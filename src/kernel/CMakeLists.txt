@@ -1,0 +1,23 @@
+##########
+# KERNEL #
+##########
+
+SET(CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/kernel)
+
+ENABLE_LANGUAGE(ASM_NASM)
+SET_SOURCE_FILES_PROPERTIES(asm/startup.s PROPERTIES LANGUAGE ASM_NASM)
+
+SET(CMAKE_CXX_FLAGS "-ffreestanding -O0 -std=gnu99 -Woverflow -m32 -nostdlib")
+SET(CMAKE_C_FLAGS "-ffreestanding -O0 -std=gnu99 -Woverflow -m32")
+
+SET(CMAKE_ASM_NASM_COMPILER ${TOOLCHAIN_PREFIX}nasm)
+SET(CMAKE_ASM_NASM_FLAGS "-I ${CMAKE_CURRENT_SOURCE_DIR}/ -f elf")
+SET(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <FLAGS> -o <OBJECT> <SOURCE>")
+
+ADD_EXECUTABLE(duckk32 asm/startup.s kmain.cpp pit.cpp shell.cpp stdio.cpp keyboard.cpp common.cpp ata.cpp tasking/elf.cpp tasking/tasking.cpp tasking/tss.cpp pci/pci.cpp memory/gdt.cpp memory/heap.cpp memory/paging.cpp interrupt/idt.cpp interrupt/irq.cpp interrupt/isr.cpp interrupt/syscall.cpp filesystem/ext2.cpp filesystem/fat32.cpp filesystem/vfs.cpp asm/assembly_extern.c)
+
+SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel.ld)
+SET_TARGET_PROPERTIES(duckk32 PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
+SET(CMAKE_CXX_LINK_EXECUTABLE "ld <OBJECTS> -T ${LINKER_SCRIPT} -melf_i386 -Map kernel.map -o <TARGET> <LINK_LIBRARIES>")
+
+TARGET_INCLUDE_DIRECTORIES(duckk32 PRIVATE ${CMAKE_SOURCE_DIR})

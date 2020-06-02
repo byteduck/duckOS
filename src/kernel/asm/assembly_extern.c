@@ -1,0 +1,1 @@
+void kmain(unsigned short mbootptr);
