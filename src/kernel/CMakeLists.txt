@@ -2,6 +2,8 @@
 # KERNEL #
 ##########
 
+set(CMAKE_CXX_STANDARD 11)
+
 SET(CMAKE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/src/kernel)
 
 ENABLE_LANGUAGE(ASM_NASM)
@@ -14,7 +16,8 @@ SET(CMAKE_ASM_NASM_COMPILER ${TOOLCHAIN_PREFIX}nasm)
 SET(CMAKE_ASM_NASM_FLAGS "-I ${CMAKE_CURRENT_SOURCE_DIR}/ -f elf")
 SET(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <FLAGS> -o <OBJECT> <SOURCE>")
 
-ADD_EXECUTABLE(duckk32 asm/startup.s kmain.cpp pit.cpp shell.cpp stdio.cpp keyboard.cpp common.cpp ata.cpp tasking/elf.cpp tasking/tasking.cpp tasking/tss.cpp pci/pci.cpp memory/gdt.cpp memory/heap.cpp memory/paging.cpp interrupt/idt.cpp interrupt/irq.cpp interrupt/isr.cpp interrupt/syscall.cpp filesystem/ext2.cpp filesystem/fat32.cpp filesystem/vfs.cpp asm/assembly_extern.c)
+SET(SOURCE_FILES asm/startup.s kmain.cpp pit.cpp shell.cpp stdio.cpp keyboard.cpp common.cpp ata.cpp tasking/elf.cpp tasking/tasking.cpp tasking/tss.cpp pci/pci.cpp memory/gdt.cpp memory/heap.cpp memory/paging.cpp interrupt/idt.cpp interrupt/irq.cpp interrupt/isr.cpp interrupt/syscall.cpp filesystem/ext2.cpp filesystem/fat32.cpp filesystem/vfs.cpp pci/pci.cpp device/ide.cpp device/ide.h)
+ADD_EXECUTABLE(duckk32 ${SOURCE_FILES})
 
 SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel.ld)
 SET_TARGET_PROPERTIES(duckk32 PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})

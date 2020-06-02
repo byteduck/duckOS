@@ -8,6 +8,7 @@
 #include <tasking/elf.h>
 #include <pci/pci.h>
 #include <memory/paging.h>
+#include <device/ide.h>
 
 char cmdbuf[256];
 char argbuf[256];
@@ -89,7 +90,7 @@ static void command_eval(char *cmd, char *args){
 		println("kill: Kill a program.");
 		println("dummy: Create a dummy process.");
 		println("elfinfo: Print info about an ELF executable.");
-		println("pciinfo: Print PCI debug info.");
+		println("lspci: Lists PCI devices.");
 		println("exit: Pretty self explanatory.");
 	}else if(strcmp(cmd,"ls")){
 		if(strcmp(args,"")){
@@ -180,6 +181,15 @@ static void command_eval(char *cmd, char *args){
 		}else{
 			printf("Cannot find %s.\n",args);
 		}
+	}else if(strcmp(cmd, "lspci")){
+		PCI::enumerate_devices([](PCI::Address address, PCI::ID id, void* dataPtr) {
+			uint8_t clss = PCI::read_byte(address, PCI_CLASS);
+			uint8_t subclss = PCI::read_byte(address, PCI_SUBCLASS);
+			printf("%x:%x.%x Vendor: 0x%x Device: 0x%x\n  Class: 0x%x Subclass: 0x%x\n", address.bus, address.slot, address.function, id.vendor, id.device, clss, subclss);
+		}, nullptr);
+	}else if(strcmp(cmd, "findpata")){
+		IDE::PATAChannel channel = IDE::find_pata_channel(ATA_PRIMARY);
+		printf("%x:%x.%x Int %d\n", channel.address.bus, channel.address.slot, channel.address.function, PCI::read_byte(channel.address, PCI_INTERRUPT_LINE));
 	}else{
 		if(!findAndExecute(cmd, true)) printf("\"%s\" is not a recognized command, file, or program.\n", cmd);
 	}
