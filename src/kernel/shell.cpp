@@ -2,7 +2,7 @@
 #include <keyboard.h>
 #include <stdio.h>
 #include <shell.h>
-#include <filesystem/ext2.h>
+#include <filesystem/Ext2.h>
 #include <memory/heap.h>
 #include <tasking/tasking.h>
 #include <tasking/elf.h>
@@ -15,15 +15,15 @@ char argbuf[256];
 char dirbuf[512];
 char dirbuf2[512];
 bool exitShell = false;
-file_t currentDir = {}, fileBuf = {};
+//file_t currentDir = {}, fileBuf = {};
 extern bool shell_mode;
 extern char kbdbuf[256];
-filesystem_t *shellfs;
+Filesystem *shellfs;
 extern bool tasking_enabled;
 
-void initShell(filesystem_t *fsp){
+void initShell(Filesystem *fsp){
 	shellfs = fsp;
-	shellfs->getFile("/",&currentDir,shellfs);
+	//shellfs->getFile("/",&currentDir,shellfs);
 	dirbuf[0] = '/';
 	dirbuf[1] = '\0';
 }
@@ -57,7 +57,7 @@ void progx(){
 	exec(prog);
 }
 
-bool findAndExecute(char *cmd, bool wait){
+/*bool findAndExecute(char *cmd, bool wait){
 	file_t *file = (file_t *)kmalloc(sizeof(file_t));
 	if(shellfs->getFile(cmd, file, shellfs) && !file->isDirectory){
 		if(file->sectors*512 > 0x1000)
@@ -72,10 +72,10 @@ bool findAndExecute(char *cmd, bool wait){
 		return true;
 	}
 	return false;
-}
+}*/
 
 static void command_eval(char *cmd, char *args){
-	if(strcmp(cmd,"help")){
+	/*if(strcmp(cmd,"help")){
 		println("ls: List the files in the current directory. Use -h for help.");
 		println("cd: Change the current directory.");
 		println("pwd: Print the working directory.");
@@ -101,7 +101,7 @@ static void command_eval(char *cmd, char *args){
 				ext2_inode *inode = kmalloc(sizeof(ext2_inode));
 				ext2_readInode(inodeID, inode, ext2);
 				if((inode->type & 0xF000) != EXT2_DIRECTORY) printf("%s is not a directory.\n",args); else ext2_listDirectory(inodeID, ext2);
-			}*/
+			}*//*
 		}
 	}else if(strcmp(cmd,"cd")){
 		strcpy(dirbuf, dirbuf2);
@@ -192,5 +192,5 @@ static void command_eval(char *cmd, char *args){
 		printf("%x:%x.%x Int %d\n", channel.address.bus, channel.address.slot, channel.address.function, PCI::read_byte(channel.address, PCI_INTERRUPT_LINE));
 	}else{
 		if(!findAndExecute(cmd, true)) printf("\"%s\" is not a recognized command, file, or program.\n", cmd);
-	}
+	}*/
 }

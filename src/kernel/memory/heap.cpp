@@ -25,6 +25,7 @@ Frame first_available_frame(){
 		}
 	}
 	PANIC("NO_HEAP_SPACE","The heap ran out of memory.",true);
+	return frbuf;
 }
 
 FrameSet first_available_frameset(uint32_t len){ //len is the amount of 16byte frames, not bytes.

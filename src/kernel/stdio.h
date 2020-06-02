@@ -1,6 +1,8 @@
 #ifndef STDIO_H
 #define STDIO_H
 
+#include <common.h>
+
 void print_color(char* c, char color);
 void println_color(char* c, char color);
 void putch(char c);
