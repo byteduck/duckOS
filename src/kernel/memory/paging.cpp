@@ -3,33 +3,33 @@
 #include <memory/paging.h>
 #include <interrupt/isr.h>
 
-uint32_t page_directory[1024] __attribute__((aligned(4096)));
-uint32_t exec_page_table[1024] __attribute__((aligned(4096)));
+PageDirectory page_directory[1024] __attribute__((aligned(4096)));
+PageTable exec_page_table[1024] __attribute__((aligned(4096)));
 #define krnlstartPhys = &kernelstart-HIGHER_HALF;
 #define krnlendPhys = &krnlend-HIGHER_HALF;
 extern uint32_t BootPageDirectory;
 
 void setupPaging(){
 	uint32_t i,j;
-	page_directory[0]= 0x83;
+	page_directory[0].value = 0x83;
 	for(i = 1; i < (HIGHER_HALF >> 22); i++){
-		page_directory[i] = 0x0;
+		page_directory[i].value = 0x0;
 	}
-	page_directory[i] = 0x83;
+	page_directory[i].value = 0x83;
 	i++;
 	for(i=i; i < 1024; i++){
-		page_directory[i] = 0;
+		page_directory[i].value = 0;
 	}
 	uint32_t *d = (uint32_t*)0x1000;
 	load_page_dir((uint32_t *)((uint32_t)&page_directory[0]-HIGHER_HALF));
 }
 
 void exec(uint8_t *prog){
-	exec_page_table[0] = ((uint32_t)&prog[0]-HIGHER_HALF) | 0x3;
-	page_directory[0] = ((uint32_t)&exec_page_table[0]-HIGHER_HALF) | 0x3;
+	exec_page_table[0].value = ((uint32_t)&prog[0]-HIGHER_HALF) | 0x3;
+	page_directory[0].value = ((uint32_t)&exec_page_table[0]-HIGHER_HALF) | 0x3;
 	load_page_dir((uint32_t *)((uint32_t)&page_directory[0]-HIGHER_HALF));
 	((void(*)())0)();
-	exec_page_table[0] = 0x83;
+	exec_page_table[0].value = 0x83;
 	load_page_dir((uint32_t *)((uint32_t)&page_directory[0]-HIGHER_HALF));
 }
 

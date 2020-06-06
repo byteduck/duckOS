@@ -14,7 +14,7 @@ public:
 	InodeID rootInode;
 	virtual const char* name() const;
 	static bool probe(BlockDevice* dev);
-	virtual void get_inode(InodeID id, Inode* inode);
+	virtual Inode *get_inode(InodeID id);
 	Filesystem(BlockDevice* device);
 };
 

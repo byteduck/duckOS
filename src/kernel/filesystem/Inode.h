@@ -11,12 +11,15 @@ class Inode {
 public:
 	InodeID id;
 	Filesystem* fs;
-	bool isDirectory;
-	bool isLink;
 
-	Inode(Filesystem* fs, InodeID id);
+    Inode(Filesystem* fs, InodeID id);
+    Inode();
 
-	bool read(uint32_t start, uint32_t length, uint8_t *buffer);
+	virtual bool is_directory();
+	virtual bool is_link();
+	virtual Inode* find(string name);
+	virtual bool read(uint32_t start, uint32_t length, uint8_t *buffer);
+	bool is_null();
 };
 
 

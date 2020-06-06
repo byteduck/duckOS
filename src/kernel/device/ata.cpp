@@ -1,4 +1,5 @@
 #include <common.h>
+#include <stdio.h>
 #include <device/ata.h>
 
 /*

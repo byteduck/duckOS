@@ -21,8 +21,6 @@
 
 int i;
 
-Ext2Filesystem *fs;
-
 int kmain(uint32_t mbootptr){
 	load_gdt();
 	interrupts_init();
@@ -31,36 +29,44 @@ int kmain(uint32_t mbootptr){
 	parse_mboot(mbootptr+HIGHER_HALF);
 	clearScreen();
 	center_print("Now in 32-bit protected mode!",0x07);
-	PIODevice disk = PIODevice(boot_disk);
-	uint8_t sect[512];
-	disk.read_block(0, sect);
-	if(sect[1] == 0xFF){
-		println_color("WARNING: I think you may be booting DuckOS off of a USB drive or other unsupported device. Disk reading functions may not work.",0x0C);
-	}
-	PartitionDevice part(&disk, pio_get_first_partition(boot_disk));
-	if(Ext2Filesystem::probe(&part)){
-		printf("Partition is ext2 ");
-	}else{
-		println("Partition is not ext2!");
-		while(true);
-	}
-	Ext2Filesystem ext2fs(&part);
-	fs = &ext2fs;
-	if(ext2fs.superblock.version_major < 1){
-		printf("Unsupported ext2 version %d.%d. Must be at least 1.", fs->superblock.version_major, fs->superblock.version_minor);
-		while(true);
-	}
-	printf("%d.%d\n", fs->superblock.version_major, fs->superblock.version_minor);
-	if(fs->superblock.inode_size != 128){
-		printf("Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time.", fs->superblock.inode_size);
-	}
 	initTasking();
 	return 0;
 }
 
 //called from kthread
 void kmain_late(){
-	initShell(fs);
+    PIODevice disk = PIODevice(boot_disk);
+    uint8_t sect[512];
+    disk.read_block(0, sect);
+    if(sect[1] == 0xFF){
+        println_color("WARNING: I think you may be booting DuckOS off of a USB drive or other unsupported device. Disk reading functions may not work.",0x0C);
+    }
+    PartitionDevice part(&disk, pio_get_first_partition(boot_disk));
+    if(Ext2Filesystem::probe(&part)){
+        printf("Partition is ext2 ");
+    }else{
+        println("Partition is not ext2!");
+        while(true);
+    }
+    Ext2Filesystem ext2fs(&part);
+    if(ext2fs.superblock.version_major < 1){
+        printf("Unsupported ext2 version %d.%d. Must be at least 1.", ext2fs.superblock.version_major, ext2fs.superblock.version_minor);
+        while(true);
+    }
+    printf("%d.%d\n", ext2fs.superblock.version_major, ext2fs.superblock.version_minor);
+    if(ext2fs.superblock.inode_size != 128){
+        printf("Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time.", ext2fs.superblock.inode_size);
+    }
+
+    //auto* in = (Ext2Inode*)(ext2fs.get_inode(2));
+    //Ext2Inode* boot = (Ext2Inode*)(in->find("boot"));
+    //Ext2Inode* in2 = new(kmalloc(sizeof(Ext2Inode))) Ext2Inode;
+    //printf("%d\n", in2->is_link());
+    printf("The OS will not work for now. Paging and alloc are being rewritten.");
+    while(1);
+
+
+	initShell(&ext2fs);
 	addProcess(createProcess("shell",(uint32_t)shell));
 	while(getProcess(2));
 	printf("\n\nShell exited.\n\n");

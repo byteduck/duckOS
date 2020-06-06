@@ -12,6 +12,6 @@ bool Filesystem::probe(BlockDevice *dev) {
 	return false;
 }
 
-void Filesystem::get_inode(InodeID id, Inode *inode) {
+Inode* Filesystem::get_inode(InodeID id) {
 
 }
