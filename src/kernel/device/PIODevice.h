@@ -1,7 +1,7 @@
 #ifndef DUCKOS_PIODEVICE_H
 #define DUCKOS_PIODEVICE_H
 
-#include <common.h>
+#include <kstddef.h>
 #include "BlockDevice.h"
 
 class PIODevice: public BlockDevice {

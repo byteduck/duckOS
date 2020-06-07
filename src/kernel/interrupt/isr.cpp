@@ -1,4 +1,4 @@
-#include <common.h>
+#include <kstddef.h>
 #include <memory/paging.h>
 #include <kstdio.h>
 #include <interrupt/idt.h>

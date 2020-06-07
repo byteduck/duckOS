@@ -1,7 +1,7 @@
 #ifndef DUCKOS_INODE_H
 #define DUCKOS_INODE_H
 
-#include <common.h>
+#include <kstddef.h>
 #include <filesystem/FileSystem.h>
 
 class Filesystem;

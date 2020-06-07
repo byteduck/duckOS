@@ -71,5 +71,9 @@ void sti();
 int strToInt(char *str);
 void toUpper(char *str);
 char *strcat(char *dest, const char *src);
+void *operator new(size_t size);
+void *operator new[](size_t size);
+void operator delete(void *p);
+void operator delete[](void *p);
 
 #endif

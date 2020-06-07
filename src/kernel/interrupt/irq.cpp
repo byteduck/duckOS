@@ -1,4 +1,4 @@
-#include <common.h>
+#include <kstddef.h>
 #include <interrupt/idt.h>
 #include <interrupt/irq.h>
 #include <pit.h>

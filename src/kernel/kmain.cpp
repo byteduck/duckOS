@@ -1,4 +1,4 @@
-#include <common.h>
+#include <kstddef.h>
 #include <tasking/tss.h>
 #include <memory/gdt.h>
 #include <multiboot.h>
@@ -61,7 +61,6 @@ void kmain_late(){
 	addProcess(createProcess("shell",(uint32_t)shell));
 	while(getProcess(2));
 	printf("\n\nShell exited.\n\n");
-	while(1);
 	PANIC("Kernel process stopped!","That should not happen.",true);
 	__kill__();
 }

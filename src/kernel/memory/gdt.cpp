@@ -1,4 +1,4 @@
-#include <common.h>
+#include <kstddef.h>
 #include <memory/gdt.h>
 
 GDTEntry gdt[GDT_ENTRIES];

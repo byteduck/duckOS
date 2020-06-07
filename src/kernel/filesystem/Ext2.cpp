@@ -1,4 +1,4 @@
-#include <common.h>
+#include <kstddef.h>
 #include <memory/kliballoc.h>
 #include <kstdio.h>
 #include <filesystem/Ext2.h>
@@ -65,7 +65,7 @@ uint32_t Ext2Filesystem::block_to_sector(uint32_t block){
 }
 
 Inode* Ext2Filesystem::get_inode(InodeID id) {
-    Ext2Inode* ret = (Ext2Inode*) kmalloc(sizeof(Ext2Inode));
+    auto* ret = new Ext2Inode();
 	ret->id = id;
 	ret->fs = this;
 	ret->read_raw();
@@ -134,23 +134,23 @@ bool Ext2Inode::is_link() {
 
 Inode* Ext2Inode::find(string find_name) {
     Inode* ret = nullptr;
-    if((raw.type & 0xF000) == EXT2_DIRECTORY) {
-        uint8_t* buf = static_cast<uint8_t *>(kmalloc(fs->block_size));
+    if((raw.type & 0xF000u) == EXT2_DIRECTORY) {
+        auto* buf = static_cast<uint8_t *>(kmalloc(fs->block_size));
         for(int i = 0; i < 12; i++) {
             uint32_t block = raw.block_pointers[i];
             if(block == 0 || block > fs->superblock.total_blocks);
             fs->read_block(block, buf);
-            ext2_directory* dir = reinterpret_cast<ext2_directory *>(buf);
+            auto* dir = reinterpret_cast<ext2_directory *>(buf);
             uint32_t add = 0;
             char name_buf[257];
             while(dir->inode != 0 && add < fs->block_size) {
                 memcpy(name_buf, &dir->type+1, dir->name_length);
                 name_buf[dir->name_length] = '\0';
-                printf(name_buf);
-                printf("\n");
                 if(strcmp(find_name, name_buf)){
                     ret = fs->get_inode(dir->inode);
                 }
+                add += dir->size;
+                dir = (ext2_directory*)((size_t)dir + dir->size);
             }
         }
         kfree(buf);

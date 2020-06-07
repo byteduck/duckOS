@@ -1,7 +1,7 @@
 #ifndef _LIBALLOC_H
 #define _LIBALLOC_H
 
-#include <common.h>
+#include <kstddef.h>
 #include <memory/paging.h>
 
 typedef uint32_t uintptr_t;

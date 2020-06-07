@@ -1,4 +1,4 @@
-#include <common.h>
+#include <kstddef.h>
 #include <interrupt/idt.h>
 
 struct IDTEntry idt[256];

@@ -1,7 +1,7 @@
 #ifndef TASKING_H
 #define TASKING_H
 
-#include <common.h>
+#include <kstddef.h>
 
 #define PROCESS_ALIVE 0
 #define PROCESS_ZOMBIE 1

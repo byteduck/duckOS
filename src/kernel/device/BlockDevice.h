@@ -1,7 +1,7 @@
 #ifndef DUCKOS_BLOCKDEVICE_H
 #define DUCKOS_BLOCKDEVICE_H
 
-#include <common.h>
+#include <kstddef.h>
 #include "Device.h"
 class BlockDevice: public Device {
 public:

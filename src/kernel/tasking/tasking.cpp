@@ -1,6 +1,6 @@
 #include <tasking/tasking.h>
 #include <memory/kliballoc.h>
-#include <common.h>
+#include <kstddef.h>
 #include <kstdio.h>
 #include <pit.h>
 #include <kmain.h>
