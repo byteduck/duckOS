@@ -1,5 +1,5 @@
-#include <kstddef.h>
-#include <interrupt/idt.h>
+#include <kernel/kstddef.h>
+#include <kernel/interrupt/idt.h>
 
 struct IDTEntry idt[256];
 struct IDTPointer idtp;

@@ -1,14 +1,14 @@
-#include <kstddef.h>
-#include <keyboard.h>
-#include <kstdio.h>
-#include <shell.h>
-#include <filesystem/Ext2.h>
-#include <memory/kliballoc.h>
-#include <tasking/tasking.h>
-#include <tasking/elf.h>
-#include <pci/pci.h>
-#include <memory/paging.h>
-#include <device/ide.h>
+#include <kernel/kstddef.h>
+#include <kernel/keyboard.h>
+#include <kernel/kstdio.h>
+#include <kernel/shell.h>
+#include <kernel/filesystem/Ext2.h>
+#include <kernel/memory/kliballoc.h>
+#include <kernel/tasking/tasking.h>
+#include <kernel/tasking/elf.h>
+#include <kernel/pci/pci.h>
+#include <kernel/memory/paging.h>
+#include <kernel/device/ide.h>
 
 char cmdbuf[256];
 char argbuf[256];
@@ -69,7 +69,7 @@ void shell(){
 }*/
 
 static void command_eval(char *cmd, char *args){
-	/*if(strcmp(cmd,"help")){
+	if(strcmp(cmd,"help")){
 		println("ls: List the files in the current directory. Use -h for help.");
 		println("cd: Change the current directory.");
 		println("pwd: Print the working directory.");
@@ -77,6 +77,7 @@ static void command_eval(char *cmd, char *args){
 		println("help: Shows this message.");
 		println("cat: Prints a file's contents.");
 		println("about: Prints some information.");
+		println("mem: Prints information about the memory.");
 		//println("partinfo: Prints information about the current partition.");
 		println("pagefault: Triggers a page fault, in case you wanted to.");
 		println("tasks: Prints all running tasks.");
@@ -87,18 +88,18 @@ static void command_eval(char *cmd, char *args){
 		println("lspci: Lists PCI devices.");
 		println("exit: Pretty self explanatory.");
 	}else if(strcmp(cmd,"ls")){
-		if(strcmp(args,"")){
+		/*if(strcmp(args,"")){
 			shellfs->listDir(&currentDir, shellfs);
 		}else{
-			/*uint32_t inodeID = ext2_findFile(args, current_inode, inode_buf, ext2);
+			uint32_t inodeID = ext2_findFile(args, current_inode, inode_buf, ext2);
 			if(!inodeID) printf("That directory does not exist.\n"); else{
 				ext2_inode *inode = kmalloc(sizeof(ext2_inode));
 				ext2_readInode(inodeID, inode, ext2);
 				if((inode->type & 0xF000) != EXT2_DIRECTORY) printf("%s is not a directory.\n",args); else ext2_listDirectory(inodeID, ext2);
-			}*//*
-		}
+			}
+		}*/
 	}else if(strcmp(cmd,"cd")){
-		strcpy(dirbuf, dirbuf2);
+		/*strcpy(dirbuf, dirbuf2);
 		strcat(dirbuf2,args);
 		strcat(dirbuf2,"/");
 		if(!shellfs->getFile(dirbuf2, &fileBuf, shellfs)) printf("That directory does not exist.\n"); else{
@@ -106,13 +107,15 @@ static void command_eval(char *cmd, char *args){
 				currentDir = fileBuf;
 				strcpy(dirbuf2, dirbuf);
 			}
-		}
+		}*/
 	}else if(strcmp(cmd,"pwd")){
 		printf("%s\n",dirbuf);
 	}else if(strcmp(cmd,"about")){
 		println("DuckOS v0.0");
+	}else if(strcmp(cmd, "mem")) {
+		printf("Used memory: %dKiB\n", get_used_mem());
 	}else if(strcmp(cmd,"cat")){
-		file_t file = {};
+		/*file_t file = {};
 		strcpy(dirbuf, dirbuf2);
 		strcat(dirbuf2,args);
 		strcat(dirbuf2,"/");
@@ -124,7 +127,7 @@ static void command_eval(char *cmd, char *args){
 			kfree(buf, file.sectors*512);
 		}else{
 			printf("Cannot find %s.\n",args);
-		}
+		}*/
 	}else if(strcmp(cmd,"pagefault")){
 		if(strcmp(args,"-r")){
 			char i = ((char*)0xDEADC0DE)[0];
@@ -140,7 +143,7 @@ static void command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"tasks")){
 		printTasks();
 	}else if(strcmp(cmd,"bg")){
-		if(strcmp(args,"") || !findAndExecute(args, false)) printf("Cannot find \"%s\".\n", args);
+		//if(strcmp(args,"") || !findAndExecute(args, false)) printf("Cannot find \"%s\".\n", args);
 	}else if(strcmp(cmd,"kill")){
 		uint32_t pid = strToInt(args);
 		process_t *proc = getProcess(pid);
@@ -154,7 +157,7 @@ static void command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd, "dummy")){
 		addProcess(createProcess("dummy", (uint32_t)dummy));
 	}else if(strcmp(cmd, "elfinfo")){
-		file_t file = {};
+		/*file_t file = {};
 		strcpy(dirbuf, dirbuf2);
 		strcat(dirbuf2,args);
 		strcat(dirbuf2,"/");
@@ -174,7 +177,7 @@ static void command_eval(char *cmd, char *args){
 			kfree(headerBuf, 512);
 		}else{
 			printf("Cannot find %s.\n",args);
-		}
+		}*/
 	}else if(strcmp(cmd, "lspci")){
 		PCI::enumerate_devices([](PCI::Address address, PCI::ID id, void* dataPtr) {
 			uint8_t clss = PCI::read_byte(address, PCI_CLASS);
@@ -185,6 +188,6 @@ static void command_eval(char *cmd, char *args){
 		IDE::PATAChannel channel = IDE::find_pata_channel(ATA_PRIMARY);
 		printf("%x:%x.%x Int %d\n", channel.address.bus, channel.address.slot, channel.address.function, PCI::read_byte(channel.address, PCI_INTERRUPT_LINE));
 	}else{
-		if(!findAndExecute(cmd, true)) printf("\"%s\" is not a recognized command, file, or program.\n", cmd);
-	}*/
+		//if(!findAndExecute(cmd, true)) printf("\"%s\" is not a recognized command, file, or program.\n", cmd);
+	}
 }

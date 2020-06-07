@@ -1,8 +1,8 @@
-#include <kstddef.h>
-#include <memory/kliballoc.h>
-#include <kstdio.h>
-#include <filesystem/Ext2.h>
-#include <filesystem/FileSystem.h>
+#include <kernel/kstddef.h>
+#include <kernel/memory/kliballoc.h>
+#include <kernel/kstdio.h>
+#include <kernel/filesystem/Ext2.h>
+#include <kernel/filesystem/FileSystem.h>
 
 extern uint8_t ata_buf[512], ata_buf2[512];
 

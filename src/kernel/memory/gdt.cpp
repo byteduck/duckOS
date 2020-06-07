@@ -1,5 +1,5 @@
-#include <kstddef.h>
-#include <memory/gdt.h>
+#include <kernel/kstddef.h>
+#include <kernel/memory/gdt.h>
 
 GDTEntry gdt[GDT_ENTRIES];
 GDTPointer gp;

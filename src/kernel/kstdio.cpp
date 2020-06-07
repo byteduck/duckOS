@@ -1,6 +1,6 @@
-#include <kstddef.h>
-#include <kstdio.h>
-#include <memory/paging.h>
+#include <kernel/kstddef.h>
+#include <kernel/kstdio.h>
+#include <kernel/memory/paging.h>
 
 int xpos = 0;
 int ypos = 0;
@@ -190,6 +190,7 @@ void backspace(){
 void PANIC(char *error, char *msg, bool hang){
 	clearScreen();
 	setAllColor(0x9f);
+	setAllColor(0x9f);
 	println("Good job, you crashed it.\nAnyway, here's the details, since you probably need them.\nDon't mess it up again.\n");
 	println(error);
 	println(msg);
@@ -197,7 +198,7 @@ void PANIC(char *error, char *msg, bool hang){
 	while(hang);
 }
 
-uint8_t* vidmem = (uint8_t*)0xB8000+KERNEL_VIRTADDR; //It would be 0xb8000, but we mapped the kernel to 0xc0000000.
+uint8_t* vidmem = (uint8_t*)0xB8000; //It would be 0xb8000, but we mapped the kernel to 0xc0000000.
 void putch_color(char c, char color){
 	if(c == '\r'){
 		xpos = 0;

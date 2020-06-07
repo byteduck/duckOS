@@ -1,4 +1,4 @@
-#include <memory/kliballoc.h>
+#include <kernel/memory/kliballoc.h>
 
 /**  Durand's Amazing Super Duper Memory functions.  */
 
@@ -49,8 +49,8 @@
 #define LIBALLOC_DEAD	0xdeaddead
 
 #if defined DEBUG || defined INFO
-#include <stdio.h>
-#include <stdlib.h>
+#include <kernel/stdio.h>
+#include <kernel/stdlib.h>
 
 #define FLUSH()		fflush( stdout )
 

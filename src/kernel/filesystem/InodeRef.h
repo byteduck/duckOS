@@ -2,7 +2,7 @@
 #define DUCKOS_INODEREF_H
 
 
-#include <filesystem/Inode.h>
+#include <kernel/filesystem/Inode.h>
 
 class InodeRef {
 public:

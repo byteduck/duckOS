@@ -5,8 +5,14 @@
 #define PAGING_4MiB 1
 #define PAGE_SIZE 4096
 #define PAGE_SIZE_FLAG PAGING_4KiB
-#define KERNEL_VIRTADDR 0xC0000000
-#define KERNEL_HEAP_VIRTADDR (KERNEL_VIRTADDR + PAGE_SIZE*1024)
+#define HIGHER_HALF 0xC0000000
+#define KERNEL_START ((size_t)&_KERNEL_START)
+#define KERNEL_END ((size_t)&_KERNEL_END)
+#define KERNEL_SIZE (KERNEL_END - KERNEL_START)
+#define KERNEL_SIZE_PAGES ((KERNEL_SIZE + (PAGE_SIZE - 1)) / PAGE_SIZE)
+#define KERNEL_END_VIRTADDR (HIGHER_HALF + KERNEL_SIZE_PAGES * PAGE_SIZE)
+#define KERNEL_PAGETABLES_VIRTADDR 0xFFC00000
+#define KERNEL_HEAP_VIRTADDR (HIGHER_HALF + PAGE_SIZE*1024)
 
 typedef union PageDirectory {
     class __attribute((packed)) Data {
@@ -50,19 +56,25 @@ typedef union PageTable {
     uint32_t value;
 } PageTable;
 
-extern "C" long KERNEL_START;
-extern "C" long KERNEL_END;
+extern "C" long _KERNEL_START;
+extern "C" long _KERNEL_END;
 extern "C" void load_page_dir(size_t* dir);
 void setup_paging();
 void page_fault_handler(struct registers *r);
-size_t find_pages(size_t size);
-size_t find_one_page(size_t startIndex);
-bool is_page_used(size_t page);
-void set_page_used(size_t page);
-void set_page_free(size_t page);
-size_t allocate_pages(size_t size);
+
+void early_pagetable_setup(PageTable* page_table, size_t virtual_address, bool read_write);
+void map_page(size_t physaddr, size_t virtaddr, bool read_write);
+void map_page(size_t physaddr, size_t virtaddr, bool read_write, bool modify_directory);
+void map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pages);
+void map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pages, bool modify_directory);
+void unmap_page(size_t virtaddr);
+void unmap_pages(size_t virtaddr, size_t num_pages);
+size_t get_physaddr(size_t virtaddr);
+
+PageTable* alloc_page_table(size_t tables_index, bool modify_directory);
+PageTable* alloc_page_table(size_t tables_index);
+void dealloc_page_table(size_t tables_index);
 size_t get_used_mem();
-void k_page_dir_setup(PageTable* page_table, size_t virtual_address, bool read_write);
 
 int liballoc_lock();
 int liballoc_unlock();

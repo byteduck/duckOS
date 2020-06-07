@@ -1,7 +1,7 @@
-#include <kstddef.h>
-#include <pit.h>
-#include <kstdio.h>
-#include <tasking/tasking.h>
+#include <kernel/kstddef.h>
+#include <kernel/pit.h>
+#include <kernel/kstdio.h>
+#include <kernel/tasking/tasking.h>
 
 extern bool tasking_enabled;
 

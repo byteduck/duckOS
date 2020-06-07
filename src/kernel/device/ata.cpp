@@ -1,6 +1,6 @@
-#include <kstddef.h>
-#include <kstdio.h>
-#include <device/ata.h>
+#include <kernel/kstddef.h>
+#include <kernel/kstdio.h>
+#include <kernel/device/ata.h>
 
 /*
 * This system is to read disks formatted with an MBR only.

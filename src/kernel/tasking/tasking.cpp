@@ -1,9 +1,9 @@
-#include <tasking/tasking.h>
-#include <memory/kliballoc.h>
-#include <kstddef.h>
-#include <kstdio.h>
-#include <pit.h>
-#include <kmain.h>
+#include <kernel/tasking/tasking.h>
+#include <kernel/memory/kliballoc.h>
+#include <kernel/kstddef.h>
+#include <kernel/kstdio.h>
+#include <kernel/pit.h>
+#include <kernel/kmain.h>
 
 //big thanks to levOS (levex on GitHub) for some bits of the tasking code
 //Also, big thanks to /r/osdev and specifically /u/DSMan195276 and /u/NasenSpray for help getting it to work!

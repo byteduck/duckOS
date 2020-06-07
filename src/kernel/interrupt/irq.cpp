@@ -1,7 +1,7 @@
-#include <kstddef.h>
-#include <interrupt/idt.h>
-#include <interrupt/irq.h>
-#include <pit.h>
+#include <kernel/kstddef.h>
+#include <kernel/interrupt/idt.h>
+#include <kernel/interrupt/irq.h>
+#include <kernel/pit.h>
 
 void (*irq_routines[16])(struct registers *r) = {
 	0,0,0,0,0,0,0,0,

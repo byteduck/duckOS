@@ -1,7 +1,7 @@
-#include <kstddef.h>
-#include <kstdio.h>
-#include <tasking/tasking.h>
-#include <interrupt/syscall.h>
+#include <kernel/kstddef.h>
+#include <kernel/kstdio.h>
+#include <kernel/tasking/tasking.h>
+#include <kernel/interrupt/syscall.h>
 
 void syscallHandler(uint32_t eax, uint32_t ebx){
 	switch(eax){

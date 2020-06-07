@@ -1,2 +1,2 @@
-#include <kstddef.h>
-#include <tasking/tss.h>
+#include <kernel/kstddef.h>
+#include <kernel/tasking/tss.h>

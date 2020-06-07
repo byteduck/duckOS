@@ -1,9 +1,9 @@
-#include <kstddef.h>
-#include <memory/paging.h>
-#include <kstdio.h>
-#include <interrupt/idt.h>
-#include <interrupt/isr.h>
-#include <tasking/tasking.h>
+#include <kernel/kstddef.h>
+#include <kernel/memory/paging.h>
+#include <kernel/kstdio.h>
+#include <kernel/interrupt/idt.h>
+#include <kernel/interrupt/isr.h>
+#include <kernel/tasking/tasking.h>
 
 void isr_init(){
 	idt_set_gate(0, (unsigned)isr0, 0x08, 0x8E);

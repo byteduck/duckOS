@@ -1,7 +1,7 @@
 #ifndef DUCKOS_IDE_H
 #define DUCKOS_IDE_H
 
-#include <pci/pci.h>
+#include <kernel/pci/pci.h>
 
 #define ATA_PRIMARY 0x0
 #define ATA_SECONDARY 0x1

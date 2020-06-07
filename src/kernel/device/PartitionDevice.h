@@ -1,7 +1,7 @@
 #ifndef DUCKOS_PARTITIONDEVICE_H
 #define DUCKOS_PARTITIONDEVICE_H
 
-#include <device/BlockDevice.h>
+#include <kernel/device/BlockDevice.h>
 
 class PartitionDevice: public BlockDevice {
 public:

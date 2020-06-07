@@ -1,7 +1,7 @@
 #ifndef EXT2_H
 #define EXT2_H
 
-#include <filesystem/FileSystem.h>
+#include <kernel/filesystem/FileSystem.h>
 
 //inode constants
 #define ROOT_INODE 2

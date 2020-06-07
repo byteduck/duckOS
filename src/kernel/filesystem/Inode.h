@@ -1,8 +1,8 @@
 #ifndef DUCKOS_INODE_H
 #define DUCKOS_INODE_H
 
-#include <kstddef.h>
-#include <filesystem/FileSystem.h>
+#include <kernel/kstddef.h>
+#include <kernel/filesystem/FileSystem.h>
 
 class Filesystem;
 typedef uint32_t InodeID;

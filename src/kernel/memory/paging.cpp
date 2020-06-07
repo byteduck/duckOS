@@ -1,52 +1,72 @@
-#include <kstddef.h>
-#include <kstdio.h>
-#include <memory/paging.h>
-#include <interrupt/isr.h>
+#include <kernel/kstddef.h>
+#include <kernel/kstdio.h>
+#include <kernel/memory/paging.h>
+#include <kernel/interrupt/isr.h>
+#include <kernel/memory/MemoryBitmap.hpp>
 
 PageDirectory kernel_page_directory[1024] __attribute__((aligned(4096)));
-PageTable kernel_page_table[1024] __attribute__((aligned(4096)));
-PageTable kernel_heap_page_table[1024] __attribute__ ((aligned(4096)));
+PageTable kernel_early_page_table[1024] __attribute__((aligned(4096)));
+PageTable page_tables_table[1024] __attribute__((aligned(4096)));
+PageTable* page_tables[1024];
+size_t page_tables_physaddr[1024];
+uint16_t page_tables_num_mapped[1024] = {0};
 
-size_t used_pages = 0;
-uint32_t memory_bitmap[32768];
+MemoryBitmap<0x100000> pmem_bitmap;
+MemoryBitmap<0x100000> vmem_bitmap;
 
 //TODO: Assumes computer has at least 4GiB of memory. Should detect memory in future.
 void setup_paging() {
+	//Assert that the kernel doesn't exceed 4MiB
+	ASSERT(KERNEL_END - KERNEL_START <= PAGE_SIZE * 1024);
+
 	//Initialize all entries in page directory as not present and read/write
 	for(auto & i : kernel_page_directory) {
 		i.value = 0; //Just to make sure
 		i.data.read_write = true;
 	}
 
-	// Identity map the first directory (4MiB)
-	kernel_page_directory[0].data.present = true;
-	kernel_page_directory[0].data.read_write = true;
-	kernel_page_directory[0].data.size = PAGE_SIZE_FLAG;
-
-	//Assert that the kernel doesn't exceed 4MiB
-	ASSERT(&KERNEL_START - &KERNEL_END <= PAGE_SIZE * 1024);
-
-	//Setup kernel page directory to map the kernel to KERNEL_VIRTADDR
-	k_page_dir_setup(kernel_page_table, KERNEL_VIRTADDR, false);
-	for(auto i = 0; i < 1024; i++) {
-		kernel_page_table[i].data.present = true;
-		kernel_page_table[i].data.read_write = true;
-		kernel_page_table[i].data.set_address(4096u*i);
-	}
-
 	//Mark the kernel's pages as used
+	for(auto i = 0; i < (KERNEL_START - HIGHER_HALF)/PAGE_SIZE + KERNEL_SIZE_PAGES; i++) {
+		pmem_bitmap.set_page_used(i);
+	}
+
+	//Setup the page directory that holds the page tables
+	early_pagetable_setup(page_tables_table, KERNEL_PAGETABLES_VIRTADDR, true);
+	for(auto & table : page_tables_table) {
+		table.value = 0;
+	}
+
+	//Setup kernel page directory to map the kernel to HIGHER_HALF
+	early_pagetable_setup(kernel_early_page_table, HIGHER_HALF, true);
+	for(auto i = 0; i < (KERNEL_START - HIGHER_HALF)/PAGE_SIZE + KERNEL_SIZE_PAGES; i++) {
+		kernel_early_page_table[i].data.present = true;
+		kernel_early_page_table[i].data.read_write = true;
+		kernel_early_page_table[i].data.set_address(PAGE_SIZE*i);
+	}
+
+	//Enable our new paging scheme
+	load_page_dir((uint32_t *)((size_t)kernel_page_directory - HIGHER_HALF));
+
+	//Map kernel pages into page_tables but don't modify the directory yet - it would crash if we did
+	map_pages(KERNEL_START - HIGHER_HALF, KERNEL_START, true, KERNEL_SIZE_PAGES, false);
+	//Identity map first MiB
+	map_pages(0, 0, true, 0x100, false);
+	//Map the page table table
+	uint32_t page_tables_table_index = ((KERNEL_PAGETABLES_VIRTADDR / PAGE_SIZE) / 1024) % 1024;
+	page_tables[page_tables_table_index] = page_tables_table;
+	page_tables_physaddr[page_tables_table_index] = (size_t)page_tables_table - HIGHER_HALF;
+
+	//Now, write everything to the directory
 	for(auto i = 0; i < 1024; i++) {
-		set_page_used(i);
+		PageTable* table = page_tables[i];
+		if(table) {
+			kernel_page_directory[i].data.set_address(page_tables_physaddr[i]);
+			kernel_page_directory[i].data.present = true;
+			kernel_page_directory[i].data.read_write = true;
+		} else {
+			kernel_page_directory[i].value = 0;
+		}
 	}
-
-	//Setup kernel heap page directory
-	k_page_dir_setup(kernel_heap_page_table, KERNEL_HEAP_VIRTADDR, true);
-	for(auto & page : kernel_heap_page_table) {
-		page.value = 0;
-	}
-
-	//Load kernel page directory (we have to pass in the physical memory location, so subtract KERNEL_VIRTADDR)
-	load_page_dir((uint32_t *)((size_t)kernel_page_directory - KERNEL_VIRTADDR));
 }
 
 void PageDirectory::Data::set_address(size_t address) {
@@ -107,87 +127,19 @@ void page_fault_handler(struct registers *r){
 	while(true);
 }
 
-//Returns the bit index into memory_bitmap where there are enough contiguous pages to fit $size bytes. Returns 0 if none.
-size_t find_pages(size_t size) {
-	//Calculate number of pages (round-up division)
-	size_t num_pages = (size + (PAGE_SIZE - 1)) / PAGE_SIZE;
-	if(num_pages == 1) return find_one_page(0);
-	size_t cur_page = find_one_page(0);
-	while(true) {
-		//Check if the chunk of pages starting at cur_page are free.
-		bool all_free = true;
-		auto page = find_one_page(cur_page) + 1;
-		for(;page - cur_page < num_pages; page++) {
-			if(is_page_used(page)){
-				all_free = false;
-				break;
-			}
-		}
+//Returns the bit index into phys_memory_bitmap where there are enough contiguous pages to fit $size bytes. Returns 0 if none.
 
-		//If the all_free flag is set, return the first page of the chunk we found.
-		if(all_free)
-			return cur_page;
-
-		//Otherwise, start the next iteration of the loop at the next page after that chunk we just checked.
-		cur_page = find_one_page(page);
-
-		//If we've made it past the end of the memory bitmap, return 0. No memory available.
-		if((cur_page + num_pages) / 32 >= sizeof(memory_bitmap) / sizeof(uint32_t)) {
-			return 0;
-		}
-	}
-}
-
-//Finds one free page starting at startIndex pages. Returns 0 if none found.
-size_t find_one_page(size_t startIndex) {
-	uint8_t start_bit = startIndex % 32;
-	for(size_t bitmap_index = startIndex / 32; bitmap_index < sizeof(memory_bitmap) / sizeof(uint32_t); bitmap_index++) {
-		for(auto bit = start_bit; bit < 32; bit++) {
-			if(!((memory_bitmap[bitmap_index] >> bit) & 1u)) {
-				return bitmap_index * 32 + bit;
-			}
-		}
-		start_bit = 0;
-	}
-	return 0;
-}
-
-bool is_page_used(size_t page) {
-	return (bool)((memory_bitmap[page / 32] >> (page % 32u)) & 1u);
-}
-
-void set_page_used(size_t page) {
-	used_pages += 1;
-	memory_bitmap[page / 32] |= 1u << (page % 32u);
-}
-
-void set_page_free(size_t page) {
-	used_pages -= 1;
-	memory_bitmap[page / 32] &= ~(1u << (page % 32u));
-}
-
-//Sets the first contiguous chunk of $size pages to used and return the index of the first page used. Returns 0 if fail.
-size_t allocate_pages(size_t size){
-	size_t page = find_pages(size);
-	size_t num_pages = (size + (PAGE_SIZE - 1)) / PAGE_SIZE;
-	if(page) {
-		for(size_t sPage = page; sPage - page < num_pages; sPage++) {
-			set_page_used(sPage);
-		}
-	}
-	return page;
-}
 
 //in KiB
 size_t get_used_mem() {
 #if PAGE_SIZE_FLAG == PAGING_4KiB
-	return used_pages * 4;
+	return pmem_bitmap.used_pages() * 4;
 #else
-	return used_pages * 4096;
+	return pmem_bitmap.used_pages() * 4096;
 #endif
 }
 
-void k_page_dir_setup(PageTable *page_table, size_t virtual_address, bool read_write) {
+void early_pagetable_setup(PageTable *page_table, size_t virtual_address, bool read_write) {
 	ASSERT(virtual_address % PAGE_SIZE == 0);
 
 	size_t index = virtual_address / PAGE_SIZE;
@@ -195,7 +147,73 @@ void k_page_dir_setup(PageTable *page_table, size_t virtual_address, bool read_w
 	kernel_page_directory[dir_index].data.present = true;
 	kernel_page_directory[dir_index].data.read_write = read_write;
 	kernel_page_directory[dir_index].data.size = PAGE_SIZE_FLAG;
-	kernel_page_directory[dir_index].data.set_address((size_t)page_table - KERNEL_VIRTADDR);
+	kernel_page_directory[dir_index].data.set_address((size_t)page_table - HIGHER_HALF);
+}
+
+//Map one page at physaddr to virtaddr
+void map_page(size_t physaddr, size_t virtaddr, bool read_write, bool modify_directory) {
+	ASSERT(physaddr % PAGE_SIZE == 0);
+	ASSERT(virtaddr % PAGE_SIZE == 0);
+	size_t index = virtaddr / PAGE_SIZE;
+	size_t tables_index = (index / 1024) % 1024;
+	if(!page_tables[tables_index])
+		alloc_page_table(tables_index, modify_directory);
+	if(vmem_bitmap.is_page_used(index)) {
+		PANIC("KRNL_MAP_MAPPED_PAGE", "The kernel tried to map a page that was already mapped.", true);
+	}
+	vmem_bitmap.set_page_used(index);
+	size_t table_index = index % 1024;
+	page_tables_num_mapped[tables_index]++;
+	PageTable* table = &page_tables[tables_index][table_index];
+	table->data.present = true;
+	table->data.read_write = true;
+	table->data.set_address(physaddr);
+}
+
+void map_page(size_t physaddr, size_t virtaddr, bool read_write) {
+	map_page(physaddr, virtaddr, read_write, true);
+}
+
+//Map physaddr to virtaddr for num_pages pages.
+void map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pages, bool modify_directory) {
+	for(size_t offset = 0; offset < num_pages * PAGE_SIZE; offset += PAGE_SIZE) {
+		map_page(physaddr + offset, virtaddr + offset, read_write, modify_directory);
+	}
+}
+
+void map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pages) {
+	map_pages(physaddr, virtaddr, read_write, num_pages, true);
+}
+
+PageTable* alloc_page_table(size_t tables_index, bool modify_directory) {
+	size_t page = pmem_bitmap.allocate_pages(1,0);
+	if(!page) PANIC("KRNL_FAILED_ALLOC_PAGETABLE", "There are no more pages available.", true);
+	PageTable* tables_table = &page_tables_table[tables_index];
+	tables_table->data.set_address(page * PAGE_SIZE);
+	tables_table->data.present = true;
+	tables_table->data.read_write = true;
+	auto* table = (PageTable*)(KERNEL_PAGETABLES_VIRTADDR + tables_index * PAGE_SIZE);
+	page_tables[tables_index] = table;
+	page_tables_physaddr[tables_index] = page * PAGE_SIZE;
+	if(modify_directory) {
+		PageDirectory* dir = &kernel_page_directory[tables_index];
+		dir->data.set_address(page * PAGE_SIZE);
+		dir->data.present = true;
+		dir->data.read_write = true;
+	}
+	return table;
+}
+
+void dealloc_page_table(size_t tables_index) {
+	size_t page = page_tables_table[tables_index].data.get_address() / PAGE_SIZE;
+	page_tables_table[tables_index].value = 0;
+	page_tables_physaddr[tables_index] = 0;
+	pmem_bitmap.set_page_free(page);
+	kernel_page_directory[tables_index].value = 0;
+}
+
+PageTable* alloc_page_table(size_t tables_index) {
+	return alloc_page_table(tables_index, true);
 }
 
 int liballoc_lock() {
@@ -209,69 +227,67 @@ int liballoc_unlock() {
 }
 
 
-void* liballoc_alloc( int pages ) {
-	if(kernel_heap_page_table[1024 - pages].data.present) return nullptr;
+void* liballoc_alloc(int pages) {
 	void* retptr = nullptr;
 
-	//First, find a block of $pages contiguous pages in the table
-	int table_start_index = 0;
-	while(table_start_index < 1024) {
-		bool all_unused = true;
-		int i = table_start_index;
-		for(; i < table_start_index + pages; i++) {
-			if(kernel_heap_page_table[i].data.present){
-				all_unused = false;
-				break;
-			}
-		}
-		if(all_unused)
-			break;
-		table_start_index = i + 1;
-	}
-	if(table_start_index > 1024) return nullptr;
 
-	bool needs_undo = false;
-	int table_entry = table_start_index;
+	//First, find a block of $pages contiguous virtual pages in the kernel space
+	auto vpage = vmem_bitmap.find_pages(pages, HIGHER_HALF / PAGE_SIZE);
+	if(!vpage) {
+		PANIC("KRNL_NO_VMEM_SPACE", "The kernel ran out of vmem space.", true);
+	}
+	retptr = (void*)(vpage * PAGE_SIZE);
 
 	//Next, allocate the pages
-	for(; table_entry < table_start_index + pages; table_entry++) {
-		size_t phys_page = allocate_pages(PAGE_SIZE);
+	for(auto i = 0; i < pages; i++) {
+		size_t phys_page = pmem_bitmap.allocate_pages(1, 0);
 		//If we were unable to allocate a page, break out and undo the previous allocations
 		if(!phys_page) {
-			needs_undo = true;
-			break;
+			PANIC("KRNL_NO_HEAP_SPACE", "The kernel ran out of heap space.", true);
 		}
 
-		PageTable* table = &kernel_heap_page_table[table_entry];
-		table->data.present = true;
-		table->data.read_write = true;
-		table->data.set_address(phys_page * PAGE_SIZE);
-		if(retptr == nullptr) {
-			retptr = (void*)(KERNEL_HEAP_VIRTADDR + table_entry * PAGE_SIZE);
-		}
-	}
-
-	if(needs_undo) {
-		table_entry--;
-		while(table_entry >= table_start_index) {
-			PageTable* table = &kernel_heap_page_table[table_entry];
-			set_page_free(table->data.get_address() / PAGE_SIZE);
-			table->value = 0;
-			table_entry--;
-		}
-		return nullptr;
+		map_page(phys_page * PAGE_SIZE, vpage * PAGE_SIZE + i * PAGE_SIZE, true);
 	}
 
 	return retptr;
 }
 
-int liballoc_free( void* ptr, int pages ) {
-	size_t table_index = ((size_t)ptr - KERNEL_HEAP_VIRTADDR)/PAGE_SIZE;
-	for(auto i = table_index; i < table_index + pages; i++) {
-		size_t page_physaddr = kernel_heap_page_table[i].data.get_address();
-		set_page_free(page_physaddr / PAGE_SIZE);
-		kernel_heap_page_table[i].value = 0;
+int liballoc_free(void* ptr, int pages) {
+	for(auto i = 0; i < pages; i++) {
+		pmem_bitmap.set_page_free(get_physaddr((size_t)ptr + PAGE_SIZE * i) / PAGE_SIZE);
 	}
-
+	unmap_pages((size_t)ptr, pages);
 	return 0;
+}
+
+void unmap_page(size_t virtaddr) {
+	ASSERT(virtaddr % PAGE_SIZE == 0);
+	size_t page = virtaddr / PAGE_SIZE;
+	size_t tables_index = (page / 1024) % 1024;
+	if(!page_tables[tables_index]) PANIC("KRNL_UNMAP_UNMAPPED_PAGE", "The kernel tried to unmap a page that wasn't mapped.", true);
+	vmem_bitmap.set_page_free(page);
+	size_t table_index = page % 1024;
+	page_tables_num_mapped[tables_index]--;
+	PageTable* table = &page_tables[tables_index][table_index];
+	table->value = 0;
+	if(page_tables_num_mapped[tables_index] == 0)
+		dealloc_page_table(tables_index);
+}
+
+void unmap_pages(size_t virtaddr, size_t num_pages) {
+	for(size_t offset = 0; offset < num_pages * PAGE_SIZE; offset += PAGE_SIZE) {
+		unmap_page(virtaddr + offset);
+	}
+}
+
+//Get the physical address mapped to virtaddr. Returns 0 if not mapped.
+size_t get_physaddr(size_t virtaddr) {
+	size_t page = virtaddr / PAGE_SIZE;
+	size_t tables_index = (page / 1024) % 1024;
+	if(!vmem_bitmap.is_page_used(page)) return 0;
+	if(!kernel_page_directory[tables_index].data.present) return 0; //TODO: Log an error
+	if(!page_tables[tables_index]) return 0; //TODO: Log an error
+	size_t table_index = page % 1024;
+	size_t page_paddr = page_tables[tables_index][table_index].data.get_address();
+	return page_paddr + (virtaddr % PAGE_SIZE);
 }

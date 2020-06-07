@@ -1,6 +1,6 @@
-#include <kstddef.h>
-#include <kstdio.h>
-#include <keyboard.h>
+#include <kernel/kstddef.h>
+#include <kernel/kstdio.h>
+#include <kernel/keyboard.h>
 
 bool shift = 0;
 char kbdbuf[256];
