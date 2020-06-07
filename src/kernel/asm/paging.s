@@ -9,6 +9,7 @@ load_page_dir:
 	pusha
 	mov cr3, eax
 
+    ;Turn on paging in cr0 register
 	mov eax, cr0
 	or eax, 0x80000000
 	mov cr0, eax

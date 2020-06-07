@@ -70,7 +70,7 @@ void fault_handler(struct registers *r){
 
 			case 14: //Page fault
 			if(getCurrentProcess()->pid == 1)
-				pageFaultHandler(r);
+				page_fault_handler(r);
 			else
 				notify(SIGILL);
 			break;

@@ -51,12 +51,6 @@ void shell(){
 	__kill__();
 }
 
-uint8_t prog[0x1000];
-
-void progx(){
-	exec(prog);
-}
-
 /*bool findAndExecute(char *cmd, bool wait){
 	file_t *file = (file_t *)kmalloc(sizeof(file_t));
 	if(shellfs->getFile(cmd, file, shellfs) && !file->isDirectory){

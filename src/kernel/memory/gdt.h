@@ -1,6 +1,8 @@
 #ifndef GDT_H
 #define GDT_H
 
+#define GDT_ENTRIES 5
+
 typedef struct GDTEntry{
     uint16_t limit;
     uint16_t base_low;

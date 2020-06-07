@@ -36,7 +36,7 @@ start:
     mov cr3, ecx
 
     mov ecx, cr4
-    or ecx, 0x00000010 ;Enable PAE
+    or ecx, 0x00000010 ;Enable PSE
     mov cr4, ecx
 
     mov ecx, cr0

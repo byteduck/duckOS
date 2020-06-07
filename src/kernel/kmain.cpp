@@ -24,7 +24,7 @@ int i;
 int kmain(uint32_t mbootptr){
 	load_gdt();
 	interrupts_init();
-	setupPaging();
+	setup_paging();
 	init_heap();
 	parse_mboot(mbootptr+HIGHER_HALF);
 	clearScreen();
@@ -62,6 +62,10 @@ void kmain_late(){
     //Ext2Inode* boot = (Ext2Inode*)(in->find("boot"));
     //Ext2Inode* in2 = new(kmalloc(sizeof(Ext2Inode))) Ext2Inode;
     //printf("%d\n", in2->is_link());
+
+    printf("Used memory: %dKiB\n", get_used_mem());
+
+
     printf("The OS will not work for now. Paging and alloc are being rewritten.");
     while(1);
 
