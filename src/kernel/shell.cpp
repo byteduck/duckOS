@@ -1,9 +1,9 @@
 #include <common.h>
 #include <keyboard.h>
-#include <stdio.h>
+#include <kstdio.h>
 #include <shell.h>
 #include <filesystem/Ext2.h>
-#include <memory/heap.h>
+#include <memory/kliballoc.h>
 #include <tasking/tasking.h>
 #include <tasking/elf.h>
 #include <pci/pci.h>

@@ -1,41 +1,37 @@
 #include <common.h>
-#include <stdio.h>
+#include <kstdio.h>
 #include <memory/paging.h>
 #include <interrupt/isr.h>
 
-PageDirectory page_directory[1024] __attribute__((aligned(4096)));
+PageDirectory kernel_page_directory[1024] __attribute__((aligned(4096)));
 PageTable kernel_page_table[1024] __attribute__((aligned(4096)));
+PageTable kernel_heap_page_table[1024] __attribute__ ((aligned(4096)));
 
 size_t used_pages = 0;
 uint32_t memory_bitmap[32768];
 
-
 //TODO: Assumes computer has at least 4GiB of memory. Should detect memory in future.
 void setup_paging() {
 	//Initialize all entries in page directory as not present and read/write
-	for(auto & i : page_directory) {
+	for(auto & i : kernel_page_directory) {
 		i.value = 0; //Just to make sure
 		i.data.read_write = true;
 	}
 
 	// Identity map the first directory (4MiB)
-	page_directory[0].data.present = true;
-	page_directory[0].data.read_write = true;
-	page_directory[0].data.size = PAGE_SIZE_FLAG;
+	kernel_page_directory[0].data.present = true;
+	kernel_page_directory[0].data.read_write = true;
+	kernel_page_directory[0].data.size = PAGE_SIZE_FLAG;
 
-	//Setup kernel page directory to map the kernel to HIGHER_HALF
-	size_t krnl_index = HIGHER_HALF / PAGE_SIZE;
-	size_t krnl_dir = (krnl_index / 1024) % 1024;
-	page_directory[krnl_dir].data.present = true;
-	page_directory[krnl_dir].data.read_write = true;
-	page_directory[krnl_dir].data.size = PAGE_SIZE_FLAG;
-	page_directory[krnl_dir].data.page_table_addr = (size_t)((size_t)kernel_page_table - HIGHER_HALF) >> 12u;
+	//Assert that the kernel doesn't exceed 4MiB
+	ASSERT(&KERNEL_START - &KERNEL_END <= PAGE_SIZE * 1024);
 
-	//Setup kernel page table
-	for(size_t i = 0; i < 1024; i++) {
+	//Setup kernel page directory to map the kernel to KERNEL_VIRTADDR
+	k_page_dir_setup(kernel_page_table, KERNEL_VIRTADDR, false);
+	for(auto i = 0; i < 1024; i++) {
 		kernel_page_table[i].data.present = true;
 		kernel_page_table[i].data.read_write = true;
-		kernel_page_table[i].data.page_addr = (4096u*i) >> 12u;
+		kernel_page_table[i].data.set_address(4096u*i);
 	}
 
 	//Mark the kernel's pages as used
@@ -43,8 +39,30 @@ void setup_paging() {
 		set_page_used(i);
 	}
 
-	//Load kernel page directory (we have to pass in the physical memory location, so subtract HIGHER_HALF)
-	load_page_dir((uint32_t *)((size_t)page_directory - HIGHER_HALF));
+	//Setup kernel heap page directory
+	k_page_dir_setup(kernel_heap_page_table, KERNEL_HEAP_VIRTADDR, true);
+	for(auto & page : kernel_heap_page_table) {
+		page.value = 0;
+	}
+
+	//Load kernel page directory (we have to pass in the physical memory location, so subtract KERNEL_VIRTADDR)
+	load_page_dir((uint32_t *)((size_t)kernel_page_directory - KERNEL_VIRTADDR));
+}
+
+void PageDirectory::Data::set_address(size_t address) {
+	page_table_addr = address >> 12u;
+}
+
+size_t PageDirectory::Data::get_address() {
+	return page_table_addr << 12u;
+}
+
+void PageTable::Data::set_address(size_t address) {
+	page_addr = address >> 12u;
+}
+
+size_t PageTable::Data::get_address() {
+	return page_addr << 12u;
 }
 
 //TODO: More descriptive
@@ -55,20 +73,28 @@ void page_fault_handler(struct registers *r){
 	bool other = false;
 	switch(r->err_code){
 		case 0:
-		case 1:
 			PANIC("KRNL_READ_NONPAGED_AREA", "", false);
 			break;
+		case 1:
+			PANIC("KRNL_READ_PROTECTION_FAULT", "", false);
+			break;
 		case 2:
-		case 3:
 			PANIC("KRNL_WRITE_NONPAGED_AREA", "", false);
 			break;
+		case 3:
+			PANIC("KRNL_WRITE_PROTECTION_FAULT", "", false);
+			break;
 		case 4:
-		case 5:
 			PANIC("USR_READ_NONPAGED_AREA", "", false);
 			break;
+		case 5:
+			PANIC("USR_READ_PROTECTION_FAULT", "", false);
+			break;
 		case 6:
-		case 7:
 			PANIC("USR_WRITE_NONPAGED_AREA", "", false);
+			break;
+		case 7:
+			PANIC("USR_WRITE_PROTECTION_FAULT", "", false);
 			break;
 		default:
 			PANIC("UNKNOWN_PAGE_FAULT", "", false);
@@ -161,6 +187,91 @@ size_t get_used_mem() {
 #endif
 }
 
-size_t map_page(size_t vaddr, size_t physaddr, bool read_write) {
+void k_page_dir_setup(PageTable *page_table, size_t virtual_address, bool read_write) {
+	ASSERT(virtual_address % PAGE_SIZE == 0);
+
+	size_t index = virtual_address / PAGE_SIZE;
+	size_t dir_index = (index / 1024) % 1024;
+	kernel_page_directory[dir_index].data.present = true;
+	kernel_page_directory[dir_index].data.read_write = read_write;
+	kernel_page_directory[dir_index].data.size = PAGE_SIZE_FLAG;
+	kernel_page_directory[dir_index].data.set_address((size_t)page_table - KERNEL_VIRTADDR);
+}
+
+int liballoc_lock() {
+	cli();
+	return 0;
+}
+
+int liballoc_unlock() {
+	sti();
+	return 0;
+}
+
+
+void* liballoc_alloc( int pages ) {
+	if(kernel_heap_page_table[1024 - pages].data.present) return nullptr;
+	void* retptr = nullptr;
+
+	//First, find a block of $pages contiguous pages in the table
+	int table_start_index = 0;
+	while(table_start_index < 1024) {
+		bool all_unused = true;
+		int i = table_start_index;
+		for(; i < table_start_index + pages; i++) {
+			if(kernel_heap_page_table[i].data.present){
+				all_unused = false;
+				break;
+			}
+		}
+		if(all_unused)
+			break;
+		table_start_index = i + 1;
+	}
+	if(table_start_index > 1024) return nullptr;
+
+	bool needs_undo = false;
+	int table_entry = table_start_index;
+
+	//Next, allocate the pages
+	for(; table_entry < table_start_index + pages; table_entry++) {
+		size_t phys_page = allocate_pages(PAGE_SIZE);
+		//If we were unable to allocate a page, break out and undo the previous allocations
+		if(!phys_page) {
+			needs_undo = true;
+			break;
+		}
+
+		PageTable* table = &kernel_heap_page_table[table_entry];
+		table->data.present = true;
+		table->data.read_write = true;
+		table->data.set_address(phys_page * PAGE_SIZE);
+		if(retptr == nullptr) {
+			retptr = (void*)(KERNEL_HEAP_VIRTADDR + table_entry * PAGE_SIZE);
+		}
+	}
+
+	if(needs_undo) {
+		table_entry--;
+		while(table_entry >= table_start_index) {
+			PageTable* table = &kernel_heap_page_table[table_entry];
+			set_page_free(table->data.get_address() / PAGE_SIZE);
+			table->value = 0;
+			table_entry--;
+		}
+		return nullptr;
+	}
+
+	return retptr;
+}
+
+int liballoc_free( void* ptr, int pages ) {
+	size_t table_index = ((size_t)ptr - KERNEL_HEAP_VIRTADDR)/PAGE_SIZE;
+	for(auto i = table_index; i < table_index + pages; i++) {
+		size_t page_physaddr = kernel_heap_page_table[i].data.get_address();
+		set_page_free(page_physaddr / PAGE_SIZE);
+		kernel_heap_page_table[i].value = 0;
+	}
+
 	return 0;
 }

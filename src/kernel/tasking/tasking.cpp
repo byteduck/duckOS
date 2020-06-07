@@ -1,7 +1,7 @@
 #include <tasking/tasking.h>
-#include <memory/heap.h>
+#include <memory/kliballoc.h>
 #include <common.h>
-#include <stdio.h>
+#include <kstdio.h>
 #include <pit.h>
 #include <kmain.h>
 
@@ -97,8 +97,8 @@ void preempt_now(){
 void __kill__(){
 	if(current_proc->pid != 1){
 		tasking_enabled = false;
-		kfree((uint8_t *)current_proc->stack,4096);
-		kfree(current_proc, sizeof(process_t));
+		kfree((uint8_t *)current_proc->stack);
+		kfree(current_proc);
 		current_proc->prev->next = current_proc->next;
 		current_proc->next->prev = current_proc->prev;
 		current_proc->state = PROCESS_DEAD;
@@ -152,8 +152,8 @@ void notify(uint32_t sig){
 void kill(process_t *p){
 	if(getProcess(p->pid) != NULL){
 		tasking_enabled = false;
-		kfree((uint8_t *)p->stack,4096);
-		kfree(p, sizeof(process_t));
+		kfree((uint8_t *)p->stack);
+		kfree(p);
 		p->prev->next = p->next;
 		p->next->prev = p->prev;
 		p->state = PROCESS_DEAD;

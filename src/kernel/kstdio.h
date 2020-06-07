@@ -3,6 +3,11 @@
 
 #include <common.h>
 
+#define ASSERT(cond) \
+if(!(cond)) { \
+  PANIC("Assertion failed:", __FILE__ " at line " STR(__LINE__), true); \
+}
+
 void print_color(char* c, char color);
 void println_color(char* c, char color);
 void putch(char c);

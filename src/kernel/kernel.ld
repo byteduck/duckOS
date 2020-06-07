@@ -4,7 +4,7 @@ SECTIONS {
     /* This is a higher-half kernel, so it will live at 3GiB + 1MB in the virtual address space */
 
     . = 0xC0100000;
-	krnlstart = .;
+	PROVIDE(KERNEL_START = .);
 
     .text : AT(ADDR(.text) - 0xC0000000)
     {
@@ -22,5 +22,5 @@ SECTIONS {
 		*(.bss*)
 	}
 	
-	krnlend = .;
+	PROVIDE(KERNEL_END = .);
 }

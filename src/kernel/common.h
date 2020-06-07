@@ -1,9 +1,10 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define HIGHER_HALF 0xC0000000
-
 #define NULL 0
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 #define __va_argsiz(t)	\
 	(((sizeof(t) + sizeof(int) - 1) / sizeof(int)) * sizeof(int))
@@ -33,9 +34,6 @@ typedef char* string;
 typedef int int32_t;
 typedef uint32_t size_t;
 typedef unsigned int uint;
-
-extern uint32_t krnlstart;
-extern uint32_t krnlend;
 
 struct  __attribute__((packed)) registers{
     unsigned int gs, fs, es, ds;

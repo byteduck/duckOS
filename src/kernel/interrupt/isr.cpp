@@ -1,6 +1,6 @@
 #include <common.h>
 #include <memory/paging.h>
-#include <stdio.h>
+#include <kstdio.h>
 #include <interrupt/idt.h>
 #include <interrupt/isr.h>
 #include <tasking/tasking.h>
@@ -69,7 +69,7 @@ void fault_handler(struct registers *r){
 			break;
 
 			case 14: //Page fault
-			if(getCurrentProcess()->pid == 1)
+			if(getCurrentProcess() == nullptr || getCurrentProcess()->pid == 1)
 				page_fault_handler(r);
 			else
 				notify(SIGILL);
@@ -91,7 +91,7 @@ void print_regs(struct registers *r){
 	asm volatile("mov %%ss, %%eax":"=a"(r->ss));
 	printf("eip:0x%X err:%d\n", r->eip, r->err_code);
 	printf("cs:0x%X ds:0x%X es:0x%X gs:0x%X fs:0x%X ss:0x%X\n",r->cs,r->ds,r->es,r->gs,r->fs,r->ss);
-	printf("e?x: a:0x%X b:0x%X c:0x%X d:0x%X\n",r->eax,r->ebx,r->ecx,r->edx);
+	printf("eax:0x%X ebx:0x%X ecx:0x%X edx:0x%X\n",r->eax,r->ebx,r->ecx,r->edx);
 	printf("edi: 0x%X esi: 0x%X ebp: 0x%X\n",r->edi,r->esi,r->ebp);
 	printf("EFLAGS: 0x%X",r->eflags);
 }

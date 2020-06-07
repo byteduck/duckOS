@@ -1,6 +1,6 @@
 #include <common.h>
 #include <pit.h>
-#include <stdio.h>
+#include <kstdio.h>
 #include <tasking/tasking.h>
 
 extern bool tasking_enabled;

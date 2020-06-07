@@ -1,5 +1,5 @@
 #include <common.h>
-#include <stdio.h>
+#include <kstdio.h>
 #include <keyboard.h>
 
 bool shift = 0;

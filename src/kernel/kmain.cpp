@@ -2,8 +2,8 @@
 #include <tasking/tss.h>
 #include <memory/gdt.h>
 #include <multiboot.h>
-#include <stdio.h>
-#include <memory/heap.h>
+#include <kstdio.h>
+#include <memory/kliballoc.h>
 #include <memory/paging.h>
 #include <interrupt/idt.h>
 #include <interrupt/isr.h>
@@ -25,8 +25,7 @@ int kmain(uint32_t mbootptr){
 	load_gdt();
 	interrupts_init();
 	setup_paging();
-	init_heap();
-	parse_mboot(mbootptr+HIGHER_HALF);
+	parse_mboot(mbootptr + KERNEL_VIRTADDR);
 	clearScreen();
 	center_print("Now in 32-bit protected mode!",0x07);
 	initTasking();
@@ -35,7 +34,7 @@ int kmain(uint32_t mbootptr){
 
 //called from kthread
 void kmain_late(){
-    PIODevice disk = PIODevice(boot_disk);
+	PIODevice disk = PIODevice(boot_disk);
     uint8_t sect[512];
     disk.read_block(0, sect);
     if(sect[1] == 0xFF){
@@ -57,18 +56,6 @@ void kmain_late(){
     if(ext2fs.superblock.inode_size != 128){
         printf("Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time.", ext2fs.superblock.inode_size);
     }
-
-    //auto* in = (Ext2Inode*)(ext2fs.get_inode(2));
-    //Ext2Inode* boot = (Ext2Inode*)(in->find("boot"));
-    //Ext2Inode* in2 = new(kmalloc(sizeof(Ext2Inode))) Ext2Inode;
-    //printf("%d\n", in2->is_link());
-
-    printf("Used memory: %dKiB\n", get_used_mem());
-
-
-    printf("The OS will not work for now. Paging and alloc are being rewritten.");
-    while(1);
-
 
 	initShell(&ext2fs);
 	addProcess(createProcess("shell",(uint32_t)shell));

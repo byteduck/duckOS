@@ -1,5 +1,5 @@
 #include <common.h>
-#include <stdio.h>
+#include <kstdio.h>
 #include <tasking/tasking.h>
 #include <interrupt/syscall.h>
 
