@@ -115,7 +115,6 @@ public:
 		uint32_t os_specific_2[3];
 	} Raw;
 
-	Ext2Filesystem* fs;
 	Raw raw;
 
 	uint32_t get_block_group();
@@ -126,6 +125,7 @@ public:
 	void read_raw();
 	bool read(uint32_t start, uint32_t length, uint8_t* buf) override;
 	Inode* find(string name) override;
+	Ext2Filesystem* ext2fs();
 };
 
 class Ext2Filesystem: public Filesystem {

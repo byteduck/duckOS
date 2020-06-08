@@ -18,6 +18,7 @@
 #include <kernel/device/PIODevice.h>
 #include <kernel/device/PartitionDevice.h>
 #include <kernel/kmain.h>
+#include <kernel/filesystem/VFS.h>
 
 int i;
 
@@ -37,33 +38,40 @@ int kmain(uint32_t mbootptr){
 //called from kthread
 void kmain_late(){
 	printf("init: Tasking initialized.\ninit: Initializing disk...\n");
-	PIODevice disk = PIODevice(boot_disk);
+	auto* disk = new PIODevice(boot_disk);
     uint8_t sect[512];
-    disk.read_block(0, sect);
+    disk->read_block(0, sect);
     if(sect[1] == 0xFF){
         println_color("init: WARNING: I think you may be booting DuckOS off of a USB drive or other unsupported device. Disk reading functions may not work.",0x0C);
     }
-    PartitionDevice part(&disk, pio_get_first_partition(boot_disk));
-    if(Ext2Filesystem::probe(&part)){
+    auto *part = new PartitionDevice(disk, pio_get_first_partition(boot_disk));
+    if(Ext2Filesystem::probe(part)){
         printf("init: Partition is ext2 ");
     }else{
         println("init: Partition is not ext2! Hanging.");
         while(true);
     }
-    Ext2Filesystem ext2fs(&part);
-    if(ext2fs.superblock.version_major < 1){
-        printf("init: Unsupported ext2 version %d.%d. Must be at least 1. Hanging.", ext2fs.superblock.version_major, ext2fs.superblock.version_minor);
+    auto* ext2fs = new Ext2Filesystem(part);
+    if(ext2fs->superblock.version_major < 1){
+        printf("init: Unsupported ext2 version %d.%d. Must be at least 1. Hanging.", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
         while(true);
     }
-    printf("%d.%d\n", ext2fs.superblock.version_major, ext2fs.superblock.version_minor);
-    if(ext2fs.superblock.inode_size != 128){
-        printf("init: Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time. Hanging.", ext2fs.superblock.inode_size);
+    printf("%d.%d\n", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
+    if(ext2fs->superblock.inode_size != 128){
+        printf("init: Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time. Hanging.", ext2fs->superblock.inode_size);
     }
 
-	initShell(&ext2fs);
+    VFS* vfs = new VFS();
+    if(!vfs->mount_root(ext2fs)) {
+    	printf("init: Failed to mount root. Hanging.");
+    	while(true);
+    }
+
+	initShell();
 	addProcess(createProcess("shell",(uint32_t)shell));
 	while(getProcess(2));
 	printf("\n\nShell exited.\n\n");
+	while(1);
 	PANIC("Kernel process stopped!","That should not happen.",true);
 	__kill__();
 }
