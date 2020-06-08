@@ -35,6 +35,11 @@ int kmain(uint32_t mbootptr){
 	return 0;
 }
 
+void shell_process(){
+	Shell shell;
+	shell.shell();
+}
+
 //called from kthread
 void kmain_late(){
 	printf("init: Tasking initialized.\ninit: Initializing disk...\n");
@@ -51,7 +56,7 @@ void kmain_late(){
         println("init: Partition is not ext2! Hanging.");
         while(true);
     }
-    auto* ext2fs = new Ext2Filesystem(part);
+    auto* ext2fs = new Ext2Filesystem(*part);
     if(ext2fs->superblock.version_major < 1){
         printf("init: Unsupported ext2 version %d.%d. Must be at least 1. Hanging.", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
         while(true);
@@ -67,8 +72,7 @@ void kmain_late(){
     	while(true);
     }
 
-	initShell();
-	addProcess(createProcess("shell",(uint32_t)shell));
+	addProcess(createProcess("shell",(uint32_t)shell_process));
 	while(getProcess(2));
 	printf("\n\nShell exited.\n\n");
 	while(1);

@@ -17,11 +17,10 @@ public:
 		InodeRef* _host_inode;
 	};
 
-	static VFS* inst();
+	static VFS& inst();
 
-	InodeRef open_directory(string path, InodeRef* base);
-	InodeRef* resolve_path(string path, InodeRef* base);
-	InodeRef* root_ref();
+	DC::shared_ptr<InodeRef> resolve_path(string path, DC::shared_ptr<InodeRef> base);
+	InodeRef& root_ref();
 
 	VFS();
 	~VFS();
@@ -29,7 +28,8 @@ public:
 	bool mount_root(Filesystem* fs);
 
 private:
-	Inode* _root_inode = nullptr;
+	DC::shared_ptr<Inode> _root_inode;
+	DC::shared_ptr<InodeRef> _root_ref;
 	Mount mounts[16];
 	static VFS* instance;
 };

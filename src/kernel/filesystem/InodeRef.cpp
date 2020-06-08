@@ -5,7 +5,7 @@
 #include <kernel/kstdio.h>
 #include "InodeRef.h"
 
-InodeRef::InodeRef(Inode* inode, string name, InodeRef *parent): _inode(inode), _parent(parent){
+InodeRef::InodeRef(DC::shared_ptr<Inode> inode, string name, DC::shared_ptr<InodeRef> parent): _inode(inode), _parent(parent){
 	_name = new char[strlen(name)];
 	strcpy(name, _name);
 }
@@ -14,7 +14,7 @@ InodeRef::~InodeRef() {
 	delete _name;
 }
 
-Inode* InodeRef::inode() {
+DC::shared_ptr<Inode> InodeRef::inode() {
     return _inode;
 }
 
@@ -22,18 +22,19 @@ string InodeRef::name() {
     return _name;
 }
 
-InodeRef *InodeRef::parent() {
+DC::shared_ptr<InodeRef> InodeRef::parent() {
     return _parent;
 }
 
 void InodeRef::get_full_path(char *buffer) {
 	if(!parent()) {
-		*buffer = '/';
+		*buffer++ = '/';
+		*buffer = '\0';
 		return;
 	}
 	InodeRef* chain[128];
 	int i = 0;
-	for (auto* ref = this; ref; ref = ref->parent()) {
+	for (auto* ref = this; ref; ref = ref->parent().get()) {
 		chain[i] = ref;
 		i++;
 	}

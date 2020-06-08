@@ -3,19 +3,20 @@
 
 
 #include <kernel/filesystem/Inode.h>
+#include <common/unique_ptr.hpp>
 
 class InodeRef {
 public:
-    InodeRef(Inode* inode, string name, InodeRef* parent);
+    InodeRef(DC::shared_ptr<Inode> inode, string name, DC::shared_ptr<InodeRef> parent);
     ~InodeRef();
-    Inode* inode();
+	DC::shared_ptr<Inode> inode();
     string name();
-    InodeRef* parent();
+	DC::shared_ptr<InodeRef> parent();
     void get_full_path(char* buffer);
 private:
-    Inode* _inode;
+	DC::shared_ptr<Inode> _inode;
     string _name;
-    InodeRef* _parent;
+	DC::shared_ptr<InodeRef> _parent;
 };
 
 

@@ -3,6 +3,7 @@
 
 #include <kernel/kstddef.h>
 #include <kernel/filesystem/FileSystem.h>
+#include <common/shared_ptr.hpp>
 
 class Filesystem;
 typedef uint32_t InodeID;
@@ -10,16 +11,15 @@ typedef uint32_t InodeID;
 class Inode {
 public:
 	InodeID id;
-	Filesystem* fs;
+	Filesystem& fs;
 
-    Inode(Filesystem* fs, InodeID id);
-    Inode();
+    Inode(Filesystem& fs, InodeID id);
 
 	virtual bool is_directory();
 	virtual bool is_link();
-	virtual Inode* find(string name);
+	virtual DC::shared_ptr<Inode> find(string name);
+	virtual Inode* find_rawptr(string name);
 	virtual bool read(uint32_t start, uint32_t length, uint8_t *buffer);
-	bool is_null();
 };
 
 

@@ -91,6 +91,7 @@ class Ext2Filesystem;
 
 class Ext2Inode: public Inode {
 public:
+
 	typedef struct __attribute__((packed)) Raw {
 		uint16_t type;
 		uint16_t user_id;
@@ -117,6 +118,7 @@ public:
 
 	Raw raw;
 
+	Ext2Inode(Ext2Filesystem& filesystem, InodeID i);
 	uint32_t get_block_group();
 	uint32_t get_index();
 	uint32_t get_block();
@@ -124,8 +126,8 @@ public:
 	bool is_link() override;
 	void read_raw();
 	bool read(uint32_t start, uint32_t length, uint8_t* buf) override;
-	Inode* find(string name) override;
-	Ext2Filesystem* ext2fs();
+	Inode* find_rawptr(string name) override;
+	Ext2Filesystem& ext2fs();
 };
 
 class Ext2Filesystem: public Filesystem {
@@ -139,10 +141,10 @@ public:
 	uint32_t num_block_groups;
 	uint32_t inodes_per_block;
 
-	Ext2Filesystem(BlockDevice *device);
+	Ext2Filesystem(BlockDevice& device);
 	const char* name() const;
 	static bool probe(BlockDevice* dev);
-	Inode* get_inode(InodeID id) override;
+	Inode * get_inode_rawptr(InodeID id) override;
 	void get_superblock(ext2_superblock *sb);
 	uint32_t block_to_sector(uint32_t block);
 	void read_slink(uint32_t block, uint8_t *buf);
