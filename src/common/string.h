@@ -20,7 +20,7 @@ namespace DC {
 		bool operator==(const char* str) const;
 		bool operator!=(const string& str) const;
 		bool operator!=(const char* str) const;
-		char operator[](size_t index) const;
+		char& operator[](size_t index) const;
 
 		size_t length() const;
 		char* c_str() const;

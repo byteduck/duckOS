@@ -88,7 +88,7 @@ namespace DC {
 		return !strcmp(str, _cstring);
 	}
 
-	char string::operator[](size_t index) const {
+	char& string::operator[](size_t index) const {
 		return _cstring[index];
 	}
 
