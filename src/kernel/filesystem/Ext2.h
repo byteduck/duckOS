@@ -126,7 +126,7 @@ public:
 	bool is_link() override;
 	void read_raw();
 	bool read(uint32_t start, uint32_t length, uint8_t* buf) override;
-	Inode* find_rawptr(string name) override;
+	Inode* find_rawptr(DC::string name) override;
 	Ext2Filesystem& ext2fs();
 };
 

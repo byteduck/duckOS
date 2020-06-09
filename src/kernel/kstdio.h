@@ -2,6 +2,7 @@
 #define STDIO_H
 
 #include <kernel/kstddef.h>
+#include <common/string.h>
 
 #define ASSERT(cond) \
 if(!(cond)) { \

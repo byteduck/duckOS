@@ -1,5 +1,5 @@
 #include <kernel/filesystem/FileSystem.h>
-#include "InodeRef.h"
+#include "LinkedInode.h"
 
 Filesystem::Filesystem(BlockDevice& device): _device(device) {
 }

@@ -15,10 +15,10 @@ bool Inode::is_link() {
     return false;
 }
 
-DC::shared_ptr<Inode> Inode::find(string name) {
+DC::shared_ptr<Inode> Inode::find(DC::string name) {
     return DC::shared_ptr<Inode>(find_rawptr(name));
 }
 
-Inode *Inode::find_rawptr(string name) {
+Inode *Inode::find_rawptr(DC::string name) {
 	return nullptr;
 }

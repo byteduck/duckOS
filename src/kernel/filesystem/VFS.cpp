@@ -1,4 +1,5 @@
 #include <kernel/kstdio.h>
+#include <common/cstring.h>
 #include "VFS.h"
 #include "Ext2.h"
 
@@ -26,45 +27,52 @@ bool VFS::mount_root(Filesystem* fs) {
 	}
 
 	_root_inode = DC::move(root_inode);
-	_root_ref = DC::shared_ptr<InodeRef>(new InodeRef(_root_inode, "/", DC::shared_ptr<InodeRef>(nullptr)));
+	_root_ref = DC::shared_ptr<LinkedInode>(new LinkedInode(_root_inode, "/", DC::shared_ptr<LinkedInode>(nullptr)));
 	mounts[0] = root_mount;
 
 	return true;
 }
 
-DC::shared_ptr<InodeRef> VFS::resolve_path(string path, DC::shared_ptr<InodeRef> _base) {
+DC::shared_ptr<LinkedInode> VFS::resolve_path(DC::string path, DC::shared_ptr<LinkedInode> _base) {
+	if(path == "/") return _root_ref;
 	auto current_inode = path[0] == '/' ? _root_ref : _base;
-	char name_buf[256];
-	if(path[0] == '/') path++;
-	while(*path != '\0') {
+	DC::string part;
+	if(path[0] == '/') path.substr(1, path.length() - 1);
+	while(path[0] != '\0') {
 		auto parent = current_inode;
-		if(!parent->inode()->is_directory()) return DC::shared_ptr<InodeRef>(nullptr);
+		if(!parent->inode()->is_directory()) return DC::shared_ptr<LinkedInode>(nullptr);
 
-		size_t slash_index = indexOf('/', path);
-		substrr(0, slash_index, path, name_buf);
-		path += slash_index + (slash_index == strlen(path) ? 0 : 1);
+		size_t slash_index = path.find('/');
+		if(slash_index != -1) {
+			part = path.substr(0, slash_index);
+			path = path.substr(slash_index + 1, path.length() - slash_index - 1);
+		} else {
+			part = path;
+			path = "";
+		}
 
-		if(strcmp(name_buf, "..")) {
+		if(part == "..") {
 			if(current_inode->parent()) {
-				current_inode = DC::shared_ptr<InodeRef>(current_inode->parent());
+				current_inode = DC::shared_ptr<LinkedInode>(current_inode->parent());
 			}
 			continue;
-		} else if(strcmp(name_buf, ".")) {
+		} else if(part == ".") {
 			continue;
 		}
 
-		auto child_inode = current_inode->inode()->find(name_buf);
+		auto child_inode = current_inode->inode()->find(part);
 
 		if(child_inode) {
-			current_inode = DC::shared_ptr<InodeRef>(new InodeRef(child_inode, name_buf, parent));
+			current_inode = DC::shared_ptr<LinkedInode>(new LinkedInode(child_inode, part, parent));
 		} else {
-			return DC::shared_ptr<InodeRef>(nullptr);
+			return DC::shared_ptr<LinkedInode>(nullptr);
 		}
 	}
+
 	return current_inode;
 }
 
-InodeRef& VFS::root_ref() {
+LinkedInode& VFS::root_ref() {
 	return *_root_ref;
 }
 
@@ -72,7 +80,7 @@ InodeRef& VFS::root_ref() {
  * Mount Class *
  * * * * * * * */
 
-VFS::Mount::Mount(Filesystem* fs, InodeRef *host_inode): _fs(fs), _host_inode(host_inode) {
+VFS::Mount::Mount(Filesystem* fs, LinkedInode *host_inode): _fs(fs), _host_inode(host_inode) {
 
 }
 

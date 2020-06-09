@@ -3,6 +3,7 @@
 #include <kernel/kstdio.h>
 #include <kernel/filesystem/Ext2.h>
 #include <kernel/filesystem/FileSystem.h>
+#include <common/cstring.h>
 
 extern uint8_t ata_buf[512], ata_buf2[512];
 
@@ -134,7 +135,7 @@ bool Ext2Inode::is_link() {
     return (raw.type & 0xF000) == EXT2_SYMLINK;
 }
 
-Inode *Ext2Inode::find_rawptr(string find_name) {
+Inode *Ext2Inode::find_rawptr(DC::string find_name) {
 	Inode *ret = nullptr;
 	if((raw.type & 0xF000u) == EXT2_DIRECTORY) {
 		auto* buf = static_cast<uint8_t *>(kmalloc(ext2fs().block_size));
@@ -148,7 +149,7 @@ Inode *Ext2Inode::find_rawptr(string find_name) {
 			while(dir->inode != 0 && add < ext2fs().block_size) {
 				memcpy(name_buf, &dir->type+1, dir->name_length);
 				name_buf[dir->name_length] = '\0';
-				if(strcmp(find_name, name_buf)){
+				if(find_name == name_buf){
 					ret = fs.get_inode_rawptr(dir->inode);
 				}
 				add += dir->size;

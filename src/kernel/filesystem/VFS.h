@@ -1,26 +1,27 @@
 #ifndef DUCKOS_VFS_H
 #define DUCKOS_VFS_H
 
-#include "InodeRef.h"
+#include "LinkedInode.h"
+#include <common/string.h>
 
 class VFS {
 public:
 	class Mount {
 	public:
 		Mount();
-		Mount(Filesystem* fs, InodeRef* host_inode);
+		Mount(Filesystem* fs, LinkedInode* host_inode);
 		InodeID host_inode();
 		Filesystem* fs();
 
 	private:
 		Filesystem* _fs;
-		InodeRef* _host_inode;
+		LinkedInode* _host_inode;
 	};
 
 	static VFS& inst();
 
-	DC::shared_ptr<InodeRef> resolve_path(string path, DC::shared_ptr<InodeRef> base);
-	InodeRef& root_ref();
+	DC::shared_ptr<LinkedInode> resolve_path(DC::string path, DC::shared_ptr<LinkedInode> base);
+	LinkedInode& root_ref();
 
 	VFS();
 	~VFS();
@@ -29,7 +30,7 @@ public:
 
 private:
 	DC::shared_ptr<Inode> _root_inode;
-	DC::shared_ptr<InodeRef> _root_ref;
+	DC::shared_ptr<LinkedInode> _root_ref;
 	Mount mounts[16];
 	static VFS* instance;
 };
