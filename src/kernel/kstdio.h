@@ -29,6 +29,7 @@ void setAllColor(char color);
 void center_print(char* c, char color);
 void update_cursor();
 void scroll();
+void set_vidmem(uint8_t* memloc);
 #define SCREEN_CHAR_WIDTH 80
 #define SCREEN_CHAR_HEIGHT 25
 

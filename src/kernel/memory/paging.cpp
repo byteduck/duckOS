@@ -67,6 +67,8 @@ void setup_paging() {
 			kernel_page_directory[i].value = 0;
 		}
 	}
+
+	set_vidmem((uint8_t*)0xB8000);
 }
 
 void PageDirectory::Data::set_address(size_t address) {

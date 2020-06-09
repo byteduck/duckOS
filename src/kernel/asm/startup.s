@@ -19,17 +19,15 @@ BootPageDirectory:                              ;The page directory for mapping 
 
 retfromkernel: db 0xa,"|-----------------------|",0xa,"| Returned from kernel. |",0xa,"|-----------------------|" ;The message that shows when (if?) the kernel exits.
 
-section .text
+section .multiboot
 align 4
 mboot:
-	dd  0xe85250d6
-	dd  0
-	dd  mboot_end-mboot
-	dd  -(0xe85250d6 + 0 + (mboot_end - mboot))
-	dw 0
-	dw 0
-	dd 8
+	dd  0x1BADB002
+	dd  0x3
+	dd  -(0x1BADB002 + 0x3)
 mboot_end:
+
+section .text
 
 start:
     mov ecx, (BootPageDirectory - KERNEL_VIRTUAL_BASE) ;We're subtracting KERNEL_VIRTUAL_BASE because this whole thing is compiled with an offset of 0xc0000000, and we want physical addresses.

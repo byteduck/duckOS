@@ -4,12 +4,17 @@ PROJECT(duckos)
 ADD_SUBDIRECTORY(src/kernel/)
 
 ADD_CUSTOM_TARGET(image
-        COMMAND ${CMAKE_COMMAND} -E env "SOURCE_DIR=${CMAKE_SOURCE_DIR}" ${CMAKE_SOURCE_DIR}/scripts/runMakeImage.sh
+        COMMAND ${CMAKE_COMMAND} -E env "SOURCE_DIR=${CMAKE_SOURCE_DIR}" ${CMAKE_SOURCE_DIR}/scripts/image-grub.sh
         BYPRODUCTS ${CMAKE_BINARY_DIR}/duckOS.img
         USES_TERMINAL
 )
 
-ADD_CUSTOM_TARGET(qemu
-        COMMAND ${CMAKE_SOURCE_DIR}/scripts/qemu.sh
+ADD_CUSTOM_TARGET(qemu-kernel
+        COMMAND ${CMAKE_SOURCE_DIR}/scripts/qemu-kernel.sh
+        USES_TERMINAL
+)
+
+ADD_CUSTOM_TARGET(qemu-image
+        COMMAND ${CMAKE_SOURCE_DIR}/scripts/qemu-image.sh
         USES_TERMINAL
 )
