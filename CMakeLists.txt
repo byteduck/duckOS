@@ -4,7 +4,7 @@ PROJECT(duckos)
 ADD_SUBDIRECTORY(src/kernel/)
 
 ADD_CUSTOM_TARGET(image
-        COMMAND ${CMAKE_COMMAND} -E env "SOURCE_DIR=${CMAKE_SOURCE_DIR}" ${CMAKE_SOURCE_DIR}/scripts/image-grub.sh
+        COMMAND ${CMAKE_COMMAND} -E env "SOURCE_DIR=${CMAKE_SOURCE_DIR}" ${CMAKE_SOURCE_DIR}/scripts/image.sh
         BYPRODUCTS ${CMAKE_BINARY_DIR}/duckOS.img
         USES_TERMINAL
 )

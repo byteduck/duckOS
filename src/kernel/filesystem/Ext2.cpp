@@ -4,75 +4,76 @@
 #include <kernel/filesystem/Ext2.h>
 #include <kernel/filesystem/FileSystem.h>
 #include <common/cstring.h>
+#include <common/defines.h>
 
 extern uint8_t ata_buf[512], ata_buf2[512];
 
-Ext2Filesystem::Ext2Filesystem(BlockDevice& device) : Filesystem(device) {
-	get_superblock(&superblock);
-	root_inode_id = 2;
-	block_size = 1024 << (superblock.block_size);
-	block_group_descriptor_table = superblock.superblock_block+1;
-	blocks_per_inode_table = (superblock.inode_size * superblock.inodes_per_group)/block_size;
-	sectors_per_inode_table = (superblock.inode_size * superblock.inodes_per_group)/512;
-	sectors_per_block = block_size/512;
-	num_block_groups = superblock.total_blocks/superblock.blocks_per_group + (superblock.total_blocks % superblock.blocks_per_group != 0);
-	inodes_per_block = block_size/superblock.inode_size;
+Ext2Filesystem::Ext2Filesystem(DC::shared_ptr<FileDescriptor> file) : FileBasedFilesystem(file) {
+	_fsid = EXT2_FSID;
 }
 
-bool Ext2Filesystem::probe(BlockDevice* dev){
-	dev->read_block(2, ata_buf); //Supercluster begins at partition sector + 2
+void Ext2Filesystem::init() {
+	read_superblock(&superblock);
+	set_block_size(1024u << (superblock.block_size));
+	block_group_descriptor_table = superblock.superblock_block+1;
+	blocks_per_inode_table = (superblock.inode_size * superblock.inodes_per_group)/block_size();
+	sectors_per_inode_table = (superblock.inode_size * superblock.inodes_per_group)/512;
+	sectors_per_block = block_size()/512;
+	num_block_groups = superblock.total_blocks/superblock.blocks_per_group + (superblock.total_blocks % superblock.blocks_per_group != 0);
+	inodes_per_block = block_size()/superblock.inode_size;
+}
+
+bool Ext2Filesystem::probe(FileDescriptor& file){
+	file.seek(512 * 2, SEEK_SET); //Supercluster begins at partition sector + 2
+	file.read(ata_buf, 512);
 	return ((ext2_superblock *)ata_buf)->signature == EXT2_SIGNATURE;
 }
 
-void Ext2Filesystem::get_superblock(ext2_superblock *sb){
-	device().read_block(2, (uint8_t *)sb);
+void Ext2Filesystem::read_superblock(ext2_superblock *sb){
+	read_logical_blocks(2, 2, (uint8_t*)sb);
 	if(sb->version_major < 1){ //If major version is less than 1, then use defaults for stuff
 		sb->first_inode = 11;
 		sb->inode_size = 128;
 	}
 }
 
-bool Ext2Filesystem::read_block(uint32_t block, uint8_t *buf){
-	return device().read_blocks(block_to_sector(block), sectors_per_block, buf);
-}
-
 void Ext2Filesystem::read_slink(uint32_t block, uint8_t *buf){
-	uint8_t *bbuf = static_cast<uint8_t *>(kmalloc(block_size));
-	read_block(block, bbuf);
+	uint8_t *bbuf = static_cast<uint8_t *>(kmalloc(block_size()));
+	read_blocks(block, 1, bbuf);
 	uint32_t *blocks = (uint32_t *)bbuf;
-	uint32_t numblocks = block_size/sizeof(uint32_t);
+	uint32_t numblocks = block_size()/sizeof(uint32_t);
 	for(int i = 0; i < numblocks; i++){
 		if(blocks[i] == 0) break;
-		read_block(blocks[i], buf+i*block_size);
+		read_blocks(blocks[i], 1, buf+i*block_size());
 	}
 	kfree(bbuf);
 }
 
 void Ext2Filesystem::read_dlink(uint32_t block, uint8_t *buf){
-	uint8_t *bbuf = static_cast<uint8_t *>(kmalloc(block_size));
-	read_block(block, bbuf);
+	uint8_t *bbuf = static_cast<uint8_t *>(kmalloc(block_size()));
+	read_blocks(block, 1, bbuf);
 	uint32_t *blocks = (uint32_t *)bbuf;
-	uint32_t numblocks = block_size/sizeof(uint32_t);
-	uint32_t singsize = numblocks*block_size;
+	uint32_t numblocks = block_size()/sizeof(uint32_t);
+	uint32_t singsize = numblocks*block_size();
 	for(int i = 0; i < numblocks; i++){
 		if(blocks[i] == 0) break;
-		read_block(blocks[i], buf+i*singsize);
+		read_blocks(blocks[i], 1, buf+i*singsize);
 	}
 	kfree(bbuf);
-}
-
-uint32_t Ext2Filesystem::block_to_sector(uint32_t block){
-	return (block_size/512)*block;
 }
 
 Inode* Ext2Filesystem::get_inode_rawptr(InodeID id) {
 	auto ret = new Ext2Inode(*this, id);
 	((Ext2Inode*)ret)->read_raw();
-	return ret;
+	return static_cast<Inode *>(ret);
 }
 
-const char *Ext2Filesystem::name() const {
+char *Ext2Filesystem::name() {
 	return "EXT2";
+}
+
+InodeID Ext2Filesystem::root_inode() {
+	return 2;
 }
 
 ////// INODE
@@ -90,63 +91,78 @@ uint32_t Ext2Inode::get_index() {
 }
 
 uint32_t Ext2Inode::get_block(){
-	return (get_index() * ext2fs().superblock.inode_size) / ext2fs().block_size;
+	return (get_index() * ext2fs().superblock.inode_size) / fs.block_size();
 }
 
 void Ext2Inode::read_raw() {
-	uint8_t* block_buf = static_cast<uint8_t *>(kmalloc(ext2fs().block_size));
+	auto* block_buf = new uint8_t[fs.block_size()];
 
 	uint32_t bg = get_block_group();
-	ext2fs().read_block(2, block_buf);
+	ext2fs().read_blocks(2, 1, block_buf);
 	auto* d = (ext2_block_group_descriptor*) block_buf;
 	for(int i = 0; i < bg; i++) d++; //note to self - d++ adds to the pointer by sizeof(ext2_block_group_descriptor)
 	uint32_t inode_table = d->inode_table;
 
-	ext2fs().read_block(inode_table + get_block(), block_buf);
+	ext2fs().read_blocks(inode_table + get_block(), 1, block_buf);
 	uint32_t index = get_index() % ext2fs().superblock.inodes_per_group;
 	Raw* inodeRaw = reinterpret_cast<Raw *>(block_buf);
 	for(int i = 0; i < index; i++) inodeRaw++; //same here as above
 
 	memcpy(&raw, inodeRaw, sizeof(Ext2Inode::Raw));
-	kfree(block_buf);
+	delete[] block_buf;
+
+	InodeMetadata meta;
+	meta.mode = raw.mode;
+	meta.size = raw.size;
+	_metadata = meta;
 }
 
-bool Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
-	//TODO ignores start/length, only reads whole thing
-	for(int i = 0; i < 12; i++){
-		uint32_t block = raw.block_pointers[i];
-		if(block == 0 || block > ext2fs().superblock.total_blocks){break;}
-		ext2fs().read_block(block, buf);
+size_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
+	ASSERT(start >= 0);
+	if(raw.size == 0) return 0;
+	//TODO: symlinks
+	size_t first_block = start / fs.block_size();
+	size_t first_block_start = start % fs.block_size();
+	size_t last_block = (start + length) / fs.block_size();
+	size_t last_block_end = length % fs.block_size();
+	if(last_block >= num_blocks()) {
+		last_block = num_blocks() - 1;
 	}
-	if(raw.s_pointer)
-		ext2fs().read_slink(raw.s_pointer, buf+12*ext2fs().block_size);
-	if(raw.d_pointer)
-		ext2fs().read_dlink(raw.d_pointer, buf+(ext2fs().block_size/sizeof(uint32_t))*ext2fs().block_size+12*ext2fs().block_size);
-	if(raw.t_pointer)
-		printf("WARNING! File uses t_pointer. Will not work.\n");
+
+	auto block_buf = new uint8_t[fs.block_size()];
+	for(auto i = first_block; i <= last_block; i++) {
+		uint32_t block = 0;
+		if(i < 12) { //Direct block pointer
+			block = raw.block_pointers[i];
+		} else if(i < fs.block_size() / sizeof(uint32_t) + 12) { //Singly indirect block pointer
+			ext2fs().read_blocks(raw.s_pointer, 1, block_buf);
+			block = ((uint32_t*)block_buf)[i - 12];
+		} //TODO: doubly indirect/triply indirect
+		ext2fs().read_blocks(block, 1, block_buf);
+		if(i == first_block) {
+			memcpy(buf, block_buf + first_block_start, fs.block_size() - first_block_start);
+		} else if(i == last_block) {
+			memcpy(buf + (i - first_block) * fs.block_size(), block_buf, last_block_end);
+		} else {
+			memcpy(buf + last_block * fs.block_size(), block_buf, fs.block_size());
+		}
+	}
+	delete[] block_buf;
 	return true;
-}
-
-bool Ext2Inode::is_directory() {
-    return (raw.type & 0xF000) == EXT2_DIRECTORY;
-}
-
-bool Ext2Inode::is_link() {
-    return (raw.type & 0xF000) == EXT2_SYMLINK;
 }
 
 Inode *Ext2Inode::find_rawptr(DC::string find_name) {
 	Inode *ret = nullptr;
-	if((raw.type & 0xF000u) == EXT2_DIRECTORY) {
-		auto* buf = static_cast<uint8_t *>(kmalloc(ext2fs().block_size));
+	if((raw.mode & 0xF000u) == EXT2_DIRECTORY) {
+		auto* buf = static_cast<uint8_t *>(kmalloc(fs.block_size()));
 		for(int i = 0; i < 12; i++) {
 			uint32_t block = raw.block_pointers[i];
 			if(block == 0 || block > ext2fs().superblock.total_blocks);
-			ext2fs().read_block(block, buf);
+			ext2fs().read_blocks(block, 1, buf);
 			auto* dir = reinterpret_cast<ext2_directory *>(buf);
 			uint32_t add = 0;
 			char name_buf[257];
-			while(dir->inode != 0 && add < ext2fs().block_size) {
+			while(dir->inode != 0 && add < fs.block_size()) {
 				memcpy(name_buf, &dir->type+1, dir->name_length);
 				name_buf[dir->name_length] = '\0';
 				if(find_name == name_buf){
@@ -163,4 +179,8 @@ Inode *Ext2Inode::find_rawptr(DC::string find_name) {
 
 Ext2Filesystem& Ext2Inode::ext2fs() {
 	return (Ext2Filesystem &)(fs);
+}
+
+size_t Ext2Inode::num_blocks() {
+	return (raw.size + fs.block_size() - 1) / fs.block_size();
 }

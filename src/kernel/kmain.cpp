@@ -24,7 +24,7 @@ int i;
 
 int kmain(uint32_t mbootptr){
 	clearScreen();
-	printf("init: Starting duckOSd...\n");
+	printf("init: Starting duckOS...\n");
 	parse_mboot(mbootptr + HIGHER_HALF);
 	load_gdt();
 	interrupts_init();
@@ -45,20 +45,22 @@ void shell_process(){
 //called from kthread
 void kmain_late(){
 	printf("init: Tasking initialized.\ninit: Initializing disk...\n");
-	auto* disk = new PIODevice(boot_disk);
+	auto disk = DC::make_shared<PIODevice>(boot_disk);
     uint8_t sect[512];
     disk->read_block(0, sect);
     if(sect[1] == 0xFF){
         println_color("init: WARNING: I think you may be booting DuckOS off of a USB drive or other unsupported device. Disk reading functions may not work.",0x0C);
     }
-    auto *part = new PartitionDevice(disk, pio_get_first_partition(boot_disk));
-    if(Ext2Filesystem::probe(part)){
+    auto part = DC::make_shared<PartitionDevice>(disk, pio_get_first_partition(boot_disk));
+	auto part_descriptor = DC::make_shared<FileDescriptor>(part);
+    if(Ext2Filesystem::probe(*part_descriptor.get())){
         printf("init: Partition is ext2 ");
     }else{
         println("init: Partition is not ext2! Hanging.");
         while(true);
     }
-    auto* ext2fs = new Ext2Filesystem(*part);
+    auto* ext2fs = new Ext2Filesystem(part_descriptor);
+    ext2fs->init();
     if(ext2fs->superblock.version_major < 1){
         printf("init: Unsupported ext2 version %d.%d. Must be at least 1. Hanging.", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
         while(true);

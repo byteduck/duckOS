@@ -85,7 +85,7 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"cd")){
 		auto ref = VFS::inst().resolve_path(args, current_dir);
 		if(ref) {
-			if(ref->inode()->is_directory())
+			if(ref->inode()->metadata().is_directory())
 				current_dir = ref;
 			else
 				printf("Could not cd to '%s': Not a directory\n", args);

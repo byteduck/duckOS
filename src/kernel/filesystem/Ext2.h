@@ -2,6 +2,9 @@
 #define EXT2_H
 
 #include <kernel/filesystem/FileSystem.h>
+#include "FileBasedFilesystem.h"
+
+#define EXT2_FSID 2
 
 //inode constants
 #define ROOT_INODE 2
@@ -93,26 +96,26 @@ class Ext2Inode: public Inode {
 public:
 
 	typedef struct __attribute__((packed)) Raw {
-		uint16_t type;
-		uint16_t user_id;
-		uint32_t size_lower;
-		uint32_t last_access_time;
-		uint32_t creation_time;
-		uint32_t last_modification_time;
-		uint32_t deletion_time;
-		uint16_t group_id;
+		uint16_t mode;
+		uint16_t uid;
+		uint32_t size;
+		uint32_t atime;
+		uint32_t ctime;
+		uint32_t mtime;
+		uint32_t dtime;
+		uint16_t guid;
 		uint16_t hard_links; //Hard links to this node
-		uint32_t sectors_in_use; //Hard disk sectors, not ext2 blocks.
+		uint32_t sectors; //Hard disk sectors, not ext2 blocks.
 		uint32_t flags;
 		uint32_t os_specific_1;
 		uint32_t block_pointers[12];
 		uint32_t s_pointer;
 		uint32_t d_pointer;
 		uint32_t t_pointer;
-		uint32_t generation_number;
-		uint32_t extended_attribute_block;
-		uint32_t size_upper;
-		uint32_t block_address;
+		uint32_t generation;
+		uint32_t file_acl;
+		uint32_t dir_acl;
+		uint32_t fragment_addr;
 		uint32_t os_specific_2[3];
 	} Raw;
 
@@ -122,18 +125,16 @@ public:
 	uint32_t get_block_group();
 	uint32_t get_index();
 	uint32_t get_block();
-	bool is_directory() override;
-	bool is_link() override;
+	size_t num_blocks();
 	void read_raw();
-	bool read(uint32_t start, uint32_t length, uint8_t* buf) override;
+	size_t read(uint32_t start, uint32_t length, uint8_t* buf) override;
 	Inode* find_rawptr(DC::string name) override;
 	Ext2Filesystem& ext2fs();
 };
 
-class Ext2Filesystem: public Filesystem {
+class Ext2Filesystem: public FileBasedFilesystem {
 public:
 	ext2_superblock superblock;
-	uint32_t block_size;
 	uint32_t block_group_descriptor_table;
 	uint32_t blocks_per_inode_table;
 	uint32_t sectors_per_inode_table;
@@ -141,15 +142,16 @@ public:
 	uint32_t num_block_groups;
 	uint32_t inodes_per_block;
 
-	Ext2Filesystem(BlockDevice& device);
-	const char* name() const;
-	static bool probe(BlockDevice* dev);
+	Ext2Filesystem(DC::shared_ptr<FileDescriptor> file);
+	InodeID root_inode() override;
+	char* name() override;
+	static bool probe(FileDescriptor& dev);
 	Inode * get_inode_rawptr(InodeID id) override;
-	void get_superblock(ext2_superblock *sb);
-	uint32_t block_to_sector(uint32_t block);
+	void read_superblock(ext2_superblock *sb);
 	void read_slink(uint32_t block, uint8_t *buf);
 	void read_dlink(uint32_t block, uint8_t *buf);
-	bool read_block(uint32_t block, uint8_t *buf);
+
+	void init();
 };
 
 #endif

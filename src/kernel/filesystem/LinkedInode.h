@@ -1,10 +1,11 @@
 #ifndef DUCKOS_LINKEDINODE_H
 #define DUCKOS_LINKEDINODE_H
 
-
 #include <kernel/filesystem/Inode.h>
 #include <common/unique_ptr.hpp>
 #include <common/string.h>
+
+class Inode;
 
 class LinkedInode {
 public:

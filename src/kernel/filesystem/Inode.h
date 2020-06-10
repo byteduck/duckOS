@@ -2,9 +2,9 @@
 #define DUCKOS_INODE_H
 
 #include <kernel/kstddef.h>
-#include <kernel/filesystem/FileSystem.h>
 #include <common/shared_ptr.hpp>
 #include <common/string.h>
+#include "InodeMetadata.h"
 
 class Filesystem;
 typedef uint32_t InodeID;
@@ -16,11 +16,14 @@ public:
 
     Inode(Filesystem& fs, InodeID id);
 
-	virtual bool is_directory();
-	virtual bool is_link();
 	virtual DC::shared_ptr<Inode> find(DC::string name);
 	virtual Inode* find_rawptr(DC::string name);
-	virtual bool read(uint32_t start, uint32_t length, uint8_t *buffer);
+	virtual size_t read(uint32_t start, uint32_t length, uint8_t *buffer) = 0;
+
+	InodeMetadata metadata();
+
+protected:
+	InodeMetadata _metadata;
 };
 
 

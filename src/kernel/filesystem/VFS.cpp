@@ -22,7 +22,7 @@ bool VFS::mount_root(Filesystem* fs) {
 	auto root_inode_id = root_mount.fs()->root_inode();
 	auto root_inode = root_mount.fs()->get_inode(root_inode_id);
 
-	if(!root_inode->is_directory()) {
+	if(!root_inode->metadata().is_directory()) {
 		return false;
 	}
 
@@ -37,10 +37,10 @@ DC::shared_ptr<LinkedInode> VFS::resolve_path(DC::string path, DC::shared_ptr<Li
 	if(path == "/") return _root_ref;
 	auto current_inode = path[0] == '/' ? _root_ref : _base;
 	DC::string part;
-	if(path[0] == '/') path.substr(1, path.length() - 1);
+	if(path[0] == '/') path = path.substr(1, path.length() - 1);
 	while(path[0] != '\0') {
 		auto parent = current_inode;
-		if(!parent->inode()->is_directory()) return DC::shared_ptr<LinkedInode>(nullptr);
+		if(!parent->inode()->metadata().is_directory()) return DC::shared_ptr<LinkedInode>(nullptr);
 
 		size_t slash_index = path.find('/');
 		if(slash_index != -1) {
