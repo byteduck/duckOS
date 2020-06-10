@@ -141,6 +141,8 @@ public:
 	uint32_t sectors_per_block;
 	uint32_t num_block_groups;
 	uint32_t inodes_per_block;
+	size_t num_singly_indirect;
+	size_t num_doubly_indirect;
 
 	Ext2Filesystem(DC::shared_ptr<FileDescriptor> file);
 	InodeID root_inode() override;

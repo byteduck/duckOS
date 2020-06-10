@@ -9,6 +9,7 @@
 
 #define SIGTERM 15
 #define SIGILL 4
+#define SIGSEGV 11
 
 typedef struct process_t{
 	char *name;

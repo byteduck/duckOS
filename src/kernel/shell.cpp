@@ -12,13 +12,15 @@
 #include <kernel/filesystem/VFS.h>
 #include <common/cstring.h>
 #include <common/stdlib.h>
+#include <common/defines.h>
+#include <kernel/filesystem/InodeFile.h>
 
 
 extern bool shell_mode;
 extern char kbdbuf[256];
 extern bool tasking_enabled;
 
-Shell::Shell(): current_dir(VFS::inst().resolve_path("/", DC::shared_ptr<LinkedInode>(nullptr))){
+Shell::Shell(): current_dir(VFS::inst().root_ref()){
 }
 
 void dummy(){
@@ -83,10 +85,11 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"ls")){
 		printf("Not implemented\n");
 	}else if(strcmp(cmd,"cd")){
-		auto ref = VFS::inst().resolve_path(args, current_dir);
-		if(ref) {
-			if(ref->inode()->metadata().is_directory())
-				current_dir = ref;
+		auto ref = VFS::inst().resolve_path(args, current_dir, nullptr);
+		if(!ref.is_error()) {
+			auto val = ref.value();
+			if(val->inode()->metadata().is_directory())
+				current_dir = val;
 			else
 				printf("Could not cd to '%s': Not a directory\n", args);
 		} else {
@@ -99,19 +102,31 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd, "mem")) {
 		printf("Used memory: %dKiB\n", get_used_mem());
 	}else if(strcmp(cmd,"cat")){
-		/*file_t file = {};
-		strcpy(dirbuf, dirbuf2);
-		strcat(dirbuf2,args);
-		strcat(dirbuf2,"/");
-		if(shellfs->getFile(dirbuf2, &file, shellfs)){
-			uint8_t *buf = (uint8_t *)kmalloc(file.sectors*512);
-			shellfs->read(&file, buf, shellfs);
-			for(int i = 0; i < file.size; i++)
-				putch(buf[i]);
-			kfree(buf, file.sectors*512);
-		}else{
-			printf("Cannot find %s.\n",args);
-		}*/
+		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
+		if(desc_ret.is_error()) {
+			switch (desc_ret.code()) {
+				case -ENOENT:
+					printf("Cannot cat '%s': no such file\n", args);
+					break;
+				case -ENOTDIR:
+					printf("Cannot cat '%s': path is not a directory\n", args);
+					break;
+				default:
+					printf("Cannot cat '%s': Error %d\n", args, desc_ret.code());
+			}
+		} else {
+			auto desc = desc_ret.value();
+			if(desc->metadata().is_directory()) printf("Cannot cat '%s': is a directory\n", args);
+			else {
+				uint8_t* buf = new uint8_t[513];
+				size_t nread;
+				while((nread = desc->read(buf, 512))) {
+					buf[nread] = '\0';
+					printf((char*)buf);
+				}
+				delete[] buf;
+			}
+		}
 	}else if(strcmp(cmd,"pagefault")){
 		if(strcmp(args,"-r")){
 			char i = ((char*)0xDEADC0DE)[0];

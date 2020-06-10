@@ -1,7 +1,9 @@
 #include <kernel/kstdio.h>
 #include <common/cstring.h>
+#include <common/defines.h>
 #include "VFS.h"
 #include "Ext2.h"
+#include "InodeFile.h"
 
 VFS* VFS::instance;
 
@@ -33,14 +35,14 @@ bool VFS::mount_root(Filesystem* fs) {
 	return true;
 }
 
-DC::shared_ptr<LinkedInode> VFS::resolve_path(DC::string path, DC::shared_ptr<LinkedInode> _base) {
+ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& _base, DC::shared_ptr<LinkedInode>* parent_storage) {
 	if(path == "/") return _root_ref;
 	auto current_inode = path[0] == '/' ? _root_ref : _base;
 	DC::string part;
 	if(path[0] == '/') path = path.substr(1, path.length() - 1);
 	while(path[0] != '\0') {
 		auto parent = current_inode;
-		if(!parent->inode()->metadata().is_directory()) return DC::shared_ptr<LinkedInode>(nullptr);
+		if(!parent->inode()->metadata().is_directory()) return -ENOTDIR;
 
 		size_t slash_index = path.find('/');
 		if(slash_index != -1) {
@@ -65,16 +67,52 @@ DC::shared_ptr<LinkedInode> VFS::resolve_path(DC::string path, DC::shared_ptr<Li
 		if(child_inode) {
 			current_inode = DC::shared_ptr<LinkedInode>(new LinkedInode(child_inode, part, parent));
 		} else {
-			return DC::shared_ptr<LinkedInode>(nullptr);
+			if(parent_storage && path.find('/') == -1) {
+				*parent_storage = current_inode;
+			}
+			return -ENOENT;
 		}
 	}
+
+	if(parent_storage) *parent_storage = current_inode->parent();
 
 	return current_inode;
 }
 
-LinkedInode& VFS::root_ref() {
-	return *_root_ref;
+DC::shared_ptr<LinkedInode> VFS::root_ref() {
+	return _root_ref;
 }
+
+ResultRet<DC::shared_ptr<FileDescriptor>>
+VFS::open(DC::string path, int options, int mode, DC::shared_ptr<LinkedInode> base) {
+	if((options & O_DIRECTORY) && (options & O_CREAT)) {
+		return -EINVAL;
+	}
+	DC::shared_ptr<LinkedInode> parent(nullptr);
+	auto resolv = resolve_path(path, base, &parent);
+	if(options & O_CREAT) {
+		if(!parent) return -ENOENT;
+		if(resolv.is_error()) {
+			if(resolv.code() == -ENOENT) {
+				//TODO: create directory here
+				return -EIO;
+			} else return resolv.code();
+		}
+		if(options & O_EXCL) return -EEXIST;
+	}
+	if(resolv.is_error()) return resolv.code();
+
+	auto inode = resolv.value();
+	auto meta = inode->inode()->metadata();
+
+	if((options & O_DIRECTORY) && !meta.is_directory()) return -ENOTDIR;
+
+	auto file = DC::make_shared<InodeFile>(inode->inode());
+	auto ret = DC::make_shared<FileDescriptor>(file);
+	ret->set_options(options);
+	return ret;
+}
+
 
 /* * * * * * * *
  * Mount Class *

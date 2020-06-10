@@ -118,6 +118,11 @@ void __notify__(uint32_t sig){
 		case SIGILL:
 			printf("\n(PID %d) Illegal operation! Aborting.\n",current_proc->pid);
 			__kill__();
+			break;
+		case SIGSEGV:
+			printf("\n(PID %d) Segmentation fault! Aborting.\n",current_proc->pid);
+			__kill__();
+			break;
 	}
 }
 

@@ -1,7 +1,7 @@
+#include <kernel/kstdio.h>
 #include "InodeFile.h"
 
 InodeFile::InodeFile(DC::shared_ptr<Inode> inode): _inode(inode) {
-
 }
 
 bool InodeFile::is_inode() {

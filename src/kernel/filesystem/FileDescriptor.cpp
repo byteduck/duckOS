@@ -9,8 +9,8 @@ FileDescriptor::FileDescriptor(DC::shared_ptr<File> file): _file(file) {
 }
 
 void FileDescriptor::set_options(int options) {
-	_readable = options & OPTION_READ;
-	_writable = options & OPTION_WRITE;
+	_readable = options & O_RDONLY;
+	_writable = options & O_WRONLY;
 }
 
 bool FileDescriptor::readable() {
@@ -29,6 +29,7 @@ int FileDescriptor::seek(int offset, int whence) {
 			break;
 		case SEEK_CUR:
 			new_seek += offset;
+			break;
 		case SEEK_END:
 			if(metadata().exists())
 				new_seek = metadata().size;

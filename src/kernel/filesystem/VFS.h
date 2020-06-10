@@ -2,6 +2,7 @@
 #define DUCKOS_VFS_H
 
 #include "LinkedInode.h"
+#include "FileDescriptor.h"
 #include <common/string.h>
 
 class VFS {
@@ -20,8 +21,9 @@ public:
 
 	static VFS& inst();
 
-	DC::shared_ptr<LinkedInode> resolve_path(DC::string path, DC::shared_ptr<LinkedInode> base);
-	LinkedInode& root_ref();
+	ResultRet<DC::shared_ptr<LinkedInode>> resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& base, DC::shared_ptr<LinkedInode>* parent_storage);
+	ResultRet<DC::shared_ptr<FileDescriptor>> open(DC::string path, int options, int mode, DC::shared_ptr<LinkedInode> base);
+	DC::shared_ptr<LinkedInode> root_ref();
 
 	VFS();
 	~VFS();

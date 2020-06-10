@@ -19,8 +19,11 @@ void Ext2Filesystem::init() {
 	blocks_per_inode_table = (superblock.inode_size * superblock.inodes_per_group)/block_size();
 	sectors_per_inode_table = (superblock.inode_size * superblock.inodes_per_group)/512;
 	sectors_per_block = block_size()/512;
-	num_block_groups = superblock.total_blocks/superblock.blocks_per_group + (superblock.total_blocks % superblock.blocks_per_group != 0);
+	num_block_groups = (superblock.total_blocks + superblock.blocks_per_group - 1)/superblock.blocks_per_group;
 	inodes_per_block = block_size()/superblock.inode_size;
+
+	num_singly_indirect = block_size() / sizeof(uint32_t);
+	num_doubly_indirect = num_singly_indirect * num_singly_indirect;
 }
 
 bool Ext2Filesystem::probe(FileDescriptor& file){
@@ -104,8 +107,8 @@ void Ext2Inode::read_raw() {
 	uint32_t inode_table = d->inode_table;
 
 	ext2fs().read_blocks(inode_table + get_block(), 1, block_buf);
-	uint32_t index = get_index() % ext2fs().superblock.inodes_per_group;
 	Raw* inodeRaw = reinterpret_cast<Raw *>(block_buf);
+	uint32_t index = get_index() % ext2fs().inodes_per_block;
 	for(int i = 0; i < index; i++) inodeRaw++; //same here as above
 
 	memcpy(&raw, inodeRaw, sizeof(Ext2Inode::Raw));
@@ -120,11 +123,17 @@ void Ext2Inode::read_raw() {
 size_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 	ASSERT(start >= 0);
 	if(raw.size == 0) return 0;
+	if(start > raw.size) return 0;
+	if(start + length > raw.size) length = raw.size - start;
+	if(length == 0) return 0;
+
 	//TODO: symlinks
 	size_t first_block = start / fs.block_size();
 	size_t first_block_start = start % fs.block_size();
 	size_t last_block = (start + length) / fs.block_size();
-	size_t last_block_end = length % fs.block_size();
+	size_t last_block_end = (first_block_start + length) % fs.block_size();
+
+	if(last_block_end == 0) last_block--;
 	if(last_block >= num_blocks()) {
 		last_block = num_blocks() - 1;
 	}
@@ -134,13 +143,29 @@ size_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 		uint32_t block = 0;
 		if(i < 12) { //Direct block pointer
 			block = raw.block_pointers[i];
-		} else if(i < fs.block_size() / sizeof(uint32_t) + 12) { //Singly indirect block pointer
+		} else if(i < ext2fs().num_singly_indirect + 12) { //Singly indirect block pointer
 			ext2fs().read_blocks(raw.s_pointer, 1, block_buf);
 			block = ((uint32_t*)block_buf)[i - 12];
-		} //TODO: doubly indirect/triply indirect
+		} else if(i < ext2fs().num_doubly_indirect + 12){
+			ext2fs().read_blocks(raw.d_pointer, 1, block_buf);
+			uint32_t dindex = i - ext2fs().num_singly_indirect - 12;
+			ext2fs().read_blocks(((uint32_t*)block_buf)[dindex / ext2fs().num_singly_indirect], 1, block_buf);
+			block = ((uint32_t*)block_buf)[dindex % ext2fs().num_singly_indirect];
+		} else {
+			ext2fs().read_blocks(raw.t_pointer, 1, block_buf);
+			uint32_t tindex = i - ext2fs().num_singly_indirect - ext2fs().num_doubly_indirect - 12;
+			ext2fs().read_blocks(((uint32_t*)block_buf)[tindex / ext2fs().num_doubly_indirect], 1, block_buf);
+			uint32_t dindex = tindex % ext2fs().num_doubly_indirect;
+			ext2fs().read_blocks(((uint32_t*)block_buf)[dindex / ext2fs().num_singly_indirect], 1, block_buf);
+			block = ((uint32_t*)block_buf)[tindex % ext2fs().num_singly_indirect];
+		}
 		ext2fs().read_blocks(block, 1, block_buf);
 		if(i == first_block) {
-			memcpy(buf, block_buf + first_block_start, fs.block_size() - first_block_start);
+			if(length < fs.block_size() - first_block_start) {
+				memcpy(buf, block_buf + first_block_start, length);
+			} else {
+				memcpy(buf, block_buf + first_block_start, fs.block_size() - first_block_start);
+			}
 		} else if(i == last_block) {
 			memcpy(buf + (i - first_block) * fs.block_size(), block_buf, last_block_end);
 		} else {
@@ -148,7 +173,7 @@ size_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 		}
 	}
 	delete[] block_buf;
-	return true;
+	return length;
 }
 
 Inode *Ext2Inode::find_rawptr(DC::string find_name) {

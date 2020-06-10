@@ -104,14 +104,8 @@ void printHexw(uint16_t num){
 }
 
 void printHexl(uint32_t num){
-	char *str = "  ";
+	char *str = "        ";
 	print("0x");
-	itoa(num >> 24, str, 16);
-	print(str);
-	itoa(num >> 16, str, 16);
-	print(str);
-	itoa(num >> 8, str, 16);
-	print(str);
 	itoa(num, str, 16);
 	print(str);
 }

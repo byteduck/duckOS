@@ -1,3 +1,4 @@
+#include <kernel/kstdio.h>
 #include "Inode.h"
 
 Inode::Inode(Filesystem& fs, InodeID id): fs(fs), id(id) {

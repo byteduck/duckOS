@@ -11,6 +11,7 @@ public:
 
 	bool is_success() const;
 	bool is_error() const;
+	int code() const;
 private:
 	int _code;
 };
@@ -18,10 +19,11 @@ private:
 template<typename T>
 class ResultRet {
 public:
-	ResultRet(int error):  _result(ResultRet(error)) {};
+	ResultRet(int error):  _result(error) {};
 	ResultRet(Result error): _result(error) {};
 	ResultRet(T ret): _ret(ret), _result(0) {};
 	bool is_error() const {return _result.is_error();}
+	int code() const {return _result.code();}
 	T value() const {
 		ASSERT(!is_error());
 		return _ret;
