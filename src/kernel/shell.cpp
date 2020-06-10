@@ -83,7 +83,47 @@ void Shell::command_eval(char *cmd, char *args){
 		println("lspci: Lists PCI devices.");
 		println("exit: Pretty self explanatory.");
 	}else if(strcmp(cmd,"ls")){
-		printf("Not implemented\n");
+		DC::string path = ".";
+		if(!strcmp(args, "")) path = args;
+		auto desc_ret = VFS::inst().open(path, O_RDONLY | O_DIRECTORY, MODE_DIRECTORY, current_dir);
+		if(desc_ret.is_error()) {
+			switch(desc_ret.code()) {
+				case -ENOTDIR:
+					printf("Couldn't ls: '%s' is not a directory\n", args);
+					break;
+				case -ENOENT:
+					printf("Couldn't ls: '%s' does not exist\n", args);
+					break;
+				default:
+					printf("Couldn't ls: %d\n", desc_ret.code());
+			}
+		} else {
+			auto desc = desc_ret.value();
+			DirectoryEntry buffer {};
+			while(desc->read_dir_entry(&buffer)) {
+				switch(buffer.type) {
+					case TYPE_UNKNOWN:
+						printf("[unknown] ");
+						break;
+					case TYPE_FILE:
+						printf("[file] ");
+						break;
+					case TYPE_DIR:
+						printf("[dir] ");
+						break;
+					case TYPE_CHARACTER_DEVICE:
+					case TYPE_BLOCK_DEVICE:
+					case TYPE_FIFO:
+					case TYPE_SOCKET:
+						printf("[device] ");
+						break;
+					case TYPE_SYMLINK:
+						printf("[link] ");
+						break;
+				}
+				printf("%d %s\n", buffer.id, buffer.name);
+			}
+		}
 	}else if(strcmp(cmd,"cd")){
 		auto ref = VFS::inst().resolve_path(args, current_dir, nullptr);
 		if(!ref.is_error()) {

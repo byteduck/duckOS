@@ -16,4 +16,8 @@ size_t InodeFile::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_
 	return _inode->read(offset, count, buffer);
 }
 
+size_t InodeFile::read_dir_entry(FileDescriptor &fd, size_t offset, DirectoryEntry *buffer) {
+	return _inode->read_dir_entry(offset, buffer);
+}
+
 

@@ -128,6 +128,7 @@ public:
 	size_t num_blocks();
 	void read_raw();
 	size_t read(uint32_t start, uint32_t length, uint8_t* buf) override;
+	size_t read_dir_entry(size_t start, DirectoryEntry* buffer) override;
 	Inode* find_rawptr(DC::string name) override;
 	Ext2Filesystem& ext2fs();
 };

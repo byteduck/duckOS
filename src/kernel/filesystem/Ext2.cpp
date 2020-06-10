@@ -176,6 +176,27 @@ size_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 	return length;
 }
 
+size_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry *buffer) {
+	auto* buf = new uint8_t[fs.block_size()];
+	size_t block = start / fs.block_size();
+	size_t start_in_block = start % fs.block_size();
+	if(read(block * fs.block_size(), fs.block_size(), buf) == 0) return 0;
+	auto* dir = (ext2_directory*)(buf + start_in_block);
+
+	size_t name_length = dir->name_length;
+	if(name_length > NAME_MAXLEN - 1) name_length = NAME_MAXLEN - 1;
+
+	if(dir->inode == 0) return 0;
+
+	buffer->name_length = name_length;
+	buffer->id = dir->inode;
+	buffer->type = dir->type;
+	memcpy(buffer->name, &dir->type+1, name_length);
+	buffer->name[name_length] = '\0';
+
+	return dir->size;
+}
+
 Inode *Ext2Inode::find_rawptr(DC::string find_name) {
 	Inode *ret = nullptr;
 	if((raw.mode & 0xF000u) == EXT2_DIRECTORY) {

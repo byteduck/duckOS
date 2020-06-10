@@ -1,5 +1,6 @@
 #include "FileDescriptor.h"
 #include "InodeFile.h"
+#include "DirectoryEntry.h"
 #include <common/defines.h>
 #include <kernel/kstdio.h>
 
@@ -58,4 +59,10 @@ size_t FileDescriptor::read(uint8_t *buffer, size_t count) {
 
 size_t FileDescriptor::offset() {
 	return _seek;
+}
+
+size_t FileDescriptor::read_dir_entry(DirectoryEntry* buffer) {
+	int nbytes = _file->read_dir_entry(*this, offset(), buffer);
+	if(nbytes > 0) _seek += nbytes;
+	return nbytes;
 }

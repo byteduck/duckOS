@@ -5,8 +5,10 @@
 #include "File.h"
 #include "Inode.h"
 #include "InodeMetadata.h"
+#include "DirectoryEntry.h"
 
 class File;
+class DirectoryEntry;
 class FileDescriptor {
 public:
 	FileDescriptor(DC::shared_ptr<File> file);
@@ -18,6 +20,7 @@ public:
 
 	int seek(int offset, int whence);
 	size_t read(uint8_t* buffer, size_t count);
+	size_t read_dir_entry(DirectoryEntry *buffer);
 	size_t offset();
 private:
 	DC::shared_ptr<File> _file;
