@@ -117,6 +117,12 @@ void Ext2Inode::read_raw() {
 	InodeMetadata meta;
 	meta.mode = raw.mode;
 	meta.size = raw.size;
+	if(meta.is_character_device() || meta.is_block_device()) {
+		unsigned device = raw.block_pointers[0];
+		if(!device) device = raw.block_pointers[1];
+		meta.dev_major = (device & 0xfff00u) >> 8u;
+		meta.dev_minor = (device & 0xffu) | ((device >> 12u) & 0xfff00u);
+	}
 	_metadata = meta;
 }
 

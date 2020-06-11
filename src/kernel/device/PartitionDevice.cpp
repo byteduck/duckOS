@@ -1,8 +1,8 @@
 #include <kernel/kstdio.h>
 #include "PartitionDevice.h"
 
-PartitionDevice::PartitionDevice(const DC::shared_ptr<BlockDevice> &parent, uint32_t offset_blocks):
-_parent(parent), _offset(offset_blocks * parent->block_size()) {
+PartitionDevice::PartitionDevice(unsigned major, unsigned minor, const DC::shared_ptr<BlockDevice> &parent, uint32_t offset_blocks):
+BlockDevice(major, minor), _parent(parent), _offset(offset_blocks * parent->block_size()) {
 
 }
 

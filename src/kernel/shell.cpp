@@ -103,19 +103,19 @@ void Shell::command_eval(char *cmd, char *args){
 			while(desc->read_dir_entry(&buffer)) {
 				switch(buffer.type) {
 					case TYPE_UNKNOWN:
-						printf("[unknown] ");
+						printf("[?]    ");
 						break;
 					case TYPE_FILE:
 						printf("[file] ");
 						break;
 					case TYPE_DIR:
-						printf("[dir] ");
+						printf("[dir]  ");
 						break;
 					case TYPE_CHARACTER_DEVICE:
 					case TYPE_BLOCK_DEVICE:
 					case TYPE_FIFO:
 					case TYPE_SOCKET:
-						printf("[device] ");
+						printf("[dev]  ");
 						break;
 					case TYPE_SYMLINK:
 						printf("[link] ");
@@ -150,6 +150,9 @@ void Shell::command_eval(char *cmd, char *args){
 					break;
 				case -ENOTDIR:
 					printf("Cannot cat '%s': path is not a directory\n", args);
+					break;
+				case -ENODEV:
+					printf("Cannot cat '%s': no such device\n", args);
 					break;
 				default:
 					printf("Cannot cat '%s': Error %d\n", args, desc_ret.code());

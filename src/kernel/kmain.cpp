@@ -19,6 +19,7 @@
 #include <kernel/device/PartitionDevice.h>
 #include <kernel/kmain.h>
 #include <kernel/filesystem/VFS.h>
+#include <common/vector.hpp>
 
 int i;
 
@@ -29,6 +30,7 @@ int kmain(uint32_t mbootptr){
 	load_gdt();
 	interrupts_init();
 	setup_paging();
+	Device::init();
 
 	printf("init: First stage complete.\ninit: Initializing tasking...\n");
 
@@ -45,13 +47,13 @@ void shell_process(){
 //called from kthread
 void kmain_late(){
 	printf("init: Tasking initialized.\ninit: Initializing disk...\n");
-	auto disk = DC::make_shared<PIODevice>(boot_disk);
+	auto disk = DC::make_shared<PIODevice>(3, 0, boot_disk);
     uint8_t sect[512];
     disk->read_block(0, sect);
     if(sect[1] == 0xFF){
         println_color("init: WARNING: I think you may be booting DuckOS off of a USB drive or other unsupported device. Disk reading functions may not work.",0x0C);
     }
-    auto part = DC::make_shared<PartitionDevice>(disk, pio_get_first_partition(boot_disk));
+    auto part = DC::make_shared<PartitionDevice>(3, 1, disk, pio_get_first_partition(boot_disk));
 	auto part_descriptor = DC::make_shared<FileDescriptor>(part);
     if(Ext2Filesystem::probe(*part_descriptor.get())){
         printf("init: Partition is ext2 ");

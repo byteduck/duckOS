@@ -18,9 +18,15 @@ public:
 	size_t size = 0;
 	InodeID inode_id;
 
-	bool is_directory();
-	bool is_simple_file();
-	bool exists();
+	unsigned dev_major;
+	unsigned dev_minor;
+
+	bool is_directory() const;
+	bool is_block_device() const;
+	bool is_character_device() const;
+	bool is_device() const;
+	bool is_simple_file() const;
+	bool exists() const;
 };
 
 

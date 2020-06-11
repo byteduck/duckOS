@@ -1,3 +1,4 @@
+#include <kernel/kstdio.h>
 #include "stdlib.h"
 
 int atoi(char *str){
@@ -36,8 +37,10 @@ char *itoa(int i, char *p, int base){
 	int ind;
 	switch(base){
 		case 10: {
-			if (i < 0) {
-				*p++ = '-';
+			bool neg = i < 0;
+			if (neg) {
+				p[0] = '-';
+				p++;
 				i *= -1;
 			}
 			int shifter = i;
@@ -50,6 +53,7 @@ char *itoa(int i, char *p, int base){
 				*--p = digit[i % 10];
 				i = i / 10;
 			} while (i);
+			if(neg) p--;
 		}
 			break;
 			//I figured out how to roll base 2 and 16 into one thing... Not sure how efficient it is though

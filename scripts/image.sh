@@ -46,6 +46,17 @@ grub-install --boot-directory=mnt/boot --target=i386-pc --modules="ext2 part_msd
 cp "${SOURCE_DIR}/scripts/grub.cfg" mnt/boot/grub || (echo "Couldn't copy grub.cfg." && exit 1)
 echo "Installed grub!"
 
+echo "Setting up root filesystem..."
+echo "Setting up devices..."
+mkdir -p mnt/dev
+mknod mnt/dev/tty0 c 4 0
+mknod mnt/dev/hda b 3 0
+mknod mnt/dev/random c 1 8
+mknod mnt/dev/null c 1 3
+mknod mnt/dev/zero c 1 5
+echo "Done setting up devices!"
+echo "Done setting up root filesystem!"
+
 echo "Unmounting and cleaning up loopback device..."
 umount mnt/ || (echo "Couldn't unmount." && exit 1)
 rmdir mnt || (echo "Couldn't rmdir mnt." && exit 1)

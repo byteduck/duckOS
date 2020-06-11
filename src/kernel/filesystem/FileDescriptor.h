@@ -9,9 +9,11 @@
 
 class File;
 class DirectoryEntry;
+class Device;
 class FileDescriptor {
 public:
 	FileDescriptor(DC::shared_ptr<File> file);
+	FileDescriptor(Device* device);
 
 	void set_options(int options);
 	bool readable();
@@ -23,7 +25,8 @@ public:
 	size_t read_dir_entry(DirectoryEntry *buffer);
 	size_t offset();
 private:
-	DC::shared_ptr<File> _file;
+	DC::shared_ptr<File> _fileptr;
+	File* _file;
 	DC::shared_ptr<Inode> _inode;
 
 	bool _readable {false};

@@ -5,8 +5,7 @@
 
 class PartitionDevice: public BlockDevice {
 public:
-
-	PartitionDevice(const DC::shared_ptr<BlockDevice>& parent, size_t offset_blocks);
+	PartitionDevice(unsigned major, unsigned minor, const DC::shared_ptr<BlockDevice>& parent, size_t offset_blocks);
 	bool read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
 	bool write_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
 	size_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;

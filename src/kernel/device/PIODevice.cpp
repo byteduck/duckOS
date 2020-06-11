@@ -2,7 +2,7 @@
 #include "PIODevice.h"
 #include "ata.h"
 
-PIODevice::PIODevice(uint8_t id) {
+PIODevice::PIODevice(unsigned major, unsigned minor, uint8_t id): BlockDevice(major, minor) {
 	disk_id = id;
 }
 
