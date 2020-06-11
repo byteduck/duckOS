@@ -11,3 +11,7 @@ size_t RandomDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, si
 	get_random_bytes(buffer, amount);
 	return amount;
 }
+
+size_t RandomDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+	return count;
+}

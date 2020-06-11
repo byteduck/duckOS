@@ -1,6 +1,7 @@
 #include "Device.h"
 #include "ZeroDevice.h"
 #include "RandomDevice.h"
+#include "NullDevice.h"
 
 DC::vector<Device*> Device::_devices;
 
@@ -8,6 +9,7 @@ void Device::init() {
 	_devices = DC::vector<Device*>();
 	new ZeroDevice();
 	new RandomDevice();
+	new NullDevice();
 }
 
 Device::Device(unsigned major, unsigned minor): _major(major), _minor(minor) {

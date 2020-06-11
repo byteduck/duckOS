@@ -10,3 +10,7 @@ size_t ZeroDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size
 	memset(buffer, 0, read);
 	return read;
 }
+
+size_t ZeroDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+	return count;
+}
