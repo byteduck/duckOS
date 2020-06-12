@@ -21,9 +21,9 @@ public:
 	InodeMetadata metadata();
 
 	int seek(int offset, int whence);
-	size_t read(uint8_t* buffer, size_t count);
-	size_t read_dir_entry(DirectoryEntry *buffer);
-	size_t write(const uint8_t* buffer, size_t count);
+	ssize_t read(uint8_t* buffer, size_t count);
+	ssize_t read_dir_entry(DirectoryEntry *buffer);
+	ssize_t write(const uint8_t* buffer, size_t count);
 	size_t offset();
 private:
 	DC::shared_ptr<File> _fileptr;

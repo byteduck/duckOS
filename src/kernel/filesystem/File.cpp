@@ -19,16 +19,16 @@ bool File::is_inode() {
 	return false;
 }
 
-size_t File::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+ssize_t File::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
 	return 0;
 }
 
-size_t File::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+ssize_t File::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
 	return 0;
 }
 
 
-size_t File::read_dir_entry(FileDescriptor &fd, size_t offset, DirectoryEntry *buffer) {
+ssize_t File::read_dir_entry(FileDescriptor &fd, size_t offset, DirectoryEntry *buffer) {
 	return 0;
 }
 

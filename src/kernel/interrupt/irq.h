@@ -1,6 +1,8 @@
 #ifndef IRQ_H
 #define IRQ_H
 
+#include "IRQHandler.h"
+
 extern "C" void irq0();
 extern "C" void irq1();
 extern "C" void irq2();
@@ -18,9 +20,9 @@ extern "C" void irq13();
 extern "C" void irq14();
 extern "C" void irq15();
 
-void irq_add_handler(int irq, void (*handler)(struct registers *r));
+void irq_set_handler(int irq, IRQHandler* handler);
 void irq_remove_handler(int irq);
-void irq_remap(void);
+void irq_remap();
 void irq_init();
 extern "C" void irq_handler(struct registers *r);
 

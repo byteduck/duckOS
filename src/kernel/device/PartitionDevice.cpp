@@ -14,7 +14,7 @@ bool PartitionDevice::write_blocks(uint32_t block, uint32_t count, uint8_t *buff
 	return _parent->write_blocks(block + _offset, count, buffer);
 }
 
-size_t PartitionDevice::read(FileDescriptor &fd, size_t start, uint8_t *buffer, size_t count) {
+ssize_t PartitionDevice::read(FileDescriptor &fd, size_t start, uint8_t *buffer, size_t count) {
 	return _parent->read(fd, start + _offset, buffer, count);
 }
 

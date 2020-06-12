@@ -20,7 +20,7 @@ size_t PIODevice::block_size() {
 	return 512;
 }
 
-size_t PIODevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+ssize_t PIODevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
 	size_t num_blocks = count / block_size();
 	size_t block_start = offset / block_size();
 	uint8_t* tmpbuf = new uint8_t[num_blocks * block_size()];

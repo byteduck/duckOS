@@ -126,7 +126,7 @@ void Ext2Inode::read_raw() {
 	_metadata = meta;
 }
 
-size_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
+ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 	ASSERT(start >= 0);
 	if(raw.size == 0) return 0;
 	if(start > raw.size) return 0;
@@ -182,7 +182,7 @@ size_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 	return length;
 }
 
-size_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry *buffer) {
+ssize_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry *buffer) {
 	auto* buf = new uint8_t[fs.block_size()];
 	size_t block = start / fs.block_size();
 	size_t start_in_block = start % fs.block_size();
