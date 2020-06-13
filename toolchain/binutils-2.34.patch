@@ -1,0 +1,88 @@
+diff --git a/bfd/config.bfd b/bfd/config.bfd
+index b96931f5..bf97a7a4 100644
+--- a/bfd/config.bfd
++++ b/bfd/config.bfd
+@@ -313,6 +313,12 @@ case "${targ}" in
+     ;;
+ #endif /* BFD64 */
+ 
++  i[3-7]86-*-duckos*)
++    targ_defvec=i386_elf32_vec
++    targ_selvecs=
++    targ64_selvecs=x86_64_elf64_vec
++    ;;
++
+   am33_2.0-*-linux*)
+     targ_defvec=am33_elf32_linux_vec
+     ;;
+diff --git a/config.sub b/config.sub
+index f02d43ad..a050760c 100755
+--- a/config.sub
++++ b/config.sub
+@@ -1339,6 +1339,7 @@ case $os in
+ 	# Each alternative MUST end in a * to match a version number.
+ 	# sysv* is not here because it comes later, after sysvr4.
+ 	gnu* | bsd* | mach* | minix* | genix* | ultrix* | irix* \
++	     | duckos* \
+ 	     | *vms* | esix* | aix* | cnk* | sunos | sunos[34]*\
+ 	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
+ 	     | sym* | kopensolaris* | plan9* \
+diff --git a/gas/configure.tgt b/gas/configure.tgt
+index 37224c51..44216df1 100644
+--- a/gas/configure.tgt
++++ b/gas/configure.tgt
+@@ -214,6 +214,7 @@ case ${generic_target} in
+   h8300-*-elf)				fmt=elf ;;
+   h8300-*-linux*)			fmt=elf em=linux ;;
+ 
++  i386-*-duckos*)			fmt=elf ;;
+   i386-*-beospe*)			fmt=coff em=pe ;;
+   i386-*-beos*)				fmt=elf ;;
+   i386-*-elfiamcu)			fmt=elf arch=iamcu ;;
+diff --git a/ld/Makefile.am b/ld/Makefile.am
+index 4a9b8404..eb5e376c 100644
+--- a/ld/Makefile.am
++++ b/ld/Makefile.am
+@@ -289,6 +289,7 @@ ALL_EMULATION_SOURCES = \
+ 	eelf32xtensa.c \
+ 	eelf32z80.c \
+ 	eelf_i386.c \
++	eelf_i386_duckos.c \
+ 	eelf_i386_be.c \
+ 	eelf_i386_fbsd.c \
+ 	eelf_i386_ldso.c \
+diff --git a/ld/Makefile.in b/ld/Makefile.in
+index 46d9b140..74b758f9 100644
+--- a/ld/Makefile.in
++++ b/ld/Makefile.in
+@@ -779,6 +779,7 @@ ALL_EMULATION_SOURCES = \
+ 	eelf32xtensa.c \
+ 	eelf32z80.c \
+ 	eelf_i386.c \
++	eelf_i386_duckos.c \
+ 	eelf_i386_be.c \
+ 	eelf_i386_fbsd.c \
+ 	eelf_i386_ldso.c \
+diff --git a/ld/configure.tgt b/ld/configure.tgt
+index 23194e35..bf6e5dd6 100644
+--- a/ld/configure.tgt
++++ b/ld/configure.tgt
+@@ -298,6 +298,9 @@ hppa*-*-netbsd*)	targ_emul=hppanbsd
+ 			;;
+ hppa*-*-openbsd*)	targ_emul=hppaobsd
+ 			;;
++i[3-7]86-*-duckos*)	targ_emul=elf_i386_duckos
++			targ_extra_emuls=elf_i386
++			;;
+ i[3-7]86-*-nto-qnx*)	targ_emul=i386nto
+ 			;;
+ i[3-7]86-*-go32)	targ_emul=i386go32
+diff --git a/ld/emulparams/elf_i386_duckos.sh b/ld/emulparams/elf_i386_duckos.sh
+new file mode 100644
+index 00000000..342d5298
+--- /dev/null
++++ b/ld/emulparams/elf_i386_duckos.sh
+@@ -0,0 +1,3 @@
++. ${srcdir}/emulparams/elf_i386.sh
++GENERATE_SHLIB_SCRIPT=yes
++GENERATE_PIE_SCRIPT=yes

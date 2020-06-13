@@ -33,7 +33,7 @@ DC::vector<Device *> Device::devices() {
 	return _devices;
 }
 
-Device *Device::get_device(size_t major, size_t minor) {
+Device *Device::get_device(unsigned major, unsigned minor) {
 	for(auto i = 0; i < _devices.size(); i++) {
 		if(_devices[i] != nullptr){
 			if(_devices[i]->_major == major && _devices[i]->_minor == minor) return _devices[i];

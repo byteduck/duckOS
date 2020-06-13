@@ -1,7 +1,3 @@
-//
-// Created by aaron on 6/2/20.
-//
-
 #include <kernel/kstdio.h>
 #include <common/cstring.h>
 #include "LinkedInode.h"

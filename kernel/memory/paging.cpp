@@ -49,8 +49,12 @@ void setup_paging() {
 
 	//Map kernel pages into page_tables but don't modify the directory yet - it would crash if we did
 	map_pages(KERNEL_START - HIGHER_HALF, KERNEL_START, true, KERNEL_SIZE_PAGES, false);
-	//Identity map first MiB
-	map_pages(0, 0, true, 0x100, false);
+
+	//Map the page with the video memory in it
+	size_t vidmem_ppage = (0xB8000 / PAGE_SIZE) * PAGE_SIZE;
+	size_t vidmem_vpage = vidmem_ppage + HIGHER_HALF;
+	map_pages(vidmem_ppage, vidmem_vpage, true, 1, false);
+
 	//Map the page table table
 	uint32_t page_tables_table_index = ((KERNEL_PAGETABLES_VIRTADDR / PAGE_SIZE) / 1024) % 1024;
 	page_tables[page_tables_table_index] = page_tables_table;
@@ -67,8 +71,6 @@ void setup_paging() {
 			kernel_page_directory[i].value = 0;
 		}
 	}
-
-	set_vidmem((uint8_t*)0xB8000);
 }
 
 void PageDirectory::Data::set_address(size_t address) {
@@ -187,6 +189,26 @@ void map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pag
 	map_pages(physaddr, virtaddr, read_write, num_pages, true);
 }
 
+//Allocates num_pages in virtual space starting at start_page.
+//Returns true if able to allocate, false if unable.
+bool allocate_pages(size_t vaddr, size_t num_pages) {
+	ASSERT(vaddr % PAGE_SIZE == 0);
+	auto start_page = vaddr / PAGE_SIZE;
+
+	for(auto i = start_page; i < start_page + num_pages; i++)
+		if (vmem_bitmap.is_page_used(i)) return false;
+
+	for(auto i = 0; i < num_pages; i++) {
+		size_t phys_page = pmem_bitmap.allocate_pages(1, 0);
+		if(!phys_page)
+			PANIC("NO_MEM", "There's no more physical memory left.", true);
+
+		map_page(phys_page * PAGE_SIZE, vaddr + i * PAGE_SIZE, true);
+	}
+
+	return true;
+}
+
 PageTable* alloc_page_table(size_t tables_index, bool modify_directory) {
 	size_t page = pmem_bitmap.allocate_pages(1,0);
 	if(!page) PANIC("KRNL_FAILED_ALLOC_PAGETABLE", "There are no more pages available.", true);
@@ -232,7 +254,6 @@ int liballoc_unlock() {
 void* liballoc_alloc(int pages) {
 	void* retptr = nullptr;
 
-
 	//First, find a block of $pages contiguous virtual pages in the kernel space
 	auto vpage = vmem_bitmap.find_pages(pages, HIGHER_HALF / PAGE_SIZE);
 	if(!vpage) {
@@ -243,7 +264,6 @@ void* liballoc_alloc(int pages) {
 	//Next, allocate the pages
 	for(auto i = 0; i < pages; i++) {
 		size_t phys_page = pmem_bitmap.allocate_pages(1, 0);
-		//If we were unable to allocate a page, break out and undo the previous allocations
 		if(!phys_page) {
 			PANIC("KRNL_NO_HEAP_SPACE", "The kernel ran out of heap space.", true);
 		}

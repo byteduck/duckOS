@@ -38,7 +38,7 @@ echo "Mounted."
 echo "Copying base and kernel to filesystem..."
 cp -r "${SOURCE_DIR}/base/"* mnt/ || (echo "Couldn't copy." && exit 1)
 mkdir -p mnt/boot || (echo "Couldn't make mnt/boot." && exit 1)
-cp src/kernel/duckk32 mnt/boot || (echo "Couldn't copy kernel." && exit 1)
+cp kernel/duckk32 mnt/boot || (echo "Couldn't copy kernel." && exit 1)
 echo "Copied."
 
 echo "Installing grub..."

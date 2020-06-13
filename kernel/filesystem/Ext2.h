@@ -65,7 +65,7 @@ typedef struct __attribute__((packed)) ext2_superblock{
 	uint32_t compression;
 	uint8_t file_prealloc_blocks;
 	uint8_t directory_prealloc_blocks;
-	uint16_t UNUSED_AARON_IS_THE_BEST;
+	uint16_t unused;
 	uint8_t journal_id[16];
 	uint32_t journal_inode;
 	uint32_t journal_device;

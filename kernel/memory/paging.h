@@ -69,6 +69,7 @@ void map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pag
 void map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pages, bool modify_directory);
 void unmap_page(size_t virtaddr);
 void unmap_pages(size_t virtaddr, size_t num_pages);
+bool allocate_pages(size_t vaddr, size_t num_pages);
 size_t get_physaddr(size_t virtaddr);
 
 PageTable* alloc_page_table(size_t tables_index, bool modify_directory);
