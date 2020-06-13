@@ -24,6 +24,7 @@ namespace DC {
 			_back = (++_back) % _capacity;
 			_storage[_back] = DC::move(elem);
 			_size++;
+			return true;
 		}
 
 		T& pop() {

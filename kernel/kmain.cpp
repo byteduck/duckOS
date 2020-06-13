@@ -30,6 +30,9 @@ int i;
 int kmain(uint32_t mbootptr){
 	clearScreen();
 	printf("init: Starting duckOS...\n");
+#ifdef DEBUG
+	printf("init: Debug mode is enabled.\n");
+#endif
 	parse_mboot(mbootptr + HIGHER_HALF);
 	load_gdt();
 	interrupts_init();

@@ -4,10 +4,14 @@
 #include <kernel/kstddef.h>
 #include <common/string.h>
 
+#ifdef DEBUG
 #define ASSERT(cond) \
 if(!(cond)) { \
   PANIC("Assertion failed:", __FILE__ " at line " STR(__LINE__), true); \
 }
+#else
+#define ASSERT(cond)
+#endif
 
 void print_color(char* c, char color);
 void println_color(char* c, char color);
