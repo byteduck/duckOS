@@ -97,7 +97,7 @@ void Shell::command_eval(char *cmd, char *args){
 		println("bg: Run a program in the background.");
 		println("kill: Kill a program.");
 		println("dummy: Create a dummy process.");
-		println("elfinfo: Print info about an ELF executable.");
+		println("readelf: Print info about an ELF executable.");
 		println("lspci: Lists PCI devices.");
 		println("exit: Pretty self explanatory.");
 	}else if(strcmp(cmd,"ls")){
@@ -216,28 +216,84 @@ void Shell::command_eval(char *cmd, char *args){
 			printf("No process with PID %d.\n", pid);
 	}else if(strcmp(cmd, "dummy")){
 		addProcess(createProcess("dummy", (uint32_t)dummy));
-	}else if(strcmp(cmd, "elfinfo")){
-		/*file_t file = {};
-		strcpy(dirbuf, dirbuf2);
-		strcat(dirbuf2,args);
-		strcat(dirbuf2,"/");
-		if(shellfs->getFile(dirbuf2, &file, shellfs)){
-			uint8_t *headerBuf = (uint8_t *)kmalloc(512);
-			elf32_header *header = (elf32_header*)headerBuf;
-			shellfs->read(&file, headerBuf, shellfs);
-			if(header->magic != ELF_MAGIC) {
-				printf("Not an ELF file. %x\n", header->magic);
-				return;
+	}else if(strcmp(cmd, "readelf")){
+		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
+		if(desc_ret.is_error()) {
+			switch (desc_ret.code()) {
+				case -ENOENT:
+					printf("Cannot cat '%s': no such file\n", args);
+					break;
+				case -ENOTDIR:
+					printf("Cannot cat '%s': path is not a directory\n", args);
+					break;
+				case -ENODEV:
+					printf("Cannot cat '%s': no such device\n", args);
+					break;
+				default:
+					printf("Cannot cat '%s': Error %d\n", args, desc_ret.code());
 			}
+		} else {
+			auto fd = desc_ret.value();
+			auto* header = new ELF::elf32_header;
+			fd->read((uint8_t*)header, sizeof(ELF::elf32_header));
 			printf("Bits: %s\n", header->bits == ELF32 ? "32" : "64");
 			printf("Endianness: %s\n", header->endianness == ELF_LITTLE_ENDIAN ? "little" : "big");
-			printf("Instruction set: %s\n", header->instruction_set == ELF_X86 ? "x86" : "other");
-			printf("Program Header Entry Size: %d\n", header->program_header_table_entry_size);
-			printf("Num Program Header Entries: %d\n", header->program_header_table_entries);
-			kfree(headerBuf, 512);
-		}else{
-			printf("Cannot find %s.\n",args);
-		}*/
+			printf("Instruction set: %s\n", header->instruction_set == ELF_X86 ? "x86" : "not x86");
+			printf("Version: 0x%x\n", header->elf_version);
+			printf("(Can%s execute)\n", ELF::can_execute(header) ? "" : "'t");
+
+			uint32_t pheader_loc = header->program_header_table_position;
+			uint32_t pheader_size = header->program_header_table_entry_size;
+			uint32_t num_pheaders = header->program_header_table_entries;
+
+			fd->seek(pheader_loc, SEEK_SET);
+			auto* program_headers = new ELF::elf32_segment_header[num_pheaders];
+			fd->read((uint8_t*)program_headers, pheader_size * num_pheaders);
+
+			for(auto i = 0; i < num_pheaders; i++) {
+				ELF::elf32_segment_header* header = &program_headers[i];
+				printf("--Section--\n");
+				printf("Type: ");
+				switch(header->p_type) {
+					case ELF_PT_NULL:
+						printf("PT_NULL");
+						break;
+					case ELF_PT_LOAD:
+						printf("PT_LOAD");
+						break;
+					case ELF_PT_DYNAMIC:
+						printf("PT_DYNAMIC");
+						break;
+					case ELF_PT_INTERP:
+						printf("PT_INTERP");
+						break;
+					case ELF_PT_NOTE:
+						printf("PT_NOTE");
+						break;
+					case ELF_PT_SHLIB:
+						printf("PT_SHLIB");
+						break;
+					case ELF_PT_PHDR:
+						printf("PT_PHDR");
+						break;
+					default:
+						printf("PT_LOPROC/PT_HIPROC");
+				}
+				printf("\nOffset: 0x%x, ", header->p_offset);
+				printf("Vaddr: 0x%x, ", header->p_vaddr);
+				printf("Filesz: 0x%x, ", header->p_filesz);
+				printf("Memsz: 0x%x\n", header->p_memsz);
+				DC::string flags;
+				if(header->p_flags & ELF_PF_R) flags += "R";
+				if(header->p_flags & ELF_PF_W) flags += "W";
+				if(header->p_flags & ELF_PF_X) flags += "X";
+				printf("Flags: %s, ", flags.c_str());
+				printf("Align: 0x%x\n", program_headers[i].p_align);
+			}
+
+			delete[] program_headers;
+			delete header;
+		}
 	}else if(strcmp(cmd, "lspci")){
 		PCI::enumerate_devices([](PCI::Address address, PCI::ID id, void* dataPtr) {
 			uint8_t clss = PCI::read_byte(address, PCI_CLASS);

@@ -1,0 +1,77 @@
+##########
+# KERNEL #
+##########
+
+set(CMAKE_CXX_STANDARD 11)
+
+ENABLE_LANGUAGE(ASM_NASM)
+SET_SOURCE_FILES_PROPERTIES(asm/startup.s PROPERTIES LANGUAGE ASM_NASM)
+
+SET(CMAKE_CXX_FLAGS "-ffreestanding -O0 -Woverflow -m32 -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
+
+SET(CMAKE_ASM_NASM_COMPILER nasm)
+SET(CMAKE_ASM_NASM_FLAGS "-I ${CMAKE_CURRENT_SOURCE_DIR}/ -f elf")
+SET(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <FLAGS> -o <OBJECT> <SOURCE>")
+
+SET(KERNEL_SRCS
+        asm/startup.s
+        kmain.cpp
+        pit.cpp
+        shell.cpp
+        kstdio.cpp
+        keyboard.cpp
+        kstddef.cpp
+        device/ata.cpp
+        tasking/elf.cpp
+        tasking/tasking.cpp
+        tasking/tss.cpp
+        pci/pci.cpp
+        memory/gdt.cpp
+        memory/kliballoc.cpp
+        memory/paging.cpp
+        interrupt/idt.cpp
+        interrupt/irq.cpp
+        interrupt/isr.cpp
+        interrupt/syscall.cpp
+        filesystem/Ext2.cpp
+        pci/pci.cpp
+        device/ide.cpp
+        device/Device.cpp
+        device/BlockDevice.cpp
+        device/PIODevice.cpp
+        filesystem/Inode.cpp
+        device/PartitionDevice.cpp
+        filesystem/FileSystem.cpp
+        filesystem/LinkedInode.cpp
+        memory/kliballoc.cpp
+        filesystem/VFS.cpp
+        filesystem/File.cpp
+        filesystem/FileDescriptor.cpp
+        Result.cpp
+        filesystem/InodeFile.cpp
+        filesystem/InodeMetadata.cpp
+        filesystem/FileBasedFilesystem.cpp
+        filesystem/DirectoryEntry.cpp
+        icxxabi.cpp
+        device/TTYDevice.cpp
+        device/CharacterDevice.cpp
+        device/ZeroDevice.cpp
+        random.cpp
+        device/RandomDevice.cpp
+        device/NullDevice.cpp
+        device/KeyboardDevice.cpp
+        interrupt/IRQHandler.cpp
+)
+
+SET(COMMON_SRCS
+        ../common/cstring.cpp
+        ../common/stdlib.cpp
+        ../common/string.cpp)
+
+ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS} ${COMMON_SRCS})
+
+SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/kernel.ld)
+SET_TARGET_PROPERTIES(duckk32 PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
+SET(CMAKE_CXX_LINK_EXECUTABLE "ld <OBJECTS> -T ${LINKER_SCRIPT} -melf_i386 -Map kernel.map -o <TARGET> <LINK_LIBRARIES>")
+
+TARGET_INCLUDE_DIRECTORIES(duckk32 PRIVATE ${CMAKE_SOURCE_DIR})
