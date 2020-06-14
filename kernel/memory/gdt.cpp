@@ -26,5 +26,5 @@ void load_gdt(){
 	gdt_set_gate(3, 0xFFFF, 0, 0b11111010, 0b11001111); //User code
 	gdt_set_gate(4, 0xFFFF, 0, 0b11110010, 0b11001111); //User data
 
-	gdt_flush();
+	asm volatile("lgdt %0": "=m"(gp));
 }

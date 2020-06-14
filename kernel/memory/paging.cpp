@@ -31,8 +31,14 @@ namespace Paging {
 			kernel_early_page_table[i].data.set_address(PAGE_SIZE * i);
 		}
 
-		//Enable our new paging scheme
-		load_page_dir((uint32_t *) ((size_t) kernel_page_directory.entries() - HIGHER_HALF));
+		//Enable paging
+		asm volatile(
+				"movl %%eax, %%cr3\n" //Put the page directory pointer in cr3
+				"movl %%cr0, %%eax\n"
+				"orl $0x80000000, %%eax\n" //Set the proper flags in cr0
+				"movl %%eax, %%cr0\n"
+				: : "a"((size_t) kernel_page_directory.entries() - HIGHER_HALF)
+		);
 
 		//Map kernel pages into page_tables
 		PageDirectory::k_map_pages(KERNEL_START - HIGHER_HALF, KERNEL_START, true, KERNEL_SIZE_PAGES);

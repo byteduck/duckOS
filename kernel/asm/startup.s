@@ -59,10 +59,8 @@ start_hh:
 	jmp $
 
 ;%include 'asm/vesa.asm' I still gotta figure out how to deal with this in 32-bit mode
-%include 'asm/gdt.s'
 %include 'asm/syscall.s'
 %include 'asm/int.s'
-%include 'asm/paging.s'
 
 section .bss
 align 32
