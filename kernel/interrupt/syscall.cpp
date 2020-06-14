@@ -3,7 +3,7 @@
 #include <kernel/kstdio.h>
 #include <kernel/tasking/tasking.h>
 
-void syscall_handler(registers regs){
+void syscall_handler(Registers regs){
 	uint32_t call = regs.eax;
 	uint32_t arg1 = regs.edx;
 	uint32_t arg2 = regs.ecx;
@@ -12,10 +12,10 @@ void syscall_handler(registers regs){
 
 }
 
-int handle_syscall(registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+	printf("SYSCALL(%d, %d, %d, %d)\n", call, arg1, arg2, arg3);
 	if(call == SYS_EXIT) {
-		__kill__();
-	}else
-		printf("SYSCALL(%d, %d, %d, %d)\n", call, arg1, arg2, arg3);
+		getCurrentProcess()->kill();
+	}
 	return 0;
 }

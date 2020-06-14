@@ -6,7 +6,7 @@
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
 
-struct  __attribute__((packed)) registers{
+struct  __attribute__((packed)) Registers {
     unsigned int gs, fs, es, ds;
     unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;
     unsigned int num, err_code;

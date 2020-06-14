@@ -6,7 +6,7 @@
 class IRQHandler {
 public:
 	IRQHandler(int irq);
-	virtual void handle_irq(registers* regs) = 0;
+	virtual void handle_irq(Registers* regs) = 0;
 };
 
 

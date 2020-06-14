@@ -32,7 +32,7 @@ public:
 
 	//IRQHandler
 	void set_handler(KeyboardHandler* handler);
-	void handle_irq(registers* regs) override;
+	void handle_irq(Registers* regs) override;
 
 private:
 	static KeyboardDevice* _instance;

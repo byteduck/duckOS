@@ -1,3 +1,5 @@
+#include "stdlib.h"
+
 extern "C" {
 	int main(int argc, char** argv, char** env);
 

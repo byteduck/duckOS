@@ -24,6 +24,6 @@ void irq_set_handler(int irq, IRQHandler* handler);
 void irq_remove_handler(int irq);
 void irq_remap();
 void irq_init();
-extern "C" void irq_handler(struct registers *r);
+extern "C" void irq_handler(struct Registers *r);
 
 #endif

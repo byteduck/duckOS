@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 11)
 ENABLE_LANGUAGE(ASM_NASM)
 SET_SOURCE_FILES_PROPERTIES(asm/startup.s PROPERTIES LANGUAGE ASM_NASM)
 
-SET(CMAKE_CXX_FLAGS "-ffreestanding -O0 -Woverflow -m32 -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
+SET(CMAKE_CXX_FLAGS "-ffreestanding -O0 -Woverflow -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
 
 SET(CMAKE_ASM_NASM_COMPILER nasm)
 SET(CMAKE_ASM_NASM_FLAGS "-I ${CMAKE_CURRENT_SOURCE_DIR}/ -f elf")
@@ -61,6 +61,9 @@ SET(KERNEL_SRCS
         device/NullDevice.cpp
         device/KeyboardDevice.cpp
         interrupt/IRQHandler.cpp
+        memory/PageDirectory.cpp
+        memory/PageTable.cpp
+        tasking/Process.cpp
 )
 
 SET(COMMON_SRCS

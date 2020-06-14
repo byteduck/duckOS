@@ -1,17 +1,12 @@
 #include <kernel/kstddef.h>
-#include <kernel/tasking/tss.h>
-#include <kernel/memory/gdt.h>
 #include <kernel/multiboot.h>
 #include <kernel/kstdio.h>
-#include <kernel/memory/kliballoc.h>
 #include <kernel/memory/paging.h>
 #include <kernel/interrupt/idt.h>
 #include <kernel/interrupt/isr.h>
 #include <kernel/interrupt/irq.h>
-#include <kernel/interrupt/syscall.h>
 #include <kernel/device/ata.h>
 #include <kernel/filesystem/Ext2.h>
-#include <kernel/keyboard.h>
 #include <kernel/shell.h>
 #include <kernel/pit.h>
 #include <kernel/tasking/tasking.h>
@@ -19,10 +14,7 @@
 #include <kernel/device/PartitionDevice.h>
 #include <kernel/kmain.h>
 #include <kernel/filesystem/VFS.h>
-#include <common/vector.hpp>
 #include <kernel/device/TTYDevice.h>
-#include <common/circular_queue.hpp>
-#include <common/defines.h>
 #include <kernel/device/KeyboardDevice.h>
 
 int i;
@@ -36,7 +28,7 @@ int kmain(uint32_t mbootptr){
 	parse_mboot(mbootptr + HIGHER_HALF);
 	load_gdt();
 	interrupts_init();
-	setup_paging();
+	Paging::setup_paging();
 	Device::init();
 
 	printf("init: First stage complete.\ninit: Initializing tasking...\n");
@@ -97,7 +89,7 @@ void kmain_late(){
 	printf("\n\nShell exited.\n\n");
 	while(1);
 	PANIC("Kernel process stopped!","That should not happen.",true);
-	__kill__();
+	getCurrentProcess()->kill();
 }
 
 void parse_mboot(uint32_t addr){

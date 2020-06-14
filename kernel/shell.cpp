@@ -61,7 +61,7 @@ void Shell::shell(){
 		command_eval(cmdbuf, argbuf);
 		setColor(0x0f);
 	}
-	__kill__();
+	getCurrentProcess()->kill();
 }
 
 /*bool findAndExecute(char *cmd, bool wait){
@@ -158,7 +158,7 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"about")){
 		println("DuckOS v0.1");
 	}else if(strcmp(cmd, "mem")) {
-		printf("Used memory: %dKiB\n", get_used_mem());
+		printf("Used memory: %dKiB\n", Paging::get_used_mem());
 	}else if(strcmp(cmd,"cat")){
 		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
 		if(desc_ret.is_error()) {
@@ -206,7 +206,7 @@ void Shell::command_eval(char *cmd, char *args){
 		//if(strcmp(args,"") || !findAndExecute(args, false)) printf("Cannot find \"%s\".\n", args);
 	}else if(strcmp(cmd,"kill")){
 		uint32_t pid = atoi(args);
-		process_t *proc = getProcess(pid);
+		Process *proc = getProcess(pid);
 		if(proc != NULL && proc->pid != 1){
 			kill(proc);
 			printf("Sent SIGTERM (%d) to %s (PID %d).\n", SIGTERM, proc->name, proc->pid);
@@ -294,6 +294,8 @@ void Shell::command_eval(char *cmd, char *args){
 			delete[] program_headers;
 			delete header;
 		}
+	}else if(strcmp(cmd, "exec")) {
+		ELF::load_and_execute(args);
 	}else if(strcmp(cmd, "lspci")){
 		PCI::enumerate_devices([](PCI::Address address, PCI::ID id, void* dataPtr) {
 			uint8_t clss = PCI::read_byte(address, PCI_CLASS);

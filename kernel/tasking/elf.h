@@ -70,6 +70,7 @@ namespace ELF {
 
 	bool is_valid_elf_header(elf32_header* header);
 	bool can_execute(elf32_header* header);
+	void load_and_execute(DC::string file);
 }
 
 #endif

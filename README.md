@@ -16,7 +16,7 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
 - Uses BIOS interrupts (ATA PIO) to read/write to disk instead of AHCI/IDE (This is pretty slow)
 
 ### Building / Running
-- See [INSTRUCTIONS.md](BUILDING.md) for instructions.
+- See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
 
 ### Credits
 - [blanham's mirror of liballoc 1.1](https://github.com/blanham/liballoc) for the kernel heap allocation implementation (it's open domain, so if you want to use it, I highly recommend it)
