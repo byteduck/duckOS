@@ -6,6 +6,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/elf.h>
+#include <common/shared_ptr.hpp>
 
 #define PROCESS_STACK_SIZE 4096
 
@@ -29,6 +30,13 @@ public:
 	size_t page_directory_loc;
 	Registers registers = {};
 	bool kernel = false;
+
+	DC::shared_ptr<FileDescriptor> stdin;
+	DC::shared_ptr<FileDescriptor> stdout;
+
+	//Syscalls
+	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
+	ssize_t sys_write(int fd, uint8_t* buf, size_t count);
 
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel = false);

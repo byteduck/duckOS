@@ -2,22 +2,22 @@
 #include "KeyboardDevice.h"
 
 size_t TTYDevice::_current_tty;
-TTYDevice* TTYDevice::_ttys[];
+DC::shared_ptr<TTYDevice> TTYDevice::_ttys[];
 
-TTYDevice *TTYDevice::current_tty() {
+DC::shared_ptr<TTYDevice> TTYDevice::current_tty() {
 	return _ttys[_current_tty];
 }
 
 void TTYDevice::set_current_tty(size_t tty) {
-	TTYDevice* current = _ttys[_current_tty];
-	if(current != nullptr) current->_active = false;
+	DC::shared_ptr<TTYDevice> current = _ttys[_current_tty];
+	if(current.get() != nullptr) current->_active = false;
 	_current_tty = tty;
-	KeyboardDevice::inst()->set_handler(_ttys[_current_tty]);
+	KeyboardDevice::inst()->set_handler(_ttys[_current_tty].get());
 }
 
 void TTYDevice::register_tty(size_t id, TTYDevice *device) {
 	if(_ttys[id]) PANIC("DUPLICATE_TTY", "A TTY tried to register with an ID that was already registered.", true);
-	_ttys[id] = device;
+	_ttys[id] = DC::shared_ptr<TTYDevice>(device);
 }
 
 

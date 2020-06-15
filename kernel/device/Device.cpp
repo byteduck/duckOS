@@ -29,7 +29,7 @@ unsigned Device::minor() {
 }
 
 
-DC::vector<Device *> Device::devices() {
+DC::vector<Device*> Device::devices() {
 	return _devices;
 }
 

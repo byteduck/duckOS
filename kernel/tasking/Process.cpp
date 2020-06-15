@@ -1,6 +1,7 @@
 #include <kernel/memory/kliballoc.h>
 #include <kernel/filesystem/VFS.h>
 #include <common/defines.h>
+#include <kernel/device/TTYDevice.h>
 #include "Process.h"
 #include "TaskManager.h"
 #include "elf.h"
@@ -83,9 +84,15 @@ DC::string Process::name(){
 	return _name;
 }
 
-Process::Process(const DC::string& name, size_t entry_point, bool kernel):
-_name(name), inited(false), _pid(TaskManager::get_new_pid()), state(PROCESS_ALIVE), kernel(kernel)
-{
+Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name(name), inited(false), _pid(TaskManager::get_new_pid()), state(PROCESS_ALIVE), kernel(kernel) {
+	if(!kernel) {
+		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		ttydesc->set_options(O_RDONLY | O_WRONLY);
+
+		stdin = ttydesc;
+		stdout = ttydesc;
+	}
+
 	size_t stack_base;
 	if(!kernel) {
 		page_directory = new Paging::PageDirectory();
@@ -175,4 +182,30 @@ void Process::kill() {
 	}else{
 		PANIC("KERNEL KILLED","EVERYONE PANIC THIS ISN'T GOOD",true);
 	}
+}
+
+
+/************
+ * SYSCALLS *
+ ************/
+
+
+ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
+	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
+	if(fd == 0) { //stdin
+		return stdin->read(buf, count);
+	} else if(fd == 1) { //stdout
+		return -EINVAL;
+	}
+	return -EBADF;
+}
+
+ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
+	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
+	if(fd == 0) { //stdin
+		return -EINVAL;
+	} else if(fd == 1) { //stdout
+		return stdout->write(buf, count);
+	}
+	return -EBADF;
 }
