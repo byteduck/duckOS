@@ -8,7 +8,8 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
 - Typing commands into the kernel shell
 - Reading files off of the hard drive
 - Reading devices as files (`/dev/hda`, `/dev/zero`, `/dev/random`, etc)
-- Basic multitasking (But no executables)
+- Basic multitasking
+  - This includes executing ELFs, although there's very few syscalls (just one for exit() at the time of writing)
 
 ### Known Issues / Limitations
 - It kinda sucks
