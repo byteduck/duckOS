@@ -29,6 +29,7 @@ typedef unsigned long long int uint64_t;
 typedef  signed  long long int int64_t;
 typedef uint32_t size_t;
 typedef int32_t ssize_t;
+typedef int pid_t;
 
 
 #endif //DUCKOS_CSTDDEF_H

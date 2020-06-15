@@ -23,7 +23,7 @@ SET(KERNEL_SRCS
         kstddef.cpp
         device/ata.cpp
         tasking/elf.cpp
-        tasking/tasking.cpp
+        tasking/TaskManager.cpp
         tasking/tss.cpp
         pci/pci.cpp
         memory/gdt.cpp

@@ -32,7 +32,7 @@ namespace Paging {
 		 * Static kernel page directory stuff *
 		 **************************************/
 
-		static Entry kernel_entries[256] __attribute__((aligned(4096)));
+		static Entry kernel_entries[256];
 		static MemoryBitmap<0x40000> kernel_vmem_bitmap;
 		static PageTable kernel_page_tables[256] __attribute__((aligned(4096)));
 		static size_t kernel_page_tables_physaddr[1024];
@@ -66,6 +66,20 @@ namespace Paging {
 		 */
 		static void k_unmap_pages(size_t virtaddr, size_t num_pages);
 
+		/**
+		 * Allocates a number of contiguous pages in kernel vmem and returns a pointer to the first one.
+		 * @param pages The number of pages to allocate.
+		 * @return A pointer to the first page allocated.
+		 */
+		static void* k_alloc_pages(size_t pages);
+
+		/**
+		 * Frees num_pages pages allocated with k_alloc_pages.
+		 * @param ptr The pointer returned by k_alloc_pages to the start of the pages to be freed.
+		 * @param num_pages The number of pages to be freed.
+		 */
+		static void k_free_pages(void* ptr, size_t num_pages);
+
 
 
 		/************************************
@@ -73,7 +87,14 @@ namespace Paging {
 		 ************************************/
 
 		PageDirectory();
+		~PageDirectory();
 		Entry* entries();
+
+		/**
+		 * Get the physical address of the table of entries.
+		 * @return The physical address of the table of entries.
+		 */
+		size_t entries_physaddr();
 
 		/**
 		 * @return The entry at index.
@@ -137,9 +158,14 @@ namespace Paging {
 		 */
 		void update_kernel_entries();
 
+		/**
+		 * Sets the entry pointer to entries. Should only be used for kernel page table.
+		 */
+		void set_entries(Entry* entries);
+
 	private:
 		//The page directory entries for this page directory.
-		Entry _entries[1024] __attribute__((aligned(4096))) = {{.value=0}};
+		Entry* _entries = nullptr;
 		//The bitmap of used vmem for this page directory.
 		MemoryBitmap<0xC0000> _vmem_bitmap;
 		//An array of pointers to the page tables that the directory points to.

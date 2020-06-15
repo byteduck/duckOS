@@ -1,8 +1,9 @@
-#include <kernel/tasking/tasking.h>
+#include <kernel/tasking/TaskManager.h>
 #include <kernel/memory/kliballoc.h>
 #include <kernel/kstddef.h>
 #include <kernel/kstdio.h>
 #include <kernel/pit.h>
+#include <kernel/memory/paging.h>
 #include <kernel/kmain.h>
 #include <common/cstring.h>
 
@@ -20,63 +21,35 @@ void kthread(){
 	while(1);
 }
 
-Process *createProcess(char *name, uint32_t loc){
-	auto *p = new Process();
-
-	p->name = name;
-	p->pid = ++__cpid__;
-	p->state = PROCESS_ALIVE;
-	p->registers.eip = loc;
-	p->registers.esp = (uint32_t) kmalloc(4096);
-	p->inited = false;
-	uint32_t *stack = (uint32_t *)(p->registers.esp + 4096);
-	p->stack = (uint8_t*)p->registers.esp;
-
-	//pushing Registers on to the stack
-	*--stack = 0x202; // eflags
-	*--stack = 0x8; // cs
-	*--stack = loc; // eip
-	*--stack = 0; // eax
-	*--stack = 0; // ebx
-	*--stack = 0; // ecx;
-	*--stack = 0; //edx
-	*--stack = 0; //esi
-	*--stack = 0; //edi
-	*--stack = p->registers.esp + 4096; //ebp
-	*--stack = 0x10; // ds
-	*--stack = 0x10; // fs
-	*--stack = 0x10; // es
-	*--stack = 0x10; // gs
-
-	p->registers.esp = (uint32_t)stack;
-	return p;
-}
-
-Process *getProcess(uint32_t pid){
+Process* TaskManager::process_for_pid(pid_t pid){
 	Process *current = kernel_proc;
 	do{
-		if(current->pid == pid) return current;
+		if(current->pid() == pid) return current;
 		current = current->next;
 	}while(current != kernel_proc);
 	return (Process *) nullptr;
 }
 
-void printTasks(){
+void TaskManager::print_tasks(){
 	Process *current = kernel_proc;
 	printf("Running processes: (PID, name, state, * = is current)\n");
 	do{
-		printf("%c[%d] '%s' %d\n", current == current_proc ? '*' : ' ', current->pid, current->name.c_str(), current->state);
+		printf("%c[%d] '%s' %d\n", current == current_proc ? '*' : ' ', current->pid(), current->name().c_str(), current->state);
 		current = current->next;
 	}while(current != kernel_proc);
 }
 
-void preempt_now(){
+void TaskManager::preempt_now(){
 	if(!tasking_enabled) return;
 	asm volatile("int $0x81");
 }
 
-void initTasking(){
-	kernel_proc = createProcess("duckk32", (uint32_t)kthread);
+pid_t TaskManager::get_new_pid(){
+	return ++__cpid__;
+}
+
+void TaskManager::init(){
+	kernel_proc = Process::create_kernel("duckk32", kthread);
 	kernel_proc->next = kernel_proc;
 	kernel_proc->prev = kernel_proc;
 	current_proc = kernel_proc;
@@ -85,11 +58,11 @@ void initTasking(){
 	PANIC("Failed to init tasking", "Something went wrong..", true);
 }
 
-Process *getCurrentProcess(){
+Process* TaskManager::current_process(){
 	return current_proc;
 }
 
-uint32_t addProcess(Process *p){
+uint32_t TaskManager::add_process(Process *p){
 	bool en = tasking_enabled;
 	tasking_enabled = false;
 	p->next = current_proc->next;
@@ -97,15 +70,15 @@ uint32_t addProcess(Process *p){
 	p->prev = current_proc;
 	current_proc->next = p;
 	tasking_enabled = en;
-	return p->pid;
+	return p->pid();
 }
 
-void notify(uint32_t sig){
+void TaskManager::notify(uint32_t sig){
 	current_proc->notify(sig);
 }
 
-void kill(Process *p){
-	if(getProcess(p->pid) != NULL){
+void TaskManager::kill(Process *p){
+	if(process_for_pid(p->pid()) != NULL){
 		tasking_enabled = false;
 		kfree((uint8_t *)p->stack);
 		kfree(p);
@@ -116,7 +89,7 @@ void kill(Process *p){
 	}
 }
 
-void preempt(){
+void TaskManager::preempt(){
 	//push current_proc process' Registers on to its stack
 	asm volatile("push %eax");
 	asm volatile("push %ebx");
@@ -136,7 +109,6 @@ void preempt(){
 		return;
 	}
 	//pop all of next process' Registers off of its stack
-	//asm volatile("mov %%eax, %%cr3": :"a"(current_proc->page_directory_loc)); TODO: figure out how to load new page directory
 	asm volatile("mov %%eax, %%esp": :"a"(current_proc->registers.esp));
 	asm volatile("pop %gs");
 	asm volatile("pop %fs");
@@ -145,12 +117,9 @@ void preempt(){
 	asm volatile("pop %ebp");
 	asm volatile("pop %edi");
 	asm volatile("pop %esi");
-	//asm volatile("out %%al, %%dx": :"d"(0x20), "a"(0x20));
+	asm volatile("movl %%eax, %%cr3": : "a"(current_proc->page_directory_loc)); //Load page directory for process
 	asm volatile("pop %edx");
 	asm volatile("pop %ecx");
 	asm volatile("pop %ebx");
 	asm volatile("pop %eax");
-	//asm volatile("add $0x0C, %esp");
-	//while(wait);
-	//asm volatile("iret");
 }

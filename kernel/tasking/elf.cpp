@@ -2,7 +2,7 @@
 #include <common/defines.h>
 #include <kernel/filesystem/VFS.h>
 #include <kernel/memory/paging.h>
-#include "tasking.h"
+#include "TaskManager.h"
 
 bool ELF::is_valid_elf_header(elf32_header* header) {
 	return header->magic == ELF_MAGIC;

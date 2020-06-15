@@ -4,7 +4,7 @@
 #include <kernel/shell.h>
 #include <kernel/filesystem/Ext2.h>
 #include <kernel/memory/kliballoc.h>
-#include <kernel/tasking/tasking.h>
+#include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/elf.h>
 #include <kernel/pci/pci.h>
 #include <kernel/memory/paging.h>
@@ -61,7 +61,7 @@ void Shell::shell(){
 		command_eval(cmdbuf, argbuf);
 		setColor(0x0f);
 	}
-	getCurrentProcess()->kill();
+	TaskManager::current_process()->kill();
 }
 
 /*bool findAndExecute(char *cmd, bool wait){
@@ -201,21 +201,21 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"exit")){
 		exitShell = true;
 	}else if(strcmp(cmd,"tasks")){
-		printTasks();
+		TaskManager::print_tasks();
 	}else if(strcmp(cmd,"bg")){
 		//if(strcmp(args,"") || !findAndExecute(args, false)) printf("Cannot find \"%s\".\n", args);
 	}else if(strcmp(cmd,"kill")){
 		uint32_t pid = atoi(args);
-		Process *proc = getProcess(pid);
-		if(proc != NULL && proc->pid != 1){
-			kill(proc);
-			printf("Sent SIGTERM (%d) to %s (PID %d).\n", SIGTERM, proc->name, proc->pid);
-		}else if(proc->pid == 1)
+		Process *proc = TaskManager::process_for_pid(pid);
+		if(proc != NULL && proc->pid() != 1){
+			TaskManager::kill(proc);
+			printf("Sent SIGTERM (%d) to %s (PID %d).\n", SIGTERM, proc->name().c_str(), proc->pid());
+		}else if(proc->pid() == 1)
 			printf("Cannot kill kernel!\n");
 		else
 			printf("No process with PID %d.\n", pid);
 	}else if(strcmp(cmd, "dummy")){
-		addProcess(createProcess("dummy", (uint32_t)dummy));
+		TaskManager::add_process(Process::create_kernel("dummy", dummy));
 	}else if(strcmp(cmd, "readelf")){
 		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
 		if(desc_ret.is_error()) {

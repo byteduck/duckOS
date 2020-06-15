@@ -8,6 +8,7 @@
 
 namespace Paging {
 	PageDirectory kernel_page_directory;
+	PageDirectory::Entry kernel_page_directory_entries[1024];
 	PageTable kernel_early_page_table;
 	MemoryBitmap<0x100000> _pmem_bitmap;
 
@@ -16,6 +17,7 @@ namespace Paging {
 		//Assert that the kernel doesn't exceed 4MiB
 		ASSERT(KERNEL_END - KERNEL_START <= PAGE_SIZE * 1024);
 
+		kernel_page_directory.set_entries(kernel_page_directory_entries);
 		PageDirectory::init_kmem();
 
 		//Mark the kernel's pages as used
@@ -136,32 +138,10 @@ int liballoc_unlock() {
 
 
 void *liballoc_alloc(int pages) {
-	void *retptr = nullptr;
-
-	//First, find a block of $pages contiguous virtual pages in the kernel space
-	auto vpage = PageDirectory::kernel_vmem_bitmap.find_pages(pages, 0) + 0xC0000;
-	if (vpage == -1) {
-		PANIC("KRNL_NO_VMEM_SPACE", "The kernel ran out of vmem space.", true);
-	}
-	retptr = (void *) (vpage * PAGE_SIZE);
-
-	//Next, allocate the pages
-	for (auto i = 0; i < pages; i++) {
-		size_t phys_page = pmem_bitmap().allocate_pages(1, 0);
-		if (!phys_page) {
-			PANIC("KRNL_NO_HEAP_SPACE", "The kernel ran out of heap space.", true);
-		}
-
-		PageDirectory::k_map_page(phys_page * PAGE_SIZE, vpage * PAGE_SIZE + i * PAGE_SIZE, true);
-	}
-
-	return retptr;
+	return PageDirectory::k_alloc_pages(pages);
 }
 
 int liballoc_free(void *ptr, int pages) {
-	for (auto i = 0; i < pages; i++) {
-		pmem_bitmap().set_page_free(kernel_page_directory.get_physaddr((size_t) ptr + PAGE_SIZE * i) / PAGE_SIZE);
-	}
-	PageDirectory::k_unmap_pages((size_t) ptr, pages);
+	PageDirectory::k_free_pages(ptr, pages);
 	return 0;
 }

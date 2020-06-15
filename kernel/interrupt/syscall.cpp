@@ -1,7 +1,7 @@
 #include <kernel/kstddef.h>
 #include <kernel/interrupt/syscall.h>
 #include <kernel/kstdio.h>
-#include <kernel/tasking/tasking.h>
+#include <kernel/tasking/TaskManager.h>
 
 void syscall_handler(Registers regs){
 	uint32_t call = regs.eax;
@@ -15,7 +15,7 @@ void syscall_handler(Registers regs){
 int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
 	printf("SYSCALL(%d, %d, %d, %d)\n", call, arg1, arg2, arg3);
 	if(call == SYS_EXIT) {
-		getCurrentProcess()->kill();
+		TaskManager::current_process()->kill();
 	}
 	return 0;
 }

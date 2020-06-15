@@ -9,7 +9,7 @@
 #include <kernel/filesystem/Ext2.h>
 #include <kernel/shell.h>
 #include <kernel/pit.h>
-#include <kernel/tasking/tasking.h>
+#include <kernel/tasking/TaskManager.h>
 #include <kernel/device/PIODevice.h>
 #include <kernel/device/PartitionDevice.h>
 #include <kernel/kmain.h>
@@ -33,7 +33,7 @@ int kmain(uint32_t mbootptr){
 
 	printf("init: First stage complete.\ninit: Initializing tasking...\n");
 
-	initTasking();
+	TaskManager::init();
 
 	return 0;
 }
@@ -84,12 +84,11 @@ void kmain_late(){
 
 	printf("init: Done!\n");
 
-	addProcess(createProcess("shell",(uint32_t)shell_process));
-	while(getProcess(2));
+	TaskManager::add_process(Process::create_kernel("shell", shell_process));
+	while(TaskManager::process_for_pid(2));
 	printf("\n\nShell exited.\n\n");
+
 	while(1);
-	PANIC("Kernel process stopped!","That should not happen.",true);
-	getCurrentProcess()->kill();
 }
 
 void parse_mboot(uint32_t addr){
@@ -107,7 +106,7 @@ void interrupts_init(){
 	register_idt();
 	isr_init();
 	idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0x8E);
-	idt_set_gate(0x81, (unsigned)preempt, 0x08, 0x8E); //for preempting without PIT
+	idt_set_gate(0x81, (unsigned)TaskManager::preempt, 0x08, 0x8E); //for preempting without PIT
 	pit_init(200);
 	irq_init();
 	asm volatile("sti");

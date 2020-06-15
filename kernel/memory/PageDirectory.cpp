@@ -69,6 +69,34 @@ namespace Paging {
 		}
 	}
 
+	void *PageDirectory::k_alloc_pages(size_t pages) {
+		//First, find a block of $pages contiguous virtual pages in the kernel space
+		auto vpage = kernel_vmem_bitmap.find_pages(pages, 0) + 0xC0000;
+		if (vpage == -1) {
+			PANIC("KRNL_NO_VMEM_SPACE", "The kernel ran out of vmem space.", true);
+		}
+		void* retptr = (void *) (vpage * PAGE_SIZE);
+
+		//Next, allocate the pages
+		for (auto i = 0; i < pages; i++) {
+			size_t phys_page = pmem_bitmap().allocate_pages(1, 0);
+			if (!phys_page) {
+				PANIC("NO_MEM", "There's no more physical memory left.", true);
+			}
+
+			k_map_page(phys_page * PAGE_SIZE, vpage * PAGE_SIZE + i * PAGE_SIZE, true);
+		}
+
+		return retptr;
+	}
+
+	void PageDirectory::k_free_pages(void *ptr, size_t num_pages) {
+		for (auto i = 0; i < num_pages; i++) {
+			pmem_bitmap().set_page_free(kernel_page_directory.get_physaddr((size_t) ptr + PAGE_SIZE * i) / PAGE_SIZE);
+		}
+		PageDirectory::k_unmap_pages((size_t) ptr, num_pages);
+	}
+
 
 	/**
 	 * PageDirectory Entry stuff
@@ -83,14 +111,6 @@ namespace Paging {
 		return page_table_addr << 12u;
 	}
 
-	PageDirectory::Entry *PageDirectory::entries() {
-		return _entries;
-	}
-
-	PageDirectory::Entry &PageDirectory::operator[](int index) {
-		return _entries[index];
-	}
-
 
 	/**
 	 * PageDirectory stuff
@@ -98,7 +118,24 @@ namespace Paging {
 
 
 	PageDirectory::PageDirectory() {
+		if(!_entries) _entries = (Entry*)k_alloc_pages(1);
 		update_kernel_entries();
+	}
+
+	PageDirectory::~PageDirectory() {
+		k_free_pages(_entries, 1);
+	}
+
+	PageDirectory::Entry *PageDirectory::entries() {
+		return _entries;
+	}
+
+	size_t PageDirectory::entries_physaddr() {
+		return get_physaddr((size_t)_entries);
+	}
+
+	PageDirectory::Entry &PageDirectory::operator[](int index) {
+		return _entries[index];
 	}
 
 	void PageDirectory::map_page(size_t physaddr, size_t virtaddr, bool read_write) {
@@ -157,14 +194,25 @@ namespace Paging {
 	}
 
 	size_t PageDirectory::get_physaddr(size_t virtaddr) {
-		size_t page = virtaddr / PAGE_SIZE;
-		size_t directory_index = (page / 1024) % 1024;
-		if (virtaddr < HIGHER_HALF && !_vmem_bitmap.is_page_used(page)) return 0;
-		if (!_entries[directory_index].data.present) return 0; //TODO: Log an error
-		if (!_page_tables[directory_index]) return 0; //TODO: Log an error
-		size_t table_index = page % 1024;
-		size_t page_paddr = (_page_tables[directory_index])->entries()[table_index].data.get_address();
-		return page_paddr + (virtaddr % PAGE_SIZE);
+		if(virtaddr < HIGHER_HALF) { //Program space
+			size_t page = virtaddr / PAGE_SIZE;
+			size_t directory_index = (page / 1024) % 1024;
+			if (!_vmem_bitmap.is_page_used(page)) return 0;
+			if (!_entries[directory_index].data.present) return 0; //TODO: Log an error
+			if (!_page_tables[directory_index]) return 0; //TODO: Log an error
+			size_t table_index = page % 1024;
+			size_t page_paddr = (_page_tables[directory_index])->entries()[table_index].data.get_address();
+			return page_paddr + (virtaddr % PAGE_SIZE);
+		} else { //Kernel space
+			size_t page = (virtaddr - HIGHER_HALF) / PAGE_SIZE;
+			size_t directory_index = (page / 1024) % 1024;
+			if (!kernel_vmem_bitmap.is_page_used(page)) return 0;
+			if (!kernel_entries[directory_index].data.present) return 0; //TODO: Log an error
+			size_t table_index = page % 1024;
+			size_t page_paddr = (kernel_page_tables[directory_index])[table_index].data.get_address();
+			return page_paddr + (virtaddr % PAGE_SIZE);
+		}
+
 	}
 
 	bool PageDirectory::allocate_pages(size_t vaddr, size_t memsize) {
@@ -227,5 +275,9 @@ namespace Paging {
 		_entries[1023].data.present = true;
 		_entries[1023].data.read_write = true;
 		_entries[1023].data.set_address((size_t)_page_tables_table.entries() - HIGHER_HALF);
+	}
+
+	void PageDirectory::set_entries(Entry* entries) {
+		_entries = entries;
 	}
 }
