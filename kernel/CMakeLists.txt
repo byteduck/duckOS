@@ -24,7 +24,6 @@ SET(KERNEL_SRCS
         device/ata.cpp
         tasking/elf.cpp
         tasking/TaskManager.cpp
-        tasking/tss.cpp
         pci/pci.cpp
         memory/gdt.cpp
         memory/kliballoc.cpp

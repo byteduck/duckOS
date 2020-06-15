@@ -3,6 +3,7 @@
 
 #include <kernel/kstddef.h>
 #include "Process.h"
+#include "TSS.h"
 
 #define PROCESS_ALIVE 0
 #define PROCESS_ZOMBIE 1
@@ -15,7 +16,9 @@
 class Process;
 
 namespace TaskManager {
+	extern TSS tss;
 	void init();
+	bool& enabled();
 	void print_tasks();
 	uint32_t add_process(Process *p);
 	Process *current_process();

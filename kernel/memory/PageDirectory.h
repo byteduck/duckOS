@@ -2,6 +2,7 @@
 #define DUCKOS_PAGEDIRECTORY_H
 
 #include <common/cstddef.h>
+#include <common/vector.hpp>
 #include "paging.h"
 
 namespace Paging {
@@ -168,12 +169,14 @@ namespace Paging {
 		Entry* _entries = nullptr;
 		//The bitmap of used vmem for this page directory.
 		MemoryBitmap<0xC0000> _vmem_bitmap;
+		//The bitmap of used pmem for this page directory.
+		MemoryBitmap<0x100000> _personal_pmem_bitmap;
 		//An array of pointers to the page tables that the directory points to.
 		PageTable* _page_tables[768] = {nullptr};
 		//An array of u16s that stores the number of pages mapped in each page table, used to deallocate a page table once no longer needed
 		uint16_t _page_tables_num_mapped[1024] = {0};
 		//The page table that points to the memory allocated to store the page tables for this page directory
-		PageTable _page_tables_table;
+		PageTable* _page_tables_table;
 		//The physical addresses for each page table, used to translate vaddr -> paddr
 		size_t _page_tables_physaddr[1024] = {0};
 	};

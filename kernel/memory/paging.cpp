@@ -8,7 +8,7 @@
 
 namespace Paging {
 	PageDirectory kernel_page_directory;
-	PageDirectory::Entry kernel_page_directory_entries[1024];
+	PageDirectory::Entry kernel_page_directory_entries[1024] __attribute__((aligned(4096)));
 	PageTable kernel_early_page_table;
 	MemoryBitmap<0x100000> _pmem_bitmap;
 
@@ -138,10 +138,10 @@ int liballoc_unlock() {
 
 
 void *liballoc_alloc(int pages) {
-	return PageDirectory::k_alloc_pages(pages);
+	return PageDirectory::k_alloc_pages(pages * PAGE_SIZE);
 }
 
 int liballoc_free(void *ptr, int pages) {
-	PageDirectory::k_free_pages(ptr, pages);
+	PageDirectory::k_free_pages(ptr, pages * PAGE_SIZE);
 	return 0;
 }

@@ -29,7 +29,7 @@ namespace DC {
 
 		void push_back(const T& elem) {
 			if(_size + 1 > _capacity) {
-				resize(_size + 1);
+				resize(_capacity == 0 ? 1 : _capacity * 2);
 			}
 			_storage[_size++] = DC::move(elem);
 		}

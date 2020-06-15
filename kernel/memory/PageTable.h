@@ -33,6 +33,7 @@ namespace Paging {
 		Entry& operator[](int index);
 	private:
 		Entry _entries[1024] __attribute__((aligned(4096))) = {{.value=0}};
+		//CANNOT have any other members with current pagetable allocation scheme; the pointer to the pagetable must be the pointer to its entries
 	};
 }
 

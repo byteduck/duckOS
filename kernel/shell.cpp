@@ -240,7 +240,7 @@ void Shell::command_eval(char *cmd, char *args){
 			printf("Endianness: %s\n", header->endianness == ELF_LITTLE_ENDIAN ? "little" : "big");
 			printf("Instruction set: %s\n", header->instruction_set == ELF_X86 ? "x86" : "not x86");
 			printf("Version: 0x%x\n", header->elf_version);
-			printf("(Can%s execute)\n", ELF::can_execute(header) ? "" : "'t");
+			printf("(Can%s execute, entry=0x%x)\n", ELF::can_execute(header) ? "" : "'t", header->program_entry_position);
 
 			uint32_t pheader_loc = header->program_header_table_position;
 			uint32_t pheader_size = header->program_header_table_entry_size;
@@ -295,7 +295,14 @@ void Shell::command_eval(char *cmd, char *args){
 			delete header;
 		}
 	}else if(strcmp(cmd, "exec")) {
-		ELF::load_and_execute(args);
+		ResultRet<Process *> p = Process::create_user(args);
+		if(p.is_error()) {
+			printf("Failed to create process: %d.\n", p.code());
+			return;
+		}
+		TaskManager::add_process(p.value());
+		pid_t pid = p.value()->pid();
+		while(TaskManager::process_for_pid(pid));
 	}else if(strcmp(cmd, "lspci")){
 		PCI::enumerate_devices([](PCI::Address address, PCI::ID id, void* dataPtr) {
 			uint8_t clss = PCI::read_byte(address, PCI_CLASS);

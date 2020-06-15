@@ -64,5 +64,6 @@ start_hh:
 
 section .bss
 align 32
+[global stack]
 stack:
     resb 0x4000      ; reserve 16k stack on a uint64_t boundary

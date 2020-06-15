@@ -69,7 +69,8 @@ namespace Paging {
 		}
 	}
 
-	void *PageDirectory::k_alloc_pages(size_t pages) {
+	void *PageDirectory::k_alloc_pages(size_t memsize) {
+		size_t pages = (memsize + PAGE_SIZE - 1) / PAGE_SIZE;
 		//First, find a block of $pages contiguous virtual pages in the kernel space
 		auto vpage = kernel_vmem_bitmap.find_pages(pages, 0) + 0xC0000;
 		if (vpage == -1) {
@@ -90,7 +91,8 @@ namespace Paging {
 		return retptr;
 	}
 
-	void PageDirectory::k_free_pages(void *ptr, size_t num_pages) {
+	void PageDirectory::k_free_pages(void *ptr, size_t memsize) {
+		size_t num_pages = (memsize + PAGE_SIZE - 1) / PAGE_SIZE;
 		for (auto i = 0; i < num_pages; i++) {
 			pmem_bitmap().set_page_free(kernel_page_directory.get_physaddr((size_t) ptr + PAGE_SIZE * i) / PAGE_SIZE);
 		}
@@ -118,12 +120,18 @@ namespace Paging {
 
 
 	PageDirectory::PageDirectory() {
-		if(!_entries) _entries = (Entry*)k_alloc_pages(1);
+		_entries = (Entry*) k_alloc_pages(PAGE_SIZE);
+		_page_tables_table = (PageTable*) k_alloc_pages(PAGE_SIZE);
 		update_kernel_entries();
 	}
 
 	PageDirectory::~PageDirectory() {
-		k_free_pages(_entries, 1);
+		k_free_pages(_entries, PAGE_SIZE);
+		k_free_pages(_page_tables_table, PAGE_SIZE);
+		//TODO: Figure out a better way to do this
+		for(auto i = 0; i < 0x100000; i++) {
+			if(_personal_pmem_bitmap.is_page_used(i)) pmem_bitmap().set_page_free(i);
+		}
 	}
 
 	PageDirectory::Entry *PageDirectory::entries() {
@@ -203,7 +211,7 @@ namespace Paging {
 			size_t table_index = page % 1024;
 			size_t page_paddr = (_page_tables[directory_index])->entries()[table_index].data.get_address();
 			return page_paddr + (virtaddr % PAGE_SIZE);
-		} else { //Kernel space
+		} else if(virtaddr < PAGETABLES_VIRTADDR){ //Kernel space
 			size_t page = (virtaddr - HIGHER_HALF) / PAGE_SIZE;
 			size_t directory_index = (page / 1024) % 1024;
 			if (!kernel_vmem_bitmap.is_page_used(page)) return 0;
@@ -211,6 +219,8 @@ namespace Paging {
 			size_t table_index = page % 1024;
 			size_t page_paddr = (kernel_page_tables[directory_index])[table_index].data.get_address();
 			return page_paddr + (virtaddr % PAGE_SIZE);
+		} else { //Program pagetables table
+			return _page_tables_physaddr[(virtaddr - PAGETABLES_VIRTADDR) / PAGE_SIZE] + (virtaddr % PAGE_SIZE);
 		}
 
 	}
@@ -225,6 +235,8 @@ namespace Paging {
 
 		for (auto i = 0; i < num_pages; i++) {
 			size_t phys_page = pmem_bitmap().allocate_pages(1, 0);
+			_personal_pmem_bitmap.set_page_used(phys_page);
+
 			if (!phys_page)
 				PANIC("NO_MEM", "There's no more physical memory left.", true);
 
@@ -237,10 +249,11 @@ namespace Paging {
 	PageTable *PageDirectory::alloc_page_table(size_t tables_index) {
 		//Allocate a physical memory page to store this page table
 		size_t page = pmem_bitmap().allocate_pages(1, 0);
+		_personal_pmem_bitmap.set_page_used(page);
 		if (page == -1) PANIC("KRNL_FAILED_ALLOC_PAGETABLE", "There are no more pages available.", true);
 
 		//Find the entry in the page tables table that will point to the page storing this page table and set it up
-		PageTable::Entry *tables_table = &_page_tables_table[tables_index];
+		PageTable::Entry *tables_table = &_page_tables_table->entries()[tables_index];
 		tables_table->data.set_address(page * PAGE_SIZE);
 		tables_table->data.present = true;
 		tables_table->data.read_write = true;
@@ -257,10 +270,11 @@ namespace Paging {
 	}
 
 	void PageDirectory::dealloc_page_table(size_t tables_index) {
-		size_t page = _page_tables_table[tables_index].data.get_address() / PAGE_SIZE;
-		_page_tables_table[tables_index].value = 0;
+		size_t page = _page_tables_table->entries()[tables_index].data.get_address() / PAGE_SIZE;
+		_page_tables_table->entries()[tables_index].value = 0;
 		_page_tables_physaddr[tables_index] = 0;
 		pmem_bitmap().set_page_free(page);
+		_personal_pmem_bitmap.set_page_free(page);
 		_entries[tables_index].value = 0;
 	}
 
@@ -274,7 +288,7 @@ namespace Paging {
 
 		_entries[1023].data.present = true;
 		_entries[1023].data.read_write = true;
-		_entries[1023].data.set_address((size_t)_page_tables_table.entries() - HIGHER_HALF);
+		_entries[1023].data.set_address(get_physaddr((size_t)_page_tables_table));
 	}
 
 	void PageDirectory::set_entries(Entry* entries) {
