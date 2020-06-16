@@ -276,7 +276,12 @@ void Shell::command_eval(char *cmd, char *args){
 		IDE::PATAChannel channel = IDE::find_pata_channel(ATA_PRIMARY);
 		printf("%x:%x.%x Int %d\n", channel.address.bus, channel.address.slot, channel.address.function, PCI::read_byte(channel.address, PCI_INTERRUPT_LINE));
 	}else{
-		ResultRet<Process *> p = Process::create_user(cmd);
+		DC::string cmds = cmd;
+		ResultRet<Process *> p(0);
+		if(cmds.find("/") != -1)
+			p = Process::create_user(cmd);
+		else
+			p = Process::create_user(DC::string("/bin/") + cmds);
 		if(p.is_error()) {
 			if(p.code() == -ENOENT) printf("Could not find command '%s'.\n", cmd);
 			else printf("Error creating process: %d\n", p.code());

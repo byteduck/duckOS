@@ -42,7 +42,7 @@ namespace DC {
 			if(_front == _back) {
 				_front = -1;
 				_back = -1;
-			} if(_back == 0) {
+			} else if(_back == 0) {
 				_back = _capacity - 1;
 			} else _back--;
 			_size--;
