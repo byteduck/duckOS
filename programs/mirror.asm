@@ -1,7 +1,7 @@
 [bits 32]
 [global _start]
 
-; A simple program that prompts you to type a character and then repeats the character back to you.
+; A simple program that prompts you to type something and then repeats it back to you.
 
 section .text
 
@@ -11,27 +11,30 @@ print_prompt:
     mov eax, 4 ;SYS_WRITE
     mov ebx, 1 ;STDOUT
     mov ecx, prompt
-    mov edx, 18
+    mov edx, 16
     int 0x80
 
 wait_for_input:
     mov eax, 3 ;SYS_READ
     mov ebx, 0 ;STDIN
     mov ecx, buf
-    mov edx, 1
+    mov edx, 255
     int 0x80
 
     cmp eax, 0
     je wait_for_input
+    mov [num_read], eax
 
 print_input:
-    mov al, [buf]
-    mov [response + 12], al
-
     mov eax, 4 ;SYS_WRITE
     mov ebx, 1 ;STDOUT
     mov ecx, response
-    mov edx, 14
+    mov edx, 11
+    int 0x80
+
+    mov eax, 4 ;SYS_WRITE
+    mov ecx, buf
+    mov edx, [num_read]
     int 0x80
 
 _exit:
@@ -41,8 +44,10 @@ _exit:
 section .data
 
 prompt:
-    db `Type a character: `
+    db `Type something: `
 response:
-    db `\nYou typed:  \n`
+    db `You typed: `
 buf:
-    db 0
+    resb 255
+num_read:
+    dd 0

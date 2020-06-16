@@ -19,7 +19,7 @@ ssize_t KeyboardDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer,
 	while(ret < count) {
 		if(_event_buffer.empty()) break;
 		if((count - ret) < sizeof(KeyEvent)) break;
-		auto evt =_event_buffer.pop();
+		auto evt = _event_buffer.pop_front();
 		memcpy(buffer, &evt, sizeof(KeyEvent));
 		ret += sizeof(KeyEvent);
 		buffer += sizeof(KeyEvent);

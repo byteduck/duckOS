@@ -14,9 +14,11 @@ public:
 	TTYDevice(size_t id, const DC::string& name, unsigned major, unsigned minor);
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
+
 	void set_active();
 	bool active();
 
+	bool buffered = true;
 protected:
 	static void register_tty(size_t id, TTYDevice* device);
 	static void set_current_tty(size_t tty);
@@ -28,6 +30,7 @@ private:
 	void handle_key(KeyEvent) override;
 
 	DC::circular_queue<uint8_t> _input_buffer;
+	DC::circular_queue<uint8_t> _buffered_input_buffer;
 	DC::string _name;
 	size_t _id;
 	bool _active = false;

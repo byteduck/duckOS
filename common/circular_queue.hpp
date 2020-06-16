@@ -27,12 +27,24 @@ namespace DC {
 			return true;
 		}
 
-		T& pop() {
+		T& pop_front() {
 			T& ret = _storage[_front];
 			if(_front == _back) {
 				_front = -1;
 				_back = -1;
 			} else _front = (++_front) % _capacity;
+			_size--;
+			return ret;
+		}
+
+		T& pop_back() {
+			T& ret = _storage[_back];
+			if(_front == _back) {
+				_front = -1;
+				_back = -1;
+			} if(_back == 0) {
+				_back = _capacity - 1;
+			} else _back--;
 			_size--;
 			return ret;
 		}

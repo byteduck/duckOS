@@ -85,6 +85,7 @@ DC::shared_ptr<LinkedInode> VFS::root_ref() {
 
 ResultRet<DC::shared_ptr<FileDescriptor>>
 VFS::open(DC::string path, int options, int mode, DC::shared_ptr<LinkedInode> base) {
+	if(path.length() == 0) return -ENOENT;
 	if((options & O_DIRECTORY) && (options & O_CREAT)) {
 		return -EINVAL;
 	}
