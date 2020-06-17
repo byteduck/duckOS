@@ -50,7 +50,6 @@ SET(KERNEL_SRCS
         filesystem/InodeFile.cpp
         filesystem/InodeMetadata.cpp
         filesystem/FileBasedFilesystem.cpp
-        filesystem/DirectoryEntry.cpp
         icxxabi.cpp
         device/TTYDevice.cpp
         device/CharacterDevice.cpp
@@ -78,3 +77,5 @@ SET_TARGET_PROPERTIES(duckk32 PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
 SET(CMAKE_CXX_LINK_EXECUTABLE "ld <OBJECTS> -T ${LINKER_SCRIPT} -melf_i386 -Map kernel.map -o <TARGET> <LINK_LIBRARIES>")
 
 TARGET_INCLUDE_DIRECTORIES(duckk32 PRIVATE ${CMAKE_SOURCE_DIR})
+
+INSTALL(TARGETS duckk32 RUNTIME DESTINATION boot)

@@ -1,3 +1,22 @@
+/*
+    This file is part of duckOS.
+
+    duckOS is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    duckOS is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
+
+    Copyright (c) Byteduck 2016-$YEAR. All rights reserved.
+*/
+
 #include <kernel/memory/kliballoc.h>
 #include <kernel/filesystem/VFS.h>
 #include <common/defines.h>
@@ -63,11 +82,7 @@ bool Process::load_elf(const DC::shared_ptr<FileDescriptor> &fd, ELF::elf32_head
 				return false;
 			}
 			fd->seek(pheader->p_offset, SEEK_SET);
-			auto* buf = new uint8_t[pheader->p_filesz];
-			fd->read(buf, pheader->p_filesz);
-			auto* vmem = (uint8_t*)pheader->p_vaddr;
-			memcpy(vmem, buf, pheader->p_filesz);
-			delete[] buf;
+			fd->read((uint8_t*)pheader->p_vaddr, pheader->p_filesz);
 		}
 	}
 
@@ -112,6 +127,10 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name
 	uint32_t *stack = (uint32_t*) (stack_base + PROCESS_STACK_SIZE);
 
 	//pushing Registers on to the stack
+	*--stack = 0;
+	*--stack = 0;
+	*--stack = 0;
+	*--stack = 0;
 	*--stack = 0x202; // eflags
 	*--stack = 0x8; // cs
 	*--stack = entry_point; // eip
@@ -195,7 +214,7 @@ ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 	if(fd == 0) { //stdin
 		return stdin->read(buf, count);
 	} else if(fd == 1) { //stdout
-		return -EINVAL;
+		return stdout->read(buf, count);
 	}
 	return -EBADF;
 }
@@ -203,7 +222,7 @@ ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
 	if(fd == 0) { //stdin
-		return -EINVAL;
+		return stdin->write(buf, count);
 	} else if(fd == 1) { //stdout
 		return stdout->write(buf, count);
 	}

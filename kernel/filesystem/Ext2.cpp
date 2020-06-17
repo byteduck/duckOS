@@ -1,3 +1,22 @@
+/*
+    This file is part of duckOS.
+
+    duckOS is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    duckOS is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
+
+    Copyright (c) Byteduck 2016-$YEAR. All rights reserved.
+*/
+
 #include <kernel/kstddef.h>
 #include <kernel/memory/kliballoc.h>
 #include <kernel/kstdio.h>
@@ -38,31 +57,6 @@ void Ext2Filesystem::read_superblock(ext2_superblock *sb){
 		sb->first_inode = 11;
 		sb->inode_size = 128;
 	}
-}
-
-void Ext2Filesystem::read_slink(uint32_t block, uint8_t *buf){
-	uint8_t *bbuf = static_cast<uint8_t *>(kmalloc(block_size()));
-	read_blocks(block, 1, bbuf);
-	uint32_t *blocks = (uint32_t *)bbuf;
-	uint32_t numblocks = block_size()/sizeof(uint32_t);
-	for(int i = 0; i < numblocks; i++){
-		if(blocks[i] == 0) break;
-		read_blocks(blocks[i], 1, buf+i*block_size());
-	}
-	kfree(bbuf);
-}
-
-void Ext2Filesystem::read_dlink(uint32_t block, uint8_t *buf){
-	uint8_t *bbuf = static_cast<uint8_t *>(kmalloc(block_size()));
-	read_blocks(block, 1, bbuf);
-	uint32_t *blocks = (uint32_t *)bbuf;
-	uint32_t numblocks = block_size()/sizeof(uint32_t);
-	uint32_t singsize = numblocks*block_size();
-	for(int i = 0; i < numblocks; i++){
-		if(blocks[i] == 0) break;
-		read_blocks(blocks[i], 1, buf+i*singsize);
-	}
-	kfree(bbuf);
 }
 
 Inode* Ext2Filesystem::get_inode_rawptr(InodeID id) {
@@ -175,7 +169,7 @@ ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 		} else if(i == last_block) {
 			memcpy(buf + (i - first_block) * fs.block_size(), block_buf, last_block_end);
 		} else {
-			memcpy(buf + last_block * fs.block_size(), block_buf, fs.block_size());
+			memcpy(buf + (i - first_block) * fs.block_size(), block_buf, fs.block_size());
 		}
 	}
 	delete[] block_buf;

@@ -23,7 +23,7 @@
 - Arch: `pacman -Syu base-devel cmake gmp libmpc mpfr base-devel qemu qemu-arch-extra`
 
 ## Building the toolchain
-1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site)
+1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site and [duckOS-newlib](https://github.com/byteduck/duckOS-newlib))
 2. Make a cup of coffee or tea and wait. It will take a while to compile.
 
 ## Configuring cmake
@@ -33,7 +33,7 @@
 
 ## Building and running duckOS
 1. Either run the following commands as root,  or use `sudo su` to open a root shell in the build directory you made earlier.
-2. In your build directory, run `make duckk32` to build the kernel.
+2. In your build directory, run `make` and then `make install` to build the kernel & programs.
 3. Run `make image` to make the root filesystem image.
 3. Run `make qemu-image` to run qemu with the image you just made.
 5. Enjoy!

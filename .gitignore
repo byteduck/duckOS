@@ -90,4 +90,4 @@ cmake-build-*/
 
 toolchain/tools
 toolchain/build
-base/bin
+toolchain/sysroot
