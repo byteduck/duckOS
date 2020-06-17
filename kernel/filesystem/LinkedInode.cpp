@@ -14,7 +14,7 @@
     You should have received a copy of the GNU General Public License
     along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
 
-    Copyright (c) Byteduck 2016-$YEAR. All rights reserved.
+    Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
 #include <kernel/kstdio.h>
