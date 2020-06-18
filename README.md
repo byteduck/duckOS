@@ -24,9 +24,6 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
 
-### Child repositories
-- Newlib-based C standard library: [duckOS-newlib](https://github.com/byteduck/duckOS-newlib)
-
 ### Credits
 - [blanham's mirror of liballoc 1.1](https://github.com/blanham/liballoc) for the kernel heap allocation implementation (it's open domain, so if you want to use it, I highly recommend it)
 - [SRombaut's implementation of shared_ptr](https://github.com/SRombauts/shared_ptr/)

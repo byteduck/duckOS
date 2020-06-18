@@ -23,8 +23,15 @@
 - Arch: `pacman -Syu base-devel cmake gmp libmpc mpfr base-devel qemu qemu-arch-extra`
 
 ## Building the toolchain
-1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site and [duckOS-newlib](https://github.com/byteduck/duckOS-newlib))
+1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site and newlib from the newlib ftp site.)
 2. Make a cup of coffee or tea and wait. It will take a while to compile.
+
+### Editing the toolchain
+If you'd like to edit the toolchain, you can run the `edit-toolchain.sh` script to download patch binutils/gcc/newlib and setup a git repository for each one. Then, use the `gen-patches.sh` script to generate patch files for each one.
+
+**DO NOT** git commit in the repositories created by `edit-toolchain` or else `gen-patches` won't work properly.
+
+To build something from the `edit` directory, pass the `edited-[thing]` to the `build-toolchain.sh` script. (ex: `build-toolchain.sh edited-newlib` to build newlib from the edit directory)
 
 ## Configuring cmake
 1. Make sure you've built the toolchain first.
