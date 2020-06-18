@@ -58,10 +58,6 @@ start_hh:
 	int 0x80
 	jmp $
 
-;%include 'asm/vesa.asm' I still gotta figure out how to deal with this in 32-bit mode
-%include 'asm/syscall.s'
-%include 'asm/int.s'
-
 section .bss
 align 32
 [global stack]

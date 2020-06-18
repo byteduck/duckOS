@@ -22,6 +22,12 @@
 #include <kernel/memory/kliballoc.h>
 #include <common/cstring.h>
 
+void io_wait() {
+	asm volatile ( "jmp 1f\n\t"
+				   "1:jmp 2f\n\t"
+				   "2:" );
+}
+
 void outb(uint16_t port, uint8_t value){
     asm volatile ("outb %1, %0" : : "d" (port), "a" (value));
 }

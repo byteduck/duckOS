@@ -28,7 +28,7 @@ namespace DC {
 	template<typename T>
 	class circular_queue {
 	public:
-		circular_queue(size_t size): _storage(new T[size]), _capacity(size) {
+		circular_queue(size_t size): _storage(new T[size]), _capacity(size), _size(0) {
 		}
 
 		~circular_queue() {
@@ -86,7 +86,7 @@ namespace DC {
 	private:
 		T* _storage;
 		size_t _capacity;
-		size_t _size;
+		size_t _size = 0;
 		size_t _front = -1;
 		size_t _back = -1;
 	};

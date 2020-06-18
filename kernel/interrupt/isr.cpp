@@ -60,7 +60,7 @@ void isr_init(){
 }
 
 bool fpanic(char *a, char *b, uint32_t sig){
-	if(TaskManager::current_process()->pid() == 1){
+	if(!TaskManager::enabled() || TaskManager::current_process()->pid() == 1){
 		cli();
 		PANIC(a,b,false);
 		return true;

@@ -14,12 +14,12 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
   
 ### Programs
 - mirror (/bin/mirror): A demo program that prompts you to type something and then prints it back to you.
+- dummy (/bin/dummy): A demo program that does nothing and exits.
 
 ### Known Issues / Limitations
-- It kinda sucks
 - Only works with ext2 filesystems with a block size of 1024  (I think)
 - Uses BIOS interrupts (ATA PIO) to read/write to disk instead of AHCI/IDE (This is pretty slow)
-- Sometimes, randomly, executables will start segfaulting when they exit
+- Since dynamic memory allocation (brk/sbrk) isn't yet implemented in my newlib implementation, there are many spurious crashes when running programs
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.

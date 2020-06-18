@@ -52,6 +52,6 @@ void load_gdt(){
 	TaskManager::tss.esp0 = (size_t)stack;
 
 
-	asm volatile("lgdt %0": : "m"(gp));
+	gdt_flush();
 	//asm volatile("ltr %0": : "r"((uint16_t)0x28));
 }

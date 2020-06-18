@@ -1,1 +1,2 @@
 ADD_SUBDIRECTORY(mirror/)
+ADD_SUBDIRECTORY(dummy/)

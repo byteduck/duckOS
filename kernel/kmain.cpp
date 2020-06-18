@@ -128,5 +128,5 @@ void interrupts_init(){
 	idt_set_gate(0x81, (unsigned)TaskManager::preempt, 0x08, 0x8E); //for preempting without PIT
 	pit_init(200);
 	irq_init();
-	asm volatile("sti");
+	sti();
 }

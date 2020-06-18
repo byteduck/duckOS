@@ -77,12 +77,17 @@ bool Process::load_elf(const DC::shared_ptr<FileDescriptor> &fd, ELF::elf32_head
 		auto pheader = &program_headers[i];
 		if(pheader->p_type == ELF_PT_LOAD) {
 			size_t loadloc_pagealigned = (pheader->p_vaddr/PAGE_SIZE) * PAGE_SIZE;
-			if(!page_directory->allocate_pages(loadloc_pagealigned, pheader->p_memsz)) {
+			if(!page_directory->allocate_pages(loadloc_pagealigned, pheader->p_memsz, pheader->p_flags & ELF_PF_W)) {
 				delete[] program_headers;
 				return false;
 			}
 			fd->seek(pheader->p_offset, SEEK_SET);
 			fd->read((uint8_t*)pheader->p_vaddr, pheader->p_filesz);
+			//Zero out rest of section
+			if(pheader->p_filesz < pheader->p_memsz) {
+				auto* zero_start = (uint8_t*)(pheader->p_vaddr + pheader->p_filesz);
+				memset(zero_start, 0, (int)(pheader->p_memsz - pheader->p_filesz));
+			}
 		}
 	}
 

@@ -151,7 +151,7 @@ namespace Paging {
 		 * @param memsize The amount of memory needed (NOT pages)
 		 * @return Whether or not the allocation was successful.
 		 */
-		bool allocate_pages(size_t vaddr, size_t memsize);
+		bool allocate_pages(size_t vaddr, size_t memsize, bool read_write = true);
 
 		/**
 		 * Gets the physical address for virtaddr.

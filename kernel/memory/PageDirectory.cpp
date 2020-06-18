@@ -244,7 +244,7 @@ namespace Paging {
 
 	}
 
-	bool PageDirectory::allocate_pages(size_t vaddr, size_t memsize) {
+	bool PageDirectory::allocate_pages(size_t vaddr, size_t memsize, bool read_write) {
 		ASSERT(vaddr % PAGE_SIZE == 0 && vaddr < HIGHER_HALF);
 		auto start_page = vaddr / PAGE_SIZE;
 		auto num_pages = (memsize + PAGE_SIZE - 1) / PAGE_SIZE;
@@ -259,7 +259,7 @@ namespace Paging {
 			if (!phys_page)
 				PANIC("NO_MEM", "There's no more physical memory left.", true);
 
-			map_page(phys_page * PAGE_SIZE, vaddr + i * PAGE_SIZE, true);
+			map_page(phys_page * PAGE_SIZE, vaddr + i * PAGE_SIZE, read_write);
 		}
 
 		return true;
@@ -285,6 +285,7 @@ namespace Paging {
 		direntry->data.set_address(page * PAGE_SIZE);
 		direntry->data.present = true;
 		direntry->data.read_write = true;
+
 		return table;
 	}
 

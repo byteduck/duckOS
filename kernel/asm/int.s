@@ -139,17 +139,18 @@ global irq15
 		jmp irq_common
 %endmacro
 
-irq0:
+irq0
 	push eax
 	mov eax, 0x20
 	out 0x20, al ; bytes only plz
 	pop eax
 	cmp byte [tasking_enabled], 0
-	jne preempt_do
+    jne preempt_do
 	iret
 preempt_do:
 	call preempt
 	iret
+
 irq 1
 irq 2
 irq 3

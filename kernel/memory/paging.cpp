@@ -81,9 +81,6 @@ namespace Paging {
 
 	void page_fault_handler(struct Registers *r) {
 		cli();
-		//uint32_t err_pos;
-		//asm("mov %0, %%cr2" : "=r" (err_pos));
-		bool other = false;
 		switch (r->err_code) {
 			case 0:
 				PANIC("KRNL_READ_NONPAGED_AREA", "", false);
@@ -111,11 +108,12 @@ namespace Paging {
 				break;
 			default:
 				PANIC("UNKNOWN_PAGE_FAULT", "", false);
-				other = true;
 				break;
 		}
 
-		//printf("At 0x%X\n\n",err_pos);
+		uint32_t err_pos;
+		asm("mov %%cr2, %0" : "=r" (err_pos));
+		printf("Virtual address: 0x%X\n\n", err_pos);
 		print_regs(r);
 		while (true);
 	}
