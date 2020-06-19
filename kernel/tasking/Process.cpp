@@ -88,6 +88,9 @@ bool Process::load_elf(const DC::shared_ptr<FileDescriptor> &fd, ELF::elf32_head
 				auto* zero_start = (uint8_t*)(pheader->p_vaddr + pheader->p_filesz);
 				memset(zero_start, 0, (int)(pheader->p_memsz - pheader->p_filesz));
 			}
+
+			if(current_brk < pheader->p_vaddr + pheader->p_memsz)
+				current_brk = pheader->p_vaddr + pheader->p_memsz;
 		}
 	}
 
@@ -232,4 +235,22 @@ ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 		return stdout->write(buf, count);
 	}
 	return -EBADF;
+}
+
+size_t Process::sys_sbrk(int amount) {
+	size_t current_brk_page = current_brk / PAGE_SIZE;
+	if(amount > 0) {
+		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
+		if(new_brk_page != current_brk_page) {
+			page_directory->allocate_pages((current_brk_page + 1) * PAGE_SIZE, amount - (current_brk % PAGE_SIZE), true);
+		}
+	} else if (amount < 0) {
+		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
+		if(new_brk_page != current_brk_page) {
+			page_directory->unmap_pages(new_brk_page, current_brk_page - new_brk_page);
+		}
+	}
+	size_t prev_brk = current_brk;
+	current_brk += amount;
+	return prev_brk;
 }

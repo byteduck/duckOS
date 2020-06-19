@@ -11483,10 +11483,10 @@ index 0000000..89b1d06
 +}
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..e83831b
+index 0000000..58ef4fc
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,104 @@
+@@ -0,0 +1,106 @@
 +#include <sys/stat.h>
 +#include <sys/types.h>
 +#include <sys/fcntl.h>
@@ -11513,10 +11513,10 @@ index 0000000..e83831b
 +}
 +
 +int fork() {
-+        int ret = 0;
++	int ret = 0;
 +	asm volatile("int $0x80" :: "a"(SYS_FORK));
-+        asm volatile("mov %%eax, %0" : "=r"(ret));
-+        return ret;
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	return ret;
 +}
 +
 +int fstat(int file, struct stat *st) {
@@ -11550,13 +11550,15 @@ index 0000000..e83831b
 +
 +int read(int file, char *ptr, int len) {
 +	int ret = 0;
-+        asm volatile("int $0x80" :: "a"(SYS_READ), "b"(file), "c"(ptr), "d"(len));
-+        asm volatile("mov %%eax, %0" : "=r"(ret));
-+        return ret;
++	asm volatile("int $0x80" :: "a"(SYS_READ), "b"(file), "c"(ptr), "d"(len));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	return ret;
 +}
 +
 +caddr_t sbrk(int incr) {
-+	return 0; //TODO
++	asm volatile("int $0x80" :: "a"(SYS_SBRK), "b"(incr));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	return ret; //TODO
 +};
 +
 +int stat(const char *file, struct stat *st) {
@@ -11577,9 +11579,9 @@ index 0000000..e83831b
 +
 +int write(int file, char *ptr, int len) {
 +	int ret = 0;
-+        asm volatile("int $0x80" :: "a"(SYS_WRITE), "b"(file), "c"(ptr), "d"(len));
-+        asm volatile("mov %%eax, %0" : "=r"(ret));
-+        return ret;
++	asm volatile("int $0x80" :: "a"(SYS_WRITE), "b"(file), "c"(ptr), "d"(len));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	return ret;
 +}
 +
 +int gettimeofday(struct timeval *p, void *tz) {
@@ -11593,11 +11595,12 @@ index 0000000..e83831b
 +}
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..7132763
+index 0000000..2dbc9df
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,4 @@
+@@ -0,0 +1,5 @@
 +#define SYS_EXIT 1
 +#define SYS_FORK 2
 +#define SYS_READ 3
 +#define SYS_WRITE 4
++#define SYS_SBRK 5
