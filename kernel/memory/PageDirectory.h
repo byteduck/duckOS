@@ -183,6 +183,13 @@ namespace Paging {
 		 */
 		void set_entries(Entry* entries);
 
+		/**
+		 * Makes this page directory an identical copy of another, but with different physical memory.
+		 * The page directory we're copying to (this) MUST be the loaded page directory.
+		 * @param directory the page directory to fork from.
+		 */
+		void fork_from(PageDirectory *directory);
+
 	private:
 		//The page directory entries for this page directory.
 		Entry* _entries = nullptr;

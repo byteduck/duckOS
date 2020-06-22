@@ -45,6 +45,9 @@ namespace TaskManager {
 	pid_t get_new_pid();
 	Process *process_for_pid(pid_t pid);
 	extern "C" void preempt();
+	extern "C" void preempt_init_asm(unsigned int new_esp);
+	extern "C" void preempt_asm(unsigned int *old_esp, unsigned int *new_esp, uint32_t new_cr3);
+	extern "C" void iret(void);
 	void notify(uint32_t sig);
 	void kill(Process *p);
 };

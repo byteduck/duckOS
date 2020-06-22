@@ -148,8 +148,51 @@ irq0
     jne preempt_do
 	iret
 preempt_do:
+    push eax
+    push ebx
+    push ecx
+    push edx
 	call preempt
+	pop edx
+	pop ecx
+	pop ebx
+	pop eax
 	iret
+
+[global preempt_init_asm]
+preempt_init_asm: ;Pretty much the same as preempt_asm, but without storing the state of the current process
+    mov eax, [esp+4]
+    mov esp, eax
+    pop gs
+    pop fs
+    pop esi
+    pop edi
+    pop ebp
+    iret
+
+[global preempt_asm]
+preempt_asm:
+    mov eax, [esp+4] ;old_esp
+    mov ecx, [esp+8] ;new_esp
+    mov edx, [esp+12] ;new_cr3
+    push ebp
+    push edi
+    push esi
+    push fs
+    push gs
+    mov [eax], esp
+    mov cr3, edx
+    mov esp, [ecx]
+    pop gs
+    pop fs
+    pop esi
+    pop edi
+    pop ebp
+    ret
+
+[global iret]
+iret:
+    iret
 
 irq 1
 irq 2

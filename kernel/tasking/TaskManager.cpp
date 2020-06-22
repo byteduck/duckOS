@@ -78,9 +78,7 @@ void TaskManager::init(){
 	kernel_proc->next = kernel_proc;
 	kernel_proc->prev = kernel_proc;
 	current_proc = kernel_proc;
-	kernel_proc->init();
-	//pop all of the Registers off of the stack and get started
-	PANIC("Failed to init tasking", "Something went wrong..", true);
+	preempt_init_asm(current_proc->registers.esp);
 }
 
 Process* TaskManager::current_process(){
@@ -114,36 +112,8 @@ void TaskManager::kill(Process* p){
 }
 
 void TaskManager::preempt(){
-	//push current_proc process' Registers on to its stack
-	asm volatile("push %eax");
-	asm volatile("push %ebx");
-	asm volatile("push %ecx");
-	asm volatile("push %edx");
-	asm volatile("push %esi");
-	asm volatile("push %edi");
-	asm volatile("push %ebp");
-	asm volatile("push %ds");
-	asm volatile("push %es");
-	asm volatile("push %fs");
-	asm volatile("push %gs");
-	asm volatile("mov %%esp, %%eax":"=a"(current_proc->registers.esp));
-	//pop all of next process' Registers off of its stack
-	current_proc = current_proc->next;
-	asm volatile("mov %%eax, %%esp": :"a"(current_proc->registers.esp));
-	asm volatile("movl %0, %%cr3": : "r"(current_proc->page_directory_loc)); //Load page directory for process
-	if(!current_proc->inited){
-		current_proc->init();
-		return;
-	}
-	asm volatile("pop %gs");
-	asm volatile("pop %fs");
-	asm volatile("pop %es");
-	asm volatile("pop %ds");
-	asm volatile("pop %ebp");
-	asm volatile("pop %edi");
-	asm volatile("pop %esi");
-	asm volatile("pop %edx");
-	asm volatile("pop %ecx");
-	asm volatile("pop %ebx");
-	asm volatile("pop %eax");
+	auto old_proc = current_proc;
+	current_proc = old_proc->next;
+	if(current_proc->ring == 3) tss.esp0 = (uint32_t) current_proc->kernel_stack();
+	preempt_asm(&old_proc->registers.esp, &current_proc->registers.esp, current_proc->page_directory_loc);
 }

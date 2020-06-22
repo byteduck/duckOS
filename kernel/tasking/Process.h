@@ -40,23 +40,25 @@ public:
 	DC::string name();
 	void notify(uint32_t sig);
 	void kill();
-	void init();
 
 	uint32_t state = 0;
 	Paging::PageDirectory* page_directory;
-	bool inited = false;
 	Process *next = nullptr, *prev = nullptr;
 	size_t page_directory_loc;
 	Registers registers = {};
 	bool kernel = false;
+	uint8_t ring;
 
 	DC::shared_ptr<FileDescriptor> stdin;
 	DC::shared_ptr<FileDescriptor> stdout;
+
+	void* kernel_stack();
 
 	//Syscalls
 	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
 	ssize_t sys_write(int fd, uint8_t* buf, size_t count);
 	size_t sys_sbrk(int i);
+	pid_t sys_fork(Registers& regs);
 
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel = false);
@@ -66,6 +68,8 @@ private:
 	DC::string _name = "";
 	pid_t _pid = 0;
 	size_t current_brk = 0;
+	void* _kernel_stack_base;
+	size_t _kernel_stack_size;
 };
 
 

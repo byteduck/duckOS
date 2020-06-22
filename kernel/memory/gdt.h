@@ -22,12 +22,35 @@
 
 #define GDT_ENTRIES 6
 
+union GDTEntryAccessByte {
+	uint8_t value;
+	struct bits {
+		bool accessed: 1;
+		bool read_write: 1;
+		bool direction: 1;
+		bool executable: 1;
+		bool type: 1;
+		uint8_t ring: 2;
+		bool present: 1;
+	} bits;
+};
+
+union GDTFlagsByte {
+	uint8_t value;
+	struct bits {
+		uint8_t limit_high: 4;
+		uint8_t zero: 2;
+		bool size: 1;
+		bool granularity: 1;
+	} bits;
+};
+
 typedef struct GDTEntry{
-    uint16_t limit;
+    uint16_t limit_low;
     uint16_t base_low;
     uint8_t base_middle;
-    uint8_t access;
-    uint8_t granularity;
+    GDTEntryAccessByte access;
+    GDTFlagsByte flags_and_limit;
     uint8_t base_high;
 } __attribute__((packed)) GDTEntry;
 
@@ -36,7 +59,8 @@ typedef struct GDTPointer{
     unsigned int base;
 } __attribute__((packed)) GDTPointer;
 
-void gdt_set_gate(uint32_t num, uint16_t limit, uint32_t base, uint8_t access, uint8_t gran);
+void gdt_set_gate(uint32_t num, uint32_t limit, uint32_t base, bool read_write, bool executable, bool type, uint8_t ring, bool present = true, bool accessed = false);
+void setup_tss();
 void load_gdt();
 extern "C" void gdt_flush();
 

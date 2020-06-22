@@ -58,6 +58,7 @@ int kmain(uint32_t mbootptr){
 }
 
 void shell_process(){
+	int i = 0;
 	Shell shell;
 	shell.shell();
 }
@@ -103,8 +104,8 @@ void kmain_late(){
 
 	printf("init: Done!\n");
 
-	TaskManager::add_process(Process::create_kernel("shell", shell_process));
-	while(TaskManager::process_for_pid(2));
+	pid_t shell_pid = TaskManager::add_process(Process::create_kernel("shell", shell_process));
+	while(TaskManager::process_for_pid(shell_pid));
 	printf("\n\nShell exited.\n\n");
 
 	while(1);
@@ -124,7 +125,7 @@ void parse_mboot(uint32_t addr){
 void interrupts_init(){
 	register_idt();
 	isr_init();
-	idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0x8E);
+	idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
 	idt_set_gate(0x81, (unsigned)TaskManager::preempt, 0x08, 0x8E); //for preempting without PIT
 	pit_init(200);
 	irq_init();

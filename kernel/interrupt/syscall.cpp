@@ -31,6 +31,8 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_EXIT:
 			TaskManager::current_process()->kill();
 			return 0;
+		case SYS_FORK:
+			return TaskManager::current_process()->sys_fork(regs);
 		case SYS_READ:
 			return TaskManager::current_process()->sys_read((int)arg1, (uint8_t*)arg2, (size_t)arg3);
 		case SYS_WRITE:

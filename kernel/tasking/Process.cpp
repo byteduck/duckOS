@@ -107,7 +107,8 @@ DC::string Process::name(){
 	return _name;
 }
 
-Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name(name), inited(false), _pid(TaskManager::get_new_pid()), state(PROCESS_ALIVE), kernel(kernel) {
+//TODO: Clean up this monstrosity
+Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name(name), _pid(TaskManager::get_new_pid()), state(PROCESS_ALIVE), kernel(kernel), ring(kernel ? 0 : 3) {
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
 		ttydesc->set_options(O_RDONLY | O_WRONLY);
@@ -115,6 +116,9 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name
 		stdin = ttydesc;
 		stdout = ttydesc;
 	}
+
+	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_STACK_SIZE);
+	_kernel_stack_size = PROCESS_STACK_SIZE;
 
 	size_t stack_base;
 	if(!kernel) {
@@ -128,57 +132,54 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name
 		stack_base = 0;
 	} else {
 		page_directory_loc = Paging::kernel_page_directory.entries_physaddr();
-		stack_base = (size_t) Paging::PageDirectory::k_alloc_pages(PROCESS_STACK_SIZE);
+		stack_base = (size_t) _kernel_stack_base;
 	}
 
 	registers.eip = entry_point;
-	uint32_t *stack = (uint32_t*) (stack_base + PROCESS_STACK_SIZE);
+
+	auto *stack = (uint32_t*) (stack_base + PROCESS_STACK_SIZE);
 
 	//pushing Registers on to the stack
+	*--stack = 0; //These first four values are placeholders for the argc, argv, and env that programs pop off the stack
 	*--stack = 0;
 	*--stack = 0;
 	*--stack = 0;
-	*--stack = 0;
-	*--stack = 0x202; // eflags
-	*--stack = 0x8; // cs
-	*--stack = entry_point; // eip
-	*--stack = 0; // eax
-	*--stack = 0; // ebx
-	*--stack = 0; // ecx;
-	*--stack = 0; //edx
-	*--stack = 0; //esi
-	*--stack = 0; //edi
-	*--stack = stack_base; //ebp
-	*--stack = 0x10; // ds
-	*--stack = 0x10; // fs
-	*--stack = 0x10; // es
-	*--stack = 0x10; // gs
 
+	//If this is a usermode process, push the correct ss and stack pointer for switching rings during iret
+	if(!kernel) {
+		auto cstack = (size_t) stack;
+		*--stack = 0x23;
+		*--stack = cstack;
+	}
+
+	//Push EFLAGS, CS, and EIP for iret
+	*--stack = 0x202; // eflags
+	*--stack = kernel ? 0x8 : 0x1B; // cs
+	*--stack = entry_point; // eip
+
+	//We push iret if the pid isn't 1 (the kernel process), because in the preempt_asm function, we return to preempt in
+	//the C code. However, when the process is first set up, the ret location isn't in the stack, so we push a function
+	//that calls iret.
+	if(_pid != 1) *--stack = (size_t) TaskManager::iret;
+
+	//Push everything that's popped off in preempt_asm
+	*--stack = stack_base; //ebp
+	*--stack = 0; //edi
+	*--stack = 0; //esi
+	if(kernel) {
+		*--stack = 0x10; // fs
+		*--stack = 0x10; // gs
+	} else {
+		*--stack = 0x23; // fs
+		*--stack = 0x23; // gs
+	}
+
+	//Set the ESP to the stack's location
 	registers.esp = (size_t) stack;
 }
 
 Process::~Process() {
 	if(page_directory) delete page_directory;
-}
-
-void Process::init() {
-	inited = true;
-
-	asm volatile("mov %0, %%esp" :: "r"(registers.esp));
-
-	asm volatile("pop %gs");
-	asm volatile("pop %fs");
-	asm volatile("pop %es");
-	asm volatile("pop %ds");
-	asm volatile("pop %ebp");
-	asm volatile("pop %edi");
-	asm volatile("pop %esi");
-	asm volatile("pop %edx");
-	asm volatile("pop %ecx");
-	asm volatile("pop %ebx");
-	asm volatile("pop %eax");
-
-	asm volatile("iret");
 }
 
 void Process::notify(uint32_t sig) {
@@ -253,4 +254,12 @@ size_t Process::sys_sbrk(int amount) {
 	size_t prev_brk = current_brk;
 	current_brk += amount;
 	return prev_brk;
+}
+
+pid_t Process::sys_fork(Registers& regs) {
+	return 0;
+}
+
+void *Process::kernel_stack() {
+	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
 }

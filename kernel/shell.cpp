@@ -51,6 +51,7 @@ void Shell::shell(){
 		"| Welcome to duckOS! |\n"
 		"O--------------------O\n"
 	);
+
 	auto tty_or_error = VFS::inst().open("/dev/tty0", O_RDONLY, 0, VFS::inst().root_ref());
 	if(tty_or_error.is_error()) {
 		printf("Could not open tty0: %d\n", tty_or_error.code());
@@ -294,10 +295,11 @@ void Shell::command_eval(char *cmd, char *args){
 	}else{
 		DC::string cmds = cmd;
 		ResultRet<Process *> p(0);
-		if(cmds.find("/") != -1)
+		if(cmds.find("/") != -1) {
 			p = Process::create_user(cmd);
-		else
+		} else {
 			p = Process::create_user(DC::string("/bin/") + cmds);
+		}
 		if(p.is_error()) {
 			if(p.code() == -ENOENT) printf("Could not find command '%s'.\n", cmd);
 			else printf("Error creating process: %d\n", p.code());
