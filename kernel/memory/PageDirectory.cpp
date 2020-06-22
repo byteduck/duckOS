@@ -39,7 +39,7 @@ namespace Paging {
 			kernel_entries[i].value = 0;
 			kernel_entries[i].data.present = true;
 			kernel_entries[i].data.read_write = true;
-			kernel_entries[i].data.user = true;
+			kernel_entries[i].data.user = false;
 			kernel_entries[i].data.set_address((size_t)&kernel_page_tables[i] - HIGHER_HALF);
 		}
 	}
@@ -64,7 +64,7 @@ namespace Paging {
 		PageTable::Entry *entry = &kernel_page_tables[directory_index].entries()[table_index];
 		entry->data.present = true;
 		entry->data.read_write = read_write;
-		entry->data.user = true;
+		entry->data.user = false;
 		entry->data.set_address(physaddr);
 	}
 

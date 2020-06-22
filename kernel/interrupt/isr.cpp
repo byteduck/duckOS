@@ -91,7 +91,6 @@ void fault_handler(struct Registers *r){
 			if(TaskManager::current_process() == nullptr || TaskManager::current_process()->pid() == 1) {
 				Paging::page_fault_handler(r);
 			} else {
-				Paging::page_fault_handler(r);
 				TaskManager::notify(SIGSEGV);
 			}
 			break;
