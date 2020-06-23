@@ -62,6 +62,7 @@ public:
 
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel = false);
+	Process(Process* to_fork, Registers& regs);
 
 	bool load_elf(const DC::shared_ptr<FileDescriptor>& fd, ELF::elf32_header* header);
 

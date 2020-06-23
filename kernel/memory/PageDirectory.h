@@ -88,17 +88,17 @@ namespace Paging {
 
 		/**
 		 * Allocates a number of contiguous pages in kernel vmem and returns a pointer to the first one.
-		 * @param pages The number of pages to allocate.
+		 * @param mem_size The number of pages to allocate.
 		 * @return A pointer to the first page allocated.
 		 */
-		static void* k_alloc_pages(size_t pages);
+		static void* k_alloc_pages(size_t mem_size);
 
 		/**
 		 * Frees num_pages pages allocated with k_alloc_pages.
 		 * @param ptr The pointer returned by k_alloc_pages to the start of the pages to be freed.
-		 * @param num_pages The number of pages to be freed.
+		 * @param memsize The size of the memory to be freed.
 		 */
-		static void k_free_pages(void* ptr, size_t num_pages);
+		static void k_free_pages(void* ptr, size_t memsize);
 
 
 
@@ -159,6 +159,11 @@ namespace Paging {
 		 * @return The physical address for virtaddr.
 		 */
 		size_t get_physaddr(size_t virtaddr);
+
+		/**
+		 * Calls get_physaddr(size_t virtaddr).
+		 */
+		size_t get_physaddr(void* virtaddr);
 
 		/**
 		 * Allocates space for a new page table at tables_index in the page directory.

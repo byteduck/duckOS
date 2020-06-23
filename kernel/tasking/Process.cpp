@@ -139,7 +139,6 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name
 
 	auto *stack = (uint32_t*) (stack_base + PROCESS_STACK_SIZE);
 
-	//pushing Registers on to the stack
 	*--stack = 0; //These first four values are placeholders for the argc, argv, and env that programs pop off the stack
 	*--stack = 0;
 	*--stack = 0;
@@ -159,8 +158,14 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name
 
 	//We push iret if the pid isn't 1 (the kernel process), because in the preempt_asm function, we return to preempt in
 	//the C code. However, when the process is first set up, the ret location isn't in the stack, so we push a function
-	//that calls iret.
-	if(_pid != 1) *--stack = (size_t) TaskManager::iret;
+	//that pops the initial values of the registers and calls iret.
+	if(_pid != 1){
+		*--stack = 0; //eax
+		*--stack = 0; //ebx
+		*--stack = 0; //ecx
+		*--stack = 0; //edx
+		*--stack = (size_t) TaskManager::proc_first_preempt;
+	}
 
 	//Push everything that's popped off in preempt_asm
 	*--stack = stack_base; //ebp
@@ -178,8 +183,65 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name
 	registers.esp = (size_t) stack;
 }
 
+Process::Process(Process *to_fork, Registers &regs): _name(to_fork->_name), _pid(TaskManager::get_new_pid()), state(PROCESS_ALIVE), kernel(false), ring(3), stdin(to_fork->stdin), stdout(to_fork->stdout)  {
+	if(to_fork->kernel) PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
+
+	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_STACK_SIZE);
+	_kernel_stack_size = PROCESS_STACK_SIZE;
+	page_directory = new Paging::PageDirectory();
+	page_directory_loc = page_directory->entries_physaddr();
+
+	//Load the page directory of the new process
+	asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
+
+	//Fork the old page directory
+	page_directory->fork_from(to_fork->page_directory);
+
+	registers.eip = regs.eip;
+
+	auto *stack = (uint32_t*) regs.useresp;
+
+	//Push the correct ss and stack pointer for switching rings during iret
+	auto cstack = (size_t) stack;
+	*--stack = 0x23;
+	*--stack = cstack;
+
+	//Push EFLAGS, CS, and EIP for iret
+	*--stack = 0x202; // eflags
+	*--stack = kernel ? 0x8 : 0x1B; // cs
+	*--stack = regs.eip; // eip
+
+	//We push iret if the pid isn't 1 (the kernel process), because in the preempt_asm function, we return to preempt in
+	//the C code. However, when the process is first set up, the ret location isn't in the stack, so we push a function
+	//that calls iret.
+	*--stack = 0; // fork() in the child returns 0
+	*--stack = regs.ebx;
+	*--stack = regs.ecx;
+	*--stack = regs.edx;
+	*--stack = (size_t) TaskManager::proc_first_preempt;
+
+	//Push everything that's popped off in preempt_asm
+	*--stack = regs.ebp; //ebp
+	*--stack = 0; //edi
+	*--stack = 0; //esi
+	if(kernel) {
+		*--stack = 0x10; // fs
+		*--stack = 0x10; // gs
+	} else {
+		*--stack = 0x23; // fs
+		*--stack = 0x23; // gs
+	}
+
+	//Set the ESP to the stack's location
+	registers.esp = (size_t) stack;
+
+	//Load back the page directory of the current process
+	asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
+}
+
 Process::~Process() {
-	if(page_directory) delete page_directory;
+	delete page_directory;
+	if(_kernel_stack_base) Paging::PageDirectory::k_free_pages(_kernel_stack_base, PROCESS_STACK_SIZE);
 }
 
 void Process::notify(uint32_t sig) {
@@ -257,7 +319,11 @@ size_t Process::sys_sbrk(int amount) {
 }
 
 pid_t Process::sys_fork(Registers& regs) {
-	return 0;
+	TaskManager::enabled() = false;
+	auto* new_proc = new Process(this, regs);
+	TaskManager::add_process(new_proc);
+	TaskManager::enabled() = true;
+	return new_proc->pid();
 }
 
 void *Process::kernel_stack() {

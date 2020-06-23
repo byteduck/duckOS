@@ -97,6 +97,12 @@ namespace Paging {
 	 * @return The amount of allocated physical memory in KiB (granularity of PAGE_SIZE)
 	 */
 	size_t get_used_mem();
+
+	/**
+	 * Invalidates the page in the TLB that contains vaddr.
+	 * @param vaddr A pointer that is the vaddr being invalidated.
+	 */
+	 void invlpg(void* vaddr);
 };
 
 int liballoc_lock();

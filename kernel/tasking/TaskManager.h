@@ -47,7 +47,7 @@ namespace TaskManager {
 	extern "C" void preempt();
 	extern "C" void preempt_init_asm(unsigned int new_esp);
 	extern "C" void preempt_asm(unsigned int *old_esp, unsigned int *new_esp, uint32_t new_cr3);
-	extern "C" void iret(void);
+	extern "C" void proc_first_preempt(void);
 	void notify(uint32_t sig);
 	void kill(Process *p);
 };

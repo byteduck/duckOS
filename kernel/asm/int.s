@@ -190,8 +190,12 @@ preempt_asm:
     pop ebp
     ret
 
-[global iret]
-iret:
+[global proc_first_preempt]
+proc_first_preempt:
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
     iret
 
 irq 1

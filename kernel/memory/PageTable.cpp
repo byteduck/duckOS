@@ -18,6 +18,7 @@
 */
 
 #include "PageTable.h"
+#include "PageDirectory.h"
 
 namespace Paging {
 	void PageTable::Entry::Data::set_address(size_t address) {
@@ -28,7 +29,12 @@ namespace Paging {
 		return page_addr << 12u;
 	}
 
-	PageTable::PageTable() = default;
+	PageTable::PageTable(Entry* entries_ptr) {
+		_entries = entries_ptr;
+	}
+
+	PageTable::~PageTable() {
+	}
 
 	PageTable::Entry *PageTable::entries() {
 		return _entries;
@@ -37,4 +43,16 @@ namespace Paging {
 	PageTable::Entry &PageTable::operator[](int index) {
 		return _entries[index];
 	}
+
+	void PageTable::set_copy_on_write() {
+		if(_entries) {
+			for(auto i = 0; i < 1024; i++) _entries[i].data.read_write = false;
+		}
+		_copy_on_write = true;
+	}
+
+	bool PageTable::is_copy_on_write() {
+		return _copy_on_write;
+	}
+
 }

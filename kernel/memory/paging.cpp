@@ -28,7 +28,7 @@
 namespace Paging {
 	PageDirectory kernel_page_directory;
 	PageDirectory::Entry kernel_page_directory_entries[1024] __attribute__((aligned(4096)));
-	PageTable kernel_early_page_table;
+	PageTable::Entry kernel_early_page_table_entries[1024] __attribute__((aligned(4096)));
 	MemoryBitmap<0x100000> _pmem_bitmap;
 
 	//TODO: Assumes computer has at least 4GiB of memory. Should detect memory in future.
@@ -45,6 +45,7 @@ namespace Paging {
 		}
 
 		//Setup kernel page directory to map the kernel to HIGHER_HALF
+		PageTable kernel_early_page_table(kernel_early_page_table_entries);
 		early_pagetable_setup(&kernel_early_page_table, HIGHER_HALF, true);
 		for (auto i = 0; i < (KERNEL_START - HIGHER_HALF) / PAGE_SIZE + KERNEL_SIZE_PAGES; i++) {
 			kernel_early_page_table[i].data.present = true;
@@ -137,6 +138,10 @@ namespace Paging {
 		kernel_page_directory[dir_index].data.read_write = read_write;
 		kernel_page_directory[dir_index].data.size = PAGE_SIZE_FLAG;
 		kernel_page_directory[dir_index].data.set_address((size_t) page_table->entries() - HIGHER_HALF);
+	}
+
+	void invlpg(void* vaddr) {
+		asm volatile("invlpg %0" : : "m"(*(uint8_t*)vaddr) : "memory");
 	}
 
 }
