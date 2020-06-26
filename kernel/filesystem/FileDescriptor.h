@@ -25,6 +25,7 @@
 #include "Inode.h"
 #include "InodeMetadata.h"
 #include "DirectoryEntry.h"
+#include <kernel/tasking/Lock.h>
 
 class File;
 class DirectoryEntry;
@@ -54,6 +55,8 @@ private:
 	bool _can_seek {true};
 
 	int _seek {0};
+
+	Lock lock;
 };
 
 

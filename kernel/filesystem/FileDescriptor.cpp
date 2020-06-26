@@ -77,6 +77,7 @@ InodeMetadata FileDescriptor::metadata() {
 }
 
 ssize_t FileDescriptor::read(uint8_t *buffer, size_t count) {
+	LOCK(lock);
 	if(_seek + count < 0) return -EOVERFLOW;
 	int ret = _file->read(*this, offset(), buffer, count);
 	if(_can_seek && ret > 0) _seek += ret;
@@ -88,6 +89,7 @@ size_t FileDescriptor::offset() {
 }
 
 ssize_t FileDescriptor::read_dir_entry(DirectoryEntry* buffer) {
+	LOCK(lock);
 	if(!metadata().is_directory()) return 0;
 	int nbytes = _file->read_dir_entry(*this, offset(), buffer);
 	if(_can_seek && nbytes > 0) _seek += nbytes;
@@ -95,6 +97,7 @@ ssize_t FileDescriptor::read_dir_entry(DirectoryEntry* buffer) {
 }
 
 ssize_t FileDescriptor::write(const uint8_t *buffer, size_t count) {
+	LOCK(lock);
 	if(_seek + count < 0) return -EOVERFLOW;
 	int ret = _file->write(*this, offset(), buffer, count);
 	if(_can_seek && ret > 0) _seek += ret;
