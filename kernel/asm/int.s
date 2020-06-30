@@ -140,12 +140,12 @@ global irq15
 %endmacro
 
 irq0
-	push eax
-	mov eax, 0x20
-	out 0x20, al ; bytes only plz
-	pop eax
 	cmp byte [tasking_enabled], 0
     jne preempt_do
+	push eax
+	mov eax, 0x20
+	out 0x20, al
+	pop eax
 	iret
 preempt_do:
     push eax
@@ -156,6 +156,8 @@ preempt_do:
 	pop edx
 	pop ecx
 	pop ebx
+	mov eax, 0x20
+	out 0x20, al
 	pop eax
 	iret
 
@@ -195,7 +197,9 @@ proc_first_preempt:
     pop edx
     pop ecx
     pop ebx
-    pop eax
+	mov eax, 0x20
+	out 0x20, al
+	pop eax
     iret
 
 irq 1

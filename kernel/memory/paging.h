@@ -99,6 +99,12 @@ namespace Paging {
 	size_t get_used_mem();
 
 	/**
+	 * Get the amount of memory used by the kernel in KiB.
+	 * @return The amount of memory the kernel is using (granularity of PAGE_SIZE)
+	 */
+	size_t get_used_kmem();
+
+	/**
 	 * Invalidates the page in the TLB that contains vaddr.
 	 * @param vaddr A pointer that is the vaddr being invalidated.
 	 */

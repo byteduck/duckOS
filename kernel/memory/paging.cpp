@@ -128,6 +128,14 @@ namespace Paging {
 #endif
 	}
 
+	size_t get_used_kmem() {
+#if PAGE_SIZE_FLAG == PAGING_4KiB
+		return PageDirectory::kernel_vmem_bitmap.used_pages() * 4;
+#else
+		return PageDirectory::kernel_vmem_bitmap.used_pages() * 4096;
+#endif
+	}
+
 	void early_pagetable_setup(PageTable *page_table, size_t virtual_address, bool read_write) {
 		ASSERT(virtual_address % PAGE_SIZE == 0);
 

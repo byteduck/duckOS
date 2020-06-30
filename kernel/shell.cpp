@@ -151,7 +151,7 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"about")){
 		println("DuckOS v0.1");
 	}else if(strcmp(cmd, "mem")) {
-		printf("Used memory: %dKiB\n", Paging::get_used_mem());
+		printf("Used memory: %dKiB (%dKiB kernel vmem)\n", Paging::get_used_mem(), Paging::get_used_kmem());
 	}else if(strcmp(cmd,"cat")){
 		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
 		if(desc_ret.is_error()) {

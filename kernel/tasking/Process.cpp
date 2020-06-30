@@ -77,17 +77,14 @@ bool Process::load_elf(const DC::shared_ptr<FileDescriptor> &fd, ELF::elf32_head
 		auto pheader = &program_headers[i];
 		if(pheader->p_type == ELF_PT_LOAD) {
 			size_t loadloc_pagealigned = (pheader->p_vaddr/PAGE_SIZE) * PAGE_SIZE;
-			if(!page_directory->allocate_pages(loadloc_pagealigned, pheader->p_memsz, pheader->p_flags & ELF_PF_W)) {
+			size_t loadsize_pagealigned = pheader->p_memsz + (pheader->p_vaddr % PAGE_SIZE);
+			if(!page_directory->allocate_pages(loadloc_pagealigned, loadsize_pagealigned, pheader->p_flags & ELF_PF_W)) {
 				delete[] program_headers;
 				return false;
 			}
+
 			fd->seek(pheader->p_offset, SEEK_SET);
 			fd->read((uint8_t*)pheader->p_vaddr, pheader->p_filesz);
-			//Zero out rest of section
-			if(pheader->p_filesz < pheader->p_memsz) {
-				auto* zero_start = (uint8_t*)(pheader->p_vaddr + pheader->p_filesz);
-				memset(zero_start, 0, (int)(pheader->p_memsz - pheader->p_filesz));
-			}
 
 			if(current_brk < pheader->p_vaddr + pheader->p_memsz)
 				current_brk = pheader->p_vaddr + pheader->p_memsz;
@@ -262,13 +259,8 @@ void Process::notify(uint32_t sig) {
 
 void Process::kill() {
 	if(_pid != 1){
-		TaskManager::enabled() = false;
-		prev->next = next;
-		next->prev = prev;
 		state = PROCESS_DEAD;
-		delete this;
-		TaskManager::enabled() = true;
-		TaskManager::preempt_now();
+		while(1); //TODO: Figure out a good way to preempt now instead of wasting CPU cycles
 	}else{
 		PANIC("KERNEL KILLED","EVERYONE PANIC THIS ISN'T GOOD",true);
 	}
@@ -326,6 +318,11 @@ pid_t Process::sys_fork(Registers& regs) {
 	return new_proc->pid();
 }
 
-void *Process::kernel_stack() {
+void *Process::kernel_stack_top() {
 	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
+}
+
+int Process::sys_execve(char *filename, char **argv, char **envp) {
+	printf("EXECVE: %s\n", filename);
+	return 0;
 }

@@ -61,11 +61,6 @@ bool& TaskManager::enabled(){
 	return tasking_enabled;
 }
 
-void TaskManager::preempt_now(){
-	if(!tasking_enabled) return;
-	asm volatile("int $0x81");
-}
-
 pid_t TaskManager::get_new_pid(){
 	return ++__cpid__;
 }
@@ -108,9 +103,22 @@ void TaskManager::kill(Process* p){
 	}
 }
 
+Process *TaskManager::next_process() {
+	Process* next_proc = current_proc->next;
+	while(next_proc->state == PROCESS_DEAD) {
+		//Cleanup process if it's dead
+		next_proc->prev->next = next_proc->next;
+		next_proc->next->prev = next_proc->prev;
+		Process* new_next_proc = next_proc->next;
+		delete next_proc;
+		next_proc = new_next_proc;
+	}
+	return next_proc;
+}
+
 void TaskManager::preempt(){
 	auto old_proc = current_proc;
-	current_proc = old_proc->next;
-	if(current_proc->ring == 3) tss.esp0 = (uint32_t) current_proc->kernel_stack();
+	current_proc = next_process();
+	if(current_proc->ring == 3) tss.esp0 = (uint32_t) current_proc->kernel_stack_top();
 	preempt_asm(&old_proc->registers.esp, &current_proc->registers.esp, current_proc->page_directory_loc);
 }

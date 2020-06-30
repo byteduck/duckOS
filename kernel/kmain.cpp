@@ -126,7 +126,6 @@ void interrupts_init(){
 	register_idt();
 	isr_init();
 	idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
-	idt_set_gate(0x81, (unsigned)TaskManager::preempt, 0x08, 0x8E); //for preempting without PIT
 	pit_init(200);
 	irq_init();
 	sti();

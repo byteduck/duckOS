@@ -280,7 +280,11 @@ namespace Paging {
 			if (!phys_page)
 				PANIC("NO_MEM", "There's no more physical memory left.", true);
 
-			map_page(phys_page * PAGE_SIZE, vaddr + i * PAGE_SIZE, read_write);
+			size_t page_vaddr = vaddr + i * PAGE_SIZE;
+			map_page(phys_page * PAGE_SIZE, page_vaddr, read_write);
+
+			// Zero out memory just in case it contains sensitive info
+			memset((void*)page_vaddr, 0, PAGE_SIZE);
 		}
 
 		return true;

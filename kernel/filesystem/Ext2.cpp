@@ -130,47 +130,49 @@ ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 	//TODO: symlinks
 	size_t first_block = start / fs.block_size();
 	size_t first_block_start = start % fs.block_size();
-	size_t last_block = (start + length) / fs.block_size();
-	size_t last_block_end = (first_block_start + length) % fs.block_size();
-
-	if(last_block_end == 0) last_block--;
-	if(last_block >= num_blocks()) {
-		last_block = num_blocks() - 1;
-	}
+	size_t bytes_left = length;
+	size_t block_index = first_block;
 
 	auto block_buf = new uint8_t[fs.block_size()];
-	for(auto i = first_block; i <= last_block; i++) {
-		uint32_t block = 0;
-		if(i < 12) { //Direct block pointer
-			block = raw.block_pointers[i];
-		} else if(i < ext2fs().num_singly_indirect + 12) { //Singly indirect block pointer
+	while(bytes_left) {
+		uint32_t block;
+		if(block_index < 12) { //Direct block pointer
+			block = raw.block_pointers[block_index];
+		} else if(block_index < ext2fs().num_singly_indirect + 12) { //Singly indirect block pointer
 			ext2fs().read_blocks(raw.s_pointer, 1, block_buf);
-			block = ((uint32_t*)block_buf)[i - 12];
-		} else if(i < ext2fs().num_doubly_indirect + 12){
+			block = ((uint32_t*)block_buf)[block_index - 12];
+		} else if(block_index < ext2fs().num_doubly_indirect + 12){
 			ext2fs().read_blocks(raw.d_pointer, 1, block_buf);
-			uint32_t dindex = i - ext2fs().num_singly_indirect - 12;
+			uint32_t dindex = block_index - ext2fs().num_singly_indirect - 12;
 			ext2fs().read_blocks(((uint32_t*)block_buf)[dindex / ext2fs().num_singly_indirect], 1, block_buf);
 			block = ((uint32_t*)block_buf)[dindex % ext2fs().num_singly_indirect];
 		} else {
 			ext2fs().read_blocks(raw.t_pointer, 1, block_buf);
-			uint32_t tindex = i - ext2fs().num_singly_indirect - ext2fs().num_doubly_indirect - 12;
+			uint32_t tindex = block_index - ext2fs().num_singly_indirect - ext2fs().num_doubly_indirect - 12;
 			ext2fs().read_blocks(((uint32_t*)block_buf)[tindex / ext2fs().num_doubly_indirect], 1, block_buf);
 			uint32_t dindex = tindex % ext2fs().num_doubly_indirect;
 			ext2fs().read_blocks(((uint32_t*)block_buf)[dindex / ext2fs().num_singly_indirect], 1, block_buf);
 			block = ((uint32_t*)block_buf)[tindex % ext2fs().num_singly_indirect];
 		}
 		ext2fs().read_blocks(block, 1, block_buf);
-		if(i == first_block) {
+		if(block_index == first_block) {
 			if(length < fs.block_size() - first_block_start) {
 				memcpy(buf, block_buf + first_block_start, length);
+				bytes_left = 0;
 			} else {
 				memcpy(buf, block_buf + first_block_start, fs.block_size() - first_block_start);
+				bytes_left -= fs.block_size() - first_block_start;
 			}
-		} else if(i == last_block) {
-			memcpy(buf + (i - first_block) * fs.block_size(), block_buf, last_block_end);
 		} else {
-			memcpy(buf + (i - first_block) * fs.block_size(), block_buf, fs.block_size());
+			if(bytes_left < fs.block_size()) {
+				memcpy(buf + (length - bytes_left), block_buf, bytes_left);
+				bytes_left = 0;
+			} else {
+				memcpy(buf + (length - bytes_left), block_buf, fs.block_size());
+				bytes_left -= fs.block_size();
+			}
 		}
+		block_index++;
 	}
 	delete[] block_buf;
 	return length;

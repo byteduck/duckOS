@@ -52,13 +52,14 @@ public:
 	DC::shared_ptr<FileDescriptor> stdin;
 	DC::shared_ptr<FileDescriptor> stdout;
 
-	void* kernel_stack();
+	void* kernel_stack_top();
 
 	//Syscalls
 	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
 	ssize_t sys_write(int fd, uint8_t* buf, size_t count);
 	size_t sys_sbrk(int i);
 	pid_t sys_fork(Registers& regs);
+	int sys_execve(char *filename, char **argv, char **envp);
 
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel = false);

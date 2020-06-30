@@ -19,7 +19,7 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
 ### Known Issues / Limitations
 - Only works with ext2 filesystems with a block size of 1024  (I think)
 - Uses BIOS interrupts (ATA PIO) to read/write to disk instead of AHCI/IDE (This is pretty slow)
-- Copy-on-write (CoW) is not implemented, so when processes fork, they copy all working memory which could be slow
+- Copy-on-write (CoW) is not implemented, so when processes fork, they copy all working memory which can be slow
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
