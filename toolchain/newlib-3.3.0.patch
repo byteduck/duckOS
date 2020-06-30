@@ -11483,10 +11483,10 @@ index 0000000..89b1d06
 +}
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..58ef4fc
+index 0000000..e34b88f
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,106 @@
+@@ -0,0 +1,110 @@
 +#include <sys/stat.h>
 +#include <sys/types.h>
 +#include <sys/fcntl.h>
@@ -11509,7 +11509,10 @@ index 0000000..58ef4fc
 +char **environ = 0; //TODO
 +
 +int execve(char *name, char **argv, char **env) {
-+	return 0; //TODO
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_EXECVE), "b"(name), "c"(argv), "d"(env));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	return ret;
 +}
 +
 +int fork() {
@@ -11556,6 +11559,7 @@ index 0000000..58ef4fc
 +}
 +
 +caddr_t sbrk(int incr) {
++	int ret = 0;
 +	asm volatile("int $0x80" :: "a"(SYS_SBRK), "b"(incr));
 +	asm volatile("mov %%eax, %0" : "=r"(ret));
 +	return ret; //TODO
@@ -11595,12 +11599,13 @@ index 0000000..58ef4fc
 +}
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..2dbc9df
+index 0000000..5c8f9ae
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,6 @@
 +#define SYS_EXIT 1
 +#define SYS_FORK 2
 +#define SYS_READ 3
 +#define SYS_WRITE 4
 +#define SYS_SBRK 5
++#define SYS_EXECVE 6
