@@ -180,7 +180,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name
 	registers.esp = (size_t) stack;
 }
 
-Process::Process(Process *to_fork, Registers &regs): _name(to_fork->_name), _pid(TaskManager::get_new_pid()), state(PROCESS_ALIVE), kernel(false), ring(3), stdin(to_fork->stdin), stdout(to_fork->stdout)  {
+Process::Process(Process *to_fork, Registers &regs): _name(to_fork->_name), _pid(TaskManager::get_new_pid()), state(PROCESS_ALIVE), kernel(false), ring(3), stdin(to_fork->stdin), stdout(to_fork->stdout), current_brk(to_fork->current_brk) {
 	if(to_fork->kernel) PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
 
 	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_STACK_SIZE);
@@ -297,7 +297,7 @@ size_t Process::sys_sbrk(int amount) {
 	if(amount > 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			page_directory->allocate_pages((current_brk_page + 1) * PAGE_SIZE, amount - (current_brk % PAGE_SIZE), true);
+			page_directory->allocate_pages((current_brk_page + 1) * PAGE_SIZE, (new_brk_page - current_brk_page) * PAGE_SIZE, true);
 		}
 	} else if (amount < 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
