@@ -25,8 +25,6 @@
 #include <common/cstring.h>
 #include <common/defines.h>
 
-extern uint8_t ata_buf[512], ata_buf2[512];
-
 Ext2Filesystem::Ext2Filesystem(DC::shared_ptr<FileDescriptor> file) : FileBasedFilesystem(file) {
 	_fsid = EXT2_FSID;
 }
@@ -47,8 +45,10 @@ void Ext2Filesystem::init() {
 
 bool Ext2Filesystem::probe(FileDescriptor& file){
 	file.seek(512 * 2, SEEK_SET); //Supercluster begins at partition sector + 2
-	file.read(ata_buf, 512);
-	return ((ext2_superblock *)ata_buf)->signature == EXT2_SIGNATURE;
+	auto buf = new uint8_t[512];
+	file.read(buf, 512);
+	delete[] buf;
+	return ((ext2_superblock *)buf)->signature == EXT2_SIGNATURE;
 }
 
 void Ext2Filesystem::read_superblock(ext2_superblock *sb){

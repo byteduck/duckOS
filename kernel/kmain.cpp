@@ -24,7 +24,6 @@
 #include <kernel/interrupt/idt.h>
 #include <kernel/interrupt/isr.h>
 #include <kernel/interrupt/irq.h>
-#include <kernel/device/ata.h>
 #include <kernel/filesystem/Ext2.h>
 #include <kernel/shell.h>
 #include <kernel/pit.h>
@@ -35,8 +34,9 @@
 #include <kernel/filesystem/VFS.h>
 #include <kernel/device/TTYDevice.h>
 #include <kernel/device/KeyboardDevice.h>
+#include <common/defines.h>
 
-int i;
+uint8_t boot_disk;
 
 int kmain(uint32_t mbootptr){
 	clearScreen();
@@ -75,7 +75,7 @@ void kmain_late(){
 	printf("init: TTY initialized.\ninit: Initializing disk...\n");
 
 	auto disk = DC::make_shared<PIODevice>(3, 0, boot_disk);
-	auto part = DC::make_shared<PartitionDevice>(3, 1, disk, pio_get_first_partition(boot_disk));
+	auto part = DC::make_shared<PartitionDevice>(3, 1, disk, disk->get_first_partition());
 	auto part_descriptor = DC::make_shared<FileDescriptor>(part);
 
 	if(Ext2Filesystem::probe(*part_descriptor.get())){

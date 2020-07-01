@@ -39,6 +39,8 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_write((int)arg1, (uint8_t*)arg2, (size_t)arg3);
 		case SYS_SBRK:
 			return TaskManager::current_process()->sys_sbrk((int)arg1);
+		case SYS_EXECVE:
+			return TaskManager::current_process()->sys_execve((char*)arg1, (char**)arg2, (char**)arg3);
 		default:
 #ifdef DEBUG
 			printf("UNKNOWN_SYSCALL(%d, %d, %d, %d)\n", call, arg1, arg2, arg3);

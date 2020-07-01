@@ -29,7 +29,7 @@ bool PartitionDevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffe
 	return _parent->read_blocks(block + _offset, count, buffer);
 }
 
-bool PartitionDevice::write_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
+bool PartitionDevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
 	return _parent->write_blocks(block + _offset, count, buffer);
 }
 

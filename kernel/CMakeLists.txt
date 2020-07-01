@@ -24,7 +24,6 @@ SET(KERNEL_SRCS
         kstdio.cpp
         keyboard.cpp
         kstddef.cpp
-        device/ata.cpp
         tasking/elf.cpp
         tasking/TaskManager.cpp
         pci/pci.cpp
