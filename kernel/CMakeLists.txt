@@ -65,7 +65,7 @@ SET(KERNEL_SRCS
         memory/PageTable.cpp
         tasking/Process.cpp
         tasking/Lock.cpp
-)
+        tasking/ProcessArgs.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

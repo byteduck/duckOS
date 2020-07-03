@@ -40,7 +40,7 @@ public:
 	bool writable();
 	InodeMetadata metadata();
 
-	int seek(int offset, int whence);
+	int seek(off_t offset, int whence);
 	ssize_t read(uint8_t* buffer, size_t count);
 	ssize_t read_dir_entry(DirectoryEntry *buffer);
 	ssize_t read_dir_entries(char *buffer, size_t len);

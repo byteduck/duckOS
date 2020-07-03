@@ -294,18 +294,41 @@ void Shell::command_eval(char *cmd, char *args){
 		IDE::PATAChannel channel = IDE::find_pata_channel(ATA_PRIMARY);
 		printf("%x:%x.%x Int %d\n", channel.address.bus, channel.address.slot, channel.address.function, PCI::read_byte(channel.address, PCI_INTERRUPT_LINE));
 	}else{
+		//Execute program
 		DC::string cmds = cmd;
 		ResultRet<Process *> p(0);
-		if(cmds.find("/") != -1) {
-			p = Process::create_user(cmd, current_dir);
-		} else {
-			p = Process::create_user(DC::string("/bin/") + cmds, current_dir);
+
+		//Setup process arguments
+		ProcessArgs pargs(current_dir);
+		pargs.argv.push_back(cmd);
+		DC::string unsplit_args(args);
+		while(unsplit_args.length()) {
+			int idx = unsplit_args.find(' ');
+			if(idx != -1) {
+				DC::string arg = unsplit_args.substr(0, idx);
+				if(arg.length()) pargs.argv.push_back(arg);
+				unsplit_args = unsplit_args.substr(idx + 1, unsplit_args.length() - idx - 1);
+			} else {
+				pargs.argv.push_back(unsplit_args);
+				unsplit_args = "";
+			}
 		}
+
+		//Create process
+		if(cmds.find("/") != -1) {
+			p = Process::create_user(cmd, pargs);
+		} else {
+			p = Process::create_user(DC::string("/bin/") + cmds, pargs);
+		}
+
+		//Handle error
 		if(p.is_error()) {
 			if(p.code() == -ENOENT) printf("Could not find command '%s'.\n", cmd);
 			else printf("Error creating process: %d\n", p.code());
 			return;
 		}
+
+		//Add process and wait
 		TaskManager::add_process(p.value());
 		pid_t pid = p.value()->pid();
 		while(TaskManager::process_for_pid(pid));

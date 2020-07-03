@@ -48,33 +48,29 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_FSTAT:
 			return TaskManager::current_process()->sys_fstat((int)arg1, (char*)arg2);
 		case SYS_STAT:
-			break;
+			return TaskManager::current_process()->sys_stat((char*)arg1, (char*)arg2);
 		case SYS_LSEEK:
-			break;
-		case SYS_KILL:
-			break;
+			return TaskManager::current_process()->sys_lseek((int)arg1, (off_t)arg2, (int)arg3);
 		case SYS_GETPID:
-			break;
-		case SYS_TIMES:
-			break;
-		case SYS_UNLINK:
-			break;
-		case SYS_GETTIMEOFDAY:
-			break;
-		case SYS_SIGNAL:
-			break;
-		case SYS_ISATTY:
-			break;
-		case SYS_LINK:
-			break;
-		case SYS_WAIT:
-			break;
+			return TaskManager::current_process()->pid();
 		case SYS_READDIR:
 			return TaskManager::current_process()->sys_readdir((int)arg1, (char*)arg2, (size_t)arg3);
 		case SYS_CHDIR:
 			return TaskManager::current_process()->sys_chdir((char*)arg1);
 		case SYS_GETCWD:
 			return TaskManager::current_process()->sys_getcwd((char*)arg1, (size_t)arg2);
+
+		//TODO: Implement these syscalls
+		case SYS_KILL:
+		case SYS_TIMES:
+		case SYS_UNLINK:
+		case SYS_GETTIMEOFDAY:
+		case SYS_SIGNAL:
+		case SYS_ISATTY:
+		case SYS_LINK:
+		case SYS_WAIT:
+			return -1;
+
 		default:
 #ifdef DEBUG
 			printf("UNKNOWN_SYSCALL(%d, %d, %d, %d)\n", call, arg1, arg2, arg3);

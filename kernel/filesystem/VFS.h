@@ -40,7 +40,7 @@ public:
 
 	static VFS& inst();
 
-	ResultRet<DC::shared_ptr<LinkedInode>> resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& base, DC::shared_ptr<LinkedInode>* parent_storage);
+	ResultRet<DC::shared_ptr<LinkedInode>> resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& base, DC::shared_ptr<LinkedInode>* parent_storage = nullptr);
 	ResultRet<DC::shared_ptr<FileDescriptor>> open(DC::string path, int options, int mode, DC::shared_ptr<LinkedInode> base);
 	DC::shared_ptr<LinkedInode> root_ref();
 

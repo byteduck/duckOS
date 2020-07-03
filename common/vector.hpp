@@ -21,7 +21,6 @@
 #define DUCKOS_VECTOR_HPP
 
 #include <kernel/memory/kliballoc.h>
-#include <kernel/kstdio.h>
 #include "cstddef.h"
 #include "cstring.h"
 #include "utility.h"
@@ -42,7 +41,7 @@ namespace DC {
 				for(auto i = 0; i < _size; i++) {
 					_storage[i].~T();
 				}
-				delete[] _storage;
+				kfree(_storage);
 			}
 		}
 
@@ -50,7 +49,15 @@ namespace DC {
 			if(_size + 1 > _capacity) {
 				resize(_capacity == 0 ? 1 : _capacity * 2);
 			}
-			_storage[_size++] = DC::move(elem);
+			new (&_storage[_size++]) T(elem);
+		}
+
+		void assign(size_t index, const T&& value) {
+			new (&_storage[index]) T(DC::move(value));
+		}
+
+		void assign(size_t index, const T& value) {
+			assign(index, T(value));
 		}
 
 		void pop_back() {
@@ -60,12 +67,21 @@ namespace DC {
 		void resize(size_t new_size) {
 			if(new_size == _capacity) return;
 			if(new_size < _capacity) {
-				for(auto i = _capacity - 1; i >= new_size; i--)
+				for(auto i = _capacity - 1; i >= new_size; i--) {
 					_storage[i].~T();
+				}
 			}
 			_capacity = new_size;
 			if(_storage == nullptr) _storage = (T*)kmalloc(new_size * sizeof(T));
-			else _storage = (T*)krealloc(_storage, new_size * sizeof(T));
+			else {
+				T* tmp_storage = (T*)kmalloc(new_size * sizeof(T));
+				for(auto i = 0; i < _size; i++) {
+					new (tmp_storage + i) T((T &&) _storage[i]);
+					_storage[i].~T();
+				}
+				kfree(_storage);
+				_storage = tmp_storage;
+			}
 		}
 
 		void erase(size_t elem) {
@@ -93,7 +109,6 @@ namespace DC {
 		T& operator[](size_t index) { return _storage[index]; }
 		T& front() { return _storage[0]; }
 		T& back() { return _storage[_size - 1]; }
-		void assign(size_t index, T& value) { _storage[index] = DC::move(value); }
 		int inited = 0;
 	private:
 		T* _storage = nullptr;

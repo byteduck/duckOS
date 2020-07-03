@@ -47,7 +47,7 @@ bool FileDescriptor::writable() {
 	return _writable;
 }
 
-int FileDescriptor::seek(int offset, int whence) {
+int FileDescriptor::seek(off_t offset, int whence) {
 	if(!_can_seek) return -ESPIPE;
 	size_t new_seek = _seek;
 	switch(whence) {
@@ -59,13 +59,14 @@ int FileDescriptor::seek(int offset, int whence) {
 			break;
 		case SEEK_END:
 			if(metadata().exists())
-				new_seek = metadata().size;
+				new_seek = metadata().size + offset;
 			else return -EIO;
 			break;
 		default:
 			return -EINVAL;
 	}
 	if(new_seek < 0) return -EINVAL;
+	if(metadata().exists() && new_seek > metadata().size) return -EINVAL;
 	_seek = new_seek;
 	return _seek;
 }

@@ -24,12 +24,14 @@
 #include "Process.h"
 #include "TaskManager.h"
 #include "elf.h"
+#include "ProcessArgs.h"
 
 Process* Process::create_kernel(const DC::string& name, void (*func)()){
-	return new Process(name, (size_t)func, true, DC::shared_ptr<LinkedInode>(nullptr));
+	ProcessArgs args = ProcessArgs(DC::shared_ptr<LinkedInode>(nullptr));
+	return new Process(name, (size_t)func, true, args);
 }
 
-ResultRet<Process*> Process::create_user(const DC::string& executable_loc, const DC::shared_ptr<LinkedInode>& working_dir) {
+ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs& args) {
 	auto fd_or_error = VFS::inst().open(executable_loc, O_RDONLY, 0, VFS::inst().root_ref());
 	if(fd_or_error.is_error()) return fd_or_error.code();
 
@@ -43,7 +45,7 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, const
 
 	TaskManager::enabled() = false;
 
-	Process* proc = new Process(executable_loc, header->program_entry_position, false, working_dir);
+	auto* proc = new Process(executable_loc, header->program_entry_position, false, args);
 
 	bool success = proc->load_elf(fd, header);
 
@@ -105,7 +107,7 @@ DC::string Process::name(){
 }
 
 //TODO: Clean up this monstrosity
-Process::Process(const DC::string& name, size_t entry_point, bool kernel, const DC::shared_ptr<LinkedInode>& working_dir) {
+Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs& args) {
 	_name = name;
 	_pid = TaskManager::get_new_pid();
 	state = PROCESS_ALIVE;
@@ -115,7 +117,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, const 
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
 		file_descriptors[0] = ttydesc;
 		file_descriptors[1] = ttydesc;
-		cwd = working_dir;
+		cwd = args.working_dir;
 	}
 
 	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_KERNEL_STACK_SIZE);
@@ -143,10 +145,9 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, const 
 
 	auto *stack = (uint32_t*) (stack_base + _stack_size);
 
-	*--stack = 0; //These first four values are placeholders for the argc, argv, and env that programs pop off the stack
-	*--stack = 0;
-	*--stack = 0;
-	*--stack = 0;
+	stack = (uint32_t*) args.setup_stack(stack);
+
+	*--stack = 0; //Honestly? Not sure what this is for but nothing works without it :)
 
 	//If this is a usermode process, push the correct ss and stack pointer for switching rings during iret
 	if(!kernel) {
@@ -332,7 +333,8 @@ pid_t Process::sys_fork(Registers& regs) {
 }
 
 int Process::sys_execve(char *filename, char **argv, char **envp) {
-	auto R_new_proc = Process::create_user(filename, cwd);
+	ProcessArgs args(cwd);
+	auto R_new_proc = Process::create_user(filename, args);
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	R_new_proc.value()->_pid = this->pid();
 	TaskManager::add_process(R_new_proc.value());
@@ -382,4 +384,16 @@ int Process::sys_fstat(int file, char *buf) {
 	if(!file_descriptors[file]) return -EBADF;
 	file_descriptors[file]->metadata().stat((struct stat*)buf);
 	return 0;
+}
+
+int Process::sys_stat(char *file, char *buf) {
+	auto inode_or_err = VFS::inst().resolve_path(file, cwd);
+	if(inode_or_err.is_error()) return inode_or_err.code();
+	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
+	return 0;
+}
+
+int Process::sys_lseek(int file, off_t off, int whence) {
+	if(!file_descriptors[file]) return -EBADF;
+	return file_descriptors[file]->seek(off, whence);
 }
