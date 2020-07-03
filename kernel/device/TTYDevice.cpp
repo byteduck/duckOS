@@ -52,11 +52,17 @@ ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffe
 }
 
 ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+	while(buffered && _input_buffer.empty()); //TODO: Better way of blocking without wasting CPU cycles
 	count = min(count, _input_buffer.size());
 	size_t count_loop = count;
 	while(count_loop--) *buffer++ = _input_buffer.pop_front();
 	return count;
 }
+
+bool TTYDevice::istty() {
+	return true;
+}
+
 
 void TTYDevice::set_active() {
 	set_current_tty(_id);

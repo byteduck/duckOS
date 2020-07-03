@@ -61,6 +61,7 @@ public:
 	size_t sys_sbrk(int i);
 	pid_t sys_fork(Registers& regs);
 	int sys_execve(char *filename, char **argv, char **envp);
+	int sys_execvp(char *filename, char **argv);
 	int sys_open(char *filename, int options, int mode);
 	int sys_close(int file);
 	int sys_chdir(char *path);
@@ -69,6 +70,7 @@ public:
 	int sys_fstat(int file, char* buf);
 	int sys_stat(char* file, char* buf);
 	int sys_lseek(int file, off_t off, int whence);
+	int sys_waitpid(pid_t pid, int* status, int flags);
 
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs& args);
@@ -83,7 +85,7 @@ private:
 	size_t _kernel_stack_size;
 	size_t _stack_size;
 
-	DC::shared_ptr<FileDescriptor> file_descriptors[255];
+	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors;
 	DC::shared_ptr<LinkedInode> cwd;
 };
 

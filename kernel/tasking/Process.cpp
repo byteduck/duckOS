@@ -115,8 +115,8 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	ring = kernel ? 0 : 3;
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
-		file_descriptors[0] = ttydesc;
-		file_descriptors[1] = ttydesc;
+		file_descriptors.push_back(ttydesc);
+		file_descriptors.push_back(ttydesc);
 		cwd = args.working_dir;
 	}
 
@@ -198,8 +198,8 @@ Process::Process(Process *to_fork, Registers &regs){
 	ring = 3;
 	current_brk = to_fork->current_brk;
 	cwd = to_fork->cwd;
-	for(auto i = 0; i < 255; i++)
-		file_descriptors[i] = to_fork->file_descriptors[i];
+	for(auto i = 0; i < to_fork->file_descriptors.size(); i++)
+		file_descriptors.push_back(to_fork->file_descriptors[i]);
 
 	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_KERNEL_STACK_SIZE);
 	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
@@ -296,13 +296,13 @@ void *Process::kernel_stack_top() {
 
 ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
-	if(!file_descriptors[fd]) return -EBADF;
+	if(fd < 0 || fd >= file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
 	return file_descriptors[fd]->read(buf, count);
 }
 
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
-	if(!file_descriptors[fd]) return -EBADF;
+	if(fd < 0 || fd >= file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
 	return file_descriptors[fd]->write(buf, count);
 }
 
@@ -334,6 +334,13 @@ pid_t Process::sys_fork(Registers& regs) {
 
 int Process::sys_execve(char *filename, char **argv, char **envp) {
 	ProcessArgs args(cwd);
+	if(argv) {
+		int i = 0;
+		while(argv[i]) {
+			args.argv.push_back(argv[i]);
+			i++;
+		}
+	}
 	auto R_new_proc = Process::create_user(filename, args);
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	R_new_proc.value()->_pid = this->pid();
@@ -341,21 +348,37 @@ int Process::sys_execve(char *filename, char **argv, char **envp) {
 	kill();
 }
 
-int Process::sys_open(char *filename, int options, int mode) {
-	int new_file = 0;
-	while(new_file < 256 && file_descriptors[new_file]) new_file++;
-	if(new_file == 256) return -ENOMEM;
+int Process::sys_execvp(char *filename, char **argv) {
+	ProcessArgs args(cwd);
+	if(argv) {
+		int i = 0;
+		while(argv[i]) {
+			args.argv.push_back(argv[i]);
+			i++;
+		}
+	}
 
+	ResultRet<Process*> R_new_proc(0);
+	if(indexOf('/', filename) == strlen(filename)) {
+		R_new_proc = Process::create_user(DC::string("/bin/") + filename, args);
+	} else {
+		R_new_proc = Process::create_user(filename, args);
+	}
+	if(R_new_proc.is_error()) return R_new_proc.code();
+	R_new_proc.value()->_pid = this->pid();
+	TaskManager::add_process(R_new_proc.value());
+	kill();
+}
+
+int Process::sys_open(char *filename, int options, int mode) {
 	auto fd_or_err = VFS::inst().open(filename, options, mode, cwd);
 	if(fd_or_err.is_error()) return fd_or_err.code();
-
-	file_descriptors[new_file] = fd_or_err.value();
-
-	return new_file;
+	file_descriptors.push_back(fd_or_err.value());
+	return (int)file_descriptors.size() - 1;
 }
 
 int Process::sys_close(int file) {
-	if(!file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	file_descriptors[file] = DC::shared_ptr<FileDescriptor>(nullptr);
 	return 0;
 }
@@ -370,18 +393,18 @@ int Process::sys_chdir(char *path) {
 int Process::sys_getcwd(char *buf, size_t length) {
 	if(cwd->name().length() > length) return -ENAMETOOLONG;
 	DC::string path = cwd->get_full_path();
-	memcpy(buf, path.c_str(), length);
-	buf[path.length()] = 0;
+	memcpy(buf, path.c_str(), min(length, path.length()));
+	buf[path.length()] = '\0';
 	return 0;
 }
 
 int Process::sys_readdir(int file, char *buf, size_t len) {
-	if(!file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return file_descriptors[file]->read_dir_entries(buf, len);
 }
 
 int Process::sys_fstat(int file, char *buf) {
-	if(!file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	file_descriptors[file]->metadata().stat((struct stat*)buf);
 	return 0;
 }
@@ -394,6 +417,13 @@ int Process::sys_stat(char *file, char *buf) {
 }
 
 int Process::sys_lseek(int file, off_t off, int whence) {
-	if(!file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return file_descriptors[file]->seek(off, whence);
+}
+
+int Process::sys_waitpid(pid_t pid, int* status, int flags) {
+	while(TaskManager::process_for_pid(pid)); //TODO: Better way of hanging without wasting CPU cycles
+	if(status)
+		*status = 0; //TODO: Process status
+	return pid;
 }

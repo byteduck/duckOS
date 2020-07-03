@@ -147,13 +147,13 @@ void Shell::command_eval(char *cmd, char *args){
 		} else {
 			printf("Could not find '%s'\n", args);
 		}
-	}else if(strcmp(cmd,"pwd")){
+	}else if(strcmp(cmd,"pwd.old")){
 		printf("%s\n", current_dir->get_full_path().c_str());
 	}else if(strcmp(cmd,"about")){
 		println("DuckOS v0.1");
 	}else if(strcmp(cmd, "mem")) {
 		printf("Used memory: %dKiB (%dKiB kernel vmem)\n", Paging::get_used_mem(), Paging::get_used_kmem());
-	}else if(strcmp(cmd,"cat")){
+	}else if(strcmp(cmd,"cat.old")){
 		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
 		if(desc_ret.is_error()) {
 			switch (desc_ret.code()) {

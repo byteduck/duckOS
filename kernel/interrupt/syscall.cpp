@@ -59,6 +59,10 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_chdir((char*)arg1);
 		case SYS_GETCWD:
 			return TaskManager::current_process()->sys_getcwd((char*)arg1, (size_t)arg2);
+		case SYS_WAITPID:
+			return TaskManager::current_process()->sys_waitpid((pid_t)arg1, (int*)arg2, (int)arg3);
+		case SYS_EXECVP:
+			return TaskManager::current_process()->sys_execvp((char*)arg1, (char**)arg2);
 
 		//TODO: Implement these syscalls
 		case SYS_KILL:
@@ -68,7 +72,6 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_SIGNAL:
 		case SYS_ISATTY:
 		case SYS_LINK:
-		case SYS_WAIT:
 			return -1;
 
 		default:

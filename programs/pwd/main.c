@@ -17,35 +17,13 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
-#include "File.h"
+//A simple program that prompts you to type something and repeats it back to you.
 
-File::File() {
+#include <stdio.h>
+#include <unistd.h>
 
+int main() {
+	char pwd[4096];
+	getcwd(pwd, 4096);
+	printf("%s\n", pwd);
 }
-
-File::~File() {
-
-}
-
-bool File::is_inode() {
-	return false;
-}
-
-ssize_t File::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
-	return 0;
-}
-
-ssize_t File::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
-	return 0;
-}
-
-
-ssize_t File::read_dir_entry(FileDescriptor &fd, size_t offset, DirectoryEntry *buffer) {
-	return 0;
-}
-
-bool File::istty() {
-	return false;
-}
-

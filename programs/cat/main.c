@@ -17,35 +17,38 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
-#include "File.h"
+//A simple program that forks and then prints "Hello!"
 
-File::File() {
+#include <unistd.h>
+#include <stdio.h>
+#include <errno.h>
+#include <fcntl.h>
 
-}
-
-File::~File() {
-
-}
-
-bool File::is_inode() {
-	return false;
-}
-
-ssize_t File::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+int main(int argc, char** argv) {
+	if(argc > 1) {
+		int f = open(argv[1], O_RDONLY);
+		if(f != -1) {
+			char buf[512];
+			int nread;
+			while((nread = read(f, buf, 512)) > 0) {
+				write(STDOUT_FILENO, buf, nread);
+			}
+			if(errno) {
+				printf("cat: Error %d\n", errno);
+			}
+		} else {
+			switch(errno) {
+				case ENOENT:
+					printf("cat: No such file\n");
+					break;
+				default:
+					printf("cat: Error %d\n", errno);
+			}
+			return errno;
+		}
+	} else {
+		printf("cat: Please specify a file\n");
+		return 1;
+	}
 	return 0;
 }
-
-ssize_t File::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
-	return 0;
-}
-
-
-ssize_t File::read_dir_entry(FileDescriptor &fd, size_t offset, DirectoryEntry *buffer) {
-	return 0;
-}
-
-bool File::istty() {
-	return false;
-}
-

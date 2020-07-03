@@ -15,6 +15,11 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
 - mirror (/bin/mirror): A demo program that prompts you to type something and then prints it back to you.
 - dummy (/bin/dummy): A demo program that does nothing and exits.
 - fork (/bin/fork): A demo program that forks and then prints whether it is the child or the parent process.
+- ls (/bin/ls): Lists the entries in the current or given directory.
+- cat (/bin/cat): Writes the contents of a file to stdout.
+- pwd (/bin/pwd): Prints the current working directory.
+- dsh (/bin/dsh): A basic userspace shell.
+
 
 ### Known Issues / Limitations
 - Only works with ext2 filesystems with a block size of 1024  (I think)

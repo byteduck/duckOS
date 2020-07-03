@@ -33,6 +33,7 @@ public:
 	virtual ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count);
 	virtual ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count);
 	virtual ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, DirectoryEntry* buffer);
+	virtual bool istty();
 protected:
 	File();
 };
