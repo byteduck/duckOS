@@ -41,10 +41,44 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_sbrk((int)arg1);
 		case SYS_EXECVE:
 			return TaskManager::current_process()->sys_execve((char*)arg1, (char**)arg2, (char**)arg3);
+		case SYS_OPEN:
+			return TaskManager::current_process()->sys_open((char*)arg1, (int)arg2, (int)arg3);
+		case SYS_CLOSE:
+			return TaskManager::current_process()->sys_close((int)arg1);
+		case SYS_FSTAT:
+			return TaskManager::current_process()->sys_fstat((int)arg1, (char*)arg2);
+		case SYS_STAT:
+			break;
+		case SYS_LSEEK:
+			break;
+		case SYS_KILL:
+			break;
+		case SYS_GETPID:
+			break;
+		case SYS_TIMES:
+			break;
+		case SYS_UNLINK:
+			break;
+		case SYS_GETTIMEOFDAY:
+			break;
+		case SYS_SIGNAL:
+			break;
+		case SYS_ISATTY:
+			break;
+		case SYS_LINK:
+			break;
+		case SYS_WAIT:
+			break;
+		case SYS_READDIR:
+			return TaskManager::current_process()->sys_readdir((int)arg1, (char*)arg2, (size_t)arg3);
+		case SYS_CHDIR:
+			return TaskManager::current_process()->sys_chdir((char*)arg1);
+		case SYS_GETCWD:
+			return TaskManager::current_process()->sys_getcwd((char*)arg1, (size_t)arg2);
 		default:
 #ifdef DEBUG
 			printf("UNKNOWN_SYSCALL(%d, %d, %d, %d)\n", call, arg1, arg2, arg3);
-#endif
 			return 0;
+#endif
 	}
 }

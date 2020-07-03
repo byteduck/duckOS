@@ -93,7 +93,7 @@ void Shell::command_eval(char *cmd, char *args){
 		println("readelf: Print info about an ELF executable.");
 		println("lspci: Lists PCI devices.");
 		println("exit: Pretty self explanatory.");
-	}else if(strcmp(cmd,"ls")){
+	} else if(strcmp(cmd,"ls.old")) {
 		DC::string path = ".";
 		if(!strcmp(args, "")) path = args;
 		auto desc_ret = VFS::inst().open(path, O_RDONLY | O_DIRECTORY, MODE_DIRECTORY, current_dir);
@@ -110,9 +110,9 @@ void Shell::command_eval(char *cmd, char *args){
 			}
 		} else {
 			auto desc = desc_ret.value();
-			DirectoryEntry buffer {};
-			while(desc->read_dir_entry(&buffer)) {
-				switch(buffer.type) {
+			auto* buffer = (DirectoryEntry*)kmalloc(sizeof(DirectoryEntry) + NAME_MAXLEN);
+			while(desc->read_dir_entry(buffer)) {
+				switch(buffer->type) {
 					case TYPE_UNKNOWN:
 						printf("[?]    ");
 						break;
@@ -132,8 +132,9 @@ void Shell::command_eval(char *cmd, char *args){
 						printf("[link] ");
 						break;
 				}
-				printf("%d %s\n", buffer.id, buffer.name);
+				printf("%d %s\n", buffer->id, DC::string(buffer->name, buffer->name_length).c_str());
 			}
+			delete buffer;
 		}
 	}else if(strcmp(cmd,"cd")){
 		auto ref = VFS::inst().resolve_path(args, current_dir, nullptr);
@@ -296,9 +297,9 @@ void Shell::command_eval(char *cmd, char *args){
 		DC::string cmds = cmd;
 		ResultRet<Process *> p(0);
 		if(cmds.find("/") != -1) {
-			p = Process::create_user(cmd);
+			p = Process::create_user(cmd, current_dir);
 		} else {
-			p = Process::create_user(DC::string("/bin/") + cmds);
+			p = Process::create_user(DC::string("/bin/") + cmds, current_dir);
 		}
 		if(p.is_error()) {
 			if(p.code() == -ENOENT) printf("Could not find command '%s'.\n", cmd);

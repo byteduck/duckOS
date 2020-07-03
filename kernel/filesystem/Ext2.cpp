@@ -59,7 +59,7 @@ void Ext2Filesystem::read_superblock(ext2_superblock *sb){
 	}
 }
 
-Inode* Ext2Filesystem::get_inode_rawptr(InodeID id) {
+Inode* Ext2Filesystem::get_inode_rawptr(ino_t id) {
 	auto ret = new Ext2Inode(*this, id);
 	((Ext2Inode*)ret)->read_raw();
 	return static_cast<Inode *>(ret);
@@ -69,13 +69,13 @@ char *Ext2Filesystem::name() {
 	return "EXT2";
 }
 
-InodeID Ext2Filesystem::root_inode() {
+ino_t Ext2Filesystem::root_inode() {
 	return 2;
 }
 
 ////// INODE
 
-Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, InodeID id): Inode(filesystem, id) {
+Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id) {
 
 }
 
@@ -182,20 +182,26 @@ ssize_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry *buffer) {
 	auto* buf = new uint8_t[fs.block_size()];
 	size_t block = start / fs.block_size();
 	size_t start_in_block = start % fs.block_size();
-	if(read(block * fs.block_size(), fs.block_size(), buf) == 0) return 0;
+	if(read(block * fs.block_size(), fs.block_size(), buf) == 0) {
+		delete[] buf;
+		return 0;
+	}
 	auto* dir = (ext2_directory*)(buf + start_in_block);
 
 	size_t name_length = dir->name_length;
 	if(name_length > NAME_MAXLEN - 1) name_length = NAME_MAXLEN - 1;
 
-	if(dir->inode == 0) return 0;
+	if(dir->inode == 0) {
+		delete[] buf;
+		return 0;
+	}
 
 	buffer->name_length = name_length;
 	buffer->id = dir->inode;
 	buffer->type = dir->type;
 	memcpy(buffer->name, &dir->type+1, name_length);
-	buffer->name[name_length] = '\0';
 
+	delete[] buf;
 	return dir->size;
 }
 

@@ -26,10 +26,10 @@
 #include "elf.h"
 
 Process* Process::create_kernel(const DC::string& name, void (*func)()){
-	return new Process(name, (size_t)func, true);
+	return new Process(name, (size_t)func, true, DC::shared_ptr<LinkedInode>(nullptr));
 }
 
-ResultRet<Process*> Process::create_user(const DC::string& executable_loc) {
+ResultRet<Process*> Process::create_user(const DC::string& executable_loc, const DC::shared_ptr<LinkedInode>& working_dir) {
 	auto fd_or_error = VFS::inst().open(executable_loc, O_RDONLY, 0, VFS::inst().root_ref());
 	if(fd_or_error.is_error()) return fd_or_error.code();
 
@@ -43,7 +43,7 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc) {
 
 	TaskManager::enabled() = false;
 
-	Process* proc = new Process(executable_loc, header->program_entry_position, false);
+	Process* proc = new Process(executable_loc, header->program_entry_position, false, working_dir);
 
 	bool success = proc->load_elf(fd, header);
 
@@ -105,17 +105,21 @@ DC::string Process::name(){
 }
 
 //TODO: Clean up this monstrosity
-Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name(name), _pid(TaskManager::get_new_pid()), state(PROCESS_ALIVE), kernel(kernel), ring(kernel ? 0 : 3) {
+Process::Process(const DC::string& name, size_t entry_point, bool kernel, const DC::shared_ptr<LinkedInode>& working_dir) {
+	_name = name;
+	_pid = TaskManager::get_new_pid();
+	state = PROCESS_ALIVE;
+	this->kernel = kernel;
+	ring = kernel ? 0 : 3;
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
-		ttydesc->set_options(O_RDONLY | O_WRONLY);
-
-		stdin = ttydesc;
-		stdout = ttydesc;
+		file_descriptors[0] = ttydesc;
+		file_descriptors[1] = ttydesc;
+		cwd = working_dir;
 	}
 
-	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_STACK_SIZE);
-	_kernel_stack_size = PROCESS_STACK_SIZE;
+	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_KERNEL_STACK_SIZE);
+	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
 
 	size_t stack_base;
 	if(!kernel) {
@@ -125,16 +129,19 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name
 		//Load the page directory of the new process
 		asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
 
-		if(!page_directory->allocate_pages(0, PROCESS_STACK_SIZE)) PANIC("NEW_PROC_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new process's stack.", true);
-		stack_base = 0;
+		if(!page_directory->allocate_pages(HIGHER_HALF - PROCESS_STACK_SIZE, PROCESS_STACK_SIZE))
+			PANIC("NEW_PROC_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new process's stack.", true);
+		stack_base = HIGHER_HALF - PROCESS_STACK_SIZE;
+		_stack_size = PROCESS_STACK_SIZE;
 	} else {
 		page_directory_loc = Paging::kernel_page_directory.entries_physaddr();
 		stack_base = (size_t) _kernel_stack_base;
+		_stack_size = PROCESS_KERNEL_STACK_SIZE;
 	}
 
 	registers.eip = entry_point;
 
-	auto *stack = (uint32_t*) (stack_base + PROCESS_STACK_SIZE);
+	auto *stack = (uint32_t*) (stack_base + _stack_size);
 
 	*--stack = 0; //These first four values are placeholders for the argc, argv, and env that programs pop off the stack
 	*--stack = 0;
@@ -180,11 +187,21 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel): _name
 	registers.esp = (size_t) stack;
 }
 
-Process::Process(Process *to_fork, Registers &regs): _name(to_fork->_name), _pid(TaskManager::get_new_pid()), state(PROCESS_ALIVE), kernel(false), ring(3), stdin(to_fork->stdin), stdout(to_fork->stdout), current_brk(to_fork->current_brk) {
+Process::Process(Process *to_fork, Registers &regs){
 	if(to_fork->kernel) PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
 
-	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_STACK_SIZE);
-	_kernel_stack_size = PROCESS_STACK_SIZE;
+	_name = to_fork->_name;
+	_pid = TaskManager::get_new_pid();
+	state = PROCESS_ALIVE;
+	kernel = false;
+	ring = 3;
+	current_brk = to_fork->current_brk;
+	cwd = to_fork->cwd;
+	for(auto i = 0; i < 255; i++)
+		file_descriptors[i] = to_fork->file_descriptors[i];
+
+	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_KERNEL_STACK_SIZE);
+	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
 	page_directory = new Paging::PageDirectory();
 	page_directory_loc = page_directory->entries_physaddr();
 
@@ -238,7 +255,7 @@ Process::Process(Process *to_fork, Registers &regs): _name(to_fork->_name), _pid
 
 Process::~Process() {
 	delete page_directory;
-	if(_kernel_stack_base) Paging::PageDirectory::k_free_pages(_kernel_stack_base, PROCESS_STACK_SIZE);
+	if(_kernel_stack_base) Paging::PageDirectory::k_free_pages(_kernel_stack_base, PROCESS_KERNEL_STACK_SIZE);
 }
 
 void Process::notify(uint32_t sig) {
@@ -266,6 +283,10 @@ void Process::kill() {
 	}
 }
 
+void *Process::kernel_stack_top() {
+	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
+}
+
 
 /************
  * SYSCALLS *
@@ -274,22 +295,14 @@ void Process::kill() {
 
 ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
-	if(fd == 0) { //stdin
-		return stdin->read(buf, count);
-	} else if(fd == 1) { //stdout
-		return stdout->read(buf, count);
-	}
-	return -EBADF;
+	if(!file_descriptors[fd]) return -EBADF;
+	return file_descriptors[fd]->read(buf, count);
 }
 
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
-	if(fd == 0) { //stdin
-		return stdin->write(buf, count);
-	} else if(fd == 1) { //stdout
-		return stdout->write(buf, count);
-	}
-	return -EBADF;
+	if(!file_descriptors[fd]) return -EBADF;
+	return file_descriptors[fd]->write(buf, count);
 }
 
 size_t Process::sys_sbrk(int amount) {
@@ -318,11 +331,55 @@ pid_t Process::sys_fork(Registers& regs) {
 	return new_proc->pid();
 }
 
-void *Process::kernel_stack_top() {
-	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
+int Process::sys_execve(char *filename, char **argv, char **envp) {
+	auto R_new_proc = Process::create_user(filename, cwd);
+	if(R_new_proc.is_error()) return R_new_proc.code();
+	R_new_proc.value()->_pid = this->pid();
+	TaskManager::add_process(R_new_proc.value());
+	kill();
 }
 
-int Process::sys_execve(char *filename, char **argv, char **envp) {
-	printf("EXECVE: %s\n", filename);
+int Process::sys_open(char *filename, int options, int mode) {
+	int new_file = 0;
+	while(new_file < 256 && file_descriptors[new_file]) new_file++;
+	if(new_file == 256) return -ENOMEM;
+
+	auto fd_or_err = VFS::inst().open(filename, options, mode, cwd);
+	if(fd_or_err.is_error()) return fd_or_err.code();
+
+	file_descriptors[new_file] = fd_or_err.value();
+
+	return new_file;
+}
+
+int Process::sys_close(int file) {
+	if(!file_descriptors[file]) return -EBADF;
+	file_descriptors[file] = DC::shared_ptr<FileDescriptor>(nullptr);
+	return 0;
+}
+
+int Process::sys_chdir(char *path) {
+	auto inode_or_error = VFS::inst().resolve_path(path, cwd, nullptr);
+	if(inode_or_error.is_error()) return inode_or_error.code();
+	cwd = inode_or_error.value();
+	return 0;
+}
+
+int Process::sys_getcwd(char *buf, size_t length) {
+	if(cwd->name().length() > length) return -ENAMETOOLONG;
+	DC::string path = cwd->get_full_path();
+	memcpy(buf, path.c_str(), length);
+	buf[path.length()] = 0;
+	return 0;
+}
+
+int Process::sys_readdir(int file, char *buf, size_t len) {
+	if(!file_descriptors[file]) return -EBADF;
+	return file_descriptors[file]->read_dir_entries(buf, len);
+}
+
+int Process::sys_fstat(int file, char *buf) {
+	if(!file_descriptors[file]) return -EBADF;
+	file_descriptors[file]->metadata().stat((struct stat*)buf);
 	return 0;
 }

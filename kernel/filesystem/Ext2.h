@@ -102,7 +102,7 @@ typedef struct __attribute__((packed)) ext2_block_group_descriptor{
 	uint8_t unused[14];
 } ext2_block_group_descriptor;
 
-typedef struct __attribute__((packed)) ext2_directory{
+typedef struct __attribute__((packed)) ext2_directory {
 	uint32_t inode;
 	uint16_t size;
 	uint8_t name_length;
@@ -140,7 +140,7 @@ public:
 
 	Raw raw;
 
-	Ext2Inode(Ext2Filesystem& filesystem, InodeID i);
+	Ext2Inode(Ext2Filesystem& filesystem, ino_t i);
 	uint32_t get_block_group();
 	uint32_t get_index();
 	uint32_t get_block();
@@ -165,10 +165,10 @@ public:
 	size_t num_doubly_indirect;
 
 	Ext2Filesystem(DC::shared_ptr<FileDescriptor> file);
-	InodeID root_inode() override;
+	ino_t root_inode() override;
 	char* name() override;
 	static bool probe(FileDescriptor& dev);
-	Inode * get_inode_rawptr(InodeID id) override;
+	Inode * get_inode_rawptr(ino_t id) override;
 	void read_superblock(ext2_superblock *sb);
 
 	void init();

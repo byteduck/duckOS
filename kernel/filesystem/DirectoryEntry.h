@@ -22,7 +22,6 @@
 
 #include "InodeMetadata.h"
 
-#define NAME_MAXLEN 256
 #define TYPE_UNKNOWN 0
 #define TYPE_FILE 1
 #define TYPE_DIR 2
@@ -32,12 +31,13 @@
 #define TYPE_SOCKET 6
 #define TYPE_SYMLINK 7
 
-class DirectoryEntry {
-public:
-	InodeID id;
-	size_t name_length;
+#define NAME_MAXLEN 256
+
+struct __attribute__((packed)) DirectoryEntry {
+	ino_t id;
 	uint8_t type;
-	char name[NAME_MAXLEN];
+	size_t name_length;
+	char name[];
 };
 
 

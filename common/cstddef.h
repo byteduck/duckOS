@@ -50,5 +50,20 @@ typedef uint32_t size_t;
 typedef int32_t ssize_t;
 typedef int pid_t;
 
+typedef unsigned short ino_t;
+typedef short dev_t;
+typedef uint32_t mode_t;
+typedef unsigned short nlink_t;
+typedef unsigned short uid_t;
+typedef unsigned short gid_t;
+typedef long off_t;
+typedef long unsigned int time_t;
+typedef long blksize_t;
+typedef long blkcnt_t;
+
+struct timespec {
+	time_t tv_sec;
+	long tv_nsec;
+};
 
 #endif //DUCKOS_CSTDDEF_H

@@ -154,7 +154,7 @@ VFS::Mount::Mount(): _fs(nullptr), _host_inode(nullptr) {
 
 }
 
-InodeID VFS::Mount::host_inode() {
+ino_t VFS::Mount::host_inode() {
 	return _host_inode->inode()->id;
 }
 

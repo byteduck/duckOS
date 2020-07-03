@@ -20,7 +20,7 @@
 #include <kernel/kstdio.h>
 #include "Inode.h"
 
-Inode::Inode(Filesystem& fs, InodeID id): fs(fs), id(id) {
+Inode::Inode(Filesystem& fs, ino_t id): fs(fs), id(id) {
 }
 
 DC::shared_ptr<Inode> Inode::find(DC::string name) {

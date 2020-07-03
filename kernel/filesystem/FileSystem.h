@@ -26,7 +26,6 @@
 #include <kernel/filesystem/FileDescriptor.h>
 
 class Inode;
-typedef uint32_t InodeID;
 
 class FileDescriptor;
 class Filesystem {
@@ -35,9 +34,9 @@ public:
 
 	virtual char* name();
 	static bool probe(DC::shared_ptr<FileDescriptor> dev);
-	virtual DC::shared_ptr<Inode> get_inode(InodeID id);
-	virtual Inode* get_inode_rawptr(InodeID id);
-	virtual InodeID root_inode();
+	virtual DC::shared_ptr<Inode> get_inode(ino_t id);
+	virtual Inode* get_inode_rawptr(ino_t id);
+	virtual ino_t root_inode();
 	virtual uint8_t fsid();
 	virtual size_t block_size();
 	virtual void set_block_size(size_t block_size);
@@ -45,7 +44,7 @@ public:
 protected:
 	DC::shared_ptr<FileDescriptor> _file;
 	uint8_t _fsid;
-	InodeID root_inode_id;
+	ino_t root_inode_id;
 private:
 	size_t _block_size;
 };

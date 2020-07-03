@@ -90,9 +90,35 @@ size_t FileDescriptor::offset() {
 
 ssize_t FileDescriptor::read_dir_entry(DirectoryEntry* buffer) {
 	LOCK(lock);
-	if(!metadata().is_directory()) return 0;
-	int nbytes = _file->read_dir_entry(*this, offset(), buffer);
-	if(_can_seek && nbytes > 0) _seek += nbytes;
+	if(!metadata().is_directory()) return -ENOTDIR;
+	ssize_t nbytes = _file->read_dir_entry(*this, offset(), buffer);
+	if(nbytes > 0) {
+		if(_can_seek) _seek += nbytes;
+		return sizeof(DirectoryEntry) + buffer->name_length;
+	}
+	return nbytes;
+}
+
+ssize_t FileDescriptor::read_dir_entries(char* buffer, size_t len) {
+	LOCK(lock);
+	if(!metadata().is_directory()) return -ENOTDIR;
+	ssize_t nbytes = 0;
+	char* tmpbuf = (char*)kmalloc(sizeof(DirectoryEntry) + NAME_MAXLEN * sizeof(char));
+	while(true) {
+		ssize_t read = read_dir_entry((DirectoryEntry*) tmpbuf);
+		if(read > 0) {
+			if(read + nbytes > len) break;
+			memcpy(buffer, tmpbuf, read);
+			nbytes += read;
+			buffer += read;
+		} else if(read == 0) {
+			break; //Nothing left to read
+		} else {
+			delete tmpbuf;
+			return read; //Error
+		}
+	}
+	delete tmpbuf;
 	return nbytes;
 }
 

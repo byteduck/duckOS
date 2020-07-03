@@ -32,15 +32,15 @@ bool Filesystem::probe(DC::shared_ptr<FileDescriptor> dev) {
 	return false;
 }
 
-DC::shared_ptr<Inode> Filesystem::get_inode(InodeID iid) {
+DC::shared_ptr<Inode> Filesystem::get_inode(ino_t iid) {
 	return DC::shared_ptr<Inode>(get_inode_rawptr(iid));
 }
 
-Inode *Filesystem::get_inode_rawptr(InodeID iid) {
+Inode *Filesystem::get_inode_rawptr(ino_t iid) {
 	return nullptr;
 }
 
-InodeID Filesystem::root_inode() {
+ino_t Filesystem::root_inode() {
 	return root_inode_id;
 }
 

@@ -29,6 +29,7 @@ namespace DC {
 		string();
 		string(const string& string);
 		string(const char* string);
+		string(const char* string, size_t length);
 		~string();
 
 		string& operator=(const char* str);

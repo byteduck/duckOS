@@ -30,12 +30,27 @@
 #define MODE_SYMLINK 0xA000
 #define MODE_SOCKET 0xC000
 
-typedef uint32_t InodeID;
+struct stat {
+	dev_t		st_dev;
+	ino_t		st_ino;
+	mode_t	st_mode;
+	nlink_t	st_nlink;
+	uid_t		st_uid;
+	gid_t		st_gid;
+	dev_t		st_rdev;
+	off_t		st_size;
+	struct timespec st_atim;
+	struct timespec st_mtim;
+	struct timespec st_ctim;
+	blksize_t     st_blksize;
+	blkcnt_t	st_blocks;
+};
+
 class InodeMetadata {
 public:
 	size_t mode = 0;
 	size_t size = 0;
-	InodeID inode_id;
+	ino_t inode_id;
 
 	unsigned dev_major;
 	unsigned dev_minor;
@@ -46,6 +61,7 @@ public:
 	bool is_device() const;
 	bool is_simple_file() const;
 	bool exists() const;
+	void stat(struct stat *stat);
 };
 
 

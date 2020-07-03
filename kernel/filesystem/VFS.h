@@ -30,7 +30,7 @@ public:
 	public:
 		Mount();
 		Mount(Filesystem* fs, LinkedInode* host_inode);
-		InodeID host_inode();
+		ino_t host_inode();
 		Filesystem* fs();
 
 	private:

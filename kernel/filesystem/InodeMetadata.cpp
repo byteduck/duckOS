@@ -42,3 +42,11 @@ bool InodeMetadata::is_character_device() const {
 bool InodeMetadata::is_device() const {
 	return (mode & 0xF000u) == MODE_CHAR_DEVICE ||  (mode & 0xF000u) == MODE_BLOCK_DEVICE;
 }
+
+void InodeMetadata::stat(struct stat *stat) {
+	stat->st_mode = mode;
+	stat->st_size = size;
+	stat->st_ino = inode_id;
+	stat->st_dev = ((dev_t)dev_major << 8u) + dev_minor;
+	//TODO: Fill in more info
+}

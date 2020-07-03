@@ -26,15 +26,17 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/elf.h>
 #include <common/shared_ptr.hpp>
+#include <kernel/filesystem/LinkedInode.h>
 
-#define PROCESS_STACK_SIZE 4096
+#define PROCESS_STACK_SIZE 1048576 //1024KiB
+#define PROCESS_KERNEL_STACK_SIZE 4096 //4KiB
 
 class Process {
 public:
 	~Process();
 
 	static Process* create_kernel(const DC::string& name, void (*func)());
-	static ResultRet<Process*> create_user(const DC::string& executable_loc);
+	static ResultRet<Process*> create_user(const DC::string& executable_loc, const DC::shared_ptr<LinkedInode>& working_dir);
 
 	pid_t pid();
 	DC::string name();
@@ -49,9 +51,6 @@ public:
 	bool kernel = false;
 	uint8_t ring;
 
-	DC::shared_ptr<FileDescriptor> stdin;
-	DC::shared_ptr<FileDescriptor> stdout;
-
 	void* kernel_stack_top();
 
 	//Syscalls
@@ -60,9 +59,15 @@ public:
 	size_t sys_sbrk(int i);
 	pid_t sys_fork(Registers& regs);
 	int sys_execve(char *filename, char **argv, char **envp);
+	int sys_open(char *filename, int options, int mode);
+	int sys_close(int file);
+	int sys_chdir(char *path);
+	int sys_getcwd(char *buf, size_t length);
+	int sys_readdir(int file, char* buf, size_t len);
+	int sys_fstat(int file, char* buf);
 
 private:
-	Process(const DC::string& name, size_t entry_point, bool kernel = false);
+	Process(const DC::string& name, size_t entry_point, bool kernel, const DC::shared_ptr<LinkedInode>& working_dir);
 	Process(Process* to_fork, Registers& regs);
 
 	bool load_elf(const DC::shared_ptr<FileDescriptor>& fd, ELF::elf32_header* header);
@@ -72,6 +77,10 @@ private:
 	size_t current_brk = 0;
 	void* _kernel_stack_base;
 	size_t _kernel_stack_size;
+	size_t _stack_size;
+
+	DC::shared_ptr<FileDescriptor> file_descriptors[255];
+	DC::shared_ptr<LinkedInode> cwd;
 };
 
 

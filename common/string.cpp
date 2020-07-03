@@ -38,6 +38,12 @@ namespace DC {
 		strcpy(_cstring, str);
 	}
 
+	string::string(const char* str, size_t length): _length(length + 1) {
+		_size = _length + 1;
+		_cstring = new char[_size];
+		_cstring[_length - 1] = '\0';
+		memcpy(_cstring, str, _length - 1);
+	}
 
 	string::~string(){
 		delete[] _cstring;

@@ -26,6 +26,23 @@
 #define SYS_WRITE 4
 #define SYS_SBRK 5
 #define SYS_EXECVE 6
+#define SYS_OPEN 7
+#define SYS_CLOSE 8
+#define SYS_FSTAT 9
+#define SYS_STAT 10
+#define SYS_LSEEK 11
+#define SYS_KILL 12
+#define SYS_GETPID 13
+#define SYS_TIMES 14
+#define SYS_UNLINK 15
+#define SYS_GETTIMEOFDAY 16
+#define SYS_SIGNAL 17
+#define SYS_ISATTY 18
+#define SYS_LINK 19
+#define SYS_WAIT 20
+#define SYS_READDIR 21
+#define SYS_CHDIR 22
+#define SYS_GETCWD 23
 
 extern "C" void syscall_handler(Registers regs);
 int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);

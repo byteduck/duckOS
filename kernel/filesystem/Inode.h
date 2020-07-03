@@ -27,14 +27,13 @@
 #include "DirectoryEntry.h"
 
 class Filesystem;
-typedef uint32_t InodeID;
 
 class Inode {
 public:
-	InodeID id;
+	ino_t id;
 	Filesystem& fs;
 
-    Inode(Filesystem& fs, InodeID id);
+    Inode(Filesystem& fs, ino_t id);
 
 	virtual DC::shared_ptr<Inode> find(DC::string name);
 	virtual Inode* find_rawptr(DC::string name);
