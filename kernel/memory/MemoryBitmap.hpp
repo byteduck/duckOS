@@ -88,20 +88,22 @@ public:
 	}
 
 	void set_page_used(size_t page){
+		ASSERT(!is_page_used(page));
 		_used_pages += 1;
 		bitmap[page / 32] |= 1u << (page % 32u);
 	}
 
 	void set_page_free(size_t page){
+		ASSERT(is_page_used(page));
 		_used_pages -= 1;
 		bitmap[page / 32] &= ~(1u << (page % 32u));
 	}
 
 	size_t allocate_pages(size_t num_pages, size_t start_index){
 		size_t page = find_pages(num_pages, start_index);
-		if(page) {
-			for(size_t sPage = page; sPage - page < num_pages; sPage++) {
-				set_page_used(sPage);
+		if(page != -1) {
+			for(size_t sPage = 0; sPage < num_pages; sPage++) {
+				set_page_used(sPage + page);
 			}
 		}
 		return page;

@@ -28,10 +28,10 @@
 
 Process* Process::create_kernel(const DC::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(DC::shared_ptr<LinkedInode>(nullptr));
-	return new Process(name, (size_t)func, true, args);
+	return new Process(name, (size_t)func, true, &args, 0);
 }
 
-ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs& args) {
+ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t parent) {
 	auto fd_or_error = VFS::inst().open(executable_loc, O_RDONLY, 0, VFS::inst().root_ref());
 	if(fd_or_error.is_error()) return fd_or_error.code();
 
@@ -45,7 +45,7 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, Proce
 
 	TaskManager::enabled() = false;
 
-	auto* proc = new Process(executable_loc, header->program_entry_position, false, args);
+	auto* proc = new Process(executable_loc, header->program_entry_position, false, args, parent);
 
 	bool success = proc->load_elf(fd, header);
 
@@ -107,17 +107,18 @@ DC::string Process::name(){
 }
 
 //TODO: Clean up this monstrosity
-Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs& args) {
+Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent) {
 	_name = name;
 	_pid = TaskManager::get_new_pid();
 	state = PROCESS_ALIVE;
 	this->kernel = kernel;
 	ring = kernel ? 0 : 3;
+	parent = parent;
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
-		cwd = args.working_dir;
+		cwd = args->working_dir;
 	}
 
 	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_KERNEL_STACK_SIZE);
@@ -145,7 +146,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 
 	auto *stack = (uint32_t*) (stack_base + _stack_size);
 
-	stack = (uint32_t*) args.setup_stack(stack);
+	stack = (uint32_t*) args->setup_stack(stack);
 
 	*--stack = 0; //Honestly? Not sure what this is for but nothing works without it :)
 
@@ -198,11 +199,14 @@ Process::Process(Process *to_fork, Registers &regs){
 	ring = 3;
 	current_brk = to_fork->current_brk;
 	cwd = to_fork->cwd;
+	parent = to_fork->_pid;
+
 	for(auto i = 0; i < to_fork->file_descriptors.size(); i++)
 		file_descriptors.push_back(to_fork->file_descriptors[i]);
 
 	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_KERNEL_STACK_SIZE);
 	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
+
 	page_directory = new Paging::PageDirectory();
 	page_directory_loc = page_directory->entries_physaddr();
 
@@ -284,6 +288,12 @@ void Process::kill() {
 	}
 }
 
+void Process::handle_pagefault(Registers *regs) {
+	size_t err_pos;
+	asm("mov %%cr2, %0" : "=r" (err_pos));
+	if(!page_directory->try_cow(err_pos)) notify(SIGSEGV);
+}
+
 void *Process::kernel_stack_top() {
 	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
 }
@@ -311,12 +321,13 @@ size_t Process::sys_sbrk(int amount) {
 	if(amount > 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			page_directory->allocate_pages((current_brk_page + 1) * PAGE_SIZE, (new_brk_page - current_brk_page) * PAGE_SIZE, true);
+			page_directory->allocate_pages((current_brk_page + 1) * PAGE_SIZE,
+										   (new_brk_page - current_brk_page) * PAGE_SIZE, true);
 		}
 	} else if (amount < 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			page_directory->unmap_pages(new_brk_page, current_brk_page - new_brk_page);
+			page_directory->deallocate_pages(new_brk_page * PAGE_SIZE, (current_brk_page - new_brk_page) * PAGE_SIZE);
 		}
 	}
 	size_t prev_brk = current_brk;
@@ -333,15 +344,16 @@ pid_t Process::sys_fork(Registers& regs) {
 }
 
 int Process::sys_execve(char *filename, char **argv, char **envp) {
-	ProcessArgs args(cwd);
+	auto* args = new ProcessArgs(cwd);
 	if(argv) {
 		int i = 0;
 		while(argv[i]) {
-			args.argv.push_back(argv[i]);
+			args->argv.push_back(argv[i]);
 			i++;
 		}
 	}
-	auto R_new_proc = Process::create_user(filename, args);
+	auto R_new_proc = Process::create_user(filename, args, parent);
+	delete args;
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	R_new_proc.value()->_pid = this->pid();
 	TaskManager::add_process(R_new_proc.value());
@@ -349,21 +361,22 @@ int Process::sys_execve(char *filename, char **argv, char **envp) {
 }
 
 int Process::sys_execvp(char *filename, char **argv) {
-	ProcessArgs args(cwd);
+	auto* args = new ProcessArgs(cwd);
 	if(argv) {
 		int i = 0;
 		while(argv[i]) {
-			args.argv.push_back(argv[i]);
+			args->argv.push_back(argv[i]);
 			i++;
 		}
 	}
 
 	ResultRet<Process*> R_new_proc(0);
 	if(indexOf('/', filename) == strlen(filename)) {
-		R_new_proc = Process::create_user(DC::string("/bin/") + filename, args);
+		R_new_proc = Process::create_user(DC::string("/bin/") + filename, args, parent);
 	} else {
-		R_new_proc = Process::create_user(filename, args);
+		R_new_proc = Process::create_user(filename, args, parent);
 	}
+	delete args;
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	R_new_proc.value()->_pid = this->pid();
 	TaskManager::add_process(R_new_proc.value());
@@ -422,8 +435,18 @@ int Process::sys_lseek(int file, off_t off, int whence) {
 }
 
 int Process::sys_waitpid(pid_t pid, int* status, int flags) {
-	while(TaskManager::process_for_pid(pid)); //TODO: Better way of hanging without wasting CPU cycles
-	if(status)
-		*status = 0; //TODO: Process status
+	if(pid < -1) {
+		return -ECHILD; //TODO: Wait for process with pgroup abs(pid)
+	} else if(pid == -1) {
+		return -ECHILD; //TODO: Wait for any child
+	} else if(pid == 0) {
+		return -ECHILD; //TODO: Wait for process in same pgroup
+	} else {
+		if(!TaskManager::process_for_pid(pid)) return -ECHILD;
+		while(TaskManager::process_for_pid(pid)); //TODO: Better way of hanging without wasting CPU cycles
+		if(status)
+			*status = 0; //TODO: Process status
+	}
+
 	return pid;
 }

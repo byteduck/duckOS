@@ -19,6 +19,9 @@ SECTIONS {
 	
 	.bss : AT(ADDR(.bss) - 0xC0000000)
 	{
+	    _PAGETABLES_START = .;
+	    *(.pagetables*)
+	    _PAGETABLES_END = .;
 		*(COMMON)
 		*(.bss*)
 	}

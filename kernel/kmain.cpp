@@ -126,7 +126,7 @@ void interrupts_init(){
 	register_idt();
 	isr_init();
 	idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
-	pit_init(200);
+	pit_init(1000);
 	irq_init();
 	sti();
 }

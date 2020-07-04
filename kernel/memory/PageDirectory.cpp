@@ -17,10 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <kernel/tasking/TaskManager.h>
 #include "PageDirectory.h"
 
 namespace Paging {
-
 	PageDirectory::Entry PageDirectory::kernel_entries[256];
 	MemoryBitmap<0x40000> PageDirectory::kernel_vmem_bitmap;
 	PageTable PageDirectory::kernel_page_tables[256];
@@ -34,7 +34,12 @@ namespace Paging {
 	void PageDirectory::init_kmem() {
 		kernel_vmem_bitmap.reset_bitmap();
 		for(auto & entries : kernel_page_table_entries) for(auto & entry : entries) entry.value = 0;
-		for(auto i = 0; i < 256; i++) kernel_page_tables[i] = PageTable(kernel_page_table_entries[i]);
+		for(auto i = 0; i < 256; i++) {
+			new (&kernel_page_tables[i]) PageTable(HIGHER_HALF + i * PAGE_SIZE * 1024,
+											  &kernel_page_directory, false);
+
+			kernel_page_tables[i].entries() = kernel_page_table_entries[i];
+		}
 		for(auto & physaddr : kernel_page_tables_physaddr) physaddr = 0;
 
 		for(auto i = 0; i < 256; i++) {
@@ -106,11 +111,13 @@ namespace Paging {
 		//Next, allocate the pages
 		for (auto i = 0; i < pages; i++) {
 			size_t phys_page = pmem_bitmap().allocate_pages(1, 0);
-			if (!phys_page) {
+			if (phys_page == -1) {
 				PANIC("NO_MEM", "There's no more physical memory left.", true);
 			}
 
-			k_map_page(phys_page * PAGE_SIZE, vpage * PAGE_SIZE + i * PAGE_SIZE, true);
+			size_t vaddr = vpage * PAGE_SIZE + i * PAGE_SIZE;
+			k_map_page(phys_page * PAGE_SIZE, vaddr, true);
+			memset((void*)vaddr, 0, PAGE_SIZE);
 		}
 
 		return retptr;
@@ -119,7 +126,11 @@ namespace Paging {
 	void PageDirectory::k_free_pages(void *ptr, size_t memsize) {
 		size_t num_pages = (memsize + PAGE_SIZE - 1) / PAGE_SIZE;
 		for (auto i = 0; i < num_pages; i++) {
-			pmem_bitmap().set_page_free(kernel_page_directory.get_physaddr((size_t) ptr + PAGE_SIZE * i) / PAGE_SIZE);
+			size_t physaddr = kernel_page_directory.get_physaddr((size_t) ptr + PAGE_SIZE * i);
+			if(physaddr == -1)
+				PANIC("KRNL_FREE_BAD_PTR", "The kernel tried to free pages that were not in use.", true);
+
+			pmem_bitmap().set_page_free(physaddr / PAGE_SIZE);
 		}
 		PageDirectory::k_unmap_pages((size_t) ptr, num_pages);
 	}
@@ -146,17 +157,14 @@ namespace Paging {
 
 	PageDirectory::PageDirectory() {
 		_entries = (Entry*) k_alloc_pages(PAGE_SIZE);
-		_page_tables_table = new PageTable((PageTable::Entry*) k_alloc_pages(PAGE_SIZE));
 		update_kernel_entries();
 	}
 
 	PageDirectory::~PageDirectory() {
 		k_free_pages(_entries, PAGE_SIZE); //Free entries
-		k_free_pages(_page_tables_table->entries(), PAGE_SIZE); //Free page tables table entries
-		delete _page_tables_table; //Free page tables table
+
 		//Free page tables
 		for(auto & table : _page_tables) if(table) {
-			k_free_pages(table->entries(), 4096);
 			delete table;
 		}
 
@@ -165,6 +173,7 @@ namespace Paging {
 			if(_personal_pmem_bitmap.is_page_used(i)){
 				pmem_bitmap().set_page_free(i); //Free used pmem
 			}
+			if(_personal_pmem_bitmap.used_pages() == 0) break;
 		}
 	}
 
@@ -242,22 +251,20 @@ namespace Paging {
 		if(virtaddr < HIGHER_HALF) { //Program space
 			size_t page = virtaddr / PAGE_SIZE;
 			size_t directory_index = (page / 1024) % 1024;
-			if (!_vmem_bitmap.is_page_used(page)) return 0;
-			if (!_entries[directory_index].data.present) return 0; //TODO: Log an error
-			if (!_page_tables[directory_index]) return 0; //TODO: Log an error
+			if (!_vmem_bitmap.is_page_used(page)) return -1;
+			if (!_entries[directory_index].data.present) return -1; //TODO: Log an error
+			if (!_page_tables[directory_index]) return -1; //TODO: Log an error
 			size_t table_index = page % 1024;
 			size_t page_paddr = (_page_tables[directory_index])->entries()[table_index].data.get_address();
 			return page_paddr + (virtaddr % PAGE_SIZE);
-		} else if(virtaddr < PAGETABLES_VIRTADDR){ //Kernel space
+		} else { //Kernel space
 			size_t page = (virtaddr - HIGHER_HALF) / PAGE_SIZE;
 			size_t directory_index = (page / 1024) % 1024;
-			if (!kernel_vmem_bitmap.is_page_used(page)) return 0;
-			if (!kernel_entries[directory_index].data.present) return 0; //TODO: Log an error
+			if (!kernel_vmem_bitmap.is_page_used(page)) return -1;
+			if (!kernel_entries[directory_index].data.present) return -1; //TODO: Log an error
 			size_t table_index = page % 1024;
 			size_t page_paddr = (kernel_page_tables[directory_index])[table_index].data.get_address();
 			return page_paddr + (virtaddr % PAGE_SIZE);
-		} else { //Program pagetables table
-			return _page_tables_physaddr[(virtaddr - PAGETABLES_VIRTADDR) / PAGE_SIZE] + (virtaddr % PAGE_SIZE);
 		}
 	}
 
@@ -275,10 +282,9 @@ namespace Paging {
 
 		for (auto i = 0; i < num_pages; i++) {
 			size_t phys_page = pmem_bitmap().allocate_pages(1, 0);
-			_personal_pmem_bitmap.set_page_used(phys_page);
-
-			if (!phys_page)
+			if (phys_page == -1)
 				PANIC("NO_MEM", "There's no more physical memory left.", true);
+			_personal_pmem_bitmap.set_page_used(phys_page);
 
 			size_t page_vaddr = vaddr + i * PAGE_SIZE;
 			map_page(phys_page * PAGE_SIZE, page_vaddr, read_write);
@@ -290,88 +296,108 @@ namespace Paging {
 		return true;
 	}
 
+	bool PageDirectory::deallocate_pages(size_t vaddr, size_t memsize) {
+		ASSERT(vaddr % PAGE_SIZE == 0 && vaddr < HIGHER_HALF);
+		auto start_page = vaddr / PAGE_SIZE;
+		auto num_pages = (memsize + PAGE_SIZE - 1) / PAGE_SIZE;
+
+		for (auto i = start_page; i < start_page + num_pages; i++)
+			if (!_vmem_bitmap.is_page_used(i)) return false;
+
+		for (auto i = start_page; i < start_page + num_pages; i++) {
+			size_t physaddr = get_physaddr(i * PAGE_SIZE);
+			size_t physpage = physaddr / PAGE_SIZE;
+
+			pmem_bitmap().set_page_free(physpage);
+			_personal_pmem_bitmap.set_page_free(physpage);
+
+			unmap_page(i * PAGE_SIZE);
+		}
+
+		return true;
+	}
+
 	PageTable *PageDirectory::alloc_page_table(size_t tables_index) {
-		//Allocate a physical memory page to store the page table's entries
-		auto* new_entries = (PageTable::Entry*) k_alloc_pages(4096);
-		size_t new_entries_physaddr = get_physaddr(new_entries);
-
-		//Find the entry in the page tables table that will point to the page storing this page table's entries and set it up
-		PageTable::Entry *tables_table = &_page_tables_table->entries()[tables_index];
-		tables_table->data.set_address(new_entries_physaddr);
-		tables_table->data.user = false;
-		tables_table->data.present = true;
-		tables_table->data.read_write = true;
-
-		//Set up the new page table
-		auto *table = new PageTable(new_entries);
+		auto *table = new PageTable(tables_index * PAGE_SIZE * 1024, this);
 		_page_tables[tables_index] = table;
-		_page_tables_physaddr[tables_index] = (size_t) new_entries;
 		PageDirectory::Entry *direntry = &_entries[tables_index];
-		direntry->data.set_address(new_entries_physaddr);
+		direntry->data.set_address(get_physaddr(table->entries()));
 		direntry->data.present = true;
 		direntry->data.user = true;
 		direntry->data.read_write = true;
-
 		return table;
 	}
 
 	void PageDirectory::dealloc_page_table(size_t tables_index) {
-		size_t page = _page_tables_table->entries()[tables_index].data.get_address() / PAGE_SIZE;
-		_page_tables_table->entries()[tables_index].value = 0;
-		_page_tables_physaddr[tables_index] = 0;
-		pmem_bitmap().set_page_free(page);
-		_personal_pmem_bitmap.set_page_free(page);
+		delete _page_tables[tables_index];
+		_page_tables[tables_index] = nullptr;
 		_entries[tables_index].value = 0;
 	}
 
 	void PageDirectory::update_kernel_entries() {
-		//Only go to entry 1022 because 1023 (the last one) is the process-specific page table table
-		for(auto i = 768; i < 1023; i++){
+		for(auto i = 768; i < 1024; i++){
 			auto ki = i - 768;
 			_entries[i].value = kernel_entries[ki].value;
-			_page_tables_physaddr[i] = kernel_page_tables_physaddr[ki];
 		}
-
-		_entries[1023].data.present = true;
-		_entries[1023].data.read_write = true;
-		_entries[1023].data.user = true;
-		if(_page_tables_table) //The kernel_page_directory doesn't have a page tables table
-			_entries[1023].data.set_address(get_physaddr((size_t)_page_tables_table->entries()));
 	}
 
 	void PageDirectory::set_entries(Entry* entries) {
 		_entries = entries;
 	}
 
-	void PageDirectory::fork_from(PageDirectory *directory) {
+	void PageDirectory::fork_from(PageDirectory *parent) {
 		//TODO: Implement CoW
 		//Iterate through every entry of the page directory we're copying from
 		for(auto table = 0; table < 768; table++) {
 			//If the entry is present, continue
-			if(directory->_entries[table].data.present) {
-				auto* page_table = directory->_page_tables[table];
+			if(parent->_entries[table].data.present) {
+				auto cow_parent_page_table = DC::shared_ptr<PageTable>(parent->_page_tables[table]);
+				cow_parent_page_table->mark_cow_parent();
+
+				//Replace the pagetable in the parent
+				auto* parent_page_table = new PageTable(cow_parent_page_table->vaddr(), parent);
+				parent->_page_tables[table] = parent_page_table;
+				parent->_entries[table].data.set_address(get_physaddr(parent_page_table->entries()));
+
+				//Allocate a page table
+				auto* my_page_table = alloc_page_table(table);
+
 				//Iterate through every page table entry
 				for(auto entry = 0; entry < 1024; entry++) {
-					PageTable::Entry* pte = &page_table->entries()[entry];
-					//If the entry is present, copy it
+					PageTable::Entry* pte = &cow_parent_page_table->entries()[entry];
+					//If the entry is present, setup CoW or just point to it
 					if(pte->data.present) {
-						//Allocate a kernel page and point it to the page the entry points to
-						size_t vpage_number = kernel_vmem_bitmap.find_one_page(0) + 0xC0000;
-						void* vpage = (void*)(vpage_number * PAGE_SIZE);
-						k_map_page(pte->data.get_address(), (size_t) vpage, true);
+						//Set the page as used in the vmem bitmap
+						_vmem_bitmap.set_page_used(table * 1024 + entry);
 
-						size_t virtaddr = (entry * PAGE_SIZE) + (table * PAGE_SIZE * 1024);
-						if(!allocate_pages(virtaddr, PAGE_SIZE, true))
-							PANIC("FORK_PAGEALLOC_FAIL", "Failed to allocate virtual pages during a fork.", true);
+						//See if the entry was already CoW
+						auto cow_parent = cow_parent_page_table->get_cow_parent(entry);
 
+						//If it was not already marked CoW and should be set up with new pointer
+						if(!cow_parent) {
+							cow_parent = DC::make_shared<CoWParent>(cow_parent_page_table, entry);
+							parent->_personal_pmem_bitmap.set_page_free(pte->data.get_address() / PAGE_SIZE);
+						} else {
+							//Otherwise, reset the reference to the CoWParent in the parent table
+							cow_parent_page_table->reset_cow_parent(entry);
+						}
 
-						memcpy((void*)virtaddr, vpage, PAGE_SIZE);
-
-						k_unmap_page((size_t) vpage);
-						_page_tables[table]->entries()[entry].data.read_write = pte->data.read_write;
+						my_page_table->setup_cow_entry(cow_parent);
+						parent_page_table->setup_cow_entry(cow_parent);
 					}
 				}
 			}
 		}
+	}
+
+	bool PageDirectory::try_cow(size_t virtaddr) {
+		size_t page = virtaddr / PAGE_SIZE;
+		size_t directory_index = (page / 1024) % 1024;
+		if(!_page_tables[directory_index]) return false;
+		return _page_tables[directory_index]->cow(virtaddr);
+	}
+
+	void PageDirectory::take_pmem_ownership(size_t paddr) {
+		_personal_pmem_bitmap.set_page_used(paddr / PAGE_SIZE);
 	}
 }

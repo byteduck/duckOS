@@ -34,6 +34,7 @@ class FileDescriptor {
 public:
 	FileDescriptor(DC::shared_ptr<File> file);
 	FileDescriptor(Device* device);
+	~FileDescriptor();
 
 	void set_options(int options);
 	bool readable();

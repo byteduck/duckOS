@@ -33,8 +33,8 @@ namespace Paging {
 
 	//TODO: Assumes computer has at least 4GiB of memory. Should detect memory in future.
 	void setup_paging() {
-		//Assert that the kernel doesn't exceed 4MiB
-		ASSERT(KERNEL_END - KERNEL_START <= PAGE_SIZE * 1024);
+		//Assert that the kernel doesn't exceed 7MiB
+		ASSERT(KERNEL_END - KERNEL_START <= 0x700000);
 
 		kernel_page_directory.set_entries(kernel_page_directory_entries);
 		PageDirectory::init_kmem();
@@ -45,9 +45,10 @@ namespace Paging {
 		}
 
 		//Setup kernel page directory to map the kernel to HIGHER_HALF
-		PageTable kernel_early_page_table(kernel_early_page_table_entries);
+		PageTable kernel_early_page_table(0, nullptr, false);
+		kernel_early_page_table.entries() = kernel_early_page_table_entries;
 		early_pagetable_setup(&kernel_early_page_table, HIGHER_HALF, true);
-		for (auto i = 0; i < (KERNEL_START - HIGHER_HALF) / PAGE_SIZE + KERNEL_SIZE_PAGES; i++) {
+		for (auto i = 0; i < 1024; i++) {
 			kernel_early_page_table[i].data.present = true;
 			kernel_early_page_table[i].data.read_write = true;
 			kernel_early_page_table[i].data.set_address(PAGE_SIZE * i);
@@ -165,7 +166,6 @@ int liballoc_unlock() {
 	sti();
 	return 0;
 }
-
 
 void *liballoc_alloc(int pages) {
 	return PageDirectory::k_alloc_pages(pages * PAGE_SIZE);

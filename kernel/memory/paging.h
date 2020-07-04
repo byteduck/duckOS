@@ -29,11 +29,11 @@
 #define HIGHER_HALF 0xC0000000
 #define KERNEL_START ((size_t)&_KERNEL_START)
 #define KERNEL_END ((size_t)&_KERNEL_END)
+#define PAGETABLES_START ((size_t)&_PAGETABLES_START)
+#define PAGETABLES_END ((size_t)&_PAGETABLES_END)
 #define KERNEL_SIZE (KERNEL_END - KERNEL_START)
 #define KERNEL_SIZE_PAGES ((KERNEL_SIZE + (PAGE_SIZE - 1)) / PAGE_SIZE)
 #define KERNEL_END_VIRTADDR (HIGHER_HALF + KERNEL_SIZE_PAGES * PAGE_SIZE)
-#define PAGETABLES_VIRTADDR 0xFFC00000
-#define KERNEL_HEAP_VIRTADDR (HIGHER_HALF + PAGE_SIZE*1024)
 
 /**
  * The basic premise of how the memory allocation in duckOS is as follows:
@@ -65,6 +65,8 @@ namespace Paging {
 
 	extern "C" long _KERNEL_START;
 	extern "C" long _KERNEL_END;
+	extern "C" long _PAGETABLES_START;
+	extern "C" long _PAGETABLES_END;
 	extern "C" void load_page_dir(size_t* dir);
 
 	/**

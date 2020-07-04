@@ -21,10 +21,10 @@
 #define DUCKOS_PAGEDIRECTORY_H
 
 #include <common/cstddef.h>
-#include <common/vector.hpp>
 #include "paging.h"
 
 namespace Paging {
+	class PageTable;
 	class PageDirectory {
 	public:
 		typedef union Entry {
@@ -123,6 +123,8 @@ namespace Paging {
 
 		/**
 		 * Maps one page from physaddr to virtaddr in program space.
+		 * Does NOT modify the physical memory bitmap.
+		 * DOES modify the virtual memory bitmap.
 		 * @param physaddr The physical address to map from.
 		 * @param virtaddr The virtual address to map to. Must be in program space (<3GiB)
 		 * @param read_write Whether or not the page should be read/write.
@@ -136,6 +138,8 @@ namespace Paging {
 
 		/**
 		 * Unmaps one page at virtaddr in program space.
+		 * Does NOT modify the physical memory bitmap.
+		 * DOES modify the virtual memory bitmap.
 		 * @param virtaddr The virtual address of the page to unmap. Must be in program space (<3GiB)
 		 */
 		void unmap_page(size_t virtaddr);
@@ -147,11 +151,20 @@ namespace Paging {
 
 		/**
 		 * Allocates the needed amount of pages to fit memsize amount of data starting at vaddr.
-		 * @param vaddr The virtual address to start mapping at.
-		 * @param memsize The amount of memory needed (NOT pages)
+		 * @param vaddr The virtual address to start mapping at. Must be page-aligned.
+		 * @param memsize The amount of memory needed (NOT pages, will be rounded up to be page-aligned)
+		 * @param read_write Whether or not the memory should be marked read/write.
 		 * @return Whether or not the allocation was successful.
 		 */
 		bool allocate_pages(size_t vaddr, size_t memsize, bool read_write = true);
+
+		/**
+		 * Deallocates the needed amount of pages to fit memsize amount of data starting at vaddr.
+		 * @param vaddr The virtual address to start unmapping at. Must be page-aligned.
+		 * @param memsize The amount of memory being freed (NOT pages, will be rounded up to be page-aligned)
+		 * @return Whether or not the deallocation was successful.
+		 */
+		bool deallocate_pages(size_t vaddr, size_t memsize);
 
 		/**
 		 * Gets the physical address for virtaddr.
@@ -195,6 +208,19 @@ namespace Paging {
 		 */
 		void fork_from(PageDirectory *directory);
 
+		/**
+		 * Tries to Copy-On-Write the page at virtaddr.
+		 * @param virtaddr The virtual address to be CoWed.
+		 * @return Whether or not the page was eligible for CoW and it was successful.
+		 */
+		bool try_cow(size_t virtaddr);
+
+		/**
+		 * Marks the page corresponding to paddr as used in the pmem bitmap.
+		 * @param paddr The physical address of the page to take ownership of.
+		 */
+		void take_pmem_ownership(size_t paddr);
+
 	private:
 		//The page directory entries for this page directory.
 		Entry* _entries = nullptr;
@@ -206,10 +232,6 @@ namespace Paging {
 		PageTable* _page_tables[768] = {nullptr};
 		//An array of u16s that stores the number of pages mapped in each page table, used to deallocate a page table once no longer needed
 		uint16_t _page_tables_num_mapped[1024] = {0};
-		//The page table that points to the memory allocated to store the page tables for this page directory
-		PageTable* _page_tables_table;
-		//The physical addresses for each page table, used to translate vaddr -> paddr
-		size_t _page_tables_physaddr[1024] = {0};
 	};
 }
 

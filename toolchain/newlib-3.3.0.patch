@@ -11678,10 +11678,10 @@ index 0000000..b643455
 +
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..893cc77
+index 0000000..729352e
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,278 @@
+@@ -0,0 +1,293 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -11735,6 +11735,17 @@ index 0000000..893cc77
 +int execve(char *name, char **argv, char **env) {
 +	int ret = 0;
 +	asm volatile("int $0x80" :: "a"(SYS_EXECVE), "b"(name), "c"(argv), "d"(env));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int execvp(char *name, char **argv) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_EXECVP), "b"(name), "c"(argv));
 +	asm volatile("mov %%eax, %0" : "=r"(ret));
 +	if(ret < 0) {
 +		errno = -ret;
@@ -11897,8 +11908,12 @@ index 0000000..893cc77
 +}
 +
 +int wait(int *status) {
++	waitpid(-1, &status, 0);
++}
++
++int waitpid(pid_t pid, int *status, int flags) {
 +	int ret = 0;
-+	asm volatile("int $0x80" :: "a"(SYS_WAIT), "b"(status));
++	asm volatile("int $0x80" :: "a"(SYS_WAITPID), "b"(pid), "c"(status), "d"(flags));
 +	asm volatile("mov %%eax, %0" : "=r"(ret));
 +	if(ret < 0) {
 +		errno = -ret;
@@ -11962,10 +11977,10 @@ index 0000000..893cc77
 +}
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..da94b98
+index 0000000..d084a10
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,45 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12004,9 +12019,10 @@ index 0000000..da94b98
 +#define SYS_SIGNAL 17
 +#define SYS_ISATTY 18
 +#define SYS_LINK 19
-+#define SYS_WAIT 20
++#define SYS_WAITPID 20
 +#define SYS_READDIR 21
 +#define SYS_CHDIR 22
 +#define SYS_GETCWD 23
++#define SYS_EXECVP 24
 +
 +int _read_dir(int file, char *ptr, size_t len);

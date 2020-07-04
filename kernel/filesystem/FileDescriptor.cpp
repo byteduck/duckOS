@@ -33,6 +33,8 @@ FileDescriptor::FileDescriptor(Device* device): _file(device) {
 	_can_seek = !device->is_character_device();
 }
 
+FileDescriptor::~FileDescriptor() = default;
+
 
 void FileDescriptor::set_options(int options) {
 	_readable = options & O_RDONLY;

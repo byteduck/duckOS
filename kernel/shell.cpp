@@ -299,27 +299,29 @@ void Shell::command_eval(char *cmd, char *args){
 		ResultRet<Process *> p(0);
 
 		//Setup process arguments
-		ProcessArgs pargs(current_dir);
-		pargs.argv.push_back(cmd);
+		auto* pargs = new ProcessArgs(current_dir);
+		pargs->argv.push_back(cmd);
 		DC::string unsplit_args(args);
 		while(unsplit_args.length()) {
 			int idx = unsplit_args.find(' ');
 			if(idx != -1) {
 				DC::string arg = unsplit_args.substr(0, idx);
-				if(arg.length()) pargs.argv.push_back(arg);
+				if(arg.length()) pargs->argv.push_back(arg);
 				unsplit_args = unsplit_args.substr(idx + 1, unsplit_args.length() - idx - 1);
 			} else {
-				pargs.argv.push_back(unsplit_args);
+				pargs->argv.push_back(unsplit_args);
 				unsplit_args = "";
 			}
 		}
 
 		//Create process
 		if(cmds.find("/") != -1) {
-			p = Process::create_user(cmd, pargs);
+			p = Process::create_user(cmd, pargs, TaskManager::current_process()->pid());
 		} else {
-			p = Process::create_user(DC::string("/bin/") + cmds, pargs);
+			p = Process::create_user(DC::string("/bin/") + cmds, pargs, TaskManager::current_process()->pid());
 		}
+
+		delete pargs;
 
 		//Handle error
 		if(p.is_error()) {

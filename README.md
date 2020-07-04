@@ -9,7 +9,7 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
 - Reading files off of the hard drive
 - Reading devices as files (`/dev/hda`, `/dev/zero`, `/dev/random`, etc)
 - A newlib-based C standard library for programs (Only some syscalls are implemented so far)
-- Multitasking / executing ELFs
+- Multitasking / executing ELFs (With CoW for forked processes)
   
 ### Programs
 - mirror (/bin/mirror): A demo program that prompts you to type something and then prints it back to you.
@@ -24,7 +24,7 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
 ### Known Issues / Limitations
 - Only works with ext2 filesystems with a block size of 1024  (I think)
 - Uses BIOS interrupts (ATA PIO) to read/write to disk instead of AHCI/IDE (This is pretty slow)
-- Copy-on-write (CoW) is not implemented, so when processes fork, they copy all working memory which can be slow
+- File locking doesn't seem to work properly yet
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.

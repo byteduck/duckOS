@@ -33,7 +33,9 @@ namespace DC {
 			inited = 1;
 		}
 
-		vector(size_t size, const T& value = T()): _storage(new T[size] {value}), _capacity(size) {
+		vector(size_t size, const T& value = T()): _storage((T*) kcalloc(size, sizeof(T))), _capacity(size) {
+			for(auto i = 0; i < size; i++) new (&_storage[i]) T(value);
+			inited = 1;
 		}
 
 		~vector(){
@@ -72,9 +74,9 @@ namespace DC {
 				}
 			}
 			_capacity = new_size;
-			if(_storage == nullptr) _storage = (T*)kmalloc(new_size * sizeof(T));
+			if(_storage == nullptr) _storage = (T*) kcalloc(new_size, sizeof(T));
 			else {
-				T* tmp_storage = (T*)kmalloc(new_size * sizeof(T));
+				T* tmp_storage = (T*) kcalloc(new_size, sizeof(T));
 				for(auto i = 0; i < _size; i++) {
 					new (tmp_storage + i) T((T &&) _storage[i]);
 					_storage[i].~T();

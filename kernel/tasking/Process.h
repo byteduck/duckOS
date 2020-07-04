@@ -38,12 +38,13 @@ public:
 	~Process();
 
 	static Process* create_kernel(const DC::string& name, void (*func)());
-	static ResultRet<Process*> create_user(const DC::string& executable_loc, ProcessArgs& args);
+	static ResultRet<Process*> create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t parent);
 
 	pid_t pid();
 	DC::string name();
 	void notify(uint32_t sig);
 	void kill();
+	void handle_pagefault(Registers *regs);
 
 	uint32_t state = 0;
 	Paging::PageDirectory* page_directory;
@@ -73,7 +74,7 @@ public:
 	int sys_waitpid(pid_t pid, int* status, int flags);
 
 private:
-	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs& args);
+	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
 
 	bool load_elf(const DC::shared_ptr<FileDescriptor>& fd, ELF::elf32_header* header);
@@ -85,8 +86,11 @@ private:
 	size_t _kernel_stack_size;
 	size_t _stack_size;
 
-	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors;
+	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors = DC::vector<DC::shared_ptr<FileDescriptor>>(3);
 	DC::shared_ptr<LinkedInode> cwd;
+
+	pid_t parent = 0;
+	DC::vector<pid_t> children;
 };
 
 

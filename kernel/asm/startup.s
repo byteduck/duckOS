@@ -2,22 +2,36 @@
 [global start]
 [global load_gdt]
 [extern kmain]
-[global BootPageDirectory]
 
 global flagss
 
 KERNEL_VIRTUAL_BASE equ 0xC0000000                  ; 3GiB
-KERNEL_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)
+KERNEL_START_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)
+
+section .pagetables
+align 0x1000
+
+
+;Page tables
+IdentityPageTable:
+    times 4096 dd 0
+KernelPageTable1:
+    times 4096 dd 0
+KernelPageTable2:
+    times 4096 dd 0
+
+;Page directory
+BootPageDirectory:
+    times (KERNEL_START_PAGE_NUMBER) dd 0
+HigherHalfPDStart:
+    times (1024 - KERNEL_START_PAGE_NUMBER) dd 0
 
 section .data
 align 0x1000
-BootPageDirectory:                              ;The page directory for mapping the higher-half.
-    dd 0x00000083
-    times (KERNEL_PAGE_NUMBER - 1) dd 0
-    dd 0x00000083                               ;Our kernel's page
-    times (1024 - KERNEL_PAGE_NUMBER - 1) dd 0
 
-retfromkernel: db 0xa,"|-----------------------|",0xa,"| Returned from kernel. |",0xa,"|-----------------------|" ;The message that shows when (if?) the kernel exits.
+;Variables
+mbootptr:
+    dd 0
 
 section .multiboot
 align 4
@@ -30,15 +44,43 @@ mboot_end:
 section .text
 
 start:
-    mov ecx, (BootPageDirectory - KERNEL_VIRTUAL_BASE) ;We're subtracting KERNEL_VIRTUAL_BASE because this whole thing is compiled with an offset of 0xc0000000, and we want physical addresses.
+    mov [mbootptr - KERNEL_VIRTUAL_BASE], ebx
+
+    ;Identity map first 4MiB
+    mov ebx, 0x0
+    mov edx, IdentityPageTable - KERNEL_VIRTUAL_BASE
+    call fill_table
+
+    ;Assign identity entry in page directory
+    mov ecx, (IdentityPageTable - KERNEL_VIRTUAL_BASE)
+    or ecx, 3
+    mov [BootPageDirectory - KERNEL_VIRTUAL_BASE], ecx
+
+    ;Map first 8MiB of kernel
+    mov eax, 0x0
+    mov ebx, 0x0
+    mov edx, (KernelPageTable1 - KERNEL_VIRTUAL_BASE)
+    call fill_table
+    mov eax, 0x0
+    mov ebx, (1024 * 4096)
+    mov edx, (KernelPageTable2 - KERNEL_VIRTUAL_BASE)
+    call fill_table
+
+    ;Assign kernel entries in page directory
+    mov ecx, (KernelPageTable1 - KERNEL_VIRTUAL_BASE)
+    or ecx, 3
+    mov [HigherHalfPDStart - KERNEL_VIRTUAL_BASE], ecx
+    mov ecx, (KernelPageTable2 - KERNEL_VIRTUAL_BASE)
+    or ecx, 3
+    mov [HigherHalfPDStart - KERNEL_VIRTUAL_BASE + 4], ecx
+
+    ;Load boot page directory into cr3
+    mov ecx, (BootPageDirectory - KERNEL_VIRTUAL_BASE)
     mov cr3, ecx
 
-    mov ecx, cr4
-    or ecx, 0x00000010 ;Enable PSE
-    mov cr4, ecx
-
+    ;Turn on paging
     mov ecx, cr0
-    or ecx, 0x80000000 ;Turn on paging
+    or ecx, 0x80000000
     mov cr0, ecx
 
     lea ecx, [start_hh]
@@ -49,14 +91,28 @@ start_hh:
     	invlpg [0]
 
 	mov esp, stack+0x4000
-	push dword ebx
+	push dword [mbootptr]
 
 	call kmain
 
-	mov eax, 1
-	mov ebx, retfromkernel
-	int 0x80
 	jmp $
+
+;Map a pagetable pointed to by edx starting at physical address ebx
+fill_table:
+    push eax
+    mov eax, 0
+fill_table_loop:
+    mov ecx, ebx
+    or ecx, 3
+    mov [edx+eax*4], ecx
+    add ebx, 4096
+    inc eax
+    cmp eax, 1024
+    je fill_table_end
+    jmp fill_table_loop
+fill_table_end:
+    pop eax
+    ret
 
 section .bss
 align 32
