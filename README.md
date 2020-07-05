@@ -24,7 +24,7 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
 ### Known Issues / Limitations
 - Only works with ext2 filesystems with a block size of 1024  (I think)
 - Uses BIOS interrupts (ATA PIO) to read/write to disk instead of AHCI/IDE (This is pretty slow)
-- File locking doesn't seem to work properly yet
+- File locking uses spinlocks, which wastes CPU time
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
