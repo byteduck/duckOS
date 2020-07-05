@@ -33,10 +33,10 @@ private:
 
 class Locker {
 public:
-	Locker(Lock lock);
+	explicit Locker(Lock& lock);
 	~Locker();
 private:
-	Lock _lock;
+	Lock& _lock;
 };
 
 #define LOCK(lock) Locker locker((lock))

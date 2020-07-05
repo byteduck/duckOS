@@ -17,6 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <kernel/kstdio.h>
 #include "Lock.h"
 
 Lock::Lock() = default;
@@ -36,7 +37,7 @@ void Lock::release() {
 }
 
 
-Locker::Locker(Lock lock): _lock(lock) {
+Locker::Locker(Lock& lock): _lock(lock) {
 	while(_lock.locked());
 	_lock.lock();
 }

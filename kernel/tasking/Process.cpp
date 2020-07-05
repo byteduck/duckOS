@@ -313,7 +313,8 @@ ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
 	if(fd < 0 || fd >= file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
-	return file_descriptors[fd]->write(buf, count);
+	int ret = file_descriptors[fd]->write(buf, count);
+	return ret;
 }
 
 size_t Process::sys_sbrk(int amount) {
