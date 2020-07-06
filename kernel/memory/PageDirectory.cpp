@@ -423,4 +423,8 @@ namespace Paging {
 	void PageDirectory::take_pmem_ownership(size_t paddr) {
 		_personal_pmem_bitmap.set_page_used(paddr / PAGE_SIZE);
 	}
+
+	size_t PageDirectory::used_pmem() {
+		return (_personal_pmem_bitmap.used_pages() * PAGE_SIZE) / 1024;
+	}
 }

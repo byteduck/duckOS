@@ -114,6 +114,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	this->kernel = kernel;
 	ring = kernel ? 0 : 3;
 	parent = parent;
+
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
 		file_descriptors.push_back(ttydesc);
@@ -146,9 +147,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	registers.eip = entry_point;
 
 	auto *stack = (uint32_t*) (stack_base + _stack_size);
-
 	stack = (uint32_t*) args->setup_stack(stack);
-
 	*--stack = 0; //Honestly? Not sure what this is for but nothing works without it :)
 
 	//If this is a usermode process, push the correct ss and stack pointer for switching rings during iret
@@ -179,9 +178,13 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	*--stack = 0; //edi
 	*--stack = 0; //esi
 	if(kernel) {
+		*--stack = 0x10; // ds
+		*--stack = 0x10; // es
 		*--stack = 0x10; // fs
 		*--stack = 0x10; // gs
 	} else {
+		*--stack = 0x23; // ds
+		*--stack = 0x23; // es
 		*--stack = 0x23; // fs
 		*--stack = 0x23; // gs
 	}
@@ -245,9 +248,13 @@ Process::Process(Process *to_fork, Registers &regs){
 	*--stack = 0; //edi
 	*--stack = 0; //esi
 	if(kernel) {
+		*--stack = 0x10; // ds
+		*--stack = 0x10; // es
 		*--stack = 0x10; // fs
 		*--stack = 0x10; // gs
 	} else {
+		*--stack = 0x23; // ds
+		*--stack = 0x23; // es
 		*--stack = 0x23; // fs
 		*--stack = 0x23; // gs
 	}

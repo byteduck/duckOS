@@ -230,6 +230,12 @@ namespace Paging {
 		 */
 		void take_pmem_ownership(size_t paddr);
 
+		/**
+		 * Get the used memory in KiB
+		 * @return The amount of used memory in KiB.
+		 */
+		size_t used_pmem();
+
 	private:
 		//The page directory entries for this page directory.
 		Entry* _entries = nullptr;

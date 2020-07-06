@@ -50,11 +50,11 @@ Process* TaskManager::process_for_pid(pid_t pid){
 
 void TaskManager::print_tasks(){
 	Process *current = kernel_proc;
-	printf("Running processes: (PID, name, state, * = is current)\n");
-	do{
-		printf("%c[%d] '%s' %d\n", current == current_proc ? '*' : ' ', current->pid(), current->name().c_str(), current->state);
+	printf("Running processes: ([PID] name state usermem)\n");
+	do {
+		printf("[%d] '%s' %d %dKiB\n", current->pid(), current->name().c_str(), current->state, current->ring == 3 ? current->page_directory->used_pmem() : 0);
 		current = current->next;
-	}while(current != kernel_proc);
+	} while(current != kernel_proc);
 }
 
 bool& TaskManager::enabled(){
@@ -117,8 +117,9 @@ Process *TaskManager::next_process() {
 }
 
 void TaskManager::preempt(){
+	if(!tasking_enabled) return;
 	auto old_proc = current_proc;
 	current_proc = next_process();
-	if(current_proc->ring == 3) tss.esp0 = (uint32_t) current_proc->kernel_stack_top();
+	if(current_proc->ring == 3) tss.esp0 = (size_t)current_proc->kernel_stack_top();
 	preempt_asm(&old_proc->registers.esp, &current_proc->registers.esp, current_proc->page_directory_loc);
 }

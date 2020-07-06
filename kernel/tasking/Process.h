@@ -27,6 +27,7 @@
 #include <kernel/tasking/elf.h>
 #include <common/shared_ptr.hpp>
 #include <kernel/filesystem/LinkedInode.h>
+#include <kernel/tasking/TSS.h>
 #include "ProcessArgs.h"
 
 #define PROCESS_STACK_SIZE 1048576 //1024KiB
@@ -46,14 +47,6 @@ public:
 	void kill();
 	void handle_pagefault(Registers *regs);
 
-	uint32_t state = 0;
-	Paging::PageDirectory* page_directory;
-	Process *next = nullptr, *prev = nullptr;
-	size_t page_directory_loc;
-	Registers registers = {};
-	bool kernel = false;
-	uint8_t ring;
-
 	void* kernel_stack_top();
 
 	//Syscalls
@@ -72,6 +65,14 @@ public:
 	int sys_stat(char* file, char* buf);
 	int sys_lseek(int file, off_t off, int whence);
 	int sys_waitpid(pid_t pid, int* status, int flags);
+
+	uint32_t state = 0;
+	Paging::PageDirectory* page_directory;
+	Process *next = nullptr, *prev = nullptr;
+	size_t page_directory_loc;
+	Registers registers = {};
+	bool kernel = false;
+	uint8_t ring;
 
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);

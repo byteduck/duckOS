@@ -105,7 +105,7 @@ isr_common:
     push eax
     mov eax, fault_handler
     call eax
-    pop eax
+    add esp, 4
     pop gs
     pop fs
     pop es
@@ -139,15 +139,8 @@ global irq15
 		jmp irq_common
 %endmacro
 
+
 irq0
-	cmp byte [tasking_enabled], 0
-    jne preempt_do
-	push eax
-	mov eax, 0x20
-	out 0x20, al
-	pop eax
-	iret
-preempt_do:
     push eax
     push ebx
     push ecx
@@ -167,6 +160,8 @@ preempt_init_asm: ;Pretty much the same as preempt_asm, but without storing the 
     mov esp, eax
     pop gs
     pop fs
+    pop es
+    pop ds
     pop esi
     pop edi
     pop ebp
@@ -180,6 +175,8 @@ preempt_asm:
     push ebp
     push edi
     push esi
+    push ds
+    push es
     push fs
     push gs
     mov [eax], esp
@@ -187,6 +184,8 @@ preempt_asm:
     mov esp, [ecx]
     pop gs
     pop fs
+    pop es
+    pop ds
     pop esi
     pop edi
     pop ebp
@@ -235,7 +234,7 @@ irq_common:
     push eax
     mov eax, irq_handler
     call eax
-    pop eax
+    add esp, 4
     pop gs
     pop fs
     pop es
