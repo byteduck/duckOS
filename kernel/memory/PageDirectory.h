@@ -100,6 +100,15 @@ namespace Paging {
 		 */
 		static void k_free_pages(void* ptr, size_t memsize);
 
+		/**
+		 * Maps a number of continguous pages in kernel vmem to physaddr and returns a pointer to the first one.
+		 * This marks both the virtual and physical pages as used (the physical pages can already be marked used).
+		 * @param physaddr The physical address to map to.
+		 * @param mem_size The amount of memory to map.
+		 * @param read_write Whether or not the memory should be marked read/write.
+		 * @return A pointer to the first page allocated.
+		 */
+		static void* k_mmap(size_t physaddr, size_t mem_size, bool read_write = true);
 
 
 		/************************************

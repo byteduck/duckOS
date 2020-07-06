@@ -32,7 +32,7 @@ Process* Process::create_kernel(const DC::string& name, void (*func)()){
 }
 
 ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t parent) {
-	auto fd_or_error = VFS::inst().open(executable_loc, O_RDONLY, 0, VFS::inst().root_ref());
+	auto fd_or_error = VFS::inst().open(executable_loc, O_RDONLY, 0, args->working_dir);
 	if(fd_or_error.is_error()) return fd_or_error.code();
 
 	auto fd = fd_or_error.value();
@@ -116,6 +116,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	parent = parent;
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
 		cwd = args->working_dir;
@@ -289,9 +290,11 @@ void Process::kill() {
 }
 
 void Process::handle_pagefault(Registers *regs) {
+	TaskManager::enabled() = false;
 	size_t err_pos;
 	asm("mov %%cr2, %0" : "=r" (err_pos));
 	if(!page_directory->try_cow(err_pos)) notify(SIGSEGV);
+	TaskManager::enabled() = true;
 }
 
 void *Process::kernel_stack_top() {
@@ -313,8 +316,7 @@ ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
 	if(fd < 0 || fd >= file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
-	int ret = file_descriptors[fd]->write(buf, count);
-	return ret;
+	return file_descriptors[fd]->write(buf, count);
 }
 
 size_t Process::sys_sbrk(int amount) {

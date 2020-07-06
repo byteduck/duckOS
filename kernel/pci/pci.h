@@ -39,6 +39,12 @@
 #define PCI_LATENCY_TIMER 0xd //byte
 #define PCI_HEADER_TYPE 0xe //byte
 #define PCI_BIST 0xf //byte
+#define PCI_BAR0 0x10
+#define PCI_BAR1 0x14
+#define PCI_BAR2 0x18
+#define PCI_BAR3 0x1C
+#define PCI_BAR4 0x20
+#define PCI_BAR5 0x24
 #define PCI_PRIMARY_BUS 0x18 //byte
 #define PCI_SECONDARY_BUS 0x19 //byte
 #define PCI_INTERRUPT_LINE 0x3c //byte
@@ -121,6 +127,7 @@ namespace PCI {
 	public:
 		uint16_t vendor;
 		uint16_t device;
+		bool operator==(ID& other) const;
 	};
 
 	typedef void (*PCIEnumerationCallback)(Address, ID, void* dataPtr);

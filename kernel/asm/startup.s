@@ -36,9 +36,9 @@ mbootptr:
 section .multiboot
 align 4
 mboot:
-	dd  0x1BADB002
-	dd  0x3
-	dd  -(0x1BADB002 + 0x3)
+	dd  0x1BADB002           ;Magic
+	dd  0x3                  ;Flags (4KiB-aligned modules, memory info)
+	dd  -(0x1BADB002 + 0x3)  ;Checksum
 mboot_end:
 
 section .text

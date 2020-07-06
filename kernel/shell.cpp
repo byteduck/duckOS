@@ -198,14 +198,15 @@ void Shell::command_eval(char *cmd, char *args){
 		TaskManager::print_tasks();
 	}else if(strcmp(cmd,"kill")){
 		uint32_t pid = atoi(args);
-		Process *proc = TaskManager::process_for_pid(pid);
-		if(proc != NULL && proc->pid() != 1){
-			TaskManager::kill(proc);
-			printf("Sent SIGTERM (%d) to %s (PID %d).\n", SIGTERM, proc->name().c_str(), proc->pid());
-		}else if(proc->pid() == 1)
+		if(pid == 1) {
 			printf("Cannot kill kernel!\n");
-		else
+			return;
+		}
+		Process *proc = TaskManager::process_for_pid(pid);
+		if(proc == nullptr)
 			printf("No process with PID %d.\n", pid);
+		else
+			TaskManager::kill(proc);
 	}else if(strcmp(cmd, "readelf")){
 		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
 		if(desc_ret.is_error()) {

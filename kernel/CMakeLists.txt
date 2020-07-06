@@ -66,7 +66,8 @@ SET(KERNEL_SRCS
         tasking/Process.cpp
         tasking/Lock.cpp
         tasking/ProcessArgs.cpp
-        memory/CoWParent.cpp)
+        memory/CoWParent.cpp
+        device/BochsVGADevice.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

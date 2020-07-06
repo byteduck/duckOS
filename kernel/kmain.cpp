@@ -35,6 +35,7 @@
 #include <kernel/device/TTYDevice.h>
 #include <kernel/device/KeyboardDevice.h>
 #include <common/defines.h>
+#include <kernel/device/BochsVGADevice.h>
 
 uint8_t boot_disk;
 
@@ -49,6 +50,8 @@ int kmain(uint32_t mbootptr){
 	interrupts_init();
 	Paging::setup_paging();
 	Device::init();
+
+	new BochsVGADevice();
 
 	printf("init: First stage complete.\ninit: Initializing tasking...\n");
 

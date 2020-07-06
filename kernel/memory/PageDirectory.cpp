@@ -135,6 +135,29 @@ namespace Paging {
 		PageDirectory::k_unmap_pages((size_t) ptr, num_pages);
 	}
 
+	void *PageDirectory::k_mmap(size_t physaddr, size_t memsize, bool read_write) {
+		size_t physaddr_pagealigned = (physaddr / PAGE_SIZE) * PAGE_SIZE;
+		size_t true_memsize = memsize + (physaddr % PAGE_SIZE);
+		size_t pages = (true_memsize + PAGE_SIZE - 1) / PAGE_SIZE;
+
+		//First, find a block of $pages contiguous virtual pages in the kernel space
+		auto vpage = kernel_vmem_bitmap.find_pages(pages, 0) + 0xC0000;
+		if (vpage == -1) {
+			PANIC("KRNL_NO_VMEM_SPACE", "The kernel ran out of vmem space.", true);
+		}
+
+		size_t vaddr = vpage * PAGE_SIZE;
+
+		//Next, map the pages
+		k_map_pages(physaddr_pagealigned, vaddr, read_write, pages);
+
+		//Finally, mark the physical pages used (if not already)
+		size_t start_page = physaddr_pagealigned / PAGE_SIZE;
+		for(auto i = start_page; i < pages + start_page; i++)
+			pmem_bitmap().set_page_used(i);
+
+		return (void*)(vaddr + (physaddr % PAGE_SIZE));
+	}
 
 	/**
 	 * PageDirectory Entry stuff

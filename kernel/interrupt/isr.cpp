@@ -75,7 +75,7 @@ void fault_handler(struct Registers *r){
 		switch(r->num){
 			case 0:
 			if(fpanic("DIVIDE_BY_ZERO", "Instruction pointer:", SIGILL)){
-				printHexl(r->err_code);
+				printf("%x", r->err_code);
 				while(true);
 			}
 			break;
@@ -97,9 +97,7 @@ void fault_handler(struct Registers *r){
 
 			default:
 			if(fpanic("Something weird happened.", "Fault and Instruction pointer:", SIGILL)){
-				printHex(r->num);
-				print(" and ");
-				printHexl(r->err_code);
+				printf("%x and %x", r->num, r->err_code);
 				while(true);
 			}
 			break;

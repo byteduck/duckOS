@@ -115,4 +115,8 @@ namespace PCI {
 	IOAddress Address::get_io_address(uint8_t field) {
 		return {field, function, slot, bus, 0, true};
 	}
+
+	bool ID::operator==(ID &other) const {
+		return other.device = device && other.vendor == vendor;
+	}
 }

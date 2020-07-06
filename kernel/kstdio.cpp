@@ -21,16 +21,79 @@
 #include <kernel/kstdio.h>
 #include <kernel/memory/paging.h>
 #include <common/stdlib.h>
+#include <kernel/font8x8/font8x8_latin.h>
+#include <kernel/device/BochsVGADevice.h>
 
 int xpos = 0;
 int ypos = 0;
+int num_columns = 80;
+int num_rows = 25;
 char ccolor = 0x0f;
 uint8_t* vidmem = (uint8_t*)0xB8000 + HIGHER_HALF;
+bool graphical_mode = false;
 
-// Specific mode print_util should implement:
-// putch_color(char c, char color);
-// clearScreen();
-// center_print(char c, char color); (Should provide a wrapper for center_print_base(c,color,width))
+//Every single print statement ultimately uses this method.
+void putch_color(char c, char color){
+	serial_putch(c);
+
+	if(c == '\r'){
+		xpos = 0;
+	}else if(c == '\n'){
+		xpos = 0;
+		ypos++;
+	}else if(c == '\t'){
+		for(uint8_t i = 0; i < 5; i++)
+			putch_color(' ',color);
+	} else {
+		if(graphical_mode) graphical_putch_color(c, color);
+		else textmode_putch_color(c, color);
+		xpos++;
+		if(xpos >= num_columns){
+			ypos++;
+			xpos = 0;
+		}
+	}
+}
+
+void graphical_putch_color(char c, char color) {
+	static uint32_t* framebuffer = nullptr;
+	if(!framebuffer) framebuffer = BochsVGADevice::inst().get_framebuffer();
+
+	while(ypos >= num_rows) {
+		memcpy(framebuffer, framebuffer + 8 * (num_columns * 8), (num_rows - 1) * 8 * num_columns * 8 * 4);
+		memset(framebuffer + (8 * (num_rows - 1)) * (num_columns * 8), 0, num_columns * 8 * 8 * 4);
+		ypos--;
+	}
+
+	uint16_t pixel_xpos = xpos * 8;
+	uint16_t pixel_ypos = ypos * 8;
+	for(uint16_t x = 0; x < 8; x++) {
+		for(uint16_t y = 0; y < 8; y++) {
+			framebuffer[(x + pixel_xpos) + (y + pixel_ypos) * num_columns * 8] = (font8x8_basic[c][y] >> x) & 0x1 ? 0xFFFFFF : 0;
+		}
+	}
+}
+
+void textmode_putch_color(char c, char color) {
+	while(ypos >= num_rows) {
+		uint16_t i = 80*2;
+		while(i < 80*25*2){
+			vidmem[i-(80*2)] = vidmem[i];
+			i++;
+		}
+		i = 80*2*24;
+		while(i < 80*25*2){
+			vidmem[i++] = ' ';
+			vidmem[i++] = 0x07;
+		}
+		ypos--;
+	}
+
+	int pos = (xpos+(ypos*80))*2;
+	vidmem[pos] = c;
+	vidmem[pos+1] = color;
+	update_cursor();
+}
 
 void putch(char c){
 	if(c == '\b')
@@ -38,6 +101,28 @@ void putch(char c){
 	else
 		putch_color(c, ccolor);
 }
+
+void serial_putch(char c) {
+	static bool serial_inited = false;
+	if(!serial_inited) {
+		outb(0x3F9, 0x00);
+		outb(0x3FB, 0x80);
+		outb(0x3F8, 0x02);
+		outb(0x3F9, 0x00);
+		outb(0x3FB, 0x03);
+		outb(0x3FA, 0xC7);
+		outb(0x3FC, 0x0B);
+		serial_inited = true;
+	}
+
+	while (!(inb(0x3FD) & 0x20u));
+
+	if(c == '\n') outb(0x3F8, '\r');
+	outb(0x3F8, c);
+}
+
+
+
 
 void print_color(char* c, char color){
 	int i = 0;
@@ -62,77 +147,6 @@ void println(char* c){
 
 void setColor(char color){
 	ccolor = color;
-}
-
-void center_print_base(char* c, char color, int width){
-	if(xpos > 0){
-		print_color("\n",color);
-	}
-	int i = 0;
-	while(c[i]){
-		i++;
-	}
-	if(i > width){
-		print_color(c,color);
-	}else{
-		if(i % 2 == 0){
-			int h = (width-i)/2;
-			int j = 0;
-			while(j < h){
-				putch_color(' ', color);
-				j++;
-			}
-			print_color(c,color);
-			j = 0;
-			while(j < h){
-				putch_color(' ', color);
-				j++;
-			}
-		}else{
-			int h = (width-i)/2;
-			int j = 0;
-			while(j < h){
-				putch_color(' ', color);
-				j++;
-			}
-			print_color(c,color);
-			j = 0;
-			h--;
-			while(j < h+2){
-				putch_color(' ', color);
-				j++;
-			}
-		}
-	}
-}
-
-void printHex(uint8_t num){
-	char *str = "  ";
-	itoa(num, str, 16);
-	print("0x");
-	print(str);
-}
-
-void printHexw(uint16_t num){
-	char *str = "  ";
-	print("0x");
-	itoa(num >> 8, str, 16);
-	print(str);
-	itoa(num, str, 16);
-	print(str);
-}
-
-void printHexl(uint32_t num){
-	char *str = "        ";
-	print("0x");
-	itoa(num, str, 16);
-	print(str);
-}
-
-void printNum(int num){
-	char str[11];
-	itoa(num,str,10);
-	print(str);
 }
 
 void printf(char *fmt, ...){
@@ -194,6 +208,7 @@ void printf(char *fmt, ...){
 }
 
 void backspace(){
+	serial_putch('\b');
 	if(xpos != 0){
 		xpos--;
 		putch(' ');
@@ -211,31 +226,6 @@ void PANIC(char *error, char *msg, bool hang){
 	println(msg);
 	if(hang) cli();
 	while(hang);
-}
-
-void putch_color(char c, char color){
-	if(c == '\r'){
-		xpos = 0;
-	}else if(c == '\n'){
-		xpos = 0;
-		ypos++;
-	}else if(c == '\t'){
-		for(uint8_t i = 0; i < 5; i++)
-			putch_color(' ',color);
-	}else{
-		int pos = (xpos+(ypos*80))*2;
-		vidmem[pos] = c;
-		vidmem[pos+1] = color;
-		xpos++;
-		if(xpos >= 80){
-			ypos++;
-			xpos = 0;
-		}
-	}
-	while(ypos >= 25){
-		scroll();
-	}
-	update_cursor();
 }
 
 void clearScreen(){
@@ -257,10 +247,6 @@ void setAllColor(char color){
 	setColor(color);
 }
 
-void center_print(char* c, char color){
-	center_print_base(c, color, 80);
-}
-
 void update_cursor(){
 	uint16_t position=(ypos*80) + xpos;
     outb(0x3D4, 0x0F);
@@ -269,20 +255,17 @@ void update_cursor(){
     outb(0x3D5, (uint8_t)((position>>8)&0xFF));
 }
 
-void scroll(){
-	uint16_t i = 80*2;
-	while(i < 80*25*2){
-		vidmem[i-(80*2)] = vidmem[i];
-		i++;
+void set_graphical_mode(bool is_graphical) {
+	if(is_graphical != graphical_mode) {
+		xpos = 0;
+		ypos = 0;
 	}
-	i = 80*2*24;
-	while(i < 80*25*2){
-		vidmem[i++] = ' ';
-		vidmem[i++] = 0x07;
+	if(is_graphical) {
+		num_columns = BochsVGADevice::inst().get_framebuffer_width() / 8;
+		num_rows = BochsVGADevice::inst().get_framebuffer_height() / 8;
+	} else {
+		num_columns = 80;
+		num_rows = 25;
 	}
-	ypos--;
-}
-
-void set_vidmem(uint8_t *memloc) {
-	vidmem = memloc;
+	graphical_mode = is_graphical;
 }

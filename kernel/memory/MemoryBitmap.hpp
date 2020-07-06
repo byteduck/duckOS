@@ -88,13 +88,11 @@ public:
 	}
 
 	void set_page_used(size_t page){
-		ASSERT(!is_page_used(page));
 		_used_pages += 1;
 		bitmap[page / 32] |= 1u << (page % 32u);
 	}
 
 	void set_page_free(size_t page){
-		ASSERT(is_page_used(page));
 		_used_pages -= 1;
 		bitmap[page / 32] &= ~(1u << (page % 32u));
 	}
