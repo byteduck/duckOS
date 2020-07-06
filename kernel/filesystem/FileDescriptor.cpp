@@ -108,12 +108,14 @@ ssize_t FileDescriptor::read_dir_entries(char* buffer, size_t len) {
 	ssize_t nbytes = 0;
 	char* tmpbuf = (char*)kmalloc(sizeof(DirectoryEntry) + NAME_MAXLEN * sizeof(char));
 	while(true) {
-		ssize_t read = read_dir_entry((DirectoryEntry*) tmpbuf);
+		ssize_t read = _file->read_dir_entry(*this, offset(), (DirectoryEntry*)tmpbuf);
 		if(read > 0) {
+			if(_can_seek) _seek += read;
 			if(read + nbytes > len) break;
-			memcpy(buffer, tmpbuf, read);
-			nbytes += read;
-			buffer += read;
+			size_t entry_len = sizeof(DirectoryEntry) + ((DirectoryEntry*)tmpbuf)->name_length;
+			memcpy(buffer, tmpbuf, entry_len);
+			nbytes += entry_len;
+			buffer += entry_len;
 		} else if(read == 0) {
 			break; //Nothing left to read
 		} else {

@@ -23,6 +23,7 @@
 #include <common/stdlib.h>
 #include <kernel/font8x8/font8x8_latin.h>
 #include <kernel/device/BochsVGADevice.h>
+#include <kernel/tasking/TaskManager.h>
 
 int xpos = 0;
 int ypos = 0;
@@ -52,6 +53,7 @@ void putch_color(char c, char color){
 			ypos++;
 			xpos = 0;
 		}
+		if(!graphical_mode) update_cursor();
 	}
 }
 
@@ -60,9 +62,12 @@ void graphical_putch_color(char c, char color) {
 	if(!framebuffer) framebuffer = BochsVGADevice::inst().get_framebuffer();
 
 	while(ypos >= num_rows) {
+		//TODO: Better way of scrolling other than memcpying framebuffer
+		TaskManager::enabled() = false;
 		memcpy(framebuffer, framebuffer + 8 * (num_columns * 8), (num_rows - 1) * 8 * num_columns * 8 * 4);
 		memset(framebuffer + (8 * (num_rows - 1)) * (num_columns * 8), 0, num_columns * 8 * 8 * 4);
 		ypos--;
+		TaskManager::enabled() = true;
 	}
 
 	uint16_t pixel_xpos = xpos * 8;
@@ -92,7 +97,6 @@ void textmode_putch_color(char c, char color) {
 	int pos = (xpos+(ypos*80))*2;
 	vidmem[pos] = c;
 	vidmem[pos+1] = color;
-	update_cursor();
 }
 
 void putch(char c){
@@ -229,10 +233,14 @@ void PANIC(char *error, char *msg, bool hang){
 }
 
 void clearScreen(){
-	for(int y=0; y<25; y++){
-		for(int x=0; x<80; x++){
-			vidmem[(x+(y*80))*2] = ' ';
+	if(!graphical_mode) {
+		for (int y = 0; y < 25; y++) {
+			for (int x = 0; x < 80; x++) {
+				vidmem[(x + (y * 80)) * 2] = ' ';
+			}
 		}
+	} else {
+		memset(BochsVGADevice::inst().get_framebuffer(), 0, num_columns * num_rows * 8 * 8 * 4);
 	}
 	xpos = 0;
 	ypos = 0;

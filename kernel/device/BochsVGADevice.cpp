@@ -34,8 +34,10 @@ BochsVGADevice::BochsVGADevice(): BlockDevice(29, 0) {
 		}
 	}, &address);
 
-	if(address.bus == 0 && address.function == 0 && address.slot == 0) printf("vga: Could not find a bochs-compatible VGA device!\n");
-	else {
+	if(address.bus == 0 && address.function == 0 && address.slot == 0) {
+		printf("vga: Could not find a bochs-compatible VGA device!\n");
+		delete this;
+	} else {
 		framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
 		set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
 		framebuffer = (uint32_t*)Paging::PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
@@ -65,7 +67,7 @@ bool BochsVGADevice::set_resolution(uint16_t width, uint16_t height) {
 	write_register(VBE_DISPI_INDEX_XRES, width);
 	write_register(VBE_DISPI_INDEX_YRES, height);
 	write_register(VBE_DISPI_INDEX_VIRT_WIDTH, width);
-	write_register(VBE_DISPI_INDEX_VIRT_HEIGHT, height);
+	write_register(VBE_DISPI_INDEX_VIRT_HEIGHT, height * 2);
 	write_register(VBE_DISPI_INDEX_BPP, VBE_DISPI_BPP_32);
 	write_register(VBE_DISPI_INDEX_ENABLE, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
 	write_register(VBE_DISPI_INDEX_BANK, 0);
