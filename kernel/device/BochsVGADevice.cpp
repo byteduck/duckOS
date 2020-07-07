@@ -40,6 +40,7 @@ BochsVGADevice::BochsVGADevice(): BlockDevice(29, 0) {
 	} else {
 		framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
 		set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
+		Paging::PageDirectory::k_mark_pmem(framebuffer_paddr, framebuffer_size(), true);
 		framebuffer = (uint32_t*)Paging::PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
 		set_graphical_mode(true);
 		printf("vga: Found a bochs-compatible VGA device at %x:%x.%x\n", address.bus, address.slot, address.function);

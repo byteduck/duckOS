@@ -45,10 +45,10 @@ int kmain(uint32_t mbootptr){
 #ifdef DEBUG
 	printf("init: Debug mode is enabled.\n");
 #endif
-	parse_mboot(mbootptr + HIGHER_HALF);
 	load_gdt();
 	interrupts_init();
 	Paging::setup_paging();
+	parse_mboot(mbootptr);
 	Device::init();
 
 	new BochsVGADevice();
@@ -115,14 +115,30 @@ void kmain_late(){
 }
 
 void parse_mboot(uint32_t addr){
-	struct multiboot_info *header = (multiboot_info*)addr;
+	//Map header into memory
+	auto* header = (struct multiboot_info*) Paging::PageDirectory::k_mmap(addr, sizeof(struct multiboot_info), true);
+	if(!header) PANIC("MULTIBOOT_FAIL", "Failed to k_mmap memory for the multiboot header.\n", true);
+
+	//Check boot disk
 	if(header->flags & MULTIBOOT_INFO_BOOTDEV) {
 		boot_disk = (header->boot_device & 0xF0000000u) >> 28u;
 		printf("init: BIOS boot disk: 0x%x\n", boot_disk);
 	} else {
-		printf("init: No multiboot boot device info. Cannot boot.\n");
-		while(1);
+		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have boot device info. Cannot boot.\n", true);
 	}
+
+	//Parse memory map
+	//TODO: Actually keep track of the information and use it
+	if(header->flags & MULTIBOOT_INFO_MEM_MAP) {
+		auto* mmap_entry = (struct multiboot_mmap_entry*) (Paging::PageDirectory::k_mmap(header->mmap_addr, header->mmap_length, true));
+		Paging::parse_mboot_memory_map(header, mmap_entry);
+	} else {
+		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have a memory map. Cannot boot.\n", true);
+	}
+
+	//Unmap header
+	Paging::PageDirectory::k_munmap(header, sizeof(struct multiboot_info));
+
 }
 
 void interrupts_init(){

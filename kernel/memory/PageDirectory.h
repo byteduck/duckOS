@@ -77,7 +77,7 @@ namespace Paging {
 
 		/**
 		 * Unmaps one page at virtaddr in kernel space.
-		 * @param virtaddr The virtual address to unmap. Must be in kernel space (>=3GiB)
+		 * @param virtaddr The page-aligned virtual address to unmap. Must be in kernel space (>=3GiB)
 		 */
 		static void k_unmap_page(size_t virtaddr);
 
@@ -102,13 +102,28 @@ namespace Paging {
 
 		/**
 		 * Maps a number of continguous pages in kernel vmem to physaddr and returns a pointer to the first one.
-		 * This marks both the virtual and physical pages as used (the physical pages can already be marked used).
+		 * This marks virtual pages as used, and the physical pages as used if mark_pmem is true.
 		 * @param physaddr The physical address to map to.
 		 * @param mem_size The amount of memory to map.
 		 * @param read_write Whether or not the memory should be marked read/write.
 		 * @return A pointer to the first page allocated.
 		 */
-		static void* k_mmap(size_t physaddr, size_t mem_size, bool read_write = true);
+		static void* k_mmap(size_t physaddr, size_t mem_size, bool read_write);
+
+		/**
+		 * To be used in conjunction with k_mmap to unmap mapped pages. DOES NOT MARK PHYSICAL MEMORY FREE.
+		 * @param virtaddr The virtual address to start unmapping at (doesn't need to be page-aligned)
+		 * @param size The size (in bytes) given to k_mmap.
+		 */
+		static void k_munmap(void* ptr, size_t memsize);
+
+		/**
+		 * Marks the physical pages taken up by physaddr -> physaddr + memsize as free/used.
+		 * @param physaddr The physical address to start at (doesn't need to be page-aligned)
+		 * @param memsize The size of memory to mark
+		 * @param used Whether or not it should be mark used
+		 */
+		static void k_mark_pmem(size_t physaddr, size_t memsize, bool used);
 
 
 		/************************************

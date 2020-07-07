@@ -30,6 +30,7 @@ namespace Paging {
 	PageDirectory::Entry kernel_page_directory_entries[1024] __attribute__((aligned(4096)));
 	PageTable::Entry kernel_early_page_table_entries[1024] __attribute__((aligned(4096)));
 	MemoryBitmap<0x100000> _pmem_bitmap;
+	size_t usable_bytes_ram = 0;
 
 	//TODO: Assumes computer has at least 4GiB of memory. Should detect memory in future.
 	void setup_paging() {
@@ -40,7 +41,9 @@ namespace Paging {
 		PageDirectory::init_kmem();
 
 		//Mark the kernel's pages as used
-		for (auto i = 0; i < (KERNEL_START - HIGHER_HALF) / PAGE_SIZE + KERNEL_SIZE_PAGES; i++) {
+		size_t k_page_start = (KERNEL_START - HIGHER_HALF) / PAGE_SIZE;
+		size_t k_page_end = k_page_start + KERNEL_SIZE_PAGES;
+		for (auto i = k_page_start; i < k_page_end; i++) {
 			pmem_bitmap().set_page_used(i);
 		}
 
@@ -66,10 +69,8 @@ namespace Paging {
 		//Map kernel pages into page_tables
 		PageDirectory::k_map_pages(KERNEL_START - HIGHER_HALF, KERNEL_START, true, KERNEL_SIZE_PAGES);
 
-		//Map the page with the video memory in it
-		size_t vidmem_ppage = (0xB8000 / PAGE_SIZE) * PAGE_SIZE;
-		size_t vidmem_vpage = vidmem_ppage + HIGHER_HALF;
-		PageDirectory::k_map_pages(vidmem_ppage, vidmem_vpage, true, 1);
+		//Map the page with the video memory in it (in kstdio.c/h)
+		set_graphical_mode(false);
 
 		//Now, write everything to the directory
 		kernel_page_directory.update_kernel_entries();
@@ -122,19 +123,15 @@ namespace Paging {
 
 
 	size_t get_used_mem() {
-#if PAGE_SIZE_FLAG == PAGING_4KiB
-		return pmem_bitmap().used_pages() * 4;
-#else
-		return pmem_bitmap().used_pages() * 4096;
-#endif
+		return (pmem_bitmap().used_pages() * PAGE_SIZE) / 1024;
+	}
+
+	size_t get_total_mem() {
+		return usable_bytes_ram / 1024;
 	}
 
 	size_t get_used_kmem() {
-#if PAGE_SIZE_FLAG == PAGING_4KiB
-		return PageDirectory::kernel_vmem_bitmap.used_pages() * 4;
-#else
-		return PageDirectory::kernel_vmem_bitmap.used_pages() * 4096;
-#endif
+		return (PageDirectory::kernel_vmem_bitmap.used_pages() * PAGE_SIZE) / 1024;
 	}
 
 	void early_pagetable_setup(PageTable *page_table, size_t virtual_address, bool read_write) {
@@ -151,6 +148,17 @@ namespace Paging {
 
 	void invlpg(void* vaddr) {
 		asm volatile("invlpg %0" : : "m"(*(uint8_t*)vaddr) : "memory");
+	}
+
+	//TODO: Actually use the map
+	void parse_mboot_memory_map(struct multiboot_info* header, struct multiboot_mmap_entry* mmap_entry) {
+		size_t i = 0;
+		usable_bytes_ram = 0;
+		while(i < header->mmap_length) {
+			i += mmap_entry->size + sizeof(mmap_entry->size);
+			usable_bytes_ram += mmap_entry->len;
+			mmap_entry = (struct multiboot_mmap_entry*) ((size_t)mmap_entry + mmap_entry->size + sizeof(mmap_entry->size));
+		}
 	}
 
 }

@@ -264,6 +264,8 @@ void update_cursor(){
 }
 
 void set_graphical_mode(bool is_graphical) {
+	static bool mapped_textmode_vidmem = false;
+
 	if(is_graphical != graphical_mode) {
 		xpos = 0;
 		ypos = 0;
@@ -271,7 +273,18 @@ void set_graphical_mode(bool is_graphical) {
 	if(is_graphical) {
 		num_columns = BochsVGADevice::inst().get_framebuffer_width() / 8;
 		num_rows = BochsVGADevice::inst().get_framebuffer_height() / 8;
+
+		if(mapped_textmode_vidmem) {
+			Paging::PageDirectory::k_mark_pmem(0xB8000, 0xFA0, false);
+			Paging::PageDirectory::k_munmap(vidmem, 0xFA0);
+			mapped_textmode_vidmem = false;
+		}
 	} else {
+		if(!mapped_textmode_vidmem) {
+			Paging::PageDirectory::k_mark_pmem(0xB8000, 0xFA0, true);
+			vidmem = (uint8_t*) Paging::PageDirectory::k_mmap(0xB8000, 0xFA0, true);
+			mapped_textmode_vidmem = true;
+		}
 		num_columns = 80;
 		num_rows = 25;
 	}

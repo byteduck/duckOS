@@ -152,7 +152,10 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"about")){
 		println("DuckOS v0.1");
 	}else if(strcmp(cmd, "mem")) {
-		printf("Used memory: %dKiB (%dKiB kernel vmem)\n", Paging::get_used_mem(), Paging::get_used_kmem());
+		printf("Total memory: %dKiB\n", Paging::get_total_mem());
+		size_t used_mem_frac = (Paging::get_used_mem() * 10000) / Paging::get_total_mem();
+		printf("Used memory: %dKiB (%d.%d%%)\n", Paging::get_used_mem(), used_mem_frac / 100, used_mem_frac % 100);
+		printf("Vmem used by kernel: %dKib\n", Paging::get_used_kmem());
 	}else if(strcmp(cmd,"cat.old")){
 		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
 		if(desc_ret.is_error()) {

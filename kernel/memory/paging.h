@@ -21,6 +21,7 @@
 #define PAGING_H
 
 #include "PageTable.h"
+#include <kernel/multiboot.h>
 
 #define PAGING_4KiB 0
 #define PAGING_4MiB 1
@@ -101,6 +102,12 @@ namespace Paging {
 	size_t get_used_mem();
 
 	/**
+	 * Get the total amount of physical memory in KiB.
+	 * @return The amount of total physical memory in KiB.
+	 */
+	 size_t get_total_mem();
+
+	/**
 	 * Get the amount of memory used by the kernel in KiB.
 	 * @return The amount of memory the kernel is using (granularity of PAGE_SIZE)
 	 */
@@ -111,6 +118,11 @@ namespace Paging {
 	 * @param vaddr A pointer that is the vaddr being invalidated.
 	 */
 	 void invlpg(void* vaddr);
+
+	 /**
+	  * Parses the multiboot memory map.
+	  */
+	 void parse_mboot_memory_map(struct multiboot_info* header, struct multiboot_mmap_entry* first_entry);
 };
 
 int liballoc_lock();

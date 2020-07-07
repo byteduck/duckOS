@@ -151,12 +151,27 @@ namespace Paging {
 		//Next, map the pages
 		k_map_pages(physaddr_pagealigned, vaddr, read_write, pages);
 
-		//Finally, mark the physical pages used (if not already)
-		size_t start_page = physaddr_pagealigned / PAGE_SIZE;
-		for(auto i = start_page; i < pages + start_page; i++)
-			pmem_bitmap().set_page_used(i);
-
 		return (void*)(vaddr + (physaddr % PAGE_SIZE));
+	}
+
+	void PageDirectory::k_munmap(void *ptr, size_t memsize) {
+		size_t virtaddr_pagealigned = ((size_t)ptr / PAGE_SIZE) * PAGE_SIZE;
+		size_t true_memsize = memsize + ((size_t)ptr % PAGE_SIZE);
+		size_t pages = (true_memsize + PAGE_SIZE - 1) / PAGE_SIZE;
+		k_unmap_pages(virtaddr_pagealigned, pages);
+	}
+
+	void PageDirectory::k_mark_pmem(size_t physaddr, size_t memsize, bool used) {
+		size_t start_page = (physaddr / PAGE_SIZE);
+		size_t true_memsize = memsize + (physaddr % PAGE_SIZE);
+		size_t pages = (true_memsize + PAGE_SIZE - 1) / PAGE_SIZE;
+		if(used) {
+			for (auto i = start_page; i < pages + start_page; i++)
+				pmem_bitmap().set_page_used(i);
+		} else {
+			for (auto i = start_page; i < pages + start_page; i++)
+				pmem_bitmap().set_page_free(i);
+		}
 	}
 
 	/**
