@@ -1,17 +1,22 @@
 # duckOS
 ### A hobby operating system
 
-This is based off of my previous hobby OS, codeOS2. I'm in the process of rewriting most of the previous code from scratch, though.
+This is just a little hobby OS that aims to be at least partially POSIX/UNIX compliant.
+
+If some of this code looks familiar, it's because it's based off of my previous hobby OS, codeOS2. Most of the code is new/rewritten at this point though.
 
 ### What's working
-- Booting via grub multiboot off of a hard drive
-- Typing commands into the kernel shell
-- Reading files off of the hard drive
-- Reading devices as files (`/dev/hda`, `/dev/zero`, `/dev/random`, etc)
-- A newlib-based C standard library for programs (Only some syscalls are implemented so far)
-- Multitasking / executing ELFs (With CoW for forked processes)
+- Booting off of an IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
+- A virtual filesystem with device files (`/dev/hda`, `/dev/zero`, `/dev/random`, `/dev/fb`, `/dev/tty`, etc)
+  - The root filesystem is ext2
+- A semicomplete newlib-based C standard library for programs (see [INSTRUCTIONS.md](INSTRUCTIONS.md))
+- Preemptive Multitasking (although there isn't anything that really takes advantage of `fork` yet besides the the userspace shell `dsh`)
+- A Bochs/Qemu/VirtualBox video driver (640x480x32bpp)
   
 ### Programs
+
+The code for these can be found in [programs](programs/).
+
 - mirror (/bin/mirror): A demo program that prompts you to type something and then prints it back to you.
 - dummy (/bin/dummy): A demo program that does nothing and exits.
 - fork (/bin/fork): A demo program that forks and then prints whether it is the child or the parent process.
@@ -20,11 +25,15 @@ This is based off of my previous hobby OS, codeOS2. I'm in the process of rewrit
 - pwd (/bin/pwd): Prints the current working directory.
 - dsh (/bin/dsh): A basic userspace shell.
 
+### Ports
+- DOOM ([duckos-doom](https://github.com/byteduck/duckos-doom)): A port of DOOM.
 
 ### Known Issues / Limitations
-- Only works with ext2 filesystems with a block size of 1024  (I think)
-- Uses BIOS interrupts (ATA PIO) to read/write to disk instead of AHCI/IDE (This is pretty slow)
+- Only works with ext2 filesystems with a block size of 1024  (I think, I need to test this)
+- No ext2 filesystem write support (files can only be read)
+- Uses ATA PIO mode to read/write to disk instead of DMA, which can be pretty slow, especially on real hardware
 - File locking uses spinlocks, which wastes CPU time
+- Only textmode works on real hardware, so programs like DOOM that rely on a framebuffer will only work in an emulator / VM
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
