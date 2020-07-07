@@ -65,6 +65,7 @@ public:
 	int sys_stat(char* file, char* buf);
 	int sys_lseek(int file, off_t off, int whence);
 	int sys_waitpid(pid_t pid, int* status, int flags);
+	int sys_gettimeofday(timespec *t, void *z);
 
 	uint32_t state = 0;
 	Paging::PageDirectory* page_directory;

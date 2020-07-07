@@ -1,7 +1,7 @@
 [bits 32]
 global idt_load
 extern idtp
-extern preempt
+extern pit_handler
 extern tasking_enabled
 idt_load:
 	lidt [idtp]
@@ -145,7 +145,7 @@ irq0
     push ebx
     push ecx
     push edx
-	call preempt
+	call pit_handler
 	pop edx
 	pop ecx
 	pop ebx

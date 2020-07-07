@@ -21,6 +21,7 @@
 #include <kernel/filesystem/VFS.h>
 #include <common/defines.h>
 #include <kernel/device/TTYDevice.h>
+#include <kernel/pit.h>
 #include "Process.h"
 #include "TaskManager.h"
 #include "elf.h"
@@ -317,7 +318,8 @@ void *Process::kernel_stack_top() {
 ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
 	if(fd < 0 || fd >= file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
-	return file_descriptors[fd]->read(buf, count);
+	int ret =  file_descriptors[fd]->read(buf, count);
+	return ret;
 }
 
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
@@ -459,4 +461,9 @@ int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 	}
 
 	return pid;
+}
+
+int Process::sys_gettimeofday(timespec *t, void *z) {
+	PIT::gettimeofday(t, z);
+	return 0;
 }

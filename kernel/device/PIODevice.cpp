@@ -19,6 +19,7 @@
 
 #include <kernel/kstdio.h>
 #include <common/stdlib.h>
+#include <kernel/tasking/TaskManager.h>
 #include "PIODevice.h"
 
 PIODevice::PIODevice(unsigned major, unsigned minor, uint8_t id): BlockDevice(major, minor) {
@@ -50,16 +51,23 @@ size_t PIODevice::block_size() {
 }
 
 ssize_t PIODevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+	//We disable TaskManager while reading/writing because it just makes things super slow.
+	//A real, memory-mapped IDE driver will fix this :)
+	bool en = TaskManager::enabled();
+	TaskManager::enabled() = false;
 	size_t num_blocks = (count + block_size() - 1) / block_size();
 	size_t block_start = offset / block_size();
 	auto* tmpbuf = new uint8_t[num_blocks * block_size()];
 	read_blocks(block_start, num_blocks, tmpbuf);
 	memcpy(buffer, tmpbuf + (offset % block_size()), count);
 	delete[] tmpbuf;
+	TaskManager::enabled() = en;
 	return count;
 }
 
 ssize_t PIODevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+	bool en = TaskManager::enabled();
+	TaskManager::enabled() = false;
 	size_t first_block = offset / block_size();
 	size_t first_block_start = offset % block_size();
 	size_t bytes_left = count;
@@ -94,6 +102,7 @@ ssize_t PIODevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffe
 		}
 		block++;
 	}
+	TaskManager::enabled() = en;
 
 	return count;
 }

@@ -25,7 +25,7 @@
 #include <common/circular_queue.hpp>
 #include <kernel/interrupt/IRQHandler.h>
 
-class KeyEvent {
+class __attribute__((packed)) KeyEvent {
 public:
 	uint16_t scancode;
 	uint8_t key;

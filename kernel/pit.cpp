@@ -19,33 +19,41 @@
 
 #include <kernel/kstddef.h>
 #include <kernel/pit.h>
-#include <kernel/kstdio.h>
 #include <kernel/tasking/TaskManager.h>
 
-extern bool tasking_enabled;
+namespace PIT {
+	uint32_t ticks = 0;
+	uint32_t seconds = 0;
 
-void pit_handler(){
-	asm volatile("pusha");
-	outb(0x20, 0x20);
-	asm volatile("popa");
-	//asm volatile("iret");
-}
+	void pit_handler(){
+		if(++ticks == 100) {
+			ticks = 0;
+			seconds++;
+		}
+		TaskManager::preempt();
+	}
 
-static inline void pit_send_data(uint16_t data, uint8_t counter){
-	uint8_t port = (counter==0) ? PIT_COUNTER0 : ((counter==1) ? PIT_COUNTER1 : PIT_COUNTER2);
-	outb(port, (uint8_t)data);
-}
+	void gettimeofday(struct timespec *t, void *tz) {
+		t->tv_sec = seconds;
+		t->tv_nsec = (long)ticks * 10000;
+	}
 
-void pit_init(uint32_t frequency){
-	uint16_t divisor = (uint16_t)( 1193181 / (uint16_t)frequency);
+	static inline void pit_send_data(uint16_t data, uint8_t counter){
+		uint8_t port = (counter==0) ? PIT_COUNTER0 : ((counter==1) ? PIT_COUNTER1 : PIT_COUNTER2);
+		outb(port, (uint8_t)data);
+	}
 
-	uint8_t ocw = 0;
-	ocw = (ocw & ~0xE) | 0x6;
-	ocw = (ocw & ~0x30) | 0x30;
-	ocw = (ocw & ~0xC0) | 0;
-	outb(PIT_CMD, ocw);
+	void init(){
+		auto divisor = (uint16_t)( 1193180u / PIT_FREQUENCY);
 
-	// set frequency rate
-	pit_send_data(divisor & 0xff, 0);
-	pit_send_data((divisor >> 8) & 0xff, 0);
+		uint8_t ocw = 0;
+		ocw = (ocw & ~0xEu) | 0x6u;
+		ocw = (ocw & ~0x30u) | 0x30u;
+		ocw = (ocw & ~0xC0u) | 0u;
+		outb(PIT_CMD, ocw);
+
+		// set frequency rate
+		pit_send_data(divisor & 0xffu, 0);
+		pit_send_data((divisor >> 8u) & 0xffu, 0);
+	}
 }
