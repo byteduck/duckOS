@@ -122,6 +122,9 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
 		cwd = args->working_dir;
+		quantum = 10;
+	} else {
+		quantum = 1;
 	}
 
 	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_KERNEL_STACK_SIZE);
@@ -205,6 +208,7 @@ Process::Process(Process *to_fork, Registers &regs){
 	current_brk = to_fork->current_brk;
 	cwd = to_fork->cwd;
 	parent = to_fork->_pid;
+	quantum = to_fork->quantum;
 
 	for(auto i = 0; i < to_fork->file_descriptors.size(); i++)
 		file_descriptors.push_back(to_fork->file_descriptors[i]);

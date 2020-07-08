@@ -74,6 +74,7 @@ public:
 	Registers registers = {};
 	bool kernel = false;
 	uint8_t ring;
+	uint8_t quantum;
 
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
