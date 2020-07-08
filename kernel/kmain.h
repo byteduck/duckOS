@@ -17,10 +17,12 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include "multiboot.h"
+
 extern "C" void asm_syscall_handler();
 extern void load_gdt();
 void interrupts_init();
-void parse_mboot(uint32_t addr);
+struct multiboot_info* parse_mboot(uint32_t addr);
 
 extern "C" int kmain(uint32_t mbootptr);
 void kmain_late();

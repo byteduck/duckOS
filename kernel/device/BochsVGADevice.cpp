@@ -21,13 +21,21 @@
 #include <kernel/pci/pci.h>
 #include <common/defines.h>
 
-BochsVGADevice* BochsVGADevice::instance;
 PCI::ID bochs_qemu_vga = {0x1234, 0x1111};
 PCI::ID vbox_vga = {0x80ee, 0xbeef};
 
-BochsVGADevice::BochsVGADevice(): BlockDevice(29, 0) {
-	instance = this;
+BochsVGADevice *BochsVGADevice::create() {
+	auto* ret = new BochsVGADevice();
+	if(!ret->detect()) {
+		delete ret;
+		return nullptr;
+	}
+	return ret;
+}
 
+BochsVGADevice::BochsVGADevice(): BlockDevice(29, 0) {}
+
+bool BochsVGADevice::detect() {
 	PCI::enumerate_devices([](PCI::Address address, PCI::ID id, void* dataPtr) {
 		if(id == bochs_qemu_vga || id == vbox_vga) {
 			*((PCI::Address*)dataPtr) = address;
@@ -36,20 +44,15 @@ BochsVGADevice::BochsVGADevice(): BlockDevice(29, 0) {
 
 	if(address.bus == 0 && address.function == 0 && address.slot == 0) {
 		printf("vga: Could not find a bochs-compatible VGA device!\n");
-		delete this;
-	} else {
-		framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
-		set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
-		Paging::PageDirectory::k_mark_pmem(framebuffer_paddr, framebuffer_size(), true);
-		framebuffer = (uint32_t*)Paging::PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
-		set_graphical_mode(true);
-		printf("vga: Found a bochs-compatible VGA device at %x:%x.%x\n", address.bus, address.slot, address.function);
-		printf("vga: virtual framebuffer mapped from 0x%x to 0x%x\n", framebuffer_paddr, framebuffer);
+		return false;
 	}
-}
-
-BochsVGADevice& BochsVGADevice::inst() {
-	return *instance;
+	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
+	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
+	Paging::PageDirectory::k_mark_pmem(framebuffer_paddr, framebuffer_size(), true);
+	framebuffer = (uint32_t*)Paging::PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
+	printf("vga: Found a bochs-compatible VGA device at %x:%x.%x\n", address.bus, address.slot, address.function);
+	printf("vga: virtual framebuffer mapped from 0x%x to 0x%x\n", framebuffer_paddr, framebuffer);
+	return true;
 }
 
 void BochsVGADevice::write_register(uint16_t index, uint16_t value) {

@@ -27,16 +27,16 @@
 
 int xpos = 0;
 int ypos = 0;
-int num_columns = 80;
-int num_rows = 25;
+uint32_t num_columns = 80;
+uint32_t num_rows = 25;
 char ccolor = 0x0f;
-uint8_t* vidmem = (uint8_t*)0xB8000 + HIGHER_HALF;
+uint8_t* vidmem = nullptr;
 bool graphical_mode = false;
 
 //Every single print statement ultimately uses this method.
 void putch_color(char c, char color){
 	serial_putch(c);
-
+	if(vidmem == nullptr) return;
 	if(c == '\r'){
 		xpos = 0;
 	}else if(c == '\n'){
@@ -58,8 +58,7 @@ void putch_color(char c, char color){
 }
 
 void graphical_putch_color(char c, char color) {
-	static uint32_t* framebuffer = nullptr;
-	if(!framebuffer) framebuffer = BochsVGADevice::inst().get_framebuffer();
+	uint32_t* framebuffer = (uint32_t*) vidmem;
 
 	while(ypos >= num_rows) {
 		//TODO: Better way of scrolling other than memcpying framebuffer
@@ -233,6 +232,7 @@ void PANIC(char *error, char *msg, bool hang){
 }
 
 void clearScreen(){
+	if(vidmem == nullptr) return;
 	if(!graphical_mode) {
 		for (int y = 0; y < 25; y++) {
 			for (int x = 0; x < 80; x++) {
@@ -240,7 +240,7 @@ void clearScreen(){
 			}
 		}
 	} else {
-		memset(BochsVGADevice::inst().get_framebuffer(), 0, num_columns * num_rows * 8 * 8 * 4);
+		memset(vidmem, 0, num_columns * num_rows * 8 * 8 * 4);
 	}
 	xpos = 0;
 	ypos = 0;
@@ -263,30 +263,20 @@ void update_cursor(){
     outb(0x3D5, (uint8_t)((position>>8)&0xFF));
 }
 
-void set_graphical_mode(bool is_graphical) {
-	static bool mapped_textmode_vidmem = false;
+void set_graphical_mode(uint32_t width, uint32_t height, void* framebuffer) {
+	graphical_mode = true;
+	vidmem = (uint8_t*) framebuffer;
+	num_columns = width / 8;
+	num_rows = height / 8;
+	xpos = 0;
+	ypos = 0;
+}
 
-	if(is_graphical != graphical_mode) {
-		xpos = 0;
-		ypos = 0;
-	}
-	if(is_graphical) {
-		num_columns = BochsVGADevice::inst().get_framebuffer_width() / 8;
-		num_rows = BochsVGADevice::inst().get_framebuffer_height() / 8;
-
-		if(mapped_textmode_vidmem) {
-			Paging::PageDirectory::k_mark_pmem(0xB8000, 0xFA0, false);
-			Paging::PageDirectory::k_munmap(vidmem, 0xFA0);
-			mapped_textmode_vidmem = false;
-		}
-	} else {
-		if(!mapped_textmode_vidmem) {
-			Paging::PageDirectory::k_mark_pmem(0xB8000, 0xFA0, true);
-			vidmem = (uint8_t*) Paging::PageDirectory::k_mmap(0xB8000, 0xFA0, true);
-			mapped_textmode_vidmem = true;
-		}
-		num_columns = 80;
-		num_rows = 25;
-	}
-	graphical_mode = is_graphical;
+void set_text_mode(uint32_t width, uint32_t height, void* framebuffer) {
+	vidmem = (uint8_t*) framebuffer;
+	graphical_mode = false;
+	num_columns = width;
+	num_rows = height;
+	xpos = 0;
+	ypos = 0;
 }

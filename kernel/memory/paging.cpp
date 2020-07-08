@@ -69,9 +69,6 @@ namespace Paging {
 		//Map kernel pages into page_tables
 		PageDirectory::k_map_pages(KERNEL_START - HIGHER_HALF, KERNEL_START, true, KERNEL_SIZE_PAGES);
 
-		//Map the page with the video memory in it (in kstdio.c/h)
-		set_graphical_mode(false);
-
 		//Now, write everything to the directory
 		kernel_page_directory.update_kernel_entries();
 	}

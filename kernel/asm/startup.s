@@ -37,8 +37,13 @@ section .multiboot
 align 4
 mboot:
 	dd  0x1BADB002           ;Magic
-	dd  0x3                  ;Flags (4KiB-aligned modules, memory info)
-	dd  -(0x1BADB002 + 0x3)  ;Checksum
+	dd  0x7                  ;Flags (4KiB-aligned modules, memory info, framebuffer info)
+	dd  -(0x1BADB002 + 0x7)  ;Checksum
+	times 5 dd 0
+	dd 0                      ;Graphics mode
+	dd 640                    ;Graphics width
+	dd 480                    ;Graphics height
+	dd 32                     ;Graphics depth
 mboot_end:
 
 section .text

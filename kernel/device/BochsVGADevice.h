@@ -53,8 +53,7 @@
 
 class BochsVGADevice: public BlockDevice {
 public:
-	BochsVGADevice();
-	static BochsVGADevice& inst();
+	static BochsVGADevice* create();
 
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 
@@ -63,7 +62,8 @@ public:
 	uint16_t get_framebuffer_height();
 
 private:
-	static BochsVGADevice* instance;
+	BochsVGADevice();
+	bool detect();
 
 	void write_register(uint16_t index, uint16_t value);
 	uint16_t read_register(uint16_t index);

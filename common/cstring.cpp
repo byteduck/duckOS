@@ -51,9 +51,24 @@ void *memset(void *dest, char val, int count){
 }
 
 void *memcpy(void *dest, const void *src, size_t count){
-	const char *sp = (const char *)src;
-	char *dp = (char *)dest;
-	for(; count != 0; count--) *dp++ = *sp++;
+	uint8_t *pdest = (uint8_t*) dest;
+	uint8_t *psrc = (uint8_t*) src;
+
+	int loops = (count / sizeof(uint32_t));
+	for(int index = 0; index < loops; ++index)
+	{
+		*((uint32_t*)pdest) = *((uint32_t*)psrc);
+		pdest += sizeof(uint32_t);
+		psrc += sizeof(uint32_t);
+	}
+
+	loops = (count % sizeof(uint32_t));
+	for (int index = 0; index < loops; ++index)
+	{
+		*pdest = *psrc;
+		++pdest;
+		++psrc;
+	}
 	return dest;
 }
 

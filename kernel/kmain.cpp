@@ -36,22 +36,44 @@
 #include <kernel/device/KeyboardDevice.h>
 #include <common/defines.h>
 #include <kernel/device/BochsVGADevice.h>
+#include <kernel/device/MultibootVGADevice.h>
 
 uint8_t boot_disk;
 
 int kmain(uint32_t mbootptr){
 	clearScreen();
 	printf("init: Starting duckOS...\n");
-#ifdef DEBUG
-	printf("init: Debug mode is enabled.\n");
-#endif
 	load_gdt();
 	interrupts_init();
 	Paging::setup_paging();
-	parse_mboot(mbootptr);
+	struct multiboot_info* mboot_header = parse_mboot(mbootptr);
 	Device::init();
 
-	new BochsVGADevice();
+	//Try setting up VGA
+	BochsVGADevice* bochs_vga = BochsVGADevice::create();
+	if(bochs_vga) {
+		set_graphical_mode(bochs_vga->get_framebuffer_width(), bochs_vga->get_framebuffer_height(), bochs_vga->get_framebuffer());
+	} else {
+		auto* mboot_vga = MultibootVGADevice::create(mboot_header);
+		if(mboot_vga) {
+			if(mboot_vga->is_textmode()) {
+				set_text_mode(mboot_vga->get_framebuffer_width(), mboot_vga->get_framebuffer_height(), mboot_vga->get_framebuffer());
+			} else {
+				set_graphical_mode(mboot_vga->get_framebuffer_width(), mboot_vga->get_framebuffer_height(), mboot_vga->get_framebuffer());
+			}
+		} else {
+			printf("vga: Falling back to text mode.\n");
+			Paging::PageDirectory::k_mark_pmem(0xB8000, 0xFA0, true);
+			void* vidmem = Paging::PageDirectory::k_mmap(0xB8000, 0xFA0, true);
+			set_text_mode(80, 25, vidmem);
+		}
+	}
+
+	clearScreen();
+
+#ifdef DEBUG
+	printf("init: Debug mode is enabled.\n");
+#endif
 
 	printf("init: First stage complete.\ninit: Initializing tasking...\n");
 
@@ -114,9 +136,10 @@ void kmain_late(){
 	while(1);
 }
 
-void parse_mboot(uint32_t addr){
+struct multiboot_info* parse_mboot(uint32_t addr){
 	//Map header into memory
 	auto* header = (struct multiboot_info*) Paging::PageDirectory::k_mmap(addr, sizeof(struct multiboot_info), true);
+	Paging::PageDirectory::k_mark_pmem(addr, sizeof(struct multiboot_info), true);
 	if(!header) PANIC("MULTIBOOT_FAIL", "Failed to k_mmap memory for the multiboot header.\n", true);
 
 	//Check boot disk
@@ -137,8 +160,7 @@ void parse_mboot(uint32_t addr){
 	}
 
 	//Unmap header
-	Paging::PageDirectory::k_munmap(header, sizeof(struct multiboot_info));
-
+	return header;
 }
 
 void interrupts_init(){
