@@ -3,7 +3,7 @@
 
 This is just a little hobby OS that aims to be at least partially POSIX/UNIX compliant.
 
-If some of this code looks familiar, it's because it's based off of my previous hobby OS, codeOS2. Most of the code is new/rewritten at this point though.
+If some of this code looks familiar, it's because it's based off of my previous hobby OS, [codeOS2](https://github.com/byteduck/codeOS2). Most of the code is new/rewritten at this point though.
 
 ### What's working
 - Booting off of an IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
@@ -12,6 +12,7 @@ If some of this code looks familiar, it's because it's based off of my previous 
 - A semicomplete newlib-based C standard library for programs (see [INSTRUCTIONS.md](INSTRUCTIONS.md))
 - Preemptive Multitasking (although there isn't anything that really takes advantage of `fork` yet besides the the userspace shell `dsh`)
 - A Bochs/Qemu/VirtualBox video driver (640x480x32bpp)
+- Multiboot framebuffer support (requests 640x480x32bpp from the bootloader, and assumes it is such which may be problematic)
   
 ### Programs
 
@@ -33,7 +34,6 @@ The code for these can be found in [programs](programs/).
 - No ext2 filesystem write support (files can only be read)
 - Uses ATA PIO mode to read/write to disk instead of DMA, which can be pretty slow, especially on real hardware
 - File locking uses spinlocks, which wastes CPU time
-- Only textmode works on real hardware, so programs like DOOM that rely on a framebuffer will only work in an emulator / VM
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
