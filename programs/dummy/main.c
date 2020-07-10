@@ -19,16 +19,6 @@
 
 //A simple program that does nothing.
 
-#include <stdio.h>
-#include <unistd.h>
-
 int main(int argc, char **argv) {
-	uint8_t* brk = sbrk(0) - 1;
-	for(int i = 0; i < 1000; i++) {
-		brk[0] = 0;
-		sbrk(4096);
-		brk = sbrk(0) - 1;
-	}
-
 	return 0;
 }
