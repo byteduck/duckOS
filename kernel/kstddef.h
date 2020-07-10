@@ -49,6 +49,7 @@ void toUpper(char *str);
 void *operator new(size_t size);
 void *operator new(size_t size, void* ptr);
 void *operator new[](size_t size);
+void *operator new[](size_t size, void* ptr);
 void operator delete(void *p);
 void operator delete[](void *p);
 

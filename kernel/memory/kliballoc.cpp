@@ -302,6 +302,7 @@ void *PREFIX(malloc)(size_t req_size)
 			printf( "liballoc: initial l_memRoot initialization failed\n", p);
 		  FLUSH();
 #endif
+			liballoc_afteralloc(NULL);
 			return NULL;
 		}
 
@@ -413,6 +414,7 @@ void *PREFIX(malloc)(size_t req_size)
 			FLUSH();
 #endif
 			liballoc_unlock();		// release the lock
+			liballoc_afteralloc(p);
 			return p;
 		}
 
@@ -449,6 +451,7 @@ void *PREFIX(malloc)(size_t req_size)
 			FLUSH();
 #endif
 			liballoc_unlock();		// release the lock
+			liballoc_afteralloc(p);
 			return p;
 		}
 
@@ -496,6 +499,7 @@ void *PREFIX(malloc)(size_t req_size)
 						FLUSH();
 #endif
 					liballoc_unlock();		// release the lock
+					liballoc_afteralloc(p);
 					return p;
 				}
 			}
@@ -539,6 +543,7 @@ void *PREFIX(malloc)(size_t req_size)
 #endif
 
 					liballoc_unlock();		// release the lock
+					liballoc_afteralloc(p);
 					return p;
 				}
 			}	// min->next != NULL
@@ -591,6 +596,7 @@ void *PREFIX(malloc)(size_t req_size)
 	liballoc_dump();
 	FLUSH();
 #endif
+	liballoc_afteralloc(NULL);
 	return NULL;
 }
 

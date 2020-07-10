@@ -21,16 +21,26 @@
 #include <kernel/kstdio.h>
 #include <kernel/memory/paging.h>
 #include <kernel/interrupt/isr.h>
-#include <kernel/memory/MemoryBitmap.hpp>
 #include "PageDirectory.h"
 #include "PageTable.h"
+#include "MemoryMap.h"
 
 namespace Paging {
 	PageDirectory kernel_page_directory;
 	PageDirectory::Entry kernel_page_directory_entries[1024] __attribute__((aligned(4096)));
-	PageTable::Entry kernel_early_page_table_entries[1024] __attribute__((aligned(4096)));
-	MemoryBitmap<0x100000> _pmem_bitmap;
+	PageTable::Entry kernel_early_page_table_entries1[1024] __attribute__((aligned(4096)));
+	PageTable::Entry kernel_early_page_table_entries2[1024] __attribute__((aligned(4096)));
+
+	MemoryMap _pmem_map(0,nullptr);
+	MemoryRegion kernel_pmem_region = {0,0};
+	MemoryRegion multiboot_memory_regions[32];
+	MemoryRegion early_pmem_region_storage[2];
+	uint8_t num_multiboot_memory_regions = 0;
+
 	size_t usable_bytes_ram = 0;
+	size_t total_bytes_ram = 0;
+	size_t reserved_bytes_ram = 0;
+	size_t bad_bytes_ram = 0;
 
 	//TODO: Assumes computer has at least 4GiB of memory. Should detect memory in future.
 	void setup_paging() {
@@ -40,21 +50,23 @@ namespace Paging {
 		kernel_page_directory.set_entries(kernel_page_directory_entries);
 		PageDirectory::init_kmem();
 
-		//Mark the kernel's pages as used
-		size_t k_page_start = (KERNEL_START - HIGHER_HALF) / PAGE_SIZE;
-		size_t k_page_end = k_page_start + KERNEL_SIZE_PAGES;
-		for (auto i = k_page_start; i < k_page_end; i++) {
-			pmem_bitmap().set_page_used(i);
+		//Setup kernel page directory to map the kernel to HIGHER_HALF
+		PageTable kernel_early_page_table1(0, nullptr, false);
+		kernel_early_page_table1.entries() = kernel_early_page_table_entries1;
+		early_pagetable_setup(&kernel_early_page_table1, HIGHER_HALF, true);
+		for (auto i = 0; i < 1024; i++) {
+			kernel_early_page_table1[i].data.present = true;
+			kernel_early_page_table1[i].data.read_write = true;
+			kernel_early_page_table1[i].data.set_address(PAGE_SIZE * i);
 		}
 
-		//Setup kernel page directory to map the kernel to HIGHER_HALF
-		PageTable kernel_early_page_table(0, nullptr, false);
-		kernel_early_page_table.entries() = kernel_early_page_table_entries;
-		early_pagetable_setup(&kernel_early_page_table, HIGHER_HALF, true);
+		PageTable kernel_early_page_table2(0, nullptr, false);
+		kernel_early_page_table2.entries() = kernel_early_page_table_entries2;
+		early_pagetable_setup(&kernel_early_page_table2, HIGHER_HALF + PAGE_SIZE * 1024, true);
 		for (auto i = 0; i < 1024; i++) {
-			kernel_early_page_table[i].data.present = true;
-			kernel_early_page_table[i].data.read_write = true;
-			kernel_early_page_table[i].data.set_address(PAGE_SIZE * i);
+			kernel_early_page_table2[i].data.present = true;
+			kernel_early_page_table2[i].data.read_write = true;
+			kernel_early_page_table2[i].data.set_address(PAGE_SIZE * i + PAGE_SIZE * 1024);
 		}
 
 		//Enable paging
@@ -66,16 +78,26 @@ namespace Paging {
 				: : "a"((size_t) kernel_page_directory.entries() - HIGHER_HALF)
 		);
 
-		//Map kernel pages into page_tables
-		PageDirectory::k_map_pages(KERNEL_START - HIGHER_HALF, KERNEL_START, true, KERNEL_SIZE_PAGES);
+		//Mark the kernel region as used
+		size_t k_start_pagealigned = ((KERNEL_START - HIGHER_HALF) / PAGE_SIZE) * PAGE_SIZE;
+		size_t k_end_pagealigned = k_start_pagealigned + KERNEL_SIZE_PAGES * PAGE_SIZE;
 
-		//Now, write everything to the directory
+		//Setup the pmem map
+		_pmem_map = MemoryMap(PAGE_SIZE, &multiboot_memory_regions[0]);
+		MemoryRegion* kernel_region = _pmem_map.allocate_region(k_start_pagealigned, KERNEL_SIZE_PAGES * PAGE_SIZE, early_pmem_region_storage);
+		if(!kernel_region)
+			PANIC("KRNL_MAP_FAIL", "The kernel could not be allocated in the physical memory map.\n", true);
+		_pmem_map.recalculate_memory_totals();
+
+		//Now, map and write everything to the directory
+		PageDirectory::map_kernel(kernel_region);
 		kernel_page_directory.update_kernel_entries();
+		kernel_page_directory.dump();
 	}
 
 
-	MemoryBitmap<0x100000>& pmem_bitmap() {
-		return _pmem_bitmap;
+	MemoryMap& pmem_map() {
+		return _pmem_map;
 	}
 
 
@@ -120,15 +142,19 @@ namespace Paging {
 
 
 	size_t get_used_mem() {
-		return (pmem_bitmap().used_pages() * PAGE_SIZE) / 1024;
+		return pmem_map().used_memory();
 	}
 
-	size_t get_total_mem() {
-		return usable_bytes_ram / 1024;
+	size_t get_reserved_mem() {
+		return pmem_map().reserved_memory();
+	}
+
+	size_t get_usable_mem() {
+		return usable_bytes_ram;
 	}
 
 	size_t get_used_kmem() {
-		return (PageDirectory::kernel_vmem_bitmap.used_pages() * PAGE_SIZE) / 1024;
+		return PageDirectory::kernel_vmem_map.used_memory();
 	}
 
 	void early_pagetable_setup(PageTable *page_table, size_t virtual_address, bool read_write) {
@@ -147,14 +173,46 @@ namespace Paging {
 		asm volatile("invlpg %0" : : "m"(*(uint8_t*)vaddr) : "memory");
 	}
 
-	//TODO: Actually use the map
 	void parse_mboot_memory_map(struct multiboot_info* header, struct multiboot_mmap_entry* mmap_entry) {
-		size_t i = 0;
+		static
+		size_t mmap_offset = 0;
 		usable_bytes_ram = 0;
-		while(i < header->mmap_length) {
-			i += mmap_entry->size + sizeof(mmap_entry->size);
-			usable_bytes_ram += mmap_entry->len;
+		while(mmap_offset < header->mmap_length) {
+			if(mmap_entry->addr_high || mmap_entry->len_high) {
+				//If the entry is in extended memory, ignore it
+				printf("init: Ignoring memory region above 4GiB (0x%x%x)\n",
+						mmap_entry->addr_high, mmap_entry->addr_low);
+			} else {
+				//Otherwise, round up the address of the entry to a page boundary and round the size down to a page boundary
+				MemoryRegion& region = multiboot_memory_regions[num_multiboot_memory_regions];
+				uint32_t addr_pagealigned = ((mmap_entry->addr_low + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+				uint32_t size_pagealigned = ((mmap_entry->len_low - (addr_pagealigned - mmap_entry->addr_low)) / PAGE_SIZE) * PAGE_SIZE;
+				printf("%d %x %x -> %x %x\n", mmap_entry->type, mmap_entry->addr_low, mmap_entry->len_low, addr_pagealigned, size_pagealigned);
+				if(size_pagealigned) {
+					//If the page-aligned size is more than zero (eg mmap_entry->len >= PAGE_SIZE), interpret it
+					region = MemoryRegion(addr_pagealigned,size_pagealigned);
+					region.heap_allocated = false;
+					region.reserved = mmap_entry->type == MULTIBOOT_MEMORY_RESERVED;
+					region.used = mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE;
+					total_bytes_ram += region.size;
+					if(!region.used) usable_bytes_ram += region.size;
+					if(region.reserved) reserved_bytes_ram += region.size;
+					if(mmap_entry->type == MULTIBOOT_MEMORY_BADRAM) bad_bytes_ram += region.size;
+					num_multiboot_memory_regions++;
+				} else {
+					//Otherwise, ignore it
+					printf("init: Ignoring too-small memory region at 0x%x\n", mmap_entry->addr_low);
+				}
+			}
+			mmap_offset += mmap_entry->size + sizeof(mmap_entry->size);
 			mmap_entry = (struct multiboot_mmap_entry*) ((size_t)mmap_entry + mmap_entry->size + sizeof(mmap_entry->size));
+		}
+
+		//Create the linked list of memory regions
+		for(auto i = 0; i < num_multiboot_memory_regions; i++) {
+			MemoryRegion& region = multiboot_memory_regions[i];
+			region.prev = i ? &multiboot_memory_regions[i - 1] : nullptr;
+			region.next = i < num_multiboot_memory_regions - 1 ? &multiboot_memory_regions[i + 1] : nullptr;
 		}
 	}
 
@@ -173,10 +231,14 @@ int liballoc_unlock() {
 }
 
 void *liballoc_alloc(int pages) {
-	return PageDirectory::k_alloc_pages(pages * PAGE_SIZE);
+	return PageDirectory::k_alloc_region_for_heap(pages * PAGE_SIZE);
+}
+
+void liballoc_afteralloc(void* ptr_alloced) {
+	PageDirectory::k_after_alloc();
 }
 
 int liballoc_free(void *ptr, int pages) {
-	PageDirectory::k_free_pages(ptr, pages * PAGE_SIZE);
+	PageDirectory::k_free_region(ptr);
 	return 0;
 }

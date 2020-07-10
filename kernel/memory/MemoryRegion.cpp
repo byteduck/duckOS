@@ -17,26 +17,23 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_COWPARENT_H
-#define DUCKOS_COWPARENT_H
+#include <kernel/kstdio.h>
+#include "MemoryRegion.h"
+#include "paging.h"
 
-#include "PageTable.h"
-#include <common/shared_ptr.hpp>
+MemoryRegion::MemoryRegion(size_t start, size_t size): start(start), size(size), next(nullptr), prev(nullptr), heap_allocated(true) {
 
-namespace Paging {
-	class PageTable;
-	class CoWParent {
-	public:
-		CoWParent(const DC::shared_ptr<PageTable>& table, int entry);
-		~CoWParent();
-
-		DC::shared_ptr<PageTable> table();
-		int table_entry();
-	private:
-		DC::shared_ptr<PageTable> _table;
-		int _table_entry;
-	};
 }
 
+MemoryRegion::MemoryRegion(const MemoryRegion& region): start(region.start), size(region.size), next(region.next), prev(region.prev), heap_allocated(true) {
 
-#endif //DUCKOS_COWPARENT_H
+}
+
+MemoryRegion::~MemoryRegion() = default;
+
+void MemoryRegion::cow_deref() {
+	cow.num_refs--;
+	if(!cow.num_refs) {
+		Paging::pmem_map().free_region(this);
+	}
+}

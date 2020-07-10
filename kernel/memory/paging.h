@@ -21,6 +21,7 @@
 #define PAGING_H
 
 #include "PageTable.h"
+#include "MemoryMap.h"
 #include <kernel/multiboot.h>
 
 #define PAGING_4KiB 0
@@ -85,7 +86,7 @@ namespace Paging {
 	 * Get the physical memory bitmap.
 	 * @return The physical memory bitmap.
 	 */
-	MemoryBitmap<0x100000>& pmem_bitmap();
+	MemoryMap& pmem_map();
 
 	/**
 	 * Used when setting up paging initially in order to map an entire page table starting at a virtual address.
@@ -96,19 +97,25 @@ namespace Paging {
 	void early_pagetable_setup(PageTable* page_table, size_t virtual_address, bool read_write);
 
 	/**
-	 * Get the amount of used physical memory in KiB.
-	 * @return The amount of allocated physical memory in KiB (granularity of PAGE_SIZE)
+	 * Get the amount of used physical memory in bytes. Doesn't include reserved memory.
+	 * @return The amount of allocated physical memory in bytes (granularity of PAGE_SIZE)
 	 */
 	size_t get_used_mem();
 
 	/**
-	 * Get the total amount of physical memory in KiB.
-	 * @return The amount of total physical memory in KiB.
+	 * Get the amount of reserved physical memory in bytes.
+	 * @return The amount of reserved physical memory in bytes (granularity of PAGE_SIZE)
 	 */
-	 size_t get_total_mem();
+	size_t get_reserved_mem();
 
 	/**
-	 * Get the amount of memory used by the kernel in KiB.
+	 * Get the total amount of usable physical memory in bytes.
+	 * @return The amount of usable physical memory in bytes.
+	 */
+	 size_t get_usable_mem();
+
+	/**
+	 * Get the amount of memory used by the kernel in bytes.
 	 * @return The amount of memory the kernel is using (granularity of PAGE_SIZE)
 	 */
 	size_t get_used_kmem();
@@ -128,6 +135,7 @@ namespace Paging {
 int liballoc_lock();
 int liballoc_unlock();
 void* liballoc_alloc(int);
+void liballoc_afteralloc(void* ptr_alloced);
 int liballoc_free(void*,int);
 
 #endif

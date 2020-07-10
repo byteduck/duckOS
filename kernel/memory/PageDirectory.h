@@ -22,6 +22,8 @@
 
 #include <common/cstddef.h>
 #include "paging.h"
+#include "MemoryMap.h"
+#include "LinkedMemoryRegion.h"
 
 namespace Paging {
 	class PageTable;
@@ -53,9 +55,10 @@ namespace Paging {
 		 **************************************/
 
 		static Entry kernel_entries[256];
-		static MemoryBitmap<0x40000> kernel_vmem_bitmap;
+		static MemoryMap kernel_vmem_map;
 		static PageTable kernel_page_tables[256] __attribute__((aligned(4096)));
 		static size_t kernel_page_tables_physaddr[1024];
+		static MemoryRegion early_vmem_regions[2];
 
 		/**
 		 * Initialize the kernel page directory entries & related variables.
@@ -63,67 +66,64 @@ namespace Paging {
 		static void init_kmem();
 
 		/**
-		 * Maps one page at virtaddr (must be in kernel space) to physaddr
-		 * @param physaddr The physical address to map from.
-		 * @param virtaddr The virtual address to map to. Must be in kernel space (>=3GiB)
+		 * Map the kernel into memory.
+		 */
+		static void map_kernel(MemoryRegion* kernel_pmem_region);
+
+		/**
+		 * Maps a number of pages at virtaddr (must be in kernel space) to physaddr
+		 * @param region The linked memory region to map. The two regions must be equal in size and the virutal region must be above HIGHER_HALF.
 		 * @param read_write Whether or not the page should be read/write.
 		 */
-		static void k_map_page(size_t physaddr, size_t virtaddr, bool read_write);
+		static void k_map_region(const LinkedMemoryRegion& region, bool read_write);
 
 		/**
-		 * A wrapper around k_map_page to wrap multiple pages.
+		 * Unmaps a memory region from kernel space.
+		 * @param region The region to unmap. The regions are marked free.
 		 */
-		static void k_map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pages);
+		static void k_unmap_region(const LinkedMemoryRegion& region);
 
 		/**
-		 * Unmaps one page at virtaddr in kernel space.
-		 * @param virtaddr The page-aligned virtual address to unmap. Must be in kernel space (>=3GiB)
+		 * Allocates a region of memory in kernel space and returns the region allocated.
+		 * @param mem_size The amount of memory to allocate. Will be rounded up to be page-aligned.
+		 * @return The LinkedMemoryRegion allocated.
 		 */
-		static void k_unmap_page(size_t virtaddr);
+		static LinkedMemoryRegion k_alloc_region(size_t mem_size);
 
 		/**
-		 * A wrapper around k_unmap_page that unmaps multiple pages.
+		 * Allocates a region of memory for the heap. Should only be used by liballoc.
+		 * @param mem_size The amount of memory to allocate. Will be rounded up to be page-aligned.
+		 * @return A pointer to the region allocated.
 		 */
-		static void k_unmap_pages(size_t virtaddr, size_t num_pages);
+		static void* k_alloc_region_for_heap(size_t mem_size);
 
 		/**
-		 * Allocates a number of contiguous pages in kernel vmem and returns a pointer to the first one.
-		 * @param mem_size The number of pages to allocate.
-		 * @return A pointer to the first page allocated.
+		 * Called after liballoc allocates something. This is used to move the heap region buffer into alloced memory.
 		 */
-		static void* k_alloc_pages(size_t mem_size);
+		static void k_after_alloc();
 
 		/**
-		 * Frees num_pages pages allocated with k_alloc_pages.
-		 * @param ptr The pointer returned by k_alloc_pages to the start of the pages to be freed.
-		 * @param memsize The size of the memory to be freed.
+		 * Frees and unmaps a region of virtual and physical memory.
+		 * @param region the region to be freed.
 		 */
-		static void k_free_pages(void* ptr, size_t memsize);
+		static void k_free_region(const LinkedMemoryRegion& region);
 
 		/**
-		 * Maps a number of continguous pages in kernel vmem to physaddr and returns a pointer to the first one.
-		 * This marks virtual pages as used, and the physical pages as used if mark_pmem is true.
+		 * Frees and unmaps a region of virtual and physical memory.
+		 * k_free_region(LinkedMemoryRegion) is faster, and is preferred when possible.
+		 * @param virtaddr the virtual address of the region to be freed.
+		 * @return Whether or not the region was freed.
+		 */
+		 static bool k_free_region(void* virtaddr);
+
+		/**
+		 * Maps a number of continguous pages in kernel vmem starting at physaddr.
 		 * @param physaddr The physical address to map to.
 		 * @param mem_size The amount of memory to map.
 		 * @param read_write Whether or not the memory should be marked read/write.
-		 * @return A pointer to the first page allocated.
+		 * @return A pointer to where physaddr was mapped to.
 		 */
 		static void* k_mmap(size_t physaddr, size_t mem_size, bool read_write);
-
-		/**
-		 * To be used in conjunction with k_mmap to unmap mapped pages. DOES NOT MARK PHYSICAL MEMORY FREE.
-		 * @param virtaddr The virtual address to start unmapping at (doesn't need to be page-aligned)
-		 * @param size The size (in bytes) given to k_mmap.
-		 */
-		static void k_munmap(void* ptr, size_t memsize);
-
-		/**
-		 * Marks the physical pages taken up by physaddr -> physaddr + memsize as free/used.
-		 * @param physaddr The physical address to start at (doesn't need to be page-aligned)
-		 * @param memsize The size of memory to mark
-		 * @param used Whether or not it should be mark used
-		 */
-		static void k_mark_pmem(size_t physaddr, size_t memsize, bool used);
 
 
 		/************************************
@@ -146,49 +146,46 @@ namespace Paging {
 		Entry& operator[](int index);
 
 		/**
-		 * Maps one page from physaddr to virtaddr in program space.
-		 * Does NOT modify the physical memory bitmap.
-		 * DOES modify the virtual memory bitmap.
-		 * @param physaddr The physical address to map from.
-		 * @param virtaddr The virtual address to map to. Must be in program space (<3GiB)
+		 * Maps a number of pages at virtaddr (must be in program space) to physaddr.
+		 * @param region The linked memory region to map. The two regions must be equal in size and the virutal region must be below HIGHER_HALF.
 		 * @param read_write Whether or not the page should be read/write.
 		 */
-		void map_page(size_t physaddr, size_t virtaddr, bool read_write);
+		void map_region(const LinkedMemoryRegion& region, bool read_write);
 
 		/**
-		 * A wrapper around map_page to map multiple pages.
+		 * Unmaps a memory region from program space.
+		 * @param region The region to unmap. The regions are not marked free.
 		 */
-		void map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pages);
+		void unmap_region(const LinkedMemoryRegion& region);
 
 		/**
-		 * Unmaps one page at virtaddr in program space.
-		 * Does NOT modify the physical memory bitmap.
-		 * DOES modify the virtual memory bitmap.
-		 * @param virtaddr The virtual address of the page to unmap. Must be in program space (<3GiB)
+		 * Allocates a region of memory in program space and returns the region allocated.
+		 * @param mem_size The amount of memory to allocate. Will be rounded up to be page-aligned.
+		 * @return The LinkedMemoryRegion allocated.
 		 */
-		void unmap_page(size_t virtaddr);
+		LinkedMemoryRegion allocate_region(size_t mem_size, bool read_write);
 
 		/**
-		 * A wrapper around unmap_page to unmap multiple pages.
+		 * Allocates a region of memory in program space starting at vaddr and returns the region allocated.
+		 * @param vaddr The virtual address to start mapping at. Will be rounded down to be page-aligned.
+		 * @param mem_size The amount of memory to allocate. Will be rounded up to be page-aligned.
+		 * @return The LinkedMemoryRegion allocated.
 		 */
-		void unmap_pages(size_t virtaddr, size_t num_pages);
+		LinkedMemoryRegion allocate_region(size_t vaddr, size_t mem_size, bool read_write);
 
 		/**
-		 * Allocates the needed amount of pages to fit memsize amount of data starting at vaddr.
-		 * @param vaddr The virtual address to start mapping at. Must be page-aligned.
-		 * @param memsize The amount of memory needed (NOT pages, will be rounded up to be page-aligned)
-		 * @param read_write Whether or not the memory should be marked read/write.
-		 * @return Whether or not the allocation was successful.
+		 * Frees and unmaps a region of virtual and physical memory in program space.
+		 * @param region the region to be freed.
 		 */
-		bool allocate_pages(size_t vaddr, size_t memsize, bool read_write = true);
+		void free_region(const LinkedMemoryRegion& region);
 
 		/**
-		 * Deallocates the needed amount of pages to fit memsize amount of data starting at vaddr.
-		 * @param vaddr The virtual address to start unmapping at. Must be page-aligned.
-		 * @param memsize The amount of memory being freed (NOT pages, will be rounded up to be page-aligned)
-		 * @return Whether or not the deallocation was successful.
+		 * Frees an unmaps a region of virtual and physical memory in program space.
+		 * free_region(LinkedMemoryRegion) is faster.
+		 * @param virtaddr the virtual address of the region to be freed.
+		 * @return Whether or not the region was freed.
 		 */
-		bool deallocate_pages(size_t vaddr, size_t memsize);
+		bool free_region(void* virtaddr);
 
 		/**
 		 * Gets the physical address for virtaddr.
@@ -240,24 +237,21 @@ namespace Paging {
 		bool try_cow(size_t virtaddr);
 
 		/**
-		 * Marks the page corresponding to paddr as used in the pmem bitmap.
-		 * @param paddr The physical address of the page to take ownership of.
-		 */
-		void take_pmem_ownership(size_t paddr);
-
-		/**
 		 * Get the used memory in KiB
 		 * @return The amount of used memory in KiB.
 		 */
 		size_t used_pmem();
 
+		/**
+		 * Dump information about the memory maps
+		 */
+		void dump();
+
 	private:
 		//The page directory entries for this page directory.
 		Entry* _entries = nullptr;
-		//The bitmap of used vmem for this page directory.
-		MemoryBitmap<0xC0000> _vmem_bitmap;
-		//The bitmap of used pmem for this page directory.
-		MemoryBitmap<0x100000> _personal_pmem_bitmap;
+		//The map of used vmem for this page directory.
+		MemoryMap _vmem_map;
 		//An array of pointers to the page tables that the directory points to.
 		PageTable* _page_tables[768] = {nullptr};
 		//An array of u16s that stores the number of pages mapped in each page table, used to deallocate a page table once no longer needed

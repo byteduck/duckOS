@@ -28,6 +28,9 @@ The code for these can be found in [programs](programs/).
 ### Ports
 - DOOM ([duckos-doom](https://github.com/byteduck/duckos-doom)): A port of DOOM.
 
+### Kernel shell commands
+Type `help` for a list of commands that can be used in the kernel shell.
+
 ### Known Issues / Limitations
 - Only works with ext2 filesystems with a block size of 1024  (I think, I need to test this)
 - No ext2 filesystem write support (files can only be read)

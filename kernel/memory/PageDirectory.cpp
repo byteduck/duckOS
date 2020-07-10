@@ -22,17 +22,17 @@
 
 namespace Paging {
 	PageDirectory::Entry PageDirectory::kernel_entries[256];
-	MemoryBitmap<0x40000> PageDirectory::kernel_vmem_bitmap;
 	PageTable PageDirectory::kernel_page_tables[256];
 	PageTable::Entry kernel_page_table_entries[256][1024] __attribute__((aligned(4096)));
 	size_t PageDirectory::kernel_page_tables_physaddr[1024];
+	MemoryMap PageDirectory::kernel_vmem_map(0,nullptr);
+	MemoryRegion PageDirectory::early_vmem_regions[2] = {{0,0}, {0,0}};
 
 	/**
 	 * KERNEL MANAGEMENT
 	 */
 
 	void PageDirectory::init_kmem() {
-		kernel_vmem_bitmap.reset_bitmap();
 		for(auto & entries : kernel_page_table_entries) for(auto & entry : entries) entry.value = 0;
 		for(auto i = 0; i < 256; i++) {
 			new (&kernel_page_tables[i]) PageTable(HIGHER_HALF + i * PAGE_SIZE * 1024,
@@ -51,127 +51,159 @@ namespace Paging {
 		}
 	}
 
-	void PageDirectory::k_map_page(size_t physaddr, size_t virtaddr, bool read_write) {
-		ASSERT(physaddr % PAGE_SIZE == 0);
-		ASSERT(virtaddr % PAGE_SIZE == 0 && virtaddr >= HIGHER_HALF);
+	void PageDirectory::map_kernel(MemoryRegion* kernel_pmem_region) {
+		early_vmem_regions[0] = MemoryRegion(KERNEL_START, KERNEL_SIZE_PAGES * PAGE_SIZE);
+		early_vmem_regions[0].heap_allocated = false;
+		early_vmem_regions[0].used = true;
+		early_vmem_regions[0].next = &early_vmem_regions[1];
 
-		//The page being mapped (A virtaddr of HIGHER_HALF would be page zero since this is kernel space)
-		size_t page = (virtaddr - HIGHER_HALF) / PAGE_SIZE;
-		//The index into the kernel page directory for this page.
-		size_t directory_index = (page / 1024) % 1024;
-		//If we've already allocated this page, panic
-		if (kernel_vmem_bitmap.is_page_used(page)) {
-			PANIC("KRNL_MAP_MAPPED_PAGE", "The kernel tried to map a page that was already mapped.", true);
-		}
-		//Set this page as used.
-		kernel_vmem_bitmap.set_page_used(page);
-		//The index into the page table of this page
-		size_t table_index = page % 1024;
-		//Set up the pagetable entry
-		PageTable::Entry *entry = &kernel_page_tables[directory_index].entries()[table_index];
-		entry->data.present = true;
-		entry->data.read_write = read_write;
-		entry->data.user = false;
-		entry->data.set_address(physaddr);
+		early_vmem_regions[1] = MemoryRegion(KERNEL_START + early_vmem_regions[0].size, 0xFFFFFFFF - (KERNEL_START + early_vmem_regions[0].size));
+		early_vmem_regions[1].heap_allocated = false;
+		early_vmem_regions[1].prev = &early_vmem_regions[0];
 
-		invlpg((void*)virtaddr);
+		kernel_vmem_map = MemoryMap(PAGE_SIZE, &early_vmem_regions[0]);
+		kernel_vmem_map.recalculate_memory_totals();
+
+		LinkedMemoryRegion kregion(kernel_pmem_region, &early_vmem_regions[0]);
+
+		k_map_region(kregion, true);
 	}
 
-	void PageDirectory::k_map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pages) {
-		for (size_t offset = 0; offset < num_pages * PAGE_SIZE; offset += PAGE_SIZE) {
-			k_map_page(physaddr + offset, virtaddr + offset, read_write);
-		}
-	}
+	void PageDirectory::k_map_region(const LinkedMemoryRegion& region, bool read_write) {
+		MemoryRegion* physregion = region.phys;
+		MemoryRegion* virtregion = region.virt;
 
-	void PageDirectory::k_unmap_page(size_t virtaddr) {
-		ASSERT(virtaddr % PAGE_SIZE == 0 && virtaddr >= HIGHER_HALF);
-		size_t page = (virtaddr - HIGHER_HALF) / PAGE_SIZE;
-		size_t directory_index = (page / 1024) % 1024;
-		kernel_vmem_bitmap.set_page_free(page);
-		size_t table_index = page % 1024;
-		PageTable::Entry *table = &kernel_page_tables[directory_index].entries()[table_index];
-		table->value = 0;
-	}
+		ASSERT(physregion->size == virtregion->size);
+		ASSERT(virtregion->start >= HIGHER_HALF);
 
-	void PageDirectory::k_unmap_pages(size_t virtaddr, size_t num_pages) {
-		for (size_t offset = 0; offset < num_pages * PAGE_SIZE; offset += PAGE_SIZE) {
-			k_unmap_page(virtaddr + offset);
+		size_t num_pages = physregion->size / PAGE_SIZE;
+		size_t start_vpage = (virtregion->start - HIGHER_HALF) / PAGE_SIZE;
+		size_t start_ppage = physregion->start / PAGE_SIZE;
+		for(auto page_index = 0; page_index < num_pages; page_index++) {
+			size_t vpage = page_index + start_vpage;
+			size_t directory_index = (vpage / 1024) % 1024;
+
+			//The index into the page table of this page
+			size_t table_index = vpage % 1024;
+			//Set up the pagetable entry
+			PageTable::Entry *entry = &kernel_page_tables[directory_index].entries()[table_index];
+			entry->data.present = true;
+			entry->data.read_write = read_write;
+			entry->data.user = false;
+			entry->data.set_address((start_ppage + page_index) * PAGE_SIZE);
+
+			invlpg((void*)(virtregion->start + page_index * PAGE_SIZE));
 		}
 	}
 
-	void *PageDirectory::k_alloc_pages(size_t memsize) {
-		size_t pages = (memsize + PAGE_SIZE - 1) / PAGE_SIZE;
+	void PageDirectory::k_unmap_region(const LinkedMemoryRegion& region) {
+		MemoryRegion* vregion = region.virt;
+		size_t num_pages = vregion->size / PAGE_SIZE;
+		size_t start_page = (vregion->start - HIGHER_HALF) / PAGE_SIZE;
+		for(auto page = start_page; page < start_page + num_pages; page++) {
+			size_t directory_index = (page / 1024) % 1024;
+			size_t table_index = page % 1024;
+			PageTable::Entry *table = &kernel_page_tables[directory_index].entries()[table_index];
+			table->value = 0;
+		}
+	}
+
+	LinkedMemoryRegion PageDirectory::k_alloc_region(size_t mem_size) {
+		//First, try allocating a region of virtual memory.
+		MemoryRegion* vmem_region = kernel_vmem_map.allocate_region(mem_size);
+		if(!vmem_region) {
+			PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region.", true);
+		}
+
+		//Next, try allocating the physical pages.
+		MemoryRegion* pmem_region = pmem_map().allocate_region(mem_size);
+		if(!pmem_region) {
+			PANIC("NO_MEM", "There's no more physical memory left.", true);
+		}
+
+		//Finally, map the pages.
+		LinkedMemoryRegion region(pmem_region, vmem_region);
+		k_map_region(region, true);
+
+		memset((void*)vmem_region->start, 0, vmem_region->size);
+
+		return region;
+	}
+
+	MemoryRegion vmem_region_buffer(0,0);
+	MemoryRegion pmem_region_buffer(0,0);
+	bool region_buffer_needs_attention = false;
+
+	void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
+		region_buffer_needs_attention = true;
+
+		MemoryRegion* vmem_region = kernel_vmem_map.allocate_region(mem_size, &vmem_region_buffer);
+		vmem_region_buffer.heap_allocated = false;
+		if(!vmem_region) {
+			kernel_page_directory.dump();
+			PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region for the heap.", true);
+		}
+
+		//Next, try allocating the physical pages.
+		MemoryRegion* pmem_region = pmem_map().allocate_region(mem_size, &pmem_region_buffer);
+		pmem_region_buffer.heap_allocated = false;
+		if(!pmem_region) {
+			PANIC("NO_MEM", "There's no more physical memory left.", true);
+		}
+
+		//Finally, map the pages and zero out.
+		LinkedMemoryRegion region(pmem_region, vmem_region);
+		k_map_region(region, true);
+		memset((void*)vmem_region->start, 0x00, vmem_region->size);
+
+		return (void*) region.virt->start;
+	}
+
+	void PageDirectory::k_after_alloc() {
+		if(region_buffer_needs_attention) {
+			region_buffer_needs_attention = false;
+			auto* new_vmem = new MemoryRegion(vmem_region_buffer);
+			auto* new_pmem = new MemoryRegion(pmem_region_buffer);
+			new_vmem->related = new_pmem;
+			new_pmem->related = new_vmem;
+			kernel_vmem_map.replace_entry(&vmem_region_buffer, new_vmem);
+			pmem_map().replace_entry(&pmem_region_buffer, new_pmem);
+		}
+	}
+
+	void PageDirectory::k_free_region(const LinkedMemoryRegion& region) {
+		k_unmap_region(region);
+		kernel_vmem_map.free_region(region.virt);
+		pmem_map().free_region(region.phys);
+	}
+
+	bool PageDirectory::k_free_region(void* virtaddr) {
+		MemoryRegion* vregion = kernel_vmem_map.find_region((size_t) virtaddr);
+		if(!vregion) return false;
+		if(!vregion->related) PANIC("VREGION_NO_RELATED", "A virtual kernel memory region had no corresponding physical region.", true);
+		LinkedMemoryRegion region(vregion->related, vregion);
+		k_unmap_region(region);
+		kernel_vmem_map.free_region(region.virt);
+		pmem_map().free_region(region.phys);
+		return true;
+	}
+
+	void* PageDirectory::k_mmap(size_t physaddr, size_t memsize, bool read_write) {
+		size_t paddr_pagealigned = (physaddr / PAGE_SIZE) * PAGE_SIZE;
+		size_t psize = (((memsize + (physaddr - paddr_pagealigned)) + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+		MemoryRegion pregion = MemoryRegion(paddr_pagealigned, psize);
+
 		//First, find a block of $pages contiguous virtual pages in the kernel space
-		auto vpage = kernel_vmem_bitmap.find_pages(pages, 0) + 0xC0000;
-		if (vpage == -1) {
-			PANIC("KRNL_NO_VMEM_SPACE", "The kernel ran out of vmem space.", true);
+		MemoryRegion* vregion = kernel_vmem_map.allocate_region(memsize);
+		if(!vregion) {
+			return nullptr;
 		}
-		void* retptr = (void *) (vpage * PAGE_SIZE);
-
-		//Next, allocate the pages
-		for (auto i = 0; i < pages; i++) {
-			size_t phys_page = pmem_bitmap().allocate_pages(1, 0);
-			if (phys_page == -1) {
-				PANIC("NO_MEM", "There's no more physical memory left.", true);
-			}
-
-			size_t vaddr = vpage * PAGE_SIZE + i * PAGE_SIZE;
-			k_map_page(phys_page * PAGE_SIZE, vaddr, true);
-			memset((void*)vaddr, 0, PAGE_SIZE);
-		}
-
-		return retptr;
-	}
-
-	void PageDirectory::k_free_pages(void *ptr, size_t memsize) {
-		size_t num_pages = (memsize + PAGE_SIZE - 1) / PAGE_SIZE;
-		for (auto i = 0; i < num_pages; i++) {
-			size_t physaddr = kernel_page_directory.get_physaddr((size_t) ptr + PAGE_SIZE * i);
-			if(physaddr == -1)
-				PANIC("KRNL_FREE_BAD_PTR", "The kernel tried to free pages that were not in use.", true);
-
-			pmem_bitmap().set_page_free(physaddr / PAGE_SIZE);
-		}
-		PageDirectory::k_unmap_pages((size_t) ptr, num_pages);
-	}
-
-	void *PageDirectory::k_mmap(size_t physaddr, size_t memsize, bool read_write) {
-		size_t physaddr_pagealigned = (physaddr / PAGE_SIZE) * PAGE_SIZE;
-		size_t true_memsize = memsize + (physaddr % PAGE_SIZE);
-		size_t pages = (true_memsize + PAGE_SIZE - 1) / PAGE_SIZE;
-
-		//First, find a block of $pages contiguous virtual pages in the kernel space
-		auto vpage = kernel_vmem_bitmap.find_pages(pages, 0) + 0xC0000;
-		if (vpage == -1) {
-			PANIC("KRNL_NO_VMEM_SPACE", "The kernel ran out of vmem space.", true);
-		}
-
-		size_t vaddr = vpage * PAGE_SIZE;
 
 		//Next, map the pages
-		k_map_pages(physaddr_pagealigned, vaddr, read_write, pages);
+		LinkedMemoryRegion region(&pregion, vregion);
+		k_map_region(region, read_write);
 
-		return (void*)(vaddr + (physaddr % PAGE_SIZE));
-	}
-
-	void PageDirectory::k_munmap(void *ptr, size_t memsize) {
-		size_t virtaddr_pagealigned = ((size_t)ptr / PAGE_SIZE) * PAGE_SIZE;
-		size_t true_memsize = memsize + ((size_t)ptr % PAGE_SIZE);
-		size_t pages = (true_memsize + PAGE_SIZE - 1) / PAGE_SIZE;
-		k_unmap_pages(virtaddr_pagealigned, pages);
-	}
-
-	void PageDirectory::k_mark_pmem(size_t physaddr, size_t memsize, bool used) {
-		size_t start_page = (physaddr / PAGE_SIZE);
-		size_t true_memsize = memsize + (physaddr % PAGE_SIZE);
-		size_t pages = (true_memsize + PAGE_SIZE - 1) / PAGE_SIZE;
-		if(used) {
-			for (auto i = start_page; i < pages + start_page; i++)
-				pmem_bitmap().set_page_used(i);
-		} else {
-			for (auto i = start_page; i < pages + start_page; i++)
-				pmem_bitmap().set_page_free(i);
-		}
+		return (void*)(region.virt->start + (physaddr % PAGE_SIZE));
 	}
 
 	/**
@@ -193,25 +225,29 @@ namespace Paging {
 	 */
 
 
-	PageDirectory::PageDirectory() {
-		_entries = (Entry*) k_alloc_pages(PAGE_SIZE);
+	PageDirectory::PageDirectory(): _vmem_map(PAGE_SIZE, new MemoryRegion(0, HIGHER_HALF)) {
+		_entries = (Entry*) k_alloc_region(PAGE_SIZE).virt->start;
 		update_kernel_entries();
 	}
 
 	PageDirectory::~PageDirectory() {
-		k_free_pages(_entries, PAGE_SIZE); //Free entries
+		k_free_region(_entries); //Free entries
 
 		//Free page tables
 		for(auto & table : _page_tables) if(table) {
 			delete table;
 		}
 
-		//TODO: Figure out a better way to free pmem
-		for(auto i = 0; i < 0x100000; i++) {
-			if(_personal_pmem_bitmap.is_page_used(i)){
-				pmem_bitmap().set_page_free(i); //Free used pmem
+		MemoryRegion* cur = _vmem_map.first_region();
+		while(cur) {
+			if(cur->used && cur->related){
+				if(cur->cow.marked_cow) {
+					cur->related->cow_deref();
+				} else {
+					pmem_map().free_region(cur->related);
+				}
 			}
-			if(_personal_pmem_bitmap.used_pages() == 0) break;
+			cur = cur->next;
 		}
 	}
 
@@ -227,61 +263,50 @@ namespace Paging {
 		return _entries[index];
 	}
 
-	void PageDirectory::map_page(size_t physaddr, size_t virtaddr, bool read_write) {
-		ASSERT(physaddr % PAGE_SIZE == 0);
-		ASSERT(virtaddr % PAGE_SIZE == 0 && virtaddr < HIGHER_HALF);
+	void PageDirectory::map_region(const LinkedMemoryRegion& region, bool read_write) {
+		MemoryRegion* physregion = region.phys;
+		MemoryRegion* virtregion = region.virt;
 
-		size_t page = virtaddr / PAGE_SIZE;
-		size_t directory_index = (page / 1024) % 1024;
+		ASSERT(physregion->size == virtregion->size);
+		ASSERT(virtregion->start + virtregion->size <= HIGHER_HALF);
 
-		//If the page table for this page hasn't been alloc'd yet, alloc it
-		if (!_page_tables[directory_index])
-			alloc_page_table(directory_index);
+		size_t num_pages = physregion->size / PAGE_SIZE;
+		size_t start_vpage = virtregion->start / PAGE_SIZE;
+		size_t start_ppage = physregion->start / PAGE_SIZE;
+		for(auto page_index = 0; page_index < num_pages; page_index++) {
+			size_t vpage = page_index + start_vpage;
+			size_t directory_index = (vpage / 1024) % 1024;
 
-		if (_vmem_bitmap.is_page_used(page)) {
-			PANIC("PROG_MAP_MAPPED_PAGE", "The kernel tried to map a page in program space that was already mapped.", true);
+			//If the page table for this page hasn't been alloc'd yet, alloc it
+			if (!_page_tables[directory_index]){
+				alloc_page_table(directory_index);
+			}
+
+			//Set up the pagetable entry
+			size_t table_index = vpage % 1024;
+			_page_tables_num_mapped[directory_index]++;
+			PageTable::Entry *entry = &_page_tables[directory_index]->entries()[table_index];
+			entry->data.present = true;
+			entry->data.read_write = read_write;
+			entry->data.user = true;
+			entry->data.set_address((start_ppage + page_index) * PAGE_SIZE);
+
+			invlpg((void *) (virtregion->start + page_index * PAGE_SIZE));
 		}
-		_vmem_bitmap.set_page_used(page);
-
-		size_t table_index = page % 1024;
-		_page_tables_num_mapped[directory_index]++;
-		PageTable::Entry *entry = &_page_tables[directory_index]->entries()[table_index];
-		entry->data.present = true;
-		entry->data.read_write = true;
-		entry->data.user = true;
-		entry->data.set_address(physaddr);
-
-		invlpg((void*)virtaddr);
 	}
 
-	void PageDirectory::map_pages(size_t physaddr, size_t virtaddr, bool read_write, size_t num_pages) {
-		for (size_t offset = 0; offset < num_pages * PAGE_SIZE; offset += PAGE_SIZE) {
-			map_page(physaddr + offset, virtaddr + offset, read_write);
-		}
-	}
-
-	void PageDirectory::unmap_page(size_t virtaddr) {
-		ASSERT(virtaddr % PAGE_SIZE == 0 && virtaddr < HIGHER_HALF);
-
-		size_t page = virtaddr / PAGE_SIZE;
-		size_t directory_index = (page / 1024) % 1024;
-
-		if (!_page_tables[directory_index])
-			PANIC("PROG_UNMAP_UNMAPPED_PAGE", "The kernel tried to unmap a page in program space that wasn't mapped.", true);
-
-		_vmem_bitmap.set_page_free(page);
-
-		size_t table_index = page % 1024;
-		_page_tables_num_mapped[directory_index]--;
-		PageTable::Entry *table = &_page_tables[directory_index]->entries()[table_index];
-		table->value = 0;
-		if (_page_tables_num_mapped[directory_index] == 0)
-			dealloc_page_table(directory_index);
-	}
-
-	void PageDirectory::unmap_pages(size_t virtaddr, size_t num_pages) {
-		for (size_t offset = 0; offset < num_pages * PAGE_SIZE; offset += PAGE_SIZE) {
-			unmap_page(virtaddr + offset);
+	void PageDirectory::unmap_region(const LinkedMemoryRegion& region) {
+		MemoryRegion* vregion = region.virt;
+		size_t num_pages = vregion->size / PAGE_SIZE;
+		size_t start_page = vregion->start/ PAGE_SIZE;
+		for(auto page = start_page; page < start_page + num_pages; page++) {
+			size_t directory_index = (page / 1024) % 1024;
+			size_t table_index = page % 1024;
+			_page_tables_num_mapped[directory_index]--;
+			PageTable::Entry *table = &_page_tables[directory_index]->entries()[table_index];
+			table->value = 0;
+			if (_page_tables_num_mapped[directory_index] == 0)
+				dealloc_page_table(directory_index);
 		}
 	}
 
@@ -289,7 +314,6 @@ namespace Paging {
 		if(virtaddr < HIGHER_HALF) { //Program space
 			size_t page = virtaddr / PAGE_SIZE;
 			size_t directory_index = (page / 1024) % 1024;
-			if (!_vmem_bitmap.is_page_used(page)) return -1;
 			if (!_entries[directory_index].data.present) return -1; //TODO: Log an error
 			if (!_page_tables[directory_index]) return -1; //TODO: Log an error
 			size_t table_index = page % 1024;
@@ -298,7 +322,6 @@ namespace Paging {
 		} else { //Kernel space
 			size_t page = (virtaddr - HIGHER_HALF) / PAGE_SIZE;
 			size_t directory_index = (page / 1024) % 1024;
-			if (!kernel_vmem_bitmap.is_page_used(page)) return -1;
 			if (!kernel_entries[directory_index].data.present) return -1; //TODO: Log an error
 			size_t table_index = page % 1024;
 			size_t page_paddr = (kernel_page_tables[directory_index])[table_index].data.get_address();
@@ -310,48 +333,66 @@ namespace Paging {
 		return get_physaddr((size_t)virtaddr);
 	}
 
-	bool PageDirectory::allocate_pages(size_t vaddr, size_t memsize, bool read_write) {
-		ASSERT(vaddr % PAGE_SIZE == 0 && vaddr < HIGHER_HALF);
-		auto start_page = vaddr / PAGE_SIZE;
-		auto num_pages = (memsize + PAGE_SIZE - 1) / PAGE_SIZE;
-
-		for (auto i = start_page; i < start_page + num_pages; i++)
-			if (_vmem_bitmap.is_page_used(i)) return false;
-
-		for (auto i = 0; i < num_pages; i++) {
-			size_t phys_page = pmem_bitmap().allocate_pages(1, 0);
-			if (phys_page == -1)
-				PANIC("NO_MEM", "There's no more physical memory left.", true);
-			_personal_pmem_bitmap.set_page_used(phys_page);
-
-			size_t page_vaddr = vaddr + i * PAGE_SIZE;
-			map_page(phys_page * PAGE_SIZE, page_vaddr, read_write);
-
-			// Zero out memory just in case it contains sensitive info
-			memset((void*)page_vaddr, 0, PAGE_SIZE);
+	LinkedMemoryRegion PageDirectory::allocate_region(size_t mem_size, bool read_write) {
+		//First, try allocating a region of virtual memory.
+		MemoryRegion *vmem_region = _vmem_map.allocate_region(mem_size);
+		if (!vmem_region) {
+			//TODO: Send a signal instead
+			PANIC("NO_VMEM_SPACE", "A program ran out of vmem space.", true);
 		}
 
-		return true;
+		//Next, try allocating the physical pages.
+		MemoryRegion *pmem_region = pmem_map().allocate_region(mem_size);
+		if (!pmem_region) {
+			PANIC("NO_MEM", "There's no more physical memory left.", true);
+		}
+
+		//Finally, map the pages.
+		LinkedMemoryRegion region(pmem_region, vmem_region);
+		map_region(region, read_write);
+
+		memset((void*)vmem_region->start, 0, vmem_region->size);
+
+		return region;
 	}
 
-	bool PageDirectory::deallocate_pages(size_t vaddr, size_t memsize) {
-		ASSERT(vaddr % PAGE_SIZE == 0 && vaddr < HIGHER_HALF);
-		auto start_page = vaddr / PAGE_SIZE;
-		auto num_pages = (memsize + PAGE_SIZE - 1) / PAGE_SIZE;
-
-		for (auto i = start_page; i < start_page + num_pages; i++)
-			if (!_vmem_bitmap.is_page_used(i)) return false;
-
-		for (auto i = start_page; i < start_page + num_pages; i++) {
-			size_t physaddr = get_physaddr(i * PAGE_SIZE);
-			size_t physpage = physaddr / PAGE_SIZE;
-
-			pmem_bitmap().set_page_free(physpage);
-			_personal_pmem_bitmap.set_page_free(physpage);
-
-			unmap_page(i * PAGE_SIZE);
+	LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size, bool read_write) {
+		//First, try allocating a region of virtual memory.
+		MemoryRegion *vmem_region = _vmem_map.allocate_region(vaddr, mem_size);
+		if (!vmem_region) {
+			//TODO: Send a signal instead
+			PANIC("NO_VMEM_SPACE", "A program ran out of vmem space.", true);
 		}
 
+		//Next, try allocating the physical pages.
+		MemoryRegion *pmem_region = pmem_map().allocate_region(mem_size);
+		if (!pmem_region) {
+			PANIC("NO_MEM", "There's no more physical memory left.", true);
+		}
+
+		//Finally, map the pages.
+		LinkedMemoryRegion region(pmem_region, vmem_region);
+		map_region(region, read_write);
+
+		memset((void*)vmem_region->start, 0, vmem_region->size);
+
+		return region;
+	}
+
+	void PageDirectory::free_region(const LinkedMemoryRegion& region) {
+		unmap_region(region);
+		_vmem_map.free_region(region.virt);
+		pmem_map().free_region(region.phys);
+	}
+
+	bool PageDirectory::free_region(void* virtaddr) {
+		MemoryRegion* vregion = _vmem_map.find_region((size_t) virtaddr);
+		if(!vregion) return false;
+		if(!vregion->related) PANIC("VREGION_NO_RELATED", "A virtual program memory region had no corresponding physical region.", true);
+		LinkedMemoryRegion region(vregion->related, vregion);
+		unmap_region(region);
+		_vmem_map.free_region(region.virt);
+		pmem_map().free_region(region.phys);
 		return true;
 	}
 
@@ -384,62 +425,93 @@ namespace Paging {
 	}
 
 	void PageDirectory::fork_from(PageDirectory *parent) {
-		//TODO: Implement CoW
 		//Iterate through every entry of the page directory we're copying from
-		for(auto table = 0; table < 768; table++) {
-			//If the entry is present, continue
-			if(parent->_entries[table].data.present) {
-				auto cow_parent_page_table = DC::shared_ptr<PageTable>(parent->_page_tables[table]);
-				cow_parent_page_table->mark_cow_parent();
+		MemoryRegion* parent_region = parent->_vmem_map.first_region();
+		while(parent_region) {
+			if(parent_region->used) {
+				auto* new_region = _vmem_map.allocate_region(parent_region->start, parent_region->size);
+				if(!new_region)
+					PANIC("COW_FAILED", "CoW failed to allocate a vmem region.", true);
 
-				//Replace the pagetable in the parent
-				auto* parent_page_table = new PageTable(cow_parent_page_table->vaddr(), parent);
-				parent->_page_tables[table] = parent_page_table;
-				parent->_entries[table].data.set_address(get_physaddr(parent_page_table->entries()));
+				//If the region is already marked cow, increase the number of refs by one. Otherwise, set it to 2
+				if(parent_region->cow.marked_cow)
+					parent_region->related->cow.num_refs += 1;
+				else
+					parent_region->related->cow.num_refs = 2;
 
-				//Allocate a page table
-				auto* my_page_table = alloc_page_table(table);
+				parent_region->cow.marked_cow = true;
+				new_region->cow.marked_cow = true;
+				new_region->related = parent_region->related;
 
-				//Iterate through every page table entry
-				for(auto entry = 0; entry < 1024; entry++) {
-					PageTable::Entry* pte = &cow_parent_page_table->entries()[entry];
-					//If the entry is present, setup CoW or just point to it
-					if(pte->data.present) {
-						//Set the page as used in the vmem bitmap
-						_vmem_bitmap.set_page_used(table * 1024 + entry);
-
-						//See if the entry was already CoW
-						auto cow_parent = cow_parent_page_table->get_cow_parent(entry);
-
-						//If it was not already marked CoW and should be set up with new pointer
-						if(!cow_parent) {
-							cow_parent = DC::make_shared<CoWParent>(cow_parent_page_table, entry);
-							parent->_personal_pmem_bitmap.set_page_free(pte->data.get_address() / PAGE_SIZE);
-						} else {
-							//Otherwise, reset the reference to the CoWParent in the parent table
-							cow_parent_page_table->reset_cow_parent(entry);
-						}
-
-						my_page_table->setup_cow_entry(cow_parent);
-						parent_page_table->setup_cow_entry(cow_parent);
-					}
+				//Mark the page table entries in the parent read-only
+				size_t num_pages = parent_region->size / PAGE_SIZE;
+				size_t start_vpage = parent_region->start / PAGE_SIZE;
+				for(auto page_index = 0; page_index < num_pages; page_index++) {
+					size_t vpage = page_index + start_vpage;
+					parent->_page_tables[(vpage / 1024) % 1024]->entries()[vpage % 1024].data.read_write = false;
 				}
+
+				//Map the page table entries in child as read-only
+				map_region(LinkedMemoryRegion(new_region->related, new_region), false);
+
+
 			}
+			parent_region = parent_region->next;
 		}
 	}
 
 	bool PageDirectory::try_cow(size_t virtaddr) {
-		size_t page = virtaddr / PAGE_SIZE;
-		size_t directory_index = (page / 1024) % 1024;
-		if(!_page_tables[directory_index]) return false;
-		return _page_tables[directory_index]->cow(virtaddr);
-	}
+		auto* region = _vmem_map.find_region(virtaddr);
+		if(!region || !region->cow.marked_cow) return false;
 
-	void PageDirectory::take_pmem_ownership(size_t paddr) {
-		_personal_pmem_bitmap.set_page_used(paddr / PAGE_SIZE);
+		//Allocate a temporary kernel region to copy the memory into
+		LinkedMemoryRegion tmp_region = k_alloc_region(region->size);
+		if(!tmp_region.virt) PANIC("COW_COPY_FAIL", "CoW failed to allocate a memory region to copy.", true);
+
+		//Copy the region into the buffer
+		memcpy((void*)tmp_region.virt->start, (void*)region->start, region->size);
+
+		//Unmap the buffer region from the kernel
+		k_unmap_region(tmp_region);
+		kernel_vmem_map.free_region(tmp_region.virt);
+
+		//Reduce reference count of physical region and map new physical region to virtual region
+		region->related->cow_deref();
+		region->cow.marked_cow = false;
+		LinkedMemoryRegion new_region(tmp_region.phys, region);
+		map_region(new_region, true);
+
+		return true;
 	}
 
 	size_t PageDirectory::used_pmem() {
-		return (_personal_pmem_bitmap.used_pages() * PAGE_SIZE) / 1024;
+		return 0; //TODO
+		//return (_personal_pmem_bitmap.used_pages() * PAGE_SIZE) / 1024;
+	}
+
+	void PageDirectory::dump() {
+		MemoryRegion* cur = pmem_map().first_region();
+		printf("\nPHYSICAL:\n");
+		while(cur) {
+			printf("%x %x %d | %x\n", cur->start, cur->size, cur->used, cur->related ? cur->related->start : -1);
+			cur = cur->next;
+		}
+		printf("\nKERNEL:\n");
+		cur = kernel_vmem_map.first_region();
+		while(cur) {
+			printf("%x %x %d | %x\n", cur->start, cur->size, cur->used, cur->related ? cur->related->start : -1);
+			cur = cur->next;
+		}
+		if(!_vmem_map.first_region()) {
+			printf("\n");
+			return;
+		}
+		printf("\nPROGRAM:\n");
+		cur = _vmem_map.first_region();
+		while(cur) {
+			printf("%x %x %d | %x\n", cur->start, cur->size, cur->used, cur->related ? cur->related->start : -1);
+			cur = cur->next;
+		}
+		printf("\n");
 	}
 }

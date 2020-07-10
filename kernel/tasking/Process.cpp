@@ -67,7 +67,6 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, Proce
 
 bool Process::load_elf(const DC::shared_ptr<FileDescriptor> &fd, ELF::elf32_header* header) {
 	//FIXME: Dealloc phys pages if creation fails
-
 	uint32_t pheader_loc = header->program_header_table_position;
 	uint32_t pheader_size = header->program_header_table_entry_size;
 	uint32_t num_pheaders = header->program_header_table_entries;
@@ -81,7 +80,7 @@ bool Process::load_elf(const DC::shared_ptr<FileDescriptor> &fd, ELF::elf32_head
 		if(pheader->p_type == ELF_PT_LOAD) {
 			size_t loadloc_pagealigned = (pheader->p_vaddr/PAGE_SIZE) * PAGE_SIZE;
 			size_t loadsize_pagealigned = pheader->p_memsz + (pheader->p_vaddr % PAGE_SIZE);
-			if(!page_directory->allocate_pages(loadloc_pagealigned, loadsize_pagealigned, pheader->p_flags & ELF_PF_W)) {
+			if(!page_directory->allocate_region(loadloc_pagealigned, loadsize_pagealigned, pheader->p_flags & ELF_PF_W).virt) {
 				delete[] program_headers;
 				return false;
 			}
@@ -127,7 +126,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 		quantum = 1;
 	}
 
-	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_KERNEL_STACK_SIZE);
+	_kernel_stack_base = (void*) Paging::PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
 	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
 
 	size_t stack_base;
@@ -138,8 +137,9 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 		//Load the page directory of the new process
 		asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
 
-		if(!page_directory->allocate_pages(HIGHER_HALF - PROCESS_STACK_SIZE, PROCESS_STACK_SIZE))
+		if(!page_directory->allocate_region(HIGHER_HALF - PROCESS_STACK_SIZE, PROCESS_STACK_SIZE, true).virt)
 			PANIC("NEW_PROC_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new process's stack.", true);
+
 		stack_base = HIGHER_HALF - PROCESS_STACK_SIZE;
 		_stack_size = PROCESS_STACK_SIZE;
 	} else {
@@ -213,7 +213,7 @@ Process::Process(Process *to_fork, Registers &regs){
 	for(auto i = 0; i < to_fork->file_descriptors.size(); i++)
 		file_descriptors.push_back(to_fork->file_descriptors[i]);
 
-	_kernel_stack_base = Paging::PageDirectory::k_alloc_pages(PROCESS_KERNEL_STACK_SIZE);
+	_kernel_stack_base = (void*)Paging::PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
 	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
 
 	page_directory = new Paging::PageDirectory();
@@ -273,7 +273,7 @@ Process::Process(Process *to_fork, Registers &regs){
 
 Process::~Process() {
 	delete page_directory;
-	if(_kernel_stack_base) Paging::PageDirectory::k_free_pages(_kernel_stack_base, PROCESS_KERNEL_STACK_SIZE);
+	if(_kernel_stack_base) Paging::PageDirectory::k_free_region(_kernel_stack_base);
 }
 
 void Process::notify(uint32_t sig) {
@@ -305,7 +305,10 @@ void Process::handle_pagefault(Registers *regs) {
 	TaskManager::enabled() = false;
 	size_t err_pos;
 	asm("mov %%cr2, %0" : "=r" (err_pos));
-	if(!page_directory->try_cow(err_pos)) notify(SIGSEGV);
+	if(!page_directory->try_cow(err_pos)) {
+		Paging::page_fault_handler(regs);
+		notify(SIGSEGV);
+	}
 	TaskManager::enabled() = true;
 }
 
@@ -337,13 +340,13 @@ size_t Process::sys_sbrk(int amount) {
 	if(amount > 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			page_directory->allocate_pages((current_brk_page + 1) * PAGE_SIZE,
+			page_directory->allocate_region((current_brk_page + 1) * PAGE_SIZE,
 										   (new_brk_page - current_brk_page) * PAGE_SIZE, true);
 		}
 	} else if (amount < 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			page_directory->deallocate_pages(new_brk_page * PAGE_SIZE, (current_brk_page - new_brk_page) * PAGE_SIZE);
+			page_directory->free_region((void*) (new_brk_page * PAGE_SIZE));
 		}
 	}
 	size_t prev_brk = current_brk;
@@ -374,6 +377,8 @@ int Process::sys_execve(char *filename, char **argv, char **envp) {
 	R_new_proc.value()->_pid = this->pid();
 	TaskManager::add_process(R_new_proc.value());
 	kill();
+	ASSERT(false);
+	return -1;
 }
 
 int Process::sys_execvp(char *filename, char **argv) {
@@ -397,6 +402,8 @@ int Process::sys_execvp(char *filename, char **argv) {
 	R_new_proc.value()->_pid = this->pid();
 	TaskManager::add_process(R_new_proc.value());
 	kill();
+	ASSERT(false);
+	return -1;
 }
 
 int Process::sys_open(char *filename, int options, int mode) {

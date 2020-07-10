@@ -53,7 +53,6 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 			return false;
 	}
 
-	Paging::PageDirectory::k_mark_pmem(framebuffer_paddr, framebuffer_size(), true);
 	framebuffer = (uint32_t*)Paging::PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
 
 	return true;

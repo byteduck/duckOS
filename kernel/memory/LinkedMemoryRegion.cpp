@@ -1,28 +1,27 @@
 /*
     This file is part of duckOS.
-
+    
     duckOS is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
+    
     duckOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
+    
     You should have received a copy of the GNU General Public License
     along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
-
+    
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "multiboot.h"
+#include <kernel/kstdio.h>
+#include "LinkedMemoryRegion.h"
 
-extern "C" void asm_syscall_handler();
-extern void load_gdt();
-void interrupts_init();
-struct multiboot_info parse_mboot(uint32_t physaddr);
-
-extern "C" int kmain(uint32_t mbootptr);
-void kmain_late();
+LinkedMemoryRegion::LinkedMemoryRegion(MemoryRegion* phys, MemoryRegion* virt): phys(phys), virt(virt) {
+	ASSERT(virt->size == phys->size);
+	phys->related = virt;
+	virt->related = phys;
+}

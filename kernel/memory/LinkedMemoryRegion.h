@@ -17,19 +17,18 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "CoWParent.h"
-namespace Paging {
-	CoWParent::CoWParent(const DC::shared_ptr<PageTable>& table, int entry): _table(table), _table_entry(entry) {
-	}
+#ifndef DUCKOS_LINKEDMEMORYREGION_H
+#define DUCKOS_LINKEDMEMORYREGION_H
 
-	CoWParent::~CoWParent() {
-	}
 
-	DC::shared_ptr<PageTable> CoWParent::table() {
-		return _table;
-	}
+#include "MemoryRegion.h"
 
-	int CoWParent::table_entry() {
-		return _table_entry;
-	}
-}
+class LinkedMemoryRegion {
+public:
+	LinkedMemoryRegion(MemoryRegion* phys, MemoryRegion* virt);
+	MemoryRegion* phys;
+	MemoryRegion* virt;
+};
+
+
+#endif //DUCKOS_LINKEDMEMORYREGION_H

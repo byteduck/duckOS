@@ -121,7 +121,6 @@ void Ext2Inode::read_raw() {
 }
 
 ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
-	ASSERT(start >= 0);
 	if(raw.size == 0) return 0;
 	if(start > raw.size) return 0;
 	if(start + length > raw.size) length = raw.size - start;
