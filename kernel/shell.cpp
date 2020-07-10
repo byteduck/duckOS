@@ -151,7 +151,7 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"pwd.old")){
 		printf("%s\n", current_dir->get_full_path().c_str());
 	}else if(strcmp(cmd,"about")){
-		println("DuckOS v0.1");
+		println("DuckOS v0.2");
 	}else if(strcmp(cmd, "mem")) {
 		printf("Total usable memory: %dKiB\n", Paging::get_usable_mem() / 1024);
 		printf("Total reserved memory: %dKiB\n", Paging::get_reserved_mem() / 1024);
