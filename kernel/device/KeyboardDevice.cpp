@@ -58,8 +58,7 @@ void KeyboardDevice::handle_irq(Registers *regs) {
 	while(true) {
 		auto status = inb(KBD_PORT_STATUS);
 		//If there's nothing in the buffer or we're not reading the ps/2 keyboard buffer, return
-		if(!(!(status & KBD_STATUS_WHICHBUF) && (status & KBD_STATUS_OUTBUF_FULL)))
-			return;
+		if(!(!(status & KBD_STATUS_WHICHBUF) && (status & KBD_STATUS_OUTBUF_FULL))) return;
 
 		auto scancode = inb(0x60);
 		auto key = scancode & 0x7fu;

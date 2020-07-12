@@ -26,8 +26,7 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/elf.h>
 #include <kernel/pci/pci.h>
-#include <kernel/memory/paging.h>
-#include <kernel/device/ide.h>
+#include <kernel/memory/memory.h>
 #include <kernel/filesystem/VFS.h>
 #include <common/cstring.h>
 #include <common/stdlib.h>
@@ -35,9 +34,9 @@
 #include <kernel/filesystem/InodeFile.h>
 #include <kernel/device/TTYDevice.h>
 #include <kernel/memory/MemoryMap.h>
+#include <kernel/device/PATADevice.h>
 
 char kbdbuf[512];
-extern bool tasking_enabled;
 
 Shell::Shell(): current_dir(VFS::inst().root_ref()){
 }
@@ -153,13 +152,13 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"about")){
 		println("DuckOS v0.2");
 	}else if(strcmp(cmd, "mem")) {
-		printf("Total usable memory: %dKiB\n", Paging::get_usable_mem() / 1024);
-		printf("Total reserved memory: %dKiB\n", Paging::get_reserved_mem() / 1024);
-		size_t used_mem_frac = ((Paging::get_used_mem() / 1024) * 10000) / (Paging::get_usable_mem() / 1024);
-		printf("Used memory: %dKiB (%d.%s%d%%)\n", Paging::get_used_mem() / 1024, used_mem_frac / 100, used_mem_frac  % 100 < 10 ? "0" : "", used_mem_frac % 100);
-		printf("Vmem used by kernel: %dKib\n", Paging::get_used_kmem() / 1024);
+		printf("Total usable memory: %dKiB\n", Memory::get_usable_mem() / 1024);
+		printf("Total reserved memory: %dKiB\n", Memory::get_reserved_mem() / 1024);
+		size_t used_mem_frac = ((Memory::get_used_mem() / 1024) * 10000) / (Memory::get_usable_mem() / 1024);
+		printf("Used memory: %dKiB (%d.%s%d%%)\n", Memory::get_used_mem() / 1024, used_mem_frac / 100, used_mem_frac % 100 < 10 ? "0" : "", used_mem_frac % 100);
+		printf("Vmem used by kernel: %dKib\n", Memory::get_used_kmem() / 1024);
 	}else if(strcmp(cmd, "memdump")) {
-		Paging::kernel_page_directory.dump();
+		Memory::kernel_page_directory.dump();
 	}else if(strcmp(cmd,"cat.old")){
 		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
 		if(desc_ret.is_error()) {
@@ -298,7 +297,7 @@ void Shell::command_eval(char *cmd, char *args){
 			uint8_t subclss = PCI::read_byte(address, PCI_SUBCLASS);
 			printf("%x:%x.%x Vendor: 0x%x Device: 0x%x\n  Class: 0x%x Subclass: 0x%x\n", address.bus, address.slot, address.function, id.vendor, id.device, clss, subclss);
 		}, nullptr);
-	} else {
+	}else{
 		//Execute program
 		DC::string cmds = cmd;
 		ResultRet<Process *> p(0);

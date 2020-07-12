@@ -2,6 +2,7 @@
 global idt_load
 extern idtp
 extern pit_handler
+extern preempt
 extern tasking_enabled
 idt_load:
 	lidt [idtp]
@@ -166,6 +167,19 @@ preempt_init_asm: ;Pretty much the same as preempt_asm, but without storing the 
     pop edi
     pop ebp
     iret
+
+[global preempt_now_asm]
+preempt_now_asm:
+    push eax
+    push ebx
+    push ecx
+    push edx
+    call preempt
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+    ret
 
 [global preempt_asm]
 preempt_asm:

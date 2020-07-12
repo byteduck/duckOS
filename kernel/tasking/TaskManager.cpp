@@ -22,9 +22,10 @@
 #include <kernel/kstddef.h>
 #include <kernel/kstdio.h>
 #include <kernel/pit.h>
-#include <kernel/memory/paging.h>
+#include <kernel/memory/memory.h>
 #include <kernel/kmain.h>
 #include <common/cstring.h>
+#include <kernel/interrupt/irq.h>
 
 TSS TaskManager::tss;
 
@@ -33,10 +34,13 @@ Process *kernel_proc;
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
 
-void kthread(){
+void ktask(){
 	tasking_enabled = true;
 	kmain_late();
-	while(1);
+	while(1) {
+		asm volatile("sti");
+		asm volatile("hlt");
+	}
 }
 
 Process* TaskManager::process_for_pid(pid_t pid){
@@ -44,7 +48,7 @@ Process* TaskManager::process_for_pid(pid_t pid){
 	do{
 		if(current->pid() == pid) return current;
 		current = current->next;
-	}while(current != kernel_proc);
+	} while(current != kernel_proc);
 	return (Process *) nullptr;
 }
 
@@ -66,7 +70,7 @@ pid_t TaskManager::get_new_pid(){
 }
 
 void TaskManager::init(){
-	kernel_proc = Process::create_kernel("duckk32", kthread);
+	kernel_proc = Process::create_kernel("duckk32", ktask);
 	kernel_proc->next = kernel_proc;
 	kernel_proc->prev = kernel_proc;
 	current_proc = kernel_proc;
@@ -78,17 +82,17 @@ Process* TaskManager::current_process(){
 }
 
 uint32_t TaskManager::add_process(Process *p){
-	bool en = tasking_enabled;
+	ASSERT(tasking_enabled)
 	tasking_enabled = false;
 	p->next = current_proc->next;
 	p->next->prev = p;
 	p->prev = current_proc;
 	current_proc->next = p;
-	tasking_enabled = en;
+	tasking_enabled = true;
 	return p->pid();
 }
 
-void TaskManager::notify(uint32_t sig){
+void TaskManager::notify_current(uint32_t sig){
 	current_proc->notify(sig);
 }
 
@@ -105,8 +109,12 @@ void TaskManager::kill(Process* p){
 
 Process *TaskManager::next_process() {
 	Process* next_proc = current_proc->next;
+	//Don't switch to a yielding process
+	while(next_proc->is_yielding()) {
+		next_proc = next_proc->next;
+	}
+	//Cleanup dead processes
 	while(next_proc->state == PROCESS_DEAD) {
-		//Cleanup process if it's dead
 		next_proc->prev->next = next_proc->next;
 		next_proc->next->prev = next_proc->prev;
 		Process* new_next_proc = next_proc->next;
@@ -116,10 +124,17 @@ Process *TaskManager::next_process() {
 	return next_proc;
 }
 
+
+static uint8_t quantum_counter = 0;
+
+void TaskManager::yield() {
+	ASSERT(!Interrupt::in_interrupt())
+	quantum_counter = 0;
+	preempt_now_asm();
+}
+
 void TaskManager::preempt(){
 	if(!tasking_enabled) return;
-
-	static uint8_t quantum_counter = 0;
 	if(quantum_counter == 0) {
 		auto old_proc = current_proc;
 		current_proc = next_process();

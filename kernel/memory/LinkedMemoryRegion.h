@@ -25,9 +25,10 @@
 
 class LinkedMemoryRegion {
 public:
+	LinkedMemoryRegion() = default;
 	LinkedMemoryRegion(MemoryRegion* phys, MemoryRegion* virt);
-	MemoryRegion* phys;
-	MemoryRegion* virt;
+	MemoryRegion* phys = nullptr;
+	MemoryRegion* virt = nullptr;
 };
 
 

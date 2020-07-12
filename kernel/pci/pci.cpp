@@ -62,6 +62,18 @@ namespace PCI {
 		write_word(address, PCI_COMMAND, comm.value);
 	}
 
+	void enable_bus_mastering(Address address) {
+		Command comm = {.value = read_word(address, PCI_COMMAND)};
+		comm.attrs.bus_master = true;
+		write_word(address, PCI_COMMAND, comm.value);
+	}
+
+	void disable_bus_mastering(Address address) {
+		Command comm = {.value = read_word(address, PCI_COMMAND)};
+		comm.attrs.bus_master = false;
+		write_word(address, PCI_COMMAND, comm.value);
+	}
+
 	void enumerate_devices(PCIEnumerationCallback callback, void* dataPtr) {
 		if((read_byte({}, PCI_HEADER_TYPE) & PCI_MULTIFUNCTION) == 0) {
 			//Single controller
@@ -113,7 +125,11 @@ namespace PCI {
 	}
 
 	IOAddress Address::get_io_address(uint8_t field) {
-		return {field, function, slot, bus, 0, true};
+		return {field, function, slot, bus, true};
+	}
+
+	bool Address::is_zero() {
+		return slot == 0 && function == 0 && bus == 0;
 	}
 
 	bool ID::operator==(ID &other) const {

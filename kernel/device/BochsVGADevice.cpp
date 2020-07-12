@@ -18,6 +18,7 @@
 */
 
 #include "BochsVGADevice.h"
+#include <kernel/memory/PageDirectory.h>
 #include <kernel/pci/pci.h>
 #include <common/defines.h>
 
@@ -48,7 +49,7 @@ bool BochsVGADevice::detect() {
 	}
 	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
 	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
-	framebuffer = (uint32_t*)Paging::PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
+	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
 	printf("vga: Found a bochs-compatible VGA device at %x:%x.%x\n", address.bus, address.slot, address.function);
 	printf("vga: virtual framebuffer mapped from 0x%x to 0x%x\n", framebuffer_paddr, framebuffer);
 	return true;

@@ -17,6 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <kernel/tasking/TaskManager.h>
 #include "TTYDevice.h"
 #include "KeyboardDevice.h"
 
@@ -52,7 +53,8 @@ ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffe
 }
 
 ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
-	while(buffered && _input_buffer.empty()); //TODO: Better way of blocking without wasting CPU cycles
+	//TODO: Have to use a spinlock instaed of a yield, because the yield breaks everything (at least in Qemu) for some reason...
+	while(buffered && _input_buffer.empty());
 	count = min(count, _input_buffer.size());
 	size_t count_loop = count;
 	while(count_loop--) *buffer++ = _input_buffer.pop_front();
@@ -75,12 +77,12 @@ bool TTYDevice::active() {
 void TTYDevice::handle_key(KeyEvent event) {
 	if(!event.pressed()) return;
 	if(!event.character) return;
-
 	if(buffered) {
 		if(event.character == '\n') {
 			_buffered_input_buffer.push('\n');
-			while (!_buffered_input_buffer.empty())
+			while (!_buffered_input_buffer.empty()) {
 				_input_buffer.push(_buffered_input_buffer.pop_front());
+			}
 			putch('\n');
 		} else if(event.character == '\b') {
 			if(!_buffered_input_buffer.empty()){

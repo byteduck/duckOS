@@ -20,7 +20,7 @@
 #include <kernel/kstddef.h>
 #include <kernel/multiboot.h>
 #include <kernel/kstdio.h>
-#include <kernel/memory/paging.h>
+#include <kernel/memory/memory.h>
 #include <kernel/interrupt/idt.h>
 #include <kernel/interrupt/isr.h>
 #include <kernel/interrupt/irq.h>
@@ -37,6 +37,8 @@
 #include <common/defines.h>
 #include <kernel/device/BochsVGADevice.h>
 #include <kernel/device/MultibootVGADevice.h>
+#include <kernel/memory/PageDirectory.h>
+#include <kernel/device/PATADevice.h>
 
 uint8_t boot_disk;
 
@@ -46,7 +48,7 @@ int kmain(uint32_t mbootptr){
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
 	load_gdt();
 	interrupts_init();
-	Paging::setup_paging();
+	Memory::setup_paging();
 	Device::init();
 
 	//Try setting up VGA
@@ -63,7 +65,7 @@ int kmain(uint32_t mbootptr){
 			}
 		} else {
 			printf("vga: Falling back to text mode.\n");
-			void* vidmem = (void*)Paging::PageDirectory::k_mmap(0xB8000, 0xFA0, true);
+			void* vidmem = (void*) PageDirectory::k_mmap(0xB8000, 0xFA0, true);
 			set_text_mode(80, 25, vidmem);
 		}
 	}
@@ -87,7 +89,7 @@ void shell_process(){
 	shell.shell();
 }
 
-//called from kthread
+//called from ktask
 void kmain_late(){
 	new KeyboardDevice;
 
@@ -98,11 +100,12 @@ void kmain_late(){
 
 	printf("init: TTY initialized.\ninit: Initializing disk...\n");
 
-	auto disk = DC::make_shared<PIODevice>(3, 0, boot_disk);
-	auto part = DC::make_shared<PartitionDevice>(3, 1, disk, disk->get_first_partition());
+	auto tmpdisk = DC::make_shared<PIODevice>(99, 99, 8);
+	//auto disk = DC::shared_ptr<PATADevice>(PATADevice::find(PATADevice::PRIMARY, PATADevice::MASTER));
+	auto part = DC::make_shared<PartitionDevice>(3, 1, tmpdisk, tmpdisk->get_first_partition());
 	auto part_descriptor = DC::make_shared<FileDescriptor>(part);
 
-	if(Ext2Filesystem::probe(*part_descriptor.get())){
+	if(Ext2Filesystem::probe(*part_descriptor)){
 		printf("init: Partition is ext2 ");
 	}else{
 		println("init: Partition is not ext2! Hanging.");
@@ -129,10 +132,6 @@ void kmain_late(){
 	printf("init: Done!\n");
 
 	pid_t shell_pid = TaskManager::add_process(Process::create_kernel("shell", shell_process));
-	while(TaskManager::process_for_pid(shell_pid));
-	printf("\n\nShell exited.\n\n");
-
-	while(1);
 }
 
 struct multiboot_info parse_mboot(uint32_t physaddr){
@@ -152,7 +151,7 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 	//TODO: Actually keep track of the information and use it
 	if(header->flags & MULTIBOOT_INFO_MEM_MAP) {
 		auto* mmap_entry = (multiboot_mmap_entry*) (header->mmap_addr + HIGHER_HALF);
-		Paging::parse_mboot_memory_map(header, mmap_entry);
+		Memory::parse_mboot_memory_map(header, mmap_entry);
 	} else {
 		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have a memory map. Cannot boot.\n", true);
 	}
@@ -161,10 +160,10 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 }
 
 void interrupts_init(){
-	register_idt();
-	isr_init();
-	idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
+	Interrupt::register_idt();
+	Interrupt::isr_init();
+	Interrupt::idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
 	PIT::init();
-	irq_init();
+	Interrupt::irq_init();
 	sti();
 }

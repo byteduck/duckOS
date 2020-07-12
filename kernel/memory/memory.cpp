@@ -19,13 +19,13 @@
 
 #include <kernel/kstddef.h>
 #include <kernel/kstdio.h>
-#include <kernel/memory/paging.h>
+#include <kernel/memory/memory.h>
 #include <kernel/interrupt/isr.h>
-#include "PageDirectory.h"
+#include <kernel/memory/PageDirectory.h>
 #include "PageTable.h"
 #include "MemoryMap.h"
 
-namespace Paging {
+namespace Memory {
 	PageDirectory kernel_page_directory;
 	PageDirectory::Entry kernel_page_directory_entries[1024] __attribute__((aligned(4096)));
 	PageTable::Entry kernel_early_page_table_entries1[1024] __attribute__((aligned(4096)));
@@ -92,7 +92,6 @@ namespace Paging {
 		//Now, map and write everything to the directory
 		PageDirectory::map_kernel(kernel_region);
 		kernel_page_directory.update_kernel_entries();
-		kernel_page_directory.dump();
 	}
 
 
@@ -218,7 +217,7 @@ namespace Paging {
 
 }
 
-using namespace Paging;
+using namespace Memory;
 
 int liballoc_lock() {
 	cli();

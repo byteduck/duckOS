@@ -24,8 +24,15 @@
 
 class IRQHandler {
 public:
-	IRQHandler(int irq);
 	virtual void handle_irq(Registers* regs) = 0;
+protected:
+	explicit IRQHandler();
+	IRQHandler(int irq);
+	void set_irq(int irq);
+	void uninstall_irq();
+	void reinstall_irq();
+private:
+	int _irq = 0;
 };
 
 

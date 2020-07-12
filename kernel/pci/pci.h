@@ -39,12 +39,12 @@
 #define PCI_LATENCY_TIMER 0xd //byte
 #define PCI_HEADER_TYPE 0xe //byte
 #define PCI_BIST 0xf //byte
-#define PCI_BAR0 0x10
-#define PCI_BAR1 0x14
-#define PCI_BAR2 0x18
-#define PCI_BAR3 0x1C
-#define PCI_BAR4 0x20
-#define PCI_BAR5 0x24
+#define PCI_BAR0 0x10 //dword
+#define PCI_BAR1 0x14 //dword
+#define PCI_BAR2 0x18 //dword
+#define PCI_BAR3 0x1C //dword
+#define PCI_BAR4 0x20 //dword
+#define PCI_BAR5 0x24 //dword
 #define PCI_PRIMARY_BUS 0x18 //byte
 #define PCI_SECONDARY_BUS 0x19 //byte
 #define PCI_INTERRUPT_LINE 0x3c //byte
@@ -91,7 +91,7 @@ namespace PCI {
 			uint8_t function: 3;
 			uint8_t slot: 5;
 			uint8_t bus: 8;
-			uint8_t reserved: 7;
+			uint8_t : 7;
 			bool enable: 1;
 		} attrs;
 		uint32_t value;
@@ -106,7 +106,7 @@ namespace PCI {
 			bool mem_write_invalidate_enable : 1;
 			bool VGA_palette_snoop : 1;
 			bool parity_error_response : 1;
-			bool reserved : 1;
+			bool : 1;
 			bool serr_enable : 1;
 			bool fast_back_to_back_enable : 1;
 			bool interrupt_disable : 1;
@@ -121,6 +121,7 @@ namespace PCI {
 		uint8_t slot;
 		uint8_t function;
 		IOAddress get_io_address(uint8_t field);
+		bool is_zero();
 	};
 
 	class ID {
@@ -142,6 +143,8 @@ namespace PCI {
 
 	void enable_interrupt(Address address);
 	void disable_interrupt(Address address);
+	void enable_bus_mastering(Address address);
+	void disable_bus_mastering(Address address);
 
 	void enumerate_devices(PCIEnumerationCallback callback, void* dataPtr);
 	void enumerate_bus(uint8_t bus, PCIEnumerationCallback callback, void* dataPtr);

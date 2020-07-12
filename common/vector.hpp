@@ -33,8 +33,8 @@ namespace DC {
 			inited = 1;
 		}
 
-		vector(size_t size, const T& value = T()): _storage((T*) kcalloc(size, sizeof(T))), _capacity(size) {
-			for(auto i = 0; i < size; i++) new (&_storage[i]) T(value);
+		vector(size_t capacity, const T& value = T()): _storage((T*) kcalloc(capacity, sizeof(T))), _capacity(capacity) {
+			for(auto i = 0; i < capacity; i++) new (&_storage[i]) T(value);
 			inited = 1;
 		}
 

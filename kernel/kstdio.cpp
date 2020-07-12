@@ -19,7 +19,7 @@
 
 #include <kernel/kstddef.h>
 #include <kernel/kstdio.h>
-#include <kernel/memory/paging.h>
+#include <kernel/memory/memory.h>
 #include <common/stdlib.h>
 #include <kernel/font8x8/font8x8_latin.h>
 #include <kernel/device/BochsVGADevice.h>
@@ -62,11 +62,9 @@ void graphical_putch_color(char c, char color) {
 
 	while(ypos >= num_rows) {
 		//TODO: Better way of scrolling other than memcpying framebuffer
-		TaskManager::enabled() = false;
 		memcpy(framebuffer, framebuffer + 8 * (num_columns * 8), (num_rows - 1) * 8 * num_columns * 8 * 4);
 		memset(framebuffer + (8 * (num_rows - 1)) * (num_columns * 8), 0, num_columns * 8 * 8 * 4);
 		ypos--;
-		TaskManager::enabled() = true;
 	}
 
 	uint16_t pixel_xpos = xpos * 8;

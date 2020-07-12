@@ -21,22 +21,24 @@
 #include <kernel/interrupt/idt.h>
 #include <common/cstring.h>
 
-struct IDTEntry idt[256];
-struct IDTPointer idtp;
+struct Interrupt::IDTPointer idtp;
+namespace Interrupt {
+	struct IDTEntry idt[256];
 
-void idt_set_gate(uint8_t num, uint32_t loc, uint16_t selector, uint8_t attrs){
-	idt[num].offset_low = (loc & 0xFFFFu);
-	idt[num].offset_high = (loc >> 16u) & 0xFFFFu;
-	idt[num].selector = selector;
-	idt[num].zero = 0;
-	idt[num].attrs = attrs;
-}
+	void idt_set_gate(uint8_t num, uint32_t loc, uint16_t selector, uint8_t attrs) {
+		idt[num].offset_low = (loc & 0xFFFFu);
+		idt[num].offset_high = (loc >> 16u) & 0xFFFFu;
+		idt[num].selector = selector;
+		idt[num].zero = 0;
+		idt[num].attrs = attrs;
+	}
 
-void register_idt(){
-	idtp.size = (sizeof(struct IDTEntry) * 256) - 1;
-	idtp.offset = (int)&idt;
-	
-	memset(&idt, 0, sizeof(struct IDTEntry) * 256);
-	
-	idt_load();
+	void register_idt() {
+		idtp.size = (sizeof(struct IDTEntry) * 256) - 1;
+		idtp.offset = (int) &idt;
+
+		memset(&idt, 0, sizeof(struct IDTEntry) * 256);
+
+		idt_load();
+	}
 }

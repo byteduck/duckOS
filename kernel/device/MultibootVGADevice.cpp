@@ -19,6 +19,7 @@
 
 #include <common/defines.h>
 #include "MultibootVGADevice.h"
+#include <kernel/memory/PageDirectory.h>
 
 MultibootVGADevice *MultibootVGADevice::create(struct multiboot_info *mboot_header) {
 	auto* ret = new MultibootVGADevice();
@@ -53,7 +54,7 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 			return false;
 	}
 
-	framebuffer = (uint32_t*)Paging::PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
+	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
 
 	return true;
 }

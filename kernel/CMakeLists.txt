@@ -29,14 +29,13 @@ SET(KERNEL_SRCS
         pci/pci.cpp
         memory/gdt.cpp
         memory/kliballoc.cpp
-        memory/paging.cpp
+        memory/memory.cpp
         interrupt/idt.cpp
         interrupt/irq.cpp
         interrupt/isr.cpp
         interrupt/syscall.cpp
         filesystem/Ext2.cpp
         pci/pci.cpp
-        device/ide.cpp
         device/Device.cpp
         device/BlockDevice.cpp
         device/PIODevice.cpp
@@ -70,7 +69,9 @@ SET(KERNEL_SRCS
         device/MultibootVGADevice.cpp
         memory/MemoryRegion.cpp
         memory/MemoryMap.cpp
-        memory/LinkedMemoryRegion.cpp)
+        memory/LinkedMemoryRegion.cpp
+        device/PATADevice.cpp
+        tasking/TaskYield.hpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

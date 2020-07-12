@@ -17,9 +17,27 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <kernel/kstdio.h>
 #include "IRQHandler.h"
 #include "irq.h"
 
-IRQHandler::IRQHandler(int irq) {
-	irq_set_handler(irq, this);
+IRQHandler::IRQHandler() {
+
+}
+
+IRQHandler::IRQHandler(int irq): _irq(irq) {
+	Interrupt::irq_set_handler(irq, this);
+}
+
+void IRQHandler::set_irq(int irq) {
+	_irq = irq;
+}
+
+void IRQHandler::uninstall_irq() {
+	Interrupt::irq_set_handler(_irq, nullptr);
+}
+
+void IRQHandler::reinstall_irq() {
+	if(!_irq) return;
+	Interrupt::irq_set_handler(_irq, this);
 }

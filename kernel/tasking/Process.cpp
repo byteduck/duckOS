@@ -26,6 +26,7 @@
 #include "TaskManager.h"
 #include "elf.h"
 #include "ProcessArgs.h"
+#include <kernel/memory/PageDirectory.h>
 
 Process* Process::create_kernel(const DC::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(DC::shared_ptr<LinkedInode>(nullptr));
@@ -44,23 +45,14 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, Proce
 		return -ENOEXEC;
 	}
 
-	TaskManager::enabled() = false;
-
 	auto* proc = new Process(executable_loc, header->program_entry_position, false, args, parent);
-
 	bool success = proc->load_elf(fd, header);
-
-	//Load the page directory of the current process back
-	asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
-
-	TaskManager::enabled() = true;
 
 	delete header;
 	if(!success) {
 		delete proc;
 		return -ENOEXEC;
 	}
-
 
 	return proc;
 }
@@ -80,13 +72,30 @@ bool Process::load_elf(const DC::shared_ptr<FileDescriptor> &fd, ELF::elf32_head
 		if(pheader->p_type == ELF_PT_LOAD) {
 			size_t loadloc_pagealigned = (pheader->p_vaddr/PAGE_SIZE) * PAGE_SIZE;
 			size_t loadsize_pagealigned = pheader->p_memsz + (pheader->p_vaddr % PAGE_SIZE);
-			if(!page_directory->allocate_region(loadloc_pagealigned, loadsize_pagealigned, pheader->p_flags & ELF_PF_W).virt) {
-				delete[] program_headers;
-				return false;
+
+			//Allocate a kernel memory region to load the section into
+			LinkedMemoryRegion tmp_region = PageDirectory::k_alloc_region(loadsize_pagealigned);
+
+			//Read the section into the region
+			fd->seek(pheader->p_offset, SEEK_SET);
+			fd->read((uint8_t*) tmp_region.virt->start + (pheader->p_vaddr - loadloc_pagealigned), pheader->p_filesz);
+
+			//Allocate a program vmem region
+			MemoryRegion* vmem_region = page_directory->vmem_map().allocate_region(loadloc_pagealigned, loadsize_pagealigned);
+			if(!vmem_region) {
+				//If we failed to allocate the program vmem region, free the tmp region
+				Memory::pmem_map().free_region(tmp_region.phys);
+				printf("FATAL: Failed to allocate a vmem region in load_elf!\n");
+				break;
 			}
 
-			fd->seek(pheader->p_offset, SEEK_SET);
-			fd->read((uint8_t*)pheader->p_vaddr, pheader->p_filesz);
+			//Unmap the region from the kernel
+			PageDirectory::k_unmap_region(tmp_region);
+			PageDirectory::kernel_vmem_map.free_region(tmp_region.virt);
+
+			//Map the physical region to the program's vmem region
+			LinkedMemoryRegion prog_region(tmp_region.phys, vmem_region);
+			page_directory->map_region(prog_region, pheader->p_flags & ELF_PF_W);
 
 			if(current_brk < pheader->p_vaddr + pheader->p_memsz)
 				current_brk = pheader->p_vaddr + pheader->p_memsz;
@@ -108,6 +117,9 @@ DC::string Process::name(){
 
 //TODO: Clean up this monstrosity
 Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent) {
+	//Disable task switching so we don't screw up paging
+	TaskManager::enabled() = false;
+
 	_name = name;
 	_pid = TaskManager::get_new_pid();
 	state = PROCESS_ALIVE;
@@ -126,15 +138,14 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 		quantum = 1;
 	}
 
-	_kernel_stack_base = (void*) Paging::PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
+	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
 	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
 
 	size_t stack_base;
 	if(!kernel) {
-		page_directory = new Paging::PageDirectory();
+		//Make and load a new page directory
+		page_directory = new PageDirectory();
 		page_directory_loc = page_directory->entries_physaddr();
-
-		//Load the page directory of the new process
 		asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
 
 		if(!page_directory->allocate_region(HIGHER_HALF - PROCESS_STACK_SIZE, PROCESS_STACK_SIZE, true).virt)
@@ -143,7 +154,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 		stack_base = HIGHER_HALF - PROCESS_STACK_SIZE;
 		_stack_size = PROCESS_STACK_SIZE;
 	} else {
-		page_directory_loc = Paging::kernel_page_directory.entries_physaddr();
+		page_directory_loc = Memory::kernel_page_directory.entries_physaddr();
 		stack_base = (size_t) _kernel_stack_base;
 		_stack_size = PROCESS_KERNEL_STACK_SIZE;
 	}
@@ -195,11 +206,18 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 
 	//Set the ESP to the stack's location
 	registers.esp = (size_t) stack;
+
+	if(!kernel) {
+		//Load back the page directory of the current process
+		asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
+	}
+	TaskManager::enabled() = true;
 }
 
 Process::Process(Process *to_fork, Registers &regs){
 	if(to_fork->kernel) PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
 
+	TaskManager::enabled() = false;
 	_name = to_fork->_name;
 	_pid = TaskManager::get_new_pid();
 	state = PROCESS_ALIVE;
@@ -213,10 +231,10 @@ Process::Process(Process *to_fork, Registers &regs){
 	for(auto i = 0; i < to_fork->file_descriptors.size(); i++)
 		file_descriptors.push_back(to_fork->file_descriptors[i]);
 
-	_kernel_stack_base = (void*)Paging::PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
+	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
 	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
 
-	page_directory = new Paging::PageDirectory();
+	page_directory = new PageDirectory();
 	page_directory_loc = page_directory->entries_physaddr();
 
 	//Load the page directory of the new process
@@ -269,11 +287,13 @@ Process::Process(Process *to_fork, Registers &regs){
 
 	//Load back the page directory of the current process
 	asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
+
+	TaskManager::enabled() = true;
 }
 
 Process::~Process() {
 	delete page_directory;
-	if(_kernel_stack_base) Paging::PageDirectory::k_free_region(_kernel_stack_base);
+	if(_kernel_stack_base) PageDirectory::k_free_region(_kernel_stack_base);
 }
 
 void Process::notify(uint32_t sig) {
@@ -295,7 +315,8 @@ void Process::notify(uint32_t sig) {
 void Process::kill() {
 	if(_pid != 1){
 		state = PROCESS_DEAD;
-		while(1); //TODO: Figure out a good way to preempt now instead of wasting CPU cycles
+		TaskManager::yield();
+		ASSERT(false); //We should never reach here
 	}else{
 		PANIC("KERNEL KILLED","EVERYONE PANIC THIS ISN'T GOOD",true);
 	}
@@ -306,7 +327,7 @@ void Process::handle_pagefault(Registers *regs) {
 	size_t err_pos;
 	asm("mov %%cr2, %0" : "=r" (err_pos));
 	if(!page_directory->try_cow(err_pos)) {
-		Paging::page_fault_handler(regs);
+		Memory::page_fault_handler(regs);
 		notify(SIGSEGV);
 	}
 	TaskManager::enabled() = true;
@@ -314,6 +335,23 @@ void Process::handle_pagefault(Registers *regs) {
 
 void *Process::kernel_stack_top() {
 	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
+}
+
+void Process::yield_to(TaskYield &yielder) {
+	ASSERT(TaskManager::enabled());
+	_yielder = &yielder;
+	state = PROCESS_YIELDING;
+	TaskManager::yield();
+	_yielder = nullptr;
+	state = PROCESS_ALIVE;
+}
+
+bool Process::is_yielding() {
+	return _yielder != nullptr && !_yielder->ready();
+}
+
+TaskYield* Process::yielder() {
+	return _yielder;
 }
 
 
@@ -355,10 +393,8 @@ size_t Process::sys_sbrk(int amount) {
 }
 
 pid_t Process::sys_fork(Registers& regs) {
-	TaskManager::enabled() = false;
 	auto* new_proc = new Process(this, regs);
 	TaskManager::add_process(new_proc);
-	TaskManager::enabled() = true;
 	return new_proc->pid();
 }
 
@@ -435,6 +471,7 @@ int Process::sys_getcwd(char *buf, size_t length) {
 }
 
 int Process::sys_readdir(int file, char *buf, size_t len) {
+	TaskManager::yield();
 	if(file < 0 || file >= file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return file_descriptors[file]->read_dir_entries(buf, len);
 }

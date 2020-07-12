@@ -27,6 +27,7 @@
 #define PROCESS_ALIVE 0
 #define PROCESS_ZOMBIE 1
 #define PROCESS_DEAD 2
+#define PROCESS_YIELDING 3
 
 #define SIGTERM 15
 #define SIGILL 4
@@ -36,20 +37,28 @@ class Process;
 
 namespace TaskManager {
 	extern TSS tss;
+
 	void init();
 	bool& enabled();
 	void print_tasks();
+
 	uint32_t add_process(Process *p);
 	Process *current_process();
-	pid_t get_new_pid();
 	Process *process_for_pid(pid_t pid);
+
+	void yield();
+
+	void notify_current(uint32_t sig);
+	void kill(Process *p);
+
+	pid_t get_new_pid();
 	Process* next_process();
+
 	extern "C" void preempt();
+	extern "C" void preempt_now_asm();
 	extern "C" void preempt_init_asm(unsigned int new_esp);
 	extern "C" void preempt_asm(unsigned int *old_esp, unsigned int *new_esp, uint32_t new_cr3);
 	extern "C" void proc_first_preempt(void);
-	void notify(uint32_t sig);
-	void kill(Process *p);
 };
 
 #endif

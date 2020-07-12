@@ -19,7 +19,7 @@
 
 #include <kernel/kstdio.h>
 #include "MemoryRegion.h"
-#include "paging.h"
+#include "memory.h"
 
 MemoryRegion::MemoryRegion(size_t start, size_t size): start(start), size(size), next(nullptr), prev(nullptr), heap_allocated(true) {
 
@@ -34,6 +34,6 @@ MemoryRegion::~MemoryRegion() = default;
 void MemoryRegion::cow_deref() {
 	cow.num_refs--;
 	if(!cow.num_refs) {
-		Paging::pmem_map().free_region(this);
+		Memory::pmem_map().free_region(this);
 	}
 }

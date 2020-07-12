@@ -22,6 +22,7 @@
 
 #include "PageTable.h"
 #include "MemoryMap.h"
+#include <kernel/memory/PageDirectory.h>
 #include <kernel/multiboot.h>
 
 #define PAGING_4KiB 0
@@ -60,15 +61,15 @@
  */
 
 
-namespace Paging {
-	class PageTable;
-	class PageDirectory;
-	extern PageDirectory kernel_page_directory;
+class PageTable;
+class PageDirectory;
+extern "C" long _KERNEL_START;
+extern "C" long _KERNEL_END;
+extern "C" long _PAGETABLES_START;
+extern "C" long _PAGETABLES_END;
 
-	extern "C" long _KERNEL_START;
-	extern "C" long _KERNEL_END;
-	extern "C" long _PAGETABLES_START;
-	extern "C" long _PAGETABLES_END;
+namespace Memory {
+	extern PageDirectory kernel_page_directory;
 	extern "C" void load_page_dir(size_t* dir);
 
 	/**

@@ -29,6 +29,8 @@
 #include <kernel/filesystem/LinkedInode.h>
 #include <kernel/tasking/TSS.h>
 #include "ProcessArgs.h"
+#include <kernel/memory/PageDirectory.h>
+#include "TaskYield.hpp"
 
 #define PROCESS_STACK_SIZE 1048576 //1024KiB
 #define PROCESS_KERNEL_STACK_SIZE 4096 //4KiB
@@ -46,8 +48,10 @@ public:
 	void notify(uint32_t sig);
 	void kill();
 	void handle_pagefault(Registers *regs);
-
 	void* kernel_stack_top();
+	void yield_to(TaskYield& yielder);
+	bool is_yielding();
+	TaskYield* yielder();
 
 	//Syscalls
 	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
@@ -68,13 +72,13 @@ public:
 	int sys_gettimeofday(timespec *t, void *z);
 
 	uint32_t state = 0;
-	Paging::PageDirectory* page_directory;
 	Process *next = nullptr, *prev = nullptr;
 	size_t page_directory_loc;
 	Registers registers = {};
 	bool kernel = false;
 	uint8_t ring;
 	uint8_t quantum;
+	PageDirectory* page_directory;
 
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
@@ -82,18 +86,28 @@ private:
 
 	bool load_elf(const DC::shared_ptr<FileDescriptor>& fd, ELF::elf32_header* header);
 
+	//Identifying info
 	DC::string _name = "";
 	pid_t _pid = 0;
+
+	//Memory
 	size_t current_brk = 0;
+
+	//Kernel stack
 	void* _kernel_stack_base;
 	size_t _kernel_stack_size;
 	size_t _stack_size;
 
+	//Files
 	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors = DC::vector<DC::shared_ptr<FileDescriptor>>(3);
 	DC::shared_ptr<LinkedInode> cwd;
 
+	//Parent/Children
 	pid_t parent = 0;
 	DC::vector<pid_t> children;
+
+	//Yielding stuff
+	TaskYield* _yielder = nullptr;
 };
 
 
