@@ -48,13 +48,12 @@ TTYDevice::TTYDevice(size_t id, const DC::string& name, unsigned int major, unsi
 }
 
 ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
-	for(auto i = 0; i < count; i++) putch(buffer[i]);
+	for(size_t i = 0; i < count; i++) putch(buffer[i]);
 	return count;
 }
 
 ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
-	//TODO: Have to use a spinlock instaed of a yield, because the yield breaks everything (at least in Qemu) for some reason...
-	while(buffered && _input_buffer.empty());
+	if(buffered && _input_buffer.empty()) TaskManager::current_process()->yield_to(_buffer_yielder);
 	count = min(count, _input_buffer.size());
 	size_t count_loop = count;
 	while(count_loop--) *buffer++ = _input_buffer.pop_front();
@@ -84,6 +83,7 @@ void TTYDevice::handle_key(KeyEvent event) {
 				_input_buffer.push(_buffered_input_buffer.pop_front());
 			}
 			putch('\n');
+			_buffer_yielder.set_ready();
 		} else if(event.character == '\b') {
 			if(!_buffered_input_buffer.empty()){
 				_buffered_input_buffer.pop_back();

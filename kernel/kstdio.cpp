@@ -71,7 +71,7 @@ void graphical_putch_color(char c, char color) {
 	uint16_t pixel_ypos = ypos * 8;
 	for(uint16_t x = 0; x < 8; x++) {
 		for(uint16_t y = 0; y < 8; y++) {
-			framebuffer[(x + pixel_xpos) + (y + pixel_ypos) * num_columns * 8] = (font8x8_basic[c][y] >> x) & 0x1 ? 0xFFFFFF : 0;
+			framebuffer[(x + pixel_xpos) + (y + pixel_ypos) * num_columns * 8] = ((font8x8_basic[(int)c][y] >> x) & 0x1u) ? 0xFFFFFFu : 0x0u;
 		}
 	}
 }
@@ -160,49 +160,49 @@ void printf(char *fmt, ...){
 	va_start(argp, fmt);
 
 	for(p = fmt; *p != '\0'; p++){
-	if(*p != '%'){
-		putch(*p);
-		continue;
-	}
-	switch(*++p){
-		case 'c':
-			i = va_arg(argp, int);
-			putch(i);
-			break;
+		if(*p != '%'){
+			putch(*p);
+			continue;
+		}
+		switch(*++p){
+			case 'c':
+				i = va_arg(argp, int);
+				putch(i);
+				break;
 
-		case 'd':
-			i = va_arg(argp, int);
-			s = itoa(i, fmtbuf, 10);
-			print(s);
-			break;
+			case 'd':
+				i = va_arg(argp, int);
+				s = itoa(i, fmtbuf, 10);
+				print(s);
+				break;
 
-		case 's':
-			s = va_arg(argp, char *);
-			print(s);
-			break;
+			case 's':
+				s = va_arg(argp, char *);
+				print(s);
+				break;
 
-		case 'x':
-			i = va_arg(argp, int);
-			s = itoa(i, fmtbuf, 16);
-			print(s);
-			break;
+			case 'x':
+				i = va_arg(argp, int);
+				s = itoa(i, fmtbuf, 16);
+				print(s);
+				break;
 
-		case 'X':
-			i = va_arg(argp, int);
-			s = itoa(i, fmtbuf, 16);
-			toUpper(s);
-			print(s);
-			break;
+			case 'X':
+				i = va_arg(argp, int);
+				s = itoa(i, fmtbuf, 16);
+				toUpper(s);
+				print(s);
+				break;
 
-		case 'b':
-			i = va_arg(argp, int);
-			s = itoa(i, fmtbuf, 2);
-			print(s);
-			break;
+			case 'b':
+				i = va_arg(argp, int);
+				s = itoa(i, fmtbuf, 2);
+				print(s);
+				break;
 
-		case '%':
-			putch('%');
-			break;
+			case '%':
+				putch('%');
+				break;
 		}
 	}
 	va_end(argp);

@@ -36,8 +36,8 @@ public:
     DC::string get_full_path();
 private:
 	DC::shared_ptr<Inode> _inode;
-    DC::string _name;
 	DC::shared_ptr<LinkedInode> _parent;
+    DC::string _name;
 };
 
 

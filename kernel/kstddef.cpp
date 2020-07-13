@@ -72,11 +72,13 @@ int indexOfn(char c, int n, char *str){ //like indexOf, except ignores n instanc
 	int i = 0;
 	int count = 0;
 	while(str[i] != '\0'){
-		if(str[i] == c)
-			if(count == n)
+		if(str[i] == c) {
+			if (count == n) {
 				return i;
-			else
+			} else {
 				count++;
+			}
+		}
 		i++;
 	}
 	return strlen(str);
@@ -124,7 +126,7 @@ void sti(){
 void toUpper(char *str){
 	while(*str != '\0'){
 		if(*str >= 'a' && *str <= 'z') *str = *str - ('a' - 'A');
-		*str++;
+		str++;
 	}
 }
 

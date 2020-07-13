@@ -22,7 +22,7 @@
 #include <kernel/kstdio.h>
 #include <kernel/tasking/TaskManager.h>
 
-void syscall_handler(Registers regs){
+void syscall_handler(Registers& regs){
 	regs.eax = handle_syscall(regs, regs.eax, regs.ebx, regs.ecx, regs.edx);
 }
 

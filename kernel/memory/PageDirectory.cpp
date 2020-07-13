@@ -82,7 +82,7 @@ void PageDirectory::k_map_region(const LinkedMemoryRegion& region, bool read_wri
 	size_t num_pages = physregion->size / PAGE_SIZE;
 	size_t start_vpage = (virtregion->start - HIGHER_HALF) / PAGE_SIZE;
 	size_t start_ppage = physregion->start / PAGE_SIZE;
-	for(auto page_index = 0; page_index < num_pages; page_index++) {
+	for(size_t page_index = 0; page_index < num_pages; page_index++) {
 		size_t vpage = page_index + start_vpage;
 		size_t directory_index = (vpage / 1024) % 1024;
 
@@ -280,7 +280,7 @@ void PageDirectory::map_region(const LinkedMemoryRegion& region, bool read_write
 	size_t num_pages = physregion->size / PAGE_SIZE;
 	size_t start_vpage = virtregion->start / PAGE_SIZE;
 	size_t start_ppage = physregion->start / PAGE_SIZE;
-	for(auto page_index = 0; page_index < num_pages; page_index++) {
+	for(size_t page_index = 0; page_index < num_pages; page_index++) {
 		size_t vpage = page_index + start_vpage;
 		size_t directory_index = (vpage / 1024) % 1024;
 
@@ -457,7 +457,7 @@ void PageDirectory::fork_from(PageDirectory *parent) {
 			//Mark the page table entries in the parent read-only
 			size_t num_pages = parent_region->size / PAGE_SIZE;
 			size_t start_vpage = parent_region->start / PAGE_SIZE;
-			for(auto page_index = 0; page_index < num_pages; page_index++) {
+			for(size_t page_index = 0; page_index < num_pages; page_index++) {
 				size_t vpage = page_index + start_vpage;
 				parent->_page_tables[(vpage / 1024) % 1024]->entries()[vpage % 1024].data.read_write = false;
 			}

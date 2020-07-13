@@ -247,7 +247,7 @@ void Shell::command_eval(char *cmd, char *args){
 			auto* program_headers = new ELF::elf32_segment_header[num_pheaders];
 			fd->read((uint8_t*)program_headers, pheader_size * num_pheaders);
 
-			for(auto i = 0; i < num_pheaders; i++) {
+			for(size_t i = 0; i < num_pheaders; i++) {
 				ELF::elf32_segment_header* header = &program_headers[i];
 				printf("--Section--\n");
 				printf("Type: ");
@@ -317,7 +317,7 @@ void Shell::command_eval(char *cmd, char *args){
 		}
 
 		//Create process
-		if(cmds.find("/") != -1) {
+		if((int) cmds.find("/") != -1) {
 			p = Process::create_user(cmd, pargs, TaskManager::current_process()->pid());
 		} else {
 			p = Process::create_user(DC::string("/bin/") + cmds, pargs, TaskManager::current_process()->pid());

@@ -80,7 +80,6 @@ namespace Memory {
 
 		//Mark the kernel region as used
 		size_t k_start_pagealigned = ((KERNEL_START - HIGHER_HALF) / PAGE_SIZE) * PAGE_SIZE;
-		size_t k_end_pagealigned = k_start_pagealigned + KERNEL_SIZE_PAGES * PAGE_SIZE;
 
 		//Setup the pmem map
 		_pmem_map = MemoryMap(PAGE_SIZE, &multiboot_memory_regions[0]);
@@ -133,7 +132,7 @@ namespace Memory {
 		}
 
 		uint32_t err_pos;
-		asm("mov %%cr2, %0" : "=r" (err_pos));
+		asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
 		printf("Virtual address: 0x%X\n\n", err_pos);
 		print_regs(r);
 		while (true);
@@ -188,7 +187,7 @@ namespace Memory {
 				uint32_t size_pagealigned = ((mmap_entry->len_low - (addr_pagealigned - mmap_entry->addr_low)) / PAGE_SIZE) * PAGE_SIZE;
 				if(size_pagealigned) {
 					//If the page-aligned size is more than zero (eg mmap_entry->len >= PAGE_SIZE), interpret it
-					region = MemoryRegion(addr_pagealigned,size_pagealigned);
+					region = MemoryRegion(addr_pagealigned, size_pagealigned);
 					region.heap_allocated = false;
 					region.reserved = mmap_entry->type == MULTIBOOT_MEMORY_RESERVED;
 					region.used = mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE;

@@ -34,13 +34,13 @@ namespace DC {
 		}
 
 		vector(size_t capacity, const T& value = T()): _storage((T*) kcalloc(capacity, sizeof(T))), _capacity(capacity) {
-			for(auto i = 0; i < capacity; i++) new (&_storage[i]) T(value);
+			for(size_t i = 0; i < capacity; i++) new (&_storage[i]) T(value);
 			inited = 1;
 		}
 
 		~vector(){
 			if(_storage != nullptr){
-				for(auto i = 0; i < _size; i++) {
+				for(size_t i = 0; i < _size; i++) {
 					_storage[i].~T();
 				}
 				kfree(_storage);
@@ -77,7 +77,7 @@ namespace DC {
 			if(_storage == nullptr) _storage = (T*) kcalloc(new_size, sizeof(T));
 			else {
 				T* tmp_storage = (T*) kcalloc(new_size, sizeof(T));
-				for(auto i = 0; i < _size; i++) {
+				for(size_t i = 0; i < _size; i++) {
 					new (tmp_storage + i) T((T &&) _storage[i]);
 					_storage[i].~T();
 				}

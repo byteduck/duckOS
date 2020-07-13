@@ -32,8 +32,8 @@ public:
 	size_t part_offset();
 	DC::shared_ptr<File> parent();
 private:
-	uint32_t _offset;
 	DC::shared_ptr<BlockDevice> _parent;
+	uint32_t _offset;
 };
 
 

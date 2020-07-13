@@ -41,11 +41,11 @@ namespace CommandLine {
 			DC::string part = "";
 			while(cmd.length()) {
 				size_t space_index = cmd.find(' ');
-				part = space_index != -1 ? cmd.substr(0, space_index) : cmd;
-				cmd = space_index != -1 ? cmd.substr(space_index + 1, cmd.length()) : "";
+				part = (int) space_index != -1 ? cmd.substr(0, space_index) : cmd;
+				cmd = (int) space_index != -1 ? cmd.substr(space_index + 1, cmd.length()) : "";
 				if(!part.length()) continue;
 				size_t equal_index = part.find('=');
-				if(equal_index != -1)
+				if((int) equal_index != -1)
 					options.push_back({
 						part.substr(0, equal_index),
 						part.substr(equal_index + 1, part.length())
@@ -60,14 +60,14 @@ namespace CommandLine {
 	}
 
 	DC::string get_option_value(char* name) {
-		for(auto i = 0; i < options.size(); i++) {
+		for(size_t i = 0; i < options.size(); i++) {
 			if(options[i].name == name) return options[i].value;
 		}
 		return "";
 	}
 
 	bool has_option(char* name) {
-		for(auto i = 0; i < options.size(); i++) {
+		for(size_t i = 0; i < options.size(); i++) {
 			if(options[i].name == name) return true;
 		}
 		return false;

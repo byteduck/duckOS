@@ -64,7 +64,7 @@ public:
 	Entry& operator[](int index);
 
 private:
-	Entry *_entries = nullptr;
+	Entry* _entries = nullptr;
 	size_t _vaddr = 0;
 	PageDirectory* _page_directory = nullptr;
 	bool _alloced_table = false;

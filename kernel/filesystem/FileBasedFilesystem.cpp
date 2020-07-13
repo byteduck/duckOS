@@ -30,7 +30,7 @@ FileBasedFilesystem::FileBasedFilesystem(DC::shared_ptr<FileDescriptor> file): F
 }
 
 FileBasedFilesystem::~FileBasedFilesystem() {
-	for(auto i = 0; i < cache.size(); i++)
+	for(size_t i = 0; i < cache.size(); i++)
 		if (cache[i].data) delete cache[i].data;
 }
 
@@ -62,13 +62,14 @@ bool FileBasedFilesystem::read_block(size_t block, uint8_t *buffer) {
 }
 
 bool FileBasedFilesystem::read_blocks(size_t block, size_t count, uint8_t *buffer) {
-	for(auto i = 0; i < count; i++) {
-		read_block(block + i, buffer + block_size() * i);
+	for(size_t i = 0; i < count; i++) {
+		if(!read_block(block + i, buffer + block_size() * i)) return false;
 	}
+	return true;
 }
 
 BlockCacheEntry* FileBasedFilesystem::get_chache_entry(size_t block) {
-	for(auto i = 0; i < cache.size(); i++) {
+	for(size_t i = 0; i < cache.size(); i++) {
 		if (cache[i].block == block) {
 			BlockCacheEntry* entry = &cache[i];
 			entry->last_used = PIT::get_seconds();
@@ -84,7 +85,7 @@ BlockCacheEntry* FileBasedFilesystem::make_cache_entry(size_t block) {
 		//If the cache is full, find the oldest entry and replace it
 		size_t oldest_entry = 0;
 		size_t oldest_entry_time = 0xFFFFFFFF;
-		for(auto i = 0; i < cache.size(); i++) {
+		for(size_t i = 0; i < cache.size(); i++) {
 			if(cache[i].last_used < oldest_entry_time) {
 				oldest_entry = i;
 				oldest_entry_time = cache[i].last_used;
@@ -108,7 +109,7 @@ void FileBasedFilesystem::flush_cache_entry(BlockCacheEntry* entry){
 }
 
 void FileBasedFilesystem::free_cache_entry(size_t block) {
-	for(auto i = 0; i < cache.size(); i++) {
+	for(size_t i = 0; i < cache.size(); i++) {
 		if (cache[i].block == block) {
 			delete[] cache[i].data;
 			cache.erase(i);

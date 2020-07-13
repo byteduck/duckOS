@@ -51,7 +51,7 @@ bool FileDescriptor::writable() {
 
 int FileDescriptor::seek(off_t offset, int whence) {
 	if(!_can_seek) return -ESPIPE;
-	size_t new_seek = _seek;
+	off_t new_seek = _seek;
 	switch(whence) {
 		case SEEK_SET:
 			new_seek = offset;

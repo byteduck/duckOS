@@ -103,7 +103,7 @@ void Ext2Inode::read_raw() {
 	ext2fs().read_blocks(inode_table + get_block(), 1, block_buf);
 	Raw* inodeRaw = reinterpret_cast<Raw *>(block_buf);
 	uint32_t index = get_index() % ext2fs().inodes_per_block;
-	for(int i = 0; i < index; i++) inodeRaw++; //same here as above
+	for(uint32_t i = 0; i < index; i++) inodeRaw++; //same here as above
 
 	memcpy(&raw, inodeRaw, sizeof(Ext2Inode::Raw));
 	delete[] block_buf;
@@ -210,7 +210,6 @@ Inode *Ext2Inode::find_rawptr(DC::string find_name) {
 		auto* buf = static_cast<uint8_t *>(kmalloc(fs.block_size()));
 		for(int i = 0; i < 12; i++) {
 			uint32_t block = raw.block_pointers[i];
-			if(block == 0 || block > ext2fs().superblock.total_blocks);
 			ext2fs().read_blocks(block, 1, buf);
 			auto* dir = reinterpret_cast<ext2_directory *>(buf);
 			uint32_t add = 0;

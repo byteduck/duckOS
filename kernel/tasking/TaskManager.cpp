@@ -149,7 +149,9 @@ void TaskManager::preempt(){
 		auto old_proc = current_proc;
 		current_proc = next_process();
 		quantum_counter = current_proc->quantum - 1;
-		if(current_proc->ring == 3) tss.esp0 = (size_t)current_proc->kernel_stack_top();
+		if(current_proc->ring == 3) {
+			tss.esp0 = (size_t) current_proc->kernel_stack_top();
+		}
 		preempt_asm(&old_proc->registers.esp, &current_proc->registers.esp, current_proc->page_directory_loc);
 	} else {
 		quantum_counter--;

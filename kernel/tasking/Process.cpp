@@ -67,7 +67,7 @@ bool Process::load_elf(const DC::shared_ptr<FileDescriptor> &fd, ELF::elf32_head
 	auto* program_headers = new ELF::elf32_segment_header[num_pheaders];
 	fd->read((uint8_t*)program_headers, pheader_size * num_pheaders);
 
-	for(auto i = 0; i < num_pheaders; i++) {
+	for(uint32_t i = 0; i < num_pheaders; i++) {
 		auto pheader = &program_headers[i];
 		if(pheader->p_type == ELF_PT_LOAD) {
 			size_t loadloc_pagealigned = (pheader->p_vaddr/PAGE_SIZE) * PAGE_SIZE;
@@ -228,7 +228,7 @@ Process::Process(Process *to_fork, Registers &regs){
 	parent = to_fork->_pid;
 	quantum = to_fork->quantum;
 
-	for(auto i = 0; i < to_fork->file_descriptors.size(); i++)
+	for(size_t i = 0; i < to_fork->file_descriptors.size(); i++)
 		file_descriptors.push_back(to_fork->file_descriptors[i]);
 
 	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
@@ -325,7 +325,7 @@ void Process::kill() {
 void Process::handle_pagefault(Registers *regs) {
 	TaskManager::enabled() = false;
 	size_t err_pos;
-	asm("mov %%cr2, %0" : "=r" (err_pos));
+	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
 	if(!page_directory->try_cow(err_pos)) {
 		Memory::page_fault_handler(regs);
 		notify(SIGSEGV);
@@ -362,14 +362,14 @@ TaskYield* Process::yielder() {
 
 ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
-	if(fd < 0 || fd >= file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
+	if(fd < 0 || fd >= (int) file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
 	int ret =  file_descriptors[fd]->read(buf, count);
 	return ret;
 }
 
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
-	if(fd < 0 || fd >= file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
+	if(fd < 0 || fd >= (int) file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
 	return file_descriptors[fd]->write(buf, count);
 }
 
@@ -450,7 +450,7 @@ int Process::sys_open(char *filename, int options, int mode) {
 }
 
 int Process::sys_close(int file) {
-	if(file < 0 || file >= file_descriptors.size() || !file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	file_descriptors[file] = DC::shared_ptr<FileDescriptor>(nullptr);
 	return 0;
 }
@@ -472,12 +472,12 @@ int Process::sys_getcwd(char *buf, size_t length) {
 
 int Process::sys_readdir(int file, char *buf, size_t len) {
 	TaskManager::yield();
-	if(file < 0 || file >= file_descriptors.size() || !file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return file_descriptors[file]->read_dir_entries(buf, len);
 }
 
 int Process::sys_fstat(int file, char *buf) {
-	if(file < 0 || file >= file_descriptors.size() || !file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	file_descriptors[file]->metadata().stat((struct stat*)buf);
 	return 0;
 }
@@ -490,7 +490,7 @@ int Process::sys_stat(char *file, char *buf) {
 }
 
 int Process::sys_lseek(int file, off_t off, int whence) {
-	if(file < 0 || file >= file_descriptors.size() || !file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return file_descriptors[file]->seek(off, whence);
 }
 

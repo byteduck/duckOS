@@ -95,7 +95,7 @@ namespace Interrupt {
 		_in_interrupt = false;
 	}
 
-	volatile bool in_interrupt() {
+	bool in_interrupt() {
 		return _in_interrupt;
 	}
 }

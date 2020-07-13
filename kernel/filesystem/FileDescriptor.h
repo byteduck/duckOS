@@ -48,15 +48,15 @@ public:
 	ssize_t write(const uint8_t* buffer, size_t count);
 	size_t offset();
 private:
-	DC::shared_ptr<File> _fileptr;
 	File* _file;
+	DC::shared_ptr<File> _fileptr;
 	DC::shared_ptr<Inode> _inode;
 
 	bool _readable {false};
 	bool _writable {false};
 	bool _can_seek {true};
 
-	int _seek {0};
+	off_t _seek {0};
 
 	Lock lock;
 };

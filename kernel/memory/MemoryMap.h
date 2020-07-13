@@ -85,8 +85,8 @@ public:
 	void replace_entry(MemoryRegion *old_region, MemoryRegion *new_region);
 
 private:
-	MemoryRegion* _first_region;
 	size_t _page_size;
+	MemoryRegion* _first_region;
 	size_t bytes_used;
 	size_t bytes_reserved;
 };

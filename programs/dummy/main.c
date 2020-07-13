@@ -19,6 +19,11 @@
 
 //A simple program that does nothing.
 
+#include <unistd.h>
+
 int main(int argc, char **argv) {
+	sbrk(4096);
+	uint8_t* test = sbrk(0) - 3;
+	test[0] = 4;
 	return 0;
 }

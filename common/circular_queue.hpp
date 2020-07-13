@@ -32,15 +32,16 @@ namespace DC {
 		}
 
 		~circular_queue() {
-			for(auto i = 0; i < _capacity; i++)
+			for(size_t i = 0; i < _capacity; i++)
 				_storage[i].~T();
 			delete _storage;
 		}
 
 		bool push(const T& elem) {
 			if(size() == _capacity) return false;
-			if(_front == -1) _front = 0;
-			_back = (++_back) % _capacity;
+			if((int) _front == -1) _front = 0;
+			_back++;
+			_back = _back % _capacity;
 			_storage[_back] = DC::move(elem);
 			_size++;
 			return true;
@@ -51,7 +52,10 @@ namespace DC {
 			if(_front == _back) {
 				_front = -1;
 				_back = -1;
-			} else _front = (++_front) % _capacity;
+			} else {
+				_front++;
+				_front = _front % _capacity;
+			}
 			_size--;
 			return ret;
 		}

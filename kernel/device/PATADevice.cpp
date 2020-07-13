@@ -34,7 +34,7 @@ PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType 
 PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio)
 	: IRQHandler()
 	, BlockDevice(channel == PRIMARY ? 3 : 4, drive == MASTER ? 0 : 1)
-	, _channel(channel), _drive(drive), _pci_addr(addr), _use_pio(use_pio)
+	, _pci_addr(addr), _channel(channel), _drive(drive), _use_pio(use_pio)
 {
 	//IO Ports
 	_io_base = channel == PRIMARY ? 0x1F0 : 0x170;
@@ -224,10 +224,10 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 bool PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
 	if(!_use_pio) {
 		//DMA mode
-		uint32_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
+		size_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
 		bool flag = true;
-		for (int i = 0; i < num_chunks; i++) {
-			uint32_t num_sectors = min(ATA_MAX_SECTORS_AT_ONCE, count);
+		for (size_t i = 0; i < num_chunks; i++) {
+			uint32_t num_sectors = min((size_t) ATA_MAX_SECTORS_AT_ONCE, count);
 			if (!read_sectors_dma(block + i * ATA_MAX_SECTORS_AT_ONCE, num_sectors,
 								  buffer + (512 * i * ATA_MAX_SECTORS_AT_ONCE))) {
 				flag = false;
@@ -239,7 +239,7 @@ bool PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
 	} else {
 		//PIO mode
 		while(count) {
-			uint8_t to_read = min(count, 0xFF);
+			uint8_t to_read = min(count, 0xFFu);
 			read_sectors_pio(block, to_read, buffer);
 			block += to_read;
 			count -= to_read;

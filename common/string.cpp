@@ -140,7 +140,7 @@ namespace DC {
 		size_t len = strlen(str);
 		for(auto i = start; i <= _length - len; i++) {
 			if(operator[](i) == str[0]) {
-				for(auto j = 0; j < len; j++) {
+				for(size_t j = 0; j < len; j++) {
 					if(operator[](i + j) != str[j]) break;
 				}
 				return i;

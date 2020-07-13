@@ -30,10 +30,11 @@ class Filesystem;
 
 class Inode {
 public:
-	ino_t id;
 	Filesystem& fs;
+	ino_t id;
 
     Inode(Filesystem& fs, ino_t id);
+    virtual ~Inode();
 
 	virtual DC::shared_ptr<Inode> find(DC::string name);
 	virtual Inode* find_rawptr(DC::string name);

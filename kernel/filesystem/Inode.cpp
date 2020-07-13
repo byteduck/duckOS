@@ -23,6 +23,10 @@
 Inode::Inode(Filesystem& fs, ino_t id): fs(fs), id(id) {
 }
 
+Inode::~Inode() {
+
+}
+
 DC::shared_ptr<Inode> Inode::find(DC::string name) {
     return DC::shared_ptr<Inode>(find_rawptr(name));
 }

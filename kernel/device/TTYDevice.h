@@ -50,9 +50,9 @@ private:
 
 	void handle_key(KeyEvent) override;
 
+	DC::string _name;
 	DC::circular_queue<uint8_t> _input_buffer;
 	DC::circular_queue<uint8_t> _buffered_input_buffer;
-	DC::string _name;
 	size_t _id;
 	bool _active = false;
 	TaskYield _buffer_yielder;

@@ -117,7 +117,7 @@ namespace PCI {
 	}
 
 	uint8_t get_class(Address address) {
-		PCI::read_byte(address, PCI_CLASS);
+		return PCI::read_byte(address, PCI_CLASS);
 	}
 
 	uint8_t get_subclass(Address address) {
@@ -137,6 +137,6 @@ namespace PCI {
 	}
 
 	bool ID::operator==(ID &other) const {
-		return other.device = device && other.vendor == vendor;
+		return other.device == device && other.vendor == vendor;
 	}
 }

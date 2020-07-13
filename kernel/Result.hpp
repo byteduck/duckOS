@@ -48,8 +48,8 @@ public:
 		return _ret;
 	};
 private:
-	Result _result;
 	T _ret;
+	Result _result;
 };
 
 #endif //DUCKOS_RESULT_HPP
