@@ -53,10 +53,6 @@ namespace Interrupt {
 		io_wait();
 		outb(PIC2_DATA, 0x01); //8086 mode
 		io_wait();
-
-		//No mask
-		outb(PIC1_DATA, 0);
-		outb(PIC2_DATA, 0);
 	}
 
 	void irq_init(){
@@ -83,14 +79,14 @@ namespace Interrupt {
 		_in_interrupt = true;
 
 		//Call handler if it exists
-		auto handler = handlers[r->num - 32];
+		auto handler = handlers[r->num - 0x20];
 		if(handler != nullptr){
 			handler->handle_irq(r);
 		}
 
 		//Send EOI(s)
-		if(r->num - 32 >= 8) outb(0xA0, 0x20);
-		outb(0x20, 0x20); //Send EOI to controller
+		if(r->num - 0x20 >= 8) outb(PIC2_COMMAND, 0x20);
+		outb(PIC1_COMMAND, 0x20); //Send EOI to controller
 
 		_in_interrupt = false;
 	}

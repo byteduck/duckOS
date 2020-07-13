@@ -159,6 +159,7 @@ bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_
 	wait_ready();
 
 	//Send read DMA command
+	cli();
 	outb(_io_base + ATA_COMMAND, ATA_READ_DMA_EXT);
 	io_delay();
 
@@ -166,6 +167,7 @@ bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_
 	outb(_bus_master_base, 0x9);
 
 	//Wait for irq
+	reinstall_irq();
 	sti();
 	_yielder.set_waiting();
 	TaskManager::current_process()->yield_to(_yielder);
@@ -178,7 +180,7 @@ bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_
 
 	//Tell bus master we're done
 	outb(_bus_master_base + ATA_BM_STATUS, inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
-	
+
 	return true;
 }
 

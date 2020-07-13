@@ -5,7 +5,7 @@
 set(CMAKE_CXX_STANDARD 11)
 
 ENABLE_LANGUAGE(ASM_NASM)
-SET_SOURCE_FILES_PROPERTIES(asm/startup.s asm/int.s asm/syscall.s asm/gdt.s PROPERTIES LANGUAGE ASM_NASM)
+SET_SOURCE_FILES_PROPERTIES(asm/startup.s asm/tasking.s asm/int.s asm/syscall.s asm/gdt.s PROPERTIES LANGUAGE ASM_NASM)
 
 SET(CMAKE_CXX_FLAGS "-ffreestanding -O0 -Woverflow -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
 
@@ -15,6 +15,7 @@ SET(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <FLAGS> -o <OBJECT>
 
 SET(KERNEL_SRCS
         asm/startup.s
+        asm/tasking.s
         asm/int.s
         asm/syscall.s
         asm/gdt.s

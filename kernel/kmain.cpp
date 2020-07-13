@@ -92,7 +92,6 @@ void shell_process(){
 //called from ktask
 void kmain_late(){
 	new KeyboardDevice;
-
 	printf("init: Tasking initialized.\ninit: Initializing TTY...\n");
 
 	auto* tty0 = new TTYDevice(0, "tty0", 4, 0);
@@ -101,8 +100,8 @@ void kmain_late(){
 	printf("init: TTY initialized.\ninit: Initializing disk...\n");
 
 	auto tmpdisk = DC::make_shared<PIODevice>(99, 99, 8);
-	//auto disk = DC::shared_ptr<PATADevice>(PATADevice::find(PATADevice::PRIMARY, PATADevice::MASTER));
-	auto part = DC::make_shared<PartitionDevice>(3, 1, tmpdisk, tmpdisk->get_first_partition());
+	auto disk = DC::shared_ptr<PATADevice>(PATADevice::find(PATADevice::PRIMARY, PATADevice::MASTER));
+	auto part = DC::make_shared<PartitionDevice>(3, 1, disk, tmpdisk->get_first_partition());
 	auto part_descriptor = DC::make_shared<FileDescriptor>(part);
 
 	if(Ext2Filesystem::probe(*part_descriptor)){
