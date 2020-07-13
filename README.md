@@ -33,9 +33,7 @@ The code for these can be found in [programs](programs/).
 Type `help` for a list of commands that can be used in the kernel shell.
 
 ### Known Issues / Limitations
-- Only works with ext2 filesystems with a block size of 1024  (I think, I need to test this)
 - No ext2 filesystem write support (files can only be read)
-- Uses ATA PIO mode to read/write to disk instead of DMA, which can be pretty slow, especially on real hardware
 - File locking uses spinlocks, which wastes CPU time
 
 ### Building / Running

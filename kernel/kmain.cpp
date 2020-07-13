@@ -28,7 +28,6 @@
 #include <kernel/shell.h>
 #include <kernel/pit.h>
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/device/PIODevice.h>
 #include <kernel/device/PartitionDevice.h>
 #include <kernel/kmain.h>
 #include <kernel/filesystem/VFS.h>
@@ -99,9 +98,12 @@ void kmain_late(){
 
 	printf("init: TTY initialized.\ninit: Initializing disk...\n");
 
-	auto tmpdisk = DC::make_shared<PIODevice>(99, 99, 8);
-	auto disk = DC::shared_ptr<PATADevice>(PATADevice::find(PATADevice::PRIMARY, PATADevice::MASTER));
-	auto part = DC::make_shared<PartitionDevice>(3, 1, disk, tmpdisk->get_first_partition());
+	auto disk = DC::shared_ptr<PATADevice>(PATADevice::find(PATADevice::PRIMARY, PATADevice::MASTER, false));
+	auto* mbr_buf = new uint8_t[512];
+	disk->read_block(0, mbr_buf);
+	uint32_t part_offset = *((uint32_t*) &mbr_buf[0x1C6]);
+	delete[] mbr_buf;
+	auto part = DC::make_shared<PartitionDevice>(3, 1, disk, part_offset);
 	auto part_descriptor = DC::make_shared<FileDescriptor>(part);
 
 	if(Ext2Filesystem::probe(*part_descriptor)){
@@ -130,7 +132,8 @@ void kmain_late(){
 
 	printf("init: Done!\n");
 
-	pid_t shell_pid = TaskManager::add_process(Process::create_kernel("shell", shell_process));
+	TaskManager::add_process(Process::create_kernel("shell", shell_process));
+	TaskManager::current_process()->kill();
 }
 
 struct multiboot_info parse_mboot(uint32_t physaddr){

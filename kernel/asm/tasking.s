@@ -32,6 +32,7 @@ preempt_init_asm: ;Pretty much the same as preempt_asm, but without storing the 
 
 [global preempt_now_asm]
 preempt_now_asm:
+    cli
     push eax
     push ebx
     push ecx

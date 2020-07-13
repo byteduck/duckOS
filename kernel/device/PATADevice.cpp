@@ -22,20 +22,20 @@
 #include <kernel/memory/kliballoc.h>
 #include <kernel/tasking/TaskManager.h>
 
-PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType drive) {
+PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio) {
 	PCI::Address addr = {0,0,0};
 	PCI::enumerate_devices([](PCI::Address addr, PCI::ID id, void* data) {
 		if(PCI::get_class(addr) == PCI_MASS_STORAGE_CONTROLLER && PCI::get_subclass(addr) == PCI_IDE_CONTROLLER)
 			*((PCI::Address*)data) = addr;
 	}, &addr);
 	if(addr.is_zero()) return nullptr;
-	return new PATADevice(addr, channel, drive);
+	return new PATADevice(addr, channel, drive, use_pio);
 }
 
-PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevice::DriveType drive)
+PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio)
 	: IRQHandler()
 	, BlockDevice(channel == PRIMARY ? 3 : 4, drive == MASTER ? 0 : 1)
-	, _channel(channel), _drive(drive),_pci_addr(addr)
+	, _channel(channel), _drive(drive), _pci_addr(addr), _use_pio(use_pio)
 {
 	//IO Ports
 	_io_base = channel == PRIMARY ? 0x1F0 : 0x170;
@@ -47,16 +47,18 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 	set_irq(drive == MASTER ? 14 : 15);
 
 	//Enable bus mastering and interrupt line
-	PCI::enable_interrupt(addr);
-	PCI::enable_bus_mastering(addr);
+	if(!use_pio) {
+		PCI::enable_interrupt(addr);
+		PCI::enable_bus_mastering(addr);
 
-	//DMA stuff
-	_prdt = new PRDT; //Malloc'd memory is 4byte aligned so this is ok
-	_prdt_physaddr = Memory::kernel_page_directory.get_physaddr(_prdt);
-	_dma_region = PageDirectory::k_alloc_region(ATA_MAX_SECTORS_AT_ONCE * 512);
-	if(!_dma_region.virt) PANIC("ATA_DMA_FAIL", "Failed to set up a DMA region for a PATA device.", true);
+		//DMA stuff
+		_prdt = new PRDT; //Malloc'd memory is 4byte aligned so this is ok
+		_prdt_physaddr = Memory::kernel_page_directory.get_physaddr(_prdt);
+		_dma_region = PageDirectory::k_alloc_region(ATA_MAX_SECTORS_AT_ONCE * 512);
+		if (!_dma_region.virt) PANIC("ATA_DMA_FAIL", "Failed to set up a DMA region for a PATA device.", true);
+	}
 
-	//"Reset" the drive
+	//Prepare the drive
 	outb(_io_base + ATA_DRIVESEL, 0xA0u | (drive == SLAVE ? 0x10u : 0x00u));
 	outb(_io_base + ATA_SECCNT0, 0);
 	outb(_io_base + ATA_LBA0, 0);
@@ -84,14 +86,10 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 	}
 	memcpy(_model_number, identity_model_number, ATA_IDENTITY_MODEL_NUMBER_LENGTH);
 
-	_cylinders = identity[ATA_IDENTITY_CYLINDERS];
-	_heads = identity[ATA_IDENTITY_HEADS];
-	_sectors_per_track = identity[ATA_IDENTITY_SECTORS_PER_TRACK];
-
 	kfree(identity_reversed);
 	kfree(identity);
 
-	printf("PATA: Setup disk %s (C:%d/H:%d/S:%d)\n", _model_number, _cylinders, _heads, _sectors_per_track);
+	printf("PATA: Setup disk %s using %s\n", _model_number, _use_pio ? "PIO" : "DMA");
 }
 
 void PATADevice::io_delay() {
@@ -184,18 +182,71 @@ bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_
 	return true;
 }
 
-bool PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
-	uint32_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
-	bool flag = true;
-	for(int i = 0; i < num_chunks; i++) {
-		uint32_t num_sectors = min(ATA_MAX_SECTORS_AT_ONCE, count);
-		if(!read_sectors_dma(block + i * ATA_MAX_SECTORS_AT_ONCE, num_sectors, buffer + (512 * i * ATA_MAX_SECTORS_AT_ONCE))) {
-			flag = false;
-			break;
+void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer) {
+	wait_status(ATA_STATUS_BSY);
+	outb(_io_base + ATA_DRIVESEL, 0xe0u | (_drive == SLAVE ? 0x8u : 0x0u));
+	outb(_io_base + ATA_FEATURES, 0x00);
+	outb(_io_base + ATA_SECCNT0, sectors);
+	outb(_io_base + ATA_LBA0, (uint8_t) sector);
+	outb(_io_base + ATA_LBA1, (uint8_t)(sector >> 8u));
+	outb(_io_base + ATA_LBA2, (uint8_t)(sector >> 16u));
+	outb(_io_base + ATA_COMMAND, ATA_WRITE_PIO);
+	for(auto j = 0; j < sectors; j++) {
+		wait_status(ATA_STATUS_BSY);
+		while(!(inb(_io_base + ATA_STATUS) & ATA_STATUS_DRQ));
+		for(auto i = 0; i < 256; i++) {
+			outw(_io_base + ATA_DATA, buffer[i * 2] + (buffer[i * 2 + 1] << 8u));
 		}
-		count -= num_sectors;
+		buffer += 512;
 	}
-	return flag;
+}
+
+void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buffer) {
+	wait_status(ATA_STATUS_BSY);
+	outb(_io_base + ATA_DRIVESEL, 0xe0u | (_drive == SLAVE ? 0x8u : 0x0u));
+	outb(_io_base + ATA_FEATURES, 0x00);
+	outb(_io_base + ATA_SECCNT0, sectors);
+	outb(_io_base + ATA_LBA0, (uint8_t) sector);
+	outb(_io_base + ATA_LBA1, (uint8_t)(sector >> 8u));
+	outb(_io_base + ATA_LBA2, (uint8_t)(sector >> 16u));
+	outb(_io_base + ATA_COMMAND, ATA_READ_PIO);
+	for(auto j = 0; j < sectors; j++) {
+		wait_status(ATA_STATUS_BSY);
+		while (!(inb(_io_base + ATA_STATUS) & ATA_STATUS_DRQ));
+		for (auto i = 0; i < 256; i++) {
+			uint16_t tmp = inw(_io_base + ATA_DATA);
+			buffer[i * 2] = (uint8_t) tmp;
+			buffer[i * 2 + 1] = (uint8_t) (tmp >> 8u);
+		}
+		buffer += 512;
+	}
+}
+
+bool PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
+	if(!_use_pio) {
+		//DMA mode
+		uint32_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
+		bool flag = true;
+		for (int i = 0; i < num_chunks; i++) {
+			uint32_t num_sectors = min(ATA_MAX_SECTORS_AT_ONCE, count);
+			if (!read_sectors_dma(block + i * ATA_MAX_SECTORS_AT_ONCE, num_sectors,
+								  buffer + (512 * i * ATA_MAX_SECTORS_AT_ONCE))) {
+				flag = false;
+				break;
+			}
+			count -= num_sectors;
+		}
+		return flag;
+	} else {
+		//PIO mode
+		while(count) {
+			uint8_t to_read = min(count, 0xFF);
+			read_sectors_pio(block, to_read, buffer);
+			block += to_read;
+			count -= to_read;
+		}
+		return true;
+	}
 }
 
 bool PATADevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
@@ -207,8 +258,6 @@ size_t PATADevice::block_size() {
 }
 
 ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
-	//We disable TaskManager while reading/writing because it just makes things super slow.
-	//A real, memory-mapped IDE driver will fix this :)
 	size_t num_blocks = (count + block_size() - 1) / block_size();
 	size_t block_start = offset / block_size();
 	auto* tmpbuf = new uint8_t[num_blocks * block_size()];

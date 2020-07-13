@@ -30,13 +30,14 @@
 TSS TaskManager::tss;
 
 Process *current_proc;
+Process *kidle_proc;
 Process *kernel_proc;
+
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
 
-void ktask(){
+void kidle(){
 	tasking_enabled = true;
-	kmain_late();
 	while(1) {
 		asm volatile("sti");
 		asm volatile("hlt");
@@ -44,21 +45,21 @@ void ktask(){
 }
 
 Process* TaskManager::process_for_pid(pid_t pid){
-	Process *current = kernel_proc;
+	Process *current = kidle_proc;
 	do{
 		if(current->pid() == pid) return current;
 		current = current->next;
-	} while(current != kernel_proc);
+	} while(current != kidle_proc);
 	return (Process *) nullptr;
 }
 
 void TaskManager::print_tasks(){
-	Process *current = kernel_proc;
+	Process *current = kidle_proc;
 	printf("Running processes: ([PID] name state usermem)\n");
 	do {
 		printf("[%d] '%s' %d %dKiB\n", current->pid(), current->name().c_str(), current->state, current->ring == 3 ? current->page_directory->used_pmem() : 0);
 		current = current->next;
-	} while(current != kernel_proc);
+	} while(current != kidle_proc);
 }
 
 bool& TaskManager::enabled(){
@@ -70,10 +71,17 @@ pid_t TaskManager::get_new_pid(){
 }
 
 void TaskManager::init(){
-	kernel_proc = Process::create_kernel("duckk32", ktask);
-	kernel_proc->next = kernel_proc;
-	kernel_proc->prev = kernel_proc;
-	current_proc = kernel_proc;
+	//Create kidle process
+	kidle_proc = Process::create_kernel("kidle", kidle);
+	kidle_proc->next = kidle_proc;
+	kidle_proc->prev = kidle_proc;
+	current_proc = kidle_proc;
+
+	//Create kinit process
+	kernel_proc = Process::create_kernel("kinit", kmain_late);
+	add_process(kernel_proc);
+
+	//Preempt
 	preempt_init_asm(current_proc->registers.esp);
 }
 
@@ -144,5 +152,4 @@ void TaskManager::preempt(){
 	} else {
 		quantum_counter--;
 	}
-
 }

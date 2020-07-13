@@ -101,13 +101,16 @@ public:
 	typedef enum Channel { PRIMARY, SECONDARY } Channel;
 	typedef enum DriveType { MASTER, SLAVE } DriveType;
 
-	static PATADevice* find(Channel channel, DriveType drive);
+	static PATADevice* find(Channel channel, DriveType drive, bool use_pio = false);
 
 	//PATADevice
 	void io_delay();
 	uint8_t wait_status(uint8_t flags = ATA_STATUS_BSY);
 	void wait_ready();
 	bool read_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t* buf);
+	void write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer);
+	void read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buffer);
+
 
 	//BlockDevice
 	bool read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
@@ -121,7 +124,7 @@ public:
 	void handle_irq(Registers* regs) override;
 
 private:
-	PATADevice(PCI::Address addr, Channel channel, DriveType drive);
+	PATADevice(PCI::Address addr, Channel channel, DriveType drive, bool use_pio);
 
 	//Addresses
 	PCI::Address _pci_addr;
@@ -133,9 +136,7 @@ private:
 	Channel _channel;
 	DriveType _drive;
 	char _model_number[40];
-	uint16_t _cylinders = 0;
-	uint16_t _heads = 0;
-	uint16_t _sectors_per_track = 0;
+	uint8_t _use_pio = false;
 
 	//DMA stuff
 	PRDT* _prdt = nullptr;

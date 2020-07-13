@@ -39,7 +39,6 @@ SET(KERNEL_SRCS
         pci/pci.cpp
         device/Device.cpp
         device/BlockDevice.cpp
-        device/PIODevice.cpp
         filesystem/Inode.cpp
         device/PartitionDevice.cpp
         filesystem/FileSystem.cpp
