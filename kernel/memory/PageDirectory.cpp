@@ -205,6 +205,15 @@ void* PageDirectory::k_mmap(size_t physaddr, size_t memsize, bool read_write) {
 	return (void*)(region.virt->start + (physaddr % PAGE_SIZE));
 }
 
+bool PageDirectory::k_munmap(void* virtaddr) {
+	MemoryRegion* vregion = kernel_vmem_map.find_region((size_t) virtaddr);
+	if(!vregion) return false;
+	LinkedMemoryRegion region(nullptr, vregion);
+	k_unmap_region(region);
+	kernel_vmem_map.free_region(region.virt);
+	return true;
+}
+
 /**
  * PageDirectory Entry stuff
  */

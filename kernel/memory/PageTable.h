@@ -24,7 +24,7 @@
 #include <common/shared_ptr.hpp>
 #include "MemoryBitmap.hpp"
 #include <kernel/memory/PageDirectory.h>
-#include "memory.h"
+#include "Memory.h"
 
 class PageDirectory;
 class PageTable {

@@ -19,7 +19,7 @@
 
 #include <kernel/kstddef.h>
 #include <kernel/kstdio.h>
-#include <kernel/memory/memory.h>
+#include <kernel/memory/Memory.h>
 #include <common/stdlib.h>
 #include <kernel/font8x8/font8x8_latin.h>
 #include <kernel/device/BochsVGADevice.h>

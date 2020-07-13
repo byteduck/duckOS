@@ -20,7 +20,7 @@
 #include <kernel/tasking/elf.h>
 #include <common/defines.h>
 #include <kernel/filesystem/VFS.h>
-#include <kernel/memory/memory.h>
+#include <kernel/memory/Memory.h>
 #include "TaskManager.h"
 
 bool ELF::is_valid_elf_header(elf32_header* header) {

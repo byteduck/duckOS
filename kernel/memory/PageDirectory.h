@@ -21,7 +21,7 @@
 #define DUCKOS_PAGEDIRECTORY_H
 
 #include <common/cstddef.h>
-#include "memory.h"
+#include "Memory.h"
 #include "MemoryMap.h"
 #include "LinkedMemoryRegion.h"
 #include "PageTable.h"
@@ -124,6 +124,13 @@ public:
 	 * @return A pointer to where physaddr was mapped to.
 	 */
 	static void* k_mmap(size_t physaddr, size_t mem_size, bool read_write);
+
+	/**
+	 * Unmaps and frees number of contiguous pages in kernel vmem at virtaddr.
+	 * @param virtaddr The virtual address within the region to be freed.
+	 * @return Whether or not the region could be freed.
+	 */
+	static bool k_munmap(void* virtaddr);
 
 
 	/************************************

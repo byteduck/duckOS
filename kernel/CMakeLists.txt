@@ -30,7 +30,7 @@ SET(KERNEL_SRCS
         pci/pci.cpp
         memory/gdt.cpp
         memory/kliballoc.cpp
-        memory/memory.cpp
+        memory/Memory.cpp
         interrupt/idt.cpp
         interrupt/irq.cpp
         interrupt/isr.cpp
@@ -71,7 +71,8 @@ SET(KERNEL_SRCS
         memory/MemoryMap.cpp
         memory/LinkedMemoryRegion.cpp
         device/PATADevice.cpp
-        tasking/TaskYield.hpp)
+        tasking/TaskYield.hpp
+        CommandLine.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

@@ -18,7 +18,7 @@
 */
 
 #include <kernel/kstddef.h>
-#include <kernel/memory/memory.h>
+#include <kernel/memory/Memory.h>
 #include <kernel/kstdio.h>
 #include <kernel/interrupt/idt.h>
 #include <kernel/interrupt/isr.h>

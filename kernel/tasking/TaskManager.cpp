@@ -22,7 +22,7 @@
 #include <kernel/kstddef.h>
 #include <kernel/kstdio.h>
 #include <kernel/pit.h>
-#include <kernel/memory/memory.h>
+#include <kernel/memory/Memory.h>
 #include <kernel/kmain.h>
 #include <common/cstring.h>
 #include <kernel/interrupt/irq.h>

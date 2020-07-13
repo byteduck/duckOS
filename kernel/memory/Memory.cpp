@@ -19,7 +19,7 @@
 
 #include <kernel/kstddef.h>
 #include <kernel/kstdio.h>
-#include <kernel/memory/memory.h>
+#include <kernel/memory/Memory.h>
 #include <kernel/interrupt/isr.h>
 #include <kernel/memory/PageDirectory.h>
 #include "PageTable.h"
@@ -186,7 +186,6 @@ namespace Memory {
 				MemoryRegion& region = multiboot_memory_regions[num_multiboot_memory_regions];
 				uint32_t addr_pagealigned = ((mmap_entry->addr_low + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
 				uint32_t size_pagealigned = ((mmap_entry->len_low - (addr_pagealigned - mmap_entry->addr_low)) / PAGE_SIZE) * PAGE_SIZE;
-				printf("%d %x %x -> %x %x\n", mmap_entry->type, mmap_entry->addr_low, mmap_entry->len_low, addr_pagealigned, size_pagealigned);
 				if(size_pagealigned) {
 					//If the page-aligned size is more than zero (eg mmap_entry->len >= PAGE_SIZE), interpret it
 					region = MemoryRegion(addr_pagealigned,size_pagealigned);

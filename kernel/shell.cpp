@@ -26,7 +26,7 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/elf.h>
 #include <kernel/pci/pci.h>
-#include <kernel/memory/memory.h>
+#include <kernel/memory/Memory.h>
 #include <kernel/filesystem/VFS.h>
 #include <common/cstring.h>
 #include <common/stdlib.h>

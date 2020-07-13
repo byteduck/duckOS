@@ -21,7 +21,7 @@
 #define _LIBALLOC_H
 
 #include <kernel/kstddef.h>
-#include <kernel/memory/memory.h>
+#include <kernel/memory/Memory.h>
 
 typedef uint32_t uintptr_t;
 

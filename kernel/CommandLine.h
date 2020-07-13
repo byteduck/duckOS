@@ -17,23 +17,20 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
-#include "MemoryRegion.h"
-#include "Memory.h"
+#ifndef DUCKOS_COMMANDLINE_H
+#define DUCKOS_COMMANDLINE_H
 
-MemoryRegion::MemoryRegion(size_t start, size_t size): start(start), size(size), next(nullptr), prev(nullptr), heap_allocated(true) {
+#include <kernel/multiboot.h>
 
+namespace CommandLine {
+	struct Option {
+		DC::string name, value;
+	};
+
+	void init(const struct multiboot_info& header);
+	DC::string get_option_value(char* name);
+	bool has_option(char* name);
 }
 
-MemoryRegion::MemoryRegion(const MemoryRegion& region): start(region.start), size(region.size), next(region.next), prev(region.prev), heap_allocated(true) {
 
-}
-
-MemoryRegion::~MemoryRegion() = default;
-
-void MemoryRegion::cow_deref() {
-	cow.num_refs--;
-	if(!cow.num_refs) {
-		Memory::pmem_map().free_region(this);
-	}
-}
+#endif //DUCKOS_COMMANDLINE_H
