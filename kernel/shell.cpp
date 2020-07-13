@@ -292,10 +292,8 @@ void Shell::command_eval(char *cmd, char *args){
 			delete header;
 		}
 	}else if(strcmp(cmd, "lspci")){
-		PCI::enumerate_devices([](PCI::Address address, PCI::ID id, void* dataPtr) {
-			uint8_t clss = PCI::read_byte(address, PCI_CLASS);
-			uint8_t subclss = PCI::read_byte(address, PCI_SUBCLASS);
-			printf("%x:%x.%x Vendor: 0x%x Device: 0x%x\n  Class: 0x%x Subclass: 0x%x\n", address.bus, address.slot, address.function, id.vendor, id.device, clss, subclss);
+		PCI::enumerate_devices([](PCI::Address address, PCI::ID id, uint16_t type, void* dataPtr) {
+			printf("%x:%x.%x Vendor: 0x%x Device: 0x%x Type: 0x%x\n", address.bus, address.slot, address.function, id.vendor, id.device, type);
 		}, nullptr);
 	}else{
 		//Execute program

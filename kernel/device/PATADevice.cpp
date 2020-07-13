@@ -24,9 +24,8 @@
 
 PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio) {
 	PCI::Address addr = {0,0,0};
-	PCI::enumerate_devices([](PCI::Address addr, PCI::ID id, void* data) {
-		if(PCI::get_class(addr) == PCI_MASS_STORAGE_CONTROLLER && PCI::get_subclass(addr) == PCI_IDE_CONTROLLER)
-			*((PCI::Address*)data) = addr;
+	PCI::enumerate_devices([](PCI::Address addr, PCI::ID id, uint16_t type, void* data) {
+		if(type == PCI_TYPE_IDE_CONTROLLER) *((PCI::Address*)data) = addr;
 	}, &addr);
 	if(addr.is_zero()) return nullptr;
 	return new PATADevice(addr, channel, drive, use_pio);

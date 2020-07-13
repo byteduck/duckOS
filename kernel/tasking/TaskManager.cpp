@@ -31,7 +31,6 @@ TSS TaskManager::tss;
 
 Process *current_proc;
 Process *kidle_proc;
-Process *kernel_proc;
 
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
@@ -73,15 +72,18 @@ pid_t TaskManager::get_new_pid(){
 void TaskManager::init(){
 	//Create kidle process
 	kidle_proc = Process::create_kernel("kidle", kidle);
-	kidle_proc->next = kidle_proc;
-	kidle_proc->prev = kidle_proc;
-	current_proc = kidle_proc;
 
 	//Create kinit process
-	kernel_proc = Process::create_kernel("kinit", kmain_late);
-	add_process(kernel_proc);
+	auto* kinit_proc = Process::create_kernel("kinit", kmain_late);
+
+	//Link processes together manually
+	kidle_proc->next = kinit_proc;
+	kidle_proc->prev = kinit_proc;
+	kinit_proc->next = kidle_proc;
+	kinit_proc->prev = kidle_proc;
 
 	//Preempt
+	current_proc = kidle_proc;
 	preempt_init_asm(current_proc->registers.esp);
 }
 

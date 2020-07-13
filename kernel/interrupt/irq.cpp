@@ -53,6 +53,10 @@ namespace Interrupt {
 		io_wait();
 		outb(PIC2_DATA, 0x01); //8086 mode
 		io_wait();
+
+		//No mask
+		outb(PIC1_DATA, 0);
+		outb(PIC2_DATA, 0);
 	}
 
 	void irq_init(){

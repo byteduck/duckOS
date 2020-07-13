@@ -22,14 +22,24 @@
 
 #include "FileSystem.h"
 
+class BlockCacheEntry {
+public:
+	BlockCacheEntry(size_t block, uint8_t* data);
+	size_t block = 0;
+	uint8_t* data = nullptr;
+};
+
 class FileBasedFilesystem: public Filesystem {
 public:
 	FileBasedFilesystem(DC::shared_ptr<FileDescriptor> file);
+	~FileBasedFilesystem();
 	size_t logical_block_size();
 	bool read_logical_blocks(size_t block, size_t count, uint8_t* buffer);
+	bool read_block(size_t block, uint8_t* buffer);
 	bool read_blocks(size_t block, size_t count, uint8_t* buffer);
 protected:
 	size_t _logical_block_size {512};
+	DC::vector<BlockCacheEntry> cache;
 };
 
 

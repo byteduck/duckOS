@@ -37,7 +37,7 @@ BochsVGADevice *BochsVGADevice::create() {
 BochsVGADevice::BochsVGADevice(): BlockDevice(29, 0) {}
 
 bool BochsVGADevice::detect() {
-	PCI::enumerate_devices([](PCI::Address address, PCI::ID id, void* dataPtr) {
+	PCI::enumerate_devices([](PCI::Address address, PCI::ID id, uint16_t type, void* dataPtr) {
 		if(id == bochs_qemu_vga || id == vbox_vga) {
 			*((PCI::Address*)dataPtr) = address;
 		}

@@ -27,30 +27,30 @@
 #define PCI_DATA_PORT 0xCFC
 
 //Fields
-#define PCI_VENDOR_ID 0x0 //word
-#define PCI_DEVICE_ID 0x1 //word
-#define PCI_COMMAND 0x4 //word
-#define PCI_STATUS 0x6 //word
-#define PCI_REVISION_ID 0x8 //byte
-#define PCI_PROG_IF 0x9 //byte
-#define PCI_SUBCLASS 0xa //byte
-#define PCI_CLASS 0xb //byte
-#define PCI_CACHE_LINE_SIZE 0xc //byte
-#define PCI_LATENCY_TIMER 0xd //byte
-#define PCI_HEADER_TYPE 0xe //byte
-#define PCI_BIST 0xf //byte
-#define PCI_BAR0 0x10 //dword
-#define PCI_BAR1 0x14 //dword
-#define PCI_BAR2 0x18 //dword
-#define PCI_BAR3 0x1C //dword
-#define PCI_BAR4 0x20 //dword
-#define PCI_BAR5 0x24 //dword
-#define PCI_PRIMARY_BUS 0x18 //byte
-#define PCI_SECONDARY_BUS 0x19 //byte
-#define PCI_INTERRUPT_LINE 0x3c //byte
-#define PCI_INTERRUPT_PIN 0x3d //byte
+#define PCI_VENDOR_ID 0x0 //16
+#define PCI_DEVICE_ID 0x2 //16
+#define PCI_COMMAND 0x4 //16
+#define PCI_STATUS 0x6 //16
+#define PCI_REVISION_ID 0x8 //8
+#define PCI_PROG_IF 0x9 //8
+#define PCI_SUBCLASS 0xa //8
+#define PCI_CLASS 0xb //8
+#define PCI_CACHE_LINE_SIZE 0xc //8
+#define PCI_LATENCY_TIMER 0xd //8
+#define PCI_HEADER_TYPE 0xe //8
+#define PCI_BIST 0xf //8
+#define PCI_BAR0 0x10 //32
+#define PCI_BAR1 0x14 //32
+#define PCI_BAR2 0x18 //32
+#define PCI_BAR3 0x1C //32
+#define PCI_BAR4 0x20 //32
+#define PCI_BAR5 0x24 //32
+#define PCI_PRIMARY_BUS 0x18 //8
+#define PCI_SECONDARY_BUS 0x19 //8
+#define PCI_INTERRUPT_LINE 0x3c //8
+#define PCI_INTERRUPT_PIN 0x3d //8
 
-//Flags and such
+//Header types
 #define PCI_MULTIFUNCTION 0x80
 
 //Vendors
@@ -83,6 +83,10 @@
 //Device Subclasses
 #define PCI_PCI_BRIDGE 0x4
 #define PCI_IDE_CONTROLLER 0x1
+
+//Device types
+#define PCI_TYPE_BRIDGE 0x0604
+#define PCI_TYPE_IDE_CONTROLLER 0x0101
 
 namespace PCI {
 	union IOAddress {
@@ -131,7 +135,7 @@ namespace PCI {
 		bool operator==(ID& other) const;
 	};
 
-	typedef void (*PCIEnumerationCallback)(Address, ID, void* dataPtr);
+	typedef void (*PCIEnumerationCallback)(Address addr, ID id, uint16_t type, void* dataPtr);
 
 	uint8_t read_byte(Address address, uint8_t field);
 	uint16_t read_word(Address address, uint8_t field);
@@ -153,6 +157,7 @@ namespace PCI {
 
 	uint8_t get_class(Address address);
 	uint8_t get_subclass(Address address);
+	uint16_t get_type(Address address);
 
 };
 

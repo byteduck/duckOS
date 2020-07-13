@@ -88,7 +88,6 @@ void shell_process(){
 	shell.shell();
 }
 
-//called from ktask
 void kmain_late(){
 	new KeyboardDevice;
 	printf("init: Tasking initialized.\ninit: Initializing TTY...\n");
@@ -98,7 +97,11 @@ void kmain_late(){
 
 	printf("init: TTY initialized.\ninit: Initializing disk...\n");
 
-	auto disk = DC::shared_ptr<PATADevice>(PATADevice::find(PATADevice::PRIMARY, PATADevice::MASTER, false));
+	auto disk = DC::shared_ptr<PATADevice>(PATADevice::find(PATADevice::PRIMARY, PATADevice::MASTER));
+	if(!disk) {
+		printf("init: Couldn't find IDE controller! Hanging...\n");
+		while(1);
+	}
 	auto* mbr_buf = new uint8_t[512];
 	disk->read_block(0, mbr_buf);
 	uint32_t part_offset = *((uint32_t*) &mbr_buf[0x1C6]);
