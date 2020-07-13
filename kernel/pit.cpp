@@ -33,6 +33,14 @@ namespace PIT {
 		TaskManager::preempt();
 	}
 
+	uint32_t get_seconds() {
+		return seconds;
+	}
+
+	uint32_t get_nseconds() {
+		return (long)ticks * 10000;
+	}
+
 	void gettimeofday(struct timespec *t, void *tz) {
 		t->tv_sec = seconds;
 		t->tv_nsec = (long)ticks * 10000;

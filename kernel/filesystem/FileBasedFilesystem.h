@@ -22,11 +22,15 @@
 
 #include "FileSystem.h"
 
+#define MAX_FILESYSTEM_CACHE_SIZE 0x1000000 //16 MiB
+
 class BlockCacheEntry {
 public:
 	BlockCacheEntry(size_t block, uint8_t* data);
 	size_t block = 0;
 	uint8_t* data = nullptr;
+	size_t last_used = 0;
+	bool dirty = false;
 };
 
 class FileBasedFilesystem: public Filesystem {
@@ -38,6 +42,11 @@ public:
 	bool read_block(size_t block, uint8_t* buffer);
 	bool read_blocks(size_t block, size_t count, uint8_t* buffer);
 protected:
+	BlockCacheEntry* get_chache_entry(size_t block);
+	BlockCacheEntry* make_cache_entry(size_t block);
+	void flush_cache_entry(BlockCacheEntry* entry);
+	void free_cache_entry(size_t block);
+
 	size_t _logical_block_size {512};
 	DC::vector<BlockCacheEntry> cache;
 };

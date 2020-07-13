@@ -27,10 +27,14 @@
 
 #define PIT_FREQUENCY 100 //Hz
 
+#include <common/cstddef.h>
+
 namespace PIT {
 	extern "C" void pit_handler();
 	void init();
 	void gettimeofday(struct timespec *t, void *z);
+	uint32_t get_seconds();
+	uint32_t get_nseconds();
 };
 
 #endif
