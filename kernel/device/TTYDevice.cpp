@@ -53,7 +53,7 @@ ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffe
 }
 
 ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
-	if(buffered && _input_buffer.empty()) TaskManager::current_process()->yield_to(_buffer_yielder);
+	while(buffered && _input_buffer.empty()) TaskManager::current_process()->yield_to(_buffer_yielder);
 	count = min(count, _input_buffer.size());
 	size_t count_loop = count;
 	while(count_loop--) *buffer++ = _input_buffer.pop_front();

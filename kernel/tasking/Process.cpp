@@ -126,6 +126,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	this->kernel = kernel;
 	ring = kernel ? 0 : 3;
 	parent = parent;
+	quantum = 1;
 
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
@@ -133,9 +134,6 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
 		cwd = args->working_dir;
-		quantum = 10;
-	} else {
-		quantum = 1;
 	}
 
 	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
@@ -315,6 +313,7 @@ void Process::notify(uint32_t sig) {
 void Process::kill() {
 	if(_pid != 1){
 		state = PROCESS_DEAD;
+		_yielder.set_all_ready();
 		TaskManager::yield();
 		ASSERT(false); //We should never reach here
 	}else{
@@ -337,21 +336,30 @@ void *Process::kernel_stack_top() {
 	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
 }
 
-void Process::yield_to(TaskYield &yielder) {
+void Process::yield_to(TaskYieldQueue& yielder) {
 	ASSERT(TaskManager::enabled());
-	_yielder = &yielder;
+	yielder.add_process(this);
+	_yielding_to = &yielder;
 	state = PROCESS_YIELDING;
 	TaskManager::yield();
-	_yielder = nullptr;
+	_yielding_to = nullptr;
 	state = PROCESS_ALIVE;
 }
 
-bool Process::is_yielding() {
-	return _yielder != nullptr && !_yielder->ready();
+void Process::yield_to(Process* proc) {
+	yield_to(proc->_yielder);
 }
 
-TaskYield* Process::yielder() {
-	return _yielder;
+bool Process::is_yielding() {
+	return _yielding_to != nullptr;
+}
+
+TaskYieldQueue* Process::yielding_to() {
+	return _yielding_to;
+}
+
+void Process::finish_yielding() {
+	_yielding_to = nullptr;
 }
 
 
@@ -503,7 +511,7 @@ int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 		return -ECHILD; //TODO: Wait for process in same pgroup
 	} else {
 		if(!TaskManager::process_for_pid(pid)) return -ECHILD;
-		while(TaskManager::process_for_pid(pid)); //TODO: Better way of hanging without wasting CPU cycles
+
 		if(status)
 			*status = 0; //TODO: Process status
 	}

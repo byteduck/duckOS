@@ -165,8 +165,6 @@ bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_
 
 	//Wait for irq
 	reinstall_irq();
-	sti();
-	_yielder.set_waiting();
 	TaskManager::current_process()->yield_to(_yielder);
 	uninstall_irq();
 
@@ -189,15 +187,19 @@ void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8
 	outb(_io_base + ATA_LBA0, (uint8_t) sector);
 	outb(_io_base + ATA_LBA1, (uint8_t)(sector >> 8u));
 	outb(_io_base + ATA_LBA2, (uint8_t)(sector >> 16u));
+	cli();
+	reinstall_irq();
 	outb(_io_base + ATA_COMMAND, ATA_WRITE_PIO);
 	for(auto j = 0; j < sectors; j++) {
-		wait_status(ATA_STATUS_BSY);
-		while(!(inb(_io_base + ATA_STATUS) & ATA_STATUS_DRQ));
+		TaskManager::current_process()->yield_to(_yielder);
+		cli();
 		for(auto i = 0; i < 256; i++) {
 			outw(_io_base + ATA_DATA, buffer[i * 2] + (buffer[i * 2 + 1] << 8u));
 		}
 		buffer += 512;
 	}
+	sti();
+	uninstall_irq();
 }
 
 void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buffer) {
@@ -208,10 +210,12 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 	outb(_io_base + ATA_LBA0, (uint8_t) sector);
 	outb(_io_base + ATA_LBA1, (uint8_t)(sector >> 8u));
 	outb(_io_base + ATA_LBA2, (uint8_t)(sector >> 16u));
+	cli();
+	reinstall_irq();
 	outb(_io_base + ATA_COMMAND, ATA_READ_PIO);
 	for(auto j = 0; j < sectors; j++) {
-		wait_status(ATA_STATUS_BSY);
-		while (!(inb(_io_base + ATA_STATUS) & ATA_STATUS_DRQ));
+		TaskManager::current_process()->yield_to(_yielder);
+		cli();
 		for (auto i = 0; i < 256; i++) {
 			uint16_t tmp = inw(_io_base + ATA_DATA);
 			buffer[i * 2] = (uint8_t) tmp;
@@ -219,6 +223,8 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 		}
 		buffer += 512;
 	}
+	sti();
+	uninstall_irq();
 }
 
 bool PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {

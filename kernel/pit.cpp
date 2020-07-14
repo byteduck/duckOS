@@ -26,7 +26,7 @@ namespace PIT {
 	uint32_t seconds = 0;
 
 	void pit_handler(){
-		if(++ticks == 100) {
+		if(++ticks == 1000) {
 			ticks = 0;
 			seconds++;
 		}
@@ -38,12 +38,12 @@ namespace PIT {
 	}
 
 	uint32_t get_nseconds() {
-		return (long)ticks * 10000;
+		return (long)ticks * 1000;
 	}
 
 	void gettimeofday(struct timespec *t, void *tz) {
 		t->tv_sec = seconds;
-		t->tv_nsec = (long)ticks * 10000;
+		t->tv_nsec = (long)ticks * 1000;
 	}
 
 	static inline void pit_send_data(uint16_t data, uint8_t counter){

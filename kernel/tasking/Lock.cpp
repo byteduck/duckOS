@@ -20,26 +20,8 @@
 #include <kernel/kstdio.h>
 #include "Lock.h"
 
-Lock::Lock() = default;
-
-Lock::~Lock() = default;
-
-bool Lock::locked() {
-	return _locked;
-}
-
-void Lock::lock() {
-	_locked = true;
-}
-
-void Lock::release() {
-	_locked = false;
-}
-
-
 Locker::Locker(Lock& lock): _lock(lock) {
-	while(_lock.locked());
-	_lock.lock();
+	_lock.acquire();
 }
 
 Locker::~Locker() {

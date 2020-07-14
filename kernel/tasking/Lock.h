@@ -22,13 +22,9 @@
 
 class Lock {
 public:
-	Lock();
-	~Lock();
-	bool locked();
-	void lock();
-	void release();
-private:
-	bool _locked = false;
+	virtual bool locked() = 0;
+	virtual void acquire() = 0;
+	virtual void release() = 0;
 };
 
 class Locker {
@@ -40,6 +36,5 @@ private:
 };
 
 #define LOCK(lock) Locker locker((lock))
-
 
 #endif //DUCKOS_LOCK_H

@@ -34,7 +34,6 @@ Type `help` for a list of commands that can be used in the kernel shell.
 
 ### Known Issues / Limitations
 - No ext2 filesystem write support (files can only be read)
-- File locking uses spinlocks, which wastes CPU time
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.

@@ -17,21 +17,21 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_TASKYIELD_HPP
-#define DUCKOS_TASKYIELD_HPP
-#include <kernel/kstdio.h>
+#ifndef DUCKOS_SPINLOCK_H
+#define DUCKOS_SPINLOCK_H
 
-class TaskYield {
+#include "Lock.h"
+
+class SpinLock: public Lock {
 public:
-	TaskYield() = default;
-	~TaskYield() = default;
-
-	inline void set_waiting() { _ready = false; }
-	inline void set_ready() { _ready = true; }
-	inline bool ready() { return _ready; };
+	SpinLock();
+	~SpinLock();
+	bool locked() override;
+	void acquire() override;
+	void release() override;
 private:
-	volatile bool _ready = true;
+	volatile bool _locked = false;
 };
 
 
-#endif //DUCKOS_TASKYIELD_HPP
+#endif //DUCKOS_SPINLOCK_H

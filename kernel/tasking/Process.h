@@ -30,11 +30,14 @@
 #include <kernel/tasking/TSS.h>
 #include "ProcessArgs.h"
 #include <kernel/memory/PageDirectory.h>
-#include "TaskYield.hpp"
+#include "TaskYieldQueue.h"
 
 #define PROCESS_STACK_SIZE 1048576 //1024KiB
 #define PROCESS_KERNEL_STACK_SIZE 4096 //4KiB
 
+class TaskYieldQueue;
+class FileDescriptor;
+namespace ELF {struct elf32_header;};
 class Process {
 public:
 
@@ -49,9 +52,11 @@ public:
 	void kill();
 	void handle_pagefault(Registers *regs);
 	void* kernel_stack_top();
-	void yield_to(TaskYield& yielder);
+	void yield_to(TaskYieldQueue& yielder);
+	void yield_to(Process* p);
 	bool is_yielding();
-	TaskYield* yielder();
+	void finish_yielding();
+	TaskYieldQueue* yielding_to();
 
 	//Syscalls
 	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
@@ -107,7 +112,8 @@ private:
 	DC::vector<pid_t> children;
 
 	//Yielding stuff
-	TaskYield* _yielder = nullptr;
+	TaskYieldQueue* _yielding_to = nullptr;
+	TaskYieldQueue _yielder;
 };
 
 

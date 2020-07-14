@@ -334,7 +334,6 @@ void Shell::command_eval(char *cmd, char *args){
 
 		//Add process and wait
 		TaskManager::add_process(p.value());
-		pid_t pid = p.value()->pid();
-		while(TaskManager::process_for_pid(pid));
+		TaskManager::current_process()->yield_to(p.value());
 	}
 }

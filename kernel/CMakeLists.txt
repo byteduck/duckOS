@@ -64,6 +64,8 @@ SET(KERNEL_SRCS
         memory/PageTable.cpp
         tasking/Process.cpp
         tasking/Lock.cpp
+        tasking/SpinLock.cpp
+        tasking/YieldLock.cpp
         tasking/ProcessArgs.cpp
         device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp
@@ -71,7 +73,7 @@ SET(KERNEL_SRCS
         memory/MemoryMap.cpp
         memory/LinkedMemoryRegion.cpp
         device/PATADevice.cpp
-        tasking/TaskYield.hpp
+        tasking/TaskYieldQueue.cpp
         CommandLine.cpp)
 
 SET(COMMON_SRCS
