@@ -49,7 +49,7 @@ public:
 	pid_t pid();
 	DC::string name();
 	void notify(uint32_t sig);
-	void kill();
+	void kill(bool notify_yielders = true);
 	void handle_pagefault(Registers *regs);
 	void* kernel_stack_top();
 	void yield_to(TaskYieldQueue& yielder);

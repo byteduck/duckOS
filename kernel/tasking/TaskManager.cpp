@@ -46,7 +46,7 @@ void kidle(){
 Process* TaskManager::process_for_pid(pid_t pid){
 	Process *current = kidle_proc;
 	do{
-		if(current->pid() == pid) return current;
+		if(current->pid() == pid && current->state != PROCESS_DEAD) return current;
 		current = current->next;
 	} while(current != kidle_proc);
 	return (Process *) nullptr;

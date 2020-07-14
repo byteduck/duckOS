@@ -310,10 +310,10 @@ void Process::notify(uint32_t sig) {
 	}
 }
 
-void Process::kill() {
+void Process::kill(bool notify_yielders) {
 	if(_pid != 1){
+		if(notify_yielders) _yielder.set_all_ready();
 		state = PROCESS_DEAD;
-		_yielder.set_all_ready();
 		TaskManager::yield();
 		ASSERT(false); //We should never reach here
 	}else{
@@ -419,8 +419,9 @@ int Process::sys_execve(char *filename, char **argv, char **envp) {
 	delete args;
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	R_new_proc.value()->_pid = this->pid();
+	R_new_proc.value()->_yielder = this->_yielder;
 	TaskManager::add_process(R_new_proc.value());
-	kill();
+	kill(false);
 	ASSERT(false);
 	return -1;
 }
@@ -444,8 +445,9 @@ int Process::sys_execvp(char *filename, char **argv) {
 	delete args;
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	R_new_proc.value()->_pid = this->pid();
+	R_new_proc.value()->_yielder = this->_yielder;
 	TaskManager::add_process(R_new_proc.value());
-	kill();
+	kill(false);
 	ASSERT(false);
 	return -1;
 }
@@ -510,8 +512,9 @@ int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 	} else if(pid == 0) {
 		return -ECHILD; //TODO: Wait for process in same pgroup
 	} else {
-		if(!TaskManager::process_for_pid(pid)) return -ECHILD;
-
+		Process* proc = TaskManager::process_for_pid(pid);
+		if(!proc) return -ECHILD;
+		yield_to(proc);
 		if(status)
 			*status = 0; //TODO: Process status
 	}
