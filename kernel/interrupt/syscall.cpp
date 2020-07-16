@@ -23,13 +23,16 @@
 #include <kernel/tasking/TaskManager.h>
 
 void syscall_handler(Registers& regs){
+	Process* proc = TaskManager::current_process();
+	proc->in_syscall = true;
 	regs.eax = handle_syscall(regs, regs.eax, regs.ebx, regs.ecx, regs.edx);
+	proc->in_syscall = false;
 }
 
 int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
 	switch(call) {
 		case SYS_EXIT:
-			TaskManager::current_process()->kill();
+			TaskManager::current_process()->kill(SIGKILL);
 			return 0;
 		case SYS_FORK:
 			return TaskManager::current_process()->sys_fork(regs);
@@ -65,12 +68,14 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_execvp((char*)arg1, (char**)arg2);
 		case SYS_GETTIMEOFDAY:
 			return TaskManager::current_process()->sys_gettimeofday((struct timespec*)arg1, (void*)arg2);
+		case SYS_SIGACTION:
+			return TaskManager::current_process()->sys_sigaction((int)arg1, (struct sigaction*)arg2, (struct sigaction*)arg3);
+		case SYS_KILL:
+			return TaskManager::current_process()->sys_kill((pid_t)arg1, (int)arg2);
 
 		//TODO: Implement these syscalls
-		case SYS_KILL:
 		case SYS_TIMES:
 		case SYS_UNLINK:
-		case SYS_SIGNAL:
 		case SYS_ISATTY:
 		case SYS_LINK:
 			return -1;

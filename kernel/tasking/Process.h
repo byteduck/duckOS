@@ -30,17 +30,23 @@
 #include <kernel/tasking/TSS.h>
 #include "ProcessArgs.h"
 #include <kernel/memory/PageDirectory.h>
+#include <common/queue.hpp>
 #include "TaskYieldQueue.h"
+#include "Signal.h"
 
 #define PROCESS_STACK_SIZE 1048576 //1024KiB
 #define PROCESS_KERNEL_STACK_SIZE 4096 //4KiB
+#define PROCESS_ALIVE 0
+#define PROCESS_ZOMBIE 1
+#define PROCESS_DEAD 2
+#define PROCESS_YIELDING 3
 
 class TaskYieldQueue;
 class FileDescriptor;
 namespace ELF {struct elf32_header;};
+
 class Process {
 public:
-
 	~Process();
 
 	static Process* create_kernel(const DC::string& name, void (*func)());
@@ -48,10 +54,18 @@ public:
 
 	pid_t pid();
 	DC::string name();
-	void notify(uint32_t sig);
-	void kill(bool notify_yielders = true);
+	void kill(int signal, bool notify_yielders = true);
 	void handle_pagefault(Registers *regs);
 	void* kernel_stack_top();
+
+	bool handle_pending_signal();
+	bool has_pending_signals();
+	void call_signal_handler(int signal);
+	bool& in_signal_handler();
+	bool& ready_to_handle_signal();
+	bool& just_finished_signal();
+	void* signal_stack_top();
+
 	void yield_to(TaskYieldQueue& yielder);
 	void yield_to(Process* p);
 	bool is_yielding();
@@ -59,10 +73,12 @@ public:
 	TaskYieldQueue* yielding_to();
 
 	//Syscalls
+	void check_ptr(void* ptr);
 	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
 	ssize_t sys_write(int fd, uint8_t* buf, size_t count);
 	size_t sys_sbrk(int i);
 	pid_t sys_fork(Registers& regs);
+	int exec(const DC::string& filename, ProcessArgs* args);
 	int sys_execve(char *filename, char **argv, char **envp);
 	int sys_execvp(char *filename, char **argv);
 	int sys_open(char *filename, int options, int mode);
@@ -75,12 +91,16 @@ public:
 	int sys_lseek(int file, off_t off, int whence);
 	int sys_waitpid(pid_t pid, int* status, int flags);
 	int sys_gettimeofday(timespec *t, void *z);
+	int sys_sigaction(int sig, struct sigaction *new_action, struct sigaction *old_action);
+	int sys_kill(pid_t pid, int sig);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;
 	size_t page_directory_loc;
 	Registers registers = {};
+	Registers signal_registers = {};
 	bool kernel = false;
+	bool in_syscall = false;
 	uint8_t ring;
 	uint8_t quantum;
 	PageDirectory* page_directory;
@@ -90,6 +110,7 @@ private:
 	Process(Process* to_fork, Registers& regs);
 
 	bool load_elf(const DC::shared_ptr<FileDescriptor>& fd, ELF::elf32_header* header);
+	void setup_stack(uint32_t*& kernel_stack, uint32_t* user_stack, Registers& registers);
 
 	//Identifying info
 	DC::string _name = "";
@@ -114,6 +135,17 @@ private:
 	//Yielding stuff
 	TaskYieldQueue* _yielding_to = nullptr;
 	TaskYieldQueue _yielder;
+	bool notify_yielders_on_death = true;
+
+	//Signals
+	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
+	DC::queue<int> pending_signals = {0};
+	bool _in_signal = false;
+	bool _ready_to_handle_signal = false;
+	bool _just_finished_signal = false;
+	size_t _signal_stack_top = 0;
+	LinkedMemoryRegion _sighandler_ustack_region;
+	LinkedMemoryRegion _sighandler_kstack_region;
 };
 
 

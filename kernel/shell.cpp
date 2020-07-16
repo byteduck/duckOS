@@ -73,7 +73,7 @@ void Shell::shell(){
 		command_eval(cmdbuf, argbuf);
 		setColor(0x0f);
 	}
-	TaskManager::current_process()->kill();
+	TaskManager::current_process()->kill(SIGKILL);
 }
 
 void Shell::command_eval(char *cmd, char *args){

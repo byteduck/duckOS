@@ -18,14 +18,11 @@
 */
 
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/memory/kliballoc.h>
 #include <kernel/kstddef.h>
 #include <kernel/kstdio.h>
-#include <kernel/pit.h>
-#include <kernel/memory/Memory.h>
 #include <kernel/kmain.h>
-#include <common/cstring.h>
 #include <kernel/interrupt/irq.h>
+#include <kernel/pit.h>
 
 TSS TaskManager::tss;
 
@@ -103,7 +100,7 @@ uint32_t TaskManager::add_process(Process *p){
 }
 
 void TaskManager::notify_current(uint32_t sig){
-	current_proc->notify(sig);
+	current_proc->kill(sig);
 }
 
 void TaskManager::kill(Process* p){
@@ -119,17 +116,19 @@ void TaskManager::kill(Process* p){
 
 Process *TaskManager::next_process() {
 	Process* next_proc = current_proc->next;
+
 	//Don't switch to a yielding process
 	while(next_proc->is_yielding()) {
 		next_proc = next_proc->next;
 	}
+
 	//Cleanup dead processes
 	while(next_proc->state == PROCESS_DEAD) {
 		next_proc->prev->next = next_proc->next;
 		next_proc->next->prev = next_proc->prev;
 		Process* new_next_proc = next_proc->next;
 		delete next_proc;
-		next_proc = new_next_proc;
+		do next_proc = new_next_proc; while(next_proc->state == PROCESS_DEAD); //Make sure not to choose a dead process
 	}
 	return next_proc;
 }
@@ -143,16 +142,62 @@ void TaskManager::yield() {
 	preempt_now_asm();
 }
 
-void TaskManager::preempt(){
-	if(!tasking_enabled) return;
+void TaskManager::preempt(Registers& regs){
+	PIT::pit_handler();
+
+	//Store current process's registers
+	if(current_proc->in_signal_handler())
+		current_proc->signal_registers = regs;
+	else
+		current_proc->registers = regs;
+
+	//Handle pending signal
+	Process *current = kidle_proc;
+	do {
+		current->handle_pending_signal();
+		current = current->next;
+	} while(current != kidle_proc);
+
+	//If it's time to switch, switch
 	if(quantum_counter == 0) {
+		//Pick a new process and decrease the quantum counter
 		auto old_proc = current_proc;
 		current_proc = next_process();
 		quantum_counter = current_proc->quantum - 1;
-		if(current_proc->ring == 3) {
-			tss.esp0 = (size_t) current_proc->kernel_stack_top();
+
+		//If we were just in a signal handler, use the esp from signal_registers
+		unsigned int* old_esp;
+		if(old_proc->in_signal_handler()) {
+			old_esp = &old_proc->signal_registers.esp;
+		} else {
+			old_esp = &old_proc->registers.esp;
 		}
-		preempt_asm(&old_proc->registers.esp, &current_proc->registers.esp, current_proc->page_directory_loc);
+
+		//If we just finished handling a signal, set in_signal_handler to false.
+		if(old_proc->just_finished_signal()) {
+			old_proc->just_finished_signal() = false;
+			old_proc->in_signal_handler() = false;
+		}
+
+		//If we're about to start handling a signal, set in_signal_handler to true.
+		if(current_proc->ready_to_handle_signal()) {
+			current_proc->in_signal_handler() = true;
+			current_proc->ready_to_handle_signal() = false;
+		}
+
+		//If we're switching to a process in a signal handler, use the esp from signal_registers
+		unsigned int* new_esp;
+		if(current_proc->in_signal_handler()){
+			new_esp = &current_proc->signal_registers.esp;
+			tss.esp0 = (size_t) current_proc->signal_stack_top();
+		} else {
+			new_esp = &current_proc->registers.esp;
+			tss.esp0 = (size_t) current_proc->kernel_stack_top();
+
+		}
+
+		//Switch the stacks.
+		preempt_asm(old_esp, new_esp, current_proc->page_directory_loc);
 	} else {
 		quantum_counter--;
 	}

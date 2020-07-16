@@ -74,7 +74,8 @@ SET(KERNEL_SRCS
         memory/LinkedMemoryRegion.cpp
         device/PATADevice.cpp
         tasking/TaskYieldQueue.cpp
-        CommandLine.cpp)
+        CommandLine.cpp
+        tasking/Signal.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

@@ -24,7 +24,7 @@
 #include <common/queue.hpp>
 
 class Process;
-class TaskYieldQueue: private DC::queue<Process*> {
+class TaskYieldQueue: private DC::queue<pid_t> {
 public:
 	TaskYieldQueue();
 	~TaskYieldQueue() = default;

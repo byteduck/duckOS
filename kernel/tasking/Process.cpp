@@ -27,6 +27,7 @@
 #include "elf.h"
 #include "ProcessArgs.h"
 #include <kernel/memory/PageDirectory.h>
+#include <kernel/interrupt/syscall.h>
 
 Process* Process::create_kernel(const DC::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(DC::shared_ptr<LinkedInode>(nullptr));
@@ -115,7 +116,6 @@ DC::string Process::name(){
 	return _name;
 }
 
-//TODO: Clean up this monstrosity
 Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent) {
 	//Disable task switching so we don't screw up paging
 	TaskManager::enabled() = false;
@@ -157,58 +157,51 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 		_stack_size = PROCESS_KERNEL_STACK_SIZE;
 	}
 
+	//Setup registers
+	registers.eflags = 0x202;
+	registers.cs = kernel ? 0x8 : 0x1B;
 	registers.eip = entry_point;
-
-	auto *stack = (uint32_t*) (stack_base + _stack_size);
-	stack = (uint32_t*) args->setup_stack(stack);
-	*--stack = 0; //Honestly? Not sure what this is for but nothing works without it :)
-
-	//If this is a usermode process, push the correct ss and stack pointer for switching rings during iret
-	if(!kernel) {
-		auto cstack = (size_t) stack;
-		*--stack = 0x23;
-		*--stack = cstack;
-	}
-
-	//Push EFLAGS, CS, and EIP for iret
-	*--stack = 0x202; // eflags
-	*--stack = kernel ? 0x8 : 0x1B; // cs
-	*--stack = entry_point; // eip
-
-	//We push iret if the pid isn't 1 (the kernel process), because in the preempt_asm function, we return to preempt in
-	//the C code. However, when the process is first set up, the ret location isn't in the stack, so we push a function
-	//that pops the initial values of the registers and calls iret.
-	if(_pid != 1){
-		*--stack = 0; //eax
-		*--stack = 0; //ebx
-		*--stack = 0; //ecx
-		*--stack = 0; //edx
-		*--stack = (size_t) TaskManager::proc_first_preempt;
-	}
-
-	//Push everything that's popped off in preempt_asm
-	*--stack = stack_base; //ebp
-	*--stack = 0; //edi
-	*--stack = 0; //esi
+	registers.eax = 0;
+	registers.ebx = 0;
+	registers.ecx = 0;
+	registers.edx = 0;
+	registers.ebp = stack_base;
+	registers.edi = 0;
+	registers.esi = 0;
 	if(kernel) {
-		*--stack = 0x10; // ds
-		*--stack = 0x10; // es
-		*--stack = 0x10; // fs
-		*--stack = 0x10; // gs
+		registers.ds = 0x10; // ds
+		registers.es = 0x10; // es
+		registers.fs = 0x10; // fs
+		registers.gs = 0x10; // gs
 	} else {
-		*--stack = 0x23; // ds
-		*--stack = 0x23; // es
-		*--stack = 0x23; // fs
-		*--stack = 0x23; // gs
+		registers.ds = 0x23; // ds
+		registers.es = 0x23; // es
+		registers.fs = 0x23; // fs
+		registers.gs = 0x23; // gs
 	}
 
-	//Set the ESP to the stack's location
-	registers.esp = (size_t) stack;
+	//Setup stack
+	if(ring != 0) {
+		//Set up the user stack for the program arguments
+		auto *user_stack = (uint32_t *) (stack_base + _stack_size);
+		user_stack = (uint32_t *) args->setup_stack(user_stack);
+		*--user_stack = 0; //Honestly? Not sure why this is needed but nothing works without it :)
+
+		//Setup the kernel stack with register states
+		auto *kernel_stack = (uint32_t *) ((size_t) _kernel_stack_base + _kernel_stack_size);
+		setup_stack(kernel_stack, user_stack, registers);
+	} else {
+		auto *stack  =(uint32_t*) (stack_base + _stack_size);
+		stack = (uint32_t *) args->setup_stack(stack);
+		*--stack = 0;
+		setup_stack(stack, stack, registers);
+	}
 
 	if(!kernel) {
 		//Load back the page directory of the current process
 		asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
 	}
+
 	TaskManager::enabled() = true;
 }
 
@@ -226,8 +219,11 @@ Process::Process(Process *to_fork, Registers &regs){
 	parent = to_fork->_pid;
 	quantum = to_fork->quantum;
 
+	//Copy signal handlers and file descriptors
 	for(size_t i = 0; i < to_fork->file_descriptors.size(); i++)
 		file_descriptors.push_back(to_fork->file_descriptors[i]);
+	for(int i = 0; i < 32; i++)
+		signal_actions[i] = to_fork->signal_actions[i];
 
 	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
 	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
@@ -241,47 +237,12 @@ Process::Process(Process *to_fork, Registers &regs){
 	//Fork the old page directory
 	page_directory->fork_from(to_fork->page_directory);
 
-	registers.eip = regs.eip;
-
-	auto *stack = (uint32_t*) regs.useresp;
-
-	//Push the correct ss and stack pointer for switching rings during iret
-	auto cstack = (size_t) stack;
-	*--stack = 0x23;
-	*--stack = cstack;
-
-	//Push EFLAGS, CS, and EIP for iret
-	*--stack = 0x202; // eflags
-	*--stack = kernel ? 0x8 : 0x1B; // cs
-	*--stack = regs.eip; // eip
-
-	//We push iret if the pid isn't 1 (the kernel process), because in the preempt_asm function, we return to preempt in
-	//the C code. However, when the process is first set up, the ret location isn't in the stack, so we push a function
-	//that calls iret.
-	*--stack = 0; // fork() in the child returns 0
-	*--stack = regs.ebx;
-	*--stack = regs.ecx;
-	*--stack = regs.edx;
-	*--stack = (size_t) TaskManager::proc_first_preempt;
-
-	//Push everything that's popped off in preempt_asm
-	*--stack = regs.ebp; //ebp
-	*--stack = 0; //edi
-	*--stack = 0; //esi
-	if(kernel) {
-		*--stack = 0x10; // ds
-		*--stack = 0x10; // es
-		*--stack = 0x10; // fs
-		*--stack = 0x10; // gs
-	} else {
-		*--stack = 0x23; // ds
-		*--stack = 0x23; // es
-		*--stack = 0x23; // fs
-		*--stack = 0x23; // gs
-	}
-
-	//Set the ESP to the stack's location
-	registers.esp = (size_t) stack;
+	//Setup registers and stack
+	registers = regs;
+	registers.eax = 0; // fork() in child returns zero
+	auto* user_stack = (size_t*) regs.useresp;
+	auto* kernel_stack = (size_t*) ((size_t) _kernel_stack_base + _kernel_stack_size);
+	setup_stack(kernel_stack, user_stack, registers);
 
 	//Load back the page directory of the current process
 	asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
@@ -289,47 +250,177 @@ Process::Process(Process *to_fork, Registers &regs){
 	TaskManager::enabled() = true;
 }
 
+void Process::setup_stack(uint32_t*& kernel_stack, uint32_t* userstack, Registers& regs) {
+	//If usermode, push ss and useresp
+	if(ring != 0) {
+		*--kernel_stack = 0x23;
+		*--kernel_stack = (size_t) userstack;
+	}
+
+	//Push EFLAGS, CS, and EIP for iret
+	*--kernel_stack = regs.eflags; // eflags
+	*--kernel_stack = regs.cs; // cs
+	*--kernel_stack = regs.eip; // eip
+
+	if(_pid == 1) { //Special case for kidle process, which uses preempt_init_asm
+		//Push everything that's popped off in preempt_asm
+		*--kernel_stack = regs.ebp; //ebp
+		*--kernel_stack = regs.edi; //edi
+		*--kernel_stack = regs.esi; //esi
+		*--kernel_stack = regs.ds; // ds
+		*--kernel_stack = regs.es; // es
+		*--kernel_stack = regs.fs; // fs
+		*--kernel_stack = regs.gs; // gs
+	} else {
+		uint32_t* start_stack = kernel_stack;
+		kernel_stack -= 2; //Num + Err code in registers struct
+		*--kernel_stack = regs.eax;
+		*--kernel_stack = regs.ecx;
+		*--kernel_stack = regs.edx;
+		*--kernel_stack = regs.ebx;
+		*--kernel_stack = (size_t) start_stack;
+		*--kernel_stack = regs.ebp;
+		*--kernel_stack = regs.esi;
+		*--kernel_stack = regs.edi;
+		*--kernel_stack = regs.ds;
+		*--kernel_stack = regs.es;
+		*--kernel_stack = regs.fs;
+		*--kernel_stack = regs.gs;
+		*--kernel_stack = (size_t) TaskManager::proc_first_preempt;
+	}
+
+	regs.esp = (size_t) kernel_stack;
+	regs.useresp = (size_t) userstack;
+}
+
 Process::~Process() {
 	delete page_directory;
 	if(_kernel_stack_base) PageDirectory::k_free_region(_kernel_stack_base);
 }
 
-void Process::notify(uint32_t sig) {
-	switch(sig){
-		case SIGTERM:
-			kill();
-			break;
-		case SIGILL:
-			printf("\n(PID %d) Illegal operation! Aborting.\n", _pid);
-			kill();
-			break;
-		case SIGSEGV:
-			printf("\n(PID %d) Segmentation fault! Aborting.\n", _pid);
-			kill();
-			break;
-	}
+void Process::kill(int signal, bool notify_yielders) {
+	pending_signals.push(signal);
+	if(!notify_yielders) notify_yielders_on_death = false;
+	if(TaskManager::current_process() == this) TaskManager::yield();
 }
 
-void Process::kill(bool notify_yielders) {
-	if(_pid != 1){
-		if(notify_yielders) _yielder.set_all_ready();
-		state = PROCESS_DEAD;
-		TaskManager::yield();
-		ASSERT(false); //We should never reach here
-	}else{
-		PANIC("KERNEL KILLED","EVERYONE PANIC THIS ISN'T GOOD",true);
+bool Process::handle_pending_signal() {
+	if(pending_signals.empty() || _in_signal) return false;
+	int signal = pending_signals.pop();
+	if(signal >= 0 && signal <= 32) {
+		Signal::SignalSeverity severity = Signal::signal_severities[signal];
+
+		//Print signal if unhandled and fatal
+		if(severity == Signal::FATAL && !signal_actions[signal].action)
+			printf("PID %d exiting with signal %s\n", _pid, Signal::signal_names[signal]);
+
+		if(severity >= Signal::KILL && !signal_actions[signal].action) {
+			//If the signal has no handler and is KILL or FATAL, then kill the process
+			if (notify_yielders_on_death) _yielder.set_all_ready();
+			state = PROCESS_DEAD;
+			pending_signals.pop();
+		} else if(signal_actions[signal].action) {
+			//Otherwise, have the process handle the signal
+			call_signal_handler(signal);
+		}
 	}
+	return true;
+}
+
+bool Process::has_pending_signals() {
+	return !pending_signals.empty();
+}
+
+void Process::call_signal_handler(int signal) {
+	if(signal < 1 || signal >= 32) return;
+	auto signal_loc = (size_t) signal_actions[signal].action;
+	if(!signal_loc || signal_loc >= HIGHER_HALF) return;
+
+	//Load the page directory so we can write to the userspace stack
+	asm volatile("mov %0, %%cr3" :: "r"(page_directory_loc));
+
+	//Allocate a userspace stack
+	_sighandler_ustack_region = page_directory->allocate_region(HIGHER_HALF - PROCESS_STACK_SIZE * 2, PROCESS_STACK_SIZE, true);
+	if(!_sighandler_ustack_region.virt) {
+		printf("FATAL: Failed to allocate sighandler user stack for pid %d!\n", pid());
+		kill(SIGKILL);
+		return;
+	}
+
+	//Allocate a kernel stack
+	_sighandler_kstack_region = PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE);
+	if(!_sighandler_kstack_region.virt) {
+		printf("FATAL: Failed to allocate sighandler kernel stack for pid %d!\n", pid());
+		kill(SIGKILL);
+		return;
+	}
+
+	auto* user_stack = (size_t*) (_sighandler_ustack_region.virt->start + PROCESS_STACK_SIZE);
+	_signal_stack_top = _sighandler_kstack_region.virt->start + _sighandler_kstack_region.virt->size;
+
+	//Push signal number and fake return address to the stack
+	*--user_stack = signal;
+	*--user_stack = SIGNAL_RETURN_FAKE_ADDR;
+
+	//Setup signal registers
+	signal_registers.eflags = 0x202;
+	signal_registers.cs = ring == 0 ? 0x8 : 0x1B;
+	signal_registers.eip = signal_loc;
+	signal_registers.eax = 0;
+	signal_registers.ebx = 0;
+	signal_registers.ecx = 0;
+	signal_registers.edx = 0;
+	signal_registers.ebp = (size_t) user_stack;
+	signal_registers.edi = 0;
+	signal_registers.esi = 0;
+	if(ring == 0) {
+		signal_registers.ds = 0x10; // ds
+		signal_registers.es = 0x10; // es
+		signal_registers.fs = 0x10; // fs
+		signal_registers.gs = 0x10; // gs
+	} else {
+		signal_registers.ds = 0x23; // ds
+		signal_registers.es = 0x23; // es
+		signal_registers.fs = 0x23; // fs
+		signal_registers.gs = 0x23; // gs
+	}
+
+	//Setup signal stack
+	setup_stack(user_stack, user_stack, signal_registers);
+
+	//Load back page directory of current process
+	asm volatile("mov %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
+
+	_ready_to_handle_signal = true;
+}
+
+bool& Process::in_signal_handler() {
+	return _in_signal;
+}
+
+bool& Process::just_finished_signal() {
+	return _just_finished_signal;
+}
+
+bool& Process::ready_to_handle_signal() {
+	return _ready_to_handle_signal;
+}
+
+void* Process::signal_stack_top() {
+	return (void*) _signal_stack_top;
 }
 
 void Process::handle_pagefault(Registers *regs) {
-	TaskManager::enabled() = false;
 	size_t err_pos;
 	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-	if(!page_directory->try_cow(err_pos)) {
-		Memory::page_fault_handler(regs);
-		notify(SIGSEGV);
+	//If the fault is at the fake signal return address, exit the signal handler
+	if(_in_signal && err_pos == SIGNAL_RETURN_FAKE_ADDR) {
+		_just_finished_signal = true;
+		PageDirectory::k_free_region(_sighandler_kstack_region);
+		page_directory->free_region(_sighandler_ustack_region);
+		TaskManager::yield();
 	}
-	TaskManager::enabled() = true;
+	if(!page_directory->try_cow(err_pos)) kill(SIGSEGV);
 }
 
 void *Process::kernel_stack_top() {
@@ -367,16 +458,21 @@ void Process::finish_yielding() {
  * SYSCALLS *
  ************/
 
+void Process::check_ptr(void *ptr) {
+	if(ptr != nullptr && (size_t) ptr >= HIGHER_HALF) {
+		kill(SIGSEGV);
+	}
+}
 
 ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
-	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
+	check_ptr(buf);
 	if(fd < 0 || fd >= (int) file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
 	int ret =  file_descriptors[fd]->read(buf, count);
 	return ret;
 }
 
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
-	if((size_t)buf + count > HIGHER_HALF) return -EFAULT;
+	check_ptr(buf);
 	if(fd < 0 || fd >= (int) file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
 	return file_descriptors[fd]->write(buf, count);
 }
@@ -406,53 +502,56 @@ pid_t Process::sys_fork(Registers& regs) {
 	return new_proc->pid();
 }
 
-int Process::sys_execve(char *filename, char **argv, char **envp) {
-	auto* args = new ProcessArgs(cwd);
-	if(argv) {
-		int i = 0;
-		while(argv[i]) {
-			args->argv.push_back(argv[i]);
-			i++;
-		}
-	}
+int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	auto R_new_proc = Process::create_user(filename, args, parent);
 	delete args;
+	filename.~string(); //Manually delete because we won't return from here and we need to clean up resources
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	R_new_proc.value()->_pid = this->pid();
 	R_new_proc.value()->_yielder = this->_yielder;
 	TaskManager::add_process(R_new_proc.value());
-	kill(false);
-	ASSERT(false);
+	kill(SIGKILL, false);
+	ASSERT(false)
 	return -1;
+}
+
+int Process::sys_execve(char *filename, char **argv, char **envp) {
+	check_ptr(filename);
+	check_ptr(argv);
+	check_ptr(envp);
+	auto* args = new ProcessArgs(cwd);
+	if(argv) {
+		int i = 0;
+		while(argv[i]) {
+			check_ptr(argv[i]);
+			args->argv.push_back(argv[i]);
+			i++;
+		}
+	}
+	return exec(filename, args);
 }
 
 int Process::sys_execvp(char *filename, char **argv) {
+	check_ptr(filename);
+	check_ptr(argv);
 	auto* args = new ProcessArgs(cwd);
 	if(argv) {
 		int i = 0;
 		while(argv[i]) {
+			check_ptr(argv[i]);
 			args->argv.push_back(argv[i]);
 			i++;
 		}
 	}
-
-	ResultRet<Process*> R_new_proc(0);
 	if(indexOf('/', filename) == strlen(filename)) {
-		R_new_proc = Process::create_user(DC::string("/bin/") + filename, args, parent);
+		return exec(DC::string("/bin/") + filename, args);
 	} else {
-		R_new_proc = Process::create_user(filename, args, parent);
+		return exec(filename, args);
 	}
-	delete args;
-	if(R_new_proc.is_error()) return R_new_proc.code();
-	R_new_proc.value()->_pid = this->pid();
-	R_new_proc.value()->_yielder = this->_yielder;
-	TaskManager::add_process(R_new_proc.value());
-	kill(false);
-	ASSERT(false);
-	return -1;
 }
 
 int Process::sys_open(char *filename, int options, int mode) {
+	check_ptr(filename);
 	auto fd_or_err = VFS::inst().open(filename, options, mode, cwd);
 	if(fd_or_err.is_error()) return fd_or_err.code();
 	file_descriptors.push_back(fd_or_err.value());
@@ -466,6 +565,7 @@ int Process::sys_close(int file) {
 }
 
 int Process::sys_chdir(char *path) {
+	check_ptr(path);
 	auto inode_or_error = VFS::inst().resolve_path(path, cwd, nullptr);
 	if(inode_or_error.is_error()) return inode_or_error.code();
 	cwd = inode_or_error.value();
@@ -473,6 +573,7 @@ int Process::sys_chdir(char *path) {
 }
 
 int Process::sys_getcwd(char *buf, size_t length) {
+	check_ptr(buf);
 	if(cwd->name().length() > length) return -ENAMETOOLONG;
 	DC::string path = cwd->get_full_path();
 	memcpy(buf, path.c_str(), min(length, path.length()));
@@ -481,6 +582,7 @@ int Process::sys_getcwd(char *buf, size_t length) {
 }
 
 int Process::sys_readdir(int file, char *buf, size_t len) {
+	check_ptr(buf);
 	TaskManager::yield();
 	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return file_descriptors[file]->read_dir_entries(buf, len);
@@ -493,6 +595,8 @@ int Process::sys_fstat(int file, char *buf) {
 }
 
 int Process::sys_stat(char *file, char *buf) {
+	check_ptr(file);
+	check_ptr(buf);
 	auto inode_or_err = VFS::inst().resolve_path(file, cwd);
 	if(inode_or_err.is_error()) return inode_or_err.code();
 	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
@@ -505,6 +609,7 @@ int Process::sys_lseek(int file, off_t off, int whence) {
 }
 
 int Process::sys_waitpid(pid_t pid, int* status, int flags) {
+	check_ptr(status);
 	if(pid < -1) {
 		return -ECHILD; //TODO: Wait for process with pgroup abs(pid)
 	} else if(pid == -1) {
@@ -523,6 +628,44 @@ int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 }
 
 int Process::sys_gettimeofday(timespec *t, void *z) {
+	check_ptr(t);
+	check_ptr(z);
 	PIT::gettimeofday(t, z);
+	return 0;
+}
+
+int Process::sys_sigaction(int sig, sigaction_t *new_action, sigaction_t *old_action) {
+	check_ptr(new_action);
+	check_ptr(old_action);
+	check_ptr((void*) new_action->sa_sigaction);
+	if(sig == SIGSTOP || sig == SIGKILL || sig < 1 || sig >= 32) return -EINVAL;
+	cli(); //We don't want this interrupted or else we'd have a problem if it's needed before it's done
+	if(old_action) {
+		memcpy(&old_action->sa_sigaction, &signal_actions[sig].action, sizeof(Signal::SigAction::action));
+		memcpy(&old_action->sa_flags, &signal_actions[sig].flags, sizeof(Signal::SigAction::flags));
+	}
+	signal_actions[sig].action = new_action->sa_sigaction;
+	signal_actions[sig].flags = new_action->sa_flags;
+	sti();
+	return 0;
+}
+
+int Process::sys_kill(pid_t pid, int sig) {
+	//TODO: Permission check
+	if(sig == 0) return 0;
+	if(sig < 0 || sig >= NSIG) return -EINVAL;
+	if(pid == _pid) kill(sig);
+	else if(pid == 0) {
+		//TODO: kill processes in pgroup
+	} else if(pid == -1) {
+		//TODO: kill all processes for which we have permission to kill
+	} else if(pid < -1) {
+		//TODO: kill all processes in pgroup -pid
+	} else {
+		Process* proc = TaskManager::process_for_pid(pid);
+		if(!proc) return -ESRCH;
+		printf("KILL %d\n", proc->pid());
+		proc->kill(sig);
+	}
 	return 0;
 }

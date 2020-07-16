@@ -36,7 +36,7 @@
 #define SYS_TIMES 14
 #define SYS_UNLINK 15
 #define SYS_GETTIMEOFDAY 16
-#define SYS_SIGNAL 17
+#define SYS_SIGACTION 17
 #define SYS_ISATTY 18
 #define SYS_LINK 19
 #define SYS_WAITPID 20
@@ -44,6 +44,7 @@
 #define SYS_CHDIR 22
 #define SYS_GETCWD 23
 #define SYS_EXECVP 24
+#define SYS_SIGRETURN 25
 
 extern "C" void syscall_handler(Registers& regs);
 int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);

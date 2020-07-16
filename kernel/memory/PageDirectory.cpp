@@ -447,8 +447,7 @@ void PageDirectory::fork_from(PageDirectory *parent) {
 			//If the region is already marked cow, increase the number of refs by one. Otherwise, set it to 2
 			if(parent_region->cow.marked_cow)
 				parent_region->related->cow.num_refs += 1;
-			else
-				parent_region->related->cow.num_refs = 2;
+			else parent_region->related->cow.num_refs = 2;
 
 			parent_region->cow.marked_cow = true;
 			new_region->cow.marked_cow = true;

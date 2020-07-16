@@ -30,7 +30,6 @@ namespace PIT {
 			ticks = 0;
 			seconds++;
 		}
-		TaskManager::preempt();
 	}
 
 	uint32_t get_seconds() {

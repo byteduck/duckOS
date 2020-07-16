@@ -66,4 +66,12 @@ struct timespec {
 	long tv_nsec;
 };
 
+typedef void (*sighandler_t)(int);
+typedef unsigned long sigset_t;
+typedef struct sigaction {
+	sighandler_t sa_sigaction;
+	sigset_t sa_mask;
+	int sa_flags;
+} sigaction_t;
+
 #endif //DUCKOS_CSTDDEF_H

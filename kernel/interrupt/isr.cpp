@@ -61,7 +61,7 @@ namespace Interrupt {
 	}
 
 	bool fpanic(char *a, char *b, uint32_t sig){
-		if(!TaskManager::enabled() || TaskManager::current_process()->pid() == 1){
+		if(!TaskManager::enabled() || TaskManager::current_process()->kernel){
 			cli();
 			PANIC(a,b,false);
 			return true;
@@ -112,6 +112,6 @@ void print_regs(struct Registers *r){
 	printf("eip:0x%X err:%d\n", r->eip, r->err_code);
 	printf("cs:0x%X ds:0x%X es:0x%X gs:0x%X fs:0x%X ss:0x%X\n",r->cs,r->ds,r->es,r->gs,r->fs,r->ss);
 	printf("eax:0x%X ebx:0x%X ecx:0x%X edx:0x%X\n",r->eax,r->ebx,r->ecx,r->edx);
-	printf("edi: 0x%X esi: 0x%X ebp: 0x%X\n",r->edi,r->esi,r->ebp);
+	printf("edi: 0x%X esi: 0x%X ebp: 0x%X esp:0x%X\n",r->edi,r->esi,r->ebp,r->esp);
 	printf("EFLAGS: 0x%X",r->eflags);
 }
