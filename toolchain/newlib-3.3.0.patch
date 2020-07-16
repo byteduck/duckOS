@@ -11678,10 +11678,10 @@ index 0000000..b643455
 +
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..729352e
+index 0000000..f146d18
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,293 @@
+@@ -0,0 +1,313 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -11707,6 +11707,7 @@ index 0000000..729352e
 +#include <sys/times.h>
 +#include <sys/errno.h>
 +#include <sys/time.h>
++#include <sys/signal.h>
 +#include <stdio.h>
 +#include <dirent.h>
 +#include <stdarg.h>
@@ -11973,14 +11974,33 @@ index 0000000..729352e
 +typedef void (*sighandler_t)(int);
 +
 +sighandler_t signal(int sig, sighandler_t handler) {
-+	//TODO
++	struct sigaction new_sigaction;
++	new_sigaction.sa_handler = handler;
++	new_sigaction.sa_flags = 0;
++	new_sigaction.sa_mask = 0;
++	struct sigaction old_sigaction;
++	int ret = sigaction(sig, &new_sigaction, &old_sigaction);
++	if (ret < 0)
++		return SIG_ERR;
++	return old_sigaction.sa_handler;
++}
++
++int sigaction(int sig, const struct sigaction* act, struct sigaction* oldact) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_SIGACTION), "b"(sig), "c"(act), "d"(oldact));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
 +}
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..d084a10
+index 0000000..2b71380
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,45 @@
+@@ -0,0 +1,46 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12016,7 +12036,7 @@ index 0000000..d084a10
 +#define SYS_TIMES 14
 +#define SYS_UNLINK 15
 +#define SYS_GETTIMEOFDAY 16
-+#define SYS_SIGNAL 17
++#define SYS_SIGACTION 17
 +#define SYS_ISATTY 18
 +#define SYS_LINK 19
 +#define SYS_WAITPID 20
@@ -12024,5 +12044,6 @@ index 0000000..d084a10
 +#define SYS_CHDIR 22
 +#define SYS_GETCWD 23
 +#define SYS_EXECVP 24
++#define SYS_SIGRETURN 25
 +
 +int _read_dir(int file, char *ptr, size_t len);
