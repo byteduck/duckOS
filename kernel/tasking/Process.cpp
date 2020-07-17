@@ -191,7 +191,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 		auto *kernel_stack = (uint32_t *) ((size_t) _kernel_stack_base + _kernel_stack_size);
 		setup_stack(kernel_stack, user_stack, registers);
 	} else {
-		auto *stack  =(uint32_t*) (stack_base + _stack_size);
+		auto *stack = (uint32_t*) (stack_base + _stack_size);
 		stack = (uint32_t *) args->setup_stack(stack);
 		*--stack = 0;
 		setup_stack(stack, stack, registers);
@@ -262,32 +262,22 @@ void Process::setup_stack(uint32_t*& kernel_stack, uint32_t* userstack, Register
 	*--kernel_stack = regs.cs; // cs
 	*--kernel_stack = regs.eip; // eip
 
-	if(_pid == 1) { //Special case for kidle process, which uses preempt_init_asm
-		//Push everything that's popped off in preempt_asm
-		*--kernel_stack = regs.ebp; //ebp
-		*--kernel_stack = regs.edi; //edi
-		*--kernel_stack = regs.esi; //esi
-		*--kernel_stack = regs.ds; // ds
-		*--kernel_stack = regs.es; // es
-		*--kernel_stack = regs.fs; // fs
-		*--kernel_stack = regs.gs; // gs
-	} else {
-		uint32_t* start_stack = kernel_stack;
-		kernel_stack -= 2; //Num + Err code in registers struct
+	if(_pid != 1) {
 		*--kernel_stack = regs.eax;
+		*--kernel_stack = regs.ebx;
 		*--kernel_stack = regs.ecx;
 		*--kernel_stack = regs.edx;
-		*--kernel_stack = regs.ebx;
-		*--kernel_stack = (size_t) start_stack;
-		*--kernel_stack = regs.ebp;
-		*--kernel_stack = regs.esi;
-		*--kernel_stack = regs.edi;
-		*--kernel_stack = regs.ds;
-		*--kernel_stack = regs.es;
-		*--kernel_stack = regs.fs;
-		*--kernel_stack = regs.gs;
 		*--kernel_stack = (size_t) TaskManager::proc_first_preempt;
 	}
+
+	*--kernel_stack = regs.ebp;
+	*--kernel_stack = regs.esi;
+	*--kernel_stack = regs.edi;
+	*--kernel_stack = regs.ds;
+	*--kernel_stack = regs.es;
+	*--kernel_stack = regs.fs;
+	*--kernel_stack = regs.gs;
+
 
 	regs.esp = (size_t) kernel_stack;
 	regs.useresp = (size_t) userstack;

@@ -130,6 +130,7 @@ Process *TaskManager::next_process() {
 		delete next_proc;
 		do next_proc = new_next_proc; while(next_proc->state == PROCESS_DEAD); //Make sure not to choose a dead process
 	}
+
 	return next_proc;
 }
 
@@ -142,17 +143,11 @@ void TaskManager::yield() {
 	preempt_now_asm();
 }
 
-void TaskManager::preempt(Registers& regs){
-	PIT::pit_handler();
-
-	//Store current process's registers
-	if(current_proc->in_signal_handler())
-		current_proc->signal_registers = regs;
-	else
-		current_proc->registers = regs;
+void TaskManager::preempt(){
+	if(!tasking_enabled) return;
 
 	//Handle pending signal
-	Process *current = kidle_proc;
+	Process *current = kidle_proc->next;
 	do {
 		current->handle_pending_signal();
 		current = current->next;
