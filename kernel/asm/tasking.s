@@ -80,12 +80,15 @@ preempt_init_asm: ;Pretty much the same as preempt_asm, but without storing the 
 
 [global preempt_asm]
 preempt_asm:
-    mov eax, [esp+4] ;old_esp
-    mov ecx, [esp+8] ;new_esp
-    mov edx, [esp+12] ;new_cr3
+    push ebp
+    mov ebp, esp
+    mov eax, [ebp+8] ;old_esp
+    mov ecx, [ebp+12] ;new_esp
+    mov edx, [ebp+16] ;new_cr3
     mov [eax], esp
     mov cr3, edx
     mov esp, [ecx]
+    pop ebp
     ret
 
 [global proc_first_preempt]

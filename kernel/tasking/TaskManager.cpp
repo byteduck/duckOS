@@ -188,7 +188,6 @@ void TaskManager::preempt(){
 		} else {
 			new_esp = &current_proc->registers.esp;
 			tss.esp0 = (size_t) current_proc->kernel_stack_top();
-
 		}
 
 		//Switch the stacks.

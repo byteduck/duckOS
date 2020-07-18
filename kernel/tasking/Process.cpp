@@ -275,7 +275,10 @@ void Process::setup_stack(uint32_t*& kernel_stack, uint32_t* userstack, Register
 	*--kernel_stack = regs.fs;
 	*--kernel_stack = regs.gs;
 
-	if(_pid != 1) *--kernel_stack = (size_t) TaskManager::proc_first_preempt;
+	if(_pid != 1) {
+		*--kernel_stack = (size_t) TaskManager::proc_first_preempt;
+		*--kernel_stack = 0; //Fake popped EBP
+	}
 
 	regs.esp = (size_t) kernel_stack;
 	regs.useresp = (size_t) userstack;
