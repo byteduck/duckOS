@@ -118,6 +118,7 @@ DC::string Process::name(){
 
 Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent) {
 	//Disable task switching so we don't screw up paging
+	bool en = TaskManager::enabled();
 	TaskManager::enabled() = false;
 
 	_name = name;
@@ -202,7 +203,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 		asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
 	}
 
-	TaskManager::enabled() = true;
+	TaskManager::enabled() = en;
 }
 
 Process::Process(Process *to_fork, Registers &regs){
@@ -262,22 +263,19 @@ void Process::setup_stack(uint32_t*& kernel_stack, uint32_t* userstack, Register
 	*--kernel_stack = regs.cs; // cs
 	*--kernel_stack = regs.eip; // eip
 
-	if(_pid != 1) {
-		*--kernel_stack = regs.eax;
-		*--kernel_stack = regs.ebx;
-		*--kernel_stack = regs.ecx;
-		*--kernel_stack = regs.edx;
-		*--kernel_stack = (size_t) TaskManager::proc_first_preempt;
-	}
-
+	*--kernel_stack = regs.eax;
+	*--kernel_stack = regs.ebx;
+	*--kernel_stack = regs.ecx;
+	*--kernel_stack = regs.edx;
 	*--kernel_stack = regs.ebp;
-	*--kernel_stack = regs.esi;
 	*--kernel_stack = regs.edi;
+	*--kernel_stack = regs.esi;
 	*--kernel_stack = regs.ds;
 	*--kernel_stack = regs.es;
 	*--kernel_stack = regs.fs;
 	*--kernel_stack = regs.gs;
 
+	if(_pid != 1) *--kernel_stack = (size_t) TaskManager::proc_first_preempt;
 
 	regs.esp = (size_t) kernel_stack;
 	regs.useresp = (size_t) userstack;
