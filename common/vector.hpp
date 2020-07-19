@@ -30,12 +30,10 @@ namespace DC {
 	class vector {
 	public:
 		vector(): _storage(nullptr), _capacity(0), _size(0) {
-			inited = 1;
 		}
 
 		explicit vector(size_t capacity, const T& value = T()): _capacity(capacity) {
 			_storage = new T[capacity] {value};
-			inited = 1;
 		}
 
 		vector(vector<T>& other): _capacity(other._capacity), _size(other._size) {
@@ -72,32 +70,31 @@ namespace DC {
 		}
 
 		void pop_back() {
-			_storage[--_size].~T();
+			_storage[--_size] = T();
 		}
 
 		void resize(size_t new_size) {
 			if(new_size == _capacity) return;
 			if(new_size < _capacity) {
 				for(auto i = _capacity - 1; i >= new_size; i--) {
-					_storage[i].~T();
+					_storage[i] = T();
 				}
 			}
 			_capacity = new_size;
 			if(_storage == nullptr) _storage = new T[_capacity];
 			else {
-				T* tmp_storage = (T*) kcalloc(new_size, sizeof(T));
+				T* tmp_storage = new T[_capacity];
 				for(size_t i = 0; i < _size; i++) {
-					new (tmp_storage + i) T((T &&) _storage[i]);
-					_storage[i].~T();
+					tmp_storage[i] = _storage[i];
 				}
-				kfree(_storage);
+				delete[] _storage;
 				_storage = tmp_storage;
 			}
 		}
 
 		void erase(size_t elem) {
 			if(elem >= _size) return;
-			_storage[elem].~T();
+			_storage[elem] = T();
 			for(size_t i = elem; i < _size - 1; i++)
 				_storage[i] = DC::move(_storage[i + 1]);
 			_size--;
@@ -164,7 +161,6 @@ namespace DC {
 			return _storage[_size - 1];
 		}
 
-		int inited = 0;
 	private:
 		T* _storage = nullptr;
 		size_t _capacity = 0;

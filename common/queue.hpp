@@ -34,21 +34,18 @@ namespace DC {
 		}
 
 		~queue() {
-			for(size_t i = 0; i < _capacity; i++)
-				_storage[i].~T();
-			delete _storage;
+			delete[] _storage;
 		}
 
 		void push(const T& elem) {
 			if(size() == _capacity) {
 				if(_capacity == 0) _capacity = 1;
 				else _capacity *= 2;
-				T* tmp_storage = (T*) kcalloc(_capacity, sizeof(T));
+				T* tmp_storage = new T[_capacity];
 				for(size_t i = 0; i < _size; i++) {
-					new (tmp_storage + i) T((T &&) _storage[i]);
-					_storage[i].~T();
+					tmp_storage[i] = _storage[i];
 				}
-				kfree(_storage);
+				delete[] _storage;
 				_storage = tmp_storage;
 			}
 			if((int) _front == -1) _front = 0;

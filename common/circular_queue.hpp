@@ -32,9 +32,7 @@ namespace DC {
 		}
 
 		~circular_queue() {
-			for(size_t i = 0; i < _capacity; i++)
-				_storage[i].~T();
-			delete _storage;
+			delete[] _storage;
 		}
 
 		bool push(const T& elem) {
