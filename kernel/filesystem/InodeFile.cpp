@@ -39,4 +39,8 @@ ssize_t InodeFile::read_dir_entry(FileDescriptor &fd, size_t offset, DirectoryEn
 	return _inode->read_dir_entry(offset, buffer);
 }
 
+ssize_t InodeFile::write(FileDescriptor &fd, size_t offset, const uint8_t* buffer, size_t count) {
+	return _inode->write(offset, count, buffer);
+}
+
 

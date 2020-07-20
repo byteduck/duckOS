@@ -68,7 +68,7 @@ int FileDescriptor::seek(off_t offset, int whence) {
 			return -EINVAL;
 	}
 	if(new_seek < 0) return -EINVAL;
-	if(metadata().exists() && new_seek > metadata().size) return -EINVAL;
+	if(metadata().exists() && metadata().is_device() && new_seek > metadata().size) return -EINVAL;
 	_seek = new_seek;
 	return _seek;
 }
@@ -106,24 +106,24 @@ ssize_t FileDescriptor::read_dir_entries(char* buffer, size_t len) {
 	LOCK(lock);
 	if(!metadata().is_directory()) return -ENOTDIR;
 	ssize_t nbytes = 0;
-	char* tmpbuf = (char*)kmalloc(sizeof(DirectoryEntry) + NAME_MAXLEN * sizeof(char));
+	auto* dirbuf = new DirectoryEntry;
 	while(true) {
-		ssize_t read = _file->read_dir_entry(*this, offset(), (DirectoryEntry*)tmpbuf);
+		ssize_t read = _file->read_dir_entry(*this, offset(), dirbuf);
 		if(read > 0) {
 			if(_can_seek) _seek += read;
 			if(read + nbytes > len) break;
-			size_t entry_len = sizeof(DirectoryEntry) + ((DirectoryEntry*)tmpbuf)->name_length;
-			memcpy(buffer, tmpbuf, entry_len);
+			size_t entry_len = dirbuf->entry_length();
+			memcpy(buffer, dirbuf, entry_len);
 			nbytes += entry_len;
 			buffer += entry_len;
 		} else if(read == 0) {
 			break; //Nothing left to read
 		} else {
-			delete tmpbuf;
+			delete dirbuf;
 			return read; //Error
 		}
 	}
-	delete tmpbuf;
+	delete dirbuf;
 	return nbytes;
 }
 

@@ -107,9 +107,10 @@ public:
 	void io_delay();
 	uint8_t wait_status(uint8_t flags = ATA_STATUS_BSY);
 	void wait_ready();
-	bool read_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t* buf);
-	void write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer);
+	bool read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t* buf);
+	bool write_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t* buf);
 	void read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buffer);
+	void write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer);
 
 
 	//BlockDevice
@@ -118,7 +119,8 @@ public:
 	size_t block_size() override;
 
 	//File
-	ssize_t read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) override;
+	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
+	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 
 	//IRQHandler
 	void handle_irq(Registers* regs) override;

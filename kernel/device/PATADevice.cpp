@@ -111,7 +111,7 @@ void PATADevice::wait_ready() {
 }
 
 
-bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t *buf) {
+bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *buf) {
 	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
 
 	if(num_sectors * 512 > _dma_region.phys->size) return false;
@@ -179,6 +179,71 @@ bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_
 	return true;
 }
 
+bool PATADevice::write_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t *buf) {
+	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
+
+	if(num_sectors * 512 > _dma_region.phys->size) return false;
+	_prdt->addr = _dma_region.phys->start;
+	_prdt->size = num_sectors * 512;
+	_prdt->eot = 0x8000;
+
+	//Copy to buffer
+	memcpy((void*) _dma_region.virt->start, buf, 512 * num_sectors);
+
+	io_delay();
+
+	//Stop bus master
+	outb(_bus_master_base, 0);
+
+	//Write PRDT
+	outl(_bus_master_base + ATA_BM_PRDT, _prdt_physaddr);
+
+	//Set interrupt and error flags
+	outb(_bus_master_base + ATA_BM_STATUS, inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
+
+	wait_status();
+
+	//Select drive
+	outb(_io_base + ATA_CONTROL, 0);
+	outb(_io_base + ATA_DRIVESEL, 0xe0u | (_drive == SLAVE ? 0x8u : 0x0u));
+	io_delay();
+
+	//Write features + Higher seccnt (We're dealing w/ 32 bit here so no need for upper stuff)
+	outw(_io_base + ATA_FEATURES, 0);
+	outb(_io_base + ATA_SECCNT0, 0);
+	outb(_io_base + ATA_LBA0, 0);
+	outb(_io_base + ATA_LBA1, 0);
+	outb(_io_base + ATA_LBA2, 0);
+
+	//Set count and lba
+	outb(_io_base + ATA_SECCNT0, num_sectors);
+	outb(_io_base + ATA_LBA0, (lba & 0xFFu));
+	outb(_io_base + ATA_LBA1, (lba & 0xFF00u) >> 8u);
+	outb(_io_base + ATA_LBA2, (lba & 0xFF0000u) >> 16u);
+
+	wait_ready();
+
+	//Send read DMA command
+	cli();
+	outb(_io_base + ATA_COMMAND, ATA_WRITE_DMA_EXT);
+	io_delay();
+
+	//Start bus master
+	outb(_bus_master_base, 0x1);
+
+	//Wait for irq
+	reinstall_irq();
+	TaskManager::current_process()->yield_to(_yielder);
+	uninstall_irq();
+
+	if(_post_irq_status & ATA_STATUS_ERR) return false;
+
+	//Tell bus master we're done
+	outb(_bus_master_base + ATA_BM_STATUS, inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
+
+	return true;
+}
+
 void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer) {
 	wait_status(ATA_STATUS_BSY);
 	outb(_io_base + ATA_DRIVESEL, 0xe0u | (_drive == SLAVE ? 0x8u : 0x0u));
@@ -187,15 +252,18 @@ void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8
 	outb(_io_base + ATA_LBA0, (uint8_t) sector);
 	outb(_io_base + ATA_LBA1, (uint8_t)(sector >> 8u));
 	outb(_io_base + ATA_LBA2, (uint8_t)(sector >> 16u));
+	wait_ready();
 	cli();
 	reinstall_irq();
 	outb(_io_base + ATA_COMMAND, ATA_WRITE_PIO);
 	for(auto j = 0; j < sectors; j++) {
-		TaskManager::current_process()->yield_to(_yielder);
-		cli();
+		io_delay();
+		while(inb(_io_base + ATA_STATUS) & ATA_STATUS_BSY || !(inb(_io_base + ATA_STATUS) & ATA_STATUS_DRQ));
 		for(auto i = 0; i < 256; i++) {
 			outw(_io_base + ATA_DATA, buffer[i * 2] + (buffer[i * 2 + 1] << 8u));
 		}
+		TaskManager::current_process()->yield_to(_yielder);
+		cli();
 		buffer += 512;
 	}
 	sti();
@@ -255,7 +323,30 @@ bool PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
 }
 
 bool PATADevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
-	return false;
+	if(!_use_pio) {
+		//DMA mode
+		size_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
+		bool flag = true;
+		for (size_t i = 0; i < num_chunks; i++) {
+			uint32_t num_sectors = min((size_t) ATA_MAX_SECTORS_AT_ONCE, count);
+			if (!write_sectors_dma(block + i * ATA_MAX_SECTORS_AT_ONCE, num_sectors,
+								  buffer + (512 * i * ATA_MAX_SECTORS_AT_ONCE))) {
+				flag = false;
+				break;
+			}
+			count -= num_sectors;
+		}
+		return flag;
+	} else {
+		//PIO mode
+		while(count) {
+			uint8_t to_read = min(count, 0xFFu);
+			write_sectors_pio(block, to_read, buffer);
+			block += to_read;
+			count -= to_read;
+		}
+		return true;
+	}
 }
 
 size_t PATADevice::block_size() {
@@ -263,12 +354,73 @@ size_t PATADevice::block_size() {
 }
 
 ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
-	size_t num_blocks = (count + block_size() - 1) / block_size();
-	size_t block_start = offset / block_size();
-	auto* tmpbuf = new uint8_t[num_blocks * block_size()];
-	read_blocks(block_start, num_blocks, tmpbuf);
-	memcpy(buffer, tmpbuf + (offset % block_size()), count);
-	delete[] tmpbuf;
+	size_t first_block = offset / block_size();
+	size_t first_block_start = offset % block_size();
+	size_t bytes_left = count;
+	size_t block = first_block;
+
+	auto block_buf = new uint8_t[block_size()];
+	while(bytes_left) {
+		read_block(block, block_buf);
+		if(block == first_block) {
+			if(count < block_size() - first_block_start) {
+				memcpy(buffer, block_buf + first_block_start, count);
+				bytes_left = 0;
+			} else {
+				memcpy(buffer, block_buf + first_block_start, block_size() - first_block_start);
+				bytes_left -= block_size() - first_block_start;
+			}
+		} else {
+			if(bytes_left < block_size()) {
+				memcpy(buffer + (count - bytes_left), block_buf, bytes_left);
+				bytes_left = 0;
+			} else {
+				memcpy(buffer + (count - bytes_left), block_buf, block_size());
+				bytes_left -= block_size();
+			}
+		}
+		block++;
+	}
+
+	delete[] block_buf;
+	return count;
+}
+
+ssize_t PATADevice::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+	size_t first_block = offset / block_size();
+	size_t first_block_start = offset % block_size();
+	size_t bytes_left = count;
+	size_t block = first_block;
+
+	auto block_buf = new uint8_t[block_size()];
+	while(bytes_left) {
+		//Read the block into a buffer
+		read_block(block, block_buf);
+
+		//Copy the appropriate portion of the buffer into the appropriate portion of the block buffer
+		if(block == first_block) {
+			if(count < block_size() - first_block_start) {
+				memcpy(block_buf + first_block_start, buffer, count);
+				bytes_left = 0;
+			} else {
+				memcpy(block_buf + first_block_start, buffer, block_size() - first_block_start);
+				bytes_left -= block_size() - first_block_start;
+			}
+		} else {
+			if(bytes_left < block_size()) {
+				memcpy(block_buf, buffer + (count - bytes_left), bytes_left);
+				bytes_left = 0;
+			} else {
+				memcpy(block_buf, buffer + (count - bytes_left), block_size());
+				bytes_left -= block_size();
+			}
+		}
+
+		write_block(block, block_buf);
+		block++;
+	}
+
+	delete[] block_buf;
 	return count;
 }
 

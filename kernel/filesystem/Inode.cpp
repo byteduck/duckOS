@@ -18,7 +18,9 @@
 */
 
 #include <kernel/kstdio.h>
+#include <common/defines.h>
 #include "Inode.h"
+#include "Filesystem.h"
 
 Inode::Inode(Filesystem& fs, ino_t id): fs(fs), id(id) {
 }
@@ -27,14 +29,23 @@ Inode::~Inode() {
 
 }
 
-DC::shared_ptr<Inode> Inode::find(DC::string name) {
-    return DC::shared_ptr<Inode>(find_rawptr(name));
-}
-
-Inode *Inode::find_rawptr(DC::string name) {
-	return nullptr;
+ResultRet<DC::shared_ptr<Inode>> Inode::find(const DC::string& name) {
+	if(!metadata().exists() && metadata().is_directory()) return -EISDIR;
+	ino_t id  = find_id(name);
+	if(id != 0) {
+		return fs.get_inode(id);
+	}
+    return -ENOENT;
 }
 
 InodeMetadata Inode::metadata() {
 	return _metadata;
+}
+
+bool Inode::exists() {
+	return _exists;
+}
+
+void Inode::mark_deleted() {
+	_exists = false;
 }

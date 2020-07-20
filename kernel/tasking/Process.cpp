@@ -131,6 +131,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		file_descriptors = DC::vector<DC::shared_ptr<FileDescriptor>>(3);
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);

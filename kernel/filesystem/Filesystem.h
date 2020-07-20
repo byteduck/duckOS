@@ -34,19 +34,25 @@ public:
 
 	virtual char* name();
 	static bool probe(DC::shared_ptr<FileDescriptor> dev);
-	virtual DC::shared_ptr<Inode> get_inode(ino_t id);
+	ResultRet<DC::shared_ptr<Inode>> get_inode(ino_t id);
 	virtual Inode* get_inode_rawptr(ino_t id);
 	virtual ino_t root_inode();
 	virtual uint8_t fsid();
 	virtual size_t block_size();
 	virtual void set_block_size(size_t block_size);
 	DC::shared_ptr<FileDescriptor> file_descriptor();
+
 protected:
+	ResultRet<DC::shared_ptr<Inode>> get_cached_inode(ino_t id);
+	void add_cached_inode(const DC::shared_ptr<Inode>& inode);
+
 	DC::shared_ptr<FileDescriptor> _file;
 	uint8_t _fsid;
 	ino_t root_inode_id;
+
 private:
 	size_t _block_size;
+	DC::vector<DC::shared_ptr<Inode>> _inode_cache;
 };
 
 #endif

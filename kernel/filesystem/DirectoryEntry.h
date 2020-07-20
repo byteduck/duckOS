@@ -20,6 +20,7 @@
 #ifndef DUCKOS_DIRECTORYENTRY_H
 #define DUCKOS_DIRECTORYENTRY_H
 
+#include <kernel/memory/kliballoc.h>
 #include "InodeMetadata.h"
 
 #define TYPE_UNKNOWN 0
@@ -33,11 +34,16 @@
 
 #define NAME_MAXLEN 256
 
-struct __attribute__((packed)) DirectoryEntry {
-	ino_t id;
-	uint8_t type;
-	size_t name_length;
-	char name[];
+class __attribute__((packed)) DirectoryEntry {
+public:
+	DirectoryEntry() = default;
+	DirectoryEntry(ino_t id, uint8_t type, const DC::string& ent_name);
+	size_t entry_length();
+
+	ino_t id = 0;
+	uint8_t type = 0;
+	size_t name_length = 0;
+	char name[NAME_MAXLEN] = {'\0'};
 };
 
 

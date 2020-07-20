@@ -35,14 +35,16 @@ SET(KERNEL_SRCS
         interrupt/irq.cpp
         interrupt/isr.cpp
         interrupt/syscall.cpp
-        filesystem/Ext2.cpp
         pci/pci.cpp
         device/Device.cpp
         device/BlockDevice.cpp
         filesystem/Inode.cpp
         device/PartitionDevice.cpp
-        filesystem/FileSystem.cpp
+        filesystem/Filesystem.cpp
         filesystem/LinkedInode.cpp
+        filesystem/ext2/Ext2Filesystem.cpp
+        filesystem/ext2/Ext2BlockGroup.cpp
+        filesystem/ext2/Ext2Inode.cpp
         memory/kliballoc.cpp
         filesystem/VFS.cpp
         filesystem/File.cpp
@@ -75,7 +77,8 @@ SET(KERNEL_SRCS
         device/PATADevice.cpp
         tasking/TaskYieldQueue.cpp
         CommandLine.cpp
-        tasking/Signal.cpp)
+        tasking/Signal.cpp
+        filesystem/DirectoryEntry.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

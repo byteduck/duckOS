@@ -20,8 +20,7 @@
 #ifndef EXT2_H
 #define EXT2_H
 
-#include <kernel/filesystem/FileSystem.h>
-#include "FileBasedFilesystem.h"
+#include <common/cstddef.h>
 
 #define EXT2_FSID 2
 
@@ -45,7 +44,24 @@
 #define EXT2_DUMP_EXCLUDE 0x40
 #define EXT2_JOURNAL_FILE 0x40000
 
-typedef struct __attribute__((packed)) ext2_superblock{
+#define EXT2_FT_UNKNOWN	0
+#define EXT2_FT_REG_FILE 1
+#define EXT2_FT_DIR	2
+#define EXT2_FT_CHRDEV 3
+#define EXT2_FT_BLKDEV 4
+#define EXT2_FT_FIFO 5
+#define EXT2_FT_SOCK 6
+#define EXT2_FT_SYMLINK 7
+
+#define ALLOC_BLOCKBUF(buf, blocksize) \
+	bool __alloced_blockbuf = buf == nullptr;\
+	if(__alloced_blockbuf) buf = new uint8_t[blocksize];
+
+#define FREE_BLOCKBUF(buf) \
+	if(__alloced_blockbuf) delete[] buf;
+
+
+typedef struct __attribute__((packed)) ext2_superblock {
 	uint32_t total_inodes;
 	uint32_t total_blocks;
 	uint32_t superuser_blocks;
@@ -92,12 +108,12 @@ typedef struct __attribute__((packed)) ext2_superblock{
 	uint8_t extra[276];
 } ext2_superblock;
 
-typedef struct __attribute__((packed)) ext2_block_group_descriptor{
+typedef struct __attribute__((packed)) ext2_block_group_descriptor {
 	uint32_t block_usage_bitmap;
 	uint32_t inode_usage_bitmap;
 	uint32_t inode_table;
-	uint16_t unallocated_blocks;
-	uint16_t allocated_blocks;
+	uint16_t free_blocks;
+	uint16_t free_inodes;
 	uint16_t num_directories;
 	uint8_t unused[14];
 } ext2_block_group_descriptor;
@@ -108,70 +124,5 @@ typedef struct __attribute__((packed)) ext2_directory {
 	uint8_t name_length;
 	uint8_t type;
 } ext2_directory;
-
-class Ext2Filesystem;
-
-class Ext2Inode: public Inode {
-public:
-
-	typedef struct __attribute__((packed)) Raw {
-		uint16_t mode;
-		uint16_t uid;
-		uint32_t size;
-		uint32_t atime;
-		uint32_t ctime;
-		uint32_t mtime;
-		uint32_t dtime;
-		uint16_t guid;
-		uint16_t hard_links; //Hard links to this node
-		uint32_t sectors; //Hard disk sectors, not ext2 blocks.
-		uint32_t flags;
-		uint32_t os_specific_1;
-		uint32_t block_pointers[12];
-		uint32_t s_pointer;
-		uint32_t d_pointer;
-		uint32_t t_pointer;
-		uint32_t generation;
-		uint32_t file_acl;
-		uint32_t dir_acl;
-		uint32_t fragment_addr;
-		uint32_t os_specific_2[3];
-	} Raw;
-
-	Raw raw;
-
-	Ext2Inode(Ext2Filesystem& filesystem, ino_t i);
-	uint32_t get_block_group();
-	uint32_t get_index();
-	uint32_t get_block();
-	size_t num_blocks();
-	void read_raw();
-	ssize_t read(uint32_t start, uint32_t length, uint8_t* buf) override;
-	ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer) override;
-	Inode* find_rawptr(DC::string name) override;
-	Ext2Filesystem& ext2fs();
-};
-
-class Ext2Filesystem: public FileBasedFilesystem {
-public:
-	ext2_superblock superblock;
-	uint32_t block_group_descriptor_table;
-	uint32_t blocks_per_inode_table;
-	uint32_t sectors_per_inode_table;
-	uint32_t sectors_per_block;
-	uint32_t num_block_groups;
-	uint32_t inodes_per_block;
-	size_t num_singly_indirect;
-	size_t num_doubly_indirect;
-
-	Ext2Filesystem(DC::shared_ptr<FileDescriptor> file);
-	ino_t root_inode() override;
-	char* name() override;
-	static bool probe(FileDescriptor& dev);
-	Inode * get_inode_rawptr(ino_t id) override;
-	void read_superblock(ext2_superblock *sb);
-
-	void init();
-};
 
 #endif

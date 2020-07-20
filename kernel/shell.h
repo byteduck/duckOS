@@ -19,7 +19,7 @@
 
 #ifndef SHELL_H
 #define SHELL_H
-#include <kernel/filesystem/Ext2.h>
+#include <kernel/filesystem/ext2/Ext2Filesystem.h>
 #include <kernel/filesystem/LinkedInode.h>
 
 class Shell {

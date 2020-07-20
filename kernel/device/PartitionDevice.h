@@ -28,6 +28,7 @@ public:
 	bool read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
 	bool write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override;
 	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
+	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 	size_t block_size() override;
 	size_t part_offset();
 	DC::shared_ptr<File> parent();

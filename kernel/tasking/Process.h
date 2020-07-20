@@ -125,12 +125,11 @@ private:
 	size_t _stack_size;
 
 	//Files
-	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors = DC::vector<DC::shared_ptr<FileDescriptor>>(3);
+	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors;
 	DC::shared_ptr<LinkedInode> cwd;
 
 	//Parent/Children
 	pid_t parent = 0;
-	DC::vector<pid_t> children;
 
 	//Yielding stuff
 	TaskYieldQueue* _yielding_to = nullptr;

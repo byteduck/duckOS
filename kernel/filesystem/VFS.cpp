@@ -21,7 +21,7 @@
 #include <common/cstring.h>
 #include <common/defines.h>
 #include "VFS.h"
-#include "Ext2.h"
+#include "ext2/Ext2Filesystem.h"
 #include "InodeFile.h"
 
 VFS* VFS::instance;
@@ -41,7 +41,9 @@ bool VFS::mount_root(Filesystem* fs) {
 
 	Mount root_mount(fs, nullptr);
 	auto root_inode_id = root_mount.fs()->root_inode();
-	auto root_inode = root_mount.fs()->get_inode(root_inode_id);
+	auto root_inode_or_err = root_mount.fs()->get_inode(root_inode_id);
+	if(root_inode_or_err.is_error()) return false;
+	auto root_inode = root_inode_or_err.value();
 
 	if(!root_inode->metadata().is_directory()) {
 		return false;
@@ -81,15 +83,15 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 			continue;
 		}
 
-		auto child_inode = current_inode->inode()->find(part);
+		auto child_inode_or_err = current_inode->inode()->find(part);
 
-		if(child_inode) {
-			current_inode = DC::shared_ptr<LinkedInode>(new LinkedInode(child_inode, part, parent));
+		if(!child_inode_or_err.is_error()) {
+			current_inode = DC::shared_ptr<LinkedInode>(new LinkedInode(child_inode_or_err.value(), part, parent));
 		} else {
 			if(parent_storage && path.find('/') == -1) {
 				*parent_storage = current_inode;
 			}
-			return -ENOENT;
+			return child_inode_or_err.code();
 		}
 	}
 

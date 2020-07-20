@@ -20,12 +20,13 @@
 #ifndef DUCKOS_FILEBASEDFILESYSTEM_H
 #define DUCKOS_FILEBASEDFILESYSTEM_H
 
-#include "FileSystem.h"
+#include "Filesystem.h"
 
 #define MAX_FILESYSTEM_CACHE_SIZE 0x1000000 //16 MiB
 
 class BlockCacheEntry {
 public:
+	BlockCacheEntry() = default;
 	BlockCacheEntry(size_t block, uint8_t* data);
 	size_t block = 0;
 	uint8_t* data = nullptr;
@@ -35,20 +36,25 @@ public:
 
 class FileBasedFilesystem: public Filesystem {
 public:
-	FileBasedFilesystem(DC::shared_ptr<FileDescriptor> file);
+	explicit FileBasedFilesystem(DC::shared_ptr<FileDescriptor> file);
 	~FileBasedFilesystem();
 	size_t logical_block_size();
 	bool read_logical_blocks(size_t block, size_t count, uint8_t* buffer);
 	bool read_block(size_t block, uint8_t* buffer);
 	bool read_blocks(size_t block, size_t count, uint8_t* buffer);
+	bool write_block(size_t block, const uint8_t* buffer);
+	bool write_blocks(size_t block, size_t count, const uint8_t* buffer);
+	void flush_cache();
+
 protected:
 	BlockCacheEntry* get_chache_entry(size_t block);
 	BlockCacheEntry* make_cache_entry(size_t block);
-	void flush_cache_entry(BlockCacheEntry* entry);
+	void flush_cache_entry(BlockCacheEntry* entry, bool use_lock = true);
 	void free_cache_entry(size_t block);
 
 	size_t _logical_block_size {512};
 	DC::vector<BlockCacheEntry> cache;
+	YieldLock lock;
 };
 
 

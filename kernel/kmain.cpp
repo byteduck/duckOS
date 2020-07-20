@@ -24,7 +24,7 @@
 #include <kernel/interrupt/idt.h>
 #include <kernel/interrupt/isr.h>
 #include <kernel/interrupt/irq.h>
-#include <kernel/filesystem/Ext2.h>
+#include <kernel/filesystem/ext2/Ext2Filesystem.h>
 #include <kernel/shell.h>
 #include <kernel/pit.h>
 #include <kernel/tasking/TaskManager.h>
@@ -87,6 +87,7 @@ int kmain(uint32_t mbootptr){
 
 void shell_process(){
 	Shell().shell();
+	TaskManager::current_process()->kill(SIGKILL);
 }
 
 void kmain_late(){

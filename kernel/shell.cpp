@@ -21,7 +21,7 @@
 #include <kernel/keyboard.h>
 #include <kernel/kstdio.h>
 #include <kernel/shell.h>
-#include <kernel/filesystem/Ext2.h>
+#include <kernel/filesystem/ext2/Ext2Filesystem.h>
 #include <kernel/memory/kliballoc.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/elf.h>
@@ -110,7 +110,7 @@ void Shell::command_eval(char *cmd, char *args){
 			}
 		} else {
 			auto desc = desc_ret.value();
-			auto* buffer = (DirectoryEntry*)kmalloc(sizeof(DirectoryEntry) + NAME_MAXLEN);
+			auto* buffer = new DirectoryEntry;
 			while(desc->read_dir_entry(buffer)) {
 				switch(buffer->type) {
 					case TYPE_UNKNOWN:
@@ -295,6 +295,8 @@ void Shell::command_eval(char *cmd, char *args){
 		PCI::enumerate_devices([](PCI::Address address, PCI::ID id, uint16_t type, void* dataPtr) {
 			printf("%x:%x.%x Vendor: 0x%x Device: 0x%x Type: 0x%x\n", address.bus, address.slot, address.function, id.vendor, id.device, type);
 		}, nullptr);
+	}else if(strcmp(cmd, "addtest")){
+		VFS::inst().root_ref()->inode()->create_entry(args, MODE_FILE);
 	}else{
 		//Execute program
 		DC::string cmds = cmd;

@@ -25,6 +25,8 @@
 #include <common/string.h>
 #include "InodeMetadata.h"
 #include "DirectoryEntry.h"
+#include <kernel/Result.hpp>
+#include <kernel/tasking/YieldLock.h>
 
 class Filesystem;
 
@@ -34,17 +36,24 @@ public:
 	ino_t id;
 
     Inode(Filesystem& fs, ino_t id);
+    bool exists();
+    void mark_deleted();
     virtual ~Inode();
 
-	virtual DC::shared_ptr<Inode> find(DC::string name);
-	virtual Inode* find_rawptr(DC::string name);
+	virtual ResultRet<DC::shared_ptr<Inode>> find(const DC::string& name);
+	virtual ino_t find_id(const DC::string& name) = 0;
 	virtual ssize_t read(size_t start, size_t length, uint8_t *buffer) = 0;
 	virtual ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer) = 0;
+	virtual ssize_t write(size_t start, size_t length, const uint8_t* buf) = 0;
+	virtual Result add_entry(const DC::string& name, Inode& inode) = 0;
+	virtual ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode) = 0;
 
 	InodeMetadata metadata();
 
 protected:
 	InodeMetadata _metadata;
+	YieldLock lock;
+	bool _exists = true;
 };
 
 

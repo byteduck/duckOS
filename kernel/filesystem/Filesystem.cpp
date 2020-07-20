@@ -17,7 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/filesystem/FileSystem.h>
+#include <kernel/filesystem/Filesystem.h>
+#include <common/defines.h>
 #include "LinkedInode.h"
 
 Filesystem::Filesystem(const DC::shared_ptr<FileDescriptor>& file): _file(file) {
@@ -32,8 +33,16 @@ bool Filesystem::probe(DC::shared_ptr<FileDescriptor> dev) {
 	return false;
 }
 
-DC::shared_ptr<Inode> Filesystem::get_inode(ino_t iid) {
-	return DC::shared_ptr<Inode>(get_inode_rawptr(iid));
+ResultRet<DC::shared_ptr<Inode>> Filesystem::get_inode(ino_t iid) {
+	auto inode_perhaps = get_cached_inode(iid);
+	if(inode_perhaps.is_error()) {
+		Inode* in = get_inode_rawptr(iid);
+		if(in) {
+			auto ins = DC::shared_ptr<Inode>(in);
+			add_cached_inode(ins);
+			return ins;
+		} else return -ENOENT;
+	} else return inode_perhaps.value();
 }
 
 Inode *Filesystem::get_inode_rawptr(ino_t iid) {
@@ -58,4 +67,15 @@ size_t Filesystem::block_size() {
 
 void Filesystem::set_block_size(size_t block_size) {
 	_block_size = block_size;
+}
+
+ResultRet<DC::shared_ptr<Inode>> Filesystem::get_cached_inode(ino_t id) {
+	for(size_t i = 0; i < _inode_cache.size(); i++) {
+		if(_inode_cache[i]->id == id) return _inode_cache[i];
+	}
+	return -ENOENT;
+}
+
+void Filesystem::add_cached_inode(const DC::shared_ptr<Inode> &inode) {
+	_inode_cache.push_back(inode);
 }

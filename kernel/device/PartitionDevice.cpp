@@ -37,6 +37,10 @@ ssize_t PartitionDevice::read(FileDescriptor &fd, size_t start, uint8_t *buffer,
 	return _parent->read(fd, start + _offset, buffer, count);
 }
 
+ssize_t PartitionDevice::write(FileDescriptor& fd, size_t start, const uint8_t* buffer, size_t count) {
+	return _parent->write(fd, start + _offset, buffer, count);
+}
+
 size_t PartitionDevice::block_size() {
 	return _parent->block_size();
 }
