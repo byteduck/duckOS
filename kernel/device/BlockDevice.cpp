@@ -24,20 +24,20 @@
 BlockDevice::BlockDevice(unsigned major, unsigned minor): Device(major, minor) {
 }
 
-bool BlockDevice::read_block(uint32_t block, uint8_t *buffer) {
+Result BlockDevice::read_block(uint32_t block, uint8_t *buffer) {
 	return read_blocks(block, 1, buffer);
 }
 
-bool BlockDevice::write_block(uint32_t block, const uint8_t *buffer) {
+Result BlockDevice::write_block(uint32_t block, const uint8_t *buffer) {
 	return write_blocks(block, 1, buffer);
 }
 
-bool BlockDevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
-	return false;
+Result BlockDevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
+	return -EIO;
 }
 
-bool BlockDevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
-	return false;
+Result BlockDevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
+	return -EIO;
 }
 
 size_t BlockDevice::block_size() {

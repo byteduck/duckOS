@@ -43,6 +43,8 @@ public:
 	//Reading/writing
 	ResultRet<DC::shared_ptr<Ext2Inode>> allocate_inode(mode_t mode, size_t size);
 	Result free_inode(Ext2Inode& inode);
+	void read_superblock(ext2_superblock *sb);
+	void write_superblock();
 
 	//Block stuff
 	uint32_t allocate_block();
@@ -50,21 +52,21 @@ public:
 	void free_block(uint32_t block);
 	void free_blocks(DC::vector<uint32_t>& blocks);
 	Ext2BlockGroup* get_block_group(uint32_t block_group);
-	bool read_block_group_raw(uint32_t block_group, ext2_block_group_descriptor* buffer, uint8_t* block_buf = nullptr);
-	bool write_block_group_raw(uint32_t block_group, const ext2_block_group_descriptor* buffer, uint8_t* block_buf = nullptr);
+	Result read_block_group_raw(uint32_t block_group, ext2_block_group_descriptor* buffer, uint8_t* block_buf = nullptr);
+	Result write_block_group_raw(uint32_t block_group, const ext2_block_group_descriptor* buffer, uint8_t* block_buf = nullptr);
 
 	//Misc
 	static bool probe(FileDescriptor& dev);
 
 	static inline bool get_bitmap_bit(uint8_t* bitmap, size_t index) {
-		return bitmap[index >> 3u] & (1u << (index % 8));
+		return (bitmap[index / 8] & (1u << (index % 8))) != 0;
 	}
 
 	static inline void set_bitmap_bit(uint8_t* bitmap, size_t index, bool state) {
 		if(state)
-			bitmap[index >> 3u] |= 1u << (index % 8);
+			bitmap[index / 8] |= (uint8_t) (1u << (index % 8));
 		else
-			bitmap[index >> 3u] &= ~(1u << (index  % 8));
+			bitmap[index / 8] &= (uint8_t) (~(1u << (index  % 8)));
 	}
 
 	//Member Variables
@@ -78,10 +80,7 @@ public:
 	size_t block_pointers_per_block;
 
 private:
-	YieldLock lock;
-
-	//Reading/writing
-	void read_superblock(ext2_superblock *sb);
+	YieldLock ext2lock;
 
 	//Block stuff
 	Ext2BlockGroup** block_groups = nullptr;

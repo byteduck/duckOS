@@ -21,6 +21,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/kliballoc.h>
 #include <kernel/tasking/TaskManager.h>
+#include <common/defines.h>
 
 PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio) {
 	PCI::Address addr = {0,0,0};
@@ -111,7 +112,7 @@ void PATADevice::wait_ready() {
 }
 
 
-bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *buf) {
+Result PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *buf) {
 	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
 
 	if(num_sectors * 512 > _dma_region.phys->size) return false;
@@ -168,7 +169,7 @@ bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *buf
 	TaskManager::current_process()->yield_to(_yielder);
 	uninstall_irq();
 
-	if(_post_irq_status & ATA_STATUS_ERR) return false;
+	if(_post_irq_status & ATA_STATUS_ERR) return -EIO;
 
 	//Copy to buffer
 	memcpy((void *) buf, (void*) _dma_region.virt->start, 512 * num_sectors);
@@ -176,10 +177,10 @@ bool PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *buf
 	//Tell bus master we're done
 	outb(_bus_master_base + ATA_BM_STATUS, inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
 
-	return true;
+	return SUCCESS;
 }
 
-bool PATADevice::write_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t *buf) {
+Result PATADevice::write_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t *buf) {
 	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
 
 	if(num_sectors * 512 > _dma_region.phys->size) return false;
@@ -236,12 +237,12 @@ bool PATADevice::write_sectors_dma(size_t lba, uint16_t num_sectors, const uint8
 	TaskManager::current_process()->yield_to(_yielder);
 	uninstall_irq();
 
-	if(_post_irq_status & ATA_STATUS_ERR) return false;
+	if(_post_irq_status & ATA_STATUS_ERR) return -EIO;
 
 	//Tell bus master we're done
 	outb(_bus_master_base + ATA_BM_STATUS, inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
 
-	return true;
+	return SUCCESS;
 }
 
 void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer) {
@@ -295,21 +296,17 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 	uninstall_irq();
 }
 
-bool PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
+Result PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
 	if(!_use_pio) {
 		//DMA mode
 		size_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
-		bool flag = true;
 		for (size_t i = 0; i < num_chunks; i++) {
 			uint32_t num_sectors = min((size_t) ATA_MAX_SECTORS_AT_ONCE, count);
-			if (!read_sectors_dma(block + i * ATA_MAX_SECTORS_AT_ONCE, num_sectors,
-								  buffer + (512 * i * ATA_MAX_SECTORS_AT_ONCE))) {
-				flag = false;
-				break;
-			}
+			Result res = read_sectors_dma(block + i * ATA_MAX_SECTORS_AT_ONCE, num_sectors, buffer + (512 * i * ATA_MAX_SECTORS_AT_ONCE));
+			if (res.is_error()) return res;
 			count -= num_sectors;
 		}
-		return flag;
+		return SUCCESS;
 	} else {
 		//PIO mode
 		while(count) {
@@ -318,25 +315,21 @@ bool PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
 			block += to_read;
 			count -= to_read;
 		}
-		return true;
+		return SUCCESS;
 	}
 }
 
-bool PATADevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
+Result PATADevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
 	if(!_use_pio) {
 		//DMA mode
 		size_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
-		bool flag = true;
 		for (size_t i = 0; i < num_chunks; i++) {
 			uint32_t num_sectors = min((size_t) ATA_MAX_SECTORS_AT_ONCE, count);
-			if (!write_sectors_dma(block + i * ATA_MAX_SECTORS_AT_ONCE, num_sectors,
-								  buffer + (512 * i * ATA_MAX_SECTORS_AT_ONCE))) {
-				flag = false;
-				break;
-			}
+			Result res = write_sectors_dma(block + i * ATA_MAX_SECTORS_AT_ONCE, num_sectors, buffer + (512 * i * ATA_MAX_SECTORS_AT_ONCE));
+			if(res.is_error()) return res;
 			count -= num_sectors;
 		}
-		return flag;
+		return SUCCESS;
 	} else {
 		//PIO mode
 		while(count) {
@@ -345,7 +338,7 @@ bool PATADevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buf
 			block += to_read;
 			count -= to_read;
 		}
-		return true;
+		return SUCCESS;
 	}
 }
 
@@ -361,7 +354,11 @@ ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, siz
 
 	auto block_buf = new uint8_t[block_size()];
 	while(bytes_left) {
-		read_block(block, block_buf);
+		Result res = read_block(block, block_buf);
+		if(res.is_error()) {
+			delete[] block_buf;
+			return res.code();
+		}
 		if(block == first_block) {
 			if(count < block_size() - first_block_start) {
 				memcpy(buffer, block_buf + first_block_start, count);
@@ -395,7 +392,11 @@ ssize_t PATADevice::write(FileDescriptor& fd, size_t offset, const uint8_t* buff
 	auto block_buf = new uint8_t[block_size()];
 	while(bytes_left) {
 		//Read the block into a buffer
-		read_block(block, block_buf);
+		Result res = read_block(block, block_buf);
+		if(res.is_error()) {
+			delete[] block_buf;
+			return res.code();
+		}
 
 		//Copy the appropriate portion of the buffer into the appropriate portion of the block buffer
 		if(block == first_block) {
@@ -416,7 +417,11 @@ ssize_t PATADevice::write(FileDescriptor& fd, size_t offset, const uint8_t* buff
 			}
 		}
 
-		write_block(block, block_buf);
+		res = write_block(block, block_buf);
+		if(res.is_error()) {
+			delete[] block_buf;
+			return res.code();
+		}
 		block++;
 	}
 

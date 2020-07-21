@@ -65,8 +65,8 @@ typedef struct __attribute__((packed)) ext2_superblock {
 	uint32_t total_inodes;
 	uint32_t total_blocks;
 	uint32_t superuser_blocks;
-	uint32_t unallocated_blocks;
-	uint32_t unallocated_inodes;
+	uint32_t free_blocks;
+	uint32_t free_inodes;
 	uint32_t superblock_block;
 	uint32_t block_size; //do 1024 << block_size to get the block size
 	uint32_t fragment_size; //Do 1024 << fragment_size to get the fragment size

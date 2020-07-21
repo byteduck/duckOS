@@ -42,3 +42,7 @@ void Ext2BlockGroup::write() {
 	fs->write_block_group_raw(num, buf);
 	delete buf;
 }
+
+uint32_t Ext2BlockGroup::first_block() {
+	return num * fs->superblock.blocks_per_group + fs->block_size() == 1024 ? 1 : 0;
+}

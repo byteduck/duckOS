@@ -25,11 +25,11 @@ BlockDevice(major, minor), _parent(parent), _offset(offset_blocks * parent->bloc
 
 }
 
-bool PartitionDevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
+Result PartitionDevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
 	return _parent->read_blocks(block + _offset, count, buffer);
 }
 
-bool PartitionDevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
+Result PartitionDevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
 	return _parent->write_blocks(block + _offset, count, buffer);
 }
 

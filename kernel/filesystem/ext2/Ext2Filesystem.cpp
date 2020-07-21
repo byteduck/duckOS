@@ -26,8 +26,6 @@
 #include "Ext2Filesystem.h"
 #include "Ext2Inode.h"
 
-
-
 Ext2Filesystem::Ext2Filesystem(const DC::shared_ptr<FileDescriptor>& file) : FileBasedFilesystem(file) {
 	_fsid = EXT2_FSID;
 }
@@ -52,9 +50,7 @@ void Ext2Filesystem::init() {
 	sectors_per_block = block_size()/512;
 	num_block_groups = (superblock.total_blocks + superblock.blocks_per_group - 1)/superblock.blocks_per_group;
 	inodes_per_block = block_size()/superblock.inode_size;
-
 	block_pointers_per_block = block_size() / sizeof(uint32_t);
-
 	block_groups = new Ext2BlockGroup*[num_block_groups] {nullptr};
 }
 
@@ -67,11 +63,15 @@ bool Ext2Filesystem::probe(FileDescriptor& file){
 }
 
 void Ext2Filesystem::read_superblock(ext2_superblock *sb){
-	read_logical_blocks(2, 2, (uint8_t*)sb);
+	read_logical_block(2, (uint8_t*)sb);
 	if(sb->version_major < 1){ //If major version is less than 1, then use defaults for stuff
 		sb->first_inode = 11;
 		sb->inode_size = 128;
 	}
+}
+
+void Ext2Filesystem::write_superblock() {
+	write_logical_block(2, (uint8_t*)&superblock);
 }
 
 Inode* Ext2Filesystem::get_inode_rawptr(ino_t id) {
@@ -79,7 +79,7 @@ Inode* Ext2Filesystem::get_inode_rawptr(ino_t id) {
 }
 
 ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, size_t size) {
-	lock.acquire();
+	ext2lock.acquire();
 
 	//Find a block group to house the inode
 	uint32_t bg = -1;
@@ -92,25 +92,26 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 
 	if(bg == -1){
 		printf("WARNING: Couldn't allocate a new inode! (no free inodes)\n");
-		lock.release();
+		ext2lock.release();
 		return -ENOSPC;
 	}
 
 	//Read the inode bitmap
 	Ext2BlockGroup& group = *block_groups[bg];
 	auto* inode_bitmap = new uint8_t[block_size()];
-	if(!read_block(group.inode_bitmap_block, inode_bitmap)) {
+	Result rb_res = read_block(group.inode_bitmap_block, inode_bitmap);
+	if(rb_res.is_error()) {
 		delete[] inode_bitmap;
 		printf("WARNING: I/O error reading inode bitmap block for block group %d!\n", bg);
-		lock.release();
-		return -EIO;
+		ext2lock.release();
+		return rb_res;
 	}
 
 	//Find a free inode
-	uint32_t inode_index = -1;
+	uint32_t inode_index = 0;
 	for(uint32_t i = 0; i < superblock.inodes_per_group; i++) {
 		if(!get_bitmap_bit(inode_bitmap, i)) {
-			inode_index = i;
+			inode_index = i + 1; //Inodes start at 1
 			set_bitmap_bit(inode_bitmap, i, true);
 			break;
 		}
@@ -121,24 +122,28 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 	delete[] inode_bitmap;
 
 	//Didn't find a free inode, so the free inode count was wrong
-	if(inode_index == -1) {
+	if(inode_index == 0) {
 		group.free_inodes = 0;
 		group.write();
 		printf("WARNING: Free inode count inconsistency in block group %d!\n", bg);
-		lock.release();
+		ext2lock.release();
 		return -ENOSPC;
 	}
+
+	//Update the blockgroup
+	group.free_inodes--;
+	group.write();
 
 	//Allocate the needed blocks for storage
 	uint32_t num_blocks = (size + block_size() - 1) / block_size();
 	auto blocks = allocate_blocks(num_blocks);
 	if(blocks.size() != num_blocks) {
-		lock.release();
+		ext2lock.release();
 		return -ENOSPC;
 	}
 
 	//Finally, create the inode
-	ino_t ino = 1 + bg * superblock.inodes_per_group + inode_index;
+	ino_t ino = bg * superblock.inodes_per_group + inode_index;
 	Ext2Inode::Raw raw;
 	raw.size = size;
 	raw.mode = mode;
@@ -146,40 +151,52 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 	//TODO: Times, uid, gid, and such
 	auto inode = DC::make_shared<Ext2Inode>(*this, ino, raw, blocks);
 
+	//Update the superblock
+	superblock.free_inodes--;
+	write_superblock();
+
 	//Add it to the cache and return!
 	add_cached_inode(inode);
-	lock.release();
+	ext2lock.release();
 	return inode;
 }
 
 Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
-	lock.acquire();
+	ext2lock.acquire();
 
 	//Update the inode bitmap and free inodes in the block group
 	Ext2BlockGroup* bg = block_groups[ino.block_group()];
 	auto bitmap = new uint8_t[block_size()];
-	if(!read_block(bg->inode_bitmap_block, bitmap)) {
+	Result res = read_block(bg->inode_bitmap_block, bitmap);
+	if(res.is_error()) {
 		delete[] bitmap;
 		printf("WARNING: Error while reading bitmap for block group %d!\n", ino.block_group());
-		lock.release();
-		return -EIO;
+		ext2lock.release();
+		return res;
 	}
+
 	set_bitmap_bit(bitmap, ino.index(), false);
-	if(!write_block(bg->inode_bitmap_block, bitmap)) {
+	res = write_block(bg->inode_bitmap_block, bitmap);
+	if(res.is_error()) {
 		delete[] bitmap;
 		printf("WARNING: Error while writing bitmap for block group %d!\n", ino.block_group());
-		lock.release();
-		return -EIO;
+		ext2lock.release();
+		return res;
 	}
+
 	bg->free_inodes++;
 	bg->write();
 
 	//Free inode blocks
 	free_blocks(ino.get_block_pointers());
 
+	//Update superblock
+	superblock.free_inodes++;
+	write_superblock();
+
 	flush_cache();
-	lock.release();
-	return 0;
+	ext2lock.release();
+	return SUCCESS;
 }
 
 char *Ext2Filesystem::name() {
@@ -190,7 +207,7 @@ ino_t Ext2Filesystem::root_inode() {
 	return 2;
 }
 
-bool Ext2Filesystem::read_block_group_raw(uint32_t block_group, ext2_block_group_descriptor* buffer, uint8_t* block_buf) {
+Result Ext2Filesystem::read_block_group_raw(uint32_t block_group, ext2_block_group_descriptor* buffer, uint8_t* block_buf) {
 	ALLOC_BLOCKBUF(block_buf, block_size());
 	auto ret = read_block(2 + (block_group * sizeof(ext2_block_group_descriptor)) / block_size(), block_buf);
 	auto* d = (ext2_block_group_descriptor*) block_buf;
@@ -200,13 +217,13 @@ bool Ext2Filesystem::read_block_group_raw(uint32_t block_group, ext2_block_group
 	return ret;
 }
 
-bool Ext2Filesystem::write_block_group_raw(uint32_t block_group, const ext2_block_group_descriptor *buffer, uint8_t* block_buf) {
+Result Ext2Filesystem::write_block_group_raw(uint32_t block_group, const ext2_block_group_descriptor *buffer, uint8_t* block_buf) {
 	ALLOC_BLOCKBUF(block_buf, block_size());
 
-	auto read_successful = read_block(2 + (block_group * sizeof(ext2_block_group_descriptor)) / block_size(), block_buf);
-	if(!read_successful) {
+	auto res = read_block(2 + (block_group * sizeof(ext2_block_group_descriptor)) / block_size(), block_buf);
+	if(res.is_error()) {
 		delete[] block_buf;
-		return false;
+		return res;
 	}
 
 	auto* d = (ext2_block_group_descriptor*) block_buf;
@@ -228,17 +245,25 @@ uint32_t Ext2Filesystem::allocate_block() {
 			break;
 		}
 		if(!bg->free_blocks) continue;
-		if(read_block(bg->block_bitmap_block, block_buf)) {
+
+		Result res = read_block(bg->block_bitmap_block, block_buf);
+		if(!res.is_error()) {
 			uint32_t bi = 0;
+
 			while(bi < superblock.blocks_per_group && get_bitmap_bit(block_buf, bi))
 				bi++;
 
 			if(bi != superblock.blocks_per_group) {
-				ret = bi + superblock.blocks_per_group * bgi;
+				ret = bi + bg->first_block();
+
+				//Update blockgroup
 				bg->free_blocks--;
 				set_bitmap_bit(block_buf, bi, true);
 				write_block(bg->block_bitmap_block, block_buf);
 				bg->write();
+
+				//Update superblock
+				superblock.free_blocks--;
 				break;
 			} else {
 				//The free blocks in this group was incorrect for some reason; update it
@@ -246,7 +271,7 @@ uint32_t Ext2Filesystem::allocate_block() {
 				bg->write();
 				printf("WARNING: Free blocks for blockgroup %d was incorrect.\n", bgi);
 			}
-		} else printf("WARNING: Error reading block bitmap for group %d\n", bgi);
+		} else printf("WARNING: Error %d reading block bitmap for group %d\n", res.code(), bgi);
 	}
 	if(ret == 0) printf("WARNING: No more free space on an EXT2 filesystem!\n");
 	delete[] block_buf;
@@ -269,11 +294,16 @@ void Ext2Filesystem::free_block(uint32_t block) {
 		return;
 	}
 
+	//Update blockgroup
 	auto* block_buf = new uint8_t[block_size()];
 	read_block(bg->block_bitmap_block, block_buf);
 	set_bitmap_bit(block_buf, block % superblock.blocks_per_group, false);
 	write_block(bg->block_bitmap_block, block_buf);
 	bg->free_blocks++;
+
+	//Update superblock
+	superblock.free_blocks++;
+
 	delete[] block_buf;
 }
 

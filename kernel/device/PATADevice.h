@@ -107,15 +107,15 @@ public:
 	void io_delay();
 	uint8_t wait_status(uint8_t flags = ATA_STATUS_BSY);
 	void wait_ready();
-	bool read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t* buf);
-	bool write_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t* buf);
+	Result read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t* buf);
+	Result write_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t* buf);
 	void read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buffer);
 	void write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer);
 
 
 	//BlockDevice
-	bool read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
-	bool write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override;
+	Result read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
+	Result write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override;
 	size_t block_size() override;
 
 	//File

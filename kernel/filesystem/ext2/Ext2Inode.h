@@ -27,27 +27,27 @@ class Ext2Filesystem;
 class Ext2Inode: public Inode {
 public:
 	typedef struct __attribute__((packed)) Raw {
-		uint16_t mode;
-		uint16_t uid;
-		uint32_t size;
-		uint32_t atime;
-		uint32_t ctime;
-		uint32_t mtime;
-		uint32_t dtime;
-		uint16_t guid;
-		uint16_t hard_links; //Hard links to this node
-		uint32_t sectors; //Hard disk sectors, not ext2 blocks.
-		uint32_t flags;
-		uint32_t os_specific_1;
-		uint32_t block_pointers[12];
-		uint32_t s_pointer;
-		uint32_t d_pointer;
-		uint32_t t_pointer;
-		uint32_t generation;
-		uint32_t file_acl;
-		uint32_t dir_acl;
-		uint32_t fragment_addr;
-		uint32_t os_specific_2[3];
+		uint16_t mode = 0;
+		uint16_t uid = 0;
+		uint32_t size = 0;
+		uint32_t atime = 0;
+		uint32_t ctime = 0;
+		uint32_t mtime = 0;
+		uint32_t dtime = 0;
+		uint16_t guid = 0;
+		uint16_t hard_links = 0; //Hard links to this node
+		uint32_t disk_blocks = 0; //Hard disk blocks, not ext2 blocks.
+		uint32_t flags = 0;
+		uint32_t os_specific_1 = 0;
+		uint32_t block_pointers[12] = {0};
+		uint32_t s_pointer = 0;
+		uint32_t d_pointer = 0;
+		uint32_t t_pointer = 0;
+		uint32_t generation = 0;
+		uint32_t file_acl = 0;
+		uint32_t dir_acl = 0;
+		uint32_t fragment_addr = 0;
+		uint32_t os_specific_2[3] = {0};
 	} Raw;
 
 	explicit Ext2Inode(Ext2Filesystem& filesystem, ino_t i);

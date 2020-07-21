@@ -201,10 +201,12 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 		_metadata.size = start + length;
 		_dirty = true;
 		write_to_disk();
+		ext2fs().write_superblock();
 	}
 
 	delete[] block_buf;
 	ext2fs().flush_cache();
+
 	return length;
 }
 
@@ -347,6 +349,8 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 
 	raw.size = _metadata.size;
 	raw.mode = _metadata.mode;
+	raw.disk_blocks = num_blocks() * (ext2fs().block_size() / 512);
+
 	if(_metadata.is_device()) {
 		//TODO: Update device inode
 	} else {
@@ -367,7 +371,7 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 			((uint32_t *) block_buf)[block_index - 12] = get_block_pointer(block_index);
 		}
 		ext2fs().write_block(raw.s_pointer, block_buf);
-	}
+	} else raw.s_pointer = 0;
 
 	if(num_blocks() > 12 + ext2fs().block_pointers_per_block) {
 		//Allocate doubly indirect block if needed and read
@@ -406,11 +410,9 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 		//Write doubly-indirect block to disk
 		delete[] dblock_buf;
 		ext2fs().write_block(raw.d_pointer, block_buf);
-	}
+	} else raw.d_pointer = 0;
 
 	//TODO: Update triply-indirect entries
-
-	//Finally, update the actual inode entry
 
 	//Get the block group and read the inode table
 	Ext2BlockGroup* bg = ext2fs().get_block_group(block_group());

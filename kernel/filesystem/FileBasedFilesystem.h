@@ -39,11 +39,17 @@ public:
 	explicit FileBasedFilesystem(DC::shared_ptr<FileDescriptor> file);
 	~FileBasedFilesystem();
 	size_t logical_block_size();
-	bool read_logical_blocks(size_t block, size_t count, uint8_t* buffer);
-	bool read_block(size_t block, uint8_t* buffer);
-	bool read_blocks(size_t block, size_t count, uint8_t* buffer);
-	bool write_block(size_t block, const uint8_t* buffer);
-	bool write_blocks(size_t block, size_t count, const uint8_t* buffer);
+
+	Result read_logical_block(size_t block, uint8_t* buffer);
+	Result read_logical_blocks(size_t block, size_t count, uint8_t* buffer);
+	Result write_logical_block(size_t block, const uint8_t* buffer);
+	Result write_logical_blocks(size_t block, size_t count, const uint8_t* buffer);
+
+
+	Result read_block(size_t block, uint8_t* buffer);
+	Result read_blocks(size_t block, size_t count, uint8_t* buffer);
+	Result write_block(size_t block, const uint8_t* buffer);
+	Result write_blocks(size_t block, size_t count, const uint8_t* buffer);
 	void flush_cache();
 
 protected:

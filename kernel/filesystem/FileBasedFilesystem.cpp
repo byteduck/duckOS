@@ -34,57 +34,101 @@ FileBasedFilesystem::~FileBasedFilesystem() {
 		if (cache[i].data) delete cache[i].data;
 }
 
-bool FileBasedFilesystem::read_logical_blocks(size_t block, size_t count, uint8_t *buffer) {
-	if(_file->seek(block * logical_block_size(), SEEK_SET) < 0) return false;
-	return _file->read(buffer, count * logical_block_size()) >= 0;
+Result FileBasedFilesystem::read_logical_block(size_t block, uint8_t *buffer) {
+	return read_logical_blocks(block, 1, buffer);
+}
+
+Result FileBasedFilesystem::read_logical_blocks(size_t block, size_t count, uint8_t *buffer) {
+	LOCK(lock);
+	int code = _file->seek(block * logical_block_size(), SEEK_SET);
+	if(code < 0) return code;
+
+	ssize_t nread = _file->read(buffer, count * logical_block_size());
+	if(nread < 0) return nread;
+	if(nread != count * logical_block_size()) return -EIO;
+	return SUCCESS;
+}
+
+Result FileBasedFilesystem::write_logical_block(size_t block, const uint8_t *buffer) {
+	return write_logical_blocks(block, 1, buffer);
+}
+
+Result FileBasedFilesystem::write_logical_blocks(size_t block, size_t count, const uint8_t *buffer) {
+	LOCK(lock);
+	int code = _file->seek(block * logical_block_size(), SEEK_SET);
+	if(code < 0) return code;
+
+	ssize_t nwrote = _file->write(buffer, count * logical_block_size());
+	if(nwrote < 0) return nwrote;
+	if(nwrote != count * logical_block_size()) return -EIO;
+	return SUCCESS;
 }
 
 size_t FileBasedFilesystem::logical_block_size() {
 	return _logical_block_size;
 }
 
-bool FileBasedFilesystem::read_block(size_t block, uint8_t *buffer) {
+Result FileBasedFilesystem::read_block(size_t block, uint8_t *buffer) {
 	LOCK(lock);
-	BlockCacheEntry* cache_entry = get_chache_entry(block);
-	if(cache_entry) {
+
+	//If we have a cache entry already, just read that
+	BlockCacheEntry *cache_entry = get_chache_entry(block);
+	if (cache_entry) {
 		memcpy(buffer, cache_entry->data, block_size());
-		return true;
+		return SUCCESS;
 	}
 
-	if(_file->seek(block * block_size(), SEEK_SET) < 0) return false;
+	//Try seeking the file
+	int seekres = _file->seek(block * block_size(), SEEK_SET);
+	if (seekres < 0) return seekres;
+
+	//Make a cache entry
 	cache_entry = make_cache_entry(block);
-	if(_file->read(cache_entry->data, block_size()) > 0) {
-		memcpy(buffer, cache_entry->data, block_size());
-		return true;
-	} else {
+
+	//Read into the cache entry
+	ssize_t nread = _file->read(cache_entry->data, block_size());
+	if (nread <= 0) {
+		//If we failed, free it and return the appropriate error
 		free_cache_entry(block);
-		return false;
+		if (nread == 0) return -EIO;
+		return nread;
 	}
+
+	//If we succeeded, copy the cache data into the buffer and return success
+	memcpy(buffer, cache_entry->data, block_size());
+	return SUCCESS;
 }
 
-bool FileBasedFilesystem::read_blocks(size_t block, size_t count, uint8_t *buffer) {
+Result FileBasedFilesystem::read_blocks(size_t block, size_t count, uint8_t *buffer) {
+	Result res = SUCCESS;
 	for(size_t i = 0; i < count; i++) {
-		if(!read_block(block + i, buffer + block_size() * i)) return false;
+		res = read_block(block + i, buffer + block_size() * i);
+		if(res.is_error()) return res;
 	}
-	return true;
+	return SUCCESS;
 }
 
-bool FileBasedFilesystem::write_blocks(size_t block, size_t count, const uint8_t* buffer) {
-	for(size_t i = 0; i < count; i++)
-		if(!write_block(block + i, buffer + i * block_size())) return false;
-	return true;
+Result FileBasedFilesystem::write_blocks(size_t block, size_t count, const uint8_t* buffer) {
+	Result res = SUCCESS;
+	for(size_t i = 0; i < count; i++) {
+		res = write_block(block + i, buffer + i * block_size());
+		if(res.is_error()) return res;
+	}
+	return SUCCESS;
 }
 
-bool FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
+Result FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
 	LOCK(lock);
 	BlockCacheEntry* entry = get_chache_entry(block);
 	if(!entry) {
 		entry = make_cache_entry(block);
-		if(_file->read(entry->data, block_size()) <= 0) return false;
+		ssize_t fres = _file->read(entry->data, block_size());
+		if(fres < 0) return fres;
+		if(fres != block_size()) return -EIO;
 	}
 	memcpy(entry->data, buffer, block_size());
 	entry->dirty = true;
-	return true;
+	return SUCCESS;
 }
 
 BlockCacheEntry* FileBasedFilesystem::get_chache_entry(size_t block) {

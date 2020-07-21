@@ -27,8 +27,8 @@ class Ext2BlockGroup {
 public:
 	Ext2BlockGroup(Ext2Filesystem* fs, uint32_t num);
 	void write();
+	uint32_t first_block();
 
-	bool inited = false;
 	Ext2Filesystem* fs;
 	uint32_t num;
 	uint32_t block_bitmap_block;
