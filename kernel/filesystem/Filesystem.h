@@ -42,10 +42,11 @@ public:
 	virtual void set_block_size(size_t block_size);
 	DC::shared_ptr<FileDescriptor> file_descriptor();
 
-protected:
 	ResultRet<DC::shared_ptr<Inode>> get_cached_inode(ino_t id);
 	void add_cached_inode(const DC::shared_ptr<Inode>& inode);
+	void remove_cached_inode(ino_t id);
 
+protected:
 	DC::shared_ptr<FileDescriptor> _file;
 	uint8_t _fsid;
 	ino_t root_inode_id;

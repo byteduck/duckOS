@@ -79,3 +79,12 @@ ResultRet<DC::shared_ptr<Inode>> Filesystem::get_cached_inode(ino_t id) {
 void Filesystem::add_cached_inode(const DC::shared_ptr<Inode> &inode) {
 	_inode_cache.push_back(inode);
 }
+
+void Filesystem::remove_cached_inode(ino_t id) {
+	for(size_t i = 0; i < _inode_cache.size(); i++) {
+		if(_inode_cache[i]->id == id) {
+			_inode_cache.erase(i);
+			return;
+		}
+	}
+}

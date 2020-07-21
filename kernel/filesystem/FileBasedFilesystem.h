@@ -44,8 +44,7 @@ public:
 	Result read_logical_blocks(size_t block, size_t count, uint8_t* buffer);
 	Result write_logical_block(size_t block, const uint8_t* buffer);
 	Result write_logical_blocks(size_t block, size_t count, const uint8_t* buffer);
-
-
+	
 	Result read_block(size_t block, uint8_t* buffer);
 	Result read_blocks(size_t block, size_t count, uint8_t* buffer);
 	Result write_block(size_t block, const uint8_t* buffer);

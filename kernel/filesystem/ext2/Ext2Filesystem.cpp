@@ -195,7 +195,9 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	write_superblock();
 
 	flush_cache();
+	ino.mark_deleted();
 	ext2lock.release();
+
 	return SUCCESS;
 }
 

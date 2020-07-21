@@ -35,7 +35,7 @@ Process* Process::create_kernel(const DC::string& name, void (*func)()){
 }
 
 ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t parent) {
-	auto fd_or_error = VFS::inst().open(executable_loc, O_RDONLY, 0, args->working_dir);
+	auto fd_or_error = VFS::inst().open((DC::string&) executable_loc, O_RDONLY, 0, args->working_dir);
 	if(fd_or_error.is_error()) return fd_or_error.code();
 
 	auto fd = fd_or_error.value();
@@ -544,7 +544,9 @@ int Process::sys_execvp(char *filename, char **argv) {
 
 int Process::sys_open(char *filename, int options, int mode) {
 	check_ptr(filename);
-	auto fd_or_err = VFS::inst().open(filename, options, mode, cwd);
+	DC::string path = filename;
+	mode &= 04777; //We just want the permission bits
+	auto fd_or_err = VFS::inst().open(path, options, mode, cwd);
 	if(fd_or_err.is_error()) return fd_or_err.code();
 	file_descriptors.push_back(fd_or_err.value());
 	return (int)file_descriptors.size() - 1;
@@ -558,7 +560,8 @@ int Process::sys_close(int file) {
 
 int Process::sys_chdir(char *path) {
 	check_ptr(path);
-	auto inode_or_error = VFS::inst().resolve_path(path, cwd, nullptr);
+	DC::string strpath = path;
+	auto inode_or_error = VFS::inst().resolve_path(strpath, cwd, nullptr);
 	if(inode_or_error.is_error()) return inode_or_error.code();
 	cwd = inode_or_error.value();
 	return 0;
@@ -589,7 +592,8 @@ int Process::sys_fstat(int file, char *buf) {
 int Process::sys_stat(char *file, char *buf) {
 	check_ptr(file);
 	check_ptr(buf);
-	auto inode_or_err = VFS::inst().resolve_path(file, cwd);
+	DC::string path(file);
+	auto inode_or_err = VFS::inst().resolve_path(path, cwd);
 	if(inode_or_err.is_error()) return inode_or_err.code();
 	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
 	return 0;
@@ -656,8 +660,23 @@ int Process::sys_kill(pid_t pid, int sig) {
 	} else {
 		Process* proc = TaskManager::process_for_pid(pid);
 		if(!proc) return -ESRCH;
-		printf("KILL %d\n", proc->pid());
 		proc->kill(sig);
 	}
+	return 0;
+}
+
+int Process::sys_unlink(char* name) {
+	check_ptr(name);
+	DC::string path(name);
+	auto ret = VFS::inst().unlink(path, cwd);
+	if(ret.is_error()) return ret.code();
+	return 0;
+}
+
+int Process::sys_rmdir(char* name) {
+	check_ptr(name);
+	DC::string path(name);
+	auto ret = VFS::inst().rmdir(path, cwd);
+	if(ret.is_error()) return ret.code();
 	return 0;
 }

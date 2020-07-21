@@ -47,8 +47,11 @@ namespace DC {
 		char* data() const;
 		string substr(size_t start, size_t length) const;
 		size_t find(const string& str, size_t start = 0) const;
-		size_t find(const char *str, size_t start = 0) const;
+		size_t find(const char* str, size_t start = 0) const;
 		size_t find(const char c, size_t start = 0) const;
+		size_t find_last_of(const string& str, size_t end = -1) const;
+		size_t find_last_of(const char* str, size_t end = -1) const;
+		size_t find_last_of(const char c, size_t end = -1) const;
 	private:
 		size_t _size;
 		size_t _length;

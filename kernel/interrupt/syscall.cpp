@@ -72,10 +72,13 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_sigaction((int)arg1, (struct sigaction*)arg2, (struct sigaction*)arg3);
 		case SYS_KILL:
 			return TaskManager::current_process()->sys_kill((pid_t)arg1, (int)arg2);
+		case SYS_UNLINK:
+			return TaskManager::current_process()->sys_unlink((char*)arg1);
+		case SYS_RMDIR:
+			return TaskManager::current_process()->sys_rmdir((char*)arg1);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:
-		case SYS_UNLINK:
 		case SYS_ISATTY:
 		case SYS_LINK:
 			return -1;

@@ -93,6 +93,8 @@ public:
 	int sys_gettimeofday(timespec *t, void *z);
 	int sys_sigaction(int sig, struct sigaction *new_action, struct sigaction *old_action);
 	int sys_kill(pid_t pid, int sig);
+	int sys_unlink(char* name);
+	int sys_rmdir(char* name);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;

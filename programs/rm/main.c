@@ -20,16 +20,42 @@
 //A simple program that prompts you to type something and repeats it back to you.
 
 #include <stdio.h>
-#include <unistd.h>
-#include <malloc.h>
+#include <errno.h>
+#include <sys/stat.h>
 
-int main() {
-	printf("Type something: ");
-	fflush(stdout);
-	char in[250];
-	int nread = 0;
-	while((nread = read(STDIN_FILENO, in, 250)) == 0);
-	in[nread] = '\0';
-	printf("You typed: %s", in);
-	return 0;
+void print_err(char* fname) {
+	switch(errno) {
+		case ENOENT:
+			printf("Cannot remove '%s': No such file or directory\n", fname);
+			break;
+		case ENOTDIR:
+			printf("Cannot remove '%s': Path is not a directory\n", fname);
+			break;
+		default:
+			printf("Canot remove '%s': Error %d\n", fname, errno);
+	}
+}
+
+int main(int argc, char** argv) {
+	if(argc < 2) {
+		printf("Missing file operand\n");
+		return 1;
+	}
+
+	struct stat statbuf;
+	int res = stat(argv[1], &statbuf);
+	if(res != 0) {
+		print_err(argv[1]);
+		return errno;
+	}
+
+	if(S_ISDIR(statbuf.st_mode)) {
+		printf("Cannot remove '%s': Is a directory\n", argv[1]);
+		return EISDIR;
+	}
+
+	res = remove(argv[1]);
+	if(res == 0) return 0;
+	print_err(argv[1]);
+	return errno;
 }

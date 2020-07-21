@@ -17,6 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <kernel/kstdio.h>
 #include "string.h"
 
 namespace DC {
@@ -152,6 +153,35 @@ namespace DC {
 	size_t string::find(const char c, size_t start) const {
 		for(auto i = start; i <= _length; i++) {
 			if(operator[](i) == c) return i;
+		}
+		return -1;
+	}
+
+	size_t string::find_last_of(const string& str, size_t end) const {
+		return find_last_of(str.c_str(), end);
+	}
+
+	size_t string::find_last_of(const char* str, size_t end) const {
+		size_t find_len = strlen(str);
+		if(!find_len) return -1;
+		if(end == -1) end = _length - 1;
+		end -= find_len;
+		for(auto i = end; i > 0; i--) {
+			if(operator[](i - 1) == str[0]) {
+				for(size_t j = 0; j < find_len; j++) {
+					if(operator[](i + j) != str[j]) break;
+				}
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	size_t string::find_last_of(const char c, size_t end) const {
+		if(end == -1) end = _length - 1;
+		end++;
+		for(auto i = end; i > 0; i--) {
+			if(operator[](i - 1) == c) return i;
 		}
 		return -1;
 	}

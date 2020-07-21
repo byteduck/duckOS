@@ -38,16 +38,20 @@ public:
 		LinkedInode* _host_inode;
 	};
 
+	VFS();
+	~VFS();
 	static VFS& inst();
 
 	ResultRet<DC::shared_ptr<LinkedInode>> resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& base, DC::shared_ptr<LinkedInode>* parent_storage = nullptr);
-	ResultRet<DC::shared_ptr<FileDescriptor>> open(DC::string path, int options, int mode, DC::shared_ptr<LinkedInode> base);
+	ResultRet<DC::shared_ptr<FileDescriptor>> open(DC::string& path, int options, mode_t mode, const DC::shared_ptr<LinkedInode>& base);
+	ResultRet<DC::shared_ptr<FileDescriptor>> create(DC::string& path, int options, mode_t mode, const DC::shared_ptr<LinkedInode>& parent);
+	Result unlink(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
+	Result rmdir(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
+	bool mount_root(Filesystem* fs);
 	DC::shared_ptr<LinkedInode> root_ref();
 
-	VFS();
-	~VFS();
-
-	bool mount_root(Filesystem* fs);
+	static DC::string path_base(const DC::string& path);
+	static DC::string path_minus_base(const DC::string& path);
 
 private:
 	DC::shared_ptr<Inode> _root_inode;

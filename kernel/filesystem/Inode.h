@@ -47,6 +47,7 @@ public:
 	virtual ssize_t write(size_t start, size_t length, const uint8_t* buf) = 0;
 	virtual Result add_entry(const DC::string& name, Inode& inode) = 0;
 	virtual ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode) = 0;
+	virtual Result remove_entry(const DC::string& name) = 0;
 
 	InodeMetadata metadata();
 

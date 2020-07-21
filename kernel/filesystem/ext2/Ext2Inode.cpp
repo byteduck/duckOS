@@ -103,12 +103,15 @@ DC::vector<uint32_t>& Ext2Inode::get_block_pointers() {
 }
 
 ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
-	LOCK(lock);
 	if(_metadata.is_device()) return 0;
 	if(_metadata.size == 0) return 0;
 	if(start > _metadata.size) return 0;
-	if(start + length > _metadata.size) length = _metadata.size - start;
 	if(length == 0) return 0;
+	if(!exists()) return -ENOENT; //Inode was deleted
+
+	if(start + length > _metadata.size) length = _metadata.size - start;
+
+	LOCK(lock);
 
 	//TODO: symlinks
 	size_t first_block = start / fs.block_size();
@@ -143,8 +146,11 @@ ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 }
 
 ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
-	LOCK(lock);
 	if(_metadata.is_device()) return 0;
+	if(length == 0) return 0;
+	if(!exists()) return -ENOENT; //Inode was deleted
+
+	LOCK(lock);
 	size_t first_block = start / fs.block_size();
 	size_t first_block_start = start % fs.block_size();
 	size_t bytes_left = length;
@@ -297,6 +303,45 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 	return write_directory_entries(entries);
 }
 
+Result Ext2Inode::remove_entry(const DC::string &name) {
+	if(!metadata().is_directory()) return -ENOTDIR;
+	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
+
+	//Read entries into vector and find the child we need
+	DC::vector<DirectoryEntry> entries;
+	size_t offset = 0;
+	ssize_t nread;
+	size_t entry_index;
+	bool found = false;
+	size_t i = 0;
+	auto* buf = new DirectoryEntry;
+	while((nread = read_dir_entry(offset, buf))) {
+		offset += nread;
+		buf->name[buf->name_length] = '\0';
+		if(name == buf->name) {
+			entry_index = i;
+			found = true;
+		}
+		entries.push_back(*buf);
+		i++;
+	}
+	kfree(buf);
+
+	//If we didn't find it or the inode doesn't exist for some reason, return with an error
+	if(!found) return -ENOENT;
+	auto child_or_err = fs.get_inode(entries[entry_index].id);
+	if(child_or_err.is_error()){
+		printf("WARNING: Orphaned directory entry in inode %d\n", id);
+		return child_or_err.code();
+	}
+
+	//Reduce the child's hardlink count, erase the entry, and write the new entry list to disk
+	LOCK(lock);
+	//((DC::shared_ptr<Ext2Inode>) child_or_err.value())->reduce_hardlink_count();
+	entries.erase(entry_index);
+	return write_directory_entries(entries);
+}
+
 void Ext2Inode::read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index, uint8_t* block_buf) {
 	if(block_index >= num_blocks()) return;
 	ext2fs().read_block(singly_indirect_block, block_buf);
@@ -349,7 +394,7 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 
 	raw.size = _metadata.size;
 	raw.mode = _metadata.mode;
-	raw.disk_blocks = num_blocks() * (ext2fs().block_size() / 512);
+	raw.logical_blocks = num_blocks() * (ext2fs().block_size() / 512);
 
 	if(_metadata.is_device()) {
 		//TODO: Update device inode
@@ -360,6 +405,8 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 	}
 
 	if(num_blocks() > 12) {
+		raw.logical_blocks++;
+
 		if (!raw.s_pointer) {
 			raw.s_pointer = ext2fs().allocate_block();
 			if (!raw.s_pointer) return false; //Block allocation failed
@@ -374,6 +421,8 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 	} else raw.s_pointer = 0;
 
 	if(num_blocks() > 12 + ext2fs().block_pointers_per_block) {
+		raw.logical_blocks++;
+
 		//Allocate doubly indirect block if needed and read
 		if(!raw.d_pointer) {
 			raw.d_pointer = ext2fs().allocate_block();
@@ -388,6 +437,8 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 		//For each block pointed to in the doubly indirect block,
 		for(uint32_t dindex = 0; dindex < ext2fs().block_pointers_per_block; dindex++) {
 			if(!get_block_pointer(cur_block)) break;
+
+			raw.logical_blocks++;
 
 			uint32_t dblock = ((uint32_t*)block_buf)[dindex];
 
@@ -412,7 +463,10 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 		ext2fs().write_block(raw.d_pointer, block_buf);
 	} else raw.d_pointer = 0;
 
-	//TODO: Update triply-indirect entries
+	if(num_blocks() > 12 + ext2fs().block_pointers_per_block * ext2fs().block_pointers_per_block) {
+		printf("WARNING: Writing triply-indirect blocks to disk isn't supported yet!\n");
+		//TODO: Triply indirect blocks
+	}
 
 	//Get the block group and read the inode table
 	Ext2BlockGroup* bg = ext2fs().get_block_group(block_group());
@@ -506,7 +560,7 @@ Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
 
 	ext2fs().flush_cache();
 
-	return 0;
+	return SUCCESS;
 }
 
 ResultRet<DC::shared_ptr<Inode>> Ext2Inode::create_entry(const DC::string& name, mode_t mode) {
@@ -541,6 +595,14 @@ void Ext2Inode::create_metadata() {
 		meta.dev_minor = (device & 0xffu) | ((device >> 12u) & 0xfff00u);
 	}
 	_metadata = meta;
+}
+
+void Ext2Inode::reduce_hardlink_count() {
+	raw.hard_links--;
+	if(raw.hard_links == 0) {
+		ext2fs().remove_cached_inode(id);
+		ext2fs().free_inode(*this);
+	}
 }
 
 

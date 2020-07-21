@@ -30,6 +30,13 @@
 #define MODE_SYMLINK 0xA000
 #define MODE_SOCKET 0xC000
 
+#define IS_DIR(mode) ((mode & 0xF000u) == MODE_DIRECTORY)
+#define IS_SIMPLE_FILE(mode) ((mode & 0xF000u) == MODE_FILE)
+#define IS_BLKDEV(mode) ((mode & 0xF000u) == MODE_BLOCK_DEVICE)
+#define IS_CHRDEV(mode) ((mode & 0xF000u) == MODE_CHAR_DEVICE)
+#define IS_FIFO(mode) ((mode & 0xF000u) == MODE_FIFO)
+#define IS_SOCKET(mode) ((mode & 0xF000u) == MODE_SOCKET)
+
 struct stat {
 	dev_t		st_dev;
 	ino_t		st_ino;

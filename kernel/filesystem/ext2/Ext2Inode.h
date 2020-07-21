@@ -36,7 +36,7 @@ public:
 		uint32_t dtime = 0;
 		uint16_t guid = 0;
 		uint16_t hard_links = 0; //Hard links to this node
-		uint32_t disk_blocks = 0; //Hard disk blocks, not ext2 blocks.
+		uint32_t logical_blocks = 0; //Hard disk blocks, not ext2 blocks.
 		uint32_t flags = 0;
 		uint32_t os_specific_1 = 0;
 		uint32_t block_pointers[12] = {0};
@@ -70,6 +70,7 @@ public:
 	ino_t find_id(const DC::string& name) override;
 	Result add_entry(const DC::string& name, Inode& inode) override;
 	ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode) override;
+	Result remove_entry(const DC::string& name) override;
 
 private:
 	void read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index, uint8_t* block_buf);
@@ -78,8 +79,8 @@ private:
 	void read_block_pointers(uint8_t* block_buf = nullptr);
 	bool write_to_disk(uint8_t* block_buf = nullptr);
 	Result write_directory_entries(DC::vector<DirectoryEntry>& entries);
-
 	void create_metadata();
+	void reduce_hardlink_count();
 
 	DC::vector<uint32_t> block_pointers;
 	Raw raw;

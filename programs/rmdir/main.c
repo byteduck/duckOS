@@ -17,36 +17,31 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef SYSCALL_H
-#define SYSCALL_H
+//A simple program that prompts you to type something and repeats it back to you.
 
-#define SYS_EXIT 1
-#define SYS_FORK 2
-#define SYS_READ 3
-#define SYS_WRITE 4
-#define SYS_SBRK 5
-#define SYS_EXECVE 6
-#define SYS_OPEN 7
-#define SYS_CLOSE 8
-#define SYS_FSTAT 9
-#define SYS_STAT 10
-#define SYS_LSEEK 11
-#define SYS_KILL 12
-#define SYS_GETPID 13
-#define SYS_TIMES 14
-#define SYS_UNLINK 15
-#define SYS_GETTIMEOFDAY 16
-#define SYS_SIGACTION 17
-#define SYS_ISATTY 18
-#define SYS_LINK 19
-#define SYS_WAITPID 20
-#define SYS_READDIR 21
-#define SYS_CHDIR 22
-#define SYS_GETCWD 23
-#define SYS_EXECVP 24
-#define SYS_RMDIR 25
+#include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
 
-extern "C" void syscall_handler(Registers& regs);
-int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);
-
-#endif
+int main(int argc, char** argv) {
+	if(argc < 2) {
+		printf("Missing directory operand\n");
+		return 1;
+	}
+	int res = rmdir(argv[1]);
+	if(res == 0) return 0;
+	switch(errno) {
+		case ENOENT:
+			printf("Cannot remove '%s': No such file or directory\n", argv[1]);
+			break;
+		case ENOTDIR:
+			printf("Cannot remove '%s': Is not a directory\n", argv[1]);
+			break;
+		case ENOTEMPTY:
+			printf("Cannot remove '%s': Is not empty\n", argv[1]);
+			break;
+		default:
+			printf("Canot remove '%s': Error %d\n", argv[1], errno);
+	}
+	return errno;
+}

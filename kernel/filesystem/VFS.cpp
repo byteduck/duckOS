@@ -100,24 +100,19 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 	return current_inode;
 }
 
-DC::shared_ptr<LinkedInode> VFS::root_ref() {
-	return _root_ref;
-}
-
-ResultRet<DC::shared_ptr<FileDescriptor>>
-VFS::open(DC::string path, int options, int mode, DC::shared_ptr<LinkedInode> base) {
+ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int options, mode_t mode, const DC::shared_ptr<LinkedInode>& base) {
 	if(path.length() == 0) return -ENOENT;
-	if((options & O_DIRECTORY) && (options & O_CREAT)) {
-		return -EINVAL;
-	}
+	if((options & O_DIRECTORY) && (options & O_CREAT)) return -EINVAL;
+
 	DC::shared_ptr<LinkedInode> parent(nullptr);
 	auto resolv = resolve_path(path, base, &parent);
 	if(options & O_CREAT) {
 		if(!parent) return -ENOENT;
 		if(resolv.is_error()) {
 			if(resolv.code() == -ENOENT) {
-				//TODO: create directory here
-				return -EIO;
+				resolv = resolve_path(path_minus_base(path), base);
+				if(resolv.is_error()) return resolv.code();
+				return create(path, options, mode, parent);
 			} else return resolv.code();
 		}
 		if(options & O_EXCL) return -EEXIST;
@@ -143,6 +138,52 @@ VFS::open(DC::string path, int options, int mode, DC::shared_ptr<LinkedInode> ba
 	return ret;
 }
 
+ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int options, mode_t mode, const DC::shared_ptr<LinkedInode> &parent) {
+	//If the type bits of the mode are zero (which it will be from sys_open), create a regular file
+	if(!IS_BLKDEV(mode) && !IS_CHRDEV(mode) && !IS_FIFO(mode) && !IS_SOCKET(mode))
+		mode |= MODE_FILE;
+
+	auto child_or_err = parent->inode()->create_entry(path_base(path), mode);
+	if(child_or_err.is_error()) return child_or_err.code();
+	auto file = DC::make_shared<InodeFile>(child_or_err.value());
+	auto ret = DC::make_shared<FileDescriptor>(file);
+	ret->set_options(options);
+	return ret;
+}
+
+Result VFS::unlink(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
+	DC::shared_ptr<LinkedInode> parent(nullptr);
+	auto resolv = resolve_path(path, base, &parent);
+	if(resolv.is_error()) return resolv.code();
+	if(resolv.value()->inode()->metadata().is_directory()) return -EISDIR;
+	return parent->inode()->remove_entry(path_base(path));
+}
+
+Result VFS::rmdir(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
+	//TODO Check for emptiness, remove . and .. refs
+	DC::shared_ptr<LinkedInode> parent(nullptr);
+	auto resolv = resolve_path(path, base, &parent);
+	if(resolv.is_error()) return resolv.code();
+	if(!resolv.value()->inode()->metadata().is_directory()) return -ENOTDIR;
+	return parent->inode()->remove_entry(path_base(path));
+}
+
+DC::shared_ptr<LinkedInode> VFS::root_ref() {
+	return _root_ref;
+}
+
+DC::string VFS::path_base(const DC::string& path) {
+	size_t slash_index = path.find_last_of('/');
+	if(slash_index == -1) return path;
+	else if(slash_index == path.length() - 1) return "";
+	else return path.substr(slash_index, path.length() - slash_index - 1);
+}
+
+DC::string VFS::path_minus_base(const DC::string &path) {
+	size_t slash_index = path.find_last_of('/');
+	if(slash_index == -1) return "";
+	else return path.substr(0, slash_index);
+}
 
 /* * * * * * * *
  * Mount Class *

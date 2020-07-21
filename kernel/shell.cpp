@@ -52,7 +52,8 @@ void Shell::shell(){
 		"O--------------------O\n"
 	);
 
-	auto tty_or_error = VFS::inst().open("/dev/tty0", O_RDONLY, 0, VFS::inst().root_ref());
+	DC::string ttypath("/dev/tty0");
+	auto tty_or_error = VFS::inst().open(ttypath, O_RDONLY, 0, VFS::inst().root_ref());
 	if(tty_or_error.is_error()) {
 		printf("Could not open tty0: %d\n", tty_or_error.code());
 		return;
@@ -137,7 +138,8 @@ void Shell::command_eval(char *cmd, char *args){
 			delete buffer;
 		}
 	}else if(strcmp(cmd,"cd")){
-		auto ref = VFS::inst().resolve_path(args, current_dir, nullptr);
+		DC::string argstr(args);
+		auto ref = VFS::inst().resolve_path(argstr, current_dir, nullptr);
 		if(!ref.is_error()) {
 			auto val = ref.value();
 			if(val->inode()->metadata().is_directory())
@@ -160,7 +162,8 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd, "memdump")) {
 		Memory::kernel_page_directory.dump();
 	}else if(strcmp(cmd,"cat.old")){
-		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
+		DC::string argstr(args);
+		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, current_dir);
 		if(desc_ret.is_error()) {
 			switch (desc_ret.code()) {
 				case -ENOENT:
@@ -214,7 +217,8 @@ void Shell::command_eval(char *cmd, char *args){
 		else
 			TaskManager::kill(proc);
 	}else if(strcmp(cmd, "readelf")){
-		auto desc_ret = VFS::inst().open(args, O_RDONLY, MODE_FILE, current_dir);
+		DC::string argstr(args);
+		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, current_dir);
 		if(desc_ret.is_error()) {
 			switch (desc_ret.code()) {
 				case -ENOENT:
@@ -297,6 +301,8 @@ void Shell::command_eval(char *cmd, char *args){
 		}, nullptr);
 	}else if(strcmp(cmd, "addtest")){
 		VFS::inst().root_ref()->inode()->create_entry(args, MODE_FILE);
+	}else if(strcmp(cmd, "removetest")) {
+		VFS::inst().root_ref()->inode()->remove_entry(args);
 	}else{
 		//Execute program
 		DC::string cmds = cmd;
