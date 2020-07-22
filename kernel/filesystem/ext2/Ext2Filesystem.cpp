@@ -84,7 +84,7 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 	//Find a block group to house the inode
 	uint32_t bg = -1;
 	for(size_t i = 0; i < num_block_groups; i++) {
-		if(block_groups[i]->free_inodes > 0) {
+		if(get_block_group(i)->free_inodes > 0) {
 			bg = i;
 			break;
 		}
@@ -97,7 +97,7 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 	}
 
 	//Read the inode bitmap
-	Ext2BlockGroup& group = *block_groups[bg];
+	Ext2BlockGroup& group = *get_block_group(bg);
 	auto* inode_bitmap = new uint8_t[block_size()];
 	Result rb_res = read_block(group.inode_bitmap_block, inode_bitmap);
 	if(rb_res.is_error()) {
@@ -166,7 +166,7 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	ext2lock.acquire();
 
 	//Update the inode bitmap and free inodes in the block group
-	Ext2BlockGroup* bg = block_groups[ino.block_group()];
+	Ext2BlockGroup* bg = get_block_group(ino.block_group());
 	auto block_buf = new uint8_t[block_size()];
 	Result res = read_block(bg->inode_bitmap_block, block_buf);
 	if(res.is_error()) {

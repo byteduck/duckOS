@@ -684,6 +684,7 @@ int Process::sys_rmdir(char* name) {
 int Process::sys_mkdir(char *path, mode_t mode) {
 	check_ptr(path);
 	DC::string strpath(path);
+	mode &= 04777; //We just want the permission bits
 	auto ret = VFS::inst().mkdir(strpath, mode, cwd);
 	if(ret.is_error()) return ret.code();
 	return 0;

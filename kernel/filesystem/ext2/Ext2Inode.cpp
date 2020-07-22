@@ -110,8 +110,8 @@ DC::vector<uint32_t>& Ext2Inode::get_block_pointers() {
 }
 
 void Ext2Inode::free_all_blocks() {
-	for(size_t i = 0; i < block_pointers.size(); i++) ext2fs().free_block(block_pointers[i]);
-	for(size_t i = 0; i < pointer_blocks.size(); i++) ext2fs().free_block(pointer_blocks[i]);
+	ext2fs().free_blocks(block_pointers);
+	ext2fs().free_blocks(pointer_blocks);
 }
 
 ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {

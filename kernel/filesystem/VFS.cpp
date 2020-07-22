@@ -160,6 +160,11 @@ Result VFS::unlink(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
 }
 
 Result VFS::rmdir(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
+	//Remove trailing slash if there is one
+	if(path.length() != 0 && path[path.length() - 1] == '/') {
+		path = path.substr(0, path.length() - 1);
+	}
+
 	DC::string pbase = path_base(path);
 	if(pbase == ".") return -EINVAL;
 	if(pbase == "..") return -ENOTEMPTY;
@@ -173,8 +178,9 @@ Result VFS::rmdir(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
 
 Result VFS::mkdir(DC::string path, mode_t mode, const DC::shared_ptr<LinkedInode> &base) {
 	//Remove trailing slash if there is one
-	if(path.length() != 0 && path[path.length() - 1] == '/')
+	if(path.length() != 0 && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
+	}
 
 	auto resolv = resolve_path(path_minus_base(path), base);
 	if(resolv.is_error()) return resolv.code();
@@ -194,7 +200,7 @@ DC::string VFS::path_base(const DC::string& path) {
 	size_t slash_index = path.find_last_of('/');
 	if(slash_index == -1) return path;
 	else if(slash_index == path.length() - 1) return "";
-	else return path.substr(slash_index, path.length() - slash_index - 1);
+	else return path.substr(slash_index, path.length() - slash_index);
 }
 
 DC::string VFS::path_minus_base(const DC::string &path) {
