@@ -47,6 +47,7 @@ public:
 	ResultRet<DC::shared_ptr<FileDescriptor>> create(DC::string& path, int options, mode_t mode, const DC::shared_ptr<LinkedInode>& parent);
 	Result unlink(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
 	Result rmdir(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
+	Result mkdir(DC::string path, mode_t mode, const DC::shared_ptr<LinkedInode>& base);
 	bool mount_root(Filesystem* fs);
 	DC::shared_ptr<LinkedInode> root_ref();
 

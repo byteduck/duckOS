@@ -30,18 +30,22 @@ int main(int argc, char** argv) {
 	}
 	int res = rmdir(argv[1]);
 	if(res == 0) return 0;
+	printf("Cannot remove directory '%s': ", argv[1]);
 	switch(errno) {
 		case ENOENT:
-			printf("Cannot remove directory '%s': No such file or directory\n", argv[1]);
+			printf("No such file or directory\n");
 			break;
 		case ENOTDIR:
-			printf("Cannot remove directory '%s': Is not a directory\n", argv[1]);
+			printf("Is not a directory\n");
 			break;
 		case ENOTEMPTY:
-			printf("Cannot remove directory '%s': Is not empty\n", argv[1]);
+			printf("Is not empty\n");
+			break;
+		case EINVAL:
+			printf("Invalid argument\n");
 			break;
 		default:
-			printf("Canot remove directory '%s': Error %d\n", argv[1], errno);
+			printf("Error %d\n", errno);
 	}
 	return errno;
 }

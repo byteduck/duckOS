@@ -49,12 +49,14 @@ public:
 	Result read_blocks(size_t block, size_t count, uint8_t* buffer);
 	Result write_block(size_t block, const uint8_t* buffer);
 	Result write_blocks(size_t block, size_t count, const uint8_t* buffer);
+	Result zero_block(size_t block);
+
 	void flush_cache();
 
 protected:
 	BlockCacheEntry* get_chache_entry(size_t block);
 	BlockCacheEntry* make_cache_entry(size_t block);
-	void flush_cache_entry(BlockCacheEntry* entry, bool use_lock = true);
+	void flush_cache_entry(BlockCacheEntry* entry);
 	void free_cache_entry(size_t block);
 
 	size_t _logical_block_size {512};

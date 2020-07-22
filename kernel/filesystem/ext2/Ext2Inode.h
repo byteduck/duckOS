@@ -51,7 +51,7 @@ public:
 	} Raw;
 
 	explicit Ext2Inode(Ext2Filesystem& filesystem, ino_t i);
-	explicit Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw& raw, DC::vector<uint32_t>& block_pointers);
+	explicit Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw& raw, DC::vector<uint32_t>& block_pointers, ino_t parent);
 	~Ext2Inode() override;
 
 	uint32_t block_group();
@@ -63,6 +63,7 @@ public:
 	uint32_t get_block_pointer(uint32_t block_index);
 	bool set_block_pointer(uint32_t block_index, uint32_t block);
 	DC::vector<uint32_t>& get_block_pointers();
+	void free_all_blocks();
 
 	ssize_t read(size_t start, size_t length, uint8_t* buf) override;
 	ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer) override;
@@ -86,6 +87,8 @@ private:
 	Result try_remove_dir();
 
 	DC::vector<uint32_t> block_pointers;
+	DC::vector<uint32_t> pointer_blocks;
+
 	Raw raw;
 	bool _dirty = false;
 };

@@ -78,7 +78,7 @@ Inode* Ext2Filesystem::get_inode_rawptr(ino_t id) {
 	return static_cast<Inode *>(new Ext2Inode(*this, id));
 }
 
-ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, size_t size) {
+ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, size_t size, ino_t parent) {
 	ext2lock.acquire();
 
 	//Find a block group to house the inode
@@ -132,6 +132,7 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 
 	//Update the blockgroup
 	group.free_inodes--;
+	if(IS_DIR(mode)) group.num_directories++;
 	group.write();
 
 	//Allocate the needed blocks for storage
@@ -147,9 +148,9 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 	Ext2Inode::Raw raw;
 	raw.size = size;
 	raw.mode = mode;
-	raw.hard_links = (mode & 0xF000u) == MODE_DIRECTORY ? 2 : 1;
+	raw.hard_links = IS_DIR(mode) ? 2 : 1;
 	//TODO: Times, uid, gid, and such
-	auto inode = DC::make_shared<Ext2Inode>(*this, ino, raw, blocks);
+	auto inode = DC::make_shared<Ext2Inode>(*this, ino, raw, blocks, parent);
 
 	//Update the superblock
 	superblock.free_inodes--;
@@ -166,34 +167,44 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 
 	//Update the inode bitmap and free inodes in the block group
 	Ext2BlockGroup* bg = block_groups[ino.block_group()];
-	auto bitmap = new uint8_t[block_size()];
-	Result res = read_block(bg->inode_bitmap_block, bitmap);
+	auto block_buf = new uint8_t[block_size()];
+	Result res = read_block(bg->inode_bitmap_block, block_buf);
 	if(res.is_error()) {
-		delete[] bitmap;
+		delete[] block_buf;
 		printf("WARNING: Error while reading bitmap for block group %d!\n", ino.block_group());
 		ext2lock.release();
 		return res;
 	}
 
-	set_bitmap_bit(bitmap, ino.index(), false);
-	res = write_block(bg->inode_bitmap_block, bitmap);
+	set_bitmap_bit(block_buf, ino.index(), false);
+	res = write_block(bg->inode_bitmap_block, block_buf);
 	if(res.is_error()) {
-		delete[] bitmap;
+		delete[] block_buf;
 		printf("WARNING: Error while writing bitmap for block group %d!\n", ino.block_group());
 		ext2lock.release();
 		return res;
 	}
 
+	//Free inode blocks
+	ino.free_all_blocks();
+
+	//Update blockgroup
 	bg->free_inodes++;
+	if(ino.metadata().is_directory()) bg->num_directories--;
 	bg->write();
 
-	//Free inode blocks
-	free_blocks(ino.get_block_pointers());
+	//Zero out inode entry
+	read_block(bg->inode_table_block + ino.block(), block_buf);
+	auto* inodeRaw = (Ext2Inode::Raw*) block_buf;
+	inodeRaw += ino.index() % inodes_per_block;
+	memset(inodeRaw, 0, sizeof(Ext2Inode::Raw));
+	write_block(bg->inode_table_block + ino.block(), block_buf);
 
 	//Update superblock
 	superblock.free_inodes++;
 	write_superblock();
 
+	delete[] block_buf;
 	flush_cache();
 	ino.mark_deleted();
 	ext2lock.release();
@@ -237,7 +248,7 @@ Result Ext2Filesystem::write_block_group_raw(uint32_t block_group, const ext2_bl
 	return write_successful;
 }
 
-uint32_t Ext2Filesystem::allocate_block() {
+uint32_t Ext2Filesystem::allocate_block(bool zero_out) {
 	auto* block_buf = new uint8_t[block_size()];
 	uint32_t ret = 0;
 	for(uint32_t bgi = 0; bgi < num_block_groups; bgi++) {
@@ -275,7 +286,10 @@ uint32_t Ext2Filesystem::allocate_block() {
 			}
 		} else printf("WARNING: Error %d reading block bitmap for group %d\n", res.code(), bgi);
 	}
+
 	if(ret == 0) printf("WARNING: No more free space on an EXT2 filesystem!\n");
+	else if(zero_out) zero_block(ret);
+
 	delete[] block_buf;
 	return ret;
 }
@@ -290,16 +304,22 @@ DC::vector<uint32_t> Ext2Filesystem::allocate_blocks(uint32_t num_blocks) {
 }
 
 void Ext2Filesystem::free_block(uint32_t block) {
-	Ext2BlockGroup* bg = get_block_group(block / superblock.blocks_per_group);
+	if(block == 0) {
+		printf("WARNING: Tried to free ext2 block 0!\n");
+		return;
+	}
+
+	uint32_t group_index = (block - 1) / superblock.blocks_per_group;
+	Ext2BlockGroup* bg = get_block_group(group_index);
 	if(!bg) {
-		printf("WARNING: Error getting block group %d!\n", block / superblock.blocks_per_group);
+		printf("WARNING: Error getting block group %d!\n", group_index);
 		return;
 	}
 
 	//Update blockgroup
 	auto* block_buf = new uint8_t[block_size()];
 	read_block(bg->block_bitmap_block, block_buf);
-	set_bitmap_bit(block_buf, block % superblock.blocks_per_group, false);
+	set_bitmap_bit(block_buf, block - bg->first_block(), false);
 	write_block(bg->block_bitmap_block, block_buf);
 	bg->free_blocks++;
 

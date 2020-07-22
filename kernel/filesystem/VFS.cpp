@@ -160,12 +160,30 @@ Result VFS::unlink(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
 }
 
 Result VFS::rmdir(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
-	//TODO Check for emptiness, remove . and .. refs
+	DC::string pbase = path_base(path);
+	if(pbase == ".") return -EINVAL;
+	if(pbase == "..") return -ENOTEMPTY;
+
 	DC::shared_ptr<LinkedInode> parent(nullptr);
 	auto resolv = resolve_path(path, base, &parent);
 	if(resolv.is_error()) return resolv.code();
 	if(!resolv.value()->inode()->metadata().is_directory()) return -ENOTDIR;
 	return parent->inode()->remove_entry(path_base(path));
+}
+
+Result VFS::mkdir(DC::string path, mode_t mode, const DC::shared_ptr<LinkedInode> &base) {
+	//Remove trailing slash if there is one
+	if(path.length() != 0 && path[path.length() - 1] == '/')
+		path = path.substr(0, path.length() - 1);
+
+	auto resolv = resolve_path(path_minus_base(path), base);
+	if(resolv.is_error()) return resolv.code();
+
+	mode |= (unsigned) MODE_DIRECTORY;
+	auto res = resolv.value()->inode()->create_entry(path_base(path), mode);
+	if(res.is_error()) return res.code();
+
+	return SUCCESS;
 }
 
 DC::shared_ptr<LinkedInode> VFS::root_ref() {

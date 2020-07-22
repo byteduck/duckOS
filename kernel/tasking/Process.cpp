@@ -680,3 +680,15 @@ int Process::sys_rmdir(char* name) {
 	if(ret.is_error()) return ret.code();
 	return 0;
 }
+
+int Process::sys_mkdir(char *path, mode_t mode) {
+	check_ptr(path);
+	DC::string strpath(path);
+	auto ret = VFS::inst().mkdir(strpath, mode, cwd);
+	if(ret.is_error()) return ret.code();
+	return 0;
+}
+
+int Process::sys_mkdirat(int fd, char *path, mode_t mode) {
+	return -1;
+}

@@ -76,6 +76,10 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_unlink((char*)arg1);
 		case SYS_RMDIR:
 			return TaskManager::current_process()->sys_rmdir((char*)arg1);
+		case SYS_MKDIR:
+			return TaskManager::current_process()->sys_mkdir((char*)arg1, (mode_t)arg2);
+		case SYS_MKDIRAT:
+			return TaskManager::current_process()->sys_mkdirat((int)arg1, (char*)arg2, (mode_t)arg3);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

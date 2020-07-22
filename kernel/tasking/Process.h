@@ -95,6 +95,8 @@ public:
 	int sys_kill(pid_t pid, int sig);
 	int sys_unlink(char* name);
 	int sys_rmdir(char* name);
+	int sys_mkdir(char *path, mode_t mode);
+	int sys_mkdirat(int fd, char *path, mode_t mode);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;

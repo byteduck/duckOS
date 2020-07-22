@@ -41,13 +41,13 @@ public:
 	Inode * get_inode_rawptr(ino_t id) override;
 
 	//Reading/writing
-	ResultRet<DC::shared_ptr<Ext2Inode>> allocate_inode(mode_t mode, size_t size);
+	ResultRet<DC::shared_ptr<Ext2Inode>> allocate_inode(mode_t mode, size_t size, ino_t parent);
 	Result free_inode(Ext2Inode& inode);
 	void read_superblock(ext2_superblock *sb);
 	void write_superblock();
 
 	//Block stuff
-	uint32_t allocate_block();
+	uint32_t allocate_block(bool zero_out = true);
 	DC::vector<uint32_t> allocate_blocks(uint32_t num_blocks);
 	void free_block(uint32_t block);
 	void free_blocks(DC::vector<uint32_t>& blocks);

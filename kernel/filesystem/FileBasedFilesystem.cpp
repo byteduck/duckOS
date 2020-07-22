@@ -70,7 +70,6 @@ size_t FileBasedFilesystem::logical_block_size() {
 
 Result FileBasedFilesystem::read_block(size_t block, uint8_t *buffer) {
 	LOCK(lock);
-
 	//If we have a cache entry already, just read that
 	BlockCacheEntry *cache_entry = get_chache_entry(block);
 	if (cache_entry) {
@@ -131,7 +130,17 @@ Result FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
 	return SUCCESS;
 }
 
+Result FileBasedFilesystem::zero_block(size_t block) {
+	LOCK(lock);
+	BlockCacheEntry* entry = get_chache_entry(block);
+	if(!entry) entry = make_cache_entry(block);
+	memset(entry->data, 0, block_size());
+	entry->dirty = true;
+	return SUCCESS;
+}
+
 BlockCacheEntry* FileBasedFilesystem::get_chache_entry(size_t block) {
+	LOCK(lock);
 	for(size_t i = 0; i < cache.size(); i++) {
 		if (cache[i].block == block) {
 			BlockCacheEntry* entry = &cache[i];
@@ -143,6 +152,7 @@ BlockCacheEntry* FileBasedFilesystem::get_chache_entry(size_t block) {
 }
 
 BlockCacheEntry* FileBasedFilesystem::make_cache_entry(size_t block) {
+	LOCK(lock);
 	BlockCacheEntry* entry;
 	if(cache.size() >= MAX_FILESYSTEM_CACHE_SIZE / block_size()) {
 		//If the cache is full, find the oldest entry and replace it
@@ -156,7 +166,7 @@ BlockCacheEntry* FileBasedFilesystem::make_cache_entry(size_t block) {
 		}
 		//Update entry's data
 		entry = &cache[oldest_entry];
-		if(entry->dirty) flush_cache_entry(entry, false);
+		if(entry->dirty) flush_cache_entry(entry);
 		entry->block = block;
 	} else {
 		cache.push_back(BlockCacheEntry(block, new uint8_t[block_size()]));
@@ -166,8 +176,8 @@ BlockCacheEntry* FileBasedFilesystem::make_cache_entry(size_t block) {
 	return entry;
 }
 
-void FileBasedFilesystem::flush_cache_entry(BlockCacheEntry* entry, bool use_lock) {
-	if(use_lock) lock.acquire();
+void FileBasedFilesystem::flush_cache_entry(BlockCacheEntry* entry) {
+	LOCK(lock);
 	ssize_t nwrote;
 	if(_file->seek(entry->block * block_size(), SEEK_SET) < 0) return;
 	if((nwrote =_file->write(entry->data, block_size())) == block_size()) {
@@ -175,10 +185,10 @@ void FileBasedFilesystem::flush_cache_entry(BlockCacheEntry* entry, bool use_loc
 	} else {
 		printf("WARNING: Error writing filesystem cache entry to disk! (Block %d, Error %d)\n", entry->block, nwrote);
 	}
-	if(use_lock) lock.release();
 }
 
 void FileBasedFilesystem::free_cache_entry(size_t block) {
+	LOCK(lock);
 	for(size_t i = 0; i < cache.size(); i++) {
 		if (cache[i].block == block) {
 			delete[] cache[i].data;
@@ -189,6 +199,7 @@ void FileBasedFilesystem::free_cache_entry(size_t block) {
 }
 
 void FileBasedFilesystem::flush_cache() {
+	LOCK(lock);
 	for(size_t i = 0; i < cache.size(); i++) {
 		if(cache[i].dirty) flush_cache_entry(&cache[i]);
 	}
