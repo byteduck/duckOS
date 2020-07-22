@@ -27,14 +27,14 @@ public:
 	virtual void release() = 0;
 };
 
-class Locker {
+class ScopedLocker {
 public:
-	explicit Locker(Lock& lock);
-	~Locker();
+	explicit ScopedLocker(Lock& lock);
+	~ScopedLocker();
 private:
 	Lock& _lock;
 };
 
-#define LOCK(lock) Locker locker((lock))
+#define LOCK(lock) ScopedLocker __locker((lock))
 
 #endif //DUCKOS_LOCK_H

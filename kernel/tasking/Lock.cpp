@@ -20,10 +20,10 @@
 #include <kernel/kstdio.h>
 #include "Lock.h"
 
-Locker::Locker(Lock& lock): _lock(lock) {
+ScopedLocker::ScopedLocker(Lock& lock): _lock(lock) {
 	_lock.acquire();
 }
 
-Locker::~Locker() {
+ScopedLocker::~ScopedLocker() {
 	_lock.release();
 }
