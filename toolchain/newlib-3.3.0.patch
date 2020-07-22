@@ -11678,10 +11678,10 @@ index 0000000..b643455
 +
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..f146d18
+index 0000000..003c38a
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,313 @@
+@@ -0,0 +1,347 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -11897,12 +11897,24 @@ index 0000000..f146d18
 +	return ret;
 +}
 +
++int rmdir(const char *path) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_RMDIR), "b"(path));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
 +int unlink(char *name) {
 +	int ret = 0;
 +	asm volatile("int $0x80" :: "a"(SYS_UNLINK), "b"(name));
 +	asm volatile("mov %%eax, %0" : "=r"(ret));
 +	if(ret < 0) {
 +		errno = -ret;
++		if(errno == EISDIR) return rmdir(name);
 +		return -1;
 +	}
 +	return ret;
@@ -11956,6 +11968,28 @@ index 0000000..f146d18
 +	return ret;
 +}
 +
++int mkdir(const char* path, mode_t mode) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_MKDIR), "b"(path), "c"(mode));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int mkdirat(int fd, const char* path, mode_t mode) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_MKDIRAT), "b"(fd), "c"(path), "d"(mode));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
 +int getcwd(char* buf, size_t len) {
 +	int ret = 0;
 +	asm volatile("int $0x80" :: "a"(SYS_GETCWD), "b"(buf), "c"(len));
@@ -11995,12 +12029,13 @@ index 0000000..f146d18
 +	}
 +	return ret;
 +}
+\ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..2b71380
+index 0000000..0a35265
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,48 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12044,6 +12079,8 @@ index 0000000..2b71380
 +#define SYS_CHDIR 22
 +#define SYS_GETCWD 23
 +#define SYS_EXECVP 24
-+#define SYS_SIGRETURN 25
++#define SYS_RMDIR 25
++#define SYS_MKDIR 26
++#define SYS_MKDIRAT 27
 +
 +int _read_dir(int file, char *ptr, size_t len);
