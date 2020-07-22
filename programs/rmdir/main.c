@@ -32,16 +32,16 @@ int main(int argc, char** argv) {
 	if(res == 0) return 0;
 	switch(errno) {
 		case ENOENT:
-			printf("Cannot remove '%s': No such file or directory\n", argv[1]);
+			printf("Cannot remove directory '%s': No such file or directory\n", argv[1]);
 			break;
 		case ENOTDIR:
-			printf("Cannot remove '%s': Is not a directory\n", argv[1]);
+			printf("Cannot remove directory '%s': Is not a directory\n", argv[1]);
 			break;
 		case ENOTEMPTY:
-			printf("Cannot remove '%s': Is not empty\n", argv[1]);
+			printf("Cannot remove directory '%s': Is not empty\n", argv[1]);
 			break;
 		default:
-			printf("Canot remove '%s': Error %d\n", argv[1], errno);
+			printf("Canot remove directory '%s': Error %d\n", argv[1], errno);
 	}
 	return errno;
 }

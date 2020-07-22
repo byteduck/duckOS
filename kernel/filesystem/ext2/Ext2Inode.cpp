@@ -83,6 +83,8 @@ uint32_t Ext2Inode::get_block_pointer(uint32_t block_index) {
 }
 
 bool Ext2Inode::set_block_pointer(uint32_t block_index, uint32_t block) {
+	LOCK(lock);
+
 	if(block_index == 0 && block_pointers.empty()) {
 		block_pointers.push_back(block);
 		_dirty = true;
@@ -151,6 +153,7 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 	if(!exists()) return -ENOENT; //Inode was deleted
 
 	LOCK(lock);
+
 	size_t first_block = start / fs.block_size();
 	size_t first_block_start = start % fs.block_size();
 	size_t bytes_left = length;
@@ -217,6 +220,8 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 }
 
 ssize_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry *buffer) {
+	LOCK(lock);
+
 	auto* buf = new uint8_t[fs.block_size()];
 	size_t block = start / fs.block_size();
 	size_t start_in_block = start % fs.block_size();
@@ -273,6 +278,8 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 	if(!metadata().is_directory()) return -ENOTDIR;
 	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
 
+	LOCK(lock);
+
 	//Read entries into a vector
 	DC::vector<DirectoryEntry> entries;
 	size_t offset = 0;
@@ -287,9 +294,7 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 		}
 		entries.push_back(*buf);
 	}
-	kfree(buf);
-
-	LOCK(lock);
+	delete buf;
 
 	//Determine filetype
 	uint8_t type = EXT2_FT_UNKNOWN;
@@ -306,6 +311,8 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 Result Ext2Inode::remove_entry(const DC::string &name) {
 	if(!metadata().is_directory()) return -ENOTDIR;
 	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
+
+	LOCK(lock);
 
 	//Read entries into vector and find the child we need
 	DC::vector<DirectoryEntry> entries;
@@ -325,7 +332,7 @@ Result Ext2Inode::remove_entry(const DC::string &name) {
 		entries.push_back(*buf);
 		i++;
 	}
-	kfree(buf);
+	delete buf;
 
 	//If we didn't find it or the inode doesn't exist for some reason, return with an error
 	if(!found) return -ENOENT;
@@ -335,9 +342,16 @@ Result Ext2Inode::remove_entry(const DC::string &name) {
 		return child_or_err.code();
 	}
 
-	//Reduce the child's hardlink count, erase the entry, and write the new entry list to disk
-	LOCK(lock);
-	//((DC::shared_ptr<Ext2Inode>) child_or_err.value())->reduce_hardlink_count();
+	//Reduce the child's hardlink count if a file, or try_remove_dir if a directory
+	auto ext2ino = (DC::shared_ptr<Ext2Inode>) child_or_err.value();
+	if(ext2ino->metadata().is_directory()) {
+		auto result = ext2ino->try_remove_dir();
+		if(result.is_error()) return result.code();
+	} else {
+		ext2ino->reduce_hardlink_count();
+	}
+
+	//Erase the entry and write the entries to disk
 	entries.erase(entry_index);
 	return write_directory_entries(entries);
 }
@@ -389,11 +403,25 @@ void Ext2Inode::read_block_pointers(uint8_t* block_buf) {
 	FREE_BLOCKBUF(block_buf);
 }
 
-bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
+Result Ext2Inode::write_to_disk(uint8_t* block_buf) {
+	LOCK(lock);
 	ALLOC_BLOCKBUF(block_buf, ext2fs().block_size());
 
-	raw.size = _metadata.size;
-	raw.mode = _metadata.mode;
+	Result res = write_block_pointers(block_buf);
+	if(res.is_error()){
+		FREE_BLOCKBUF(block_buf);
+		return res.code();
+	}
+
+	res = write_inode_entry(block_buf);
+	FREE_BLOCKBUF(block_buf);
+	if(res.is_error()) return res.code();
+
+	return SUCCESS;
+}
+
+Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
+	LOCK(lock);
 	raw.logical_blocks = num_blocks() * (ext2fs().block_size() / 512);
 
 	if(_metadata.is_device()) {
@@ -409,7 +437,7 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 
 		if (!raw.s_pointer) {
 			raw.s_pointer = ext2fs().allocate_block();
-			if (!raw.s_pointer) return false; //Block allocation failed
+			if (!raw.s_pointer) return -ENOSPC; //Block allocation failed
 		}
 
 		//Write singly indirect block to disk
@@ -426,7 +454,7 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 		//Allocate doubly indirect block if needed and read
 		if(!raw.d_pointer) {
 			raw.d_pointer = ext2fs().allocate_block();
-			if(!raw.d_pointer) return false; //Block allocation failed
+			if(!raw.d_pointer) return -ENOSPC; //Block allocation failed
 			ext2fs().read_block(raw.d_pointer, block_buf);
 			memset(block_buf, 0, ext2fs().block_size());
 		} else ext2fs().read_block(raw.d_pointer, block_buf);
@@ -446,7 +474,7 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 			if(!dblock) {
 				dblock = ext2fs().allocate_block();
 				((uint32_t*)block_buf)[dindex] = dblock;
-				if(!dblock) return false; //Allocation failed
+				if(!dblock) return -ENOSPC; //Allocation failed
 			}
 
 			//Update entries in the block and write to disk
@@ -468,6 +496,16 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 		//TODO: Triply indirect blocks
 	}
 
+	_dirty = true;
+}
+
+Result Ext2Inode::write_inode_entry(uint8_t* block_buf) {
+	LOCK(lock);
+	ALLOC_BLOCKBUF(block_buf, ext2fs().block_size());
+
+	raw.size = _metadata.size;
+	raw.mode = _metadata.mode;
+
 	//Get the block group and read the inode table
 	Ext2BlockGroup* bg = ext2fs().get_block_group(block_group());
 	ext2fs().read_block(bg->inode_table_block + block(), block_buf);
@@ -483,11 +521,12 @@ bool Ext2Inode::write_to_disk(uint8_t* block_buf) {
 	ext2fs().flush_cache();
 
 	FREE_BLOCKBUF(block_buf);
-
-	return true;
+	return SUCCESS;
 }
 
 Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
+	LOCK(lock);
+
 	size_t cur_block = 0;
 	size_t cur_byte_in_block = 0;
 	auto* block_buf = new uint8_t[ext2fs().block_size()];
@@ -557,7 +596,6 @@ Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
 
 	//Write the last block
 	ext2fs().write_block(get_block_pointer(cur_block), block_buf);
-
 	ext2fs().flush_cache();
 
 	return SUCCESS;
@@ -565,6 +603,8 @@ Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
 
 ResultRet<DC::shared_ptr<Inode>> Ext2Inode::create_entry(const DC::string& name, mode_t mode) {
 	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
+
+	LOCK(lock);
 
 	//Create the inode
 	auto inode_or_err = ext2fs().allocate_inode(mode, 0);
@@ -598,11 +638,53 @@ void Ext2Inode::create_metadata() {
 }
 
 void Ext2Inode::reduce_hardlink_count() {
+	LOCK(lock);
+
 	raw.hard_links--;
 	if(raw.hard_links == 0) {
 		ext2fs().remove_cached_inode(id);
 		ext2fs().free_inode(*this);
+	} else {
+		write_inode_entry();
 	}
+}
+
+Result Ext2Inode::try_remove_dir() {
+	if(!metadata().is_directory()) return -ENOTDIR;
+
+	LOCK(lock);
+
+	auto* buf = new DirectoryEntry;
+	ssize_t nread;
+	size_t offset = 0;
+	size_t num_entries = 0;
+	DC::vector<DirectoryEntry> entries;
+	while((nread = read_dir_entry(offset, buf))) {
+		if(num_entries >= 2) {
+			delete buf;
+			return -ENOTEMPTY;
+		}
+		offset += nread;
+		num_entries++;
+		entries.push_back(*buf);
+	}
+	delete buf;
+
+	for(size_t i = 0; i < 2; i++) {
+		DirectoryEntry& ent = entries[i];
+		if(ent.id != id) { //..
+			auto parent_ino_or_err = fs.get_inode(ent.id);
+			if(parent_ino_or_err.is_error()) return parent_ino_or_err.code();
+			auto parent_ino = (DC::shared_ptr<Ext2Inode>) parent_ino_or_err.value();
+			parent_ino->reduce_hardlink_count();
+		}
+	}
+
+	raw.hard_links = 0;
+	ext2fs().remove_cached_inode(id);
+	ext2fs().free_inode(*this);
+
+	return SUCCESS;
 }
 
 
