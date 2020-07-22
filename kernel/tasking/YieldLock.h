@@ -34,6 +34,7 @@ public:
 private:
 	TaskYieldQueue _yield_queue;
 	volatile bool _locked = false;
+	volatile Process* _holding_process = nullptr;
 };
 
 

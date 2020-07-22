@@ -30,10 +30,15 @@ bool YieldLock::locked() {
 
 void YieldLock::release() {
 	_yield_queue.set_ready();
-	if(_yield_queue.is_empty()) _locked = false;
+	if(_yield_queue.is_empty()) {
+		_holding_process = nullptr;
+		_locked = false;
+	}
 }
 
 void YieldLock::acquire() {
-	if(_locked) TaskManager::current_process()->yield_to(_yield_queue);
+	if(_locked && _holding_process != TaskManager::current_process())
+		TaskManager::current_process()->yield_to(_yield_queue);
+	_holding_process = TaskManager::current_process();
 	_locked = true;
 }
