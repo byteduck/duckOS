@@ -99,7 +99,7 @@ void textmode_putch_color(char c, char color) {
 void putch(char c){
 	if(c == '\b')
 		backspace();
-	else
+	else if(c)
 		putch_color(c, ccolor);
 }
 
