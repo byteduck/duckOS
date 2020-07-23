@@ -32,81 +32,91 @@ namespace DC {
 		vector(): _storage(nullptr), _capacity(0), _size(0) {
 		}
 
-		explicit vector(size_t capacity, const T& value = T()): _capacity(capacity) {
-			_storage = new T[capacity] {value};
+		explicit vector(size_t size, const T& value = T()): _capacity(size), _size(size) {
+			_storage = (T*) kcalloc(size, sizeof(T));
+			for(size_t i = 0; i < size; i++)
+				new (&_storage[i]) T(value);
 		}
 
 		vector(vector<T>& other): _capacity(other._capacity), _size(other._size) {
-			_storage = new T[_capacity];
-			for (size_t i = 0; i < other._size; i++)
-				_storage[i] = other._storage[i];
+			_storage = (T*) kcalloc(_size, sizeof(T));
+			for(size_t i = 0; i < _size; i++)
+				new (&_storage[i]) T(other._storage[i]);
 		}
 
 		vector(vector<T>&& other): _capacity(other._capacity), _size(other._size) {
-			_storage = new T[_capacity];
-			for (size_t i = 0; i < other._size; i++)
-				_storage[i] = DC::move(other._storage[i]);
+			_storage = (T*) kcalloc(_size, sizeof(T));
+			for(size_t i = 0; i < _size; i++)
+				new (&_storage[i]) T(DC::move(other._storage[i]));
 		}
 
 		~vector(){
-			if(_storage != nullptr){
-				delete[] _storage;
+			if(_storage != nullptr) {
+				for(size_t i = 0; i < _size; i++) _storage[i].~T();
+				kfree(_storage);
 			}
 		}
 
 		void push_back(const T& elem) {
 			if(_size + 1 > _capacity) {
-				resize(_capacity == 0 ? 1 : _capacity * 2);
+				realloc(_capacity == 0 ? 1 : _capacity * 2);
 			}
 			new (&_storage[_size++]) T(elem);
 		}
 
-		void assign(size_t index, const T&& value) {
-			new (&_storage[index]) T(DC::move(value));
-		}
-
-		void assign(size_t index, const T& value) {
-			assign(index, T(value));
-		}
-
-		void pop_back() {
-			_storage[--_size] = T();
-		}
-
 		void resize(size_t new_size) {
-			if(new_size == _capacity) return;
-			if(new_size < _capacity) {
-				for(auto i = _capacity - 1; i >= new_size; i--) {
-					_storage[i] = T();
-				}
+			if(_size == new_size) return;
+			if(new_size > _capacity) realloc(new_size);
+			if(new_size > _size) {
+				for(size_t i = _size; i < new_size; i++)
+					new (&_storage[i - 1]) T();
+			} else {
+				for(size_t i = new_size; i < _size; i++)
+					_storage[i].~T();
 			}
-			_capacity = new_size;
-			if(_storage == nullptr) _storage = new T[_capacity];
-			else {
-				T* tmp_storage = new T[_capacity];
-				for(size_t i = 0; i < _size; i++) {
-					tmp_storage[i] = _storage[i];
-				}
-				delete[] _storage;
-				_storage = tmp_storage;
+			_size = new_size;
+		}
+
+		void realloc(size_t new_capacity) {
+			if(new_capacity == _capacity) return;
+
+			if(_storage == nullptr) {
+				_capacity = new_capacity;
+				_storage = (T*) kcalloc(_capacity, sizeof(T));
+				return;
 			}
+
+			if(new_capacity < _size) {
+				for(size_t i = new_capacity; i < _size; i++)
+					_storage[i].~T();
+				_size = new_capacity;
+			}
+
+			T* tmp_storage = (T*) kcalloc(new_capacity, sizeof(T));
+			for(size_t i = 0; i < _size; i++) {
+				new (&tmp_storage[i]) T(_storage[i]);
+				_storage[i].~T();
+			}
+			kfree(_storage);
+			_storage = tmp_storage;
+			_capacity = new_capacity;
 		}
 
 		void erase(size_t elem) {
 			if(elem >= _size) return;
-			_storage[elem] = T();
+			_storage[elem].~T();
 			for(size_t i = elem; i < _size - 1; i++)
 				_storage[i] = DC::move(_storage[i + 1]);
 			_size--;
 		}
 
-		void reserve(size_t new_size) {
-			if(new_size > _capacity)
-				resize(new_size);
+		void reserve(size_t new_capacity) {
+			if(new_capacity > _capacity)
+				realloc(new_capacity);
 		}
 
 		void shrink_to_fit() {
-			resize(size());
+			realloc(size());
 		}
 
 		size_t size() const {
@@ -131,24 +141,26 @@ namespace DC {
 
 		vector<T>& operator=(const vector<T>& other) {
 			if(this != &other) {
-				delete[] _storage;
+				for(size_t i = 0; i < _size; i++) _storage[i].~T();
+				kfree(_storage);
 				_size = other._size;
 				_capacity = other._capacity;
-				_storage = new T[_capacity];
+				_storage = (T*) kcalloc(_capacity, sizeof(T));
 				for (size_t i = 0; i < _size; i++)
-					_storage[i] = other._storage[i];
+					new (&_storage[i]) T(other._storage[i]);
 			}
 			return *this;
 		}
 
 		vector<T>& operator=(vector<T>&& other) noexcept {
 			if(this != &other) {
-				delete[] _storage;
+				for(size_t i = 0; i < _size; i++) _storage[i].~T();
+				kfree(_storage);
 				_size = other._size;
 				_capacity = other._capacity;
-				_storage = new T[_capacity];
+				_storage = (T*) kcalloc(_capacity, sizeof(T));
 				for (size_t i = 0; i < _size; i++)
-					_storage[i] = DC::move(other._storage[i]);
+					new (&_storage[i]) T(DC::move(other._storage[i]));
 			}
 			return *this;
 		}
