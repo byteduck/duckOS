@@ -7,10 +7,12 @@ If some of this code looks familiar, it's because it's based off of my previous 
 
 ### What's working
 - Booting off of the primary master IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
+- PATA DMA or PIO access (force PIO by using the `use_pio` grub kernel argument)
 - A virtual filesystem with device files (`/dev/hda`, `/dev/zero`, `/dev/random`, `/dev/fb`, `/dev/tty`, etc)
   - The root filesystem is ext2, and is writeable
+- Filesystem caching (the cache size can be changed by changing `MAX_FILESYSTEM_CACHE_SIZE` in `FileBasedFilesystem.h`)
 - A semicomplete newlib-based C standard library for programs (see [INSTRUCTIONS.md](INSTRUCTIONS.md))
-- Preemptive Multitasking (although there isn't anything that really takes advantage of `fork` yet besides the the userspace shell `dsh`)
+- Preemptive Multitasking and  process forking
 - A Bochs/Qemu/VirtualBox video driver (640x480x32bpp)
 - Multiboot framebuffer support (requests 640x480x32bpp from the bootloader, and assumes it is such which may be problematic)
   
@@ -25,7 +27,7 @@ The code for these can be found in [programs](programs/).
 - mkdir (/bin/mkdir): Creates a new directory.
 - rm (/bin/rm): Removes a file.
 - rmdir (/bin/rmdir): Removes a directory.
-- touch (/bin/touch): Creates a file.
+- touch (/bin/touch): Updates the access/modification times of a file or creates it if it doesn't exist.
 - truncate (/bin/truncate): Resizes a file.
 - dsh (/bin/dsh): A basic userspace shell.
 
