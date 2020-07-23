@@ -50,6 +50,7 @@ public:
 	Result write_block(size_t block, const uint8_t* buffer);
 	Result write_blocks(size_t block, size_t count, const uint8_t* buffer);
 	Result zero_block(size_t block);
+	Result truncate_block(size_t block, size_t new_size);
 
 	void flush_cache();
 

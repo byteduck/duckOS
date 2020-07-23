@@ -48,6 +48,7 @@ public:
 	virtual Result add_entry(const DC::string& name, Inode& inode) = 0;
 	virtual ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode) = 0;
 	virtual Result remove_entry(const DC::string& name) = 0;
+	virtual Result truncate(off_t length) = 0;
 
 	InodeMetadata metadata();
 

@@ -44,5 +44,5 @@ void Ext2BlockGroup::write() {
 }
 
 uint32_t Ext2BlockGroup::first_block() {
-	return num * fs->superblock.blocks_per_group + fs->block_size() == 1024 ? 1 : 0;
+	return num * fs->superblock.blocks_per_group + (fs->block_size() == 1024 ? 1 : 0);
 }

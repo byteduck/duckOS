@@ -72,6 +72,7 @@ public:
 	Result add_entry(const DC::string& name, Inode& inode) override;
 	ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode) override;
 	Result remove_entry(const DC::string& name) override;
+	Result truncate(off_t length) override;
 
 private:
 	void read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index, uint8_t* block_buf);
@@ -85,6 +86,7 @@ private:
 	void create_metadata();
 	void reduce_hardlink_count();
 	Result try_remove_dir();
+	uint32_t calculate_num_ptr_blocks(uint32_t num_blocks);
 
 	DC::vector<uint32_t> block_pointers;
 	DC::vector<uint32_t> pointer_blocks;

@@ -23,6 +23,7 @@
 #include <kernel/kstdio.h>
 #include <kernel/memory/kliballoc.h>
 #include <kernel/kstddef.h>
+#include <common/stdlib.h>
 #include "Ext2Filesystem.h"
 #include "Ext2Inode.h"
 
@@ -137,10 +138,11 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 
 	//Allocate the needed blocks for storage
 	uint32_t num_blocks = (size + block_size() - 1) / block_size();
-	auto blocks = allocate_blocks(num_blocks);
-	if(blocks.size() != num_blocks) {
-		ext2lock.release();
-		return -ENOSPC;
+	DC::vector<uint32_t> blocks(0);
+	if(num_blocks) {
+		auto blocks_or_err = allocate_blocks(num_blocks);
+		if (blocks_or_err.is_error()) return blocks_or_err.code();
+		blocks = blocks_or_err.value();
 	}
 
 	//Finally, create the inode
@@ -193,11 +195,12 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	if(ino.metadata().is_directory()) bg->num_directories--;
 	bg->write();
 
-	//Zero out inode entry
+	//Set (fake) inode dtime
+	//TODO: Real inode dtime
 	read_block(bg->inode_table_block + ino.block(), block_buf);
 	auto* inodeRaw = (Ext2Inode::Raw*) block_buf;
 	inodeRaw += ino.index() % inodes_per_block;
-	memset(inodeRaw, 0, sizeof(Ext2Inode::Raw));
+	inodeRaw->dtime = 0x42069;
 	write_block(bg->inode_table_block + ino.block(), block_buf);
 
 	//Update superblock
@@ -248,59 +251,113 @@ Result Ext2Filesystem::write_block_group_raw(uint32_t block_group, const ext2_bl
 	return write_successful;
 }
 
-uint32_t Ext2Filesystem::allocate_block(bool zero_out) {
+ResultRet<DC::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2BlockGroup* group, uint32_t num_blocks, bool zero_out) {
+	if(group->free_blocks < num_blocks) return -ENOSPC;
+	if(num_blocks == 0) return DC::vector<uint32_t>(0);
+
+	LOCK(ext2lock);
 	auto* block_buf = new uint8_t[block_size()];
-	uint32_t ret = 0;
+
+	Result res = read_block(group->block_bitmap_block, block_buf);
+	if(res.is_error()) {
+		delete[] block_buf;
+		printf("WARNING: Error %d reading block bitmap for group %d\n", res.code(), group->num);
+		return res.code();
+	}
+
+
+	uint32_t num_allocated = 0;
+	DC::vector<uint32_t> ret;
+	ret.reserve(num_blocks);
+
+	for(size_t bi = 0; bi < superblock.blocks_per_group; bi++) {
+		if(!get_bitmap_bit(block_buf, bi)) {
+			set_bitmap_bit(block_buf, bi, true);
+			ret.push_back(bi + group->first_block());
+			if(zero_out) zero_block(bi + group->first_block());
+			group->free_blocks--;
+			superblock.free_blocks--;
+			if(++num_allocated == num_blocks) break;
+		}
+	}
+
+	if(num_allocated != num_blocks) {
+		printf("WARNING: Free block count in block group %d was incorrect!\n", group->num);
+		group->free_blocks = 0;
+	}
+
+	write_superblock();
+	group->write();
+	res = write_block(group->block_bitmap_block, block_buf);
+	delete[] block_buf;
+	if(res.is_error()) {
+		printf("WARNING: Error writing block bitmap for block group %d!\n", group->num);
+		return res.code();
+	}
+
+	return DC::move(ret);
+}
+
+ResultRet<DC::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_blocks, bool zero_out) {
+	LOCK(ext2lock);
+	if(num_blocks == 0) {
+		printf("WARNING: Tried to allocate zero ext2 blocks!\n");
+		return -EINVAL;
+	}
+
+	//First, find a block group that can fit all the blocks, or at least the most spacious block group
+	Ext2BlockGroup* target_bg = nullptr;
+	Ext2BlockGroup* most_spacious_bg = nullptr;
+
 	for(uint32_t bgi = 0; bgi < num_block_groups; bgi++) {
-		Ext2BlockGroup* bg = get_block_group(bgi);
-		if(!bg) {
+		Ext2BlockGroup *bg = get_block_group(bgi);
+		if (!bg) {
 			printf("WARNING: Error getting block group %d!\n", bgi);
 			break;
 		}
-		if(!bg->free_blocks) continue;
-
-		Result res = read_block(bg->block_bitmap_block, block_buf);
-		if(!res.is_error()) {
-			uint32_t bi = 0;
-
-			while(bi < superblock.blocks_per_group && get_bitmap_bit(block_buf, bi))
-				bi++;
-
-			if(bi != superblock.blocks_per_group) {
-				ret = bi + bg->first_block();
-
-				//Update blockgroup
-				bg->free_blocks--;
-				set_bitmap_bit(block_buf, bi, true);
-				write_block(bg->block_bitmap_block, block_buf);
-				bg->write();
-
-				//Update superblock
-				superblock.free_blocks--;
-				break;
-			} else {
-				//The free blocks in this group was incorrect for some reason; update it
-				bg->free_blocks = 0;
-				bg->write();
-				printf("WARNING: Free blocks for blockgroup %d was incorrect.\n", bgi);
-			}
-		} else printf("WARNING: Error %d reading block bitmap for group %d\n", res.code(), bgi);
+		if (bg->free_blocks >= num_blocks) {
+			target_bg = bg;
+			break;
+		}
+		if (!most_spacious_bg || bg->free_blocks > most_spacious_bg->free_blocks) most_spacious_bg = bg;
 	}
 
-	if(ret == 0) printf("WARNING: No more free space on an EXT2 filesystem!\n");
-	else if(zero_out) zero_block(ret);
+	if(target_bg) {
+		//We found a block group that will house all of the blocks we need to allocate
+		return DC::move(allocate_blocks_in_group(target_bg, num_blocks, zero_out));
+	} else {
+		//If we couldn't find one bg to fit all the blocks, allocate the blocks in multiple groups
+		DC::vector<uint32_t> ret;
+		ret.reserve(num_blocks);
+		while(num_blocks) {
+			//Find the most spacious bg
+			most_spacious_bg = nullptr;
+			for(uint32_t bgi = 0; bgi < num_block_groups; bgi++) {
+				Ext2BlockGroup *bg = get_block_group(bgi);
+				if(!bg) continue; //This error would have been printed out above presumably
+				if (!most_spacious_bg || bg->free_blocks > most_spacious_bg->free_blocks) most_spacious_bg = bg;
+			}
 
-	delete[] block_buf;
-	return ret;
+			//If the most spacious bg has no free blocks, return ENOSPC
+			if(most_spacious_bg->free_blocks == 0) return -ENOSPC;
+
+			//Allocate the needed amount of blocks in that group
+			auto res = allocate_blocks_in_group(most_spacious_bg, min(most_spacious_bg->free_blocks, num_blocks), zero_out);
+			if(res.is_error()) return res.code();
+
+			//Push the blocks allocated into the return vector
+			num_blocks -= res.value().size();
+			for(size_t i = 0; i < res.value().size(); i++) ret.push_back(res.value()[i]);
+		}
+		return DC::move(ret);
+	}
 }
 
-DC::vector<uint32_t> Ext2Filesystem::allocate_blocks(uint32_t num_blocks) {
-	DC::vector<uint32_t> ret(num_blocks);
-	for(uint32_t i = 0; i < num_blocks; i++) {
-		uint32_t block = allocate_block();
-		if(block) ret.push_back(block);
-	}
-	return DC::move(ret);
+uint32_t Ext2Filesystem::allocate_block(bool zero_out) {
+	auto ret_or_err = allocate_blocks(1, zero_out);
+	if(ret_or_err.is_error()) return 0;
+	if(ret_or_err.value().empty()) return 0;
+	return ret_or_err.value().at(0);
 }
 
 void Ext2Filesystem::free_block(uint32_t block) {

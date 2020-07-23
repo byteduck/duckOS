@@ -47,8 +47,10 @@ public:
 	void write_superblock();
 
 	//Block stuff
+	ResultRet<DC::vector<uint32_t>> allocate_blocks_in_group(Ext2BlockGroup* group, uint32_t num_blocks, bool zero_out);
+	ResultRet<DC::vector<uint32_t>> allocate_blocks(uint32_t num_blocks, bool zero_out = true);
 	uint32_t allocate_block(bool zero_out = true);
-	DC::vector<uint32_t> allocate_blocks(uint32_t num_blocks);
+
 	void free_block(uint32_t block);
 	void free_blocks(DC::vector<uint32_t>& blocks);
 	Ext2BlockGroup* get_block_group(uint32_t block_group);

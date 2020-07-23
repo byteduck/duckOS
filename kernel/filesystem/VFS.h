@@ -48,6 +48,10 @@ public:
 	Result unlink(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
 	Result rmdir(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
 	Result mkdir(DC::string path, mode_t mode, const DC::shared_ptr<LinkedInode>& base);
+	Result mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, mode_t mode);
+	Result truncate(DC::string& path, off_t length, const DC::shared_ptr<LinkedInode>& base);
+	Result ftruncate(const DC::shared_ptr<FileDescriptor>& fd, off_t length);
+
 	bool mount_root(Filesystem* fs);
 	DC::shared_ptr<LinkedInode> root_ref();
 

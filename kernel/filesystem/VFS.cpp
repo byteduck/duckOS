@@ -192,6 +192,22 @@ Result VFS::mkdir(DC::string path, mode_t mode, const DC::shared_ptr<LinkedInode
 	return SUCCESS;
 }
 
+Result VFS::mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, mode_t mode) {
+	return -1; //TODO
+}
+
+Result VFS::truncate(DC::string& path, off_t length, const DC::shared_ptr<LinkedInode>& base) {
+	if(length < 0) return -EINVAL;
+ 	auto ino_or_err = resolve_path(path, base);
+	if(ino_or_err.is_error()) return ino_or_err.code();
+	if(ino_or_err.value()->inode()->metadata().is_directory()) return -EISDIR;
+	return ino_or_err.value()->inode()->truncate(length);
+}
+
+Result VFS::ftruncate(const DC::shared_ptr<FileDescriptor>& fd, off_t length) {
+	return -1; //TODO
+}
+
 DC::shared_ptr<LinkedInode> VFS::root_ref() {
 	return _root_ref;
 }

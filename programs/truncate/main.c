@@ -17,40 +17,29 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_RESULT_HPP
-#define DUCKOS_RESULT_HPP
+//A simple program that prompts you to type something and repeats it back to you.
 
-#include <common/shared_ptr.hpp>
-#include <kernel/kstdio.h>
+#include <stdio.h>
+#include <errno.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <string.h>
 
-class Result {
-public:
-	static const int Success = 0;
+int main(int argc, char** argv) {
+	if(argc < 3) {
+		printf("Missing operands\nUsage: truncate FILE LENGTH\n");
+		return 1;
+	}
 
-	Result(int code);
+	errno = 0;
+	long new_len = strtol(argv[2], NULL, 10);
+	if((new_len == 0 && errno != 0) || new_len < 0) {
+		printf("Invalid argument\n");
+		return errno;
+	}
 
-	bool is_success() const;
-	bool is_error() const;
-	int code() const;
-private:
-	int _code;
-};
-
-template<typename T>
-class ResultRet {
-public:
-	ResultRet(int error):  _result(error) {};
-	ResultRet(Result error): _result(error) {};
-	ResultRet(T ret): _ret(ret), _result(0) {};
-	bool is_error() const {return _result.is_error();}
-	int code() const {return _result.code();}
-	T value() {
-		ASSERT(!is_error());
-		return _ret;
-	};
-private:
-	T _ret;
-	Result _result;
-};
-
-#endif //DUCKOS_RESULT_HPP
+	int res = truncate(argv[1], new_len);
+	if(res != -1) return 0;
+	printf("Cannot truncate '%s': %s\n", argv[1], strerror(errno));
+	return errno;
+}

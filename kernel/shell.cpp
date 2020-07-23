@@ -299,10 +299,6 @@ void Shell::command_eval(char *cmd, char *args){
 		PCI::enumerate_devices([](PCI::Address address, PCI::ID id, uint16_t type, void* dataPtr) {
 			printf("%x:%x.%x Vendor: 0x%x Device: 0x%x Type: 0x%x\n", address.bus, address.slot, address.function, id.vendor, id.device, type);
 		}, nullptr);
-	}else if(strcmp(cmd, "addtest")){
-		VFS::inst().root_ref()->inode()->create_entry(args, MODE_FILE);
-	}else if(strcmp(cmd, "removetest")) {
-		VFS::inst().root_ref()->inode()->remove_entry(args);
 	}else{
 		//Execute program
 		DC::string cmds = cmd;

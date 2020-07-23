@@ -97,6 +97,8 @@ public:
 	int sys_rmdir(char* name);
 	int sys_mkdir(char *path, mode_t mode);
 	int sys_mkdirat(int fd, char *path, mode_t mode);
+	int sys_truncate(char* path, off_t length);
+	int sys_ftruncate(int fd, off_t length);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;

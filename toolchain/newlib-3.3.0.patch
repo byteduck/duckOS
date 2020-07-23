@@ -11678,10 +11678,10 @@ index 0000000..b643455
 +
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..003c38a
+index 0000000..68ac60a
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,347 @@
+@@ -0,0 +1,369 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12029,13 +12029,35 @@ index 0000000..003c38a
 +	}
 +	return ret;
 +}
++
++int truncate(const char* file, off_t length) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_TRUNCATE), "b"(file), "c"(length));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int ftruncate(int fd, off_t length) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_FTRUNCATE), "b"(fd), "c"(length));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..0a35265
+index 0000000..42241dd
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,48 @@
+@@ -0,0 +1,50 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12082,5 +12104,7 @@ index 0000000..0a35265
 +#define SYS_RMDIR 25
 +#define SYS_MKDIR 26
 +#define SYS_MKDIRAT 27
++#define SYS_TRUNCATE 28
++#define SYS_FTRUNCATE 29
 +
 +int _read_dir(int file, char *ptr, size_t len);

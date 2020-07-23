@@ -70,6 +70,7 @@ size_t FileBasedFilesystem::logical_block_size() {
 
 Result FileBasedFilesystem::read_block(size_t block, uint8_t *buffer) {
 	LOCK(lock);
+
 	//If we have a cache entry already, just read that
 	BlockCacheEntry *cache_entry = get_chache_entry(block);
 	if (cache_entry) {
@@ -119,12 +120,7 @@ Result FileBasedFilesystem::write_blocks(size_t block, size_t count, const uint8
 Result FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
 	LOCK(lock);
 	BlockCacheEntry* entry = get_chache_entry(block);
-	if(!entry) {
-		entry = make_cache_entry(block);
-		ssize_t fres = _file->read(entry->data, block_size());
-		if(fres < 0) return fres;
-		if(fres != block_size()) return -EIO;
-	}
+	if(!entry) entry = make_cache_entry(block);
 	memcpy(entry->data, buffer, block_size());
 	entry->dirty = true;
 	return SUCCESS;
@@ -135,6 +131,23 @@ Result FileBasedFilesystem::zero_block(size_t block) {
 	BlockCacheEntry* entry = get_chache_entry(block);
 	if(!entry) entry = make_cache_entry(block);
 	memset(entry->data, 0, block_size());
+	entry->dirty = true;
+	return SUCCESS;
+}
+
+Result FileBasedFilesystem::truncate_block(size_t block, size_t new_size) {
+	if(new_size >= block_size()) return -EOVERFLOW;
+	LOCK(lock);
+	BlockCacheEntry* entry = get_chache_entry(block);
+	if(!entry) {
+		entry = make_cache_entry(block);
+		int res = _file->seek(block * block_size(), SEEK_SET);
+		if(res < 0) return res;
+		res = _file->read(entry->data, block_size());
+		if(res < 0) return res;
+		if(res != block_size()) return -EIO;
+	}
+	memset(entry->data + new_size, 0, (int)(block_size() - new_size));
 	entry->dirty = true;
 	return SUCCESS;
 }

@@ -131,7 +131,6 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
-		file_descriptors = DC::vector<DC::shared_ptr<FileDescriptor>>(3);
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
@@ -578,7 +577,6 @@ int Process::sys_getcwd(char *buf, size_t length) {
 
 int Process::sys_readdir(int file, char *buf, size_t len) {
 	check_ptr(buf);
-	TaskManager::yield();
 	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return file_descriptors[file]->read_dir_entries(buf, len);
 }
@@ -690,6 +688,22 @@ int Process::sys_mkdir(char *path, mode_t mode) {
 	return 0;
 }
 
-int Process::sys_mkdirat(int fd, char *path, mode_t mode) {
-	return -1;
+int Process::sys_mkdirat(int file, char *path, mode_t mode) {
+	check_ptr(path);
+	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
+	DC::string strpath(path);
+	auto ret = VFS::inst().mkdirat(file_descriptors[file], strpath, mode);
+	if(ret.is_error()) return ret.code();
+	return 0;
+}
+
+int Process::sys_truncate(char* path, off_t length) {
+	check_ptr(path);
+	DC::string strpath(path);
+	return VFS::inst().truncate(strpath, length, cwd).code();
+}
+
+int Process::sys_ftruncate(int file, off_t length) {
+	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
+	return VFS::inst().ftruncate(file_descriptors[file], length).code();
 }

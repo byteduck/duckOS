@@ -22,6 +22,7 @@
 #include <kernel/kstdio.h>
 #include <kernel/memory/kliballoc.h>
 #include <kernel/kstddef.h>
+#include <common/stdlib.h>
 #include "Ext2Inode.h"
 
 Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id) {
@@ -48,7 +49,8 @@ Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id
 Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw &raw, DC::vector<uint32_t>& block_pointers, ino_t parent): Inode(filesystem, i),  block_pointers(block_pointers), raw(raw) {
 	create_metadata();
 	if(IS_DIR(raw.mode)) {
-		DC::vector<DirectoryEntry> entries(2);
+		DC::vector<DirectoryEntry> entries;
+		entries.reserve(2);
 		entries.push_back(DirectoryEntry(i, TYPE_DIR, "."));
 		entries.push_back(DirectoryEntry(parent, TYPE_DIR, "..")); //Parent increases their hardlink count in add_entry
 		Result res = write_directory_entries(entries);
@@ -169,25 +171,18 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 	size_t bytes_left = length;
 	size_t block_index = first_block;
 
-	//We're starting the write past the end of the file, so allocate new blocks up until the first block
-	if(num_blocks() <= first_block) {
-		for(uint32_t block = num_blocks(); block <= first_block; block++) {
-			uint32_t newblock = ext2fs().allocate_block();
-			if(!newblock) return -ENOSPC;
-			set_block_pointer(block, newblock);
-		}
+	//If this write is going to expand the file, resize it
+	if(start + length > _metadata.size) {
+		auto res = truncate((off_t)start + (off_t)length);
+		if(res.is_error()) return res.code();
 	}
 
 	auto block_buf = new uint8_t[fs.block_size()];
 	while(bytes_left) {
 		uint32_t block = get_block_pointer(block_index);
 
-		//The block isn't allocated, so allocate it
-		if(!block) {
-			uint32_t newblock = ext2fs().allocate_block();
-			if(!newblock) return -ENOSPC;
-			set_block_pointer(block, newblock);
-		}
+		//The block isn't allocated, no space
+		if(!block) return -ENOSPC;
 
 		//Read the block into a buffer
 		ext2fs().read_block(block, block_buf);
@@ -214,13 +209,6 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 		//Write the block to disk/cache
 		ext2fs().write_block(block, block_buf);
 		block_index++;
-	}
-
-	if(start + length > _metadata.size) {
-		_metadata.size = start + length;
-		_dirty = true;
-		write_to_disk();
-		ext2fs().write_superblock();
 	}
 
 	delete[] block_buf;
@@ -406,6 +394,57 @@ Result Ext2Inode::remove_entry(const DC::string &name) {
 	return SUCCESS;
 }
 
+Result Ext2Inode::truncate(off_t length) {
+	if(length < 0) return -EINVAL;
+	if((size_t)length == _metadata.size) return SUCCESS;
+	LOCK(lock);
+
+	uint32_t new_num_blocks = (length + ext2fs().block_size() - 1) / ext2fs().block_size();
+
+	if(new_num_blocks > num_blocks()) {
+		//We're expanding the file, allocate new blocks
+		auto new_blocks_res = ext2fs().allocate_blocks(new_num_blocks - num_blocks(), true);
+		if(new_blocks_res.is_error()) return new_blocks_res.code();
+
+		//If we didn't get the amount of blocks we wanted, return ENOSPC
+		auto new_blocks = new_blocks_res.value();
+		if(new_blocks.size() != new_num_blocks - num_blocks()) return -ENOSPC;
+
+		//Add the new blocks to the block pointers
+		for(size_t i = 0; i < new_blocks.size(); i++)
+			block_pointers.push_back(new_blocks[i]);
+
+		//Write inode entry and block pointers to disk
+		_metadata.size = (size_t) length;
+		write_to_disk();
+	} else if(new_num_blocks < num_blocks()) {
+		//We're shrinking the file, free old blocks
+		for(size_t i = num_blocks(); i > new_num_blocks; i--)
+			ext2fs().free_block(get_block_pointer(i - 1));
+		block_pointers.resize(new_num_blocks);
+
+		//Free old pointer blocks as well
+		size_t new_num_pointer_blocks = calculate_num_ptr_blocks(new_num_blocks);
+		for(size_t i = pointer_blocks.size(); i > new_num_pointer_blocks; i--)
+			ext2fs().free_block(pointer_blocks[i - 1]);
+		pointer_blocks.resize(new_num_pointer_blocks);
+
+		//Zero out the unused portion of the last block
+		if(length % ext2fs().block_size())
+			ext2fs().truncate_block(get_block_pointer(new_num_blocks - 1), length % ext2fs().block_size());
+
+		//Write inode entry and block pointers to disk
+		_metadata.size = (size_t) length;
+		write_to_disk();
+	} else {
+		//Not changing the amount of blocks, so just write the inode entry to disk
+		_metadata.size = (size_t) length;
+		write_inode_entry();
+	}
+
+	return SUCCESS;
+}
+
 void Ext2Inode::read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index, uint8_t* block_buf) {
 	if(block_index >= num_blocks()) return;
 	ext2fs().read_block(singly_indirect_block, block_buf);
@@ -441,7 +480,8 @@ void Ext2Inode::read_triply_indirect(uint32_t triply_indirect_block, uint32_t& b
 void Ext2Inode::read_block_pointers(uint8_t* block_buf) {
 	LOCK(lock);
 	ALLOC_BLOCKBUF(block_buf, ext2fs().block_size());
-	block_pointers = DC::vector<uint32_t>(num_blocks());
+	block_pointers = DC::vector<uint32_t>();
+	block_pointers.reserve(num_blocks());
 	pointer_blocks = DC::vector<uint32_t>();
 
 	uint32_t block_index = 0;
@@ -477,7 +517,8 @@ Result Ext2Inode::write_to_disk(uint8_t* block_buf) {
 
 Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 	LOCK(lock);
-	pointer_blocks = DC::vector<uint32_t>();
+	pointer_blocks = DC::vector<uint32_t>(0);
+	pointer_blocks.reserve(calculate_num_ptr_blocks(num_blocks()));
 
 	if(_metadata.is_device()) {
 		//TODO: Update device inode
@@ -545,7 +586,7 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 	if(num_blocks() > 12 + ext2fs().block_pointers_per_block * ext2fs().block_pointers_per_block) {
 		printf("WARNING: Writing triply-indirect blocks to disk isn't supported yet!\n");
 		//TODO: Triply indirect blocks
-	}
+	} else raw.t_pointer = 0;
 
 	raw.logical_blocks = (block_pointers.size() + pointer_blocks.size()) * (ext2fs().block_size() / 512);
 	_dirty = true;
@@ -580,6 +621,24 @@ Result Ext2Inode::write_inode_entry(uint8_t* block_buf) {
 Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
 	LOCK(lock);
 
+	//First, determine the new file size
+	size_t new_filesize = 0;
+	for(size_t i = 0; i < entries.size(); i++) {
+		size_t ent_size = sizeof(ext2_directory) + entries[i].name_length;
+		ent_size += ent_size % 4 ? 4 - ent_size % 4 : 0; //4-byte align
+		new_filesize += ent_size;
+	}
+
+	//Account for null entry that fills the rest of the last block
+	//(and if the last entry is block-aligned, we need a whole additional block for the null entry)
+	if(new_filesize % fs.block_size() == 0) new_filesize++;
+	new_filesize = ((new_filesize + fs.block_size() - 1) / fs.block_size()) * fs.block_size();
+
+	//Resize the file to the new size
+	auto res = truncate((off_t) new_filesize);
+	if(res.is_error()) return res.code();
+
+	//Next, write all the entries
 	size_t cur_block = 0;
 	size_t cur_byte_in_block = 0;
 	auto* block_buf = new uint8_t[ext2fs().block_size()];
@@ -591,7 +650,7 @@ Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
 		raw_ent.name_length = ent.name_length;
 		raw_ent.type = ent.type;
 		raw_ent.inode = ent.id;
-		raw_ent.size = sizeof(raw_ent.size) + sizeof(raw_ent.inode) + sizeof(raw_ent.type) + sizeof(raw_ent.name_length) + raw_ent.name_length;
+		raw_ent.size = sizeof(raw_ent) + raw_ent.name_length;
 		raw_ent.size += raw_ent.size % 4 ? 4 - raw_ent.size % 4 : 0; //4-byte align
 
 		if(raw_ent.size + cur_byte_in_block >= ext2fs().block_size()) {
@@ -599,14 +658,6 @@ Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
 			memset(block_buf, 0, ext2fs().block_size());
 			cur_block++;
 			cur_byte_in_block = 0;
-			//We need to allocate a new block
-			if(!get_block_pointer(cur_block)) {
-				set_block_pointer(cur_block, ext2fs().allocate_block());
-				if(!get_block_pointer(cur_block)) {
-					delete[] block_buf;
-					return -ENOSPC;
-				}
-			}
 		}
 
 		memcpy(block_buf + cur_byte_in_block, &raw_ent, sizeof(raw_ent));
@@ -621,14 +672,6 @@ Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
 		memset(block_buf, 0, ext2fs().block_size());
 		cur_block++;
 		cur_byte_in_block = 0;
-		//We need to allocate a new block
-		if(!get_block_pointer(cur_block)) {
-			set_block_pointer(cur_block, ext2fs().allocate_block());
-			if(!get_block_pointer(cur_block)) {
-				delete[] block_buf;
-				return -ENOSPC;
-			}
-		}
 	}
 
 	//Make and write the null entry at the end
@@ -638,17 +681,6 @@ Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
 	end_ent.name_length = 0;
 	end_ent.inode = 0;
 	memcpy(block_buf + cur_byte_in_block, &end_ent, sizeof(end_ent));
-
-	//If we need to allocate a new block, do so
-	if(!get_block_pointer(cur_block)) {
-		set_block_pointer(cur_block, ext2fs().allocate_block());
-		if(!get_block_pointer(cur_block)) {
-			delete[] block_buf;
-			return -ENOSPC;
-		}
-	}
-
-	_metadata.size = block_pointers.size() * fs.block_size();
 
 	//Write the last block
 	ext2fs().write_block(get_block_pointer(cur_block), block_buf);
@@ -720,6 +752,28 @@ Result Ext2Inode::try_remove_dir() {
 	ext2fs().free_inode(*this);
 
 	return SUCCESS;
+}
+
+uint32_t Ext2Inode::calculate_num_ptr_blocks(uint32_t num_blocks) {
+	if(num_blocks <= 12) return 0;
+
+	uint32_t ret = 0;
+	uint32_t blocks_left = num_blocks - 12;
+
+	//Singly indirect blocks
+	blocks_left -= min(blocks_left, ext2fs().block_pointers_per_block);
+	ret += 1;
+	if(blocks_left == 0) return ret;
+
+	//Doubly indirect blocks
+	uint32_t dind_blocks = min(blocks_left, ext2fs().block_pointers_per_block * ext2fs().block_pointers_per_block);
+	blocks_left -= dind_blocks;
+	ret += 1 + (dind_blocks + ext2fs().block_pointers_per_block - 1) / ext2fs().block_pointers_per_block;
+	if(blocks_left == 0) return ret;
+
+	//TODO: Calculate triply indirect blocks
+	PANIC("EXT2_TIND", "We don't know how to calculate triply indirect blocks yet!", true);
+	return ret;
 }
 
 
