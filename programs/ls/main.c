@@ -22,11 +22,11 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <string.h>
 
 int main(int argc, char **argv, char **env) {
 	DIR *dir;
 	struct dirent *ent;
-	struct stat st;
 	char* dirname = ".";
 	if(argc >= 2) {
 		dirname = argv[1];
@@ -67,16 +67,7 @@ int main(int argc, char **argv, char **env) {
 		}
 		closedir (dir);
 	} else {
-		switch(errno) {
-			case ENOTDIR:
-				printf("ls: %s is not a directory\n", dirname);
-				break;
-			case ENOENT:
-				printf("ls: %s does not exist\n", dirname);
-				break;
-			default:
-				printf("ls: Error %d\n", errno);
-		}
-		return EXIT_FAILURE;
+		printf("Cannot mkdir '%s': %s\n", argv[1], strerror(errno));
+		return errno;
 	}
 }

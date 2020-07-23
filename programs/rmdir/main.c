@@ -22,30 +22,15 @@
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
+#include <string.h>
 
 int main(int argc, char** argv) {
 	if(argc < 2) {
-		printf("Missing directory operand\n");
+		printf("Missing directory operand\nUsage: rmdir DIRECTORY\n");
 		return 1;
 	}
 	int res = rmdir(argv[1]);
 	if(res == 0) return 0;
-	printf("Cannot remove directory '%s': ", argv[1]);
-	switch(errno) {
-		case ENOENT:
-			printf("No such file or directory\n");
-			break;
-		case ENOTDIR:
-			printf("Is not a directory\n");
-			break;
-		case ENOTEMPTY:
-			printf("Is not empty\n");
-			break;
-		case EINVAL:
-			printf("Invalid argument\n");
-			break;
-		default:
-			printf("Error %d\n", errno);
-	}
+	printf("Cannot remove directory '%s': %s\n", argv[1], strerror(errno));
 	return errno;
 }

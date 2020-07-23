@@ -23,32 +23,27 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 
 int main(int argc, char** argv) {
-	if(argc > 1) {
-		int f = open(argv[1], O_RDONLY);
-		if(f != -1) {
-			char buf[512];
-			int nread;
-			while((nread = read(f, buf, 512)) > 0) {
-				write(STDOUT_FILENO, buf, nread);
-			}
-			if(errno) {
-				printf("cat: Error %d\n", errno);
-			}
-		} else {
-			switch(errno) {
-				case ENOENT:
-					printf("cat: No such file\n");
-					break;
-				default:
-					printf("cat: Error %d\n", errno);
-			}
+	if(argc < 2) {
+		printf("cat: Missing file operand\nUsage: cat FILE\n");
+		return 1;
+	}
+	int f = open(argv[1], O_RDONLY);
+	if(f != -1) {
+		char buf[512];
+		int nread;
+		while((nread = read(f, buf, 512)) > 0) {
+			write(STDOUT_FILENO, buf, nread);
+		}
+		if(errno){
+			printf("Cannot cat '%s': %s\n", argv[1], strerror(errno));
 			return errno;
 		}
 	} else {
-		printf("cat: Please specify a file\n");
-		return 1;
+		printf("Cannot cat '%s': %s\n", argv[1], strerror(errno));
+		return errno;
 	}
 	return 0;
 }

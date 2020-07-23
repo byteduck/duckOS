@@ -22,40 +22,28 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/stat.h>
-
-void print_err(char* fname) {
-	switch(errno) {
-		case ENOENT:
-			printf("Cannot remove '%s': No such file or directory\n", fname);
-			break;
-		case ENOTDIR:
-			printf("Cannot remove '%s': Path is not a directory\n", fname);
-			break;
-		default:
-			printf("Canot remove '%s': Error %d\n", fname, errno);
-	}
-}
+#include <string.h>
 
 int main(int argc, char** argv) {
 	if(argc < 2) {
-		printf("Missing file operand\n");
+		printf("Missing file operand\nUsage: rm FILE\n");
 		return 1;
 	}
 
 	struct stat statbuf;
 	int res = stat(argv[1], &statbuf);
 	if(res != 0) {
-		print_err(argv[1]);
+		printf("Cannot remove '%s': %s\n", argv[1], strerror(errno));
 		return errno;
 	}
 
 	if(S_ISDIR(statbuf.st_mode)) {
-		printf("Cannot remove '%s': Is a directory\n", argv[1]);
+		printf("Cannot remove '%s': %s\n", argv[1], strerror(EISDIR));
 		return EISDIR;
 	}
 
 	res = remove(argv[1]);
 	if(res == 0) return 0;
-	print_err(argv[1]);
+	printf("Cannot remove '%s': %s\n", argv[1], strerror(EISDIR));
 	return errno;
 }

@@ -22,26 +22,15 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 
 int main(int argc, char** argv) {
 	if(argc < 2) {
-		printf("Missing name operand\n");
+		printf("Missing name operand\nUsage: mkdir DIRNAME");
 		return 1;
 	}
 	int res = mkdir(argv[1], 0700);
 	if(res != -1) return 0;
-	switch(errno) {
-		case ENOENT:
-			printf("Cannot mkdir '%s': No such file or directory\n", argv[1]);
-			break;
-		case ENOTDIR:
-			printf("Cannot mkdir '%s': Path is not a directory\n", argv[1]);
-			break;
-		case EEXIST:
-			printf("Cannot mkdir '%s': Directory exists\n", argv[1]);
-			break;
-		default:
-			printf("Canot mkdir '%s': Error %d\n", argv[1], errno);
-	}
+	printf("Cannot mkdir '%s': %s\n", argv[1], strerror(errno));
 	return errno;
 }

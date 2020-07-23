@@ -22,23 +22,15 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <string.h>
 
 int main(int argc, char** argv) {
 	if(argc < 2) {
-		printf("Missing file operand\n");
+		printf("Missing file operand\nUsage: touch FILE\n");
 		return 1;
 	}
 	int res = open(argv[1], O_CREAT);
 	if(res != -1) return 0;
-	switch(errno) {
-		case ENOENT:
-			printf("Cannot touch '%s': No such file or directory\n", argv[1]);
-			break;
-		case ENOTDIR:
-			printf("Cannot touch '%s': Path is not a directory\n", argv[1]);
-			break;
-		default:
-			printf("Canot touch '%s': Error %d\n", argv[1], errno);
-	}
+	printf("Cannot touch '%s': %s\n", argv[1], strerror(errno));
 	return errno;
 }
