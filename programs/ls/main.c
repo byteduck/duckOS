@@ -67,7 +67,7 @@ int main(int argc, char **argv, char **env) {
 		}
 		closedir (dir);
 	} else {
-		printf("Cannot mkdir '%s': %s\n", argv[1], strerror(errno));
+		printf("Cannot ls '%s': %s\n", argv[1], strerror(errno));
 		return errno;
 	}
 }
