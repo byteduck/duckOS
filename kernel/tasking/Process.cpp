@@ -131,6 +131,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		ttydesc->set_options(O_RDWR);
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
@@ -562,8 +563,9 @@ int Process::sys_chdir(char *path) {
 	DC::string strpath = path;
 	auto inode_or_error = VFS::inst().resolve_path(strpath, cwd, nullptr);
 	if(inode_or_error.is_error()) return inode_or_error.code();
+	if(!inode_or_error.value()->inode()->metadata().is_directory()) return -ENOTDIR;
 	cwd = inode_or_error.value();
-	return 0;
+	return SUCCESS;
 }
 
 int Process::sys_getcwd(char *buf, size_t length) {

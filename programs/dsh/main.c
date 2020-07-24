@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <stdlib.h>
 
 char cwd[4096];
 char cmdbuf[4096];
@@ -54,28 +55,15 @@ int main() {
 		if(!strcmp(cmd, "exit")) {
 			break;
 		} else if(!strcmp(cmd, "cd")) {
+			errno = 0;
 			if(argc < 2) printf("No directory specified.\n");
-			else if(chdir(argv[1])){
-				switch(errno) {
-					case ENOENT:
-						printf("directory does not exist\n");
-						break;
-					case ENOTDIR:
-						printf("is not a directory\n");
-						break;
-					default:
-						printf("%d\n", errno);
-				}
-			}
+			else if(chdir(argv[1])) perror("Could not change directory");
 		} else {
 			pid_t pid = fork();
 			if(!pid){
-				if(execvp(cmd, argv)) {
-					if(errno == ENOTDIR) printf("Cannot execute %s: is a directory\n", cmd);
-					else if(errno == ENOENT) printf("%s is not a recognized command or file.\n", cmd);
-					else printf("Unknown error: %d\n", errno);
-				}
-				return 0;
+				execvp(cmd, argv);
+				perror("Cannot execute");
+				exit(errno);
 			} else {
 				waitpid(pid, NULL, 0);
 			}

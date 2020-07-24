@@ -40,6 +40,7 @@ public:
 	void set_options(int options);
 	bool readable();
 	bool writable();
+	bool append_mode();
 	InodeMetadata metadata();
 
 	int seek(off_t offset, int whence);
@@ -48,6 +49,8 @@ public:
 	ssize_t read_dir_entries(char *buffer, size_t len);
 	ssize_t write(const uint8_t* buffer, size_t count);
 	size_t offset();
+
+
 private:
 	File* _file;
 	DC::shared_ptr<File> _fileptr;
@@ -56,6 +59,7 @@ private:
 	bool _readable {false};
 	bool _writable {false};
 	bool _can_seek {true};
+	bool _append {false};
 
 	off_t _seek {0};
 
