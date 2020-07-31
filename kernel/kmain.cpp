@@ -152,6 +152,7 @@ void kmain_late(){
 	//Create the shell process and kill the kinit process
 	TaskManager::add_process(Process::create_kernel("kshell", shell_process));
 	TaskManager::current_process()->kill(SIGKILL);
+	ASSERT(false); //We shouldn't get here
 }
 
 struct multiboot_info parse_mboot(uint32_t physaddr){

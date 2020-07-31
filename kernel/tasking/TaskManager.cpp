@@ -126,9 +126,9 @@ Process *TaskManager::next_process() {
 	while(next_proc->state == PROCESS_DEAD) {
 		next_proc->prev->next = next_proc->next;
 		next_proc->next->prev = next_proc->prev;
-		Process* new_next_proc = next_proc->next;
-		delete next_proc;
-		do next_proc = new_next_proc; while(next_proc->state == PROCESS_DEAD); //Make sure not to choose a dead process
+		Process* to_delete = next_proc;
+		do next_proc = next_proc->next; while(next_proc->state == PROCESS_DEAD || next_proc->is_yielding()); //Make sure not to choose a dead or yielding process
+		delete to_delete;
 	}
 
 	return next_proc;

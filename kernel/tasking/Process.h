@@ -144,7 +144,7 @@ private:
 
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
-	DC::queue<int> pending_signals = {0};
+	DC::queue<int> pending_signals;
 	bool _in_signal = false;
 	bool _ready_to_handle_signal = false;
 	bool _just_finished_signal = false;

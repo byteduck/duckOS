@@ -104,6 +104,7 @@ public:
 	static PATADevice* find(Channel channel, DriveType drive, bool use_pio = false);
 
 	//PATADevice
+	~PATADevice();
 	void io_delay();
 	uint8_t wait_status(uint8_t flags = ATA_STATUS_BSY);
 	void wait_ready();
@@ -148,6 +149,9 @@ private:
 	//Interrupt stuff
 	TaskYieldQueue _yielder;
 	uint8_t _post_irq_status;
+
+	//Lock
+	YieldLock _lock;
 };
 
 

@@ -59,6 +59,7 @@ preempt_now_asm:
 	mov eax, 0x20
 	out 0x20, al
 	pop eax
+	sti
     ret
 
 [global preempt_init_asm]

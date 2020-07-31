@@ -298,7 +298,8 @@ void Process::kill(int signal, bool notify_yielders) {
 
 bool Process::handle_pending_signal() {
 	if(pending_signals.empty() || _in_signal) return false;
-	int signal = pending_signals.pop();
+	int signal = pending_signals.front();
+	pending_signals.pop();
 	if(signal >= 0 && signal <= 32) {
 		Signal::SignalSeverity severity = Signal::signal_severities[signal];
 
@@ -421,12 +422,12 @@ void *Process::kernel_stack_top() {
 
 void Process::yield_to(TaskYieldQueue& yielder) {
 	ASSERT(TaskManager::enabled());
+
 	yielder.add_process(this);
 	_yielding_to = &yielder;
 	state = PROCESS_YIELDING;
+
 	TaskManager::yield();
-	_yielding_to = nullptr;
-	state = PROCESS_ALIVE;
 }
 
 void Process::yield_to(Process* proc) {
@@ -434,7 +435,7 @@ void Process::yield_to(Process* proc) {
 }
 
 bool Process::is_yielding() {
-	return _yielding_to != nullptr;
+	return state == PROCESS_YIELDING;
 }
 
 TaskYieldQueue* Process::yielding_to() {
@@ -443,6 +444,7 @@ TaskYieldQueue* Process::yielding_to() {
 
 void Process::finish_yielding() {
 	_yielding_to = nullptr;
+	state = PROCESS_ALIVE;
 }
 
 

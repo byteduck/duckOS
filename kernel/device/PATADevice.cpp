@@ -47,8 +47,8 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 	set_irq(drive == MASTER ? 14 : 15);
 
 	//Enable bus mastering and interrupt line
+	PCI::enable_interrupt(addr);
 	if(!use_pio) {
-		PCI::enable_interrupt(addr);
 		PCI::enable_bus_mastering(addr);
 
 		//DMA stuff
@@ -92,6 +92,10 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 	printf("PATA: Setup disk %s using %s\n", _model_number, _use_pio ? "PIO" : "DMA");
 }
 
+PATADevice::~PATADevice() {
+	if(_prdt) delete _prdt;
+}
+
 void PATADevice::io_delay() {
 	inb(_io_base + ATA_ALTSTATUS);
 	inb(_io_base + ATA_ALTSTATUS);
@@ -114,6 +118,7 @@ void PATADevice::wait_ready() {
 
 Result PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *buf) {
 	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
+	LOCK(_lock);
 
 	if(num_sectors * 512 > _dma_region.phys->size) return false;
 	_prdt->addr = _dma_region.phys->start;
@@ -138,7 +143,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *b
 
 	//Select drive
 	outb(_io_base + ATA_CONTROL, 0);
-	outb(_io_base + ATA_DRIVESEL, 0xe0u | (_drive == SLAVE ? 0x8u : 0x0u));
+	outb(_io_base + ATA_DRIVESEL, 0x40u | (_drive == SLAVE ? 0x8u : 0x0u));
 	io_delay();
 
 	//Write features + Higher seccnt (We're dealing w/ 32 bit here so no need for upper stuff)
@@ -157,15 +162,15 @@ Result PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *b
 	wait_ready();
 
 	//Send read DMA command
-	cli();
 	outb(_io_base + ATA_COMMAND, ATA_READ_DMA_EXT);
 	io_delay();
 
-	//Start bus master
+	//Install IRQ and start bus master
+	cli();
+	reinstall_irq();
 	outb(_bus_master_base, 0x9);
 
 	//Wait for irq
-	reinstall_irq();
 	TaskManager::current_process()->yield_to(_yielder);
 	uninstall_irq();
 
@@ -182,6 +187,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *b
 
 Result PATADevice::write_sectors_dma(size_t lba, uint16_t num_sectors, const uint8_t *buf) {
 	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
+	LOCK(_lock);
 
 	if(num_sectors * 512 > _dma_region.phys->size) return false;
 	_prdt->addr = _dma_region.phys->start;
@@ -225,15 +231,15 @@ Result PATADevice::write_sectors_dma(size_t lba, uint16_t num_sectors, const uin
 	wait_ready();
 
 	//Send read DMA command
-	cli();
 	outb(_io_base + ATA_COMMAND, ATA_WRITE_DMA_EXT);
 	io_delay();
 
-	//Start bus master
+	//Setup IRQ and start bus master
+	cli();
+	reinstall_irq();
 	outb(_bus_master_base, 0x1);
 
 	//Wait for irq
-	reinstall_irq();
 	TaskManager::current_process()->yield_to(_yielder);
 	uninstall_irq();
 
@@ -246,17 +252,31 @@ Result PATADevice::write_sectors_dma(size_t lba, uint16_t num_sectors, const uin
 }
 
 void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer) {
+	LOCK(_lock);
+
 	wait_status(ATA_STATUS_BSY);
-	outb(_io_base + ATA_DRIVESEL, 0xe0u | (_drive == SLAVE ? 0x8u : 0x0u));
-	outb(_io_base + ATA_FEATURES, 0x00);
+
+	outb(_control_base, 0);
+	outb(_io_base + ATA_DRIVESEL, 0xe0u | (_drive == SLAVE ? 0x8u  : 0x0u));
+	io_delay();
+
+	outb(_io_base + ATA_FEATURES, 0x0);
+	outb(_io_base + ATA_SECCNT0, 0);
+	outb(_io_base + ATA_LBA0, 0);
+	outb(_io_base + ATA_LBA1, 0);
+	outb(_io_base + ATA_LBA2, 0);
+
 	outb(_io_base + ATA_SECCNT0, sectors);
 	outb(_io_base + ATA_LBA0, (uint8_t) sector);
 	outb(_io_base + ATA_LBA1, (uint8_t)(sector >> 8u));
 	outb(_io_base + ATA_LBA2, (uint8_t)(sector >> 16u));
+
 	wait_ready();
+
 	cli();
 	reinstall_irq();
 	outb(_io_base + ATA_COMMAND, ATA_WRITE_PIO);
+
 	for(auto j = 0; j < sectors; j++) {
 		io_delay();
 		while(inb(_io_base + ATA_STATUS) & ATA_STATUS_BSY || !(inb(_io_base + ATA_STATUS) & ATA_STATUS_DRQ));
@@ -272,19 +292,35 @@ void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8
 }
 
 void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buffer) {
+	LOCK(_lock);
+
 	wait_status(ATA_STATUS_BSY);
-	outb(_io_base + ATA_DRIVESEL, 0xe0u | (_drive == SLAVE ? 0x8u : 0x0u));
-	outb(_io_base + ATA_FEATURES, 0x00);
+
+	outb(_control_base, 0);
+	outb(_io_base + ATA_DRIVESEL, 0xe0u | (_drive == SLAVE ? 0x8u  : 0x0u));
+	io_delay();
+
+	outb(_io_base + ATA_FEATURES, 0x0);
+	outb(_io_base + ATA_SECCNT0, 0);
+	outb(_io_base + ATA_LBA0, 0);
+	outb(_io_base + ATA_LBA1, 0);
+	outb(_io_base + ATA_LBA2, 0);
+
 	outb(_io_base + ATA_SECCNT0, sectors);
 	outb(_io_base + ATA_LBA0, (uint8_t) sector);
 	outb(_io_base + ATA_LBA1, (uint8_t)(sector >> 8u));
 	outb(_io_base + ATA_LBA2, (uint8_t)(sector >> 16u));
+
+	wait_ready();
+
 	cli();
 	reinstall_irq();
 	outb(_io_base + ATA_COMMAND, ATA_READ_PIO);
+
 	for(auto j = 0; j < sectors; j++) {
 		TaskManager::current_process()->yield_to(_yielder);
 		cli();
+
 		for (auto i = 0; i < 256; i++) {
 			uint16_t tmp = inw(_io_base + ATA_DATA);
 			buffer[i * 2] = (uint8_t) tmp;
@@ -292,8 +328,9 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 		}
 		buffer += 512;
 	}
-	sti();
+
 	uninstall_irq();
+	sti();
 }
 
 Result PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {

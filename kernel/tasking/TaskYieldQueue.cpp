@@ -20,7 +20,7 @@
 #include "TaskYieldQueue.h"
 #include "Process.h"
 
-TaskYieldQueue::TaskYieldQueue(): DC::queue<pid_t>(1) {
+TaskYieldQueue::TaskYieldQueue(): DC::queue<pid_t>() {
 
 }
 
@@ -30,13 +30,15 @@ void TaskYieldQueue::add_process(Process *p) {
 
 void TaskYieldQueue::set_ready() {
 	if(empty()) return;
-	Process* proc = TaskManager::process_for_pid(pop());
+	Process* proc = TaskManager::process_for_pid(front());
+	pop();
 	if(proc) proc->finish_yielding();
 }
 
 void TaskYieldQueue::set_all_ready() {
 	while(!empty()) {
-		Process* proc = TaskManager::process_for_pid(pop());
+		Process* proc = TaskManager::process_for_pid(front());
+		pop();
 		if(proc) proc->finish_yielding();
 	}
 }

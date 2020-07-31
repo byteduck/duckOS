@@ -53,7 +53,7 @@ namespace PIT {
 	}
 
 	void init(){
-		auto divisor = (uint16_t)( 1193180u / PIT_FREQUENCY);
+		auto divisor = (uint16_t)(1193180u / PIT_FREQUENCY);
 
 		uint8_t ocw = 0;
 		ocw = (ocw & ~0xEu) | 0x6u;

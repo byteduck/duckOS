@@ -29,43 +29,74 @@ namespace DC {
 	template<typename T>
 	class queue {
 	public:
-		queue(size_t capacity = 0): _storage(new T[capacity]), _capacity(capacity), _size(0) {
+		queue(): _storage(nullptr), _capacity(0), _size(0) {
 
 		}
 
 		~queue() {
-			delete[] _storage;
+			if(_front > _back) {
+				for(size_t i = _back; i <= _front; i++)
+					_storage[i].~T();
+			} else if(_back > _front) {
+				for(size_t i = _front; i <= _back; i++)
+					_storage[i].~T();
+			}
+
+			kfree(_storage);
 		}
 
 		void push(const T& elem) {
-			if(size() == _capacity) {
-				if(_capacity == 0) _capacity = 1;
-				else _capacity *= 2;
-				T* tmp_storage = new T[_capacity];
-				for(size_t i = 0; i < _size; i++) {
-					tmp_storage[i] = _storage[i];
-				}
-				delete[] _storage;
-				_storage = tmp_storage;
+			if(size() == _capacity)
+				realloc(_capacity ? _capacity * 2 : 1);
+
+			if(_size == 0) {
+				_front = 0;
+				_back = 0;
+			} else {
+				_back = (_back + 1) % _capacity;
 			}
-			if((int) _front == -1) _front = 0;
-			_back++;
-			_back = _back % _capacity;
-			_storage[_back] = DC::move(elem);
+
+			new(&_storage[_back]) T(elem);
+
 			_size++;
 		}
 
-		T& pop() {
-			T& ret = _storage[_front];
-			if(_front == _back) {
-				_front = -1;
-				_back = -1;
-			} else {
-				_front++;
-				_front = _front % _capacity;
+		void realloc(size_t new_capacity) {
+			if(new_capacity == _capacity) return;
+
+			if(_storage == nullptr) {
+				_capacity = new_capacity;
+				_storage = (T*) kcalloc(_capacity, sizeof(T));
+				return;
 			}
+
+			if(new_capacity < _size) {
+				for(size_t i = new_capacity; i < _size; i++)
+					_storage[i].~T();
+				_size = new_capacity;
+			}
+
+			T* tmp_storage = (T*) kcalloc(new_capacity, sizeof(T));
+			for(size_t i = 0; i < _size; i++) {
+				new (&tmp_storage[i]) T(_storage[i]);
+				_storage[i].~T();
+			}
+
+			kfree(_storage);
+			_storage = tmp_storage;
+			_capacity = new_capacity;
+		}
+
+		void pop() {
+			_storage[_front].~T();
 			_size--;
-			return ret;
+
+			if(_size == 0) {
+				_front = 0;
+				_back = 0;
+			} else {
+				_front = (_front + 1) % _capacity;
+			}
 		}
 
 		T& front() const {
@@ -83,12 +114,13 @@ namespace DC {
 		size_t size() const {
 			return _size;
 		}
+
 	private:
 		T* _storage;
 		size_t _capacity;
 		size_t _size = 0;
-		size_t _front = -1;
-		size_t _back = -1;
+		size_t _front = 0;
+		size_t _back = 0;
 	};
 }
 
