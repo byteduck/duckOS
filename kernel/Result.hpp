@@ -44,7 +44,7 @@ public:
 	ResultRet(T ret): _ret(ret), _result(0) {};
 	bool is_error() const {return _result.is_error();}
 	int code() const {return _result.code();}
-	T value() {
+	T& value() {
 		ASSERT(!is_error());
 		return _ret;
 	};
