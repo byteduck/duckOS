@@ -221,19 +221,12 @@ Process::Process(Process *to_fork, Registers &regs){
 	parent = to_fork->_pid;
 	quantum = to_fork->quantum;
 
-	//Copy signal handlers, file descriptors, and pipes
-	for(size_t i = 0; i < to_fork->file_descriptors.size(); i++)
-		file_descriptors.push_back(to_fork->file_descriptors[i]);
-
-	for(size_t i = 0; i < to_fork->pipes.size(); i++) {
-		PipeFD& pipefd = to_fork->pipes[i];
-		pipes.push_back(pipefd);
-		if(pipefd.write_fd) pipefd.pipe->add_writer();
-		if(pipefd.read_fd) pipefd.pipe->add_reader();
-	}
-
+	//Copy signal handlers and file descriptors
 	for(int i = 0; i < 32; i++)
 		signal_actions[i] = to_fork->signal_actions[i];
+
+	for(size_t i = 0; i < to_fork->file_descriptors.size(); i++)
+		file_descriptors.push_back(DC::make_shared<FileDescriptor>(*to_fork->file_descriptors[i]));
 
 	//Allocate kernel stack
 	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
@@ -507,13 +500,25 @@ pid_t Process::sys_fork(Registers& regs) {
 }
 
 int Process::exec(const DC::string& filename, ProcessArgs* args) {
+	//Create the new process
 	auto R_new_proc = Process::create_user(filename, args, parent);
-	delete args;
-	filename.~string(); //Manually delete because we won't return from here and we need to clean up resources
 	if(R_new_proc.is_error()) return R_new_proc.code();
-	R_new_proc.value()->_pid = this->pid();
-	R_new_proc.value()->_yielder = this->_yielder;
-	TaskManager::add_process(R_new_proc.value());
+	auto* new_proc = R_new_proc.value();
+
+	//Properly set new process's PID, yielders, and stdout/in/err
+	new_proc->_pid = this->pid();
+	new_proc->_yielder = this->_yielder;
+	for(size_t i = 0; i < 3; i++)
+		new_proc->file_descriptors[i] = DC::make_shared<FileDescriptor>(*file_descriptors[i]);
+
+	//Add the new process to the process list
+	TaskManager::add_process(new_proc);
+
+	//Manually delete because we won't return from here and we need to clean up resources
+	delete args;
+	filename.~string();
+
+	//Kill self and assert we don't continue after killing
 	kill(SIGKILL, false);
 	ASSERT(false)
 	return -1;
@@ -567,20 +572,6 @@ int Process::sys_open(char *filename, int options, int mode) {
 int Process::sys_close(int file) {
 	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	file_descriptors[file] = DC::shared_ptr<FileDescriptor>(nullptr);
-
-	//If it's a pipe, subtract the reader/writer count
-	for(size_t i = 0; i < pipes.size(); i++) {
-		if(pipes[i].read_fd == file) {
-			pipes[i].pipe->remove_reader();
-			pipes[i].read_fd = 0;
-		}
-
-		if(pipes[i].write_fd == file) {
-			pipes[i].pipe->remove_writer();
-			pipes[i].write_fd = 0;
-		}
-	}
-
 	return 0;
 }
 
@@ -747,17 +738,35 @@ int Process::sys_pipe(int filedes[2]) {
 	//Make the read FD
 	auto pipe_read_fd = DC::make_shared<FileDescriptor>(pipe);
 	pipe_read_fd->set_options(O_RDONLY);
+	pipe_read_fd->set_fifo_reader();
 	file_descriptors.push_back(pipe_read_fd);
 	filedes[0] = (int) file_descriptors.size() - 1;
 
 	//Make the write FD
 	auto pipe_write_fd = DC::make_shared<FileDescriptor>(pipe);
 	pipe_write_fd->set_options(O_WRONLY);
+	pipe_read_fd->set_fifo_writer();
 	file_descriptors.push_back(pipe_write_fd);
 	filedes[1] = (int) file_descriptors.size() - 1;
 
-	//Keep track of the pipe
-	pipes.push_back({pipe, filedes[0], filedes[1]});
-
 	return SUCCESS;
+}
+
+int Process::sys_dup(int oldfd) {
+	if(oldfd < 0 || oldfd >= (int) file_descriptors.size() || !file_descriptors[oldfd]) return -EBADF;
+	file_descriptors.push_back(file_descriptors[oldfd]);
+	return (int) file_descriptors.size() - 1;
+}
+
+int Process::sys_dup2(int oldfd, int newfd) {
+	if(oldfd < 0 || oldfd >= (int) file_descriptors.size() || !file_descriptors[oldfd]) return -EBADF;
+	if(newfd == oldfd) return oldfd;
+	if(newfd >= file_descriptors.size()) file_descriptors.resize(newfd + 1);
+	file_descriptors[newfd] = file_descriptors[oldfd];
+	return newfd;
+}
+
+int Process::sys_isatty(int file) {
+	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
+	return file_descriptors[file]->file()->is_tty();
 }

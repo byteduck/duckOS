@@ -33,8 +33,9 @@ class DirectoryEntry;
 class Device;
 class FileDescriptor {
 public:
-	FileDescriptor(DC::shared_ptr<File> file);
-	FileDescriptor(Device* device);
+	explicit FileDescriptor(DC::shared_ptr<File> file);
+	explicit FileDescriptor(Device* device);
+	explicit FileDescriptor(FileDescriptor& other);
 	~FileDescriptor();
 
 	void set_options(int options);
@@ -42,6 +43,7 @@ public:
 	bool writable();
 	bool append_mode();
 	InodeMetadata metadata();
+	File* file();
 
 	int seek(off_t offset, int whence);
 	ssize_t read(uint8_t* buffer, size_t count);
@@ -50,6 +52,8 @@ public:
 	ssize_t write(const uint8_t* buffer, size_t count);
 	size_t offset();
 
+	void set_fifo_reader();
+	void set_fifo_writer();
 
 private:
 	File* _file;
@@ -62,6 +66,7 @@ private:
 	bool _append {false};
 
 	off_t _seek {0};
+	bool _is_fifo_writer = false;
 
 	YieldLock lock;
 };

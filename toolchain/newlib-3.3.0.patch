@@ -11678,10 +11678,10 @@ index 0000000..b643455
 +
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..34f0ff2
+index 0000000..203eab6
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,380 @@
+@@ -0,0 +1,402 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -11790,7 +11790,7 @@ index 0000000..34f0ff2
 +	asm volatile("mov %%eax, %0" : "=r"(ret));
 +	if(ret < 0) {
 +		errno = -ret;
-+		return -1;
++		return 0;
 +	}
 +	return ret;
 +}
@@ -12062,13 +12062,35 @@ index 0000000..34f0ff2
 +	}
 +	return ret;
 +}
++
++int dup(int fd) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_DUP), "b"(fd));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int dup2(int oldfd, int newfd) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_DUP2), "b"(oldfd), "c"(newfd));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..c884cb4
+index 0000000..a48cb47
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,53 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12118,5 +12140,7 @@ index 0000000..c884cb4
 +#define SYS_TRUNCATE 28
 +#define SYS_FTRUNCATE 29
 +#define SYS_PIPE 30
++#define SYS_DUP 31
++#define SYS_DUP2 32
 +
 +int _read_dir(int file, char *ptr, size_t len);

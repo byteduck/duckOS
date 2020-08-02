@@ -86,10 +86,15 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_ftruncate((int)arg1, (off_t)arg2);
 		case SYS_PIPE:
 			return TaskManager::current_process()->sys_pipe((int*)arg1);
+		case SYS_DUP:
+			return TaskManager::current_process()->sys_dup((int)arg1);
+		case SYS_DUP2:
+			return TaskManager::current_process()->sys_dup2((int)arg1, (int)arg2);
+		case SYS_ISATTY:
+			return TaskManager::current_process()->sys_isatty((int)arg1);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:
-		case SYS_ISATTY:
 		case SYS_LINK:
 			return -1;
 

@@ -20,6 +20,7 @@
 #include "FileDescriptor.h"
 #include "InodeFile.h"
 #include "DirectoryEntry.h"
+#include "Pipe.h"
 #include <common/defines.h>
 #include <kernel/kstdio.h>
 #include <kernel/device/Device.h>
@@ -33,7 +34,35 @@ FileDescriptor::FileDescriptor(Device* device): _file(device) {
 	_can_seek = !device->is_character_device() && !device->is_fifo();
 }
 
-FileDescriptor::~FileDescriptor() = default;
+FileDescriptor::FileDescriptor(FileDescriptor& other) {
+	_file = other._file;
+	_fileptr = other._fileptr;
+	_is_fifo_writer = other._is_fifo_writer;
+	_append = other._append;
+	_can_seek = other._can_seek;
+	_inode = other._inode;
+	_readable = other._readable;
+	_writable = other._writable;
+	_seek = other._seek;
+
+	//Increase pipe reader/writer count if applicable
+	if(_file->is_fifo()) {
+		if (_is_fifo_writer)
+			((Pipe*) _file)->add_writer();
+		else
+			((Pipe*) _file)->add_reader();
+	}
+}
+
+FileDescriptor::~FileDescriptor() {
+	//Decrease pipe reader/writer count if applicable
+	if(_file->is_fifo()) {
+		if (_is_fifo_writer)
+			((Pipe*) _file)->remove_writer();
+		else
+			((Pipe*) _file)->remove_reader();
+	}
+}
 
 
 void FileDescriptor::set_options(int options) {
@@ -82,6 +111,10 @@ InodeMetadata FileDescriptor::metadata() {
 	if(_file->is_inode())
 		return ((InodeFile*)_file)->inode()->metadata();
 	return {};
+}
+
+File* FileDescriptor::file() {
+	return _file;
 }
 
 ssize_t FileDescriptor::read(uint8_t *buffer, size_t count) {
@@ -143,4 +176,12 @@ ssize_t FileDescriptor::write(const uint8_t *buffer, size_t count) {
 	int ret = _file->write(*this, offset(), buffer, count);
 	if(_can_seek && ret > 0) _seek += ret;
 	return ret;
+}
+
+void FileDescriptor::set_fifo_reader() {
+	_is_fifo_writer = false;
+}
+
+void FileDescriptor::set_fifo_writer() {
+	_is_fifo_writer = true;
 }
