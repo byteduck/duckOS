@@ -52,6 +52,7 @@
 #define ELF_PF_W 2u
 #define ELF_PF_R 4u
 
+#include <common/vector.hpp>
 
 namespace ELF {
 	typedef struct __attribute__((packed)) elf32_header {
@@ -89,6 +90,31 @@ namespace ELF {
 
 	bool is_valid_elf_header(elf32_header* header);
 	bool can_execute(elf32_header* header);
+
+	/**
+	 * Reads the program headers of an ELF file.
+	 * @param fd The file descriptor of the ELF file.
+	 * @param header The elf32_header of the file.
+	 * @return An error or a vector containing the segment headers.
+	 */
+	ResultRet<DC::vector<ELF::elf32_segment_header>> read_program_headers(FileDescriptor& fd, elf32_header* header);
+
+	/**
+	 * Reads the INTERP section of an ELF file.
+	 * @param fd The file descriptor of the ELF file.
+	 * @param headers The program headers (loaded by ELF::read_program_headers)
+	 * @return An error or the INTERP section. -ENOENT if there is no INTERP section.
+	 */
+	ResultRet<DC::string> read_interp(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers);
+
+	/**
+	 * Loads the sections of an ELF file into memory.
+	 * @param fd The file descriptor of the ELF file.
+	 * @param headers The program headers (loaded by ELF::read_program_headers)
+	 * @param page_directory The page directory to load the program into.
+	 * @return An error or the program break.
+	 */
+	ResultRet<size_t> load_sections(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers, PageDirectory* page_directory);
 }
 
 #endif

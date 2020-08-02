@@ -47,64 +47,46 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, Proce
 	}
 
 	auto* proc = new Process(executable_loc, header->program_entry_position, false, args, parent);
-	bool success = proc->load_elf(fd, header);
-
+	auto load_res = proc->load_elf(*fd, header);
 	delete header;
-	if(!success) {
+	if(load_res.is_error()) {
 		delete proc;
-		return -ENOEXEC;
+		return load_res.code();
 	}
 
 	return proc;
 }
 
-bool Process::load_elf(const DC::shared_ptr<FileDescriptor> &fd, ELF::elf32_header* header) {
-	//FIXME: Dealloc phys pages if creation fails
-	uint32_t pheader_loc = header->program_header_table_position;
-	uint32_t pheader_size = header->program_header_table_entry_size;
-	uint32_t num_pheaders = header->program_header_table_entries;
+Result Process::load_elf(FileDescriptor& fd, ELF::elf32_header* header) {
+	//Read the program headers
+	auto program_headers_res = ELF::read_program_headers(fd, header);
+	if(program_headers_res.is_error())
+		return program_headers_res.code();
+	auto program_headers = program_headers_res.value();
 
-	fd->seek(pheader_loc, SEEK_SET);
-	auto* program_headers = new ELF::elf32_segment_header[num_pheaders];
-	fd->read((uint8_t*)program_headers, pheader_size * num_pheaders);
-
-	for(uint32_t i = 0; i < num_pheaders; i++) {
-		auto pheader = &program_headers[i];
-		if(pheader->p_type == ELF_PT_LOAD) {
-			size_t loadloc_pagealigned = (pheader->p_vaddr/PAGE_SIZE) * PAGE_SIZE;
-			size_t loadsize_pagealigned = pheader->p_memsz + (pheader->p_vaddr % PAGE_SIZE);
-
-			//Allocate a kernel memory region to load the section into
-			LinkedMemoryRegion tmp_region = PageDirectory::k_alloc_region(loadsize_pagealigned);
-
-			//Read the section into the region
-			fd->seek(pheader->p_offset, SEEK_SET);
-			fd->read((uint8_t*) tmp_region.virt->start + (pheader->p_vaddr - loadloc_pagealigned), pheader->p_filesz);
-
-			//Allocate a program vmem region
-			MemoryRegion* vmem_region = page_directory->vmem_map().allocate_region(loadloc_pagealigned, loadsize_pagealigned);
-			if(!vmem_region) {
-				//If we failed to allocate the program vmem region, free the tmp region
-				Memory::pmem_map().free_region(tmp_region.phys);
-				printf("FATAL: Failed to allocate a vmem region in load_elf!\n");
-				break;
-			}
-
-			//Unmap the region from the kernel
-			PageDirectory::k_unmap_region(tmp_region);
-			PageDirectory::kernel_vmem_map.free_region(tmp_region.virt);
-
-			//Map the physical region to the program's vmem region
-			LinkedMemoryRegion prog_region(tmp_region.phys, vmem_region);
-			page_directory->map_region(prog_region, pheader->p_flags & ELF_PF_W);
-
-			if(current_brk < pheader->p_vaddr + pheader->p_memsz)
-				current_brk = pheader->p_vaddr + pheader->p_memsz;
-		}
+	//Find the interpreter (if there is one)
+	auto interp_res = ELF::read_interp(fd, program_headers);
+	bool has_interp = true;
+	DC::string interpreter = "";
+	if(interp_res.is_error()) {
+		if(interp_res.code() == -ENOENT) has_interp = false;
+		else return interp_res.code();
+	} else {
+		interpreter = interp_res.value();
 	}
 
-	delete[] program_headers;
-	return true;
+	//We don't support dynamically linked / interpreted executables yet
+	if(has_interp) {
+		printf("Tried to run an executable with an INTERP section!\n");
+		return -ENOEXEC;
+	}
+
+	//Load the appropriate sections of the ELF into memory.
+	auto brk_res = ELF::load_sections(fd, program_headers, page_directory);
+	if(brk_res.is_error()) return brk_res.code();
+	current_brk = brk_res.value();
+
+	return SUCCESS;
 }
 
 

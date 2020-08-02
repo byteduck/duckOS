@@ -36,3 +36,91 @@ bool ELF::can_execute(elf32_header *header) {
 	if(header->type != ELF_TYPE_EXECUTABLE) return false;
 	return header->endianness == ELF_LITTLE_ENDIAN;
 }
+
+ResultRet<DC::vector<ELF::elf32_segment_header>> ELF::read_program_headers(FileDescriptor& fd, elf32_header* header) {
+	uint32_t pheader_loc = header->program_header_table_position;
+	uint32_t pheader_size = header->program_header_table_entry_size;
+	uint32_t num_pheaders = header->program_header_table_entries;
+
+	//Seek to the pheader_loc
+	auto res = fd.seek(pheader_loc, SEEK_SET);
+	if(res < 0) return res;
+
+	//Create the segment header vector and read the headers into it
+	DC::vector<elf32_segment_header> program_headers(num_pheaders);
+	res = fd.read((uint8_t*)program_headers.storage(), pheader_size * num_pheaders);
+	if(res <= 0) {
+		if(res < 0) return res;
+		else return -EIO;
+	}
+
+	return program_headers;
+}
+
+ResultRet<DC::string> ELF::read_interp(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers) {
+	for(size_t i = 0; i < headers.size(); i++) {
+		elf32_segment_header& header = headers[i];
+		if (header.p_type == ELF_PT_INTERP) {
+			//Seek to interpreter section
+			auto res = fd.seek(header.p_offset, SEEK_SET);
+			if(res < 0) return res;
+
+			//Read the interpreter
+			auto* interp = new char[header.p_filesz];
+			res = fd.read((uint8_t*) interp, header.p_filesz);
+			if(res <= 0) {
+				if(res < 0) return res;
+				else return -EIO;
+			}
+
+			//Return it
+			DC::string ret(interp);
+			delete[] interp;
+			return DC::move(ret);
+		}
+	}
+
+	//No interpreter
+	return -ENOENT;
+}
+
+ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers, PageDirectory* page_directory) {
+	uint32_t current_brk = 0;
+
+	for(uint32_t i = 0; i < headers.size(); i++) {
+		auto& header = headers[i];
+		if(header.p_type == ELF_PT_LOAD) {
+			size_t loadloc_pagealigned = (header.p_vaddr/PAGE_SIZE) * PAGE_SIZE;
+			size_t loadsize_pagealigned = header.p_memsz + (header.p_vaddr % PAGE_SIZE);
+
+			//Allocate a kernel memory region to load the section into
+			LinkedMemoryRegion tmp_region = PageDirectory::k_alloc_region(loadsize_pagealigned);
+
+			//Read the section into the region
+			fd.seek(header.p_offset, SEEK_SET);
+			fd.read((uint8_t*) tmp_region.virt->start + (header.p_vaddr - loadloc_pagealigned), header.p_filesz);
+
+			//Allocate a program vmem region
+			MemoryRegion* vmem_region = page_directory->vmem_map().allocate_region(loadloc_pagealigned, loadsize_pagealigned);
+			if(!vmem_region) {
+				//If we failed to allocate the program vmem region, free the tmp region
+				Memory::pmem_map().free_region(tmp_region.phys);
+				printf("FATAL: Failed to allocate a vmem region in load_elf!\n");
+				return -ENOMEM;
+			}
+
+			//Unmap the region from the kernel
+			PageDirectory::k_unmap_region(tmp_region);
+			PageDirectory::kernel_vmem_map.free_region(tmp_region.virt);
+
+			//Map the physical region to the program's vmem region
+			LinkedMemoryRegion prog_region(tmp_region.phys, vmem_region);
+			page_directory->map_region(prog_region, header.p_flags & ELF_PF_W);
+
+			if(current_brk < header.p_vaddr + header.p_memsz)
+				current_brk = header.p_vaddr + header.p_memsz;
+		}
+	}
+
+	return current_brk;
+}
