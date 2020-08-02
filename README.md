@@ -29,7 +29,7 @@ The code for these can be found in [programs](programs/).
 - rmdir (/bin/rmdir): Removes a directory.
 - touch (/bin/touch): Updates the access/modification times of a file or creates it if it doesn't exist.
 - truncate (/bin/truncate): Resizes a file.
-- dsh (/bin/dsh): A basic userspace shell.
+- dsh (/bin/dsh): A basic userspace shell with experimental support for piping.
 
 Programs that take arguments will provide you with the correct usage when you run them without arguments.
 
