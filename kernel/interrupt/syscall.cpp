@@ -84,6 +84,8 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_truncate((char*)arg1, (off_t)arg2);
 		case SYS_FTRUNCATE:
 			return TaskManager::current_process()->sys_ftruncate((int)arg1, (off_t)arg2);
+		case SYS_PIPE:
+			return TaskManager::current_process()->sys_pipe((int*)arg1);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

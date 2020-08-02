@@ -33,6 +33,7 @@
 #include <common/queue.hpp>
 #include "TaskYieldQueue.h"
 #include "Signal.h"
+#include <kernel/filesystem/Pipe.h>
 
 #define PROCESS_STACK_SIZE 1048576 //1024KiB
 #define PROCESS_KERNEL_STACK_SIZE 4096 //4KiB
@@ -99,6 +100,7 @@ public:
 	int sys_mkdirat(int fd, char *path, mode_t mode);
 	int sys_truncate(char* path, off_t length);
 	int sys_ftruncate(int fd, off_t length);
+	int sys_pipe(int filedes[2]);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;
@@ -112,6 +114,13 @@ public:
 	PageDirectory* page_directory;
 
 private:
+	class PipeFD {
+	public:
+		DC::shared_ptr<Pipe> pipe;
+		int read_fd;
+		int write_fd;
+	};
+
 	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
 
@@ -130,8 +139,9 @@ private:
 	size_t _kernel_stack_size;
 	size_t _stack_size;
 
-	//Files
+	//Files & Pipes
 	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors;
+	DC::vector<PipeFD> pipes;
 	DC::shared_ptr<LinkedInode> cwd;
 
 	//Parent/Children

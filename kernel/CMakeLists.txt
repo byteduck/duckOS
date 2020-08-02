@@ -78,7 +78,8 @@ SET(KERNEL_SRCS
         tasking/TaskYieldQueue.cpp
         CommandLine.cpp
         tasking/Signal.cpp
-        filesystem/DirectoryEntry.cpp)
+        filesystem/DirectoryEntry.cpp
+        filesystem/Pipe.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

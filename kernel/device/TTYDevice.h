@@ -34,7 +34,7 @@ public:
 	TTYDevice(size_t id, const DC::string& name, unsigned major, unsigned minor);
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
-	bool istty() override;
+	bool is_tty() override;
 
 	void set_active();
 	bool active();

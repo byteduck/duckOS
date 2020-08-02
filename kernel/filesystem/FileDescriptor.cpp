@@ -30,7 +30,7 @@ FileDescriptor::FileDescriptor(DC::shared_ptr<File> file): _file(file.get()), _f
 }
 
 FileDescriptor::FileDescriptor(Device* device): _file(device) {
-	_can_seek = !device->is_character_device();
+	_can_seek = !device->is_character_device() && !device->is_fifo();
 }
 
 FileDescriptor::~FileDescriptor() = default;

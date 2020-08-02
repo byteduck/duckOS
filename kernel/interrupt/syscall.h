@@ -49,6 +49,7 @@
 #define SYS_MKDIRAT 27
 #define SYS_TRUNCATE 28
 #define SYS_FTRUNCATE 29
+#define SYS_PIPE 30
 
 extern "C" void syscall_handler(Registers& regs);
 int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);

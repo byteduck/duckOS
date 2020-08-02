@@ -221,15 +221,25 @@ Process::Process(Process *to_fork, Registers &regs){
 	parent = to_fork->_pid;
 	quantum = to_fork->quantum;
 
-	//Copy signal handlers and file descriptors
+	//Copy signal handlers, file descriptors, and pipes
 	for(size_t i = 0; i < to_fork->file_descriptors.size(); i++)
 		file_descriptors.push_back(to_fork->file_descriptors[i]);
+
+	for(size_t i = 0; i < to_fork->pipes.size(); i++) {
+		PipeFD& pipefd = to_fork->pipes[i];
+		pipes.push_back(pipefd);
+		if(pipefd.write_fd) pipefd.pipe->add_writer();
+		if(pipefd.read_fd) pipefd.pipe->add_reader();
+	}
+
 	for(int i = 0; i < 32; i++)
 		signal_actions[i] = to_fork->signal_actions[i];
 
+	//Allocate kernel stack
 	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
 	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
 
+	//Create page directory
 	page_directory = new PageDirectory();
 	page_directory_loc = page_directory->entries_physaddr();
 
@@ -557,6 +567,20 @@ int Process::sys_open(char *filename, int options, int mode) {
 int Process::sys_close(int file) {
 	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	file_descriptors[file] = DC::shared_ptr<FileDescriptor>(nullptr);
+
+	//If it's a pipe, subtract the reader/writer count
+	for(size_t i = 0; i < pipes.size(); i++) {
+		if(pipes[i].read_fd == file) {
+			pipes[i].pipe->remove_reader();
+			pipes[i].read_fd = 0;
+		}
+
+		if(pipes[i].write_fd == file) {
+			pipes[i].pipe->remove_writer();
+			pipes[i].write_fd = 0;
+		}
+	}
+
 	return 0;
 }
 
@@ -710,4 +734,30 @@ int Process::sys_truncate(char* path, off_t length) {
 int Process::sys_ftruncate(int file, off_t length) {
 	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return VFS::inst().ftruncate(file_descriptors[file], length).code();
+}
+
+int Process::sys_pipe(int filedes[2]) {
+	check_ptr(filedes);
+
+	//Make the pipe
+	auto pipe = DC::make_shared<Pipe>();
+	pipe->add_reader();
+	pipe->add_writer();
+
+	//Make the read FD
+	auto pipe_read_fd = DC::make_shared<FileDescriptor>(pipe);
+	pipe_read_fd->set_options(O_RDONLY);
+	file_descriptors.push_back(pipe_read_fd);
+	filedes[0] = (int) file_descriptors.size() - 1;
+
+	//Make the write FD
+	auto pipe_write_fd = DC::make_shared<FileDescriptor>(pipe);
+	pipe_write_fd->set_options(O_WRONLY);
+	file_descriptors.push_back(pipe_write_fd);
+	filedes[1] = (int) file_descriptors.size() - 1;
+
+	//Keep track of the pipe
+	pipes.push_back({pipe, filedes[0], filedes[1]});
+
+	return SUCCESS;
 }

@@ -11678,10 +11678,10 @@ index 0000000..b643455
 +
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..68ac60a
+index 0000000..34f0ff2
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,369 @@
+@@ -0,0 +1,380 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12051,13 +12051,24 @@ index 0000000..68ac60a
 +	}
 +	return ret;
 +}
++
++int pipe(int filedes[2]) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_PIPE), "b"(filedes));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..42241dd
+index 0000000..c884cb4
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,50 @@
+@@ -0,0 +1,51 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12106,5 +12117,6 @@ index 0000000..42241dd
 +#define SYS_MKDIRAT 27
 +#define SYS_TRUNCATE 28
 +#define SYS_FTRUNCATE 29
++#define SYS_PIPE 30
 +
 +int _read_dir(int file, char *ptr, size_t len);

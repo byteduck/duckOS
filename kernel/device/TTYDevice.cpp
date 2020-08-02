@@ -60,7 +60,7 @@ ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size
 	return count;
 }
 
-bool TTYDevice::istty() {
+bool TTYDevice::is_tty() {
 	return true;
 }
 
