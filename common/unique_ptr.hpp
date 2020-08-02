@@ -23,17 +23,6 @@
 namespace DC {
 
 /**
- * @brief fake implementation to use in place of a C++11 std::move() when compiling on an older compiler.
- *
- * @see http://www.cplusplus.com/reference/utility/move/
-*/
-	template<typename T>
-	inline T &move(T &v) {
-		return v;
-	}
-
-
-/**
  * @brief minimal implementation of unique pointer, a subset of the C++11 std::unique_ptr or boost::unique_ptr.
  *
  * unique_ptr is a smart pointer retaining ownership of an object through a provided pointer,

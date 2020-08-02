@@ -69,7 +69,7 @@ namespace DC {
 			if(new_size > _capacity) realloc(new_size);
 			if(new_size > _size) {
 				for(size_t i = _size; i < new_size; i++)
-					new (&_storage[i - 1]) T();
+					new (&_storage[i]) T();
 			} else {
 				for(size_t i = new_size; i < _size; i++)
 					_storage[i].~T();
@@ -171,6 +171,10 @@ namespace DC {
 
 		T& back() {
 			return _storage[_size - 1];
+		}
+
+		T* storage() {
+			return _storage;
 		}
 
 	private:
