@@ -85,6 +85,7 @@ private:
 	Result write_directory_entries(DC::vector<DirectoryEntry>& entries);
 	void create_metadata();
 	void reduce_hardlink_count();
+	void increase_hardlink_count();
 	Result try_remove_dir();
 	uint32_t calculate_num_ptr_blocks(uint32_t num_blocks);
 

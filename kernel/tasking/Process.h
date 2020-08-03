@@ -95,6 +95,7 @@ public:
 	int sys_sigaction(int sig, struct sigaction *new_action, struct sigaction *old_action);
 	int sys_kill(pid_t pid, int sig);
 	int sys_unlink(char* name);
+	int sys_link(char* oldpath, char* newpath);
 	int sys_rmdir(char* name);
 	int sys_mkdir(char *path, mode_t mode);
 	int sys_mkdirat(int fd, char *path, mode_t mode);

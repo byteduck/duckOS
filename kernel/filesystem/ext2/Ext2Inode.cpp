@@ -273,6 +273,7 @@ ino_t Ext2Inode::find_id(const DC::string& find_name) {
 }
 
 Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
+	ASSERT(inode.fs.fsid() == fs.fsid());
 	if(!metadata().is_directory()) return -ENOTDIR;
 	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
 
@@ -301,6 +302,9 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 	else if(inode.metadata().is_block_device()) type = EXT2_FT_BLKDEV;
 	else if(inode.metadata().is_character_device()) type = EXT2_FT_CHRDEV;
 
+	//Increase hardlink count of new inode
+	((Ext2Inode&) inode).increase_hardlink_count();
+
 	//Push new entry into vector and write to disk
 	entries.push_back({inode.id, type, name});
 	auto res = write_directory_entries(entries);
@@ -309,6 +313,7 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 		res = write_to_disk();
 		if(res.is_error()) return res;
 	}
+
 	return SUCCESS;
 }
 
@@ -713,6 +718,12 @@ void Ext2Inode::reduce_hardlink_count() {
 	} else {
 		write_inode_entry();
 	}
+}
+
+void Ext2Inode::increase_hardlink_count() {
+	LOCK(lock);
+	raw.hard_links++;
+	write_inode_entry();
 }
 
 Result Ext2Inode::try_remove_dir() {

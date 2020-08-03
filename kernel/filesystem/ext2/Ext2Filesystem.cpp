@@ -150,7 +150,7 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 	Ext2Inode::Raw raw;
 	raw.size = size;
 	raw.mode = mode;
-	raw.hard_links = IS_DIR(mode) ? 2 : 1;
+	raw.hard_links = IS_DIR(mode) ? 1 : 0;
 	//TODO: Times, uid, gid, and such
 	auto inode = DC::make_shared<Ext2Inode>(*this, ino, raw, blocks, parent);
 

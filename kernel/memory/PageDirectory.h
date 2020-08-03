@@ -235,6 +235,13 @@ public:
 	void set_entries(Entry* entries);
 
 	/**
+	 * Checks if a given virtual address is mapped to anything.
+	 * @param vaddr The virtual address to check.
+	 * @return Whether or not the given virtual address is mapped.
+	 */
+	bool is_mapped(size_t vaddr);
+
+	/**
 	 * Makes this page directory an identical copy of another, but with different physical memory.
 	 * The page directory we're copying to (this) MUST be the loaded page directory.
 	 * @param directory the page directory to fork from.

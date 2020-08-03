@@ -405,7 +405,7 @@ void Process::finish_yielding() {
  ************/
 
 void Process::check_ptr(void *ptr) {
-	if(ptr != nullptr && (size_t) ptr >= HIGHER_HALF) {
+	if((size_t) ptr >= HIGHER_HALF || !page_directory->is_mapped((size_t) ptr)) {
 		kill(SIGSEGV);
 	}
 }
@@ -639,6 +639,14 @@ int Process::sys_unlink(char* name) {
 	auto ret = VFS::inst().unlink(path, cwd);
 	if(ret.is_error()) return ret.code();
 	return 0;
+}
+
+int Process::sys_link(char* oldpath, char* newpath) {
+	check_ptr(oldpath);
+	check_ptr(newpath);
+	DC::string oldpath_str(oldpath);
+	DC::string newpath_str(newpath);
+	return VFS::inst().link(oldpath_str, newpath_str, cwd).code();
 }
 
 int Process::sys_rmdir(char* name) {

@@ -159,6 +159,25 @@ Result VFS::unlink(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
 	return parent->inode()->remove_entry(path_base(path));
 }
 
+Result VFS::link(DC::string& oldpath, DC::string& newpath, const DC::shared_ptr<LinkedInode>& base) {
+	//Make sure the new file doesn't already exist and the parent directory exists
+	DC::shared_ptr<LinkedInode> new_file_parent(nullptr);
+	auto resolv = resolve_path(newpath, base, &new_file_parent);
+	if(!resolv.is_error()) return -EEXIST;
+	if(!new_file_parent) return -ENOENT;
+
+	//Find the old file
+	resolv = resolve_path(oldpath, base);
+	if(resolv.is_error()) return resolv.code();
+	auto old_file = resolv.value();
+	if(old_file->inode()->metadata().is_directory()) return -EISDIR;
+
+	//Make sure they're on the same filesystem
+	if(old_file->inode()->fs.fsid() != new_file_parent->inode()->fs.fsid()) return -EXDEV;
+
+	return new_file_parent->inode()->add_entry(path_base(newpath), *old_file->inode());
+}
+
 Result VFS::rmdir(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
 	//Remove trailing slash if there is one
 	if(path.length() != 0 && path[path.length() - 1] == '/') {

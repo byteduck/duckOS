@@ -22,6 +22,8 @@ The code for these can be found in [programs](programs/).
 
 - ls (/bin/ls): Lists the entries in the current or given directory.
 - cat (/bin/cat): Writes the contents of a file to stdout.
+- cp (/bin/cp): Copies a file.
+- mv (/bin/mv): Moves a file.
 - pwd (/bin/pwd): Prints the current working directory.
 - mkdir (/bin/mkdir): Creates a new directory.
 - rm (/bin/rm): Removes a file.

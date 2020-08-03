@@ -435,6 +435,21 @@ void PageDirectory::set_entries(Entry* entries) {
 	_entries = entries;
 }
 
+bool PageDirectory::is_mapped(size_t vaddr) {
+	if(vaddr < HIGHER_HALF) { //Program space
+		size_t page = vaddr / PAGE_SIZE;
+		size_t directory_index = (page / 1024) % 1024;
+		if (!_entries[directory_index].data.present) return false;
+		if (!_page_tables[directory_index]) return false;
+	} else { //Kernel space
+		size_t page = (vaddr - HIGHER_HALF) / PAGE_SIZE;
+		size_t directory_index = (page / 1024) % 1024;
+		if (!kernel_entries[directory_index].data.present) return false;
+	}
+
+	return true;
+}
+
 void PageDirectory::fork_from(PageDirectory *parent) {
 	//Iterate through every entry of the page directory we're copying from
 	MemoryRegion* parent_region = parent->_vmem_map.first_region();
