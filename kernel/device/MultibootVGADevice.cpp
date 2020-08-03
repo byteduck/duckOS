@@ -60,6 +60,7 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 }
 
 ssize_t MultibootVGADevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+	LOCK(_lock);
 	if(!framebuffer) return -ENOSPC;
 	if(offset + count > framebuffer_size()) return -ENOSPC;
 	memcpy(((uint8_t*)framebuffer + offset), buffer, count);

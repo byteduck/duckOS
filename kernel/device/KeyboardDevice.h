@@ -63,6 +63,7 @@ private:
 	KeyboardHandler* _handler = nullptr;
 	uint8_t _modifiers = 0;
 	bool _e0_flag = false;
+	YieldLock _lock;
 };
 
 

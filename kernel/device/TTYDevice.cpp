@@ -48,11 +48,13 @@ TTYDevice::TTYDevice(size_t id, const DC::string& name, unsigned int major, unsi
 }
 
 ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+	LOCK(_lock);
 	for(size_t i = 0; i < count; i++) putch(buffer[i]);
 	return count;
 }
 
 ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+	LOCK(_lock);
 	while(buffered && _input_buffer.empty()) TaskManager::current_process()->yield_to(_buffer_yielder);
 	count = min(count, _input_buffer.size());
 	size_t count_loop = count;

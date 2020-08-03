@@ -34,6 +34,7 @@ KeyboardDevice::KeyboardDevice(): CharacterDevice(13, 0), IRQHandler(1), _event_
 }
 
 ssize_t KeyboardDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+	LOCK(_lock);
 	size_t ret = 0;
 	while(ret < count) {
 		if(_event_buffer.empty()) break;

@@ -92,6 +92,7 @@ size_t BochsVGADevice::framebuffer_size() {
 }
 
 ssize_t BochsVGADevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+	LOCK(_lock);
 	if(!framebuffer) return -ENOSPC;
 	if(offset + count > framebuffer_size()) return -ENOSPC;
 	memcpy(((uint8_t*)framebuffer + offset), buffer, count);
