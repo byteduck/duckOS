@@ -461,6 +461,9 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 		new_proc->file_descriptors[i] = DC::make_shared<FileDescriptor>(*file_descriptors[i]);
 
 	//Add the new process to the process list
+	cli();
+	_pid = -1;
+	state = PROCESS_DEAD;
 	TaskManager::add_process(new_proc);
 
 	//Manually delete because we won't return from here and we need to clean up resources
