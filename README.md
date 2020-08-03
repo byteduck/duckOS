@@ -26,11 +26,14 @@ The code for these can be found in [programs](programs/).
 - mv (/bin/mv): Moves a file.
 - pwd (/bin/pwd): Prints the current working directory.
 - mkdir (/bin/mkdir): Creates a new directory.
+- echo (/bin/echo): Prints the arguments given to it separated by spaces to stdout.
 - rm (/bin/rm): Removes a file.
+- ln (/bin/ln): Creates a link to a file.
 - rmdir (/bin/rmdir): Removes a directory.
 - touch (/bin/touch): Updates the access/modification times of a file or creates it if it doesn't exist.
 - truncate (/bin/truncate): Resizes a file.
-- dsh (/bin/dsh): A basic userspace shell with support for pipes.
+- dsh (/bin/dsh): A basic userspace shell with support for pipes (`|`) and redirections (`>`/`>>`).
+  - There is only support for one redirection at a time right now.
 
 Programs that take arguments will provide you with the correct usage when you run them without arguments.
 

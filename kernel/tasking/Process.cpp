@@ -174,8 +174,9 @@ Process::Process(Process *to_fork, Registers &regs){
 	for(int i = 0; i < 32; i++)
 		signal_actions[i] = to_fork->signal_actions[i];
 
+	file_descriptors.resize(to_fork->file_descriptors.size());
 	for(size_t i = 0; i < to_fork->file_descriptors.size(); i++)
-		file_descriptors.push_back(DC::make_shared<FileDescriptor>(*to_fork->file_descriptors[i]));
+		if(to_fork->file_descriptors[i]) file_descriptors[i] = DC::make_shared<FileDescriptor>(*to_fork->file_descriptors[i]);
 
 	//Allocate kernel stack
 	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
@@ -572,7 +573,7 @@ int Process::sys_lseek(int file, off_t off, int whence) {
 }
 
 int Process::sys_waitpid(pid_t pid, int* status, int flags) {
-	check_ptr(status);
+	if(status) check_ptr(status);
 	if(pid < -1) {
 		return -ECHILD; //TODO: Wait for process with pgroup abs(pid)
 	} else if(pid == -1) {

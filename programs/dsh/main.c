@@ -27,6 +27,8 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <ctype.h>
+#include <fcntl.h>
 
 char cwd[4096];
 char cmdbuf[4096];
@@ -53,6 +55,32 @@ int main() {
  * @param input The input to be evaluated.
  */
 void evaluate_input(char* input) {
+	//See if we have a redirection
+	int redirection_fd = -1;
+	if(strcspn(input, ">") != strlen(input)) {
+		char* redirection = NULL;
+		int redir_options = O_WRONLY | O_CREAT;
+
+		input = strtok(input, ">");
+		redirection = strtok(NULL, "");
+
+		//If there's two >, use append mode
+		if(redirection[0] == '>') {
+			redirection++;
+			redir_options |= O_APPEND;
+		} else redir_options |= O_TRUNC;
+
+		//Trim leading and trailing whitespace
+		while(isspace((unsigned char)*redirection)) redirection++;
+		redirection = strtok(redirection, " ");
+
+		redirection_fd = open(redirection, redir_options, 0666);
+		if(redirection_fd < 0) {
+			perror("Could not redirect");
+			return;
+		}
+	}
+
 	//Split commands by pipe delimiter
 	int cmdc = 0;
 	char* commands[512];
@@ -69,13 +97,13 @@ void evaluate_input(char* input) {
 	int prev_pipe_in = -1;
 	for(int i = 0; i < cmdc; i++) {
 		//If this isn't the last command, create a new pipe
-		int outfd = -1;
+		int outfd;
 		if(i != cmdc - 1) {
 			int pipefd[2];
 			pipe(pipefd);
 			outfd = pipefd[1];
 			prev_pipe_in = pipefd[0];
-		}
+		} else outfd = redirection_fd;
 
 		//Split arguments
 		int argc = 0;
@@ -85,30 +113,35 @@ void evaluate_input(char* input) {
 		while((arg = strtok(NULL, " "))) {
 			args[argc++] = arg;
 		}
+		args[argc] = NULL;
 
 		//If this isn't a builtin command, run the command
-		if(!evaluate_builtin(argc, args))
+		if(!evaluate_builtin(argc, args)) {
 			pids[pidc++] = evaluate_command(argc, args, prev_pipe_in, outfd);
+		}
 	}
 
 	//Wait for processes
 	for(int i = 0; i < pidc; i++)
 		waitpid(pids[i], NULL, 0);
+
+	//Close redirection FD
+	if(redirection_fd != -1) close(redirection_fd);
 }
 
 pid_t evaluate_command(int argc, char** argv, int infd, int outfd) {
-		pid_t pid = fork();
-		if(!pid){
-			if(infd != -1)
-				dup2(infd, STDIN_FILENO);
-			if(outfd != -1)
-				dup2(outfd, STDOUT_FILENO);
+	pid_t pid = fork();
+	if(!pid) {
+		if(infd != -1)
+			dup2(infd, STDIN_FILENO);
+		if(outfd != -1)
+			dup2(outfd, STDOUT_FILENO);
 
-			execvp(argv[0], argv);
-			perror("Cannot execute");
-			exit(errno);
-		}
-		return pid;
+		execvp(argv[0], argv);
+		perror("Cannot execute");
+		exit(errno);
+	}
+	return pid;
 }
 
 bool evaluate_builtin(int argc, char** argv) {
