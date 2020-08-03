@@ -33,6 +33,18 @@ namespace DC {
 
 		}
 
+		queue(queue<T>& other): _capacity(other._capacity), _size(other._size), _front(other.front), _back(other._back) {
+			_storage = (T*) kcalloc(_size, sizeof(T));
+			for(size_t i = 0; i < _size; i++)
+				new (&_storage[i]) T(other._storage[i]);
+		}
+
+		queue(queue<T>&& other): _capacity(other._capacity), _size(other._size), _front(other.front), _back(other._back) {
+			_storage = (T*) kcalloc(_size, sizeof(T));
+			for(size_t i = 0; i < _size; i++)
+				new (&_storage[i]) T(DC::move(other._storage[i]));
+		}
+
 		~queue() {
 			if(_front > _back) {
 				for(size_t i = _back; i <= _front; i++)
@@ -113,6 +125,36 @@ namespace DC {
 
 		size_t size() const {
 			return _size;
+		}
+
+		queue<T>& operator=(const queue<T>& other) noexcept {
+			if(this != &other) {
+				for(size_t i = 0; i < _size; i++) _storage[i].~T();
+				kfree(_storage);
+				_size = other._size;
+				_capacity = other._capacity;
+				_front = other._front;
+				_back = other._back;
+				_storage = (T*) kcalloc(_capacity, sizeof(T));
+				for (size_t i = 0; i < _size; i++)
+					new (&_storage[i]) T(DC::move(other._storage[i]));
+			}
+			return *this;
+		}
+
+		queue<T>& operator=(queue<T>&& other) noexcept {
+			if(this != &other) {
+				for(size_t i = 0; i < _size; i++) _storage[i].~T();
+				kfree(_storage);
+				_size = other._size;
+				_capacity = other._capacity;
+				_front = other._front;
+				_back = other._back;
+				_storage = (T*) kcalloc(_capacity, sizeof(T));
+				for (size_t i = 0; i < _size; i++)
+					new (&_storage[i]) T(DC::move(other._storage[i]));
+			}
+			return *this;
 		}
 
 	private:
