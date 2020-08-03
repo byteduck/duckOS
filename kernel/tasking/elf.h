@@ -53,6 +53,7 @@
 #define ELF_PF_R 4u
 
 #include <common/vector.hpp>
+#include <kernel/filesystem/LinkedInode.h>
 
 namespace ELF {
 	typedef struct __attribute__((packed)) elf32_header {
@@ -92,6 +93,13 @@ namespace ELF {
 	bool can_execute(elf32_header* header);
 
 	/**
+	 * Reads the elf32 header of the given file descriptor.
+	 * @param fd The file descriptor of the executable. Will be seeked.
+	 * @return The elf32 header, or an error if the file couldn't be read or isn't a valid ELF.
+	 */
+	ResultRet<elf32_header*> read_header(FileDescriptor& fd);
+
+	/**
 	 * Reads the program headers of an ELF file.
 	 * @param fd The file descriptor of the ELF file.
 	 * @param header The elf32_header of the file.
@@ -115,6 +123,15 @@ namespace ELF {
 	 * @return An error or the program break.
 	 */
 	ResultRet<size_t> load_sections(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers, PageDirectory* page_directory);
+
+	/**
+	 * Loads an ELF executable into the given page directory.
+	 * @param fd The file descriptor of the executable. Will be seeked.
+	 * @param page_dir The page directory to load into.
+	 * @param header The elf32 header of the executable, read by ELF::read_header
+	 * @return The program break or an error.
+	 */
+	ResultRet<uint32_t> load_elf(FileDescriptor& fd, PageDirectory* page_dir, elf32_header* header);
 }
 
 #endif

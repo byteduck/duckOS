@@ -35,60 +35,27 @@ Process* Process::create_kernel(const DC::string& name, void (*func)()){
 }
 
 ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t parent) {
+	//Open the executable
 	auto fd_or_error = VFS::inst().open((DC::string&) executable_loc, O_RDONLY, 0, args->working_dir);
 	if(fd_or_error.is_error()) return fd_or_error.code();
-
 	auto fd = fd_or_error.value();
-	auto* header = new ELF::elf32_header;
-	fd->read((uint8_t*)header, sizeof(ELF::elf32_header));
-	if(!ELF::can_execute(header)) {
-		delete header;
-		return -ENOEXEC;
-	}
 
+	//Read the ELF header
+	auto header_or_err = ELF::read_header(*fd);
+	if(header_or_err.is_error()) return header_or_err.code();
+	auto* header = header_or_err.value();
+
+	//Create the process
 	auto* proc = new Process(executable_loc, header->program_entry_position, false, args, parent);
-	auto load_res = proc->load_elf(*fd, header);
+
+	//Load the ELF into the process's page directory and set proc->current_brk
+	auto brk_or_err = ELF::load_elf(*fd, proc->page_directory, header);
 	delete header;
-	if(load_res.is_error()) {
-		delete proc;
-		return load_res.code();
-	}
+	if(brk_or_err.is_error()) return brk_or_err.value();
+	proc->current_brk = brk_or_err.value();
 
 	return proc;
 }
-
-Result Process::load_elf(FileDescriptor& fd, ELF::elf32_header* header) {
-	//Read the program headers
-	auto program_headers_res = ELF::read_program_headers(fd, header);
-	if(program_headers_res.is_error())
-		return program_headers_res.code();
-	auto program_headers = program_headers_res.value();
-
-	//Find the interpreter (if there is one)
-	auto interp_res = ELF::read_interp(fd, program_headers);
-	bool has_interp = true;
-	DC::string interpreter = "";
-	if(interp_res.is_error()) {
-		if(interp_res.code() == -ENOENT) has_interp = false;
-		else return interp_res.code();
-	} else {
-		interpreter = interp_res.value();
-	}
-
-	//We don't support dynamically linked / interpreted executables yet
-	if(has_interp) {
-		printf("Tried to run an executable with an INTERP section!\n");
-		return -ENOEXEC;
-	}
-
-	//Load the appropriate sections of the ELF into memory.
-	auto brk_res = ELF::load_sections(fd, program_headers, page_directory);
-	if(brk_res.is_error()) return brk_res.code();
-	current_brk = brk_res.value();
-
-	return SUCCESS;
-}
-
 
 pid_t Process::pid() {
 	return _pid;
@@ -294,7 +261,7 @@ bool Process::handle_pending_signal() {
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
-			if (notify_yielders_on_death) _yielder.set_all_ready();
+			if (notify_yielders_on_death) _yield_queue.set_all_ready();
 			state = PROCESS_DEAD;
 			pending_signals.pop();
 		} else if(signal_actions[signal].action) {
@@ -416,7 +383,7 @@ void Process::yield_to(TaskYieldQueue& yielder) {
 }
 
 void Process::yield_to(Process* proc) {
-	yield_to(proc->_yielder);
+	yield_to(proc->_yield_queue);
 }
 
 bool Process::is_yielding() {
@@ -487,9 +454,9 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	auto* new_proc = R_new_proc.value();
 
-	//Properly set new process's PID, yielders, and stdout/in/err
+	//Properly set new process's PID, yielder, and stdout/in/err
 	new_proc->_pid = this->pid();
-	new_proc->_yielder = this->_yielder;
+	new_proc->_yield_queue = this->_yield_queue;
 	for(size_t i = 0; i < 3; i++)
 		new_proc->file_descriptors[i] = DC::make_shared<FileDescriptor>(*file_descriptors[i]);
 

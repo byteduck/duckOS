@@ -120,7 +120,6 @@ private:
 	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
 
-	Result load_elf(FileDescriptor& fd, ELF::elf32_header* header);
 	void setup_stack(uint32_t*& kernel_stack, uint32_t* user_stack, Registers& registers);
 
 	//Identifying info
@@ -144,7 +143,7 @@ private:
 
 	//Yielding stuff
 	TaskYieldQueue* _yielding_to = nullptr;
-	TaskYieldQueue _yielder;
+	TaskYieldQueue _yield_queue;
 	bool notify_yielders_on_death = true;
 
 	//Signals

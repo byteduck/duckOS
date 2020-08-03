@@ -37,6 +37,23 @@ bool ELF::can_execute(elf32_header *header) {
 	return header->endianness == ELF_LITTLE_ENDIAN;
 }
 
+ResultRet<ELF::elf32_header*> ELF::read_header(FileDescriptor& fd) {
+	auto* header = new ELF::elf32_header;
+
+	auto res = fd.seek(0, SEEK_SET);
+	if(res < 0) return res;
+
+	res = fd.read((uint8_t*)header, sizeof(ELF::elf32_header));
+	if(res < 0) return res;
+
+	if(!ELF::can_execute(header)) {
+		delete header;
+		return -ENOEXEC;
+	}
+
+	return header;
+}
+
 ResultRet<DC::vector<ELF::elf32_segment_header>> ELF::read_program_headers(FileDescriptor& fd, elf32_header* header) {
 	uint32_t pheader_loc = header->program_header_table_position;
 	uint32_t pheader_size = header->program_header_table_entry_size;
@@ -123,4 +140,34 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, DC::vector<elf32_segmen
 	}
 
 	return current_brk;
+}
+
+ResultRet<uint32_t> ELF::load_elf(FileDescriptor& fd, PageDirectory* page_dir, elf32_header* header) {
+	if(!ELF::can_execute(header)) return -ENOEXEC;
+
+	//Read the program headers
+	auto program_headers_res = ELF::read_program_headers(fd, header);
+	if(program_headers_res.is_error())
+		return program_headers_res.code();
+	auto program_headers = program_headers_res.value();
+
+	//Find the interpreter (if there is one)
+	auto interp_res = ELF::read_interp(fd, program_headers);
+	bool has_interp = true;
+	DC::string interpreter = "";
+	if(interp_res.is_error()) {
+		if(interp_res.code() == -ENOENT) has_interp = false;
+		else return interp_res.code();
+	} else {
+		interpreter = interp_res.value();
+	}
+
+	//We don't support dynamically linked / interpreted executables yet
+	if(has_interp) {
+		printf("Tried to run an executable with an INTERP section!\n");
+		return -ENOEXEC;
+	}
+
+	//Load the appropriate sections of the ELF into memory and return the program break or error.
+	return ELF::load_sections(fd, program_headers, page_dir);
 }
