@@ -361,6 +361,8 @@ uint32_t Ext2Filesystem::allocate_block(bool zero_out) {
 }
 
 void Ext2Filesystem::free_block(uint32_t block) {
+	LOCK(ext2lock);
+
 	if(block == 0) {
 		printf("WARNING: Tried to free ext2 block 0!\n");
 		return;

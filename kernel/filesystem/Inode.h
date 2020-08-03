@@ -26,7 +26,7 @@
 #include "InodeMetadata.h"
 #include "DirectoryEntry.h"
 #include <kernel/Result.hpp>
-#include <kernel/tasking/YieldLock.h>
+#include <kernel/tasking/SpinLock.h>
 
 class Filesystem;
 
@@ -54,7 +54,7 @@ public:
 
 protected:
 	InodeMetadata _metadata;
-	YieldLock lock;
+	SpinLock lock;
 	bool _exists = true;
 };
 

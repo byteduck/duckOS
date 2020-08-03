@@ -56,7 +56,7 @@ private:
 	size_t _id;
 	bool _active = false;
 	TaskYieldQueue _buffer_yielder;
-	YieldLock _lock;
+	SpinLock _lock;
 };
 
 #endif //DUCKOS_TTYDEVICE_H

@@ -23,7 +23,7 @@
 #include "Ext2.h"
 #include "Ext2BlockGroup.h"
 #include "Ext2Inode.h"
-#include <kernel/tasking/YieldLock.h>
+#include <kernel/tasking/SpinLock.h>
 #include <kernel/filesystem/FileBasedFilesystem.h>
 
 class Ext2Filesystem;
@@ -82,7 +82,7 @@ public:
 	size_t block_pointers_per_block;
 
 private:
-	YieldLock ext2lock;
+	SpinLock ext2lock;
 
 	//Block stuff
 	Ext2BlockGroup** block_groups = nullptr;

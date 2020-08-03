@@ -19,6 +19,7 @@
 
 #include <kernel/filesystem/Filesystem.h>
 #include <common/defines.h>
+#include <kernel/tasking/TaskManager.h>
 #include "LinkedInode.h"
 
 Filesystem::Filesystem(const DC::shared_ptr<FileDescriptor>& file): _file(file) {
@@ -34,6 +35,7 @@ bool Filesystem::probe(DC::shared_ptr<FileDescriptor> dev) {
 }
 
 ResultRet<DC::shared_ptr<Inode>> Filesystem::get_inode(ino_t iid) {
+	LOCK(_inode_cache_lock);
 	auto inode_perhaps = get_cached_inode(iid);
 	if(inode_perhaps.is_error()) {
 		Inode* in = get_inode_rawptr(iid);
@@ -42,7 +44,9 @@ ResultRet<DC::shared_ptr<Inode>> Filesystem::get_inode(ino_t iid) {
 			add_cached_inode(ins);
 			return ins;
 		} else return -ENOENT;
-	} else return inode_perhaps.value();
+	} else {
+		return inode_perhaps.value();
+	}
 }
 
 Inode *Filesystem::get_inode_rawptr(ino_t iid) {
@@ -70,6 +74,7 @@ void Filesystem::set_block_size(size_t block_size) {
 }
 
 ResultRet<DC::shared_ptr<Inode>> Filesystem::get_cached_inode(ino_t id) {
+	LOCK(_inode_cache_lock);
 	for(size_t i = 0; i < _inode_cache.size(); i++) {
 		if(_inode_cache[i]->id == id) return _inode_cache[i];
 	}
@@ -77,10 +82,12 @@ ResultRet<DC::shared_ptr<Inode>> Filesystem::get_cached_inode(ino_t id) {
 }
 
 void Filesystem::add_cached_inode(const DC::shared_ptr<Inode> &inode) {
+	LOCK(_inode_cache_lock);
 	_inode_cache.push_back(inode);
 }
 
 void Filesystem::remove_cached_inode(ino_t id) {
+	LOCK(_inode_cache_lock);
 	for(size_t i = 0; i < _inode_cache.size(); i++) {
 		if(_inode_cache[i]->id == id) {
 			_inode_cache.erase(i);

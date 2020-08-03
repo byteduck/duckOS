@@ -44,7 +44,7 @@ private:
 	uint32_t framebuffer_height;
 	uint32_t framebuffer_bpp;
 	bool textmode;
-	YieldLock _lock;
+	SpinLock _lock;
 };
 
 

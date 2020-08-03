@@ -76,7 +76,7 @@ private:
 	uint16_t display_width = VBE_DEFAULT_WIDTH;
 	uint16_t display_height = VBE_DEFAULT_HEIGHT;
 
-	YieldLock _lock;
+	SpinLock _lock;
 };
 
 

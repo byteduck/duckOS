@@ -62,7 +62,7 @@ protected:
 
 	size_t _logical_block_size {512};
 	DC::vector<BlockCacheEntry> cache;
-	YieldLock lock;
+	SpinLock lock;
 };
 
 

@@ -21,9 +21,33 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <memory.h>
 
-int main() {
+int main(int argc, char **argv) {
 	pid_t pid = fork();
 	printf("Hello from %s!\n", pid == 0 ? "child" : "parent");
+
+	if(argc < 2) {
+		printf("cat: Missing file operand\nUsage: cat FILE\n");
+		return 1;
+	}
+	int f = open(argv[1], O_RDONLY);
+	if(f != -1) {
+		char buf[512];
+		int nread;
+		while((nread = read(f, buf, 512)) > 0) {
+			//write(STDOUT_FILENO, buf, nread);
+		}
+		if(errno){
+			printf("Cannot cat '%s': %s\n", argv[1], strerror(errno));
+			return errno;
+		}
+	} else {
+		printf("Cannot cat '%s': %s\n", argv[1], strerror(errno));
+		return errno;
+	}
+
 	return 0;
 }

@@ -54,6 +54,7 @@ protected:
 private:
 	size_t _block_size;
 	DC::vector<DC::shared_ptr<Inode>> _inode_cache;
+	SpinLock _inode_cache_lock;
 };
 
 #endif

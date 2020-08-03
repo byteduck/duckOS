@@ -25,7 +25,7 @@
 #include "Inode.h"
 #include "InodeMetadata.h"
 #include "DirectoryEntry.h"
-#include <kernel/tasking/YieldLock.h>
+#include <kernel/tasking/SpinLock.h>
 #include <kernel/tasking/Lock.h>
 
 class File;
@@ -68,7 +68,7 @@ private:
 	off_t _seek {0};
 	bool _is_fifo_writer = false;
 
-	YieldLock lock;
+	SpinLock lock;
 };
 
 

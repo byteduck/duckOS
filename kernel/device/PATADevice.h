@@ -151,7 +151,7 @@ private:
 	uint8_t _post_irq_status;
 
 	//Lock
-	YieldLock _lock;
+	SpinLock _lock;
 };
 
 

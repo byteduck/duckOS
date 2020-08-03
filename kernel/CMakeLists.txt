@@ -67,7 +67,6 @@ SET(KERNEL_SRCS
         tasking/Process.cpp
         tasking/Lock.cpp
         tasking/SpinLock.cpp
-        tasking/YieldLock.cpp
         tasking/ProcessArgs.cpp
         device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp
