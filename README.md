@@ -20,7 +20,6 @@ If some of this code looks familiar, it's because it's based off of my previous 
 
 The code for these can be found in [programs](programs/).
 
-- fork (/bin/fork): A demo program that forks and then prints whether it is the child or the parent process.
 - ls (/bin/ls): Lists the entries in the current or given directory.
 - cat (/bin/cat): Writes the contents of a file to stdout.
 - pwd (/bin/pwd): Prints the current working directory.
@@ -29,7 +28,7 @@ The code for these can be found in [programs](programs/).
 - rmdir (/bin/rmdir): Removes a directory.
 - touch (/bin/touch): Updates the access/modification times of a file or creates it if it doesn't exist.
 - truncate (/bin/truncate): Resizes a file.
-- dsh (/bin/dsh): A basic userspace shell with experimental support for piping.
+- dsh (/bin/dsh): A basic userspace shell with support for pipes.
 
 Programs that take arguments will provide you with the correct usage when you run them without arguments.
 
