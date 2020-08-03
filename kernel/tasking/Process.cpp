@@ -263,7 +263,6 @@ bool Process::handle_pending_signal() {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
 			if (notify_yielders_on_death) _yield_queue.set_all_ready();
 			state = PROCESS_DEAD;
-			pending_signals.pop();
 		} else if(signal_actions[signal].action) {
 			//Otherwise, have the process handle the signal
 			call_signal_handler(signal);
