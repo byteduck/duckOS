@@ -567,6 +567,16 @@ int Process::sys_stat(char *file, char *buf) {
 	return 0;
 }
 
+int Process::sys_lstat(char *file, char *buf) {
+	check_ptr(file);
+	check_ptr(buf);
+	DC::string path(file);
+	auto inode_or_err = VFS::inst().resolve_path(path, cwd, nullptr, O_INTERNAL_RETLINK);
+	if(inode_or_err.is_error()) return inode_or_err.code();
+	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
+	return 0;
+}
+
 int Process::sys_lseek(int file, off_t off, int whence) {
 	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return file_descriptors[file]->seek(off, whence);
@@ -729,3 +739,17 @@ int Process::sys_isatty(int file) {
 	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	return file_descriptors[file]->file()->is_tty();
 }
+
+int Process::sys_symlink(char* file, char* linkname) {
+	check_ptr(file);
+	check_ptr(linkname);
+	DC::string file_str(file);
+	DC::string linkname_str(linkname);
+	return VFS::inst().symlink(file_str, linkname_str, cwd).code();
+}
+
+int Process::sys_symlinkat(char* file, int dirfd, char* linkname) {
+	return -1;
+}
+
+

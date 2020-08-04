@@ -89,6 +89,7 @@ public:
 	int sys_readdir(int file, char* buf, size_t len);
 	int sys_fstat(int file, char* buf);
 	int sys_stat(char* file, char* buf);
+	int sys_lstat(char* file, char* buf);
 	int sys_lseek(int file, off_t off, int whence);
 	int sys_waitpid(pid_t pid, int* status, int flags);
 	int sys_gettimeofday(timespec *t, void *z);
@@ -105,6 +106,8 @@ public:
 	int sys_dup(int oldfd);
 	int sys_dup2(int oldfd, int newfd);
 	int sys_isatty(int fd);
+	int sys_symlink(char* file, char* linkname);
+	int sys_symlinkat(char* file, int dirfd, char* linkname);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;

@@ -25,11 +25,12 @@
 #include <common/string.h>
 #include "InodeMetadata.h"
 #include "DirectoryEntry.h"
+#include "LinkedInode.h"
 #include <kernel/Result.hpp>
 #include <kernel/tasking/SpinLock.h>
 
 class Filesystem;
-
+class LinkedInode;
 class Inode {
 public:
 	Filesystem& fs;
@@ -49,6 +50,7 @@ public:
 	virtual ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode) = 0;
 	virtual Result remove_entry(const DC::string& name) = 0;
 	virtual Result truncate(off_t length) = 0;
+	virtual ResultRet<DC::shared_ptr<LinkedInode>> resolve_link(const DC::shared_ptr<LinkedInode>& base, int options, int recursion_level);
 
 	InodeMetadata metadata();
 

@@ -28,7 +28,7 @@ The code for these can be found in [programs](programs/).
 - mkdir (/bin/mkdir): Creates a new directory.
 - echo (/bin/echo): Prints the arguments given to it separated by spaces to stdout.
 - rm (/bin/rm): Removes a file.
-- ln (/bin/ln): Creates a link to a file.
+- ln (/bin/ln): Creates a hard or symbolic link to a file or directory.
 - rmdir (/bin/rmdir): Removes a directory.
 - touch (/bin/touch): Updates the access/modification times of a file or creates it if it doesn't exist.
 - truncate (/bin/truncate): Resizes a file.

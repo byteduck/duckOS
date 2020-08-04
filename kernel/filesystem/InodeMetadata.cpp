@@ -43,6 +43,10 @@ bool InodeMetadata::is_device() const {
 	return (mode & 0xF000u) == MODE_CHAR_DEVICE ||  (mode & 0xF000u) == MODE_BLOCK_DEVICE;
 }
 
+bool InodeMetadata::is_symlink() const {
+	return (mode & 0xF000u) == MODE_SYMLINK;
+}
+
 void InodeMetadata::stat(struct stat *stat) {
 	stat->st_mode = mode;
 	stat->st_size = size;

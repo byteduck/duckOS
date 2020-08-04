@@ -23,15 +23,22 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 int main(int argc, char** argv) {
-	if(argc < 3) {
-		printf("Missing operands\nUsage: ln FILE LINK_NAME\n");
+	bool symbolic = false;
+	if(argc >= 2) symbolic = strcmp(argv[1], "-s") == 0;
+	if(argc < (symbolic ? 4 : 3)) {
+		printf("Missing operands\nUsage: ln [-s] FILE LINK_NAME\n");
 		return 1;
 	}
 
-	int res = link(argv[1], argv[2]);
+	int res;
+	if(symbolic)
+		res = symlink(argv[2], argv[3]);
+	else
+		res = link(argv[1], argv[2]);
 	if(res == 0) return 0;
-	printf("Cannot ln '%s': %s\n", argv[1], strerror(errno));
+	printf("Cannot ln '%s': %s\n", symbolic ? argv[2] : argv[1], strerror(errno));
 	return errno;
 }

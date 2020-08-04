@@ -21,6 +21,7 @@
 #include <common/defines.h>
 #include "Inode.h"
 #include "Filesystem.h"
+#include "VFS.h"
 
 Inode::Inode(Filesystem& fs, ino_t id): fs(fs), id(id) {
 }
@@ -37,6 +38,24 @@ ResultRet<DC::shared_ptr<Inode>> Inode::find(const DC::string& name) {
 		return ret;
 	}
     return -ENOENT;
+}
+
+ResultRet<DC::shared_ptr<LinkedInode>> Inode::resolve_link(const DC::shared_ptr<LinkedInode>& base, int options, int recursion_level) {
+	ASSERT(metadata().is_symlink());
+
+	auto* buf = new uint8_t[metadata().size + 1];
+	auto res = read(0, metadata().size, buf);
+	buf[metadata().size] = '\0';
+
+	if(res != metadata().size) {
+		delete[] buf;
+		if(res < 0) return res;
+		return -EIO;
+	}
+
+	DC::string link_str((char*)buf);
+	delete[] buf;
+	return VFS::inst().resolve_path(link_str, base, nullptr, options, recursion_level);
 }
 
 InodeMetadata Inode::metadata() {

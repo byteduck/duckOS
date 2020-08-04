@@ -24,6 +24,9 @@
 #include "FileDescriptor.h"
 #include <common/string.h>
 
+#define O_INTERNAL_RETLINK 0x1000000
+#define VFS_RECURSION_LIMIT 5
+
 class VFS {
 public:
 	class Mount {
@@ -42,11 +45,12 @@ public:
 	~VFS();
 	static VFS& inst();
 
-	ResultRet<DC::shared_ptr<LinkedInode>> resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& base, DC::shared_ptr<LinkedInode>* parent_storage = nullptr);
+	ResultRet<DC::shared_ptr<LinkedInode>> resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& base, DC::shared_ptr<LinkedInode>* parent_storage = nullptr, int options = 0, int recursion_level = 0);
 	ResultRet<DC::shared_ptr<FileDescriptor>> open(DC::string& path, int options, mode_t mode, const DC::shared_ptr<LinkedInode>& base);
 	ResultRet<DC::shared_ptr<FileDescriptor>> create(DC::string& path, int options, mode_t mode, const DC::shared_ptr<LinkedInode>& parent);
 	Result unlink(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
-	Result link(DC::string& oldpath, DC::string& newpath, const DC::shared_ptr<LinkedInode>& base);
+	Result link(DC::string& file, DC::string& link_name, const DC::shared_ptr<LinkedInode>& base);
+	Result symlink(DC::string& file, DC::string& link_name, const DC::shared_ptr<LinkedInode>& base);
 	Result rmdir(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
 	Result mkdir(DC::string path, mode_t mode, const DC::shared_ptr<LinkedInode>& base);
 	Result mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, mode_t mode);

@@ -56,11 +56,14 @@ bool VFS::mount_root(Filesystem* fs) {
 	return true;
 }
 
-ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& _base, DC::shared_ptr<LinkedInode>* parent_storage) {
+ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& _base, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+	if(recursion_level > VFS_RECURSION_LIMIT) return -ELOOP;
 	if(path == "/") return _root_ref;
+
 	auto current_inode = path[0] == '/' ? _root_ref : _base;
 	DC::string part;
 	if(path[0] == '/') path = path.substr(1, path.length() - 1);
+
 	while(path[0] != '\0') {
 		auto parent = current_inode;
 		if(!parent->inode()->metadata().is_directory()) return -ENOTDIR;
@@ -86,6 +89,22 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 		auto child_inode_or_err = current_inode->inode()->find(part);
 
 		if(!child_inode_or_err.is_error()) {
+			if(child_inode_or_err.value()->metadata().is_symlink()) {
+				if(!path.length()) {
+					if (options & O_NOFOLLOW)
+						return -ELOOP;
+					if (options & O_INTERNAL_RETLINK) {
+						current_inode = DC::shared_ptr<LinkedInode>(
+								new LinkedInode(child_inode_or_err.value(), part, parent));
+						break;
+					}
+				}
+
+				auto link_or_err = child_inode_or_err.value()->resolve_link(current_inode, options, recursion_level + 1);
+				if(!path.length()) return link_or_err;
+				if(link_or_err.is_error()) return link_or_err;
+				return resolve_path(path, link_or_err.value(), parent_storage, options, recursion_level + 1);
+			}
 			current_inode = DC::shared_ptr<LinkedInode>(new LinkedInode(child_inode_or_err.value(), part, parent));
 		} else {
 			if(parent_storage && path.find('/') == -1) {
@@ -104,13 +123,15 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int option
 	if(path.length() == 0) return -ENOENT;
 	if((options & O_DIRECTORY) && (options & O_CREAT)) return -EINVAL;
 
+	int resolve_options = options & O_NOFOLLOW ? O_NOFOLLOW : 0;
+
 	DC::shared_ptr<LinkedInode> parent(nullptr);
 	auto resolv = resolve_path(path, base, &parent);
 	if(options & O_CREAT) {
 		if(!parent) return -ENOENT;
 		if(resolv.is_error()) {
 			if(resolv.code() == -ENOENT) {
-				resolv = resolve_path(path_minus_base(path), base);
+				resolv = resolve_path(path_minus_base(path), base, nullptr, resolve_options);
 				if(resolv.is_error()) return resolv.code();
 				return create(path, options, mode, parent);
 			} else return resolv.code();
@@ -154,21 +175,21 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int opti
 
 Result VFS::unlink(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
 	DC::shared_ptr<LinkedInode> parent(nullptr);
-	auto resolv = resolve_path(path, base, &parent);
+	auto resolv = resolve_path(path, base, &parent, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
 	if(resolv.value()->inode()->metadata().is_directory()) return -EISDIR;
 	return parent->inode()->remove_entry(path_base(path));
 }
 
-Result VFS::link(DC::string& oldpath, DC::string& newpath, const DC::shared_ptr<LinkedInode>& base) {
+Result VFS::link(DC::string& file, DC::string& link_name, const DC::shared_ptr<LinkedInode>& base) {
 	//Make sure the new file doesn't already exist and the parent directory exists
 	DC::shared_ptr<LinkedInode> new_file_parent(nullptr);
-	auto resolv = resolve_path(newpath, base, &new_file_parent);
+	auto resolv = resolve_path(link_name, base, &new_file_parent);
 	if(!resolv.is_error()) return -EEXIST;
 	if(!new_file_parent) return -ENOENT;
 
 	//Find the old file
-	resolv = resolve_path(oldpath, base);
+	resolv = resolve_path(file, base);
 	if(resolv.is_error()) return resolv.code();
 	auto old_file = resolv.value();
 	if(old_file->inode()->metadata().is_directory()) return -EISDIR;
@@ -176,7 +197,33 @@ Result VFS::link(DC::string& oldpath, DC::string& newpath, const DC::shared_ptr<
 	//Make sure they're on the same filesystem
 	if(old_file->inode()->fs.fsid() != new_file_parent->inode()->fs.fsid()) return -EXDEV;
 
-	return new_file_parent->inode()->add_entry(path_base(newpath), *old_file->inode());
+	return new_file_parent->inode()->add_entry(path_base(link_name), *old_file->inode());
+}
+
+Result VFS::symlink(DC::string& file, DC::string& link_name, const DC::shared_ptr<LinkedInode>& base) {
+	//Make sure the new file doesn't already exist and the parent directory exists
+	DC::shared_ptr<LinkedInode> new_file_parent(nullptr);
+	auto resolv = resolve_path(link_name, base, &new_file_parent);
+	if(!resolv.is_error()) return -EEXIST;
+	if(!new_file_parent) return -ENOENT;
+
+	//Find the file
+	resolv = resolve_path(file, base);
+	if(resolv.is_error()) return resolv.code();
+	auto old_file = resolv.value();
+
+	//Create the symlink file
+	auto symlink_res = new_file_parent->inode()->create_entry(path_base(link_name), MODE_SYMLINK | 0644);
+	if(symlink_res.is_error()) return symlink_res.code();
+
+	//Write the symlink data
+	ssize_t nwritten = symlink_res.value()->write(0, file.length(), (uint8_t*) file.c_str());
+	if(nwritten != file.length()) {
+		if(nwritten < 0) return nwritten;
+		return -EIO;
+	}
+
+	return SUCCESS;
 }
 
 Result VFS::rmdir(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
@@ -190,7 +237,7 @@ Result VFS::rmdir(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {
 	if(pbase == "..") return -ENOTEMPTY;
 
 	DC::shared_ptr<LinkedInode> parent(nullptr);
-	auto resolv = resolve_path(path, base, &parent);
+	auto resolv = resolve_path(path, base, &parent, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
 	if(!resolv.value()->inode()->metadata().is_directory()) return -ENOTDIR;
 	return parent->inode()->remove_entry(path_base(path));

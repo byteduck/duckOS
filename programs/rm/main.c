@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 	}
 
 	struct stat statbuf;
-	int res = stat(argv[1], &statbuf);
+	int res = lstat(argv[1], &statbuf);
 	if(res != 0) {
 		printf("Cannot remove '%s': %s\n", argv[1], strerror(errno));
 		return errno;

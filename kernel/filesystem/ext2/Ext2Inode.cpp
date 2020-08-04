@@ -81,6 +81,7 @@ Ext2Filesystem& Ext2Inode::ext2fs() {
 }
 
 size_t Ext2Inode::num_blocks() {
+	if(_metadata.is_symlink() && _metadata.size < 60) return 0;
 	return (_metadata.size + fs.block_size() - 1) / fs.block_size();
 }
 
@@ -123,9 +124,16 @@ ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 	if(length == 0) return 0;
 	if(!exists()) return -ENOENT; //Inode was deleted
 
-	if(start + length > _metadata.size) length = _metadata.size - start;
-
 	LOCK(lock);
+
+	//Symlinks less than 60 characters use the block pointers to store their data
+	if (_metadata.is_symlink() && _metadata.size < 60) {
+		ssize_t actual_length = min(_metadata.size - start, length);
+		memcpy(buf, ((uint8_t*)raw.block_pointers) + start, (size_t) actual_length);
+		return actual_length;
+	}
+
+	if(start + length > _metadata.size) length = _metadata.size - start;
 
 	//TODO: symlinks
 	size_t first_block = start / fs.block_size();
@@ -165,6 +173,14 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 	if(!exists()) return -ENOENT; //Inode was deleted
 
 	LOCK(lock);
+
+	//If it's a symlink and less than 60 characters, use the block pointers to store the link
+	if(_metadata.is_symlink() && max(_metadata.size, start + length) < 60) {
+		memcpy(((uint8_t*)raw.block_pointers) + start, buf, length);
+		if(start + length > _metadata.size) _metadata.size = start + length;
+		write_inode_entry();
+		return length;
+	}
 
 	size_t first_block = start / fs.block_size();
 	size_t first_block_start = start % fs.block_size();
@@ -299,6 +315,7 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 	uint8_t type = EXT2_FT_UNKNOWN;
 	if(inode.metadata().is_simple_file()) type = EXT2_FT_REG_FILE;
 	else if(inode.metadata().is_directory()) type = EXT2_FT_DIR;
+	else if(inode.metadata().is_symlink()) type = EXT2_FT_SYMLINK;
 	else if(inode.metadata().is_block_device()) type = EXT2_FT_BLKDEV;
 	else if(inode.metadata().is_character_device()) type = EXT2_FT_CHRDEV;
 
@@ -484,6 +501,13 @@ void Ext2Inode::read_triply_indirect(uint32_t triply_indirect_block, uint32_t& b
 
 void Ext2Inode::read_block_pointers(uint8_t* block_buf) {
 	LOCK(lock);
+
+	if(_metadata.is_symlink() && _metadata.size < 60) {
+		pointer_blocks = DC::vector<uint32_t>();
+		block_pointers = DC::vector<uint32_t>();
+		return;
+	}
+
 	ALLOC_BLOCKBUF(block_buf, ext2fs().block_size());
 	block_pointers = DC::vector<uint32_t>();
 	block_pointers.reserve(num_blocks());
@@ -522,6 +546,8 @@ Result Ext2Inode::write_to_disk(uint8_t* block_buf) {
 
 Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 	LOCK(lock);
+	if(_metadata.is_symlink() && _metadata.size < 60) return SUCCESS;
+
 	pointer_blocks = DC::vector<uint32_t>(0);
 	pointer_blocks.reserve(calculate_num_ptr_blocks(num_blocks()));
 
@@ -712,11 +738,10 @@ void Ext2Inode::reduce_hardlink_count() {
 	LOCK(lock);
 
 	raw.hard_links--;
+	write_inode_entry();
 	if(raw.hard_links == 0) {
 		ext2fs().remove_cached_inode(id);
 		ext2fs().free_inode(*this);
-	} else {
-		write_inode_entry();
 	}
 }
 

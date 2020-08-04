@@ -67,6 +67,7 @@ public:
 	bool is_character_device() const;
 	bool is_device() const;
 	bool is_simple_file() const;
+	bool is_symlink() const;
 	bool exists() const;
 	void stat(struct stat *stat);
 };
