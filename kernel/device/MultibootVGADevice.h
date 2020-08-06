@@ -20,25 +20,29 @@
 #ifndef DUCKOS_MULTIBOOTVGADEVICE_H
 #define DUCKOS_MULTIBOOTVGADEVICE_H
 
-#include "BlockDevice.h"
+#include "VGADevice.h"
 
-class MultibootVGADevice: BlockDevice {
+class MultibootVGADevice: VGADevice {
 public:
 	static MultibootVGADevice* create(struct multiboot_info* mboot_header);
+	~MultibootVGADevice();
 
-	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;\
+	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
+	void set_pixel(size_t x, size_t y, uint32_t value) override;
 
 	bool is_textmode();
 	uint32_t get_framebuffer_width();
 	uint32_t get_framebuffer_height();
 	uint32_t* get_framebuffer();
 	size_t framebuffer_size();
+	void scroll(size_t pixels) override;
 
 private:
-	MultibootVGADevice();
+	MultibootVGADevice() = default;
 	bool detect(struct multiboot_info* mboot_header);
 	size_t framebuffer_paddr;
 	uint32_t* framebuffer;
+	uint32_t* double_buffer = nullptr;
 	uint32_t framebuffer_pitch;
 	uint32_t framebuffer_width;
 	uint32_t framebuffer_height;

@@ -51,7 +51,7 @@ void clearScreen();
 void setAllColor(char color);
 void update_cursor();
 void scroll();
-void set_graphical_mode(uint32_t width, uint32_t height, void* framebuffer);
+void set_graphical_mode(uint32_t width, uint32_t height);
 void set_text_mode(uint32_t width, uint32_t height, void* framebuffer);
 
 #define SCREEN_CHAR_WIDTH 80

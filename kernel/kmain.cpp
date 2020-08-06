@@ -56,7 +56,7 @@ int kmain(uint32_t mbootptr){
 	BochsVGADevice* bochs_vga = BochsVGADevice::create();
 	if(bochs_vga) {
 		//If we found a bochs vga device, set it up
-		set_graphical_mode(bochs_vga->get_framebuffer_width(), bochs_vga->get_framebuffer_height(), bochs_vga->get_framebuffer());
+		set_graphical_mode(bochs_vga->get_framebuffer_width(), bochs_vga->get_framebuffer_height());
 	} else {
 		//Otherwise, try using the multiboot VGA device
 		auto* mboot_vga = MultibootVGADevice::create(&mboot_header);
@@ -65,7 +65,7 @@ int kmain(uint32_t mbootptr){
 			if(mboot_vga->is_textmode()) {
 				set_text_mode(mboot_vga->get_framebuffer_width(), mboot_vga->get_framebuffer_height(), mboot_vga->get_framebuffer());
 			} else {
-				set_graphical_mode(mboot_vga->get_framebuffer_width(), mboot_vga->get_framebuffer_height(), mboot_vga->get_framebuffer());
+				set_graphical_mode(mboot_vga->get_framebuffer_width(), mboot_vga->get_framebuffer_height());
 			}
 		} else {
 			//Fallback to textmode if all else fails

@@ -44,7 +44,7 @@ bool strcmp(const char* str1, const char* str2){
 	return flag == 0 && str1[i] == '\0' && str2[i] == '\0';
 }
 
-void *memset(void *dest, char val, int count){
+void *memset(void *dest, char val, size_t count){
 	char *temp = (char *)dest;
 	for( ; count != 0; count--) *temp++ = val;
 	return dest;

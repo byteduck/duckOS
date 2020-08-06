@@ -20,7 +20,7 @@
 #ifndef DUCKOS_BOCHSVGADEVICE_H
 #define DUCKOS_BOCHSVGADEVICE_H
 
-#include "BlockDevice.h"
+#include "VGADevice.h"
 #include <kernel/pci/pci.h>
 
 #define VBE_DISPI_INDEX_ID 0
@@ -51,15 +51,17 @@
 #define VBE_DEFAULT_WIDTH 640
 #define VBE_DEFAULT_HEIGHT 480
 
-class BochsVGADevice: public BlockDevice {
+class BochsVGADevice: public VGADevice {
 public:
 	static BochsVGADevice* create();
 
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
+	void set_pixel(size_t x, size_t y, uint32_t value) override;
 
 	uint32_t* get_framebuffer();
 	uint16_t get_framebuffer_width();
 	uint16_t get_framebuffer_height();
+	void scroll(size_t pixels) override;
 
 private:
 	BochsVGADevice();

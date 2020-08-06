@@ -36,7 +36,7 @@ bool graphical_mode = false;
 //Every single print statement ultimately uses this method.
 void putch_color(char c, char color){
 	serial_putch(c);
-	if(vidmem == nullptr) return;
+	if(!graphical_mode && vidmem == nullptr) return;
 	if(c == '\r'){
 		xpos = 0;
 	}else if(c == '\n'){
@@ -58,20 +58,16 @@ void putch_color(char c, char color){
 }
 
 void graphical_putch_color(char c, char color) {
-	uint32_t* framebuffer = (uint32_t*) vidmem;
-
-	while(ypos >= num_rows) {
-		//TODO: Better way of scrolling other than memcpying framebuffer
-		memcpy(framebuffer, framebuffer + 8 * (num_columns * 8), (num_rows - 1) * 8 * num_columns * 8 * 4);
-		memset(framebuffer + (8 * (num_rows - 1)) * (num_columns * 8), 0, num_columns * 8 * 8 * 4);
-		ypos--;
+	if(ypos >= num_rows) {
+		VGADevice::inst().scroll((ypos + 1 - num_rows) * 8);
+		ypos = num_rows - 1;
 	}
 
 	uint16_t pixel_xpos = xpos * 8;
 	uint16_t pixel_ypos = ypos * 8;
 	for(uint16_t x = 0; x < 8; x++) {
 		for(uint16_t y = 0; y < 8; y++) {
-			framebuffer[(x + pixel_xpos) + (y + pixel_ypos) * num_columns * 8] = ((font8x8_basic[(int)c][y] >> x) & 0x1u) ? 0xFFFFFFu : 0x0u;
+			VGADevice::inst().set_pixel(pixel_xpos + x, pixel_ypos + y, ((font8x8_basic[(int)c][y] >> x) & 0x1u) ? 0xFFFFFFu : 0x0u);
 		}
 	}
 }
@@ -261,9 +257,9 @@ void update_cursor(){
     outb(0x3D5, (uint8_t)((position>>8)&0xFF));
 }
 
-void set_graphical_mode(uint32_t width, uint32_t height, void* framebuffer) {
+void set_graphical_mode(uint32_t width, uint32_t height) {
+	vidmem = nullptr;
 	graphical_mode = true;
-	vidmem = (uint8_t*) framebuffer;
 	num_columns = width / 8;
 	num_rows = height / 8;
 	xpos = 0;

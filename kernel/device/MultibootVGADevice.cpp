@@ -30,7 +30,9 @@ MultibootVGADevice *MultibootVGADevice::create(struct multiboot_info *mboot_head
 	return ret;
 }
 
-MultibootVGADevice::MultibootVGADevice(): BlockDevice(29, 0) {}
+MultibootVGADevice::~MultibootVGADevice() {
+	if(double_buffer) delete[] double_buffer;
+}
 
 bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 	if(!(mboot_header->flags & MULTIBOOT_INFO_FRAMEBUFFER_INFO)) {
@@ -55,16 +57,25 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 	}
 
 	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
+	double_buffer = new uint32_t[framebuffer_size() / sizeof(uint32_t)];
+	memset(double_buffer, 0, framebuffer_size());
 
 	return true;
 }
 
 ssize_t MultibootVGADevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
 	LOCK(_lock);
-	if(!framebuffer) return -ENOSPC;
+	if(!double_buffer || !framebuffer) return -ENOSPC;
 	if(offset + count > framebuffer_size()) return -ENOSPC;
+	memcpy(((uint8_t*)double_buffer + offset), buffer, count);
 	memcpy(((uint8_t*)framebuffer + offset), buffer, count);
 	return count;
+}
+
+void MultibootVGADevice::set_pixel(size_t x, size_t y, uint32_t value) {
+	if(x > framebuffer_width || y > framebuffer_height) return;
+	double_buffer[x + y * framebuffer_width] = value;
+	framebuffer[x + y * framebuffer_width] = value;
 }
 
 bool MultibootVGADevice::is_textmode() {
@@ -85,4 +96,11 @@ uint32_t *MultibootVGADevice::get_framebuffer() {
 
 size_t MultibootVGADevice::framebuffer_size() {
 	return framebuffer_pitch * framebuffer_height;
+}
+
+void MultibootVGADevice::scroll(size_t pixels) {
+	if(pixels > framebuffer_height) return;
+	memcpy(double_buffer, double_buffer + pixels * framebuffer_width, (framebuffer_height - pixels) * framebuffer_width * sizeof(uint32_t));
+	memset(double_buffer + (framebuffer_height - pixels) * framebuffer_width, 0, framebuffer_width * pixels * sizeof(uint32_t));
+	memcpy(framebuffer, double_buffer, framebuffer_size());
 }

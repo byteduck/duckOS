@@ -68,6 +68,7 @@ SET(KERNEL_SRCS
         tasking/Lock.cpp
         tasking/SpinLock.cpp
         tasking/ProcessArgs.cpp
+        device/VGADevice.cpp
         device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp
         memory/MemoryRegion.cpp

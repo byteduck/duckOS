@@ -34,7 +34,7 @@ BochsVGADevice *BochsVGADevice::create() {
 	return ret;
 }
 
-BochsVGADevice::BochsVGADevice(): BlockDevice(29, 0) {}
+BochsVGADevice::BochsVGADevice(): VGADevice() {}
 
 bool BochsVGADevice::detect() {
 	PCI::enumerate_devices([](PCI::Address address, PCI::ID id, uint16_t type, void* dataPtr) {
@@ -99,6 +99,11 @@ ssize_t BochsVGADevice::write(FileDescriptor &fd, size_t offset, const uint8_t *
 	return count;
 }
 
+void BochsVGADevice::set_pixel(size_t x, size_t y, uint32_t value) {
+	if(x > display_width || y > display_height) return;
+	framebuffer[x + y * display_width] = value;
+}
+
 uint32_t *BochsVGADevice::get_framebuffer() {
 	return framebuffer;
 }
@@ -109,4 +114,10 @@ uint16_t BochsVGADevice::get_framebuffer_width() {
 
 uint16_t BochsVGADevice::get_framebuffer_height() {
 	return display_height;
+}
+
+void BochsVGADevice::scroll(size_t pixels) {
+	if(pixels > display_height) return;
+	memcpy(framebuffer, framebuffer + pixels * display_width, (display_height - pixels) * display_width * sizeof(uint32_t));
+	memset(framebuffer + (display_height - pixels) * display_width, 0, display_width * pixels * sizeof(uint32_t));
 }
