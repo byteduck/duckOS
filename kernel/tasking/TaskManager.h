@@ -36,6 +36,9 @@ namespace TaskManager {
 	uint32_t add_process(Process *p);
 	Process *current_process();
 	Process *process_for_pid(pid_t pid);
+	Process *process_for_pgid(pid_t pgid, pid_t exclude = -1);
+	Process *process_for_ppid(pid_t ppid, pid_t exclude = -1);
+	Process *process_for_sid(pid_t sid, pid_t exclude = -1);
 
 	void yield();
 

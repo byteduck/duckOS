@@ -55,6 +55,20 @@
 #define SYS_LSTAT 33
 #define SYS_SYMLINK 34
 #define SYS_SYMLINKAT 35
+#define SYS_READLINK 36
+#define SYS_READLINKAT 37
+#define SYS_GETSID 38
+#define SYS_SETSID 39
+#define SYS_GETPGID 40
+#define SYS_GETPGRP 41
+#define SYS_SETPGID 42
+
+struct __attribute__((packed)) readlinkat_args {
+	int fd;
+	const char* path;
+	char* buf;
+	size_t bufsize;
+};
 
 extern "C" void syscall_handler(Registers& regs);
 int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);

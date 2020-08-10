@@ -94,8 +94,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 					if (options & O_NOFOLLOW)
 						return -ELOOP;
 					if (options & O_INTERNAL_RETLINK) {
-						current_inode = DC::shared_ptr<LinkedInode>(
-								new LinkedInode(child_inode_or_err.value(), part, parent));
+						current_inode = DC::shared_ptr<LinkedInode>(new LinkedInode(child_inode_or_err.value(), part, parent));
 						break;
 					}
 				}
@@ -224,6 +223,25 @@ Result VFS::symlink(DC::string& file, DC::string& link_name, const DC::shared_pt
 	}
 
 	return SUCCESS;
+}
+
+ResultRet<DC::string> VFS::readlink(DC::string& path, const DC::shared_ptr<LinkedInode>& base, ssize_t& size) {
+	auto resolv = resolve_path(path, base, nullptr, O_INTERNAL_RETLINK);
+	if(resolv.is_error()) return resolv.code();
+	auto inode = resolv.value()->inode();
+	if(!inode->metadata().is_symlink()) return -EINVAL;
+
+	auto* buf = new uint8_t[inode->metadata().size + 1];
+	size = inode->read(0, inode->metadata().size, buf);
+	buf[inode->metadata().size] = '\0';
+	if(size < 0) {
+		delete[] buf;
+		return size;
+	}
+
+	DC::string ret((char*)buf);
+	delete[] buf;
+	return ret;
 }
 
 Result VFS::rmdir(DC::string &path, const DC::shared_ptr<LinkedInode> &base) {

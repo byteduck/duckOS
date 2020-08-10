@@ -49,6 +49,33 @@ Process* TaskManager::process_for_pid(pid_t pid){
 	return (Process *) nullptr;
 }
 
+Process* TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
+	Process *current = kidle_proc;
+	do{
+		if(current->pgid() == pgid && current->pid() != excl && current->state != PROCESS_DEAD) return current;
+		current = current->next;
+	} while(current != kidle_proc);
+	return (Process *) nullptr;
+}
+
+Process* TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
+	Process *current = kidle_proc;
+	do{
+		if(current->ppid() == ppid && current->pid() != excl && current->state != PROCESS_DEAD) return current;
+		current = current->next;
+	} while(current != kidle_proc);
+	return (Process *) nullptr;
+}
+
+Process* TaskManager::process_for_sid(pid_t sid, pid_t excl){
+	Process *current = kidle_proc;
+	do{
+		if(current->sid() == sid && current->pid() != excl && current->state != PROCESS_DEAD) return current;
+		current = current->next;
+	} while(current != kidle_proc);
+	return (Process *) nullptr;
+}
+
 void TaskManager::print_tasks(){
 	Process *current = kidle_proc;
 	printf("Running processes: ([PID] name state usermem)\n");

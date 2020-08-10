@@ -49,6 +49,7 @@ Type `help` for a list of commands that can be used in the builtin kernel shell.
 - PATA DMA doesn't seem to work on real hardware at the moment, so the `use_pio` grub commandline option should be specified if you're crazy enough to test this on real hardware ;)
 - Binaries are statically linked, so they're larger and take up more memory than usual
 - Ext2 triply indirect block pointers cannot be read/written, so there may be issues writing and reading large files
+- A buffer overflow attack on the kernel may be possible, because only pointers passed to syscalls are checked for validity (and not the length of the data to be read/written)
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.

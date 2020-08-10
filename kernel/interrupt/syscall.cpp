@@ -100,6 +100,20 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_symlink((char*)arg1, (char*)arg2);
 		case SYS_SYMLINKAT:
 			return TaskManager::current_process()->sys_symlinkat((char*)arg1, (int)arg2, (char*)arg3);
+		case SYS_READLINK:
+			return TaskManager::current_process()->sys_readlink((char*)arg1, (char*)arg2, (size_t)arg3);
+		case SYS_READLINKAT:
+			return TaskManager::current_process()->sys_readlinkat((struct readlinkat_args*) arg1);
+		case SYS_GETSID:
+			return TaskManager::current_process()->sys_getsid((pid_t)arg1);
+		case SYS_SETSID:
+			return TaskManager::current_process()->sys_setsid();
+		case SYS_GETPGID:
+			return TaskManager::current_process()->sys_getpgid((pid_t)arg1);
+		case SYS_GETPGRP:
+			return TaskManager::current_process()->sys_getpgrp();
+		case SYS_SETPGID:
+			return TaskManager::current_process()->sys_setpgid((pid_t)arg1, (pid_t)arg2);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

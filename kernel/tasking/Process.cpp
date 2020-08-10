@@ -34,7 +34,7 @@ Process* Process::create_kernel(const DC::string& name, void (*func)()){
 	return new Process(name, (size_t)func, true, &args, 0);
 }
 
-ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t parent) {
+ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t ppid) {
 	//Open the executable
 	auto fd_or_error = VFS::inst().open((DC::string&) executable_loc, O_RDONLY, 0, args->working_dir);
 	if(fd_or_error.is_error()) return fd_or_error.code();
@@ -46,7 +46,7 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, Proce
 	auto* header = header_or_err.value();
 
 	//Create the process
-	auto* proc = new Process(executable_loc, header->program_entry_position, false, args, parent);
+	auto* proc = new Process(executable_loc, header->program_entry_position, false, args, ppid);
 
 	//Load the ELF into the process's page directory and set proc->current_brk
 	auto brk_or_err = ELF::load_elf(*fd, proc->page_directory, header);
@@ -61,11 +61,23 @@ pid_t Process::pid() {
 	return _pid;
 }
 
+pid_t Process::pgid() {
+	return _pgid;
+}
+
+pid_t Process::ppid() {
+	return _ppid;
+}
+
+pid_t Process::sid() {
+	return _sid;
+}
+
 DC::string Process::name(){
 	return _name;
 }
 
-Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent) {
+Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid) {
 	//Disable task switching so we don't screw up paging
 	bool en = TaskManager::enabled();
 	TaskManager::enabled() = false;
@@ -75,7 +87,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	state = PROCESS_ALIVE;
 	this->kernel = kernel;
 	ring = kernel ? 0 : 3;
-	parent = parent;
+	_ppid = ppid;
 	quantum = 1;
 
 	if(!kernel) {
@@ -167,7 +179,9 @@ Process::Process(Process *to_fork, Registers &regs){
 	ring = 3;
 	current_brk = to_fork->current_brk;
 	cwd = to_fork->cwd;
-	parent = to_fork->_pid;
+	_ppid = to_fork->_pid;
+	_sid = to_fork->_sid;
+	_pgid = to_fork->_pgid;
 	quantum = to_fork->quantum;
 
 	//Copy signal handlers and file descriptors
@@ -449,7 +463,7 @@ pid_t Process::sys_fork(Registers& regs) {
 
 int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	//Create the new process
-	auto R_new_proc = Process::create_user(filename, args, parent);
+	auto R_new_proc = Process::create_user(filename, args, _ppid);
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	auto* new_proc = R_new_proc.value();
 
@@ -583,20 +597,25 @@ int Process::sys_lseek(int file, off_t off, int whence) {
 }
 
 int Process::sys_waitpid(pid_t pid, int* status, int flags) {
+	//TODO: Flags
 	if(status) check_ptr(status);
+
+	Process* proc;
 	if(pid < -1) {
-		return -ECHILD; //TODO: Wait for process with pgroup abs(pid)
+		proc = TaskManager::process_for_pgid(-pid, _pid);
 	} else if(pid == -1) {
-		return -ECHILD; //TODO: Wait for any child
+		proc = TaskManager::process_for_ppid(_pid, _pid);
 	} else if(pid == 0) {
-		return -ECHILD; //TODO: Wait for process in same pgroup
+		proc = TaskManager::process_for_pgid(_pgid, _pid);
 	} else {
-		Process* proc = TaskManager::process_for_pid(pid);
-		if(!proc) return -ECHILD;
-		yield_to(proc);
-		if(status)
-			*status = 0; //TODO: Process status
+		proc = TaskManager::process_for_pid(pid);
 	}
+
+	if(!proc) return -ECHILD;
+	if(proc == this) return 0;
+	yield_to(proc);
+	if(status)
+		*status = 0; //TODO: Process status
 
 	return pid;
 }
@@ -630,14 +649,34 @@ int Process::sys_kill(pid_t pid, int sig) {
 	if(sig < 0 || sig >= NSIG) return -EINVAL;
 	if(pid == _pid) kill(sig);
 	else if(pid == 0) {
-		//TODO: kill processes in pgroup
+		//Kill all processes with _pgid == this->_pgid
+		Process* c_proc = this->next;
+		while(c_proc != this) {
+			if((_uid == 0 || c_proc->_uid == _uid) && c_proc->_pgid == _pgid && c_proc->_pid != 1) c_proc->kill(sig);
+			c_proc = c_proc->next;
+		}
+		kill(sig);
 	} else if(pid == -1) {
-		//TODO: kill all processes for which we have permission to kill
+		//kill all processes for which we have permission to kill except init
+		Process* c_proc = this->next;
+		while(c_proc != this) {
+			if((_uid == 0 || c_proc->_uid == _uid) && c_proc->_pid != 1) c_proc->kill(sig);
+			c_proc = c_proc->next;
+		}
+		kill(sig);
 	} else if(pid < -1) {
-		//TODO: kill all processes in pgroup -pid
+		//Kill all processes with _pgid == -pid
+		Process* c_proc = this->next;
+		while(c_proc != this) {
+			if((_uid == 0 || c_proc->_uid == _uid) && c_proc->_pgid == -pid && c_proc->_pid != 1) c_proc->kill(sig);
+			c_proc = c_proc->next;
+		}
+		kill(sig);
 	} else {
+		//Kill process with _pid == pid
 		Process* proc = TaskManager::process_for_pid(pid);
 		if(!proc) return -ESRCH;
+		if((_uid != 0 && _uid != proc->_uid) || proc->_pid == 1) return -EPERM;
 		proc->kill(sig);
 	}
 	return 0;
@@ -750,6 +789,83 @@ int Process::sys_symlink(char* file, char* linkname) {
 
 int Process::sys_symlinkat(char* file, int dirfd, char* linkname) {
 	return -1;
+}
+
+int Process::sys_readlink(char* file, char* buf, size_t bufsize) {
+	if(bufsize < 0) return -EINVAL;
+	check_ptr(file);
+	check_ptr(buf);
+	DC::string file_str(file);
+
+	ssize_t ret;
+	auto ret_perhaps = VFS::inst().readlink(file_str, cwd, ret);
+	if(ret_perhaps.is_error()) return ret_perhaps.code();
+
+	auto& link_value = ret_perhaps.value();
+	memcpy(buf, link_value.c_str(), min(link_value.length(), bufsize - 1));
+	buf[min(bufsize - 1, link_value.length())] = '\0';
+
+	return SUCCESS;
+}
+
+int Process::sys_readlinkat(struct readlinkat_args* args) {
+	check_ptr(args);
+	return -1;
+}
+
+int Process::sys_getsid(pid_t pid) {
+	if(pid == 0) return _sid;
+	auto* proc = TaskManager::process_for_pid(pid);
+	if(!proc) return -ESRCH;
+	if(proc->_sid != _sid) return -EPERM;
+	return proc->_sid;
+}
+
+int Process::sys_setsid() {
+	//Make sure there's no other processes in the group
+	Process* c_proc = this->next;
+	while(c_proc != this) {
+		if(c_proc->_pgid == _pid) return -EPERM;
+		c_proc = c_proc->next;
+	}
+
+	_sid = _pid;
+	_pgid = _pid;
+	return _sid;
+}
+
+int Process::sys_getpgid(pid_t pid) {
+	if(pid == 0) return _pgid;
+	Process* proc = TaskManager::process_for_pid(pid);
+	if(!proc) return -ESRCH;
+	return proc->_pgid;
+}
+
+int Process::sys_getpgrp() {
+	return _pgid;
+}
+
+int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
+	if(pid < 0) return -EINVAL;
+	if(!new_pgid) new_pgid = _pid;
+
+	//Validate specified pid
+	Process* proc = pid ? TaskManager::process_for_pid(pid) : this;
+	if(!proc || proc->_pid != _pid || proc->_ppid != _pid) return -ESRCH; //Process doesn't exist or is not self or child
+	if(proc->_ppid == _pid && proc->_sid != _sid) return -EPERM; //Process is a child but not in the same session
+	if(proc->_pid == proc->_sid) return -EPERM; //Process is session leader
+
+	//Make sure we're not switching to another session
+	Process* c_proc = this->next;
+	pid_t new_sid = _sid;
+	while(c_proc != this) {
+		if(c_proc->_pgid == new_pgid) new_sid = c_proc->_sid;
+		c_proc = c_proc->next;
+	}
+	if(new_sid != _sid) return -EPERM;
+
+	_pgid = new_pgid;
+	return SUCCESS;
 }
 
 

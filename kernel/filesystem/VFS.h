@@ -51,6 +51,7 @@ public:
 	Result unlink(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
 	Result link(DC::string& file, DC::string& link_name, const DC::shared_ptr<LinkedInode>& base);
 	Result symlink(DC::string& file, DC::string& link_name, const DC::shared_ptr<LinkedInode>& base);
+	ResultRet<DC::string> readlink(DC::string& path, const DC::shared_ptr<LinkedInode>& base, ssize_t& size);
 	Result rmdir(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
 	Result mkdir(DC::string path, mode_t mode, const DC::shared_ptr<LinkedInode>& base);
 	Result mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, mode_t mode);

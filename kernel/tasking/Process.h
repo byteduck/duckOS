@@ -34,6 +34,7 @@
 #include "TaskYieldQueue.h"
 #include "Signal.h"
 #include <kernel/filesystem/Pipe.h>
+#include <kernel/interrupt/syscall.h>
 
 #define PROCESS_STACK_SIZE 1048576 //1024KiB
 #define PROCESS_KERNEL_STACK_SIZE 4096 //4KiB
@@ -51,9 +52,12 @@ public:
 	~Process();
 
 	static Process* create_kernel(const DC::string& name, void (*func)());
-	static ResultRet<Process*> create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t parent);
+	static ResultRet<Process*> create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t ppid);
 
 	pid_t pid();
+	pid_t pgid();
+	pid_t ppid();
+	pid_t sid();
 	DC::string name();
 	void kill(int signal, bool notify_yielders = true);
 	void handle_pagefault(Registers *regs);
@@ -108,6 +112,13 @@ public:
 	int sys_isatty(int fd);
 	int sys_symlink(char* file, char* linkname);
 	int sys_symlinkat(char* file, int dirfd, char* linkname);
+	int sys_readlink(char* file, char* buf, size_t bufsize);
+	int sys_readlinkat(struct readlinkat_args* args);
+	int sys_getsid(pid_t pid);
+	int sys_setsid();
+	int sys_getpgid(pid_t pid);
+	int sys_getpgrp();
+	int sys_setpgid(pid_t pid, pid_t new_pgid);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;
@@ -129,6 +140,11 @@ private:
 	//Identifying info
 	DC::string _name = "";
 	pid_t _pid = 0;
+	pid_t _ppid = 0;
+	pid_t _sid = 0;
+	pid_t _pgid = 0;
+	uid_t _uid = 0;
+	gid_t _gid = 0;
 
 	//Memory
 	size_t current_brk = 0;
@@ -141,9 +157,6 @@ private:
 	//Files & Pipes
 	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors;
 	DC::shared_ptr<LinkedInode> cwd;
-
-	//Parent/Children
-	pid_t parent = 0;
 
 	//Yielding stuff
 	TaskYieldQueue* _yielding_to = nullptr;
