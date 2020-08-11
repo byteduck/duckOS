@@ -32,6 +32,7 @@ uint32_t num_rows = 25;
 char ccolor = 0x0f;
 uint8_t* vidmem = nullptr;
 bool graphical_mode = false;
+uint32_t vga_color_palette[] = {0x000000, 0x0000AA, 0x00AA00, 0x00AAAA, 0xAA0000, 0xAA00AA, 0xAA5500, 0xAAAAAA, 0x555555, 0x5555FF, 0x55FF55, 0x55FFFF, 0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF};
 
 //Every single print statement ultimately uses this method.
 void putch_color(char c, char color){
@@ -67,7 +68,7 @@ void graphical_putch_color(char c, char color) {
 	uint16_t pixel_ypos = ypos * 8;
 	for(uint16_t x = 0; x < 8; x++) {
 		for(uint16_t y = 0; y < 8; y++) {
-			VGADevice::inst().set_pixel(pixel_xpos + x, pixel_ypos + y, ((font8x8_basic[(int)c][y] >> x) & 0x1u) ? 0xFFFFFFu : 0x0u);
+			VGADevice::inst().set_pixel(pixel_xpos + x, pixel_ypos + y, ((font8x8_basic[(int)c][y] >> x) & 0x1u) ? vga_color_palette[color] : 0x0u);
 		}
 	}
 }
@@ -215,32 +216,34 @@ void backspace(){
 }
 
 void PANIC(char *error, char *msg, bool hang){
+	TaskManager::enabled() = false;
 	clearScreen();
 	setAllColor(0x9f);
 	setAllColor(0x9f);
 	println("Good job, you crashed it.\nAnyway, here's the details, since you probably need them.\nDon't mess it up again.\n");
 	println(error);
 	println(msg);
-	if(hang) cli();
 	while(hang);
+	TaskManager::enabled() = true;
 }
 
 void clearScreen(){
-	if(vidmem == nullptr) return;
 	if(!graphical_mode) {
+		if(vidmem == nullptr) return;
 		for (int y = 0; y < 25; y++) {
 			for (int x = 0; x < 80; x++) {
 				vidmem[(x + (y * 80)) * 2] = ' ';
 			}
 		}
 	} else {
-		memset(vidmem, 0, num_columns * num_rows * 8 * 8 * 4);
+		VGADevice::inst().clear();
 	}
 	xpos = 0;
 	ypos = 0;
 }
 
 void setAllColor(char color){
+	if(!vidmem) return;
 	for(int y=0; y<25; y++){
 		for(int x=0; x<80; x++){
 			vidmem[(x+(y*80))*2+1] = color;

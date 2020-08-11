@@ -121,3 +121,7 @@ void BochsVGADevice::scroll(size_t pixels) {
 	memcpy(framebuffer, framebuffer + pixels * display_width, (display_height - pixels) * display_width * sizeof(uint32_t));
 	memset(framebuffer + (display_height - pixels) * display_width, 0, display_width * pixels * sizeof(uint32_t));
 }
+
+void BochsVGADevice::clear() {
+	memset(framebuffer, 0, framebuffer_size());
+}

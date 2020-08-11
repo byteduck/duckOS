@@ -62,6 +62,7 @@ public:
 	uint16_t get_framebuffer_width();
 	uint16_t get_framebuffer_height();
 	void scroll(size_t pixels) override;
+	void clear() override;
 
 private:
 	BochsVGADevice();
