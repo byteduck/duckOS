@@ -77,6 +77,10 @@ DC::string Process::name(){
 	return _name;
 }
 
+bool& Process::just_execed() {
+	return _just_execed;
+}
+
 Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid) {
 	//Disable task switching so we don't screw up paging
 	bool en = TaskManager::enabled();
@@ -253,8 +257,22 @@ void Process::setup_stack(uint32_t*& kernel_stack, uint32_t* userstack, Register
 }
 
 Process::~Process() {
+	free_resources();
+}
+
+void Process::free_resources() {
+	if(_freed_resources) return;
+	LOCK(_lock);
+	_freed_resources = true;
 	delete page_directory;
 	if(_kernel_stack_base) PageDirectory::k_free_region(_kernel_stack_base);
+	file_descriptors.resize(0);
+}
+
+void Process::reap() {
+	LOCK(_lock);
+	if(state != PROCESS_ZOMBIE) return;
+	state = PROCESS_DEAD;
 }
 
 void Process::kill(int signal, bool notify_yielders) {
@@ -276,8 +294,9 @@ bool Process::handle_pending_signal() {
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
+			state = PROCESS_ZOMBIE;
+			free_resources();
 			if (notify_yielders_on_death) _yield_queue.set_all_ready();
-			state = PROCESS_DEAD;
 		} else if(signal_actions[signal].action) {
 			//Otherwise, have the process handle the signal
 			call_signal_handler(signal);
@@ -387,17 +406,23 @@ void *Process::kernel_stack_top() {
 }
 
 void Process::yield_to(TaskYieldQueue& yielder) {
-	//ASSERT(TaskManager::enabled());
-TaskManager::enabled() = true;
+	TaskManager::enabled() = true;
 	yielder.add_process(this);
 	_yielding_to = &yielder;
 	state = PROCESS_YIELDING;
-
 	TaskManager::yield();
 }
 
-void Process::yield_to(Process* proc) {
+int Process::wait_on(pid_t pid) {
+	Process* proc = TaskManager::process_for_pid(pid);
+	ASSERT(proc);
 	yield_to(proc->_yield_queue);
+	TaskManager::enabled() = false;
+	proc = TaskManager::process_for_pid(pid);
+	ASSERT(proc);
+	proc->reap();
+	TaskManager::enabled() = true;
+	return proc->_exit_status;
 }
 
 bool Process::is_yielding() {
@@ -422,6 +447,10 @@ void Process::check_ptr(void *ptr) {
 	if((size_t) ptr >= HIGHER_HALF || !page_directory->is_mapped((size_t) ptr)) {
 		kill(SIGSEGV);
 	}
+}
+
+void Process::sys_exit(int status) {
+	_exit_status = status;
 }
 
 ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
@@ -468,24 +497,25 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	auto* new_proc = R_new_proc.value();
 
 	//Properly set new process's PID, yielder, and stdout/in/err
-	new_proc->_pid = this->pid();
+	new_proc->_pid = _pid;
+	new_proc->_gid = _gid;
+	new_proc->_pgid = _pgid;
+	new_proc->_sid = _sid;
 	new_proc->_yield_queue = this->_yield_queue;
 	for(size_t i = 0; i < 3; i++)
 		new_proc->file_descriptors[i] = DC::make_shared<FileDescriptor>(*file_descriptors[i]);
+
+	//Manually delete because we won't return from here and we need to clean up resources
+	delete args;
+	filename.~string();
 
 	//Add the new process to the process list
 	cli();
 	_pid = -1;
 	state = PROCESS_DEAD;
 	TaskManager::add_process(new_proc);
-
-	//Manually delete because we won't return from here and we need to clean up resources
-	delete args;
-	filename.~string();
-
-	//Kill self and assert we don't continue after killing
-	kill(SIGKILL, false);
-	ASSERT(false)
+	TaskManager::yield();
+	ASSERT(false);
 	return -1;
 }
 
@@ -613,9 +643,10 @@ int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 
 	if(!proc) return -ECHILD;
 	if(proc == this) return 0;
-	yield_to(proc);
 	if(status)
-		*status = 0; //TODO: Process status
+		*status = wait_on(proc->_pid); //TODO: Process status
+	else
+		wait_on(proc->_pid);
 
 	return pid;
 }

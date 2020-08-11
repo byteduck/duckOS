@@ -25,6 +25,7 @@
 #include <kernel/pit.h>
 
 TSS TaskManager::tss;
+SpinLock TaskManager::lock;
 
 Process *current_proc;
 Process *kidle_proc;
@@ -94,6 +95,8 @@ pid_t TaskManager::get_new_pid(){
 }
 
 void TaskManager::init(){
+	lock = SpinLock();
+
 	//Create kidle process
 	kidle_proc = Process::create_kernel("kidle", kidle);
 
@@ -130,34 +133,11 @@ void TaskManager::notify_current(uint32_t sig){
 	current_proc->kill(sig);
 }
 
-void TaskManager::kill(Process* p){
-	if(process_for_pid(p->pid()) != NULL){
-		tasking_enabled = false;
-		p->prev->next = p->next;
-		p->next->prev = p->prev;
-		p->state = PROCESS_DEAD;
-		delete p;
-		tasking_enabled = true;
-	}
-}
-
 Process *TaskManager::next_process() {
 	Process* next_proc = current_proc->next;
-
-	//Don't switch to a yielding process
-	while(next_proc->is_yielding()) {
+	//Don't switch to a yielding/zombie process
+	while(next_proc->state != PROCESS_ALIVE)
 		next_proc = next_proc->next;
-	}
-
-	//Cleanup dead processes
-	while(next_proc->state == PROCESS_DEAD) {
-		next_proc->prev->next = next_proc->next;
-		next_proc->next->prev = next_proc->prev;
-		Process* to_delete = next_proc;
-		do next_proc = next_proc->next; while(next_proc->state == PROCESS_DEAD || next_proc->is_yielding()); //Make sure not to choose a dead or yielding process
-		delete to_delete;
-	}
-
 	return next_proc;
 }
 
@@ -173,11 +153,30 @@ void TaskManager::yield() {
 void TaskManager::preempt(){
 	if(!tasking_enabled) return;
 
-	//Handle pending signal
+	//Handle pending signals, cleanup dead processes, and release zombie processes' resources
 	Process *current = kidle_proc->next;
 	do {
-		current->handle_pending_signal();
-		current = current->next;
+		switch(current->state) {
+			case PROCESS_YIELDING:
+			case PROCESS_ALIVE:
+				current->handle_pending_signal();
+				current = current->next;
+				break;
+			case PROCESS_DEAD: {
+				current->prev->next = current->next;
+				current->next->prev = current->prev;
+				Process* to_delete = current;
+				current = current->next;
+				delete to_delete;
+				break;
+			}
+			case PROCESS_ZOMBIE:
+				current->free_resources();
+				current = current->next;
+				break;
+			default:
+				PANIC("PROC_INVALID_STATE", "A process had an invalid state.", true);
+		}
 	} while(current != kidle_proc);
 
 	//If it's time to switch, switch
@@ -187,9 +186,12 @@ void TaskManager::preempt(){
 		current_proc = next_process();
 		quantum_counter = current_proc->quantum - 1;
 
-		//If we were just in a signal handler, use the esp from signal_registers
+		//If we were just in a signal handler or just execed, don't save the esp to old_proc->registers
 		unsigned int* old_esp;
 		if(old_proc->in_signal_handler()) {
+			old_esp = &old_proc->signal_registers.esp;
+		} else if(old_proc->just_execed()) {
+			old_proc->just_execed() = false;
 			old_esp = &old_proc->signal_registers.esp;
 		} else {
 			old_esp = &old_proc->registers.esp;

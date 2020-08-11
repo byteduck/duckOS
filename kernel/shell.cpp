@@ -215,7 +215,7 @@ void Shell::command_eval(char *cmd, char *args){
 		if(proc == nullptr)
 			printf("No process with PID %d.\n", pid);
 		else
-			TaskManager::kill(proc);
+			proc->kill(SIGKILL);
 	}else if(strcmp(cmd, "readelf")){
 		DC::string argstr(args);
 		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, current_dir);
@@ -338,6 +338,6 @@ void Shell::command_eval(char *cmd, char *args){
 
 		//Add process and wait
 		TaskManager::add_process(p.value());
-		TaskManager::current_process()->yield_to(p.value());
+		TaskManager::current_process()->wait_on(p.value()->pid());
 	}
 }

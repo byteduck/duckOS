@@ -23,11 +23,12 @@
 #include <kernel/kstddef.h>
 #include "Process.h"
 #include "TSS.h"
+#include "SpinLock.h"
 
 class Process;
-
 namespace TaskManager {
 	extern TSS tss;
+	extern SpinLock lock;
 
 	void init();
 	bool& enabled();
@@ -43,7 +44,6 @@ namespace TaskManager {
 	void yield();
 
 	void notify_current(uint32_t sig);
-	void kill(Process *p);
 
 	pid_t get_new_pid();
 	Process* next_process();

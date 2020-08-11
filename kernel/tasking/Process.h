@@ -59,7 +59,9 @@ public:
 	pid_t ppid();
 	pid_t sid();
 	DC::string name();
+	bool& just_execed();
 	void kill(int signal, bool notify_yielders = true);
+	void free_resources();
 	void handle_pagefault(Registers *regs);
 	void* kernel_stack_top();
 
@@ -72,13 +74,14 @@ public:
 	void* signal_stack_top();
 
 	void yield_to(TaskYieldQueue& yielder);
-	void yield_to(Process* p);
+	int wait_on(pid_t pid);
 	bool is_yielding();
 	void finish_yielding();
 	TaskYieldQueue* yielding_to();
 
 	//Syscalls
 	void check_ptr(void* ptr);
+	void sys_exit(int status);
 	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
 	ssize_t sys_write(int fd, uint8_t* buf, size_t count);
 	size_t sys_sbrk(int i);
@@ -134,10 +137,11 @@ public:
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
+	void reap();
 
 	void setup_stack(uint32_t*& kernel_stack, uint32_t* user_stack, Registers& registers);
 
-	//Identifying info
+	//Identifying info and state
 	DC::string _name = "";
 	pid_t _pid = 0;
 	pid_t _ppid = 0;
@@ -145,6 +149,9 @@ private:
 	pid_t _pgid = 0;
 	uid_t _uid = 0;
 	gid_t _gid = 0;
+	int _exit_status = 0;
+	bool _freed_resources = false;
+	bool _just_execed = false;
 
 	//Memory
 	size_t current_brk = 0;
@@ -162,6 +169,7 @@ private:
 	TaskYieldQueue* _yielding_to = nullptr;
 	TaskYieldQueue _yield_queue;
 	bool notify_yielders_on_death = true;
+	SpinLock _lock;
 
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};

@@ -34,27 +34,29 @@ char cwd[4096];
 char cmdbuf[4096];
 struct stat st;
 
-void evaluate_input(char* input);
+int evaluate_input(char* input);
 pid_t evaluate_command(int argc, char** argv, int infd, int outfd);
 bool evaluate_builtin(int argc, char** argv);
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 int main() {
+	int res = 0;
 	while(true) {
 		getcwd(cwd, 4096);
-		printf("[dsh %s]# ", cwd);
+		printf("[dsh %s]%s ", cwd, res ? "X" : "#");
 		fflush(stdout);
 		gets(cmdbuf);
-		evaluate_input(cmdbuf);
+		res = evaluate_input(cmdbuf);
 	}
 }
 #pragma clang diagnostic pop
 
 /**
  * @param input The input to be evaluated.
+ * @return The result code of the input.
  */
-void evaluate_input(char* input) {
+int evaluate_input(char* input) {
 	//See if we have a redirection
 	int redirection_fd = -1;
 	if(strcspn(input, ">") != strlen(input)) {
@@ -122,11 +124,14 @@ void evaluate_input(char* input) {
 	}
 
 	//Wait for processes
+	int res = 0;
 	for(int i = 0; i < pidc; i++)
-		waitpid(pids[i], NULL, 0);
+		waitpid(pids[i], res ? NULL : &res, 0);
 
 	//Close redirection FD
 	if(redirection_fd != -1) close(redirection_fd);
+
+	return res;
 }
 
 pid_t evaluate_command(int argc, char** argv, int infd, int outfd) {

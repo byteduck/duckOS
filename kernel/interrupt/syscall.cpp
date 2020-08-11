@@ -32,6 +32,7 @@ void syscall_handler(Registers& regs){
 int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
 	switch(call) {
 		case SYS_EXIT:
+			TaskManager::current_process()->sys_exit(arg1);
 			TaskManager::current_process()->kill(SIGKILL);
 			return 0;
 		case SYS_FORK:
