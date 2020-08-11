@@ -26,12 +26,13 @@
 #include "TaskManager.h"
 #include "elf.h"
 #include "ProcessArgs.h"
+#include "WaitBlocker.h"
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/syscall.h>
 
 Process* Process::create_kernel(const DC::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(DC::shared_ptr<LinkedInode>(nullptr));
-	return new Process(name, (size_t)func, true, &args, 0);
+	return new Process(name, (size_t)func, true, &args, 1);
 }
 
 ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t ppid) {
@@ -77,6 +78,10 @@ DC::string Process::name(){
 	return _name;
 }
 
+int Process::exit_status() {
+	return _exit_status;
+}
+
 bool& Process::just_execed() {
 	return _just_execed;
 }
@@ -91,7 +96,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	state = PROCESS_ALIVE;
 	this->kernel = kernel;
 	ring = kernel ? 0 : 3;
-	_ppid = ppid;
+	_ppid = _pid > 1 ? ppid : 0; //kidle and init have a parent of 0
 	quantum = 1;
 
 	if(!kernel) {
@@ -247,7 +252,7 @@ void Process::setup_stack(uint32_t*& kernel_stack, uint32_t* userstack, Register
 	*--kernel_stack = regs.fs;
 	*--kernel_stack = regs.gs;
 
-	if(_pid != 1) {
+	if(_pid != 0) {
 		*--kernel_stack = (size_t) TaskManager::proc_first_preempt;
 		*--kernel_stack = 0; //Fake popped EBP
 	}
@@ -275,9 +280,13 @@ void Process::reap() {
 	state = PROCESS_DEAD;
 }
 
-void Process::kill(int signal, bool notify_yielders) {
+void Process::kill(int signal) {
 	pending_signals.push(signal);
-	if(!notify_yielders) notify_yielders_on_death = false;
+	if(TaskManager::current_process() == this) TaskManager::yield();
+}
+
+void Process::die_silently() {
+	state = PROCESS_DEAD;
 	if(TaskManager::current_process() == this) TaskManager::yield();
 }
 
@@ -295,8 +304,9 @@ bool Process::handle_pending_signal() {
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
 			state = PROCESS_ZOMBIE;
+			Process* parent = TaskManager::process_for_pid(_ppid);
+			if(parent && parent != this) parent->kill(SIGCHLD);
 			free_resources();
-			if (notify_yielders_on_death) _yield_queue.set_all_ready();
 		} else if(signal_actions[signal].action) {
 			//Otherwise, have the process handle the signal
 			call_signal_handler(signal);
@@ -405,37 +415,29 @@ void *Process::kernel_stack_top() {
 	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
 }
 
-void Process::yield_to(TaskYieldQueue& yielder) {
-	TaskManager::enabled() = true;
-	yielder.add_process(this);
-	_yielding_to = &yielder;
-	state = PROCESS_YIELDING;
+void Process::block(const DC::shared_ptr<Blocker>& blocker) {
+	ASSERT(state == PROCESS_ALIVE);
+	ASSERT(!_blocker);
+	_blocker = blocker;
+	state = PROCESS_BLOCKED;
 	TaskManager::yield();
 }
 
-int Process::wait_on(pid_t pid) {
-	Process* proc = TaskManager::process_for_pid(pid);
-	ASSERT(proc);
-	yield_to(proc->_yield_queue);
-	TaskManager::enabled() = false;
-	proc = TaskManager::process_for_pid(pid);
-	ASSERT(proc);
-	proc->reap();
-	TaskManager::enabled() = true;
-	return proc->_exit_status;
+void Process::block(Blocker* blocker) {
+	block(DC::shared_ptr<Blocker>(blocker));
 }
 
-bool Process::is_yielding() {
-	return state == PROCESS_YIELDING;
-}
-
-TaskYieldQueue* Process::yielding_to() {
-	return _yielding_to;
-}
-
-void Process::finish_yielding() {
-	_yielding_to = nullptr;
+void Process::unblock() {
+	_blocker = DC::shared_ptr<Blocker>(nullptr);
 	state = PROCESS_ALIVE;
+}
+
+bool Process::is_blocked() {
+	return state == PROCESS_BLOCKED;
+}
+
+bool Process::should_unblock() {
+	return _blocker && _blocker->is_ready();
 }
 
 
@@ -496,14 +498,25 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	auto* new_proc = R_new_proc.value();
 
-	//Properly set new process's PID, yielder, and stdout/in/err
+	//Properly set new process's PID, blocker, and stdout/in/err
 	new_proc->_pid = _pid;
 	new_proc->_gid = _gid;
 	new_proc->_pgid = _pgid;
 	new_proc->_sid = _sid;
-	new_proc->_yield_queue = this->_yield_queue;
-	for(size_t i = 0; i < 3; i++)
-		new_proc->file_descriptors[i] = DC::make_shared<FileDescriptor>(*file_descriptors[i]);
+	new_proc->_blocker = this->_blocker;
+	if(kernel) {
+		//Kernel processes have no file descriptors, so we need to initialize them
+		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		ttydesc->set_options(O_RDWR);
+		file_descriptors.resize(0); //Just in case
+		file_descriptors.push_back(ttydesc);
+		file_descriptors.push_back(ttydesc);
+		file_descriptors.push_back(ttydesc);
+		cwd = args->working_dir;
+	} else {
+		for(size_t i = 0; i < 3; i++)
+			new_proc->file_descriptors[i] = DC::make_shared<FileDescriptor>(*file_descriptors[i]);
+	}
 
 	//Manually delete because we won't return from here and we need to clean up resources
 	delete args;
@@ -629,26 +642,11 @@ int Process::sys_lseek(int file, off_t off, int whence) {
 int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 	//TODO: Flags
 	if(status) check_ptr(status);
-
-	Process* proc;
-	if(pid < -1) {
-		proc = TaskManager::process_for_pgid(-pid, _pid);
-	} else if(pid == -1) {
-		proc = TaskManager::process_for_ppid(_pid, _pid);
-	} else if(pid == 0) {
-		proc = TaskManager::process_for_pgid(_pgid, _pid);
-	} else {
-		proc = TaskManager::process_for_pid(pid);
-	}
-
-	if(!proc) return -ECHILD;
-	if(proc == this) return 0;
-	if(status)
-		*status = wait_on(proc->_pid); //TODO: Process status
-	else
-		wait_on(proc->_pid);
-
-	return pid;
+	auto blocker = DC::make_shared<WaitBlocker>(this, pid);
+	block(blocker);
+	if(blocker->error()) return blocker->error();
+	if(status) *status = blocker->exit_status();
+	return blocker->waited_pid();
 }
 
 int Process::sys_gettimeofday(timespec *t, void *z) {
@@ -898,5 +896,4 @@ int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
 	_pgid = new_pgid;
 	return SUCCESS;
 }
-
 

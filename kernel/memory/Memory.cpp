@@ -178,7 +178,7 @@ namespace Memory {
 		while(mmap_offset < header->mmap_length) {
 			if(mmap_entry->addr_high || mmap_entry->len_high) {
 				//If the entry is in extended memory, ignore it
-				printf("init: Ignoring memory region above 4GiB (0x%x%x)\n",
+				printf("[kinit] Ignoring memory region above 4GiB (0x%x%x)\n",
 						mmap_entry->addr_high, mmap_entry->addr_low);
 			} else {
 				//Otherwise, round up the address of the entry to a page boundary and round the size down to a page boundary
@@ -198,7 +198,7 @@ namespace Memory {
 					num_multiboot_memory_regions++;
 				} else {
 					//Otherwise, ignore it
-					printf("init: Ignoring too-small memory region at 0x%x\n", mmap_entry->addr_low);
+					printf("[kinit] Ignoring too-small memory region at 0x%x\n", mmap_entry->addr_low);
 				}
 			}
 			mmap_offset += mmap_entry->size + sizeof(mmap_entry->size);

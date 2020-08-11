@@ -23,7 +23,7 @@
 #include <common/circular_queue.hpp>
 #include "CharacterDevice.h"
 #include "KeyboardDevice.h"
-#include <kernel/tasking/TaskYieldQueue.h>
+#include <kernel/tasking/TaskBlockQueue.h>
 
 #define NUM_TTYS 8
 
@@ -55,7 +55,7 @@ private:
 	DC::circular_queue<uint8_t> _buffered_input_buffer;
 	size_t _id;
 	bool _active = false;
-	TaskYieldQueue _buffer_yielder;
+	TaskBlockQueue _buffer_blocker;
 	SpinLock _lock;
 };
 

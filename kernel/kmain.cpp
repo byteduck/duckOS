@@ -44,7 +44,7 @@ uint8_t boot_disk;
 
 int kmain(uint32_t mbootptr){
 	clearScreen();
-	printf("init: Starting duckOS...\n");
+	printf("[kinit] Starting duckOS...\n");
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
 	load_gdt();
 	interrupts_init();
@@ -69,7 +69,7 @@ int kmain(uint32_t mbootptr){
 			}
 		} else {
 			//Fallback to textmode if all else fails
-			printf("vga: Falling back to text mode.\n");
+			printf("[VGA] Falling back to text mode.\n");
 			void* vidmem = (void*) PageDirectory::k_mmap(0xB8000, 0xFA0, true);
 			set_text_mode(80, 25, vidmem);
 		}
@@ -77,9 +77,9 @@ int kmain(uint32_t mbootptr){
 
 	clearScreen();
 #ifdef DEBUG
-	printf("init: Debug mode is enabled.\n");
+	printf("[kinit] Debug mode is enabled.\n");
 #endif
-	printf("init: First stage complete.\ninit: Initializing tasking...\n");
+	printf("[kinit] First stage complete.\n[kinit] Initializing tasking...\n");
 	TaskManager::init();
 	ASSERT(false) //We should never get here
 	return 0;
@@ -92,12 +92,12 @@ void shell_process(){
 
 void kmain_late(){
 	new KeyboardDevice;
-	printf("init: Tasking initialized.\ninit: Initializing TTY...\n");
+	printf("[kinit] Tasking initialized.\n[kinit] Initializing TTY...\n");
 
 	auto* tty0 = new TTYDevice(0, "tty0", 4, 0);
 	tty0->set_active();
 
-	printf("init: TTY initialized.\ninit: Initializing disk...\n");
+	printf("[kinit] TTY initialized.\n[kinit] Initializing disk...\n");
 
 	//Setup the disk (Assumes we're using primary master drive
 	auto disk = DC::shared_ptr<PATADevice>(PATADevice::find(
@@ -106,7 +106,7 @@ void kmain_late(){
 					CommandLine::has_option("use_pio") //Use PIO if the command line option is present
 				));
 	if(!disk) {
-		printf("init: Couldn't find IDE controller! Hanging...\n");
+		printf("[kinit] Couldn't find IDE controller! Hanging...\n");
 		while(1);
 	}
 	//Find the LBA of the first partition
@@ -122,9 +122,9 @@ void kmain_late(){
 
 	//Check if the filesystem is ext2
 	if(Ext2Filesystem::probe(*part_descriptor)){
-		printf("init: Partition is ext2 ");
+		printf("[kinit] Partition is ext2 ");
 	}else{
-		println("init: Partition is not ext2! Hanging.");
+		println("[kinit] Partition is not ext2! Hanging.");
 		while(true);
 	}
 
@@ -132,26 +132,29 @@ void kmain_late(){
 	auto* ext2fs = new Ext2Filesystem(part_descriptor);
 	ext2fs->init();
 	if(ext2fs->superblock.version_major < 1){
-		printf("init: Unsupported ext2 version %d.%d. Must be at least 1. Hanging.", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
+		printf("[kinit] Unsupported ext2 version %d.%d. Must be at least 1. Hanging.", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
 		while(true);
 	}
 	printf("%d.%d\n", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
 	if(ext2fs->superblock.inode_size != 128){
-		printf("init: Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time. Hanging.", ext2fs->superblock.inode_size);
+		printf("[kinit] Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time. Hanging.", ext2fs->superblock.inode_size);
 	}
 
 	//Setup the virtual filesystem and mount the ext2 filesystem as root
 	VFS* vfs = new VFS();
 	if(!vfs->mount_root(ext2fs)) {
-		printf("init: Failed to mount root. Hanging.");
+		printf("[kinit] Failed to mount root. Hanging.");
 		while(true);
 	}
 
-	printf("init: Done!\n");
+	printf("[kinit] Done!\n");
 
 	//Create the shell process and kill the kinit process
 	TaskManager::add_process(Process::create_kernel("kshell", shell_process));
-	TaskManager::current_process()->kill(SIGKILL);
+	auto* init_args = new ProcessArgs(VFS::inst().root_ref());
+	init_args->argv.push_back("/bin/init");
+	TaskManager::current_process()->exec(DC::string("/bin/init"), init_args);
+	PANIC("INIT_FAILED", "Failed to start init.", true);
 	ASSERT(false); //We shouldn't get here
 }
 
@@ -161,7 +164,7 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 	//Check boot disk
 	if(header->flags & MULTIBOOT_INFO_BOOTDEV) {
 		boot_disk = (header->boot_device & 0xF0000000u) >> 28u;
-		printf("init: BIOS boot disk: 0x%x\n", boot_disk);
+		printf("[kinit] BIOS boot disk: 0x%x\n", boot_disk);
 	} else {
 		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have boot device info. Cannot boot.\n", true);
 	}

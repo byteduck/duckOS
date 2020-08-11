@@ -17,23 +17,39 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_VGADEVICE_H
-#define DUCKOS_VGADEVICE_H
+#ifndef DUCKOS_TASKBLOCKQUEUE_H
+#define DUCKOS_TASKBLOCKQUEUE_H
 
+#include <kernel/kstdio.h>
+#include <common/queue.hpp>
+#include "Blocker.h"
+#include <common/shared_ptr.hpp>
 
-#include "BlockDevice.h"
+class Process;
 
-
-class VGADevice: public BlockDevice {
+class QueueBlocker: public Blocker {
 public:
-	VGADevice();
-	static VGADevice& inst() {return *_inst;};
-	virtual void scroll(size_t pixels) = 0;
-	virtual void set_pixel(size_t x, size_t y, uint32_t value) = 0;
-	virtual void clear() = 0;
+	QueueBlocker() = default;
+	~QueueBlocker() override = default;
+	bool is_ready() override;
+	void set_ready();
 private:
-	static VGADevice* _inst;
+	volatile bool ready = false;
+};
+
+class TaskBlockQueue: private DC::queue<DC::shared_ptr<QueueBlocker>> {
+public:
+	TaskBlockQueue();
+	~TaskBlockQueue() = default;
+
+	void block_current_process();
+	void block_process(Process* p);
+	void unblock_one();
+	void unblock_all();
+	bool is_empty();
+
+private:
 };
 
 
-#endif //DUCKOS_VGADEVICE_H
+#endif //DUCKOS_TASKBLOCKQUEUE_H

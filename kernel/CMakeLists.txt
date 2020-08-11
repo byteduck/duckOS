@@ -68,6 +68,8 @@ SET(KERNEL_SRCS
         tasking/Lock.cpp
         tasking/SpinLock.cpp
         tasking/ProcessArgs.cpp
+        tasking/Blocker.cpp
+        tasking/WaitBlocker.cpp
         device/VGADevice.cpp
         device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp
@@ -75,7 +77,7 @@ SET(KERNEL_SRCS
         memory/MemoryMap.cpp
         memory/LinkedMemoryRegion.cpp
         device/PATADevice.cpp
-        tasking/TaskYieldQueue.cpp
+        tasking/TaskBlockQueue.cpp
         CommandLine.cpp
         tasking/Signal.cpp
         filesystem/DirectoryEntry.cpp

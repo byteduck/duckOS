@@ -31,7 +31,7 @@
 #include "ProcessArgs.h"
 #include <kernel/memory/PageDirectory.h>
 #include <common/queue.hpp>
-#include "TaskYieldQueue.h"
+#include "TaskBlockQueue.h"
 #include "Signal.h"
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/interrupt/syscall.h>
@@ -41,10 +41,12 @@
 #define PROCESS_ALIVE 0
 #define PROCESS_ZOMBIE 1
 #define PROCESS_DEAD 2
-#define PROCESS_YIELDING 3
+#define PROCESS_BLOCKED 3
 
-class TaskYieldQueue;
+class TaskBlockQueue;
 class FileDescriptor;
+class Blocker;
+
 namespace ELF {struct elf32_header;};
 
 class Process {
@@ -59,8 +61,11 @@ public:
 	pid_t ppid();
 	pid_t sid();
 	DC::string name();
+	int exit_status();
 	bool& just_execed();
-	void kill(int signal, bool notify_yielders = true);
+	void kill(int signal);
+	void reap();
+	void die_silently();
 	void free_resources();
 	void handle_pagefault(Registers *regs);
 	void* kernel_stack_top();
@@ -73,11 +78,11 @@ public:
 	bool& just_finished_signal();
 	void* signal_stack_top();
 
-	void yield_to(TaskYieldQueue& yielder);
-	int wait_on(pid_t pid);
-	bool is_yielding();
-	void finish_yielding();
-	TaskYieldQueue* yielding_to();
+	void block(const DC::shared_ptr<Blocker>& blocker);
+	void block(Blocker* blocker);
+	void unblock();
+	bool is_blocked();
+	bool should_unblock();
 
 	//Syscalls
 	void check_ptr(void* ptr);
@@ -137,7 +142,6 @@ public:
 private:
 	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
-	void reap();
 
 	void setup_stack(uint32_t*& kernel_stack, uint32_t* user_stack, Registers& registers);
 
@@ -165,10 +169,8 @@ private:
 	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors;
 	DC::shared_ptr<LinkedInode> cwd;
 
-	//Yielding stuff
-	TaskYieldQueue* _yielding_to = nullptr;
-	TaskYieldQueue _yield_queue;
-	bool notify_yielders_on_death = true;
+	//Blocking stuff
+	DC::shared_ptr<Blocker> _blocker;
 	SpinLock _lock;
 
 	//Signals

@@ -44,7 +44,7 @@ void kidle(){
 Process* TaskManager::process_for_pid(pid_t pid){
 	Process *current = kidle_proc;
 	do{
-		if(current->pid() == pid && current->state != PROCESS_DEAD) return current;
+		if(current->pid() == pid && current->pid() && current->state != PROCESS_DEAD) return current;
 		current = current->next;
 	} while(current != kidle_proc);
 	return (Process *) nullptr;
@@ -53,7 +53,7 @@ Process* TaskManager::process_for_pid(pid_t pid){
 Process* TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
 	Process *current = kidle_proc;
 	do{
-		if(current->pgid() == pgid && current->pid() != excl && current->state != PROCESS_DEAD) return current;
+		if(current->pgid() == pgid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD) return current;
 		current = current->next;
 	} while(current != kidle_proc);
 	return (Process *) nullptr;
@@ -62,7 +62,7 @@ Process* TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
 Process* TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
 	Process *current = kidle_proc;
 	do{
-		if(current->ppid() == ppid && current->pid() != excl && current->state != PROCESS_DEAD) return current;
+		if(current->ppid() == ppid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD) return current;
 		current = current->next;
 	} while(current != kidle_proc);
 	return (Process *) nullptr;
@@ -71,7 +71,7 @@ Process* TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
 Process* TaskManager::process_for_sid(pid_t sid, pid_t excl){
 	Process *current = kidle_proc;
 	do{
-		if(current->sid() == sid && current->pid() != excl && current->state != PROCESS_DEAD) return current;
+		if(current->sid() == sid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD) return current;
 		current = current->next;
 	} while(current != kidle_proc);
 	return (Process *) nullptr;
@@ -91,7 +91,7 @@ bool& TaskManager::enabled(){
 }
 
 pid_t TaskManager::get_new_pid(){
-	return ++__cpid__;
+	return __cpid__++;
 }
 
 void TaskManager::init(){
@@ -135,7 +135,7 @@ void TaskManager::notify_current(uint32_t sig){
 
 Process *TaskManager::next_process() {
 	Process* next_proc = current_proc->next;
-	//Don't switch to a yielding/zombie process
+	//Don't switch to a blocking/zombie process
 	while(next_proc->state != PROCESS_ALIVE)
 		next_proc = next_proc->next;
 	return next_proc;
@@ -157,7 +157,9 @@ void TaskManager::preempt(){
 	Process *current = kidle_proc->next;
 	do {
 		switch(current->state) {
-			case PROCESS_YIELDING:
+			case PROCESS_BLOCKED:
+				if(current->should_unblock())
+					current->unblock();
 			case PROCESS_ALIVE:
 				current->handle_pending_signal();
 				current = current->next;

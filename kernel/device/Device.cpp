@@ -66,7 +66,7 @@ void Device::remove_device(unsigned major, unsigned minor) {
 		if(_devices[i] != nullptr){
 			if(_devices[i]->_major == major && _devices[i]->_minor == minor){
 				_devices.erase(i);
-				printf("device: Device %d,%d deregistered\n", major, minor);
+				printf("[Device] Device %d,%d deregistered\n", major, minor);
 			}
 		}
 	}
@@ -75,7 +75,7 @@ void Device::remove_device(unsigned major, unsigned minor) {
 void Device::add_device(Device* dev) {
 	if(get_device(dev->_major, dev->_minor)) PANIC("DEVICE_DUPLICATE", "A device tried to register, but a device with the same major/minor was already regsitered.", true);
 	_devices.push_back(dev);
-	printf("device: Device %d,%d registered\n", dev->_major, dev->_minor);
+	printf("[Device] Device %d,%d registered\n", dev->_major, dev->_minor);
 }
 
 bool Device::is_block_device() {

@@ -44,14 +44,14 @@ bool BochsVGADevice::detect() {
 	}, &address);
 
 	if(address.bus == 0 && address.function == 0 && address.slot == 0) {
-		printf("vga: Could not find a bochs-compatible VGA device!\n");
+		printf("[VGA] Could not find a bochs-compatible VGA device!\n");
 		return false;
 	}
 	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
 	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
 	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
-	printf("vga: Found a bochs-compatible VGA device at %x:%x.%x\n", address.bus, address.slot, address.function);
-	printf("vga: virtual framebuffer mapped from 0x%x to 0x%x\n", framebuffer_paddr, framebuffer);
+	printf("[VGA] Found a bochs-compatible VGA device at %x:%x.%x\n", address.bus, address.slot, address.function);
+	printf("[VGA] virtual framebuffer mapped from 0x%x to 0x%x\n", framebuffer_paddr, framebuffer);
 	return true;
 }
 

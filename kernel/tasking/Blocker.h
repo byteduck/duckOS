@@ -17,23 +17,13 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_VGADEVICE_H
-#define DUCKOS_VGADEVICE_H
+#ifndef DUCKOS_BLOCKER_H
+#define DUCKOS_BLOCKER_H
 
-
-#include "BlockDevice.h"
-
-
-class VGADevice: public BlockDevice {
+class Blocker {
 public:
-	VGADevice();
-	static VGADevice& inst() {return *_inst;};
-	virtual void scroll(size_t pixels) = 0;
-	virtual void set_pixel(size_t x, size_t y, uint32_t value) = 0;
-	virtual void clear() = 0;
-private:
-	static VGADevice* _inst;
+	virtual ~Blocker() {}
+	virtual bool is_ready() = 0;
 };
 
-
-#endif //DUCKOS_VGADEVICE_H
+#endif //DUCKOS_BLOCKER_H

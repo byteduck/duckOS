@@ -79,7 +79,7 @@ int evaluate_input(char* input) {
 		redirection_fd = open(redirection, redir_options, 0666);
 		if(redirection_fd < 0) {
 			perror("Could not redirect");
-			return;
+			return errno;
 		}
 	}
 

@@ -89,7 +89,7 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 	kfree(identity_reversed);
 	kfree(identity);
 
-	printf("PATA: Setup disk %s using %s\n", _model_number, _use_pio ? "PIO" : "DMA");
+	printf("[PATA] Setup disk %s using %s\n", _model_number, _use_pio ? "PIO" : "DMA");
 }
 
 PATADevice::~PATADevice() {
@@ -171,7 +171,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint16_t num_sectors, uint8_t *b
 	outb(_bus_master_base, 0x9);
 
 	//Wait for irq
-	TaskManager::current_process()->yield_to(_yielder);
+	_blocker.block_current_process();
 	uninstall_irq();
 
 	if(_post_irq_status & ATA_STATUS_ERR) return -EIO;
@@ -240,7 +240,7 @@ Result PATADevice::write_sectors_dma(size_t lba, uint16_t num_sectors, const uin
 	outb(_bus_master_base, 0x1);
 
 	//Wait for irq
-	TaskManager::current_process()->yield_to(_yielder);
+	_blocker.block_current_process();
 	uninstall_irq();
 
 	if(_post_irq_status & ATA_STATUS_ERR) return -EIO;
@@ -283,7 +283,7 @@ void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8
 		for(auto i = 0; i < 256; i++) {
 			outw(_io_base + ATA_DATA, buffer[i * 2] + (buffer[i * 2 + 1] << 8u));
 		}
-		TaskManager::current_process()->yield_to(_yielder);
+		_blocker.block_current_process();
 		cli();
 		buffer += 512;
 	}
@@ -318,7 +318,7 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 	outb(_io_base + ATA_COMMAND, ATA_READ_PIO);
 
 	for(auto j = 0; j < sectors; j++) {
-		TaskManager::current_process()->yield_to(_yielder);
+		_blocker.block_current_process();
 		cli();
 
 		for (auto i = 0; i < 256; i++) {
@@ -470,5 +470,5 @@ void PATADevice::handle_irq(Registers *regs) {
 	_post_irq_status = inb(_io_base + ATA_STATUS);
 	uint8_t bus_status = inb(_bus_master_base + ATA_BM_STATUS);
 	if(!(bus_status & 0x4u)) return; //Interrupt wasn't for this
-	_yielder.set_ready();
+	_blocker.unblock_one();
 }

@@ -46,12 +46,6 @@ void dummy(){
 }
 
 void Shell::shell(){
-	printf(
-		"O--------------------O\n"
-		"| Welcome to duckOS! |\n"
-		"O--------------------O\n"
-	);
-
 	DC::string ttypath("/dev/tty0");
 	auto tty_or_error = VFS::inst().open(ttypath, O_RDONLY, 0, VFS::inst().root_ref());
 	if(tty_or_error.is_error()) {
@@ -338,6 +332,6 @@ void Shell::command_eval(char *cmd, char *args){
 
 		//Add process and wait
 		TaskManager::add_process(p.value());
-		TaskManager::current_process()->wait_on(p.value()->pid());
+		TaskManager::current_process()->sys_waitpid(p.value()->pid(), nullptr, 0);
 	}
 }

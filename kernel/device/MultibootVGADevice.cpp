@@ -36,7 +36,7 @@ MultibootVGADevice::~MultibootVGADevice() {
 
 bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 	if(!(mboot_header->flags & MULTIBOOT_INFO_FRAMEBUFFER_INFO)) {
-		printf("vga: Unable to find multiboot framebuffer info!\n");
+		printf("[VGA] Unable to find multiboot framebuffer info!\n");
 		return false;
 	}
 	framebuffer_paddr = mboot_header->framebuffer_addr;
@@ -52,7 +52,7 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 			textmode = false;
 			break;
 		default:
-			printf("vga: Unsupported multiboot framebuffer type %d!\n", mboot_header->framebuffer_type);
+			printf("[VGA] Unsupported multiboot framebuffer type %d!\n", mboot_header->framebuffer_type);
 			return false;
 	}
 

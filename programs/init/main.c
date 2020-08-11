@@ -1,3 +1,9 @@
+#include <signal.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <errno.h>
+
 /*
     This file is part of duckOS.
     
@@ -17,32 +23,18 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "TaskYieldQueue.h"
-#include "Process.h"
-
-TaskYieldQueue::TaskYieldQueue(): DC::queue<pid_t>() {
-
-}
-
-void TaskYieldQueue::add_process(Process *p) {
-	push(p->pid());
-}
-
-void TaskYieldQueue::set_ready() {
-	if(empty()) return;
-	Process* proc = TaskManager::process_for_pid(front());
-	pop();
-	if(proc) proc->finish_yielding();
-}
-
-void TaskYieldQueue::set_all_ready() {
-	while(!empty()) {
-		Process* proc = TaskManager::process_for_pid(front());
-		pop();
-		if(proc) proc->finish_yielding();
+int main(int argc, char** argv) {
+	if(getpid() != 1) {
+		printf("pid != 1. Exiting.\n");
+		return -1;
 	}
-}
 
-bool TaskYieldQueue::is_empty() {
-	return empty();
+	setsid();
+
+	printf("[init] Welcome to duckOS!\n");
+	while(1) {
+		pid_t pid = waitpid(-1, NULL, 0);
+		if(pid < 0 && errno == ECHILD) break; //All child processes exited
+	}
+	printf("[init] All child processes exited.\n");
 }

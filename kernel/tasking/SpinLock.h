@@ -21,9 +21,9 @@
 #define DUCKOS_SPINLOCK_H
 
 #include "Lock.h"
-#include "TaskYieldQueue.h"
+#include "TaskBlockQueue.h"
 
-class TaskYieldQueue;
+class TaskBlockQueue;
 class SpinLock: public Lock {
 public:
 	SpinLock();
@@ -32,7 +32,7 @@ public:
 	void acquire() override;
 	void release() override;
 private:
-	TaskYieldQueue _yield_queue;
+	TaskBlockQueue _block_queue;
 	volatile int _locked = 0;
 	volatile int _times_locked = 0;
 	volatile Process* _holding_process = nullptr;

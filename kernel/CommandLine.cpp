@@ -29,13 +29,13 @@ namespace CommandLine {
 		if(header.flags & MULTIBOOT_INFO_CMDLINE) {
 			char* str = (char*) PageDirectory::k_mmap(header.cmdline, 1024, true);
 			if(!str) {
-				printf("init: cmdline couldn't be mmap-ed!\n");
+				printf("[kinit] cmdline couldn't be mmap-ed!\n");
 				return;
 			}
 			cmdline = str;
 			PageDirectory::k_munmap(str);
 
-			printf("init: Command line options: '%s'\n", cmdline.c_str());
+			printf("[kinit] Command line options: '%s'\n", cmdline.c_str());
 
 			DC::string cmd = cmdline;
 			DC::string part = "";

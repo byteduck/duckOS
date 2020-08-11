@@ -20,6 +20,7 @@ If some of this code looks familiar, it's because it's based off of my previous 
 
 The code for these can be found in [programs](programs/).
 
+- init (/bin/init): The init system for duckOS.
 - ls (/bin/ls): Lists the entries in the current or given directory.
 - cat (/bin/cat): Writes the contents of a file to stdout.
 - cp (/bin/cp): Copies a file.

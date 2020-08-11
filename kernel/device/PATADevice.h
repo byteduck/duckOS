@@ -26,7 +26,7 @@
 #include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/pci/pci.h>
 #include <kernel/interrupt/IRQHandler.h>
-#include <kernel/tasking/TaskYieldQueue.h>
+#include <kernel/tasking/TaskBlockQueue.h>
 #include "BlockDevice.h"
 
 //Commands
@@ -147,7 +147,7 @@ private:
 	LinkedMemoryRegion _dma_region;
 
 	//Interrupt stuff
-	TaskYieldQueue _yielder;
+	TaskBlockQueue _blocker;
 	uint8_t _post_irq_status;
 
 	//Lock

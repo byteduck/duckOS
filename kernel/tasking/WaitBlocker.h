@@ -17,23 +17,27 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_VGADEVICE_H
-#define DUCKOS_VGADEVICE_H
+#ifndef DUCKOS_WAITBLOCKER_H
+#define DUCKOS_WAITBLOCKER_H
 
+#include "Blocker.h"
+#include "Process.h"
 
-#include "BlockDevice.h"
-
-
-class VGADevice: public BlockDevice {
+class WaitBlocker: public Blocker {
 public:
-	VGADevice();
-	static VGADevice& inst() {return *_inst;};
-	virtual void scroll(size_t pixels) = 0;
-	virtual void set_pixel(size_t x, size_t y, uint32_t value) = 0;
-	virtual void clear() = 0;
+	WaitBlocker(Process* proc, pid_t wait_for);
+	bool is_ready() override;
+
+	pid_t waited_pid();
+	pid_t error();
+	pid_t exit_status();
+
 private:
-	static VGADevice* _inst;
+	int _err = 0;
+	int _exit_status = 0;
+	pid_t _wait_pid;
+	pid_t _wait_pgid;
+	Process* _process;
 };
 
-
-#endif //DUCKOS_VGADEVICE_H
+#endif //DUCKOS_WAITBLOCKER_H
