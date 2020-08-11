@@ -21,9 +21,10 @@
 #define DUCKOS_SPINLOCK_H
 
 #include "Lock.h"
-#include "TaskBlockQueue.h"
+#include "BooleanBlocker.h"
+#include <common/shared_ptr.hpp>
 
-class TaskBlockQueue;
+class Process;
 class SpinLock: public Lock {
 public:
 	SpinLock();
@@ -32,7 +33,7 @@ public:
 	void acquire() override;
 	void release() override;
 private:
-	TaskBlockQueue _block_queue;
+	BooleanBlocker _blocker;
 	volatile int _locked = 0;
 	volatile int _times_locked = 0;
 	volatile Process* _holding_process = nullptr;

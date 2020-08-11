@@ -149,13 +149,17 @@ void kmain_late(){
 
 	printf("[kinit] Done!\n");
 
-	//Create the shell process and kill the kinit process
+	//Create the shell process
 	TaskManager::add_process(Process::create_kernel("kshell", shell_process));
+
+	//Replace kinit with init
 	auto* init_args = new ProcessArgs(VFS::inst().root_ref());
 	init_args->argv.push_back("/bin/init");
 	TaskManager::current_process()->exec(DC::string("/bin/init"), init_args);
+
+	//We shouldn't get here
 	PANIC("INIT_FAILED", "Failed to start init.", true);
-	ASSERT(false); //We shouldn't get here
+	ASSERT(false);
 }
 
 struct multiboot_info parse_mboot(uint32_t physaddr){

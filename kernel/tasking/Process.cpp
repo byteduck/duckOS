@@ -415,20 +415,16 @@ void *Process::kernel_stack_top() {
 	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
 }
 
-void Process::block(const DC::shared_ptr<Blocker>& blocker) {
+void Process::block(Blocker& blocker) {
 	ASSERT(state == PROCESS_ALIVE);
 	ASSERT(!_blocker);
-	_blocker = blocker;
 	state = PROCESS_BLOCKED;
+	_blocker = &blocker;
 	TaskManager::yield();
 }
 
-void Process::block(Blocker* blocker) {
-	block(DC::shared_ptr<Blocker>(blocker));
-}
-
 void Process::unblock() {
-	_blocker = DC::shared_ptr<Blocker>(nullptr);
+	_blocker = nullptr;
 	state = PROCESS_ALIVE;
 }
 
@@ -642,11 +638,11 @@ int Process::sys_lseek(int file, off_t off, int whence) {
 int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 	//TODO: Flags
 	if(status) check_ptr(status);
-	auto blocker = DC::make_shared<WaitBlocker>(this, pid);
+	WaitBlocker blocker(this, pid);
 	block(blocker);
-	if(blocker->error()) return blocker->error();
-	if(status) *status = blocker->exit_status();
-	return blocker->waited_pid();
+	if(blocker.error()) return blocker.error();
+	if(status) *status = blocker.exit_status();
+	return blocker.waited_pid();
 }
 
 int Process::sys_gettimeofday(timespec *t, void *z) {

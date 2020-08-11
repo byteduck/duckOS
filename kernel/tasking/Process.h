@@ -31,7 +31,6 @@
 #include "ProcessArgs.h"
 #include <kernel/memory/PageDirectory.h>
 #include <common/queue.hpp>
-#include "TaskBlockQueue.h"
 #include "Signal.h"
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/interrupt/syscall.h>
@@ -78,8 +77,7 @@ public:
 	bool& just_finished_signal();
 	void* signal_stack_top();
 
-	void block(const DC::shared_ptr<Blocker>& blocker);
-	void block(Blocker* blocker);
+	void block(Blocker& blocker);
 	void unblock();
 	bool is_blocked();
 	bool should_unblock();
@@ -170,7 +168,7 @@ private:
 	DC::shared_ptr<LinkedInode> cwd;
 
 	//Blocking stuff
-	DC::shared_ptr<Blocker> _blocker;
+	Blocker* _blocker = nullptr;
 	SpinLock _lock;
 
 	//Signals

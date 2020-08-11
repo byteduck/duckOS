@@ -53,7 +53,7 @@ void SpinLock::release() {
 	if(_times_locked == 0) {
 		_holding_process = nullptr;
 		atomic_store(&_locked, 0);
-		_block_queue.unblock_one();
+		_blocker.set_ready(true);
 	}
 }
 
@@ -64,13 +64,15 @@ void SpinLock::acquire() {
 	while(atomic_swap(&_locked, 1)) {
 		if(_holding_process == cur_proc) {
 			//We are the holding process, so increment the counter and return
+			_blocker.set_ready(false);
 			atomic_inc(&_times_locked);
 			return;
 		}
-		_block_queue.block_process(cur_proc);
+		cur_proc->block(_blocker);
 	}
 
 	//We now hold the lock
+	_blocker.set_ready(false);
 	atomic_inc(&_times_locked);
 	_holding_process = cur_proc;
 }

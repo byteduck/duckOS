@@ -26,6 +26,7 @@
 #include "SpinLock.h"
 
 class Process;
+class SpinLock;
 namespace TaskManager {
 	extern TSS tss;
 	extern SpinLock lock;

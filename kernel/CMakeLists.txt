@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 11)
 ENABLE_LANGUAGE(ASM_NASM)
 SET_SOURCE_FILES_PROPERTIES(asm/startup.s asm/tasking.s asm/int.s asm/syscall.s asm/gdt.s PROPERTIES LANGUAGE ASM_NASM)
 
-SET(CMAKE_CXX_FLAGS "-ffreestanding -O2 -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
+SET(CMAKE_CXX_FLAGS "-ffreestanding -O0 -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
 
 SET(CMAKE_ASM_NASM_COMPILER nasm)
 SET(CMAKE_ASM_NASM_FLAGS "-I ${CMAKE_CURRENT_SOURCE_DIR}/ -f elf")
@@ -70,6 +70,7 @@ SET(KERNEL_SRCS
         tasking/ProcessArgs.cpp
         tasking/Blocker.cpp
         tasking/WaitBlocker.cpp
+        tasking/BooleanBlocker.cpp
         device/VGADevice.cpp
         device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp
@@ -77,7 +78,6 @@ SET(KERNEL_SRCS
         memory/MemoryMap.cpp
         memory/LinkedMemoryRegion.cpp
         device/PATADevice.cpp
-        tasking/TaskBlockQueue.cpp
         CommandLine.cpp
         tasking/Signal.cpp
         filesystem/DirectoryEntry.cpp

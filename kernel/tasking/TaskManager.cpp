@@ -145,7 +145,7 @@ Process *TaskManager::next_process() {
 static uint8_t quantum_counter = 0;
 
 void TaskManager::yield() {
-	ASSERT(!Interrupt::in_interrupt())
+	if(Interrupt::in_interrupt()) return;
 	quantum_counter = 0;
 	preempt_now_asm();
 }

@@ -17,44 +17,20 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "TaskBlockQueue.h"
-#include "Process.h"
+#ifndef DUCKOS_BOOLEANBLOCKER_H
+#define DUCKOS_BOOLEANBLOCKER_H
 
-bool QueueBlocker::is_ready() {
-	return ready;
-}
+#include "Blocker.h"
 
-void QueueBlocker::set_ready() {
-	ready = true;
-}
+class BooleanBlocker: public Blocker {
+public:
+	BooleanBlocker() = default;
+	~BooleanBlocker() override = default;
+	bool is_ready() override;
+	void set_ready(bool value);
+private:
+	volatile bool ready = false;
+};
 
-TaskBlockQueue::TaskBlockQueue(): DC::queue<DC::shared_ptr<QueueBlocker>>() {
 
-}
-
-void TaskBlockQueue::block_current_process() {
-	block_process(TaskManager::current_process());
-}
-
-void TaskBlockQueue::block_process(Process *p) {
-	auto block = DC::make_shared<QueueBlocker>();
-	push(block);
-	p->block(block);
-}
-
-void TaskBlockQueue::unblock_one() {
-	if(empty()) return;
-	front()->set_ready();
-	pop();
-}
-
-void TaskBlockQueue::unblock_all() {
-	while(!empty()) {
-		front()->set_ready();
-		pop();
-	}
-}
-
-bool TaskBlockQueue::is_empty() {
-	return empty();
-}
+#endif //DUCKOS_BOOLEANBLOCKER_H
