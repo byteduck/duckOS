@@ -42,11 +42,13 @@ bool evaluate_builtin(int argc, char** argv);
 #pragma ide diagnostic ignored "EndlessLoop"
 int main() {
 	int res = 0;
+	bool stdinistty = isatty(STDIN_FILENO);
 	while(true) {
 		getcwd(cwd, 4096);
-		printf("[dsh %s]%s ", cwd, res ? "X" : "#");
+		if(stdinistty) printf("[dsh %s]%s ", cwd, res ? "X" : "#");
 		fflush(stdout);
-		gets(cmdbuf);
+		if(fgets(cmdbuf, 4096, stdin) == NULL) break;
+		strtok(cmdbuf, "\n");
 		res = evaluate_input(cmdbuf);
 	}
 }

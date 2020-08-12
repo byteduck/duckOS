@@ -80,6 +80,7 @@ _deps
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
 .idea/**/dbnavigator.xml
+.idea/discord.xml
 
 # CMake
 cmake-build-*/

@@ -68,6 +68,7 @@ void SpinLock::acquire() {
 			atomic_inc(&_times_locked);
 			return;
 		}
+		//TODO: Find a good way to unblock just one waiting task
 		cur_proc->block(_blocker);
 	}
 

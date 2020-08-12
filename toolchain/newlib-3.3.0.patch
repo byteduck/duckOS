@@ -11861,10 +11861,10 @@ index 0000000..3957434
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..e0f9cfc
+index 0000000..f74d529
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,436 @@
+@@ -0,0 +1,514 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12301,13 +12301,91 @@ index 0000000..e0f9cfc
 +	}
 +	return ret;
 +}
++
++int readlink(const char *path, char *buf, size_t bufsize) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_READLINK), "b"(path), "c"(buf), "d"(bufsize));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int readlinkat(int dirfd, const char *path, char *buf, size_t bufsize) {
++	int ret = 0;
++	struct readlinkat_args args = {dirfd, path, buf, bufsize};
++	asm volatile("int $0x80" :: "a"(SYS_READLINKAT), "b"(&args));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int getsid(pid_t pid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_GETSID), "b"(pid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int setsid() {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_SETSID));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int getpgid(pid_t pid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_GETPGID), "b"(pid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int getpgrp() {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_GETPGRP));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int setpgid(pid_t pid, pid_t pgid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_SETPGID), "b"(pid), "c"(pgid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..a89e0f5
+index 0000000..dfb1c1f
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,70 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12362,5 +12440,19 @@ index 0000000..a89e0f5
 +#define SYS_LSTAT 33
 +#define SYS_SYMLINK 34
 +#define SYS_SYMLINKAT 35
++#define SYS_READLINK 36
++#define SYS_READLINKAT 37
++#define SYS_GETSID 38
++#define SYS_SETSID 39
++#define SYS_GETPGID 40
++#define SYS_GETPGRP 41
++#define SYS_SETPGID 42
++
++struct __attribute__((packed)) readlinkat_args {
++	int fd;
++	const char* path;
++	char* buf;
++	size_t bufsize;
++};
 +
 +int _read_dir(int file, char *ptr, size_t len);
