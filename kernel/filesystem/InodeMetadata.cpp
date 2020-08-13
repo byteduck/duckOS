@@ -59,21 +59,21 @@ void InodeMetadata::stat(struct stat *stat) {
 
 bool InodeMetadata::can_write(User& user) const {
 	return  user.can_override_permissions() ||
-			(mode | PERM_O_W) ||
-			(mode | PERM_U_W && user.euid == uid) ||
-	        (mode | PERM_G_W && user.in_group(gid));
+			(mode & PERM_O_W) ||
+			(mode & PERM_U_W && user.euid == uid) ||
+	        (mode & PERM_G_W && user.in_group(gid));
 }
 
 bool InodeMetadata::can_execute(User& user) const {
 	return  user.can_override_permissions() ||
-			(mode | PERM_O_X) ||
-			(mode | PERM_U_X && user.euid == uid) ||
-			(mode | PERM_G_X && user.in_group(gid));
+			(mode & PERM_O_X) ||
+			(mode & PERM_U_X && user.euid == uid) ||
+			(mode & PERM_G_X && user.in_group(gid));
 }
 
 bool InodeMetadata::can_read(User& user) const {
 	return  user.can_override_permissions() ||
-			(mode | PERM_O_R) ||
-			(mode | PERM_U_R && user.euid == uid) ||
-			(mode | PERM_G_R && user.in_group(gid));
+			(mode & PERM_O_R) ||
+			(mode & PERM_U_R && user.euid == uid) ||
+			(mode & PERM_G_R && user.in_group(gid));
 }

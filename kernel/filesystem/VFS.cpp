@@ -67,7 +67,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 	while(path[0] != '\0') {
 		auto parent = current_inode;
 		if(!parent->inode()->metadata().is_directory()) return -ENOTDIR;
-		if(!parent->inode()->metadata().can_execute(user)) return -EPERM;
+		if(!parent->inode()->metadata().can_execute(user)) return -EACCES;
 
 		size_t slash_index = path.find('/');
 		if(slash_index != -1) {
@@ -150,8 +150,8 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int option
 	auto meta = inode->inode()->metadata();
 
 	//Check the permissions against the read/write mode
-	if((!(options & O_WRONLY) || (options & O_RDWR)) && !meta.can_read(user)) return -EPERM;
-	if(((options & O_WRONLY) || (options & O_RDWR)) && !meta.can_write(user)) return -EPERM;
+	if((!(options & O_WRONLY) || (options & O_RDWR)) && !meta.can_read(user)) return -EACCES;
+	if(((options & O_WRONLY) || (options & O_RDWR)) && !meta.can_write(user)) return -EACCES;
 
 	//If O_DIRECTORY was set and it's not a directory, error
 	if((options & O_DIRECTORY) && !meta.is_directory()) return -ENOTDIR;
@@ -180,7 +180,7 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int opti
 		mode |= MODE_FILE;
 
 	//Check permissions
-	if(!parent->inode()->metadata().can_write(user)) return -EPERM;
+	if(!parent->inode()->metadata().can_write(user)) return -EACCES;
 
 	//Create the entry
 	auto child_or_err = parent->inode()->create_entry(path_base(path), mode);
@@ -201,7 +201,7 @@ Result VFS::unlink(DC::string &path, User& user, const DC::shared_ptr<LinkedInod
 	if(resolv.is_error()) return resolv.code();
 
 	//Check permissions
-	if(!parent->inode()->metadata().can_write(user)) return -EPERM;
+	if(!parent->inode()->metadata().can_write(user)) return -EACCES;
 
 	//Unlink
 	if(resolv.value()->inode()->metadata().is_directory()) return -EISDIR;
@@ -217,7 +217,7 @@ Result VFS::link(DC::string& file, DC::string& link_name, User& user, const DC::
 	if(!new_file_parent) return -ENOENT;
 
 	//Check permisisons on the parent dir
-	if(new_file_parent->inode()->metadata().can_write(user)) return -EPERM;
+	if(new_file_parent->inode()->metadata().can_write(user)) return -EACCES;
 
 	//Find the old file
 	resolv = resolve_path(file, base, user);
@@ -241,7 +241,7 @@ Result VFS::symlink(DC::string& file, DC::string& link_name, User& user, const D
 	if(!new_file_parent) return -ENOENT;
 
 	//Check the parent dir permissions
-	if(!new_file_parent->inode()->metadata().can_write(user)) return -EPERM;
+	if(!new_file_parent->inode()->metadata().can_write(user)) return -EACCES;
 
 	//Find the file
 	resolv = resolve_path(file, base, user);
@@ -299,7 +299,7 @@ Result VFS::rmdir(DC::string &path, User& user, const DC::shared_ptr<LinkedInode
 	auto resolv = resolve_path(path, base, user, &parent, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
 	if(!resolv.value()->inode()->metadata().is_directory()) return -ENOTDIR;
-	if(!resolv.value()->inode()->metadata().can_write(user)) return -EPERM;
+	if(!resolv.value()->inode()->metadata().can_write(user)) return -EACCES;
 
 	return parent->inode()->remove_entry(path_base(path));
 }
@@ -317,7 +317,7 @@ Result VFS::mkdir(DC::string path, mode_t mode, User& user, const DC::shared_ptr
 
 	//Check that the parent is a directory and we have write permissions on it
 	if(!parent->inode()->metadata().is_directory()) return -ENOTDIR;
-	if(parent->inode()->metadata().can_write(user)) return -EPERM;
+	if(parent->inode()->metadata().can_write(user)) return -EACCES;
 
 	//Make the directory
 	mode |= (unsigned) MODE_DIRECTORY;
@@ -336,7 +336,7 @@ Result VFS::truncate(DC::string& path, off_t length, User& user, const DC::share
  	auto ino_or_err = resolve_path(path, base, user);
 	if(ino_or_err.is_error()) return ino_or_err.code();
 	if(ino_or_err.value()->inode()->metadata().is_directory()) return -EISDIR;
-	if(!ino_or_err.value()->inode()->metadata().can_write(user)) return -EPERM;
+	if(!ino_or_err.value()->inode()->metadata().can_write(user)) return -EACCES;
 	return ino_or_err.value()->inode()->truncate(length);
 }
 
