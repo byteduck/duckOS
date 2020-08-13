@@ -108,11 +108,11 @@ uint32_t *BochsVGADevice::get_framebuffer() {
 	return framebuffer;
 }
 
-uint16_t BochsVGADevice::get_framebuffer_width() {
+size_t BochsVGADevice::get_display_width() {
 	return display_width;
 }
 
-uint16_t BochsVGADevice::get_framebuffer_height() {
+size_t BochsVGADevice::get_display_height() {
 	return display_height;
 }
 

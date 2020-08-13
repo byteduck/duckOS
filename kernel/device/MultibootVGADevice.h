@@ -31,8 +31,8 @@ public:
 	void set_pixel(size_t x, size_t y, uint32_t value) override;
 
 	bool is_textmode();
-	uint32_t get_framebuffer_width();
-	uint32_t get_framebuffer_height();
+	size_t get_display_width() override;
+	size_t get_display_height() override;
 	uint32_t* get_framebuffer();
 	size_t framebuffer_size();
 	void scroll(size_t pixels) override;

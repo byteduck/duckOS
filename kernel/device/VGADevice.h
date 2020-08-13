@@ -30,6 +30,8 @@ public:
 	static VGADevice& inst() {return *_inst;};
 	virtual void scroll(size_t pixels) = 0;
 	virtual void set_pixel(size_t x, size_t y, uint32_t value) = 0;
+	virtual size_t get_display_width() = 0;
+	virtual size_t get_display_height() = 0;
 	virtual void clear() = 0;
 private:
 	static VGADevice* _inst;

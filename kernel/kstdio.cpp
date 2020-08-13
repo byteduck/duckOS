@@ -19,85 +19,17 @@
 
 #include <kernel/kstddef.h>
 #include <kernel/kstdio.h>
-#include <kernel/memory/Memory.h>
 #include <common/stdlib.h>
-#include <kernel/font8x8/font8x8_latin.h>
-#include <kernel/device/BochsVGADevice.h>
 #include <kernel/tasking/TaskManager.h>
+#include <kernel/terminal/TTYDevice.h>
+#include <common/defines.h>
 
-int xpos = 0;
-int ypos = 0;
-uint32_t num_columns = 80;
-uint32_t num_rows = 25;
-char ccolor = 0x0f;
-uint8_t* vidmem = nullptr;
-bool graphical_mode = false;
-uint32_t vga_color_palette[] = {0x000000, 0x0000AA, 0x00AA00, 0x00AAAA, 0xAA0000, 0xAA00AA, 0xAA5500, 0xAAAAAA, 0x555555, 0x5555FF, 0x55FF55, 0x55FFFF, 0xFF5555, 0xFF55FF, 0xFFFF55, 0xFFFFFF};
-
-//Every single print statement ultimately uses this method.
-void putch_color(char c, char color){
-	serial_putch(c);
-	if(!graphical_mode && vidmem == nullptr) return;
-	if(c == '\r'){
-		xpos = 0;
-	}else if(c == '\n'){
-		xpos = 0;
-		ypos++;
-	}else if(c == '\t'){
-		for(uint8_t i = 0; i < 5; i++)
-			putch_color(' ',color);
-	} else {
-		if(graphical_mode) graphical_putch_color(c, color);
-		else textmode_putch_color(c, color);
-		xpos++;
-		if(xpos >= num_columns){
-			ypos++;
-			xpos = 0;
-		}
-		if(!graphical_mode) update_cursor();
-	}
-}
-
-void graphical_putch_color(char c, char color) {
-	if(ypos >= num_rows) {
-		VGADevice::inst().scroll((ypos + 1 - num_rows) * 8);
-		ypos = num_rows - 1;
-	}
-
-	uint16_t pixel_xpos = xpos * 8;
-	uint16_t pixel_ypos = ypos * 8;
-	for(uint16_t x = 0; x < 8; x++) {
-		for(uint16_t y = 0; y < 8; y++) {
-			VGADevice::inst().set_pixel(pixel_xpos + x, pixel_ypos + y, ((font8x8_basic[(int)c][y] >> x) & 0x1u) ? vga_color_palette[color] : 0x0u);
-		}
-	}
-}
-
-void textmode_putch_color(char c, char color) {
-	while(ypos >= num_rows) {
-		uint16_t i = 80*2;
-		while(i < 80*25*2){
-			vidmem[i-(80*2)] = vidmem[i];
-			i++;
-		}
-		i = 80*2*24;
-		while(i < 80*25*2){
-			vidmem[i++] = ' ';
-			vidmem[i++] = 0x07;
-		}
-		ypos--;
-	}
-
-	int pos = (xpos+(ypos*80))*2;
-	vidmem[pos] = c;
-	vidmem[pos+1] = color;
-}
+DC::shared_ptr<FileDescriptor> tty_desc(nullptr);
+DC::shared_ptr<TTYDevice> tty(nullptr);
 
 void putch(char c){
-	if(c == '\b')
-		backspace();
-	else if(c)
-		putch_color(c, ccolor);
+	if(tty) tty_desc->write((uint8_t*) &c, 1);
+	serial_putch(c);
 }
 
 void serial_putch(char c) {
@@ -119,35 +51,12 @@ void serial_putch(char c) {
 	outb(0x3F8, c);
 }
 
-
-
-
-void print_color(char* c, char color){
-	int i = 0;
-	while(c[i] != 0){
-		putch_color(c[i], color);
-		i++;
-	}
+void print(char* str){
+	if(tty) tty_desc->write((uint8_t*) str, strlen(str));
+	while(*str) serial_putch(*(str++));
 }
 
-void print(char* c){
-	print_color(c, ccolor);
-}
-
-void println_color(char* c, char color){
-	print_color(c, color);
-	print_color("\n", color);
-}
-
-void println(char* c){
-	println_color(c,ccolor);
-}
-
-void setColor(char color){
-	ccolor = color;
-}
-
-void printf(char *fmt, ...){
+void printf(const char* fmt, ...){
 	const char *p;
 	va_list argp;
 	int i;
@@ -205,75 +114,23 @@ void printf(char *fmt, ...){
 	va_end(argp);
 }
 
-void backspace(){
-	serial_putch('\b');
-	if(xpos != 0){
-		xpos--;
-		putch(' ');
-		xpos--;
-		update_cursor();
-	}
-}
-
 void PANIC(char *error, char *msg, bool hang){
 	TaskManager::enabled() = false;
 	clearScreen();
-	setAllColor(0x9f);
-	setAllColor(0x9f);
-	println("Good job, you crashed it.\nAnyway, here's the details, since you probably need them.\nDon't mess it up again.\n");
-	println(error);
-	println(msg);
+	print("Good job, you crashed it.\nAnyway, here's the details, since you probably need them.\nDon't mess it up again.\n");
+	print(error);
+	print(msg);
 	while(hang);
 	TaskManager::enabled() = true;
 }
 
 void clearScreen(){
-	if(!graphical_mode) {
-		if(vidmem == nullptr) return;
-		for (int y = 0; y < 25; y++) {
-			for (int x = 0; x < 80; x++) {
-				vidmem[(x + (y * 80)) * 2] = ' ';
-			}
-		}
-	} else {
-		VGADevice::inst().clear();
-	}
-	xpos = 0;
-	ypos = 0;
+	if(!tty) return;
+	tty->clear();
 }
 
-void setAllColor(char color){
-	if(!vidmem) return;
-	for(int y=0; y<25; y++){
-		for(int x=0; x<80; x++){
-			vidmem[(x+(y*80))*2+1] = color;
-		}
-	}
-	setColor(color);
-}
-
-void update_cursor(){
-	uint16_t position=(ypos*80) + xpos;
-    outb(0x3D4, 0x0F);
-    outb(0x3D5, (uint8_t)(position&0xFF));
-    outb(0x3D4, 0x0E);
-    outb(0x3D5, (uint8_t)((position>>8)&0xFF));
-}
-
-void set_graphical_mode(uint32_t width, uint32_t height) {
-	vidmem = nullptr;
-	graphical_mode = true;
-	num_columns = width / 8;
-	num_rows = height / 8;
-	xpos = 0;
-	ypos = 0;
-}
-
-void set_text_mode(uint32_t width, uint32_t height, void* framebuffer) {
-	vidmem = (uint8_t*) framebuffer;
-	graphical_mode = false;
-	num_columns = width;
-	num_rows = height;
-	xpos = 0;
-	ypos = 0;
+void setup_tty() {
+	tty = TTYDevice::current_tty();
+	tty_desc = DC::make_shared<FileDescriptor>(tty);
+	tty_desc->set_options(O_WRONLY);
 }

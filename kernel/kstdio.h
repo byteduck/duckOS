@@ -32,29 +32,13 @@ if(!(cond)) { \
 #define ASSERT(cond)
 #endif
 
-//Every single print statement ultimately uses this method.
-void putch_color(char c, char color);
-void textmode_putch_color(char c, char color);
-void graphical_putch_color(char c, char color);
+
 void putch(char c);
 void serial_putch(char c);
-
-void print_color(char* c, char color);
-void println_color(char* c, char color);
-void print(char* c);
-void println(char* c);
-void setColor(char color);
-void printf(char *fmt, ...);
-void backspace();
+void printf(const char *fmt, ...);
+void print(char* str);
 void PANIC(char *error, char *msg, bool hang);
 void clearScreen();
-void setAllColor(char color);
-void update_cursor();
-void scroll();
-void set_graphical_mode(uint32_t width, uint32_t height);
-void set_text_mode(uint32_t width, uint32_t height, void* framebuffer);
-
-#define SCREEN_CHAR_WIDTH 80
-#define SCREEN_CHAR_HEIGHT 25
+void setup_tty();
 
 #endif

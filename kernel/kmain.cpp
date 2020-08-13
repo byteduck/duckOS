@@ -31,7 +31,7 @@
 #include <kernel/device/PartitionDevice.h>
 #include <kernel/kmain.h>
 #include <kernel/filesystem/VFS.h>
-#include <kernel/device/TTYDevice.h>
+#include <kernel/terminal/TTYDevice.h>
 #include <kernel/device/KeyboardDevice.h>
 #include <common/defines.h>
 #include <kernel/device/BochsVGADevice.h>
@@ -54,25 +54,11 @@ int kmain(uint32_t mbootptr){
 
 	//Try setting up VGA
 	BochsVGADevice* bochs_vga = BochsVGADevice::create();
-	if(bochs_vga) {
-		//If we found a bochs vga device, set it up
-		set_graphical_mode(bochs_vga->get_framebuffer_width(), bochs_vga->get_framebuffer_height());
-	} else {
-		//Otherwise, try using the multiboot VGA device
+	if(!bochs_vga) {
+		//We didn't find a bochs VGA device, try using the multiboot VGA device
 		auto* mboot_vga = MultibootVGADevice::create(&mboot_header);
-		if(mboot_vga) {
-			//Set it up if found
-			if(mboot_vga->is_textmode()) {
-				set_text_mode(mboot_vga->get_framebuffer_width(), mboot_vga->get_framebuffer_height(), mboot_vga->get_framebuffer());
-			} else {
-				set_graphical_mode(mboot_vga->get_framebuffer_width(), mboot_vga->get_framebuffer_height());
-			}
-		} else {
-			//Fallback to textmode if all else fails
-			printf("[VGA] Falling back to text mode.\n");
-			void* vidmem = (void*) PageDirectory::k_mmap(0xB8000, 0xFA0, true);
-			set_text_mode(80, 25, vidmem);
-		}
+		if(!mboot_vga || mboot_vga->is_textmode())
+			PANIC("MBOOT_TEXTMODE", "duckOS doesn't support textmode.", true);
 	}
 
 	clearScreen();
@@ -96,6 +82,7 @@ void kmain_late(){
 
 	auto* tty0 = new TTYDevice(0, "tty0", 4, 0);
 	tty0->set_active();
+	setup_tty();
 
 	printf("[kinit] TTY initialized.\n[kinit] Initializing disk...\n");
 
@@ -124,7 +111,7 @@ void kmain_late(){
 	if(Ext2Filesystem::probe(*part_descriptor)){
 		printf("[kinit] Partition is ext2 ");
 	}else{
-		println("[kinit] Partition is not ext2! Hanging.");
+		printf("[kinit] Partition is not ext2! Hanging.\n");
 		while(true);
 	}
 

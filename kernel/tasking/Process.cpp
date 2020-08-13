@@ -20,7 +20,7 @@
 #include <kernel/memory/kliballoc.h>
 #include <kernel/filesystem/VFS.h>
 #include <common/defines.h>
-#include <kernel/device/TTYDevice.h>
+#include <kernel/terminal/TTYDevice.h>
 #include <kernel/pit.h>
 #include "Process.h"
 #include "TaskManager.h"

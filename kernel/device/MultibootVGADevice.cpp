@@ -82,11 +82,11 @@ bool MultibootVGADevice::is_textmode() {
 	return textmode;
 }
 
-uint32_t MultibootVGADevice::get_framebuffer_width() {
+size_t MultibootVGADevice::get_display_width() {
 	return framebuffer_width;
 }
 
-uint32_t MultibootVGADevice::get_framebuffer_height() {
+size_t MultibootVGADevice::get_display_height() {
 	return framebuffer_height;
 }
 

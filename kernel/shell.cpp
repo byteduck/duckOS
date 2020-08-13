@@ -32,7 +32,7 @@
 #include <common/stdlib.h>
 #include <common/defines.h>
 #include <kernel/filesystem/InodeFile.h>
-#include <kernel/device/TTYDevice.h>
+#include <kernel/terminal/TTYDevice.h>
 #include <kernel/memory/MemoryMap.h>
 #include <kernel/device/PATADevice.h>
 
@@ -58,7 +58,6 @@ void Shell::shell(){
 		ssize_t nread;
 		while(!(nread = tty->read((uint8_t*)kbdbuf, 511)));
 		kbdbuf[nread - 1] = '\0';
-		setColor(0x07);
 		substr(indexOf(' ', kbdbuf), kbdbuf, cmdbuf);
 		if(indexOf(' ', kbdbuf)+1 <= strlen(kbdbuf)){
 			substrr(indexOf(' ', kbdbuf)+1, strlen(kbdbuf), kbdbuf, argbuf);
@@ -66,28 +65,27 @@ void Shell::shell(){
 			argbuf[0] = 0;
 		}
 		command_eval(cmdbuf, argbuf);
-		setColor(0x0f);
 	}
 	TaskManager::current_process()->kill(SIGKILL);
 }
 
 void Shell::command_eval(char *cmd, char *args){
 	if(strcmp(cmd,"help")){
-		println("ls: List the files in the current directory. Use -h for help.");
-		println("cd: Change the current directory.");
-		println("pwd: Print the working directory.");
-		println("about: Shows some information about the system.");
-		println("help: Shows this message.");
-		println("cat: Prints a file's contents.");
-		println("about: Prints some information.");
-		println("mem: Prints information about the memory.");
-		println("pagefault: Triggers a page fault, in case you wanted to.");
-		println("tasks: Prints all running tasks.");
-		println("bg: Run a program in the background.");
-		println("kill: Kill a program.");
-		println("readelf: Print info about an ELF executable.");
-		println("lspci: Lists PCI devices.");
-		println("exit: Pretty self explanatory.");
+		printf("ls: List the files in the current directory. Use -h for help.\n");
+		printf("cd: Change the current directory.\n");
+		printf("pwd: Print the working directory.\n");
+		printf("about: Shows some information about the system.\n");
+		printf("help: Shows this message.\n");
+		printf("cat: Prints a file's contents.\n");
+		printf("about: Prints some information.\n");
+		printf("mem: Prints information about the memory.\n");
+		printf("pagefault: Triggers a page fault, in case you wanted to.\n");
+		printf("tasks: Prints all running tasks.\n");
+		printf("bg: Run a program in the background.\n");
+		printf("kill: Kill a program.\n");
+		printf("readelf: Print info about an ELF executable.\n");
+		printf("lspci: Lists PCI devices.\n");
+		printf("exit: Pretty self explanatory.\n");
 	} else if(strcmp(cmd,"ls.old")) {
 		DC::string path = ".";
 		if(!strcmp(args, "")) path = args;
@@ -146,7 +144,7 @@ void Shell::command_eval(char *cmd, char *args){
 	}else if(strcmp(cmd,"pwd.old")){
 		printf("%s\n", current_dir->get_full_path().c_str());
 	}else if(strcmp(cmd,"about")){
-		println("DuckOS v0.2");
+		printf("DuckOS v0.2\n");
 	}else if(strcmp(cmd, "mem")) {
 		printf("Total usable memory: %dKiB\n", Memory::get_usable_mem() / 1024);
 		printf("Total reserved memory: %dKiB\n", Memory::get_reserved_mem() / 1024);
@@ -191,9 +189,9 @@ void Shell::command_eval(char *cmd, char *args){
 		}else if(strcmp(args,"-w")){
 			((char*)0xDEADC0DE)[0]='F';
 		}else{
-			println("Usage: pagefault [-r,-w]");
-			println("-r: Triggers a page fault by reading.");
-			println("-w: Triggers a page fault by writing.");
+			printf("Usage: pagefault [-r,-w]\n");
+			printf("-r: Triggers a page fault by reading.\n");
+			printf("-w: Triggers a page fault by writing.\n");
 		}
 	}else if(strcmp(cmd,"exit")){
 		exitShell = true;

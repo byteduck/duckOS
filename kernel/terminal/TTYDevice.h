@@ -21,24 +21,28 @@
 #define DUCKOS_TTYDEVICE_H
 
 #include <common/circular_queue.hpp>
-#include "CharacterDevice.h"
-#include "KeyboardDevice.h"
+#include <kernel/device/CharacterDevice.h>
+#include <kernel/device/KeyboardDevice.h>
+#include "Terminal.h"
 
 #define NUM_TTYS 8
 
-class TTYDevice: public CharacterDevice, public KeyboardHandler {
+class TTYDevice: public CharacterDevice, public KeyboardHandler, private Terminal::Listener {
 public:
 	static DC::shared_ptr<TTYDevice> current_tty();
 
 	TTYDevice(size_t id, const DC::string& name, unsigned major, unsigned minor);
+	~TTYDevice();
+
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
 	bool is_tty() override;
 
 	void set_active();
 	bool active();
-
+	void clear();
 	bool buffered = true;
+
 protected:
 	static void register_tty(size_t id, TTYDevice* device);
 	static void set_current_tty(size_t tty);
@@ -49,9 +53,18 @@ private:
 
 	void handle_key(KeyEvent) override;
 
+	void on_character_change(const Terminal::Position& position, const Terminal::Character& character) override;
+	void on_cursor_change(const Terminal::Position& position) override;
+	void on_backspace(const Terminal::Position& position) override;
+	void on_clear() override;
+	void on_clear_line(size_t line) override;
+	void on_scroll(size_t lines) override;
+	void on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size);
+
 	DC::string _name;
 	DC::circular_queue<uint8_t> _input_buffer;
 	DC::circular_queue<uint8_t> _buffered_input_buffer;
+	Terminal* terminal;
 	size_t _id;
 	bool _active = false;
 	BooleanBlocker _buffer_blocker;

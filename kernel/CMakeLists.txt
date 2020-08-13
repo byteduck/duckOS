@@ -54,7 +54,6 @@ SET(KERNEL_SRCS
         filesystem/InodeMetadata.cpp
         filesystem/FileBasedFilesystem.cpp
         icxxabi.cpp
-        device/TTYDevice.cpp
         device/CharacterDevice.cpp
         device/ZeroDevice.cpp
         random.cpp
@@ -81,7 +80,9 @@ SET(KERNEL_SRCS
         CommandLine.cpp
         tasking/Signal.cpp
         filesystem/DirectoryEntry.cpp
-        filesystem/Pipe.cpp)
+        filesystem/Pipe.cpp
+        terminal/TTYDevice.cpp
+        terminal/Terminal.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp
