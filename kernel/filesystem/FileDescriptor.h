@@ -33,7 +33,7 @@ class DirectoryEntry;
 class Device;
 class FileDescriptor {
 public:
-	explicit FileDescriptor(const DC::shared_ptr<File>& file, const DC::shared_ptr<User>& user);
+	explicit FileDescriptor(const DC::shared_ptr<File>& file, User& user);
 	FileDescriptor(FileDescriptor& other);
 	~FileDescriptor();
 
@@ -57,7 +57,7 @@ public:
 private:
 	DC::shared_ptr<File> _file;
 	DC::shared_ptr<Inode> _inode;
-	DC::shared_ptr<User> _user;
+	User _user;
 
 	bool _readable {false};
 	bool _writable {false};

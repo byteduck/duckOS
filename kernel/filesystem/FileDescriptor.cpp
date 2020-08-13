@@ -25,14 +25,13 @@
 #include <kernel/kstdio.h>
 #include <kernel/device/Device.h>
 
-FileDescriptor::FileDescriptor(const DC::shared_ptr<File>& file, const DC::shared_ptr<User>& user): _file(file), _user(user) {
+FileDescriptor::FileDescriptor(const DC::shared_ptr<File>& file, User& user): _file(file), _user(user) {
 	if(file->is_inode())
 		_inode = DC::static_pointer_cast<InodeFile>(file)->inode();
 }
 
-FileDescriptor::FileDescriptor(FileDescriptor& other) {
+FileDescriptor::FileDescriptor(FileDescriptor& other): _user(other._user) {
 	_file = other._file;
-	_user = other._user;
 	_is_fifo_writer = other._is_fifo_writer;
 	_append = other._append;
 	_can_seek = other._can_seek;

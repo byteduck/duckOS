@@ -35,7 +35,7 @@ Process* Process::create_kernel(const DC::string& name, void (*func)()){
 	return new Process(name, (size_t)func, true, &args, 1);
 }
 
-ResultRet<Process*> Process::create_user(const DC::string& executable_loc, const DC::shared_ptr<User>& file_open_user, ProcessArgs* args, pid_t parent) {
+ResultRet<Process*> Process::create_user(const DC::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
 	//Open the executable
 	auto fd_or_error = VFS::inst().open((DC::string&) executable_loc, O_RDONLY, 0, file_open_user, args->working_dir);
 	if(fd_or_error.is_error()) return fd_or_error.code();
@@ -86,12 +86,11 @@ bool& Process::just_execed() {
 	return _just_execed;
 }
 
-Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid) {
+Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid): _user(User::root()) {
 	//Disable task switching so we don't screw up paging
 	bool en = TaskManager::enabled();
 	TaskManager::enabled() = false;
 
-	_user = User::root();
 	_name = name;
 	_pid = TaskManager::get_new_pid();
 	state = PROCESS_ALIVE;
@@ -156,7 +155,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	//Setup stack
 	if(ring != 0) {
 		//Set up the user stack for the program arguments
-		auto *user_stack = (uint32_t *) (stack_base + _stack_size);
+		auto user_stack = (uint32_t *) (stack_base + _stack_size);
 		user_stack = (uint32_t *) args->setup_stack(user_stack);
 		*--user_stack = 0; //Honestly? Not sure why this is needed but nothing works without it :)
 
@@ -178,11 +177,10 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	TaskManager::enabled() = en;
 }
 
-Process::Process(Process *to_fork, Registers &regs){
+Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	if(to_fork->kernel) PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
 
 	TaskManager::enabled() = false;
-	_user = User::root();
 	_name = to_fork->_name;
 	_pid = TaskManager::get_new_pid();
 	state = PROCESS_ALIVE;
@@ -443,7 +441,7 @@ bool Process::should_unblock() {
  * SYSCALLS *
  ************/
 
-void Process::check_ptr(void *ptr) {
+void Process::check_ptr(const void *ptr) {
 	if((size_t) ptr >= HIGHER_HALF || !page_directory->is_mapped((size_t) ptr)) {
 		kill(SIGSEGV);
 	}
@@ -679,7 +677,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//Kill all processes with _pgid == this->_pgid
 		Process* c_proc = this->next;
 		while(c_proc != this) {
-			if((_user->uid() == 0 || c_proc->_user == _user) && c_proc->_pgid == _pgid && c_proc->_pid != 1) c_proc->kill(sig);
+			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pgid == _pgid && c_proc->_pid != 1) c_proc->kill(sig);
 			c_proc = c_proc->next;
 		}
 		kill(sig);
@@ -687,7 +685,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//kill all processes for which we have permission to kill except init
 		Process* c_proc = this->next;
 		while(c_proc != this) {
-			if((_user->uid() == 0 || c_proc->_user == _user) && c_proc->_pid != 1) c_proc->kill(sig);
+			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pid != 1) c_proc->kill(sig);
 			c_proc = c_proc->next;
 		}
 		kill(sig);
@@ -695,7 +693,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//Kill all processes with _pgid == -pid
 		Process* c_proc = this->next;
 		while(c_proc != this) {
-			if((_user->uid() == 0 || c_proc->_user == _user) && c_proc->_pgid == -pid && c_proc->_pid != 1) c_proc->kill(sig);
+			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pgid == -pid && c_proc->_pid != 1) c_proc->kill(sig);
 			c_proc = c_proc->next;
 		}
 		kill(sig);
@@ -703,7 +701,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//Kill process with _pid == pid
 		Process* proc = TaskManager::process_for_pid(pid);
 		if(!proc) return -ESRCH;
-		if((_user->uid() != 0 && proc->_user != _user) || proc->_pid == 1) return -EPERM;
+		if((_user.uid != 0 && proc->_user.uid != _user.uid) || proc->_pid == 1) return -EPERM;
 		proc->kill(sig);
 	}
 	return 0;
@@ -892,6 +890,79 @@ int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
 	if(new_sid != _sid) return -EPERM;
 
 	_pgid = new_pgid;
+	return SUCCESS;
+}
+
+int Process::sys_setuid(uid_t uid) {
+	if(!_user.can_setuid() && uid != _user.uid && uid != _user.euid)
+		return -EPERM;
+
+	_user.uid = uid;
+	_user.euid = uid;
+	return SUCCESS;
+}
+
+int Process::sys_seteuid(uid_t euid) {
+	if(!_user.can_setuid() && euid != _user.uid && euid != _user.euid)
+		return -EPERM;
+
+	_user.euid = euid;
+	return SUCCESS;
+}
+
+uid_t Process::sys_getuid() {
+	return _user.uid;
+}
+
+uid_t Process::sys_geteuid() {
+	return _user.euid;
+}
+
+int Process::sys_setgid(gid_t gid) {
+	if(!_user.can_setgid() && gid != _user.gid && gid != _user.egid)
+		return -EPERM;
+
+	_user.gid = gid;
+	_user.egid = gid;
+	return SUCCESS;
+}
+
+int Process::sys_setegid(gid_t egid) {
+	if(!_user.can_setgid() && egid != _user.gid && egid != _user.egid)
+		return -EPERM;
+
+	_user.egid = egid;
+	return SUCCESS;
+}
+
+gid_t Process::sys_getgid() {
+	return _user.gid;
+}
+
+gid_t Process::sys_getegid() {
+	return _user.egid;
+}
+
+int Process::sys_setgroups(size_t count, const gid_t* gids) {
+	check_ptr(gids);
+	if(count < 0) return -EINVAL;
+	if(!_user.can_setgid()) return -EPERM;
+
+	if(!count) {
+		_user.groups.resize(0);
+		return SUCCESS;
+	}
+
+	_user.groups.resize(count);
+	for(size_t i = 0; i < count; i++) _user.groups[i] = gids[i];
+	return SUCCESS;
+}
+
+int Process::sys_getgroups(int count, gid_t* gids) {
+	if(count < 0) return -EINVAL;
+	if(count == 0) return _user.groups.size();
+	if(count <  _user.groups.size()) return -EINVAL;
+	for(size_t i = 0; i <  _user.groups.size(); i++) gids[i] = _user.groups[i];
 	return SUCCESS;
 }
 

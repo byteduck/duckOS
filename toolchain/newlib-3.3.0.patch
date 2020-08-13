@@ -11861,10 +11861,10 @@ index 0000000..3957434
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..f74d529
+index 0000000..98e1c0a
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,514 @@
+@@ -0,0 +1,624 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12082,7 +12082,7 @@ index 0000000..f74d529
 +}
 +
 +clock_t times(struct tms *buf) {
-+	int ret = 0;
++	clock_t ret = 0;
 +	asm volatile("int $0x80" :: "a"(SYS_TIMES), "b"(buf));
 +	asm volatile("mov %%eax, %0" : "=r"(ret));
 +	if(ret < 0) {
@@ -12379,13 +12379,123 @@ index 0000000..f74d529
 +	}
 +	return ret;
 +}
++
++int setuid(uid_t uid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_SETUID), "b"(uid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int seteuid(uid_t euid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_SETEUID), "b"(euid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++uid_t getuid() {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_GETUID));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++uid_t geteuid() {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_GETEUID));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int setgid(gid_t gid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_SETGID), "b"(gid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int setegid(gid_t gid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_SETEGID), "b"(gid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++gid_t getgid() {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_GETGID));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++gid_t getegid() {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_GETEGID));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int setgroups(size_t size, const gid_t* groups) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_SETGROUPS), "b"(size), "c"(groups));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int getgroups(int size, gid_t groups[]) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_GETGROUPS), "b"(size), "c"(groups));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..dfb1c1f
+index 0000000..ed9320d
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,80 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12447,6 +12557,16 @@ index 0000000..dfb1c1f
 +#define SYS_GETPGID 40
 +#define SYS_GETPGRP 41
 +#define SYS_SETPGID 42
++#define SYS_SETUID 43
++#define SYS_SETEUID 44
++#define SYS_GETUID 45
++#define SYS_GETEUID 46
++#define SYS_SETGID 47
++#define SYS_SETEGID 48
++#define SYS_GETGID 49
++#define SYS_GETEGID 50
++#define SYS_SETGROUPS 51
++#define SYS_GETGROUPS 52
 +
 +struct __attribute__((packed)) readlinkat_args {
 +	int fd;

@@ -62,6 +62,16 @@
 #define SYS_GETPGID 40
 #define SYS_GETPGRP 41
 #define SYS_SETPGID 42
+#define SYS_SETUID 43
+#define SYS_SETEUID 44
+#define SYS_GETUID 45
+#define SYS_GETEUID 46
+#define SYS_SETGID 47
+#define SYS_SETEGID 48
+#define SYS_GETGID 49
+#define SYS_GETEGID 50
+#define SYS_SETGROUPS 51
+#define SYS_GETGROUPS 52
 
 struct __attribute__((packed)) readlinkat_args {
 	int fd;

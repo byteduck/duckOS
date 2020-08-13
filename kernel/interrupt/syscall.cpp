@@ -115,6 +115,26 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_getpgrp();
 		case SYS_SETPGID:
 			return TaskManager::current_process()->sys_setpgid((pid_t)arg1, (pid_t)arg2);
+		case SYS_SETUID:
+			return TaskManager::current_process()->sys_setuid((uid_t)arg1);
+		case SYS_SETEUID:
+			return TaskManager::current_process()->sys_seteuid((uid_t)arg1);
+		case SYS_GETUID:
+			return TaskManager::current_process()->sys_getuid();
+		case SYS_GETEUID:
+			return TaskManager::current_process()->sys_geteuid();
+		case SYS_SETGID:
+			return TaskManager::current_process()->sys_setgid((gid_t)arg1);
+		case SYS_SETEGID:
+			return TaskManager::current_process()->sys_setegid((gid_t)arg1);
+		case SYS_GETGID:
+			return TaskManager::current_process()->sys_getgid();
+		case SYS_GETEGID:
+			return TaskManager::current_process()->sys_getegid();
+		case SYS_SETGROUPS:
+			return TaskManager::current_process()->sys_setgroups((size_t)arg1, (const gid_t*)arg2);
+		case SYS_GETGROUPS:
+			return TaskManager::current_process()->sys_getgroups((int)arg1, (gid_t*)arg2);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

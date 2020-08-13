@@ -40,7 +40,7 @@ ResultRet<DC::shared_ptr<Inode>> Inode::find(const DC::string& name) {
     return -ENOENT;
 }
 
-ResultRet<DC::shared_ptr<LinkedInode>> Inode::resolve_link(const DC::shared_ptr<LinkedInode>& base, const DC::shared_ptr<User> user, int options, int recursion_level) {
+ResultRet<DC::shared_ptr<LinkedInode>> Inode::resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, int options, int recursion_level) {
 	ASSERT(metadata().is_symlink());
 
 	auto* buf = new uint8_t[metadata().size + 1];

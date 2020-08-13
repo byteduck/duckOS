@@ -53,7 +53,7 @@ public:
 	~Process();
 
 	static Process* create_kernel(const DC::string& name, void (*func)());
-	static ResultRet<Process*> create_user(const DC::string& executable_loc, const DC::shared_ptr<User>& file_open_user, ProcessArgs* args, pid_t parent);
+	static ResultRet<Process*> create_user(const DC::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent);
 
 	pid_t pid();
 	pid_t pgid();
@@ -83,7 +83,7 @@ public:
 	bool should_unblock();
 
 	//Syscalls
-	void check_ptr(void* ptr);
+	void check_ptr(const void* ptr);
 	void sys_exit(int status);
 	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
 	ssize_t sys_write(int fd, uint8_t* buf, size_t count);
@@ -125,6 +125,16 @@ public:
 	int sys_getpgid(pid_t pid);
 	int sys_getpgrp();
 	int sys_setpgid(pid_t pid, pid_t new_pgid);
+	int sys_setuid(uid_t uid);
+	int sys_seteuid(uid_t euid);
+	uid_t sys_getuid();
+	uid_t sys_geteuid();
+	int sys_setgid(gid_t gid);
+	int sys_setegid(gid_t egid);
+	gid_t sys_getgid();
+	gid_t sys_getegid();
+	int sys_setgroups(size_t count, const gid_t* gids);
+	int sys_getgroups(int count, gid_t* gids);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;
@@ -149,7 +159,7 @@ private:
 	pid_t _ppid = 0;
 	pid_t _sid = 0;
 	pid_t _pgid = 0;
-	DC::shared_ptr<User> _user;
+	User _user;
 	int _exit_status = 0;
 	bool _freed_resources = false;
 	bool _just_execed = false;

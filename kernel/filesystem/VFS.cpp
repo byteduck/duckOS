@@ -56,7 +56,7 @@ bool VFS::mount_root(Filesystem* fs) {
 	return true;
 }
 
-ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& _base, const DC::shared_ptr<User>& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& _base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	if(recursion_level > VFS_RECURSION_LIMIT) return -ELOOP;
 	if(path == "/") return _root_ref;
 
@@ -67,7 +67,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 	while(path[0] != '\0') {
 		auto parent = current_inode;
 		if(!parent->inode()->metadata().is_directory()) return -ENOTDIR;
-		if(!parent->inode()->metadata().can_execute(*user)) return -EPERM;
+		if(!parent->inode()->metadata().can_execute(user)) return -EPERM;
 
 		size_t slash_index = path.find('/');
 		if(slash_index != -1) {
@@ -119,7 +119,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 	return current_inode;
 }
 
-ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int options, mode_t mode, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base) {
+ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int options, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base) {
 	//Check path length & options for validity
 	if(path.length() == 0) return -ENOENT;
 	if((options & O_DIRECTORY) && (options & O_CREAT)) return -EINVAL;
@@ -150,8 +150,8 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int option
 	auto meta = inode->inode()->metadata();
 
 	//Check the permissions against the read/write mode
-	if((!(options & O_WRONLY) || (options & O_RDWR)) && !meta.can_read(*user)) return -EPERM;
-	if(((options & O_WRONLY) || (options & O_RDWR)) && !meta.can_write(*user)) return -EPERM;
+	if((!(options & O_WRONLY) || (options & O_RDWR)) && !meta.can_read(user)) return -EPERM;
+	if(((options & O_WRONLY) || (options & O_RDWR)) && !meta.can_write(user)) return -EPERM;
 
 	//If O_DIRECTORY was set and it's not a directory, error
 	if((options & O_DIRECTORY) && !meta.is_directory()) return -ENOTDIR;
@@ -174,13 +174,13 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int option
 	return ret;
 }
 
-ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int options, mode_t mode, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode> &parent) {
+ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int options, mode_t mode, User& user, const DC::shared_ptr<LinkedInode> &parent) {
 	//If the type bits of the mode are zero (which it will be from sys_open), create a regular file
 	if(!IS_BLKDEV(mode) && !IS_CHRDEV(mode) && !IS_FIFO(mode) && !IS_SOCKET(mode))
 		mode |= MODE_FILE;
 
 	//Check permissions
-	if(!parent->inode()->metadata().can_write(*user)) return -EPERM;
+	if(!parent->inode()->metadata().can_write(user)) return -EPERM;
 
 	//Create the entry
 	auto child_or_err = parent->inode()->create_entry(path_base(path), mode);
@@ -194,21 +194,21 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int opti
 	return ret;
 }
 
-Result VFS::unlink(DC::string &path, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode> &base) {
+Result VFS::unlink(DC::string &path, User& user, const DC::shared_ptr<LinkedInode> &base) {
 	//Find the parent dir
 	DC::shared_ptr<LinkedInode> parent(nullptr);
 	auto resolv = resolve_path(path, base, user, &parent, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
 
 	//Check permissions
-	if(!parent->inode()->metadata().can_write(*user)) return -EPERM;
+	if(!parent->inode()->metadata().can_write(user)) return -EPERM;
 
 	//Unlink
 	if(resolv.value()->inode()->metadata().is_directory()) return -EISDIR;
 	return parent->inode()->remove_entry(path_base(path));
 }
 
-Result VFS::link(DC::string& file, DC::string& link_name, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base) {
+Result VFS::link(DC::string& file, DC::string& link_name, User& user, const DC::shared_ptr<LinkedInode>& base) {
 	//Make sure the new file doesn't already exist and the parent directory exists
 	DC::shared_ptr<LinkedInode> new_file_parent(nullptr);
 	auto resolv = resolve_path(link_name, base, user, &new_file_parent);
@@ -217,7 +217,7 @@ Result VFS::link(DC::string& file, DC::string& link_name, const DC::shared_ptr<U
 	if(!new_file_parent) return -ENOENT;
 
 	//Check permisisons on the parent dir
-	if(new_file_parent->inode()->metadata().can_write(*user)) return -EPERM;
+	if(new_file_parent->inode()->metadata().can_write(user)) return -EPERM;
 
 	//Find the old file
 	resolv = resolve_path(file, base, user);
@@ -232,7 +232,7 @@ Result VFS::link(DC::string& file, DC::string& link_name, const DC::shared_ptr<U
 	return new_file_parent->inode()->add_entry(path_base(link_name), *old_file->inode());
 }
 
-Result VFS::symlink(DC::string& file, DC::string& link_name, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base) {
+Result VFS::symlink(DC::string& file, DC::string& link_name, User& user, const DC::shared_ptr<LinkedInode>& base) {
 	//Make sure the new file doesn't already exist and the parent directory exists
 	DC::shared_ptr<LinkedInode> new_file_parent(nullptr);
 	auto resolv = resolve_path(link_name, base, user, &new_file_parent);
@@ -241,7 +241,7 @@ Result VFS::symlink(DC::string& file, DC::string& link_name, const DC::shared_pt
 	if(!new_file_parent) return -ENOENT;
 
 	//Check the parent dir permissions
-	if(!new_file_parent->inode()->metadata().can_write(*user)) return -EPERM;
+	if(!new_file_parent->inode()->metadata().can_write(user)) return -EPERM;
 
 	//Find the file
 	resolv = resolve_path(file, base, user);
@@ -262,7 +262,7 @@ Result VFS::symlink(DC::string& file, DC::string& link_name, const DC::shared_pt
 	return SUCCESS;
 }
 
-ResultRet<DC::string> VFS::readlink(DC::string& path, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base, ssize_t& size) {
+ResultRet<DC::string> VFS::readlink(DC::string& path, User& user, const DC::shared_ptr<LinkedInode>& base, ssize_t& size) {
 	//Find the link and make sure it is a link
 	auto resolv = resolve_path(path, base, user, nullptr, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
@@ -284,7 +284,7 @@ ResultRet<DC::string> VFS::readlink(DC::string& path, const DC::shared_ptr<User>
 	return ret;
 }
 
-Result VFS::rmdir(DC::string &path, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode> &base) {
+Result VFS::rmdir(DC::string &path, User& user, const DC::shared_ptr<LinkedInode> &base) {
 	//Remove trailing slash if there is one
 	if(path.length() != 0 && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
@@ -299,12 +299,12 @@ Result VFS::rmdir(DC::string &path, const DC::shared_ptr<User>& user, const DC::
 	auto resolv = resolve_path(path, base, user, &parent, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
 	if(!resolv.value()->inode()->metadata().is_directory()) return -ENOTDIR;
-	if(!resolv.value()->inode()->metadata().can_write(*user)) return -EPERM;
+	if(!resolv.value()->inode()->metadata().can_write(user)) return -EPERM;
 
 	return parent->inode()->remove_entry(path_base(path));
 }
 
-Result VFS::mkdir(DC::string path, mode_t mode, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode> &base) {
+Result VFS::mkdir(DC::string path, mode_t mode, User& user, const DC::shared_ptr<LinkedInode> &base) {
 	//Remove trailing slash if there is one
 	if(path.length() != 0 && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
@@ -317,7 +317,7 @@ Result VFS::mkdir(DC::string path, mode_t mode, const DC::shared_ptr<User>& user
 
 	//Check that the parent is a directory and we have write permissions on it
 	if(!parent->inode()->metadata().is_directory()) return -ENOTDIR;
-	if(parent->inode()->metadata().can_write(*user)) return -EPERM;
+	if(parent->inode()->metadata().can_write(user)) return -EPERM;
 
 	//Make the directory
 	mode |= (unsigned) MODE_DIRECTORY;
@@ -327,20 +327,20 @@ Result VFS::mkdir(DC::string path, mode_t mode, const DC::shared_ptr<User>& user
 	return SUCCESS;
 }
 
-Result VFS::mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, const DC::shared_ptr<User>& user, mode_t mode) {
+Result VFS::mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, User& user, mode_t mode) {
 	return -1; //TODO
 }
 
-Result VFS::truncate(DC::string& path, off_t length, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base) {
+Result VFS::truncate(DC::string& path, off_t length, User& user, const DC::shared_ptr<LinkedInode>& base) {
 	if(length < 0) return -EINVAL;
  	auto ino_or_err = resolve_path(path, base, user);
 	if(ino_or_err.is_error()) return ino_or_err.code();
 	if(ino_or_err.value()->inode()->metadata().is_directory()) return -EISDIR;
-	if(!ino_or_err.value()->inode()->metadata().can_write(*user)) return -EPERM;
+	if(!ino_or_err.value()->inode()->metadata().can_write(user)) return -EPERM;
 	return ino_or_err.value()->inode()->truncate(length);
 }
 
-Result VFS::ftruncate(const DC::shared_ptr<FileDescriptor>& fd, off_t length, const DC::shared_ptr<User>& user) {
+Result VFS::ftruncate(const DC::shared_ptr<FileDescriptor>& fd, off_t length, User& user) {
 	return -1; //TODO
 }
 

@@ -50,7 +50,7 @@ public:
 	virtual ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode) = 0;
 	virtual Result remove_entry(const DC::string& name) = 0;
 	virtual Result truncate(off_t length) = 0;
-	virtual ResultRet<DC::shared_ptr<LinkedInode>> resolve_link(const DC::shared_ptr<LinkedInode>& base, const DC::shared_ptr<User> user, int options, int recursion_level);
+	virtual ResultRet<DC::shared_ptr<LinkedInode>> resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, int options, int recursion_level);
 
 	InodeMetadata metadata();
 

@@ -26,7 +26,7 @@ class Shell {
 public:
 	Shell();
 	void shell();
-	void command_eval(char *cmd, char *args);
+	void command_eval(char *cmd, char *args, User& user);
 private:
 	char cmdbuf[256] = {0};
 	char argbuf[256] = {0};

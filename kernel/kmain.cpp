@@ -51,7 +51,6 @@ int kmain(uint32_t mbootptr){
 	Memory::setup_paging();
 	Device::init();
 	CommandLine::init(mboot_header);
-	User::init();
 
 	//Try setting up VGA
 	BochsVGADevice* bochs_vga = BochsVGADevice::create();

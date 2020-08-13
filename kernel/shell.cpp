@@ -38,10 +38,10 @@ void dummy(){
 	while(1);
 }
 
-void Shell::shell(){
-
+void Shell::shell() {
+	User root_user = User::root();
 	DC::string ttypath("/dev/tty0");
-	auto tty_or_error = VFS::inst().open(ttypath, O_RDONLY, 0, User::root(), VFS::inst().root_ref());
+	auto tty_or_error = VFS::inst().open(ttypath, O_RDONLY, 0, root_user, VFS::inst().root_ref());
 	if(tty_or_error.is_error()) {
 		printf("Could not open tty0: %d\n", tty_or_error.code());
 		return;
@@ -58,12 +58,12 @@ void Shell::shell(){
 		}else{
 			argbuf[0] = 0;
 		}
-		command_eval(cmdbuf, argbuf);
+		command_eval(cmdbuf, argbuf, root_user);
 	}
 	TaskManager::current_process()->kill(SIGKILL);
 }
 
-void Shell::command_eval(char *cmd, char *args){
+void Shell::command_eval(char *cmd, char *args, User& user){
 	if(strcmp(cmd,"help")){
 		printf("ls: List the files in the current directory. Use -h for help.\n");
 		printf("cd: Change the current directory.\n");
@@ -83,7 +83,7 @@ void Shell::command_eval(char *cmd, char *args){
 	} else if(strcmp(cmd,"ls.old")) {
 		DC::string path = ".";
 		if(!strcmp(args, "")) path = args;
-		auto desc_ret = VFS::inst().open(path, O_RDONLY | O_DIRECTORY, MODE_DIRECTORY, User::root(), current_dir);
+		auto desc_ret = VFS::inst().open(path, O_RDONLY | O_DIRECTORY, MODE_DIRECTORY, user, current_dir);
 		if(desc_ret.is_error()) {
 			switch(desc_ret.code()) {
 				case -ENOTDIR:
@@ -125,7 +125,7 @@ void Shell::command_eval(char *cmd, char *args){
 		}
 	}else if(strcmp(cmd,"cd")){
 		DC::string argstr(args);
-		auto ref = VFS::inst().resolve_path(argstr, current_dir, User::root());
+		auto ref = VFS::inst().resolve_path(argstr, current_dir, user);
 		if(!ref.is_error()) {
 			auto val = ref.value();
 			if(val->inode()->metadata().is_directory())
@@ -149,7 +149,7 @@ void Shell::command_eval(char *cmd, char *args){
 		Memory::kernel_page_directory.dump();
 	}else if(strcmp(cmd,"cat.old")){
 		DC::string argstr(args);
-		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, User::root(), current_dir);
+		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, user, current_dir);
 		if(desc_ret.is_error()) {
 			switch (desc_ret.code()) {
 				case -ENOENT:
@@ -204,7 +204,7 @@ void Shell::command_eval(char *cmd, char *args){
 			proc->kill(SIGKILL);
 	}else if(strcmp(cmd, "readelf")){
 		DC::string argstr(args);
-		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, User::root(), current_dir);
+		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, user, current_dir);
 		if(desc_ret.is_error()) {
 			switch (desc_ret.code()) {
 				case -ENOENT:
@@ -308,9 +308,9 @@ void Shell::command_eval(char *cmd, char *args){
 
 		//Create process
 		if((int) cmds.find("/") != -1) {
-			p = Process::create_user(cmd, User::root(), pargs, TaskManager::current_process()->pid());
+			p = Process::create_user(cmd, user, pargs, TaskManager::current_process()->pid());
 		} else {
-			p = Process::create_user(DC::string("/bin/") + cmds, User::root(), pargs, TaskManager::current_process()->pid());
+			p = Process::create_user(DC::string("/bin/") + cmds, user, pargs, TaskManager::current_process()->pid());
 		}
 
 		delete pargs;

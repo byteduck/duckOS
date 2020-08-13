@@ -28,32 +28,32 @@
 class User {
 public:
 	///Static
-	static void init();
-	static ResultRet<DC::shared_ptr<User>> get_user(uid_t uid);
-	static Result add_user(uid_t uid);
-	static Result remove_user(uid_t user);
-	static DC::shared_ptr<User> root();
+	static User root();
 
-	///Non-Static
+	//Constructors & Destructor
+	explicit User(uid_t uid);
+	User(User& other);
+	User(User&& other) noexcept;
 	~User();
 
-	uid_t uid() const;
-	bool in_group(gid_t gid) const;
-	Result add_group(gid_t gid);
-	gid_t primary_group() const;
+	//Groups
+	bool in_group(gid_t gid);
+
+	//Capabilities
 	bool can_override_permissions() const;
+	bool can_setuid() const;
+	bool can_setgid() const;
 
-private:
-	///Static
-	static DC::vector<DC::shared_ptr<User>> users;
-	static SpinLock lock;
-	static DC::shared_ptr<User> root_user;
+	//Operators
+	User& operator=(const User& other) = default;
+	User& operator=(User&& other) noexcept = default;
 
-	///Non-Static
-	User(uid_t uid);
-
-	gid_t _primary_group;
-	uid_t _uid;
+	//Variables
+	gid_t gid;
+	gid_t egid;
+	uid_t uid;
+	uid_t euid;
+	DC::vector<gid_t> groups;
 };
 
 
