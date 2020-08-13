@@ -95,21 +95,34 @@ public:
 	void set_character(const Position& position, const Character& character);
 
 	void scroll(size_t lines);
+	void clear();
+	void clear_line(size_t line);
 
 	void set_current_attribute(const Attribute& attribute);
 	Attribute get_current_attribute();
 	void set_attribute(const Position& position, const Attribute& attribute);
 	Attribute get_attribute(const Position& position);
 
-	void clear();
-	void clear_line(size_t line);
+	void evaluate_escape_codepoint(uint32_t codepoint);
+	void evaluate_graphics_mode_escape();
 
 private:
+	enum EscapeStatus {
+		Beginning, Value
+	};
+
 	Attribute current_attribute = {TERM_DEFAULT_FOREGROUND, TERM_DEFAULT_BACKGROUND};
 	Position cursor_position = {0,0};
 	Size dimensions = {0,0};
 	Character* screen = nullptr;
 	Listener& listener;
+
+	bool escape_mode = false;
+	EscapeStatus escape_status = Beginning;
+	char escape_parameters[10][10];
+	char* current_escape_parameter;
+	size_t escape_parameter_index = 0;
+	size_t escape_parameter_char_index = 0;
 };
 
 

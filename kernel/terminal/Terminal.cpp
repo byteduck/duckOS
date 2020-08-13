@@ -19,6 +19,7 @@
 
 #include <common/cstring.h>
 #include <kernel/kstdio.h>
+#include <common/stdlib.h>
 #include "Terminal.h"
 
 Terminal::Terminal(const Size& dimensions, Listener& listener):
@@ -80,6 +81,11 @@ void Terminal::write_char(char c) {
 }
 
 void Terminal::write_codepoint(uint32_t codepoint) {
+	if(escape_mode) {
+		evaluate_escape_codepoint(codepoint);
+		return;
+	}
+
 	switch(codepoint) {
 		case '\n':
 			cursor_position.y++;
@@ -89,6 +95,10 @@ void Terminal::write_codepoint(uint32_t codepoint) {
 		case '\b':
 			backspace();
 			break;
+		case '\033':
+			escape_mode = true;
+			escape_status = Beginning;
+			return;
 		default:
 			set_character(cursor_position, {codepoint, current_attribute});
 			cursor_position.x++;
@@ -139,6 +149,22 @@ void Terminal::scroll(size_t lines) {
 	listener.on_scroll(lines);
 }
 
+void Terminal::clear() {
+	set_cursor({0,0});
+	for(size_t x = 0; x < dimensions.width; x++) {
+		for(size_t y = 0; y < dimensions.height; y++) {
+			screen[x + y * dimensions.width] = {0, current_attribute};
+		}
+	}
+	listener.on_clear();
+}
+
+void Terminal::clear_line(size_t line) {
+	for(size_t x = 0; x < dimensions.width; x++)
+		screen[x + line * dimensions.width] = {0, current_attribute};
+	listener.on_clear_line(line);
+}
+
 void Terminal::set_current_attribute(const Terminal::Attribute& attribute) {
 	current_attribute = attribute;
 }
@@ -157,18 +183,64 @@ Terminal::Attribute Terminal::get_attribute(const Terminal::Position& position) 
 	return screen[position.x + position.y * dimensions.width].attributes;
 }
 
-void Terminal::clear() {
-	set_cursor({0,0});
-	for(size_t x = 0; x < dimensions.width; x++) {
-		for(size_t y = 0; y < dimensions.height; y++) {
-			screen[x + y * dimensions.width] = {0, current_attribute};
-		}
+void Terminal::evaluate_escape_codepoint(uint32_t codepoint) {
+	switch(escape_status) {
+		case Beginning:
+			if(codepoint != '['){
+				escape_mode = false;
+				return;
+			}
+
+			current_escape_parameter = escape_parameters[0];
+			escape_parameter_index = 0;
+			escape_parameter_char_index = 0;
+			escape_status = Value;
+			break;
+		case Value:
+			switch(codepoint) {
+				case ';': //End of parameter
+					current_escape_parameter[escape_parameter_char_index] = '\0';
+					escape_parameter_char_index = 0;
+					escape_parameter_index++;
+					if(escape_parameter_index >= 10) {
+						escape_mode = false;
+						return;
+					}
+					current_escape_parameter = escape_parameters[escape_parameter_index];
+					return;
+				case 'm': //Graphics mode
+					evaluate_graphics_mode_escape();
+					break;
+				default:
+					current_escape_parameter[escape_parameter_char_index++] = codepoint;
+					if(escape_parameter_char_index >= 9) {
+						escape_mode = false;
+						return;
+					}
+					break;
+			}
 	}
-	listener.on_clear();
 }
 
-void Terminal::clear_line(size_t line) {
-	for(size_t x = 0; x < dimensions.width; x++)
-		screen[x + line * dimensions.width] = {0, current_attribute};
-	listener.on_clear_line(line);
+void Terminal::evaluate_graphics_mode_escape() {
+	escape_mode = false;
+	for(size_t i = 0; i <= escape_parameter_index; i++) {
+		int val = atoi(escape_parameters[i]);
+		if(val >= 30 && val < 38)
+			current_attribute.foreground = val - 30;
+		else if(val >= 40 && val < 48)
+			current_attribute.background = val - 40;
+		else if(val >= 90 && val < 98)
+			current_attribute.foreground = val - 82;
+		else if(val >= 100 && val < 108)
+			current_attribute.background = val - 92;
+		else {
+			switch(val) {
+				case 39:
+					current_attribute.foreground = TERM_DEFAULT_FOREGROUND;
+				case 40:
+					current_attribute.background = TERM_DEFAULT_BACKGROUND;
+			}
+		}
+	}
 }
