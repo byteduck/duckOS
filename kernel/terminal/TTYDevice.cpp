@@ -160,7 +160,11 @@ void TTYDevice::on_clear() {
 }
 
 void TTYDevice::on_clear_line(size_t line) {
-	//TODO
+	auto dims = terminal->get_dimensions();
+	uint32_t color = vga_color_palette[terminal->get_current_attribute().background];
+	for(size_t y = line * 8; y < (line + 1) * 8; y++) {
+		for(size_t x = 0; x < dims.width * 8; x++) VGADevice::inst().set_pixel(x, y, color);
+	}
 }
 
 void TTYDevice::on_scroll(size_t lines) {

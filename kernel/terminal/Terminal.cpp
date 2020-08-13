@@ -142,9 +142,16 @@ void Terminal::scroll(size_t lines) {
 		return;
 	}
 
-	memcpy(screen, screen + lines * dimensions.width, (dimensions.height - lines) * dimensions.width * sizeof(Character));
-	for(size_t i = dimensions.height - lines; i < dimensions.height; i++)
-		clear_line(i);
+	size_t clear_start_line = dimensions.height - lines;
+	for(size_t y = 0; y < dimensions.height; y++) {
+		for(size_t x = 0; x < dimensions.width; x++) {
+			if(y >= clear_start_line) {
+				screen[x + y * dimensions.width] = {0, current_attribute};
+			} else {
+				screen[x + y * dimensions.width] = screen[x + (y + lines) * dimensions.width];
+			}
+		}
+	}
 
 	listener.on_scroll(lines);
 }
@@ -195,11 +202,11 @@ void Terminal::evaluate_escape_codepoint(uint32_t codepoint) {
 			escape_parameter_index = 0;
 			escape_parameter_char_index = 0;
 			escape_status = Value;
+			memset(escape_parameters, 0, sizeof(escape_parameters));
 			break;
 		case Value:
 			switch(codepoint) {
 				case ';': //End of parameter
-					current_escape_parameter[escape_parameter_char_index] = '\0';
 					escape_parameter_char_index = 0;
 					escape_parameter_index++;
 					if(escape_parameter_index >= 10) {
@@ -209,8 +216,16 @@ void Terminal::evaluate_escape_codepoint(uint32_t codepoint) {
 					current_escape_parameter = escape_parameters[escape_parameter_index];
 					return;
 				case 'm': //Graphics mode
+					escape_mode = false;
 					evaluate_graphics_mode_escape();
 					break;
+				case 'K': //Erase line
+					escape_mode = false;
+					evaluate_clear_line_escape();
+					break;
+				case 'J': //Clear
+					escape_mode = false;
+					evaluate_clear_escape();
 				default:
 					current_escape_parameter[escape_parameter_char_index++] = codepoint;
 					if(escape_parameter_char_index >= 9) {
@@ -223,7 +238,6 @@ void Terminal::evaluate_escape_codepoint(uint32_t codepoint) {
 }
 
 void Terminal::evaluate_graphics_mode_escape() {
-	escape_mode = false;
 	for(size_t i = 0; i <= escape_parameter_index; i++) {
 		int val = atoi(escape_parameters[i]);
 		if(val >= 30 && val < 38)
@@ -242,5 +256,43 @@ void Terminal::evaluate_graphics_mode_escape() {
 					current_attribute.background = TERM_DEFAULT_BACKGROUND;
 			}
 		}
+	}
+}
+
+void Terminal::evaluate_clear_escape() {
+	int val = !escape_parameters[0] ? 0 : atoi(escape_parameters[0]);
+	switch(val) {
+		case 0:
+			for(size_t line = cursor_position.y; line < dimensions.height; line++)
+				clear_line(line);
+			break;
+		case 1:
+			for(size_t line = 0; line <= cursor_position.y; line++)
+				clear_line(line);
+			break;
+		case 2:
+			clear();
+			break;
+		default:
+			return;
+	}
+}
+
+void Terminal::evaluate_clear_line_escape() {
+	int val = !escape_parameters[0] ? 0 : atoi(escape_parameters[0]);
+	switch(val) {
+		case 0:
+			for(size_t x = cursor_position.x; x < dimensions.width; x++)
+				set_character({x, cursor_position.y}, {0, current_attribute});
+			break;
+		case 1:
+			for(size_t x = 0; x <= cursor_position.x; x++)
+				set_character({x, cursor_position.y}, {0, current_attribute});
+			break;
+		case 2:
+			clear_line(cursor_position.y);
+			break;
+		default:
+			return;
 	}
 }

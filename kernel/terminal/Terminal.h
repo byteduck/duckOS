@@ -105,6 +105,8 @@ public:
 
 	void evaluate_escape_codepoint(uint32_t codepoint);
 	void evaluate_graphics_mode_escape();
+	void evaluate_clear_escape();
+	void evaluate_clear_line_escape();
 
 private:
 	enum EscapeStatus {

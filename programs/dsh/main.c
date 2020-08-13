@@ -45,7 +45,8 @@ int main() {
 	bool stdinistty = isatty(STDIN_FILENO);
 	while(true) {
 		getcwd(cwd, 4096);
-		if(stdinistty) printf("[dsh %s]%s ", cwd, res ? "X" : "#");
+		char* color_code = res ? "31" : "39";
+		if(stdinistty) printf("\033[%sm[\033[39mdsh %s\033[%sm]# \033[39m", color_code, cwd, color_code);
 		fflush(stdout);
 		if(fgets(cmdbuf, 4096, stdin) == NULL) break;
 		strtok(cmdbuf, "\n");
@@ -159,6 +160,10 @@ bool evaluate_builtin(int argc, char** argv) {
 		errno = 0;
 		if(argc < 2) printf("No directory specified.\n");
 		else if(chdir(argv[1])) perror("Could not change directory");
+		return true;
+	} else if(!strcmp(cmd, "clear")) {
+		printf("\033[2J");
+		fflush(stdout);
 		return true;
 	}
 	return false;
