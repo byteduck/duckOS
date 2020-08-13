@@ -133,7 +133,7 @@ namespace Memory {
 
 		uint32_t err_pos;
 		asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-		printf("Virtual address: 0x%X\n\n", err_pos);
+		printf("Virtual address: 0x%X\n", err_pos);
 		print_regs(r);
 		while (true);
 	}

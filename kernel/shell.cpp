@@ -18,11 +18,8 @@
 */
 
 #include <kernel/kstddef.h>
-#include <kernel/keyboard.h>
 #include <kernel/kstdio.h>
 #include <kernel/shell.h>
-#include <kernel/filesystem/ext2/Ext2Filesystem.h>
-#include <kernel/memory/kliballoc.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/elf.h>
 #include <kernel/pci/pci.h>
@@ -31,10 +28,6 @@
 #include <common/cstring.h>
 #include <common/stdlib.h>
 #include <common/defines.h>
-#include <kernel/filesystem/InodeFile.h>
-#include <kernel/terminal/TTYDevice.h>
-#include <kernel/memory/MemoryMap.h>
-#include <kernel/device/PATADevice.h>
 
 char kbdbuf[512];
 
@@ -46,8 +39,9 @@ void dummy(){
 }
 
 void Shell::shell(){
+
 	DC::string ttypath("/dev/tty0");
-	auto tty_or_error = VFS::inst().open(ttypath, O_RDONLY, 0, VFS::inst().root_ref());
+	auto tty_or_error = VFS::inst().open(ttypath, O_RDONLY, 0, User::root(), VFS::inst().root_ref());
 	if(tty_or_error.is_error()) {
 		printf("Could not open tty0: %d\n", tty_or_error.code());
 		return;
@@ -89,7 +83,7 @@ void Shell::command_eval(char *cmd, char *args){
 	} else if(strcmp(cmd,"ls.old")) {
 		DC::string path = ".";
 		if(!strcmp(args, "")) path = args;
-		auto desc_ret = VFS::inst().open(path, O_RDONLY | O_DIRECTORY, MODE_DIRECTORY, current_dir);
+		auto desc_ret = VFS::inst().open(path, O_RDONLY | O_DIRECTORY, MODE_DIRECTORY, User::root(), current_dir);
 		if(desc_ret.is_error()) {
 			switch(desc_ret.code()) {
 				case -ENOTDIR:
@@ -131,7 +125,7 @@ void Shell::command_eval(char *cmd, char *args){
 		}
 	}else if(strcmp(cmd,"cd")){
 		DC::string argstr(args);
-		auto ref = VFS::inst().resolve_path(argstr, current_dir, nullptr);
+		auto ref = VFS::inst().resolve_path(argstr, current_dir, User::root());
 		if(!ref.is_error()) {
 			auto val = ref.value();
 			if(val->inode()->metadata().is_directory())
@@ -155,7 +149,7 @@ void Shell::command_eval(char *cmd, char *args){
 		Memory::kernel_page_directory.dump();
 	}else if(strcmp(cmd,"cat.old")){
 		DC::string argstr(args);
-		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, current_dir);
+		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, User::root(), current_dir);
 		if(desc_ret.is_error()) {
 			switch (desc_ret.code()) {
 				case -ENOENT:
@@ -210,7 +204,7 @@ void Shell::command_eval(char *cmd, char *args){
 			proc->kill(SIGKILL);
 	}else if(strcmp(cmd, "readelf")){
 		DC::string argstr(args);
-		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, current_dir);
+		auto desc_ret = VFS::inst().open(argstr, O_RDONLY, MODE_FILE, User::root(), current_dir);
 		if(desc_ret.is_error()) {
 			switch (desc_ret.code()) {
 				case -ENOENT:
@@ -314,9 +308,9 @@ void Shell::command_eval(char *cmd, char *args){
 
 		//Create process
 		if((int) cmds.find("/") != -1) {
-			p = Process::create_user(cmd, pargs, TaskManager::current_process()->pid());
+			p = Process::create_user(cmd, User::root(), pargs, TaskManager::current_process()->pid());
 		} else {
-			p = Process::create_user(DC::string("/bin/") + cmds, pargs, TaskManager::current_process()->pid());
+			p = Process::create_user(DC::string("/bin/") + cmds, User::root(), pargs, TaskManager::current_process()->pid());
 		}
 
 		delete pargs;

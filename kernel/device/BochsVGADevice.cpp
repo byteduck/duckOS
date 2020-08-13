@@ -122,6 +122,9 @@ void BochsVGADevice::scroll(size_t pixels) {
 	memset(framebuffer + (display_height - pixels) * display_width, 0, display_width * pixels * sizeof(uint32_t));
 }
 
-void BochsVGADevice::clear() {
-	memset(framebuffer, 0, framebuffer_size());
+void BochsVGADevice::clear(uint32_t color) {
+	size_t size = display_height * display_width;
+	for(size_t i = 0; i < size; i++) {
+		framebuffer[i] = color;
+	}
 }

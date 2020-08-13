@@ -51,6 +51,7 @@ int kmain(uint32_t mbootptr){
 	Memory::setup_paging();
 	Device::init();
 	CommandLine::init(mboot_header);
+	User::init();
 
 	//Try setting up VGA
 	BochsVGADevice* bochs_vga = BochsVGADevice::create();
@@ -104,7 +105,7 @@ void kmain_late(){
 
 	//Set up the PartitionDevice with that LBA
 	auto part = DC::make_shared<PartitionDevice>(3, 1, disk, part_offset);
-	auto part_descriptor = DC::make_shared<FileDescriptor>(part);
+	auto part_descriptor = DC::make_shared<FileDescriptor>(part, User::root());
 	part_descriptor->set_options(O_RDWR);
 
 	//Check if the filesystem is ext2

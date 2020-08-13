@@ -19,11 +19,11 @@
 
 #include <kernel/kstdio.h>
 #include <common/cstring.h>
+#include <kernel/User.h>
 #include "LinkedInode.h"
 
-LinkedInode::LinkedInode(DC::shared_ptr<Inode> inode, DC::string name, DC::shared_ptr<LinkedInode> parent):
-_inode(inode), _parent(parent), _name(name){
-}
+LinkedInode::LinkedInode(const DC::shared_ptr<Inode>& inode, const DC::string& name, const DC::shared_ptr<LinkedInode>& parent):
+	_inode(inode), _parent(parent), _name(name) {}
 
 LinkedInode::~LinkedInode() = default;
 

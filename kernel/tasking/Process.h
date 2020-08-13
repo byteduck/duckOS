@@ -53,7 +53,7 @@ public:
 	~Process();
 
 	static Process* create_kernel(const DC::string& name, void (*func)());
-	static ResultRet<Process*> create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t ppid);
+	static ResultRet<Process*> create_user(const DC::string& executable_loc, const DC::shared_ptr<User>& file_open_user, ProcessArgs* args, pid_t parent);
 
 	pid_t pid();
 	pid_t pgid();
@@ -149,8 +149,7 @@ private:
 	pid_t _ppid = 0;
 	pid_t _sid = 0;
 	pid_t _pgid = 0;
-	uid_t _uid = 0;
-	gid_t _gid = 0;
+	DC::shared_ptr<User> _user;
 	int _exit_status = 0;
 	bool _freed_resources = false;
 	bool _just_execed = false;

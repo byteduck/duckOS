@@ -59,6 +59,7 @@ void SpinLock::release() {
 
 void SpinLock::acquire() {
 	auto* cur_proc = TaskManager::current_process();
+	if(!cur_proc) return; //Tasking isn't initialized yet
 
 	//Loop while the lock is held
 	while(atomic_swap(&_locked, 1)) {

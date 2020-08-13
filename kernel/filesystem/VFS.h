@@ -45,18 +45,18 @@ public:
 	~VFS();
 	static VFS& inst();
 
-	ResultRet<DC::shared_ptr<LinkedInode>> resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& base, DC::shared_ptr<LinkedInode>* parent_storage = nullptr, int options = 0, int recursion_level = 0);
-	ResultRet<DC::shared_ptr<FileDescriptor>> open(DC::string& path, int options, mode_t mode, const DC::shared_ptr<LinkedInode>& base);
-	ResultRet<DC::shared_ptr<FileDescriptor>> create(DC::string& path, int options, mode_t mode, const DC::shared_ptr<LinkedInode>& parent);
-	Result unlink(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
-	Result link(DC::string& file, DC::string& link_name, const DC::shared_ptr<LinkedInode>& base);
-	Result symlink(DC::string& file, DC::string& link_name, const DC::shared_ptr<LinkedInode>& base);
-	ResultRet<DC::string> readlink(DC::string& path, const DC::shared_ptr<LinkedInode>& base, ssize_t& size);
-	Result rmdir(DC::string& path, const DC::shared_ptr<LinkedInode>& base);
-	Result mkdir(DC::string path, mode_t mode, const DC::shared_ptr<LinkedInode>& base);
-	Result mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, mode_t mode);
-	Result truncate(DC::string& path, off_t length, const DC::shared_ptr<LinkedInode>& base);
-	Result ftruncate(const DC::shared_ptr<FileDescriptor>& fd, off_t length);
+	ResultRet<DC::shared_ptr<LinkedInode>> resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& base, const DC::shared_ptr<User>& user, DC::shared_ptr<LinkedInode>* parent_storage = nullptr, int options = 0, int recursion_level = 0);
+	ResultRet<DC::shared_ptr<FileDescriptor>> open(DC::string& path, int options, mode_t mode, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base);
+	ResultRet<DC::shared_ptr<FileDescriptor>> create(DC::string& path, int options, mode_t mode, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& parent);
+	Result unlink(DC::string& path, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base);
+	Result link(DC::string& file, DC::string& link_name, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base);
+	Result symlink(DC::string& file, DC::string& link_name, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base);
+	ResultRet<DC::string> readlink(DC::string& path, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base, ssize_t& size);
+	Result rmdir(DC::string& path, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base);
+	Result mkdir(DC::string path, mode_t mode, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base);
+	Result mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, const DC::shared_ptr<User>& user, mode_t mode);
+	Result truncate(DC::string& path, off_t length, const DC::shared_ptr<User>& user, const DC::shared_ptr<LinkedInode>& base);
+	Result ftruncate(const DC::shared_ptr<FileDescriptor>& fd, off_t length, const DC::shared_ptr<User>& user);
 
 	bool mount_root(Filesystem* fs);
 	DC::shared_ptr<LinkedInode> root_ref();

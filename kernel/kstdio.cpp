@@ -116,10 +116,10 @@ void printf(const char* fmt, ...){
 
 void PANIC(char *error, char *msg, bool hang){
 	TaskManager::enabled() = false;
-	clearScreen();
-	print("Good job, you crashed it.\nAnyway, here's the details, since you probably need them.\nDon't mess it up again.\n");
-	print(error);
-	print(msg);
+	printf("\033[41;97m\033[2J"); //Red BG, bright white FG, clear screen
+	print("Good job, you crashed it.\nHere are the details, since you probably need them.\nTry not to mess it up again.\n\n");
+	printf("%s\n", error);
+	printf("%s\n", msg);
 	while(hang);
 	TaskManager::enabled() = true;
 }
@@ -131,6 +131,6 @@ void clearScreen(){
 
 void setup_tty() {
 	tty = TTYDevice::current_tty();
-	tty_desc = DC::make_shared<FileDescriptor>(tty);
+	tty_desc = DC::make_shared<FileDescriptor>(tty, User::root());
 	tty_desc->set_options(O_WRONLY);
 }

@@ -35,9 +35,9 @@ Process* Process::create_kernel(const DC::string& name, void (*func)()){
 	return new Process(name, (size_t)func, true, &args, 1);
 }
 
-ResultRet<Process*> Process::create_user(const DC::string& executable_loc, ProcessArgs* args, pid_t ppid) {
+ResultRet<Process*> Process::create_user(const DC::string& executable_loc, const DC::shared_ptr<User>& file_open_user, ProcessArgs* args, pid_t parent) {
 	//Open the executable
-	auto fd_or_error = VFS::inst().open((DC::string&) executable_loc, O_RDONLY, 0, args->working_dir);
+	auto fd_or_error = VFS::inst().open((DC::string&) executable_loc, O_RDONLY, 0, file_open_user, args->working_dir);
 	if(fd_or_error.is_error()) return fd_or_error.code();
 	auto fd = fd_or_error.value();
 
@@ -47,7 +47,7 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, Proce
 	auto* header = header_or_err.value();
 
 	//Create the process
-	auto* proc = new Process(executable_loc, header->program_entry_position, false, args, ppid);
+	auto* proc = new Process(executable_loc, header->program_entry_position, false, args, parent);
 
 	//Load the ELF into the process's page directory and set proc->current_brk
 	auto brk_or_err = ELF::load_elf(*fd, proc->page_directory, header);
@@ -91,6 +91,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	bool en = TaskManager::enabled();
 	TaskManager::enabled() = false;
 
+	_user = User::root();
 	_name = name;
 	_pid = TaskManager::get_new_pid();
 	state = PROCESS_ALIVE;
@@ -100,7 +101,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	quantum = 1;
 
 	if(!kernel) {
-		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty(), _user);
 		ttydesc->set_options(O_RDWR);
 		file_descriptors.push_back(ttydesc);
 		file_descriptors.push_back(ttydesc);
@@ -181,6 +182,7 @@ Process::Process(Process *to_fork, Registers &regs){
 	if(to_fork->kernel) PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
 
 	TaskManager::enabled() = false;
+	_user = User::root();
 	_name = to_fork->_name;
 	_pid = TaskManager::get_new_pid();
 	state = PROCESS_ALIVE;
@@ -490,19 +492,19 @@ pid_t Process::sys_fork(Registers& regs) {
 
 int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	//Create the new process
-	auto R_new_proc = Process::create_user(filename, args, _ppid);
+	auto R_new_proc = Process::create_user(filename, _user, args, _ppid);
 	if(R_new_proc.is_error()) return R_new_proc.code();
 	auto* new_proc = R_new_proc.value();
 
 	//Properly set new process's PID, blocker, and stdout/in/err
 	new_proc->_pid = _pid;
-	new_proc->_gid = _gid;
+	new_proc->_user = _user;
 	new_proc->_pgid = _pgid;
 	new_proc->_sid = _sid;
 	new_proc->_blocker = this->_blocker;
 	if(kernel) {
 		//Kernel processes have no file descriptors, so we need to initialize them
-		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty(), _user);
 		ttydesc->set_options(O_RDWR);
 		file_descriptors.resize(0); //Just in case
 		file_descriptors.push_back(ttydesc);
@@ -567,7 +569,7 @@ int Process::sys_open(char *filename, int options, int mode) {
 	check_ptr(filename);
 	DC::string path = filename;
 	mode &= 04777; //We just want the permission bits
-	auto fd_or_err = VFS::inst().open(path, options, mode, cwd);
+	auto fd_or_err = VFS::inst().open(path, options, mode, _user, cwd);
 	if(fd_or_err.is_error()) return fd_or_err.code();
 	file_descriptors.push_back(fd_or_err.value());
 	return (int)file_descriptors.size() - 1;
@@ -582,7 +584,7 @@ int Process::sys_close(int file) {
 int Process::sys_chdir(char *path) {
 	check_ptr(path);
 	DC::string strpath = path;
-	auto inode_or_error = VFS::inst().resolve_path(strpath, cwd, nullptr);
+	auto inode_or_error = VFS::inst().resolve_path(strpath, cwd, _user);
 	if(inode_or_error.is_error()) return inode_or_error.code();
 	if(!inode_or_error.value()->inode()->metadata().is_directory()) return -ENOTDIR;
 	cwd = inode_or_error.value();
@@ -614,7 +616,7 @@ int Process::sys_stat(char *file, char *buf) {
 	check_ptr(file);
 	check_ptr(buf);
 	DC::string path(file);
-	auto inode_or_err = VFS::inst().resolve_path(path, cwd);
+	auto inode_or_err = VFS::inst().resolve_path(path, cwd, _user);
 	if(inode_or_err.is_error()) return inode_or_err.code();
 	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
 	return 0;
@@ -624,7 +626,7 @@ int Process::sys_lstat(char *file, char *buf) {
 	check_ptr(file);
 	check_ptr(buf);
 	DC::string path(file);
-	auto inode_or_err = VFS::inst().resolve_path(path, cwd, nullptr, O_INTERNAL_RETLINK);
+	auto inode_or_err = VFS::inst().resolve_path(path, cwd, _user, nullptr, O_INTERNAL_RETLINK);
 	if(inode_or_err.is_error()) return inode_or_err.code();
 	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
 	return 0;
@@ -677,7 +679,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//Kill all processes with _pgid == this->_pgid
 		Process* c_proc = this->next;
 		while(c_proc != this) {
-			if((_uid == 0 || c_proc->_uid == _uid) && c_proc->_pgid == _pgid && c_proc->_pid != 1) c_proc->kill(sig);
+			if((_user->uid() == 0 || c_proc->_user == _user) && c_proc->_pgid == _pgid && c_proc->_pid != 1) c_proc->kill(sig);
 			c_proc = c_proc->next;
 		}
 		kill(sig);
@@ -685,7 +687,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//kill all processes for which we have permission to kill except init
 		Process* c_proc = this->next;
 		while(c_proc != this) {
-			if((_uid == 0 || c_proc->_uid == _uid) && c_proc->_pid != 1) c_proc->kill(sig);
+			if((_user->uid() == 0 || c_proc->_user == _user) && c_proc->_pid != 1) c_proc->kill(sig);
 			c_proc = c_proc->next;
 		}
 		kill(sig);
@@ -693,7 +695,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//Kill all processes with _pgid == -pid
 		Process* c_proc = this->next;
 		while(c_proc != this) {
-			if((_uid == 0 || c_proc->_uid == _uid) && c_proc->_pgid == -pid && c_proc->_pid != 1) c_proc->kill(sig);
+			if((_user->uid() == 0 || c_proc->_user == _user) && c_proc->_pgid == -pid && c_proc->_pid != 1) c_proc->kill(sig);
 			c_proc = c_proc->next;
 		}
 		kill(sig);
@@ -701,7 +703,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//Kill process with _pid == pid
 		Process* proc = TaskManager::process_for_pid(pid);
 		if(!proc) return -ESRCH;
-		if((_uid != 0 && _uid != proc->_uid) || proc->_pid == 1) return -EPERM;
+		if((_user->uid() != 0 && proc->_user != _user) || proc->_pid == 1) return -EPERM;
 		proc->kill(sig);
 	}
 	return 0;
@@ -710,7 +712,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 int Process::sys_unlink(char* name) {
 	check_ptr(name);
 	DC::string path(name);
-	auto ret = VFS::inst().unlink(path, cwd);
+	auto ret = VFS::inst().unlink(path, _user, cwd);
 	if(ret.is_error()) return ret.code();
 	return 0;
 }
@@ -720,13 +722,13 @@ int Process::sys_link(char* oldpath, char* newpath) {
 	check_ptr(newpath);
 	DC::string oldpath_str(oldpath);
 	DC::string newpath_str(newpath);
-	return VFS::inst().link(oldpath_str, newpath_str, cwd).code();
+	return VFS::inst().link(oldpath_str, newpath_str, _user, cwd).code();
 }
 
 int Process::sys_rmdir(char* name) {
 	check_ptr(name);
 	DC::string path(name);
-	auto ret = VFS::inst().rmdir(path, cwd);
+	auto ret = VFS::inst().rmdir(path, _user, cwd);
 	if(ret.is_error()) return ret.code();
 	return 0;
 }
@@ -735,7 +737,7 @@ int Process::sys_mkdir(char *path, mode_t mode) {
 	check_ptr(path);
 	DC::string strpath(path);
 	mode &= 04777; //We just want the permission bits
-	auto ret = VFS::inst().mkdir(strpath, mode, cwd);
+	auto ret = VFS::inst().mkdir(strpath, mode, _user, cwd);
 	if(ret.is_error()) return ret.code();
 	return 0;
 }
@@ -744,7 +746,7 @@ int Process::sys_mkdirat(int file, char *path, mode_t mode) {
 	check_ptr(path);
 	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
 	DC::string strpath(path);
-	auto ret = VFS::inst().mkdirat(file_descriptors[file], strpath, mode);
+	auto ret = VFS::inst().mkdirat(file_descriptors[file], strpath, _user, mode);
 	if(ret.is_error()) return ret.code();
 	return 0;
 }
@@ -752,12 +754,12 @@ int Process::sys_mkdirat(int file, char *path, mode_t mode) {
 int Process::sys_truncate(char* path, off_t length) {
 	check_ptr(path);
 	DC::string strpath(path);
-	return VFS::inst().truncate(strpath, length, cwd).code();
+	return VFS::inst().truncate(strpath, length, _user, cwd).code();
 }
 
 int Process::sys_ftruncate(int file, off_t length) {
 	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
-	return VFS::inst().ftruncate(file_descriptors[file], length).code();
+	return VFS::inst().ftruncate(file_descriptors[file], length, _user).code();
 }
 
 int Process::sys_pipe(int filedes[2]) {
@@ -769,14 +771,14 @@ int Process::sys_pipe(int filedes[2]) {
 	pipe->add_writer();
 
 	//Make the read FD
-	auto pipe_read_fd = DC::make_shared<FileDescriptor>(pipe);
+	auto pipe_read_fd = DC::make_shared<FileDescriptor>(pipe, _user);
 	pipe_read_fd->set_options(O_RDONLY);
 	pipe_read_fd->set_fifo_reader();
 	file_descriptors.push_back(pipe_read_fd);
 	filedes[0] = (int) file_descriptors.size() - 1;
 
 	//Make the write FD
-	auto pipe_write_fd = DC::make_shared<FileDescriptor>(pipe);
+	auto pipe_write_fd = DC::make_shared<FileDescriptor>(pipe, _user);
 	pipe_write_fd->set_options(O_WRONLY);
 	pipe_read_fd->set_fifo_writer();
 	file_descriptors.push_back(pipe_write_fd);
@@ -809,7 +811,7 @@ int Process::sys_symlink(char* file, char* linkname) {
 	check_ptr(linkname);
 	DC::string file_str(file);
 	DC::string linkname_str(linkname);
-	return VFS::inst().symlink(file_str, linkname_str, cwd).code();
+	return VFS::inst().symlink(file_str, linkname_str, _user, cwd).code();
 }
 
 int Process::sys_symlinkat(char* file, int dirfd, char* linkname) {
@@ -823,7 +825,7 @@ int Process::sys_readlink(char* file, char* buf, size_t bufsize) {
 	DC::string file_str(file);
 
 	ssize_t ret;
-	auto ret_perhaps = VFS::inst().readlink(file_str, cwd, ret);
+	auto ret_perhaps = VFS::inst().readlink(file_str, _user, cwd, ret);
 	if(ret_perhaps.is_error()) return ret_perhaps.code();
 
 	auto& link_value = ret_perhaps.value();

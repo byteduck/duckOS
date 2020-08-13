@@ -28,12 +28,14 @@ class Inode;
 
 class LinkedInode {
 public:
-    LinkedInode(DC::shared_ptr<Inode> inode, DC::string name, DC::shared_ptr<LinkedInode> parent);
+    LinkedInode(const DC::shared_ptr<Inode>& inode, const DC::string& name, const DC::shared_ptr<LinkedInode>& parent);
     ~LinkedInode();
 	DC::shared_ptr<Inode> inode();
     DC::string name();
 	DC::shared_ptr<LinkedInode> parent();
     DC::string get_full_path();
+    ResultRet<DC::shared_ptr<User>> user();
+
 private:
 	DC::shared_ptr<Inode> _inode;
 	DC::shared_ptr<LinkedInode> _parent;

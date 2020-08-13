@@ -36,7 +36,7 @@ public:
 	uint32_t* get_framebuffer();
 	size_t framebuffer_size();
 	void scroll(size_t pixels) override;
-	void clear() override;
+	void clear(uint32_t color) override;
 
 private:
 	MultibootVGADevice() = default;

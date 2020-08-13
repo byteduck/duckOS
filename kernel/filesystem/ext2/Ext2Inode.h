@@ -28,13 +28,13 @@ class Ext2Inode: public Inode {
 public:
 	typedef struct __attribute__((packed)) Raw {
 		uint16_t mode = 0;
-		uint16_t uid = 0;
+		uid_t uid = 0;
 		uint32_t size = 0;
 		uint32_t atime = 0;
 		uint32_t ctime = 0;
 		uint32_t mtime = 0;
 		uint32_t dtime = 0;
-		uint16_t guid = 0;
+		gid_t gid = 0;
 		uint16_t hard_links = 0; //Hard links to this node
 		uint32_t logical_blocks = 0; //Hard disk blocks, not ext2 blocks.
 		uint32_t flags = 0;

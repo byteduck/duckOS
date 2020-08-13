@@ -82,7 +82,8 @@ SET(KERNEL_SRCS
         filesystem/DirectoryEntry.cpp
         filesystem/Pipe.cpp
         terminal/TTYDevice.cpp
-        terminal/Terminal.cpp)
+        terminal/Terminal.cpp
+        User.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

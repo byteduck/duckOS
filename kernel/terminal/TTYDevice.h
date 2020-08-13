@@ -64,7 +64,7 @@ private:
 	DC::string _name;
 	DC::circular_queue<uint8_t> _input_buffer;
 	DC::circular_queue<uint8_t> _buffered_input_buffer;
-	Terminal* terminal;
+	Terminal* terminal = nullptr;
 	size_t _id;
 	bool _active = false;
 	BooleanBlocker _buffer_blocker;

@@ -630,6 +630,8 @@ Result Ext2Inode::write_inode_entry(uint8_t* block_buf) {
 
 	raw.size = _metadata.size;
 	raw.mode = _metadata.mode;
+	raw.uid = _metadata.uid;
+	raw.gid = _metadata.gid;
 
 	//Get the block group and read the inode table
 	Ext2BlockGroup* bg = ext2fs().get_block_group(block_group());
@@ -724,6 +726,8 @@ void Ext2Inode::create_metadata() {
 	InodeMetadata meta;
 	meta.mode = raw.mode;
 	meta.size = raw.size;
+	meta.uid = raw.uid;
+	meta.gid = raw.gid;
 	meta.inode_id = id;
 	if(meta.is_device()) {
 		unsigned device = raw.block_pointers[0];

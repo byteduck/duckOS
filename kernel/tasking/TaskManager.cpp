@@ -27,7 +27,7 @@
 TSS TaskManager::tss;
 SpinLock TaskManager::lock;
 
-Process *current_proc;
+Process *current_proc = nullptr;
 Process *kidle_proc;
 
 uint32_t __cpid__ = 0;

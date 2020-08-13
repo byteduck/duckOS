@@ -52,5 +52,28 @@ void InodeMetadata::stat(struct stat *stat) {
 	stat->st_size = size;
 	stat->st_ino = inode_id;
 	stat->st_dev = ((dev_t)dev_major << 8u) + dev_minor;
+	stat->st_uid = uid;
+	stat->st_gid = gid;
 	//TODO: Fill in more info
+}
+
+bool InodeMetadata::can_write(const User& user) const {
+	return  user.can_override_permissions() ||
+			(mode | PERM_O_W) ||
+			(mode | PERM_U_W && user.uid() == uid) ||
+	        (mode | PERM_G_W && user.in_group(gid));
+}
+
+bool InodeMetadata::can_execute(const User& user) const {
+	return  user.can_override_permissions() ||
+			(mode | PERM_O_X) ||
+			(mode | PERM_U_X && user.uid() == uid) ||
+			(mode | PERM_G_X && user.in_group(gid));
+}
+
+bool InodeMetadata::can_read(const User& user) const {
+	return  user.can_override_permissions() ||
+			(mode | PERM_O_R) ||
+			(mode | PERM_U_R && user.uid() == uid) ||
+			(mode | PERM_G_R && user.in_group(gid));
 }

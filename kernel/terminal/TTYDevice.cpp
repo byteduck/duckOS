@@ -45,7 +45,6 @@ void TTYDevice::register_tty(size_t id, TTYDevice *device) {
 
 TTYDevice::TTYDevice(size_t id, const DC::string& name, unsigned int major, unsigned int minor): CharacterDevice(major, minor), _name(name), _input_buffer(1024), _buffered_input_buffer(1024), _id(id) {
 	terminal = new Terminal({VGADevice::inst().get_display_width() / 8,VGADevice::inst().get_display_height() / 8}, *this);
-	auto dim = terminal->get_dimensions();
 	register_tty(id, this);
 }
 
@@ -156,7 +155,13 @@ void TTYDevice::on_backspace(const Terminal::Position& position) {
 }
 
 void TTYDevice::on_clear() {
-	VGADevice::inst().clear();
+	if(!terminal) {
+		//On the first clear we don't have the terminal set yet
+		VGADevice::inst().clear(0);
+		return;
+	}
+
+	VGADevice::inst().clear(vga_color_palette[terminal->get_current_attribute().background]);
 }
 
 void TTYDevice::on_clear_line(size_t line) {

@@ -25,18 +25,14 @@
 #include <kernel/kstdio.h>
 #include <kernel/device/Device.h>
 
-FileDescriptor::FileDescriptor(DC::shared_ptr<File> file): _file(file.get()), _fileptr(file) {
+FileDescriptor::FileDescriptor(const DC::shared_ptr<File>& file, const DC::shared_ptr<User>& user): _file(file), _user(user) {
 	if(file->is_inode())
 		_inode = DC::static_pointer_cast<InodeFile>(file)->inode();
 }
 
-FileDescriptor::FileDescriptor(Device* device): _file(device) {
-	_can_seek = !device->is_character_device() && !device->is_fifo();
-}
-
 FileDescriptor::FileDescriptor(FileDescriptor& other) {
 	_file = other._file;
-	_fileptr = other._fileptr;
+	_user = other._user;
 	_is_fifo_writer = other._is_fifo_writer;
 	_append = other._append;
 	_can_seek = other._can_seek;
@@ -48,9 +44,9 @@ FileDescriptor::FileDescriptor(FileDescriptor& other) {
 	//Increase pipe reader/writer count if applicable
 	if(_file->is_fifo()) {
 		if (_is_fifo_writer)
-			((Pipe*) _file)->add_writer();
+			((Pipe*) _file.get())->add_writer();
 		else
-			((Pipe*) _file)->add_reader();
+			((Pipe*) _file.get())->add_reader();
 	}
 }
 
@@ -58,9 +54,9 @@ FileDescriptor::~FileDescriptor() {
 	//Decrease pipe reader/writer count if applicable
 	if(_file->is_fifo()) {
 		if (_is_fifo_writer)
-			((Pipe*) _file)->remove_writer();
+			((Pipe*) _file.get())->remove_writer();
 		else
-			((Pipe*) _file)->remove_reader();
+			((Pipe*) _file.get())->remove_reader();
 	}
 }
 
@@ -109,11 +105,11 @@ int FileDescriptor::seek(off_t offset, int whence) {
 
 InodeMetadata FileDescriptor::metadata() {
 	if(_file->is_inode())
-		return ((InodeFile*)_file)->inode()->metadata();
+		return ((InodeFile*)_file.get())->inode()->metadata();
 	return {};
 }
 
-File* FileDescriptor::file() {
+DC::shared_ptr<File> FileDescriptor::file() {
 	return _file;
 }
 

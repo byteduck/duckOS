@@ -21,6 +21,7 @@
 #define DUCKOS_INODEMETADATA_H
 
 #include <common/cstddef.h>
+#include <kernel/User.h>
 
 #define MODE_FIFO 0x1000
 #define MODE_CHAR_DEVICE 0x2000
@@ -36,6 +37,19 @@
 #define IS_CHRDEV(mode) ((mode & 0xF000u) == MODE_CHAR_DEVICE)
 #define IS_FIFO(mode) ((mode & 0xF000u) == MODE_FIFO)
 #define IS_SOCKET(mode) ((mode & 0xF000u) == MODE_SOCKET)
+
+#define PERM_O_X 	00001u
+#define PERM_O_W 	00002u
+#define PERM_O_R 	00004u
+#define PERM_G_X 	00010u
+#define PERM_G_W 	00020u
+#define PERM_G_R 	00040u
+#define PERM_U_X 	00100u
+#define PERM_U_W 	00200u
+#define PERM_U_R 	00400u
+#define PERM_STICKY	01000u
+#define PERM_SETGID	02000u
+#define PERM_SETUID	04000u
 
 struct stat {
 	dev_t		st_dev;
@@ -55,6 +69,8 @@ struct stat {
 
 class InodeMetadata {
 public:
+	size_t uid = 0;
+	size_t gid = 0;
 	size_t mode = 0;
 	size_t size = 0;
 	ino_t inode_id;
@@ -69,6 +85,9 @@ public:
 	bool is_simple_file() const;
 	bool is_symlink() const;
 	bool exists() const;
+	bool can_write(const User& user) const;
+	bool can_execute(const User& user) const;
+	bool can_read(const User& user) const;
 	void stat(struct stat *stat);
 };
 

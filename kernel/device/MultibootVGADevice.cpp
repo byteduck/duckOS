@@ -105,7 +105,10 @@ void MultibootVGADevice::scroll(size_t pixels) {
 	memcpy(framebuffer, double_buffer, framebuffer_size());
 }
 
-void MultibootVGADevice::clear() {
-	memset(double_buffer, 0, framebuffer_size());
-	memset(framebuffer, 0, framebuffer_size());
+void MultibootVGADevice::clear(uint32_t color) {
+	size_t size = framebuffer_height * framebuffer_width;
+	for(size_t i = 0; i < size; i++) {
+		double_buffer[i] = color;
+		framebuffer[i] = color;
+	}
 }
