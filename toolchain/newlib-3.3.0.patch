@@ -11861,10 +11861,10 @@ index 0000000..3957434
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..98e1c0a
+index 0000000..f64056f
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,624 @@
+@@ -0,0 +1,690 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12489,13 +12489,79 @@ index 0000000..98e1c0a
 +	}
 +	return ret;
 +}
++
++mode_t umask(mode_t mask) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_UMASK), "b"(mask));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int chmod(const char *pathname, mode_t mode) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_CHMOD), "b"(pathname), "c"(mode));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int fchmod(int fd, mode_t mode) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_FCHMOD), "b"(fd), "c"(mode));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int chown(const char *pathname, uid_t uid, gid_t gid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_CHOWN), "b"(pathname), "c"(uid), "d"(gid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int fchown(int fd, uid_t uid, gid_t gid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_FCHOWN), "b"(fd), "c"(uid), "d"(gid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
++
++int lchown(const char *pathname, uid_t uid, gid_t gid) {
++	int ret = 0;
++	asm volatile("int $0x80" :: "a"(SYS_LCHOWN), "b"(pathname), "c"(uid), "d"(gid));
++	asm volatile("mov %%eax, %0" : "=r"(ret));
++	if(ret < 0) {
++		errno = -ret;
++		return -1;
++	}
++	return ret;
++}
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..ed9320d
+index 0000000..baaa70e
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,86 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12567,6 +12633,12 @@ index 0000000..ed9320d
 +#define SYS_GETEGID 50
 +#define SYS_SETGROUPS 51
 +#define SYS_GETGROUPS 52
++#define SYS_UMASK 53
++#define SYS_CHMOD 54
++#define SYS_FCHMOD 55
++#define SYS_CHOWN 56
++#define SYS_FCHOWN 57
++#define SYS_LCHOWN 58
 +
 +struct __attribute__((packed)) readlinkat_args {
 +	int fd;

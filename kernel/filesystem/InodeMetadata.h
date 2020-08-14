@@ -23,13 +23,13 @@
 #include <common/cstddef.h>
 #include <kernel/User.h>
 
-#define MODE_FIFO 0x1000
-#define MODE_CHAR_DEVICE 0x2000
-#define MODE_DIRECTORY 0x4000
-#define MODE_BLOCK_DEVICE 0x6000
-#define MODE_FILE 0x8000
-#define MODE_SYMLINK 0xA000
-#define MODE_SOCKET 0xC000
+#define MODE_FIFO 0x1000u
+#define MODE_CHAR_DEVICE 0x2000u
+#define MODE_DIRECTORY 0x4000u
+#define MODE_BLOCK_DEVICE 0x6000u
+#define MODE_FILE 0x8000u
+#define MODE_SYMLINK 0xA000u
+#define MODE_SOCKET 0xC000u
 
 #define IS_DIR(mode) ((mode & 0xF000u) == MODE_DIRECTORY)
 #define IS_SIMPLE_FILE(mode) ((mode & 0xF000u) == MODE_FILE)

@@ -72,6 +72,12 @@
 #define SYS_GETEGID 50
 #define SYS_SETGROUPS 51
 #define SYS_GETGROUPS 52
+#define SYS_UMASK 53
+#define SYS_CHMOD 54
+#define SYS_FCHMOD 55
+#define SYS_CHOWN 56
+#define SYS_FCHOWN 57
+#define SYS_LCHOWN 58
 
 struct __attribute__((packed)) readlinkat_args {
 	int fd;

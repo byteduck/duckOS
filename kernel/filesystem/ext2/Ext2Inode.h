@@ -70,9 +70,11 @@ public:
 	ssize_t write(size_t start, size_t length, const uint8_t* buf) override;
 	ino_t find_id(const DC::string& name) override;
 	Result add_entry(const DC::string& name, Inode& inode) override;
-	ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode) override;
+	ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) override;
 	Result remove_entry(const DC::string& name) override;
 	Result truncate(off_t length) override;
+	Result chmod(mode_t mode) override;
+	Result chown(uid_t uid, gid_t gid) override;
 
 private:
 	void read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index, uint8_t* block_buf);

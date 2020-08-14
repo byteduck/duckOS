@@ -135,6 +135,18 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_setgroups((size_t)arg1, (const gid_t*)arg2);
 		case SYS_GETGROUPS:
 			return TaskManager::current_process()->sys_getgroups((int)arg1, (gid_t*)arg2);
+		case SYS_UMASK:
+			return TaskManager::current_process()->sys_umask((mode_t)arg1);
+		case SYS_CHMOD:
+			return TaskManager::current_process()->sys_chmod((char*)arg1, (mode_t)arg2);
+		case SYS_FCHMOD:
+			return TaskManager::current_process()->sys_fchmod((int)arg1, (mode_t)arg2);
+		case SYS_CHOWN:
+			return TaskManager::current_process()->sys_chown((char*)arg1, (uid_t)arg2, (gid_t)arg3);
+		case SYS_FCHOWN:
+			return TaskManager::current_process()->sys_fchown((int)arg1, (uid_t)arg2, (gid_t)arg3);
+		case SYS_LCHOWN:
+			return TaskManager::current_process()->sys_lchown((char*)arg1, (uid_t)arg2, (gid_t)arg3);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

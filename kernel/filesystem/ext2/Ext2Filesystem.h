@@ -41,7 +41,7 @@ public:
 	Inode * get_inode_rawptr(ino_t id) override;
 
 	//Reading/writing
-	ResultRet<DC::shared_ptr<Ext2Inode>> allocate_inode(mode_t mode, size_t size, ino_t parent);
+	ResultRet<DC::shared_ptr<Ext2Inode>> allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent);
 	Result free_inode(Ext2Inode& inode);
 	void read_superblock(ext2_superblock *sb);
 	void write_superblock();

@@ -135,6 +135,12 @@ public:
 	gid_t sys_getegid();
 	int sys_setgroups(size_t count, const gid_t* gids);
 	int sys_getgroups(int count, gid_t* gids);
+	mode_t sys_umask(mode_t new_mask);
+	int sys_chmod(char* file, mode_t mode);
+	int sys_fchmod(int fd, mode_t mode);
+	int sys_chown(char* file, uid_t uid, gid_t gid);
+	int sys_fchown(int fd, uid_t uid, gid_t gid);
+	int sys_lchown(char* file, uid_t uid, gid_t gid);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;
@@ -160,6 +166,7 @@ private:
 	pid_t _sid = 0;
 	pid_t _pgid = 0;
 	User _user;
+	mode_t _umask = 022;
 	int _exit_status = 0;
 	bool _freed_resources = false;
 	bool _just_execed = false;
@@ -173,8 +180,8 @@ private:
 	size_t _stack_size;
 
 	//Files & Pipes
-	DC::vector<DC::shared_ptr<FileDescriptor>> file_descriptors;
-	DC::shared_ptr<LinkedInode> cwd;
+	DC::vector<DC::shared_ptr<FileDescriptor>> _file_descriptors;
+	DC::shared_ptr<LinkedInode> _cwd;
 
 	//Blocking stuff
 	Blocker* _blocker = nullptr;

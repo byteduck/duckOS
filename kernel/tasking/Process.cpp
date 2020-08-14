@@ -102,10 +102,10 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	if(!kernel) {
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty(), _user);
 		ttydesc->set_options(O_RDWR);
-		file_descriptors.push_back(ttydesc);
-		file_descriptors.push_back(ttydesc);
-		file_descriptors.push_back(ttydesc);
-		cwd = args->working_dir;
+		_file_descriptors.push_back(ttydesc);
+		_file_descriptors.push_back(ttydesc);
+		_file_descriptors.push_back(ttydesc);
+		_cwd = args->working_dir;
 	}
 
 	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
@@ -187,19 +187,20 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	kernel = false;
 	ring = 3;
 	current_brk = to_fork->current_brk;
-	cwd = to_fork->cwd;
+	_cwd = to_fork->_cwd;
 	_ppid = to_fork->_pid;
 	_sid = to_fork->_sid;
 	_pgid = to_fork->_pgid;
+	_umask = to_fork->_umask;
 	quantum = to_fork->quantum;
 
 	//Copy signal handlers and file descriptors
 	for(int i = 0; i < 32; i++)
 		signal_actions[i] = to_fork->signal_actions[i];
 
-	file_descriptors.resize(to_fork->file_descriptors.size());
-	for(size_t i = 0; i < to_fork->file_descriptors.size(); i++)
-		if(to_fork->file_descriptors[i]) file_descriptors[i] = DC::make_shared<FileDescriptor>(*to_fork->file_descriptors[i]);
+	_file_descriptors.resize(to_fork->_file_descriptors.size());
+	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++)
+		if(to_fork->_file_descriptors[i]) _file_descriptors[i] = DC::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
 
 	//Allocate kernel stack
 	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
@@ -271,7 +272,7 @@ void Process::free_resources() {
 	_freed_resources = true;
 	delete page_directory;
 	if(_kernel_stack_base) PageDirectory::k_free_region(_kernel_stack_base);
-	file_descriptors.resize(0);
+	_file_descriptors.resize(0);
 }
 
 void Process::reap() {
@@ -453,14 +454,14 @@ void Process::sys_exit(int status) {
 
 ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 	check_ptr(buf);
-	if(fd < 0 || fd >= (int) file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
-	return file_descriptors[fd]->read(buf, count);
+	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd]) return -EBADF;
+	return _file_descriptors[fd]->read(buf, count);
 }
 
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	check_ptr(buf);
-	if(fd < 0 || fd >= (int) file_descriptors.size() || !file_descriptors[fd]) return -EBADF;
-	return file_descriptors[fd]->write(buf, count);
+	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd]) return -EBADF;
+	return _file_descriptors[fd]->write(buf, count);
 }
 
 size_t Process::sys_sbrk(int amount) {
@@ -504,14 +505,14 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 		//Kernel processes have no file descriptors, so we need to initialize them
 		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty(), _user);
 		ttydesc->set_options(O_RDWR);
-		file_descriptors.resize(0); //Just in case
-		file_descriptors.push_back(ttydesc);
-		file_descriptors.push_back(ttydesc);
-		file_descriptors.push_back(ttydesc);
-		cwd = args->working_dir;
+		_file_descriptors.resize(0); //Just in case
+		_file_descriptors.push_back(ttydesc);
+		_file_descriptors.push_back(ttydesc);
+		_file_descriptors.push_back(ttydesc);
+		_cwd = args->working_dir;
 	} else {
 		for(size_t i = 0; i < 3; i++)
-			new_proc->file_descriptors[i] = DC::make_shared<FileDescriptor>(*file_descriptors[i]);
+			new_proc->_file_descriptors[i] = DC::make_shared<FileDescriptor>(*_file_descriptors[i]);
 	}
 
 	//Manually delete because we won't return from here and we need to clean up resources
@@ -532,7 +533,7 @@ int Process::sys_execve(char *filename, char **argv, char **envp) {
 	check_ptr(filename);
 	check_ptr(argv);
 	check_ptr(envp);
-	auto* args = new ProcessArgs(cwd);
+	auto* args = new ProcessArgs(_cwd);
 	if(argv) {
 		int i = 0;
 		while(argv[i]) {
@@ -547,7 +548,7 @@ int Process::sys_execve(char *filename, char **argv, char **envp) {
 int Process::sys_execvp(char *filename, char **argv) {
 	check_ptr(filename);
 	check_ptr(argv);
-	auto* args = new ProcessArgs(cwd);
+	auto* args = new ProcessArgs(_cwd);
 	if(argv) {
 		int i = 0;
 		while(argv[i]) {
@@ -567,32 +568,32 @@ int Process::sys_open(char *filename, int options, int mode) {
 	check_ptr(filename);
 	DC::string path = filename;
 	mode &= 04777; //We just want the permission bits
-	auto fd_or_err = VFS::inst().open(path, options, mode, _user, cwd);
+	auto fd_or_err = VFS::inst().open(path, options, mode & (~_umask), _user, _cwd);
 	if(fd_or_err.is_error()) return fd_or_err.code();
-	file_descriptors.push_back(fd_or_err.value());
-	return (int)file_descriptors.size() - 1;
+	_file_descriptors.push_back(fd_or_err.value());
+	return (int)_file_descriptors.size() - 1;
 }
 
 int Process::sys_close(int file) {
-	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
-	file_descriptors[file] = DC::shared_ptr<FileDescriptor>(nullptr);
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	_file_descriptors[file] = DC::shared_ptr<FileDescriptor>(nullptr);
 	return 0;
 }
 
 int Process::sys_chdir(char *path) {
 	check_ptr(path);
 	DC::string strpath = path;
-	auto inode_or_error = VFS::inst().resolve_path(strpath, cwd, _user);
+	auto inode_or_error = VFS::inst().resolve_path(strpath, _cwd, _user);
 	if(inode_or_error.is_error()) return inode_or_error.code();
 	if(!inode_or_error.value()->inode()->metadata().is_directory()) return -ENOTDIR;
-	cwd = inode_or_error.value();
+	_cwd = inode_or_error.value();
 	return SUCCESS;
 }
 
 int Process::sys_getcwd(char *buf, size_t length) {
 	check_ptr(buf);
-	if(cwd->name().length() > length) return -ENAMETOOLONG;
-	DC::string path = cwd->get_full_path();
+	if(_cwd->name().length() > length) return -ENAMETOOLONG;
+	DC::string path = _cwd->get_full_path();
 	memcpy(buf, path.c_str(), min(length, path.length()));
 	buf[path.length()] = '\0';
 	return 0;
@@ -600,13 +601,13 @@ int Process::sys_getcwd(char *buf, size_t length) {
 
 int Process::sys_readdir(int file, char *buf, size_t len) {
 	check_ptr(buf);
-	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
-	return file_descriptors[file]->read_dir_entries(buf, len);
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	return _file_descriptors[file]->read_dir_entries(buf, len);
 }
 
 int Process::sys_fstat(int file, char *buf) {
-	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
-	file_descriptors[file]->metadata().stat((struct stat*)buf);
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	_file_descriptors[file]->metadata().stat((struct stat*)buf);
 	return 0;
 }
 
@@ -614,7 +615,7 @@ int Process::sys_stat(char *file, char *buf) {
 	check_ptr(file);
 	check_ptr(buf);
 	DC::string path(file);
-	auto inode_or_err = VFS::inst().resolve_path(path, cwd, _user);
+	auto inode_or_err = VFS::inst().resolve_path(path, _cwd, _user);
 	if(inode_or_err.is_error()) return inode_or_err.code();
 	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
 	return 0;
@@ -624,15 +625,15 @@ int Process::sys_lstat(char *file, char *buf) {
 	check_ptr(file);
 	check_ptr(buf);
 	DC::string path(file);
-	auto inode_or_err = VFS::inst().resolve_path(path, cwd, _user, nullptr, O_INTERNAL_RETLINK);
+	auto inode_or_err = VFS::inst().resolve_path(path, _cwd, _user, nullptr, O_INTERNAL_RETLINK);
 	if(inode_or_err.is_error()) return inode_or_err.code();
 	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
 	return 0;
 }
 
 int Process::sys_lseek(int file, off_t off, int whence) {
-	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
-	return file_descriptors[file]->seek(off, whence);
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	return _file_descriptors[file]->seek(off, whence);
 }
 
 int Process::sys_waitpid(pid_t pid, int* status, int flags) {
@@ -710,7 +711,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 int Process::sys_unlink(char* name) {
 	check_ptr(name);
 	DC::string path(name);
-	auto ret = VFS::inst().unlink(path, _user, cwd);
+	auto ret = VFS::inst().unlink(path, _user, _cwd);
 	if(ret.is_error()) return ret.code();
 	return 0;
 }
@@ -720,13 +721,13 @@ int Process::sys_link(char* oldpath, char* newpath) {
 	check_ptr(newpath);
 	DC::string oldpath_str(oldpath);
 	DC::string newpath_str(newpath);
-	return VFS::inst().link(oldpath_str, newpath_str, _user, cwd).code();
+	return VFS::inst().link(oldpath_str, newpath_str, _user, _cwd).code();
 }
 
 int Process::sys_rmdir(char* name) {
 	check_ptr(name);
 	DC::string path(name);
-	auto ret = VFS::inst().rmdir(path, _user, cwd);
+	auto ret = VFS::inst().rmdir(path, _user, _cwd);
 	if(ret.is_error()) return ret.code();
 	return 0;
 }
@@ -735,29 +736,23 @@ int Process::sys_mkdir(char *path, mode_t mode) {
 	check_ptr(path);
 	DC::string strpath(path);
 	mode &= 04777; //We just want the permission bits
-	auto ret = VFS::inst().mkdir(strpath, mode, _user, cwd);
+	auto ret = VFS::inst().mkdir(strpath, mode, _user, _cwd);
 	if(ret.is_error()) return ret.code();
 	return 0;
 }
 
 int Process::sys_mkdirat(int file, char *path, mode_t mode) {
-	check_ptr(path);
-	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
-	DC::string strpath(path);
-	auto ret = VFS::inst().mkdirat(file_descriptors[file], strpath, _user, mode);
-	if(ret.is_error()) return ret.code();
-	return 0;
+	return -1;
 }
 
 int Process::sys_truncate(char* path, off_t length) {
 	check_ptr(path);
 	DC::string strpath(path);
-	return VFS::inst().truncate(strpath, length, _user, cwd).code();
+	return VFS::inst().truncate(strpath, length, _user, _cwd).code();
 }
 
 int Process::sys_ftruncate(int file, off_t length) {
-	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
-	return VFS::inst().ftruncate(file_descriptors[file], length, _user).code();
+	return -1;
 }
 
 int Process::sys_pipe(int filedes[2]) {
@@ -772,36 +767,36 @@ int Process::sys_pipe(int filedes[2]) {
 	auto pipe_read_fd = DC::make_shared<FileDescriptor>(pipe, _user);
 	pipe_read_fd->set_options(O_RDONLY);
 	pipe_read_fd->set_fifo_reader();
-	file_descriptors.push_back(pipe_read_fd);
-	filedes[0] = (int) file_descriptors.size() - 1;
+	_file_descriptors.push_back(pipe_read_fd);
+	filedes[0] = (int) _file_descriptors.size() - 1;
 
 	//Make the write FD
 	auto pipe_write_fd = DC::make_shared<FileDescriptor>(pipe, _user);
 	pipe_write_fd->set_options(O_WRONLY);
 	pipe_read_fd->set_fifo_writer();
-	file_descriptors.push_back(pipe_write_fd);
-	filedes[1] = (int) file_descriptors.size() - 1;
+	_file_descriptors.push_back(pipe_write_fd);
+	filedes[1] = (int) _file_descriptors.size() - 1;
 
 	return SUCCESS;
 }
 
 int Process::sys_dup(int oldfd) {
-	if(oldfd < 0 || oldfd >= (int) file_descriptors.size() || !file_descriptors[oldfd]) return -EBADF;
-	file_descriptors.push_back(file_descriptors[oldfd]);
-	return (int) file_descriptors.size() - 1;
+	if(oldfd < 0 || oldfd >= (int) _file_descriptors.size() || !_file_descriptors[oldfd]) return -EBADF;
+	_file_descriptors.push_back(_file_descriptors[oldfd]);
+	return (int) _file_descriptors.size() - 1;
 }
 
 int Process::sys_dup2(int oldfd, int newfd) {
-	if(oldfd < 0 || oldfd >= (int) file_descriptors.size() || !file_descriptors[oldfd]) return -EBADF;
+	if(oldfd < 0 || oldfd >= (int) _file_descriptors.size() || !_file_descriptors[oldfd]) return -EBADF;
 	if(newfd == oldfd) return oldfd;
-	if(newfd >= file_descriptors.size()) file_descriptors.resize(newfd + 1);
-	file_descriptors[newfd] = file_descriptors[oldfd];
+	if(newfd >= _file_descriptors.size()) _file_descriptors.resize(newfd + 1);
+	_file_descriptors[newfd] = _file_descriptors[oldfd];
 	return newfd;
 }
 
 int Process::sys_isatty(int file) {
-	if(file < 0 || file >= (int) file_descriptors.size() || !file_descriptors[file]) return -EBADF;
-	return file_descriptors[file]->file()->is_tty();
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	return _file_descriptors[file]->file()->is_tty();
 }
 
 int Process::sys_symlink(char* file, char* linkname) {
@@ -809,7 +804,7 @@ int Process::sys_symlink(char* file, char* linkname) {
 	check_ptr(linkname);
 	DC::string file_str(file);
 	DC::string linkname_str(linkname);
-	return VFS::inst().symlink(file_str, linkname_str, _user, cwd).code();
+	return VFS::inst().symlink(file_str, linkname_str, _user, _cwd).code();
 }
 
 int Process::sys_symlinkat(char* file, int dirfd, char* linkname) {
@@ -823,7 +818,7 @@ int Process::sys_readlink(char* file, char* buf, size_t bufsize) {
 	DC::string file_str(file);
 
 	ssize_t ret;
-	auto ret_perhaps = VFS::inst().readlink(file_str, _user, cwd, ret);
+	auto ret_perhaps = VFS::inst().readlink(file_str, _user, _cwd, ret);
 	if(ret_perhaps.is_error()) return ret_perhaps.code();
 
 	auto& link_value = ret_perhaps.value();
@@ -964,5 +959,37 @@ int Process::sys_getgroups(int count, gid_t* gids) {
 	if(count <  _user.groups.size()) return -EINVAL;
 	for(size_t i = 0; i <  _user.groups.size(); i++) gids[i] = _user.groups[i];
 	return SUCCESS;
+}
+
+mode_t Process::sys_umask(mode_t new_mask) {
+	auto ret = _umask;
+	_umask = new_mask & 0777;
+	return ret;
+}
+
+int Process::sys_chmod(char* file, mode_t mode) {
+	check_ptr(file);
+	DC::string filestr(file);
+	return VFS::inst().chmod(filestr, mode, _user, _cwd).code();
+}
+
+int Process::sys_fchmod(int fd, mode_t mode) {
+	return -1;
+}
+
+int Process::sys_chown(char* file, uid_t uid, gid_t gid) {
+	check_ptr(file);
+	DC::string filestr(file);
+	return VFS::inst().chown(filestr, uid, gid, _user, _cwd).code();
+}
+
+int Process::sys_fchown(int fd, uid_t uid, gid_t gid) {
+	return -1;
+}
+
+int Process::sys_lchown(char* file, uid_t uid, gid_t gid) {
+	check_ptr(file);
+	DC::string filestr(file);
+	return VFS::inst().chown(filestr, uid, gid, _user, _cwd, O_NOFOLLOW).code();
 }
 

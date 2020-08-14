@@ -183,7 +183,7 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int opti
 	if(!parent->inode()->metadata().can_write(user)) return -EACCES;
 
 	//Create the entry
-	auto child_or_err = parent->inode()->create_entry(path_base(path), mode);
+	auto child_or_err = parent->inode()->create_entry(path_base(path), mode, user.euid, user.egid);
 	if(child_or_err.is_error()) return child_or_err.code();
 
 	//Return a file descriptor to the new file
@@ -249,7 +249,7 @@ Result VFS::symlink(DC::string& file, DC::string& link_name, User& user, const D
 	auto old_file = resolv.value();
 
 	//Create the symlink file
-	auto symlink_res = new_file_parent->inode()->create_entry(path_base(link_name), MODE_SYMLINK | 0644);
+	auto symlink_res = new_file_parent->inode()->create_entry(path_base(link_name), MODE_SYMLINK | 0777u, user.euid, user.egid);
 	if(symlink_res.is_error()) return symlink_res.code();
 
 	//Write the symlink data
@@ -321,14 +321,10 @@ Result VFS::mkdir(DC::string path, mode_t mode, User& user, const DC::shared_ptr
 
 	//Make the directory
 	mode |= (unsigned) MODE_DIRECTORY;
-	auto res = parent->inode()->create_entry(path_base(path), mode);
+	auto res = parent->inode()->create_entry(path_base(path), mode, user.euid, user.egid);
 	if(res.is_error()) return res.code();
 
 	return SUCCESS;
-}
-
-Result VFS::mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, User& user, mode_t mode) {
-	return -1; //TODO
 }
 
 Result VFS::truncate(DC::string& path, off_t length, User& user, const DC::shared_ptr<LinkedInode>& base) {
@@ -340,8 +336,38 @@ Result VFS::truncate(DC::string& path, off_t length, User& user, const DC::share
 	return ino_or_err.value()->inode()->truncate(length);
 }
 
-Result VFS::ftruncate(const DC::shared_ptr<FileDescriptor>& fd, off_t length, User& user) {
-	return -1; //TODO
+Result VFS::chmod(DC::string& path, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base) {
+	auto res = resolve_path(path, base, user);
+	if(res.is_error()) return res.code();
+
+	auto inode = res.value();
+	auto meta = inode->inode()->metadata();
+	if(!user.can_override_permissions() && user.euid != meta.uid)
+		return -EPERM;
+
+	return inode->inode()->chmod((meta.mode & ~04777u) | (mode & 04777u));
+}
+
+Result VFS::chown(DC::string& path, uid_t uid, gid_t gid, User& user, const DC::shared_ptr<LinkedInode>& base, int options) {
+	auto res = resolve_path(path, base, user, nullptr, options);
+	if(res.is_error()) return res.code();
+
+	auto inode = res.value();
+	auto meta = inode->inode()->metadata();
+
+	if(!user.can_override_permissions() && user.euid != meta.uid)
+		return -EPERM;
+	if(uid != (uid_t) -1 && !user.can_override_permissions() && user.euid != uid)
+		return -EPERM;
+	if(gid != (gid_t) -1 && !user.can_override_permissions() && user.in_group(gid))
+		return -EPERM;
+
+	if((meta.mode & PERM_SETGID) || (meta.mode & PERM_SETUID)) {
+		auto res = inode->inode()->chmod(meta.mode & ~(04000 | 02000));
+		if(res.is_error()) return res.code();
+	}
+
+	return inode->inode()->chown(uid == (uid_t) -1 ? user.euid : uid, gid == (gid_t) -1 ? user.egid : gid);
 }
 
 DC::shared_ptr<LinkedInode> VFS::root_ref() {
@@ -360,6 +386,7 @@ DC::string VFS::path_minus_base(const DC::string &path) {
 	if(slash_index == -1) return "";
 	else return path.substr(0, slash_index);
 }
+
 
 /* * * * * * * *
  * Mount Class *

@@ -79,7 +79,7 @@ Inode* Ext2Filesystem::get_inode_rawptr(ino_t id) {
 	return static_cast<Inode *>(new Ext2Inode(*this, id));
 }
 
-ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, size_t size, ino_t parent) {
+ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent) {
 	ext2lock.acquire();
 
 	//Find a block group to house the inode
@@ -151,7 +151,9 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 	raw.size = size;
 	raw.mode = mode;
 	raw.hard_links = IS_DIR(mode) ? 1 : 0;
-	//TODO: Times, uid, gid, and such
+	raw.uid = uid;
+	raw.gid = gid;
+	//TODO: times
 	auto inode = DC::make_shared<Ext2Inode>(*this, ino, raw, blocks, parent);
 
 	//Update the superblock

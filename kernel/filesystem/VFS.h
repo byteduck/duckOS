@@ -54,9 +54,9 @@ public:
 	ResultRet<DC::string> readlink(DC::string& path, User& user, const DC::shared_ptr<LinkedInode>& base, ssize_t& size);
 	Result rmdir(DC::string& path, User& user, const DC::shared_ptr<LinkedInode>& base);
 	Result mkdir(DC::string path, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base);
-	Result mkdirat(const DC::shared_ptr<FileDescriptor>& fd, DC::string path, User& user, mode_t mode);
 	Result truncate(DC::string& path, off_t length, User& user, const DC::shared_ptr<LinkedInode>& base);
-	Result ftruncate(const DC::shared_ptr<FileDescriptor>& fd, off_t length, User& user);
+	Result chmod(DC::string& path, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base);
+	Result chown(DC::string& path, uid_t uid, gid_t gid, User& user, const DC::shared_ptr<LinkedInode>& base, int options = 0);
 
 	bool mount_root(Filesystem* fs);
 	DC::shared_ptr<LinkedInode> root_ref();

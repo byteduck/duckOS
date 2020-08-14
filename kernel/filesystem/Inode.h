@@ -47,10 +47,12 @@ public:
 	virtual ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer) = 0;
 	virtual ssize_t write(size_t start, size_t length, const uint8_t* buf) = 0;
 	virtual Result add_entry(const DC::string& name, Inode& inode) = 0;
-	virtual ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode) = 0;
+	virtual ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) = 0;
 	virtual Result remove_entry(const DC::string& name) = 0;
 	virtual Result truncate(off_t length) = 0;
 	virtual ResultRet<DC::shared_ptr<LinkedInode>> resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, int options, int recursion_level);
+	virtual Result chmod(mode_t mode) = 0;
+	virtual Result chown(uid_t uid, gid_t gid) = 0;
 
 	InodeMetadata metadata();
 

@@ -334,13 +334,13 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 	return SUCCESS;
 }
 
-ResultRet<DC::shared_ptr<Inode>> Ext2Inode::create_entry(const DC::string& name, mode_t mode) {
+ResultRet<DC::shared_ptr<Inode>> Ext2Inode::create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) {
 	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
 
 	LOCK(lock);
 
 	//Create the inode
-	auto inode_or_err = ext2fs().allocate_inode(mode, 0, id);
+	auto inode_or_err = ext2fs().allocate_inode(mode, uid, gid, 0, id);
 	if(inode_or_err.is_error()) return inode_or_err.code();
 
 	if(IS_DIR(mode)) {
@@ -464,6 +464,21 @@ Result Ext2Inode::truncate(off_t length) {
 		write_inode_entry();
 	}
 
+	return SUCCESS;
+}
+
+Result Ext2Inode::chmod(mode_t mode) {
+	LOCK(lock);
+	_metadata.mode = mode;
+	write_inode_entry();
+	return SUCCESS;
+}
+
+Result Ext2Inode::chown(uid_t uid, gid_t gid) {
+	LOCK(lock);
+	_metadata.uid = uid;
+	_metadata.gid = gid;
+	write_inode_entry();
 	return SUCCESS;
 }
 
