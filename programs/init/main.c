@@ -23,6 +23,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+// The init system for duckOS.
+
 int main(int argc, char** argv) {
 	if(getpid() != 1) {
 		printf("pid != 1. Exiting.\n");

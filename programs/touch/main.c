@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-//A simple program that prompts you to type something and repeats it back to you.
+// A program that updates the access and modification times of a file or creates it if it doesn't exist.
 
 #include <stdio.h>
 #include <errno.h>
@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 		printf("Missing file operand\nUsage: touch FILE\n");
 		return 1;
 	}
-	int res = open(argv[1], O_CREAT);
+	int res = open(argv[1], O_CREAT, 0644);
 	if(res != -1) return 0;
 	printf("Cannot touch '%s': %s\n", argv[1], strerror(errno));
 	return errno;

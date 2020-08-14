@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-//A simple program that prompts you to type something and repeats it back to you.
+//A program that copies a file.
 
 #include <stdio.h>
 #include <errno.h>
@@ -39,7 +39,13 @@ int main(int argc, char** argv) {
 		return errno;
 	}
 
-	int to_fd = open(argv[2], O_WRONLY | O_CREAT, 0666);
+	struct stat from_st;
+	if(stat(argv[1], &from_st) < 0) {
+		printf("Cannot stat %s: %s\n", argv[1], strerror(errno));
+		return errno;
+	}
+
+	int to_fd = open(argv[2], O_WRONLY | O_CREAT, from_st.st_mode);
 	if(to_fd == -1) {
 		printf("Cannot open %s: %s\n", argv[1], strerror(errno));
 		return errno;

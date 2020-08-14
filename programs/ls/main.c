@@ -17,6 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+// A program that lists the contents of a directory.
+
 #include <stdio.h>
 #include <dirent.h>
 #include <stdlib.h>

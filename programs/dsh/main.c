@@ -79,7 +79,7 @@ int evaluate_input(char* input) {
 		while(isspace((unsigned char)*redirection)) redirection++;
 		redirection = strtok(redirection, " ");
 
-		redirection_fd = open(redirection, redir_options, 0666);
+		redirection_fd = open(redirection, redir_options, 0644);
 		if(redirection_fd < 0) {
 			perror("Could not redirect");
 			return errno;

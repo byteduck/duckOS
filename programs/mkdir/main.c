@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-//A simple program that prompts you to type something and repeats it back to you.
+//A program that makes a directory.
 
 #include <stdio.h>
 #include <errno.h>
@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 		printf("Missing name operand\nUsage: mkdir DIRNAME");
 		return 1;
 	}
-	int res = mkdir(argv[1], 0700);
+	int res = mkdir(argv[1], 0777);
 	if(res != -1) return 0;
 	printf("Cannot mkdir '%s': %s\n", argv[1], strerror(errno));
 	return errno;

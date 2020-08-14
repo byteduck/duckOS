@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-//A simple program that forks and then prints "Hello!"
+//A program that writes the contents of a file to stdout.
 
 #include <unistd.h>
 #include <stdio.h>

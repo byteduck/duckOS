@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-//A simple program that prompts you to type something and repeats it back to you.
+// A program that prints the current directory.
 
 #include <stdio.h>
 #include <unistd.h>
