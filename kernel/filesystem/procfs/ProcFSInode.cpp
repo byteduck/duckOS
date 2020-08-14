@@ -94,29 +94,29 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer) {
 			DC::string str;
 
 			str += "Usable: ";
-			itoa((int) Memory::get_usable_mem() / 1024, numbuf, 10);
+			itoa((int) Memory::get_usable_mem(), numbuf, 10);
 			str += numbuf;
 
-			str += " KiB\nUsed: ";
-			itoa((int) Memory::get_used_mem() / 1024, numbuf, 10);
+			str += "\nUsed: ";
+			itoa((int) Memory::get_used_mem(), numbuf, 10);
 			str += numbuf;
 
-			str += " KiB\nReserved: ";
-			itoa((int) Memory::get_reserved_mem() / 1024, numbuf, 10);
+			str += "\nReserved: ";
+			itoa((int) Memory::get_reserved_mem(), numbuf, 10);
 			str += numbuf;
 
-			str += " KiB\nKernel Virt: ";
-			itoa((int) Memory::get_kernel_vmem() / 1024, numbuf, 10);
+			str += "\nKernel Virt: ";
+			itoa((int) Memory::get_kernel_vmem(), numbuf, 10);
 			str += numbuf;
 
-			str += " KiB\nKernel Phys: ";
-			itoa((int) Memory::get_kernel_pmem() / 1024, numbuf, 10);
+			str += "\nKernel Phys: ";
+			itoa((int) Memory::get_kernel_pmem(), numbuf, 10);
 			str += numbuf;
 
-			str += " KiB\nKernel Heap: ";
-			itoa((int) Memory::get_kheap_pmem() / 1024, numbuf, 10);
+			str += "\nKernel Heap: ";
+			itoa((int) Memory::get_kheap_pmem(), numbuf, 10);
 			str += numbuf;
-			str += " KiB\n";
+			str += "\n";
 
 			if(start + length > str.length())
 				length = str.length() - start;

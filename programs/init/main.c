@@ -25,13 +25,20 @@
 
 // The init system for duckOS.
 
-int main(int argc, char** argv) {
+int main(int argc, char** argv, char** envp) {
 	if(getpid() != 1) {
 		printf("pid != 1. Exiting.\n");
 		return -1;
 	}
 
 	setsid();
+
+	pid_t pid = fork();
+	if(pid == 0) {
+		char* args[] = {"/bin/dsh", NULL};
+		char* env[] = {NULL};
+		execve("/bin/dsh", args, env);
+	}
 
 	printf("[init] Welcome to duckOS!\n");
 	while(1) {

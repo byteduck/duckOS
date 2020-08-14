@@ -152,9 +152,6 @@ void kmain_late(){
 
 	printf("[kinit] Done!\n");
 
-	//Create the shell process
-	TaskManager::add_process(Process::create_kernel("kshell", shell_process));
-
 	//Replace kinit with init
 	auto* init_args = new ProcessArgs(VFS::inst().root_ref());
 	init_args->argv.push_back("/bin/init");
