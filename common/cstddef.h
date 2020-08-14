@@ -50,7 +50,7 @@ typedef uint32_t size_t;
 typedef int32_t ssize_t;
 typedef int pid_t;
 
-typedef unsigned short ino_t;
+typedef unsigned long ino_t;
 typedef short dev_t;
 typedef uint32_t mode_t;
 typedef unsigned short nlink_t;

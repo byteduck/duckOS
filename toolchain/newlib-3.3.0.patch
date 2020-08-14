@@ -11495,10 +11495,10 @@ index 0000000..89b1d06
 +}
 diff --git a/newlib/libc/sys/duckos/dirent.c b/newlib/libc/sys/duckos/dirent.c
 new file mode 100644
-index 0000000..935a3a6
+index 0000000..1b9264e
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/dirent.c
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,111 @@
 +/*
 +    This file is part of duckOS.
 +    
@@ -11552,8 +11552,9 @@ index 0000000..935a3a6
 +	if(!dirp->dd_buf) {
 +		struct stat st;
 +		fstat(dirp->dd_fd, &st);
-+		dirp->dd_buf = (char*)malloc(st.st_size);
-+		ssize_t res = _read_dir(dirp->dd_fd, dirp->dd_buf, st.st_size);
++		size_t dirsize = st.st_size;
++		dirp->dd_buf = (char*)malloc(dirsize);
++		ssize_t res = _read_dir(dirp->dd_fd, dirp->dd_buf, dirsize);
 +		dirp->dd_len = res;
 +		if(res < 0) {
 +			errno = -res;
@@ -11610,6 +11611,41 @@ index 0000000..935a3a6
 +	return rc;
 +}
 \ No newline at end of file
+diff --git a/newlib/libc/sys/duckos/machine/_types.h b/newlib/libc/sys/duckos/machine/_types.h
+new file mode 100644
+index 0000000..9085d01
+--- /dev/null
++++ b/newlib/libc/sys/duckos/machine/_types.h
+@@ -0,0 +1,29 @@
++/*
++    This file is part of duckOS.
++    
++    duckOS is free software: you can redistribute it and/or modify
++    it under the terms of the GNU General Public License as published by
++    the Free Software Foundation, either version 3 of the License, or
++    (at your option) any later version.
++    
++    duckOS is distributed in the hope that it will be useful,
++    but WITHOUT ANY WARRANTY; without even the implied warranty of
++    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++    GNU General Public License for more details.
++    
++    You should have received a copy of the GNU General Public License
++    along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
++    
++    Copyright (c) Byteduck 2016-2020. All rights reserved.
++*/
++
++#ifndef _MACHINE__TYPES_H
++#define _MACHINE__TYPES_H
++#include <machine/_default_types.h>
++
++#ifndef _INO_T_DECLARED
++typedef	unsigned long		ino_t;		/* inode number */
++#define	_INO_T_DECLARED
++#endif
++
++#endif
 diff --git a/newlib/libc/sys/duckos/sys/dirent.h b/newlib/libc/sys/duckos/sys/dirent.h
 new file mode 100644
 index 0000000..b643455
