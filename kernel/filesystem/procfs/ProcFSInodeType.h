@@ -17,21 +17,24 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_COMMANDLINE_H
-#define DUCKOS_COMMANDLINE_H
+#ifndef DUCKOS_PROCFSINODETYPE_H
+#define DUCKOS_PROCFSINODETYPE_H
 
-#include <kernel/multiboot.h>
+enum ProcFSInodeType {
+	Null = 0,
+	Root = 1,
 
-namespace CommandLine {
-	struct Option {
-		DC::string name, value;
-	};
+	//Root Entries
+	RootCurProcEntry,
+	RootProcEntry,
+	RootMemInfo,
+	RootCmdLine,
+	RootUptime,
 
-	void init(const struct multiboot_info& header);
-	DC::string get_option_value(char* name);
-	bool has_option(char* name);
-	DC::string get_cmdline();
-}
+	//Process entries
+	ProcExe,
+	ProcCwd,
+	ProcStatus
+};
 
-
-#endif //DUCKOS_COMMANDLINE_H
+#endif //DUCKOS_PROCFSINODETYPE_H

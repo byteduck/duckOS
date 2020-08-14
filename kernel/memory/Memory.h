@@ -116,10 +116,22 @@ namespace Memory {
 	 size_t get_usable_mem();
 
 	/**
-	 * Get the amount of memory used by the kernel in bytes.
+	 * Get the amount of vmem used by the kernel in bytes.
+	 * @return The amount of virtual memory the kernel is using (granularity of PAGE_SIZE)
+	 */
+	size_t get_kernel_vmem();
+
+	/**
+	 * Get the amount of pmem used by the kernel in bytes. (This includes the kernel's code + heap)
+	 * @return The amount of physical memory the kernel is using (granularity of PAGE_SIZE)
+	 */
+	size_t get_kernel_pmem();
+
+	/**
+	 * Get the amount of pmem used by the kernel heap in bytes.
 	 * @return The amount of memory the kernel is using (granularity of PAGE_SIZE)
 	 */
-	size_t get_used_kmem();
+	size_t get_kheap_pmem();
 
 	/**
 	 * Invalidates the page in the TLB that contains vaddr.

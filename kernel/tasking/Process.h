@@ -48,6 +48,8 @@ class Blocker;
 
 namespace ELF {struct elf32_header;};
 
+extern const char* PROC_STATUS_NAMES[];
+
 class Process {
 public:
 	~Process();
@@ -59,7 +61,11 @@ public:
 	pid_t pgid();
 	pid_t ppid();
 	pid_t sid();
+	User user();
 	DC::string name();
+	DC::string exe();
+	DC::shared_ptr<LinkedInode> cwd();
+
 	int exit_status();
 	bool& just_execed();
 	void kill(int signal);
@@ -161,6 +167,7 @@ private:
 
 	//Identifying info and state
 	DC::string _name = "";
+	DC::string _exe = "";
 	pid_t _pid = 0;
 	pid_t _ppid = 0;
 	pid_t _sid = 0;

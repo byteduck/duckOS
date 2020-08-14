@@ -32,6 +32,7 @@ namespace CommandLine {
 				printf("[kinit] cmdline couldn't be mmap-ed!\n");
 				return;
 			}
+
 			cmdline = str;
 			PageDirectory::k_munmap(str);
 
@@ -71,5 +72,9 @@ namespace CommandLine {
 			if(options[i].name == name) return true;
 		}
 		return false;
+	}
+
+	DC::string get_cmdline() {
+		return cmdline;
 	}
 }

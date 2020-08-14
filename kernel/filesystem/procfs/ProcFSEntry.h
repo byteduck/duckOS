@@ -17,21 +17,23 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_COMMANDLINE_H
-#define DUCKOS_COMMANDLINE_H
+#ifndef DUCKOS_PROCFSENTRY_H
+#define DUCKOS_PROCFSENTRY_H
 
-#include <kernel/multiboot.h>
+#include "ProcFS.h"
+#include "ProcFSInodeType.h"
 
-namespace CommandLine {
-	struct Option {
-		DC::string name, value;
-	};
+class ProcFS;
+class ProcFSEntry {
+public:
+	ProcFSEntry(ProcFSInodeType type, pid_t pid);
 
-	void init(const struct multiboot_info& header);
-	DC::string get_option_value(char* name);
-	bool has_option(char* name);
-	DC::string get_cmdline();
-}
+	DirectoryEntry dir_entry;
+	ProcFSInodeType type;
+	size_t length;
+	ino_t parent;
+	pid_t pid;
+};
 
 
-#endif //DUCKOS_COMMANDLINE_H
+#endif //DUCKOS_PROCFSENTRY_H

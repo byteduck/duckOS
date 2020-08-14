@@ -40,7 +40,7 @@ ResultRet<DC::shared_ptr<Inode>> Inode::find(const DC::string& name) {
     return -ENOENT;
 }
 
-ResultRet<DC::shared_ptr<LinkedInode>> Inode::resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, int options, int recursion_level) {
+ResultRet<DC::shared_ptr<LinkedInode>> Inode::resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	ASSERT(metadata().is_symlink());
 
 	auto* buf = new uint8_t[metadata().size + 1];
@@ -55,7 +55,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> Inode::resolve_link(const DC::shared_ptr<
 
 	DC::string link_str((char*)buf);
 	delete[] buf;
-	return VFS::inst().resolve_path(link_str, base, user, nullptr, options, recursion_level);
+	return VFS::inst().resolve_path(link_str, base, user, parent_storage, options, recursion_level);
 }
 
 InodeMetadata Inode::metadata() {

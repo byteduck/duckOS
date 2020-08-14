@@ -151,8 +151,16 @@ namespace Memory {
 		return usable_bytes_ram;
 	}
 
-	size_t get_used_kmem() {
+	size_t get_kernel_vmem() {
 		return PageDirectory::kernel_vmem_map.used_memory();
+	}
+
+	size_t get_kernel_pmem() {
+		return PageDirectory::used_kernel_pmem;
+	}
+
+	size_t get_kheap_pmem() {
+		return PageDirectory::used_kheap_pmem;
 	}
 
 	void early_pagetable_setup(PageTable *page_table, size_t virtual_address, bool read_write) {
@@ -228,6 +236,7 @@ int liballoc_unlock() {
 }
 
 void *liballoc_alloc(int pages) {
+	PageDirectory::used_kheap_pmem += pages * PAGE_SIZE;
 	return PageDirectory::k_alloc_region_for_heap(pages * PAGE_SIZE);
 }
 
@@ -236,6 +245,7 @@ void liballoc_afteralloc(void* ptr_alloced) {
 }
 
 int liballoc_free(void *ptr, int pages) {
+	PageDirectory::used_kheap_pmem -= pages * PAGE_SIZE;
 	PageDirectory::k_free_region(ptr);
 	return 0;
 }

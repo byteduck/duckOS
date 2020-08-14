@@ -17,7 +17,6 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/memory/kliballoc.h>
 #include <kernel/filesystem/VFS.h>
 #include <common/defines.h>
 #include <kernel/terminal/TTYDevice.h>
@@ -29,6 +28,8 @@
 #include "WaitBlocker.h"
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/syscall.h>
+
+const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 
 Process* Process::create_kernel(const DC::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(DC::shared_ptr<LinkedInode>(nullptr));
@@ -47,7 +48,8 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, User&
 	auto* header = header_or_err.value();
 
 	//Create the process
-	auto* proc = new Process(executable_loc, header->program_entry_position, false, args, parent);
+	auto* proc = new Process(VFS::path_base(executable_loc), header->program_entry_position, false, args, parent);
+	proc->_exe = executable_loc;
 
 	//Load the ELF into the process's page directory and set proc->current_brk
 	auto brk_or_err = ELF::load_elf(*fd, proc->page_directory, header);
@@ -74,8 +76,20 @@ pid_t Process::sid() {
 	return _sid;
 }
 
+User Process::user() {
+	return _user;
+}
+
 DC::string Process::name(){
 	return _name;
+}
+
+DC::string Process::exe() {
+	return _exe;
+}
+
+DC::shared_ptr<LinkedInode> Process::cwd() {
+	return _cwd;
 }
 
 int Process::exit_status() {
@@ -992,4 +1006,3 @@ int Process::sys_lchown(char* file, uid_t uid, gid_t gid) {
 	DC::string filestr(file);
 	return VFS::inst().chown(filestr, uid, gid, _user, _cwd, O_NOFOLLOW).code();
 }
-

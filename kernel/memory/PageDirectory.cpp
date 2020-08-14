@@ -30,12 +30,16 @@ PageTable::Entry kernel_page_table_entries[256][1024] __attribute__((aligned(409
 MemoryRegion vmem_region_buffer(0,0);
 MemoryRegion pmem_region_buffer(0,0);
 bool region_buffer_needs_attention = false;
+size_t PageDirectory::used_kernel_pmem;
+size_t PageDirectory::used_kheap_pmem;
 
 /**
  * KERNEL MANAGEMENT
  */
 
 void PageDirectory::init_kmem() {
+	used_kernel_pmem = 0;
+	used_kheap_pmem = 0;
 	for(auto & entries : kernel_page_table_entries) for(auto & entry : entries) entry.value = 0;
 	for(auto i = 0; i < 256; i++) {
 		new (&kernel_page_tables[i]) PageTable(HIGHER_HALF + i * PAGE_SIZE * 1024,
@@ -66,6 +70,7 @@ void PageDirectory::map_kernel(MemoryRegion* kernel_pmem_region) {
 
 	kernel_vmem_map = MemoryMap(PAGE_SIZE, &early_vmem_regions[0]);
 	kernel_vmem_map.recalculate_memory_totals();
+	used_kernel_pmem = early_vmem_regions[0].size;
 
 	LinkedMemoryRegion kregion(kernel_pmem_region, &early_vmem_regions[0]);
 
@@ -123,6 +128,7 @@ LinkedMemoryRegion PageDirectory::k_alloc_region(size_t mem_size) {
 	if(!pmem_region) {
 		PANIC("NO_MEM", "There's no more physical memory left.", true);
 	}
+	used_kernel_pmem += pmem_region->size;
 
 	//Finally, map the pages.
 	LinkedMemoryRegion region(pmem_region, vmem_region);
@@ -149,6 +155,7 @@ void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
 	if(!pmem_region) {
 		PANIC("NO_MEM", "There's no more physical memory left.", true);
 	}
+	used_kernel_pmem += pmem_region->size;
 
 	//Finally, map the pages and zero out.
 	LinkedMemoryRegion region(pmem_region, vmem_region);
@@ -174,6 +181,7 @@ void PageDirectory::k_free_region(const LinkedMemoryRegion& region) {
 	k_unmap_region(region);
 	kernel_vmem_map.free_region(region.virt);
 	Memory::pmem_map().free_region(region.phys);
+	used_kernel_pmem -= region.phys->size;
 }
 
 bool PageDirectory::k_free_region(void* virtaddr) {
@@ -184,6 +192,7 @@ bool PageDirectory::k_free_region(void* virtaddr) {
 	k_unmap_region(region);
 	kernel_vmem_map.free_region(region.virt);
 	Memory::pmem_map().free_region(region.phys);
+	used_kernel_pmem -= region.phys->size;
 	return true;
 }
 
@@ -353,6 +362,7 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t mem_size, bool read_wri
 	if (!pmem_region) {
 		PANIC("NO_MEM", "There's no more physical memory left.", true);
 	}
+	_used_pmem += pmem_region->size;
 
 	//Finally, map the pages.
 	LinkedMemoryRegion region(pmem_region, vmem_region);
@@ -376,6 +386,7 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size,
 	if (!pmem_region) {
 		PANIC("NO_MEM", "There's no more physical memory left.", true);
 	}
+	_used_pmem += pmem_region->size;
 
 	//Finally, map the pages.
 	LinkedMemoryRegion region(pmem_region, vmem_region);
@@ -389,6 +400,7 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size,
 void PageDirectory::free_region(const LinkedMemoryRegion& region) {
 	unmap_region(region);
 	_vmem_map.free_region(region.virt);
+	_used_pmem -= region.phys->size;
 	Memory::pmem_map().free_region(region.phys);
 }
 
@@ -400,6 +412,7 @@ bool PageDirectory::free_region(void* virtaddr) {
 	unmap_region(region);
 	_vmem_map.free_region(region.virt);
 	Memory::pmem_map().free_region(region.phys);
+	_used_pmem -= region.phys->size;
 	return true;
 }
 
@@ -510,8 +523,11 @@ bool PageDirectory::try_cow(size_t virtaddr) {
 }
 
 size_t PageDirectory::used_pmem() {
-	return 0; //TODO
-	//return (_personal_pmem_bitmap.used_pages() * PAGE_SIZE) / 1024;
+	return _used_pmem;
+}
+
+size_t PageDirectory::used_vmem() {
+	return _vmem_map.used_memory();
 }
 
 void PageDirectory::dump() {

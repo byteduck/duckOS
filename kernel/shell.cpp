@@ -144,7 +144,7 @@ void Shell::command_eval(char *cmd, char *args, User& user){
 		printf("Total reserved memory: %dKiB\n", Memory::get_reserved_mem() / 1024);
 		size_t used_mem_frac = ((Memory::get_used_mem() / 1024) * 10000) / (Memory::get_usable_mem() / 1024);
 		printf("Used memory: %dKiB (%d.%s%d%%)\n", Memory::get_used_mem() / 1024, used_mem_frac / 100, used_mem_frac % 100 < 10 ? "0" : "", used_mem_frac % 100);
-		printf("Vmem used by kernel: %dKib\n", Memory::get_used_kmem() / 1024);
+		printf("Vmem used by kernel: %dKib\n", Memory::get_kernel_vmem() / 1024);
 	}else if(strcmp(cmd, "memdump")) {
 		Memory::kernel_page_directory.dump();
 	}else if(strcmp(cmd,"cat.old")){

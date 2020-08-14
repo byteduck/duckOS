@@ -22,20 +22,37 @@
 
 #include <kernel/filesystem/Filesystem.h>
 #include "ProcFSInode.h"
+#include "ProcFSEntry.h"
 #define PROCFS_FSID 1
 
 class ProcFSInode;
+class ProcFSEntry;
 class ProcFS: public Filesystem {
 public:
+	static ProcFS& inst();
 	ProcFS();
 
+	//ProcFS
+	static ino_t id_for_entry(pid_t pid, ProcFSInodeType type);
+	static ProcFSInodeType type_for_id(ino_t id);
+	static pid_t pid_for_id(ino_t id);
+	void proc_add(Process* proc);
+	void proc_remove(Process* proc);
+
+	//Filesystem
 	char* name() override;
 	ResultRet<DC::shared_ptr<Inode>> get_inode(ino_t id) override;
 	ino_t root_inode_id() override;
 	uint8_t fsid() override;
 
 private:
-	DC::vector<DC::shared_ptr<ProcFSInode>> inodes;
+	friend class ProcFSInode;
+	static ProcFS* _instance;
+
+	SpinLock lock;
+	DC::vector<ProcFSEntry> entries;
+	DC::shared_ptr<ProcFSInode> root_inode;
+	ino_t cinode_id;
 };
 
 

@@ -85,7 +85,8 @@ SET(KERNEL_SRCS
         terminal/Terminal.cpp
         User.cpp
         filesystem/procfs/ProcFS.cpp
-        filesystem/procfs/ProcFSInode.cpp)
+        filesystem/procfs/ProcFSInode.cpp
+        filesystem/procfs/ProcFSEntry.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

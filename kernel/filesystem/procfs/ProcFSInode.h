@@ -22,16 +22,25 @@
 
 #include <kernel/filesystem/Inode.h>
 #include "ProcFS.h"
+#include "ProcFSInodeType.h"
+#include "ProcFSEntry.h"
+
+#define PROCFS_CDIR_ENTRY_SIZE (sizeof(DirectoryEntry::id) + sizeof(DirectoryEntry::type) + sizeof(DirectoryEntry::name_length) + sizeof(char))
+#define PROCFS_PDIR_ENTRY_SIZE (sizeof(DirectoryEntry::id) + sizeof(DirectoryEntry::type) + sizeof(DirectoryEntry::name_length) + sizeof(char) * 2)
 
 class ProcFS;
+class ProcFSEntry;
 class ProcFSInode: public Inode {
 public:
-	ProcFSInode(ProcFS& fs, ino_t id);
+	//Initializer / Destructor
+	explicit ProcFSInode(ProcFS& fs, ProcFSEntry& entry);
 	~ProcFSInode() override;
 
-	ResultRet<DC::shared_ptr<Inode>> find(const DC::string& name) override;
+	//Inode
+	InodeMetadata metadata() override;
 	ino_t find_id(const DC::string& name) override;
 	ssize_t read(size_t start, size_t length, uint8_t *buffer) override;
+	ResultRet<DC::shared_ptr<LinkedInode>> resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) override;
 	ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer) override;
 	ssize_t write(size_t start, size_t length, const uint8_t* buf) override;
 	Result add_entry(const DC::string& name, Inode& inode) override;
@@ -43,6 +52,9 @@ public:
 
 private:
 	ProcFS& procfs;
+	pid_t pid;
+	ProcFSInodeType type;
+	ino_t parent;
 };
 
 

@@ -99,7 +99,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 					}
 				}
 
-				auto link_or_err = child_inode_or_err.value()->resolve_link(current_inode, user, options, recursion_level + 1);
+				auto link_or_err = child_inode_or_err.value()->resolve_link(current_inode, user, parent_storage, options, recursion_level + 1);
 				if(!path.length()) return link_or_err;
 				if(link_or_err.is_error()) return link_or_err;
 				return resolve_path(path, link_or_err.value(), user, parent_storage, options, recursion_level + 1);
