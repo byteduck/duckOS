@@ -38,6 +38,7 @@
 #include <kernel/device/MultibootVGADevice.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/device/PATADevice.h>
+#include <kernel/filesystem/procfs/ProcFS.h>
 #include "CommandLine.h"
 
 uint8_t boot_disk;
@@ -128,9 +129,24 @@ void kmain_late(){
 	}
 
 	//Setup the virtual filesystem and mount the ext2 filesystem as root
-	VFS* vfs = new VFS();
+	auto* vfs = new VFS();
 	if(!vfs->mount_root(ext2fs)) {
 		printf("[kinit] Failed to mount root. Hanging.");
+		while(true);
+	}
+
+	//Mount ProcFS
+	auto root_user = User::root();
+	auto proc_or_err = VFS::inst().resolve_path("/proc", VFS::inst().root_ref(), root_user);
+	if(proc_or_err.is_error()) {
+		printf("[kinit] Failed to mount proc: %d\n", proc_or_err.code());
+		while(true);
+	}
+
+	auto* procfs = new ProcFS();
+	auto res = VFS::inst().mount(procfs, proc_or_err.value());
+	if(res.is_error()) {
+		printf("[kinit] Failed to mount proc: %d\n", proc_or_err.code());
 		while(true);
 	}
 

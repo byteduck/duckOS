@@ -25,7 +25,7 @@ BlockCacheEntry::BlockCacheEntry(size_t block, uint8_t *data): block(block), dat
 
 }
 
-FileBasedFilesystem::FileBasedFilesystem(DC::shared_ptr<FileDescriptor> file): Filesystem(file) {
+FileBasedFilesystem::FileBasedFilesystem(const DC::shared_ptr<FileDescriptor>& file): _file(file) {
 
 }
 
@@ -66,6 +66,14 @@ Result FileBasedFilesystem::write_logical_blocks(size_t block, size_t count, con
 
 size_t FileBasedFilesystem::logical_block_size() {
 	return _logical_block_size;
+}
+
+size_t FileBasedFilesystem::block_size() {
+	return _block_size;
+}
+
+void FileBasedFilesystem::set_block_size(size_t block_size) {
+	_block_size = block_size;
 }
 
 Result FileBasedFilesystem::read_block(size_t block, uint8_t *buffer) {
@@ -211,9 +219,51 @@ void FileBasedFilesystem::free_cache_entry(size_t block) {
 	}
 }
 
+ResultRet<DC::shared_ptr<Inode>> FileBasedFilesystem::get_cached_inode(ino_t id) {
+	LOCK(_inode_cache_lock);
+	for(size_t i = 0; i < _inode_cache.size(); i++) {
+		if(_inode_cache[i]->id == id) return _inode_cache[i];
+	}
+	return -ENOENT;
+}
+
+void FileBasedFilesystem::add_cached_inode(const DC::shared_ptr<Inode> &inode) {
+	LOCK(_inode_cache_lock);
+	_inode_cache.push_back(inode);
+}
+
+void FileBasedFilesystem::remove_cached_inode(ino_t id) {
+	LOCK(_inode_cache_lock);
+	for(size_t i = 0; i < _inode_cache.size(); i++) {
+		if(_inode_cache[i]->id == id) {
+			_inode_cache.erase(i);
+			return;
+		}
+	}
+}
+
 void FileBasedFilesystem::flush_cache() {
 	LOCK(lock);
 	for(size_t i = 0; i < cache.size(); i++) {
 		if(cache[i].dirty) flush_cache_entry(&cache[i]);
+	}
+}
+
+Inode* FileBasedFilesystem::get_inode_rawptr(ino_t id) {
+	return nullptr;
+}
+
+ResultRet<DC::shared_ptr<Inode>> FileBasedFilesystem::get_inode(ino_t id) {
+	LOCK(_inode_cache_lock);
+	auto inode_perhaps = get_cached_inode(id);
+	if(inode_perhaps.is_error()) {
+		Inode* in = get_inode_rawptr(id);
+		if(in) {
+			auto ins = DC::shared_ptr<Inode>(in);
+			add_cached_inode(ins);
+			return ins;
+		} else return -ENOENT;
+	} else {
+		return inode_perhaps.value();
 	}
 }

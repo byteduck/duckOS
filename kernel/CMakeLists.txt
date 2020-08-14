@@ -83,7 +83,9 @@ SET(KERNEL_SRCS
         filesystem/Pipe.cpp
         terminal/TTYDevice.cpp
         terminal/Terminal.cpp
-        User.cpp)
+        User.cpp
+        filesystem/procfs/ProcFS.cpp
+        filesystem/procfs/ProcFSInode.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

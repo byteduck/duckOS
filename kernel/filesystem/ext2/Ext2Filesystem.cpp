@@ -221,7 +221,7 @@ char *Ext2Filesystem::name() {
 	return "EXT2";
 }
 
-ino_t Ext2Filesystem::root_inode() {
+ino_t Ext2Filesystem::root_inode_id() {
 	return 2;
 }
 

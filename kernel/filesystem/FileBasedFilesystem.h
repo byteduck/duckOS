@@ -36,9 +36,11 @@ public:
 
 class FileBasedFilesystem: public Filesystem {
 public:
-	explicit FileBasedFilesystem(DC::shared_ptr<FileDescriptor> file);
+	explicit FileBasedFilesystem(const DC::shared_ptr<FileDescriptor>& file);
 	~FileBasedFilesystem();
+
 	size_t logical_block_size();
+	size_t block_size();
 
 	Result read_logical_block(size_t block, uint8_t* buffer);
 	Result read_logical_blocks(size_t block, size_t count, uint8_t* buffer);
@@ -52,17 +54,30 @@ public:
 	Result zero_block(size_t block);
 	Result truncate_block(size_t block, size_t new_size);
 
+	ResultRet<DC::shared_ptr<Inode>> get_cached_inode(ino_t id);
+	void add_cached_inode(const DC::shared_ptr<Inode>& inode);
+	void remove_cached_inode(ino_t id);
 	void flush_cache();
+
+	virtual Inode* get_inode_rawptr(ino_t id);
+	virtual ResultRet<DC::shared_ptr<Inode>> get_inode(ino_t id);
 
 protected:
 	BlockCacheEntry* get_chache_entry(size_t block);
 	BlockCacheEntry* make_cache_entry(size_t block);
 	void flush_cache_entry(BlockCacheEntry* entry);
 	void free_cache_entry(size_t block);
+	void set_block_size(size_t block_size);
 
 	size_t _logical_block_size {512};
 	DC::vector<BlockCacheEntry> cache;
 	SpinLock lock;
+	DC::shared_ptr<FileDescriptor> _file;
+	size_t _block_size;
+
+private:
+	DC::vector<DC::shared_ptr<Inode>> _inode_cache;
+	SpinLock _inode_cache_lock;
 };
 
 

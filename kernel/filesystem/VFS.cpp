@@ -39,9 +39,8 @@ VFS& VFS::inst() {
 bool VFS::mount_root(Filesystem* fs) {
 	if(_root_inode) return false;
 
-	Mount root_mount(fs, nullptr);
-	auto root_inode_id = root_mount.fs()->root_inode();
-	auto root_inode_or_err = root_mount.fs()->get_inode(root_inode_id);
+	auto root_inode_id = fs->root_inode_id();
+	auto root_inode_or_err = fs->get_inode(root_inode_id);
 	if(root_inode_or_err.is_error()) return false;
 	auto root_inode = root_inode_or_err.value();
 
@@ -51,7 +50,7 @@ bool VFS::mount_root(Filesystem* fs) {
 
 	_root_inode = DC::move(root_inode);
 	_root_ref = DC::shared_ptr<LinkedInode>(new LinkedInode(_root_inode, "/", DC::shared_ptr<LinkedInode>(nullptr)));
-	mounts[0] = root_mount;
+	mount(fs, _root_ref);
 
 	return true;
 }
@@ -107,6 +106,15 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 			}
 
 			current_inode = DC::shared_ptr<LinkedInode>(new LinkedInode(child_inode_or_err.value(), part, parent));
+
+			//Check if there's a mount at this inode and follow it if there is
+			auto mount_or_err = get_mount(current_inode);
+			if(!mount_or_err.is_error()) {
+				auto guest_fs = mount_or_err.value().guest_fs();
+				auto guest_inode_or_err = guest_fs->get_inode(guest_fs->root_inode_id());
+				if(guest_inode_or_err.is_error()) return guest_inode_or_err.code();
+				current_inode = DC::make_shared<LinkedInode>(guest_inode_or_err.value(), part, parent);
+			}
 		} else {
 			if(parent_storage && path.find('/') == -1) {
 				*parent_storage = current_inode;
@@ -387,23 +395,48 @@ DC::string VFS::path_minus_base(const DC::string &path) {
 	else return path.substr(0, slash_index);
 }
 
+Result VFS::mount(Filesystem* fs, const DC::shared_ptr<LinkedInode>& mountpoint) {
+	if(!mountpoint->inode()->metadata().is_directory()) return -ENOTDIR;
+
+	for(size_t i = 0; i < mounts.size(); i++) {
+		if(mounts[i].guest_fs()->fsid() == fs->fsid())
+			return -EBUSY; //Filesystem already mounted
+		auto host_inode = mounts[i].host_inode()->inode();
+		if(host_inode->fs.fsid() == mountpoint->inode()->fs.fsid() && host_inode->id == mountpoint->inode()->id)
+			return -EBUSY; //Directory already used as mount point
+	}
+
+	mounts.push_back(Mount(fs, mountpoint));
+	return SUCCESS;
+}
+
+ResultRet<VFS::Mount> VFS::get_mount(const DC::shared_ptr<LinkedInode>& inode) {
+	for(size_t i = 0; i < mounts.size(); i++) {
+		auto m_inode = mounts[i].host_inode()->inode();
+		if(m_inode->fs.fsid() == inode->inode()->fs.fsid() && m_inode->id == inode->inode()->id)
+			return mounts[i];
+	}
+
+	return -ENOENT;
+}
+
 
 /* * * * * * * *
  * Mount Class *
  * * * * * * * */
 
-VFS::Mount::Mount(Filesystem* fs, LinkedInode *host_inode): _fs(fs), _host_inode(host_inode) {
+VFS::Mount::Mount(Filesystem* fs, const DC::shared_ptr<LinkedInode>& host_inode): _fs(fs), _host_inode(host_inode) {
 
 }
 
-VFS::Mount::Mount(): _fs(nullptr), _host_inode(nullptr) {
+VFS::Mount::Mount(): _fs(nullptr) {
 
 }
 
-ino_t VFS::Mount::host_inode() {
-	return _host_inode->inode()->id;
+DC::shared_ptr<LinkedInode> VFS::Mount::host_inode() {
+	return _host_inode;
 }
 
-Filesystem* VFS::Mount::fs() {
+Filesystem* VFS::Mount::guest_fs() {
 	return _fs;
 }

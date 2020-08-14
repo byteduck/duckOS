@@ -36,7 +36,7 @@ public:
 	void init();
 
 	//FileBasedFilesystem
-	ino_t root_inode() override;
+	ino_t root_inode_id() override;
 	char* name() override;
 	Inode * get_inode_rawptr(ino_t id) override;
 

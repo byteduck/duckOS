@@ -33,6 +33,8 @@ The code for these can be found in [programs](programs/).
 - rmdir (/bin/rmdir): Removes a directory.
 - touch (/bin/touch): Updates the access/modification times of a file or creates it if it doesn't exist.
 - truncate (/bin/truncate): Resizes a file.
+- chmod (/bin/chmod): Changes the mode of a file.
+- chown (/bin/chown): Changes the owner of a file.
 - dsh (/bin/dsh): A basic userspace shell with support for pipes (`|`) and redirections (`>`/`>>`).
   - There is only support for one redirection at a time right now.
 

@@ -57,6 +57,10 @@ mknod mnt/dev/fb0 b 29 0
 mkdir -p mnt/dev/input
 mknod mnt/dev/input/keyboard c 13 0
 echo "Done setting up devices!"
+echo "Setting up directories..."
+mkdir -p mnt/proc
+chmod 555 mnt/proc
+echo "Done setting up directories!"
 echo "Done setting up root filesystem!"
 
 echo "Unmounting and cleaning up loopback device..."

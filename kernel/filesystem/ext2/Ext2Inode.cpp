@@ -30,7 +30,7 @@ Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id
 	Ext2BlockGroup* bg = ext2fs().get_block_group(block_group());
 
 	//Read the inode table
-	auto* block_buf = new uint8_t[fs.block_size()];
+	auto* block_buf = new uint8_t[ext2fs().block_size()];
 	ext2fs().read_blocks(bg->inode_table_block + block(), 1, block_buf);
 
 	//Copy inode entry into raw
@@ -73,7 +73,7 @@ uint32_t Ext2Inode::index() {
 }
 
 uint32_t Ext2Inode::block(){
-	return (index() * ext2fs().superblock.inode_size) / fs.block_size();
+	return (index() * ext2fs().superblock.inode_size) / ext2fs().block_size();
 }
 
 Ext2Filesystem& Ext2Inode::ext2fs() {
@@ -82,7 +82,7 @@ Ext2Filesystem& Ext2Inode::ext2fs() {
 
 size_t Ext2Inode::num_blocks() {
 	if(_metadata.is_symlink() && _metadata.size < 60) return 0;
-	return (_metadata.size + fs.block_size() - 1) / fs.block_size();
+	return (_metadata.size + ext2fs().block_size() - 1) / ext2fs().block_size();
 }
 
 uint32_t Ext2Inode::get_block_pointer(uint32_t block_index) {
@@ -136,29 +136,29 @@ ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 	if(start + length > _metadata.size) length = _metadata.size - start;
 
 	//TODO: symlinks
-	size_t first_block = start / fs.block_size();
-	size_t first_block_start = start % fs.block_size();
+	size_t first_block = start / ext2fs().block_size();
+	size_t first_block_start = start % ext2fs().block_size();
 	size_t bytes_left = length;
 	size_t block_index = first_block;
 
-	auto block_buf = new uint8_t[fs.block_size()];
+	auto block_buf = new uint8_t[ext2fs().block_size()];
 	while(bytes_left) {
 		ext2fs().read_block(get_block_pointer(block_index), block_buf);
 		if(block_index == first_block) {
-			if(length < fs.block_size() - first_block_start) {
+			if(length < ext2fs().block_size() - first_block_start) {
 				memcpy(buf, block_buf + first_block_start, length);
 				bytes_left = 0;
 			} else {
-				memcpy(buf, block_buf + first_block_start, fs.block_size() - first_block_start);
-				bytes_left -= fs.block_size() - first_block_start;
+				memcpy(buf, block_buf + first_block_start, ext2fs().block_size() - first_block_start);
+				bytes_left -= ext2fs().block_size() - first_block_start;
 			}
 		} else {
-			if(bytes_left < fs.block_size()) {
+			if(bytes_left < ext2fs().block_size()) {
 				memcpy(buf + (length - bytes_left), block_buf, bytes_left);
 				bytes_left = 0;
 			} else {
-				memcpy(buf + (length - bytes_left), block_buf, fs.block_size());
-				bytes_left -= fs.block_size();
+				memcpy(buf + (length - bytes_left), block_buf, ext2fs().block_size());
+				bytes_left -= ext2fs().block_size();
 			}
 		}
 		block_index++;
@@ -182,8 +182,8 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 		return length;
 	}
 
-	size_t first_block = start / fs.block_size();
-	size_t first_block_start = start % fs.block_size();
+	size_t first_block = start / ext2fs().block_size();
+	size_t first_block_start = start % ext2fs().block_size();
 	size_t bytes_left = length;
 	size_t block_index = first_block;
 
@@ -193,7 +193,7 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 		if(res.is_error()) return res.code();
 	}
 
-	auto block_buf = new uint8_t[fs.block_size()];
+	auto block_buf = new uint8_t[ext2fs().block_size()];
 	while(bytes_left) {
 		uint32_t block = get_block_pointer(block_index);
 
@@ -205,20 +205,20 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 
 		//Copy the appropriate portion of the buffer into the appropriate portion of the block buffer
 		if(block_index == first_block) {
-			if(length < fs.block_size() - first_block_start) {
+			if(length < ext2fs().block_size() - first_block_start) {
 				memcpy(block_buf + first_block_start, buf, length);
 				bytes_left = 0;
 			} else {
-				memcpy(block_buf + first_block_start, buf, fs.block_size() - first_block_start);
-				bytes_left -= fs.block_size() - first_block_start;
+				memcpy(block_buf + first_block_start, buf, ext2fs().block_size() - first_block_start);
+				bytes_left -= ext2fs().block_size() - first_block_start;
 			}
 		} else {
-			if(bytes_left < fs.block_size()) {
+			if(bytes_left < ext2fs().block_size()) {
 				memcpy(block_buf, buf + (length - bytes_left), bytes_left);
 				bytes_left = 0;
 			} else {
-				memcpy(block_buf, buf + (length - bytes_left), fs.block_size());
-				bytes_left -= fs.block_size();
+				memcpy(block_buf, buf + (length - bytes_left), ext2fs().block_size());
+				bytes_left -= ext2fs().block_size();
 			}
 		}
 
@@ -236,10 +236,10 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 ssize_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry *buffer) {
 	LOCK(lock);
 
-	auto* buf = new uint8_t[fs.block_size()];
-	size_t block = start / fs.block_size();
-	size_t start_in_block = start % fs.block_size();
-	if(read(block * fs.block_size(), fs.block_size(), buf) == 0) {
+	auto* buf = new uint8_t[ext2fs().block_size()];
+	size_t block = start / ext2fs().block_size();
+	size_t start_in_block = start % ext2fs().block_size();
+	if(read(block * ext2fs().block_size(), ext2fs().block_size(), buf) == 0) {
 		delete[] buf;
 		return 0;
 	}
@@ -266,14 +266,14 @@ ino_t Ext2Inode::find_id(const DC::string& find_name) {
 	if(!metadata().is_directory()) return 0;
 	LOCK(lock);
 	ino_t ret = 0;
-	auto* buf = static_cast<uint8_t *>(kmalloc(fs.block_size()));
+	auto* buf = static_cast<uint8_t *>(kmalloc(ext2fs().block_size()));
 	for(size_t i = 0; i < num_blocks(); i++) {
 		uint32_t block = get_block_pointer(i);
 		ext2fs().read_block(block, buf);
 		auto* dir = reinterpret_cast<ext2_directory*>(buf);
 		uint32_t add = 0;
 		char name_buf[257];
-		while(dir->inode != 0 && add < fs.block_size()) {
+		while(dir->inode != 0 && add < ext2fs().block_size()) {
 			memcpy(name_buf, &dir->type+1, dir->name_length);
 			name_buf[dir->name_length] = '\0';
 			if(find_name == name_buf){
@@ -289,7 +289,7 @@ ino_t Ext2Inode::find_id(const DC::string& find_name) {
 }
 
 Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
-	ASSERT(inode.fs.fsid() == fs.fsid());
+	ASSERT(inode.fs.fsid() == ext2fs().fsid());
 	if(!metadata().is_directory()) return -ENOTDIR;
 	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
 
@@ -390,7 +390,7 @@ Result Ext2Inode::remove_entry(const DC::string &name) {
 
 	//If we didn't find it or the inode doesn't exist for some reason, return with an error
 	if(!found) return -ENOENT;
-	auto child_or_err = fs.get_inode(entries[entry_index].id);
+	auto child_or_err = ext2fs().get_inode(entries[entry_index].id);
 	if(child_or_err.is_error()){
 		printf("WARNING: Orphaned directory entry in inode %d\n", id);
 		return child_or_err.code();
@@ -679,8 +679,8 @@ Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
 
 	//Account for null entry that fills the rest of the last block
 	//(and if the last entry is block-aligned, we need a whole additional block for the null entry)
-	if(new_filesize % fs.block_size() == 0) new_filesize++;
-	new_filesize = ((new_filesize + fs.block_size() - 1) / fs.block_size()) * fs.block_size();
+	if(new_filesize % ext2fs().block_size() == 0) new_filesize++;
+	new_filesize = ((new_filesize + ext2fs().block_size() - 1) / ext2fs().block_size()) * ext2fs().block_size();
 
 	//Resize the file to the new size
 	auto res = truncate((off_t) new_filesize);
@@ -794,7 +794,7 @@ Result Ext2Inode::try_remove_dir() {
 	for(size_t i = 0; i < 2; i++) {
 		DirectoryEntry& ent = entries[i];
 		if(ent.id != id) { //..
-			auto parent_ino_or_err = fs.get_inode(ent.id);
+			auto parent_ino_or_err = ext2fs().get_inode(ent.id);
 			if(parent_ino_or_err.is_error()) return parent_ino_or_err.code();
 			auto parent_ino = (DC::shared_ptr<Ext2Inode>) parent_ino_or_err.value();
 			parent_ino->reduce_hardlink_count();

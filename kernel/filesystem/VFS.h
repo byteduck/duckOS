@@ -32,13 +32,13 @@ public:
 	class Mount {
 	public:
 		Mount();
-		Mount(Filesystem* fs, LinkedInode* host_inode);
-		ino_t host_inode();
-		Filesystem* fs();
+		Mount(Filesystem* fs, const DC::shared_ptr<LinkedInode>& host_inode);
+		DC::shared_ptr<LinkedInode> host_inode();
+		Filesystem* guest_fs();
 
 	private:
 		Filesystem* _fs;
-		LinkedInode* _host_inode;
+		DC::shared_ptr<LinkedInode> _host_inode;
 	};
 
 	VFS();
@@ -57,9 +57,11 @@ public:
 	Result truncate(DC::string& path, off_t length, User& user, const DC::shared_ptr<LinkedInode>& base);
 	Result chmod(DC::string& path, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base);
 	Result chown(DC::string& path, uid_t uid, gid_t gid, User& user, const DC::shared_ptr<LinkedInode>& base, int options = 0);
+	Result mount(Filesystem* fs, const DC::shared_ptr<LinkedInode>& mountpoint);
 
 	bool mount_root(Filesystem* fs);
 	DC::shared_ptr<LinkedInode> root_ref();
+	ResultRet<Mount> get_mount(const DC::shared_ptr<LinkedInode>& inode);
 
 	static DC::string path_base(const DC::string& path);
 	static DC::string path_minus_base(const DC::string& path);
@@ -67,7 +69,7 @@ public:
 private:
 	DC::shared_ptr<Inode> _root_inode;
 	DC::shared_ptr<LinkedInode> _root_ref;
-	Mount mounts[16];
+	DC::vector<Mount> mounts;
 	static VFS* instance;
 };
 
