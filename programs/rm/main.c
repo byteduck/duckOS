@@ -33,17 +33,17 @@ int main(int argc, char** argv) {
 	struct stat statbuf;
 	int res = lstat(argv[1], &statbuf);
 	if(res != 0) {
-		printf("Cannot remove '%s': %s\n", argv[1], strerror(errno));
+		perror("rm");
 		return errno;
 	}
 
 	if(S_ISDIR(statbuf.st_mode)) {
-		printf("Cannot remove '%s': %s\n", argv[1], strerror(EISDIR));
+		perror("rm");
 		return EISDIR;
 	}
 
 	res = remove(argv[1]);
 	if(res == 0) return 0;
-	printf("Cannot remove '%s': %s\n", argv[1], strerror(EISDIR));
+	perror("rm");
 	return errno;
 }

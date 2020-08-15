@@ -31,6 +31,6 @@ int main(int argc, char** argv) {
 	}
 	int res = open(argv[1], O_CREAT, 0644);
 	if(res != -1) return 0;
-	printf("Cannot touch '%s': %s\n", argv[1], strerror(errno));
+	perror("touch");
 	return errno;
 }

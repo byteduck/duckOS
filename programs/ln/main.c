@@ -39,6 +39,6 @@ int main(int argc, char** argv) {
 	else
 		res = link(argv[1], argv[2]);
 	if(res == 0) return 0;
-	printf("Cannot ln '%s': %s\n", symbolic ? argv[2] : argv[1], strerror(errno));
+	perror("ln");
 	return errno;
 }

@@ -32,6 +32,6 @@ int main(int argc, char** argv) {
 
 	int res = rename(argv[1], argv[2]);
 	if(res == 0) return 0;
-	printf("Cannot move '%s': %s\n", argv[1], strerror(errno));
+	perror("mv");
 	return errno;
 }

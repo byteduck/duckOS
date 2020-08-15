@@ -35,14 +35,17 @@ int main(int argc, char** argv) {
 		char buf[512];
 		int nread;
 		while((nread = read(f, buf, 512)) > 0) {
-			write(STDOUT_FILENO, buf, nread);
+			if(write(STDOUT_FILENO, buf, nread) < 0) {
+				perror("cat");
+				return errno;
+			}
 		}
 		if(errno){
-			printf("Cannot cat '%s': %s\n", argv[1], strerror(errno));
+			perror("cat");
 			return errno;
 		}
 	} else {
-		printf("Cannot cat '%s': %s\n", argv[1], strerror(errno));
+		perror("cat");
 		return errno;
 	}
 	return 0;

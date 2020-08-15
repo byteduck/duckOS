@@ -40,6 +40,6 @@ int main(int argc, char** argv) {
 
 	int res = truncate(argv[1], new_len);
 	if(res != -1) return 0;
-	printf("Cannot truncate '%s': %s\n", argv[1], strerror(errno));
+	perror("truncate");
 	return errno;
 }

@@ -31,6 +31,6 @@ int main(int argc, char** argv) {
 	}
 	int res = rmdir(argv[1]);
 	if(res == 0) return 0;
-	printf("Cannot remove directory '%s': %s\n", argv[1], strerror(errno));
+	perror("rmdir");
 	return errno;
 }

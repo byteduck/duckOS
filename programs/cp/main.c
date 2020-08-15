@@ -35,19 +35,19 @@ int main(int argc, char** argv) {
 
 	int from_fd = open(argv[1], O_RDONLY);
 	if(from_fd == -1) {
-		printf("Cannot open %s: %s\n", argv[1], strerror(errno));
+		perror("cp");
 		return errno;
 	}
 
 	struct stat from_st;
 	if(stat(argv[1], &from_st) < 0) {
-		printf("Cannot stat %s: %s\n", argv[1], strerror(errno));
+		perror("cp");
 		return errno;
 	}
 
 	int to_fd = open(argv[2], O_WRONLY | O_CREAT, from_st.st_mode);
 	if(to_fd == -1) {
-		printf("Cannot open %s: %s\n", argv[1], strerror(errno));
+		perror("cp");
 		return errno;
 	}
 
@@ -60,10 +60,10 @@ int main(int argc, char** argv) {
 		nwrote = write(to_fd, buf, nread);
 		if(nwrote <= 0) {
 			if(errno) {
-				perror("Error while copying");
+				perror("cp");
 				return errno;
 			}
-			printf("Unknown error while copying\n");
+			perror("cp");
 			return 1;
 		}
 	}

@@ -31,6 +31,6 @@ int main(int argc, char** argv) {
 	}
 	int res = mkdir(argv[1], 0777);
 	if(res != -1) return 0;
-	printf("Cannot mkdir '%s': %s\n", argv[1], strerror(errno));
+	perror("mkdir");
 	return errno;
 }

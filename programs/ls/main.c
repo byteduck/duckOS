@@ -69,7 +69,7 @@ int main(int argc, char **argv, char **env) {
 		}
 		closedir (dir);
 	} else {
-		printf("Cannot ls '%s': %s\n", argv[1], strerror(errno));
+		perror("ls");
 		return errno;
 	}
 }
