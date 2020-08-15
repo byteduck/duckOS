@@ -25,7 +25,6 @@
 #include <kernel/interrupt/isr.h>
 #include <kernel/interrupt/irq.h>
 #include <kernel/filesystem/ext2/Ext2Filesystem.h>
-#include <kernel/shell.h>
 #include <kernel/pit.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/device/PartitionDevice.h>
@@ -70,11 +69,6 @@ int kmain(uint32_t mbootptr){
 	TaskManager::init();
 	ASSERT(false) //We should never get here
 	return 0;
-}
-
-void shell_process(){
-	Shell().shell();
-	TaskManager::current_process()->kill(SIGKILL);
 }
 
 void kmain_late(){

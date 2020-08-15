@@ -44,9 +44,6 @@ Programs that take arguments will provide you with the correct usage when you ru
 ### Ports
 - DOOM ([duckos-doom](https://github.com/byteduck/duckos-doom)): A port of DOOM. A little buggy at the moment, but playable. I'm waiting to  fix the bugs until I have a proper window manager since there's no sense in dedicating time to making it work in a graphical TTY.
 
-### Kernel shell commands
-Type `help` for a list of commands that can be used in the builtin kernel shell.
-
 ### Known Issues / Limitations
 - Framebuffer scrolling is slow on real hardware. I'm not focusing on fixing this right now until I start working on a window manager.
 - Must be booted off of the master drive on the primary PATA controller as of now.

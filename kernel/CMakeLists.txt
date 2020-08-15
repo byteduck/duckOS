@@ -21,7 +21,6 @@ SET(KERNEL_SRCS
         asm/gdt.s
         kmain.cpp
         pit.cpp
-        shell.cpp
         kstdio.cpp
         keyboard.cpp
         kstddef.cpp
