@@ -122,8 +122,7 @@ Process* TaskManager::current_process(){
 uint32_t TaskManager::add_process(Process *p){
 	ASSERT(tasking_enabled)
 	tasking_enabled = false;
-	if(!process_for_pid(p->pid()))
-		ProcFS::inst().proc_add(p);
+	ProcFS::inst().proc_add(p);
 	p->next = current_proc->next;
 	p->next->prev = p;
 	p->prev = current_proc;

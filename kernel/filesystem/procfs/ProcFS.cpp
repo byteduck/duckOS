@@ -53,6 +53,9 @@ pid_t ProcFS::pid_for_id(ino_t id) {
 
 void ProcFS::proc_add(Process* proc) {
 	pid_t pid = proc->pid();
+	//Make sure we don't add a duplicate entry (would happen with exec())
+	for(size_t i = 0; i < entries.size(); i++)
+		if(entries[i].pid == pid) return;
 	entries.push_back(ProcFSEntry(RootProcEntry, pid));
 	entries.push_back(ProcFSEntry(ProcExe, pid));
 	entries.push_back(ProcFSEntry(ProcCwd, pid));

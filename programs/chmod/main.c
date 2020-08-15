@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
 	}
 
 	char* endptr;
-	long mode = strtol(argv[1], &endptr, 0);
+	long mode = strtol(argv[1], &endptr, 8);
 	if (endptr == argv[1]) {
 		printf("chmod: Invalid mode\n");
 		return EINVAL;

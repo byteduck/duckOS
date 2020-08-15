@@ -85,7 +85,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer) {
 			auto str = CommandLine::get_cmdline() + "\n";
 			if(start + length > str.length())
 				length = str.length() - start;
-			memcpy(buffer, str.c_str(), length);
+			memcpy(buffer, str.c_str() + start, length);
 			return length;
 		}
 
@@ -120,7 +120,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer) {
 
 			if(start + length > str.length())
 				length = str.length() - start;
-			memcpy(buffer, str.c_str(), length);
+			memcpy(buffer, str.c_str() + start, length);
 			return length;
 		}
 
@@ -132,7 +132,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer) {
 
 			if(start + length > str.length())
 				length = str.length() - start;
-			memcpy(buffer, str.c_str(), length);
+			memcpy(buffer, str.c_str() + start, length);
 			return length;
 		}
 
@@ -180,7 +180,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer) {
 
 			if(start + length > str.length())
 				length = str.length() - start;
-			memcpy(buffer, str.c_str(), length);
+			memcpy(buffer, str.c_str() + start, length);
 			return length;
 		}
 

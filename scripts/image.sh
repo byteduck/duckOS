@@ -58,8 +58,15 @@ mkdir -p mnt/dev/input
 mknod mnt/dev/input/keyboard c 13 0
 echo "Done setting up devices!"
 echo "Setting up directories..."
+chmod -R g+rX,o+rX mnt/
+
+echo "Setting up /proc/..."
 mkdir -p mnt/proc
 chmod 555 mnt/proc
+
+echo "Setting up /etc/..."
+chown -R 0:0 mnt/etc
+
 echo "Done setting up directories!"
 echo "Done setting up root filesystem!"
 

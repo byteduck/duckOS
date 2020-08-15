@@ -3,6 +3,9 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <malloc.h>
+#include <string.h>
+#include <stdlib.h>
 
 /*
     This file is part of duckOS.
@@ -32,18 +35,61 @@ int main(int argc, char** argv, char** envp) {
 	}
 
 	setsid();
+	printf("[init] Welcome to duckOS!\n");
 
-	pid_t pid = fork();
-	if(pid == 0) {
-		char* args[] = {"/bin/dsh", NULL};
-		char* env[] = {NULL};
-		execve("/bin/dsh", args, env);
+	//Open the config file
+	FILE* config = fopen("/etc/init.conf", "r");
+	if(!config) {
+		printf("[init] Failed to open /etc/init.conf: %s\n", strerror(errno));
+		exit(errno);
 	}
 
-	printf("[init] Welcome to duckOS!\n");
+	//Read the config
+	char* line = malloc(512);
+	char* exec = malloc(512);
+	while((line = fgets(line, 512, config))) {
+		//Trim beginning whitespace
+		while(*line == ' ' || *line == '\t') line++;
+
+		//Get key and value separated by =
+		char* key = strtok(line, "= \t");
+		char* value = strtok(NULL, "\n");
+		if(!value) continue;
+
+		//Parse the key/value
+		if(!strcmp(key, "exec"))
+			strcpy(exec, value);
+	}
+	free(line);
+
+	//Execute the program given by the exec key in the config
+	pid_t pid = fork();
+	if(pid == 0) {
+		//Split the arguments
+		int eargc = 0;
+		char* args[512];
+		char* arg = strtok(exec, " \t");
+		args[eargc++] = arg;
+		while((arg = strtok(NULL, " \t"))) {
+			args[eargc++] = arg;
+		}
+		args[eargc] = NULL;
+
+		//Execute the
+		char* env[] = {NULL};
+		execve(args[0], args, env);
+
+		printf("[init] Failed to execute %s: %s\n", exec, strerror(errno));
+		exit(errno);
+	}
+
+	free(exec);
+
+	//Wait for all child processes
 	while(1) {
 		pid_t pid = waitpid(-1, NULL, 0);
 		if(pid < 0 && errno == ECHILD) break; //All child processes exited
 	}
+
 	printf("[init] All child processes exited.\n");
 }
