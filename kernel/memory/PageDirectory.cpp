@@ -323,6 +323,8 @@ void PageDirectory::unmap_region(const LinkedMemoryRegion& region) {
 		table->value = 0;
 		if (_page_tables_num_mapped[directory_index] == 0)
 			dealloc_page_table(directory_index);
+
+		Memory::invlpg((void *) (vregion->start + page * PAGE_SIZE));
 	}
 }
 

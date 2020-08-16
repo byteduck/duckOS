@@ -5,7 +5,7 @@
 ### Dependencies
 - A Linux environment (WSL will work, but WSL2 is preferred because it is much faster than WSL1)
 - GCC
-- G++
+- Nasm
 - Make
 - CMake
 - Bison
@@ -14,13 +14,13 @@
 - MPFR
 - MPC
 - Texinfo
-- ISL
-- CLooG
+- Grub
+- Gawk
 - QEmu (For emulating)
 
 ### Installing dependencies
-- Ubuntu/Debian: `apt install build-essential cmake bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo qemu-system-i386 qemu-utils nasm`
-- Arch: `pacman -S base-devel cmake gmp libmpc mpfr qemu qemu-arch-extra nasm`
+- Ubuntu/Debian: `apt install build-essential cmake bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo qemu-system-i386 qemu-utils nasm gawk grub2-common grub-pc`
+- Arch: `pacman -S base-devel cmake gmp libmpc mpfr qemu qemu-arch-extra nasm grub`
 
 ## Building the toolchain
 1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site and newlib from the newlib ftp site.)

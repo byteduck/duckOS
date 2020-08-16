@@ -483,13 +483,16 @@ size_t Process::sys_sbrk(int amount) {
 	if(amount > 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			page_directory->allocate_region((current_brk_page + 1) * PAGE_SIZE,
-										   (new_brk_page - current_brk_page) * PAGE_SIZE, true);
+			for(size_t page = current_brk_page + 1; page <= new_brk_page; page++) {
+				page_directory->allocate_region(page * PAGE_SIZE, PAGE_SIZE, true);
+			}
 		}
 	} else if (amount < 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			page_directory->free_region((void*) (new_brk_page * PAGE_SIZE));
+			for(size_t page = current_brk_page; page > new_brk_page; page--) {
+				page_directory->free_region((void*)(page * PAGE_SIZE));
+			}
 		}
 	}
 	size_t prev_brk = current_brk;
