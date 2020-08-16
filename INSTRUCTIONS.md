@@ -19,8 +19,8 @@
 - QEmu (For emulating)
 
 ### Installing dependencies
-- Ubuntu/Debian: `apt install build-essential cmake bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo qemu-system-i386 qemu-utils`
-- Arch: `pacman -Syu base-devel cmake gmp libmpc mpfr qemu qemu-arch-extra`
+- Ubuntu/Debian: `apt install build-essential cmake bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo qemu-system-i386 qemu-utils nasm`
+- Arch: `pacman -S base-devel cmake gmp libmpc mpfr qemu qemu-arch-extra nasm`
 
 ## Building the toolchain
 1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site and newlib from the newlib ftp site.)
