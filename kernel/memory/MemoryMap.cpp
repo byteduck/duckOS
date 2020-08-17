@@ -173,6 +173,36 @@ void MemoryMap::free_region(MemoryRegion *region) {
 	}
 }
 
+MemoryRegion* MemoryMap::split_region(MemoryRegion* region, size_t split_start, size_t split_size) {
+	if(split_start < region->start) return nullptr;
+	size_t split_end = split_start + split_size - 1;
+	if(split_end >= region->start + region->size) return nullptr;
+
+	//Create a new region before split_start if necessary and update the linked list
+	if(split_start != region->start) {
+		auto* new_region = new MemoryRegion(region->start, split_start - region->start);
+		if (region->prev) region->prev->next = new_region;
+		new_region->prev = region->prev;
+		new_region->next = region;
+		region->prev = new_region;
+		if(region == _first_region) _first_region = new_region;
+	}
+
+	//Create a new region after split_end if necessary
+	if(split_end != region->start + region->size - 1) {
+		auto* new_region = new MemoryRegion(split_start + split_size, (region->start + region->size) - split_end);
+		if (region->next) region->next->prev = new_region;
+		new_region->next = region->next;
+		new_region->prev = region;
+		region->next = new_region;
+	}
+
+	//Update the region's start and size
+	region->start = split_start;
+	region->size = split_size;
+	return region;
+}
+
 size_t MemoryMap::page_size() {
 	return _page_size;
 }

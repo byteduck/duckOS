@@ -483,16 +483,13 @@ size_t Process::sys_sbrk(int amount) {
 	if(amount > 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			for(size_t page = current_brk_page + 1; page <= new_brk_page; page++) {
-				page_directory->allocate_region(page * PAGE_SIZE, PAGE_SIZE, true);
-			}
+			page_directory->allocate_region((current_brk_page + 1) * PAGE_SIZE, (new_brk_page - current_brk_page) * PAGE_SIZE, true);
 		}
 	} else if (amount < 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			for(size_t page = current_brk_page; page > new_brk_page; page--) {
-				page_directory->free_region((void*)(page * PAGE_SIZE));
-			}
+			if(!page_directory->free_region((new_brk_page + 1) * PAGE_SIZE, (current_brk_page - new_brk_page) * PAGE_SIZE))
+				printf("WARNING: Failed to free memory region for PID %d\n", _pid);
 		}
 	}
 	size_t prev_brk = current_brk;

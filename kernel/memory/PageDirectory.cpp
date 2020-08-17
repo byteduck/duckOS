@@ -406,15 +406,29 @@ void PageDirectory::free_region(const LinkedMemoryRegion& region) {
 	Memory::pmem_map().free_region(region.phys);
 }
 
-bool PageDirectory::free_region(void* virtaddr) {
-	MemoryRegion* vregion = _vmem_map.find_region((size_t) virtaddr);
+bool PageDirectory::free_region(size_t virtaddr, size_t size) {
+	//Find the appropriate region
+	MemoryRegion* vregion = _vmem_map.find_region(virtaddr);
 	if(!vregion) return false;
 	if(!vregion->related) PANIC("VREGION_NO_RELATED", "A virtual program memory region had no corresponding physical region.", true);
-	LinkedMemoryRegion region(vregion->related, vregion);
+
+	//Split the physical region
+	auto* pregion = vregion->related;
+	size_t pregion_split_start = pregion->start + (virtaddr - vregion->start);
+	pregion = Memory::pmem_map().split_region(pregion, pregion_split_start, size);
+	if(!pregion) return false;
+
+	//Split the virtual region
+	vregion = _vmem_map.split_region(vregion, virtaddr, size);
+	if(!vregion) PANIC("VREGION_SPLIT_FAIL", "A virtual program memory region couldn't be split after its physical region was split.", true);
+
+	//Unmap and free the regions
+	LinkedMemoryRegion region(pregion, vregion);
 	unmap_region(region);
 	_vmem_map.free_region(region.virt);
 	Memory::pmem_map().free_region(region.phys);
 	_used_pmem -= region.phys->size;
+
 	return true;
 }
 

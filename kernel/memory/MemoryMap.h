@@ -22,6 +22,7 @@
 
 
 #include <common/cstddef.h>
+#include <kernel/tasking/SpinLock.h>
 #include "MemoryRegion.h"
 
 class MemoryMap {
@@ -52,6 +53,14 @@ public:
 	 * @param region The region to free. Both its start and size may be mutated.
 	 */
 	void free_region(MemoryRegion* region);
+
+	/**
+	 * Splits the region given into multiple parts.
+	 * @param start The start of the region to be returned.
+	 * @param size The size of the region to be returned.
+	 * @return The memory region given by the range specified, or null if the range was invalid.
+	 */
+	MemoryRegion* split_region(MemoryRegion* region, size_t start, size_t size);
 
 	/**
 	 * Finds the region containing the address.

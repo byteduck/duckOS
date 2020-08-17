@@ -192,9 +192,10 @@ public:
 	 * Frees an unmaps a region of virtual and physical memory in program space.
 	 * free_region(LinkedMemoryRegion) is faster.
 	 * @param virtaddr the virtual address of the region to be freed.
+	 * @param virtaddr the size of the region to be freed.
 	 * @return Whether or not the region was freed.
 	 */
-	bool free_region(void* virtaddr);
+	bool free_region(size_t virtaddr, size_t size);
 
 	/**
 	 * @return A pointer to the page directory's vmem map.
