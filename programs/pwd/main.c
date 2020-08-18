@@ -26,4 +26,5 @@ int main() {
 	char pwd[4096];
 	getcwd(pwd, 4096);
 	printf("%s\n", pwd);
+	return 0;
 }

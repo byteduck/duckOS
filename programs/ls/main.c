@@ -72,4 +72,6 @@ int main(int argc, char **argv, char **env) {
 		perror("ls");
 		return errno;
 	}
+
+	return 0;
 }

@@ -92,4 +92,6 @@ int main(int argc, char** argv, char** envp) {
 	}
 
 	printf("[init] All child processes exited.\n");
+
+	return 0;
 }
