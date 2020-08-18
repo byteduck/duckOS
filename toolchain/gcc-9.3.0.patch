@@ -53,7 +53,7 @@ index b2282ecdf..35396ba09 100644
  	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-elf-raw.h"
 diff --git a/gcc/config/duckos.h b/gcc/config/duckos.h
 new file mode 100644
-index 000000000..17f533c7d
+index 000000000..6605c91c1
 --- /dev/null
 +++ b/gcc/config/duckos.h
 @@ -0,0 +1,32 @@
@@ -69,15 +69,15 @@ index 000000000..17f533c7d
 +/* Files that are linked before user code.
 +   The %s tells GCC to look for these files in the library directory. */
 +#undef STARTFILE_SPEC
-+#define STARTFILE_SPEC "crt0.o%s crti.o%s crtbegin.o%s"
++#define STARTFILE_SPEC "%{!shared: %{!pg:crt0.o%s}} crti.o%s %{!shared:crtbegin.o%s}"
 +
 +/* Files that are linked after user code. */
 +#undef ENDFILE_SPEC
-+#define ENDFILE_SPEC "crtend.o%s crtn.o%s"
++#define ENDFILE_SPEC "%{!shared:crtend.o%s} crtn.o%s"
 +
 +/* How to link. */
 +#undef LINK_SPEC
-+#define LINK_SPEC "%{shared:-shared} %{static:-static} %{!shared: %{!static: %{rdynamic:-export-dynamic}}}"
++#define LINK_SPEC "%{shared:-shared} %{static:-static} %{!shared: %{!static: %{rdynamic:-export-dynamic} %{!dynamic-linker:-dynamic-linker /lib/ld-duckos.so}}}"
 +
 +/* Additional predefined macros. */
 +#undef TARGET_OS_CPP_BUILTINS

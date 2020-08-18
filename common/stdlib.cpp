@@ -17,7 +17,6 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
 #include "stdlib.h"
 
 int atoi(char *str){

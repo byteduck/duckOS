@@ -24,7 +24,7 @@
 #include <common/string.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/tasking/elf.h>
+#include <kernel/tasking/ELF.h>
 #include <common/shared_ptr.hpp>
 #include <kernel/filesystem/LinkedInode.h>
 #include <kernel/tasking/TSS.h>

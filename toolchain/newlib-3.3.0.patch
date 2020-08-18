@@ -11648,10 +11648,10 @@ index 0000000..9085d01
 +#endif
 diff --git a/newlib/libc/sys/duckos/sys/dirent.h b/newlib/libc/sys/duckos/sys/dirent.h
 new file mode 100644
-index 0000000..b643455
+index 0000000..ad6ea6c
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/sys/dirent.h
-@@ -0,0 +1,60 @@
+@@ -0,0 +1,64 @@
 +/*
 +    This file is part of duckOS.
 +    
@@ -11703,12 +11703,16 @@ index 0000000..b643455
 +	struct dirent dd_cur; /* current entry */
 +} DIR;
 +
++#ifndef __cplusplus
++
 +DIR *opendir(const char *);
 +struct dirent *readdir(DIR *);
 +int readdir_r(DIR *__restrict, struct dirent *__restrict,
 +			  struct dirent **__restrict);
 +void rewinddir(DIR *);
 +int closedir(DIR *);
++
++#endif
 +
 +#endif
 +

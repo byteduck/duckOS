@@ -24,7 +24,7 @@ SET(KERNEL_SRCS
         kstdio.cpp
         keyboard.cpp
         kstddef.cpp
-        tasking/elf.cpp
+        tasking/ELF.cpp
         tasking/TaskManager.cpp
         pci/pci.cpp
         memory/gdt.cpp
@@ -93,7 +93,7 @@ SET(COMMON_SRCS
         ../common/string.cpp)
 
 ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS} ${COMMON_SRCS})
-TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>")
+TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL)
 
 SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/kernel.ld)
 SET_TARGET_PROPERTIES(duckk32 PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})

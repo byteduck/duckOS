@@ -20,7 +20,7 @@
 #ifndef DUCKOS_QUEUE_HPP
 #define DUCKOS_QUEUE_HPP
 
-#include <kernel/memory/kliballoc.h>
+#include "kmalloc.h"
 #include "cstddef.h"
 #include "cstring.h"
 #include "utility.h"

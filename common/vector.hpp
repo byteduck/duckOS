@@ -20,7 +20,7 @@
 #ifndef DUCKOS_VECTOR_HPP
 #define DUCKOS_VECTOR_HPP
 
-#include <kernel/memory/kliballoc.h>
+#include "kmalloc.h"
 #include "cstddef.h"
 #include "cstring.h"
 #include "utility.h"

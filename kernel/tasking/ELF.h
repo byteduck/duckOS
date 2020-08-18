@@ -92,6 +92,13 @@ namespace ELF {
 	bool is_valid_elf_header(elf32_header* header);
 	bool can_execute(elf32_header* header);
 
+	class ElfInfo {
+	public:
+		DC::shared_ptr<elf32_header> header;
+		DC::vector<elf32_segment_header> segments;
+		DC::shared_ptr<FileDescriptor> fd;
+	};
+
 	/**
 	 * Reads the elf32 header of the given file descriptor.
 	 * @param fd The file descriptor of the executable. Will be seeked.
@@ -125,13 +132,13 @@ namespace ELF {
 	ResultRet<size_t> load_sections(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers, PageDirectory* page_directory);
 
 	/**
-	 * Loads an ELF executable into the given page directory.
+	 * Gets information about an ELF executable.
 	 * @param fd The file descriptor of the executable. Will be seeked.
-	 * @param page_dir The page directory to load into.
-	 * @param header The elf32 header of the executable, read by ELF::read_header
-	 * @return The program break or an error.
+	 * @param user The user executing the executable.
+	 * @param allow_interpreter If false, ENOEXEC will be returned if the executable requests an interpreter.
+	 * @return Information about the ELF executable or an error.
 	 */
-	ResultRet<uint32_t> load_elf(FileDescriptor& fd, PageDirectory* page_dir, elf32_header* header);
+	 ResultRet<ElfInfo> read_info(const DC::shared_ptr<FileDescriptor>& fd, User& user, bool allow_interpreter);
 }
 
 #endif

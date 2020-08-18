@@ -6,7 +6,7 @@ PREFIX="$DIR/tools"
 BUILD="$DIR/build"
 EDIT="$DIR/edit"
 SYSROOT="$DIR/sysroot"
-NUM_JOBS=$(nproc)
+NUM_JOBS=$(($(nproc) / 2))
 
 BINUTILS_VERSION="2.34"
 BINUTILS_FILE="binutils-$BINUTILS_VERSION"

@@ -44,12 +44,18 @@ build_gcc () {
   printf "Configuring gcc...\n"
   mkdir -p "gcc-$GCC_VERSION-build"
   cd "gcc-$GCC_VERSION-build"
+  # Note to self: Use --enable-default-pie to enable dynamic linking by default
   "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --with-newlib --enable-shared || exit 1
   printf "Making gcc...\n"
   make -j "$NUM_JOBS" all-gcc all-target-libgcc || exit 1
   printf "Installing gcc...\n"
   make install-gcc install-target-libgcc || exit 1
   printf "gcc installed!\n"
+  printf "Making libstdc++...\n"
+  make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1
+  printf "Installing libstdc++...\n"
+  make install-gcc install-target-libstdc++-v3
+  printf "libstdc++ installed!\n"
   cd ..
 
   popd

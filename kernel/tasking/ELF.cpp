@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/tasking/elf.h>
+#include <kernel/tasking/ELF.h>
 #include <common/defines.h>
 #include <kernel/filesystem/VFS.h>
 #include <kernel/memory/Memory.h>
@@ -33,7 +33,7 @@ bool ELF::can_execute(elf32_header *header) {
 	if(header->instruction_set != ELF_X86) return false;
 	if(header->elf_version != 0x1) return false;
 	if(header->header_version != 0x1) return false;
-	if(header->type != ELF_TYPE_EXECUTABLE) return false;
+	if(header->type != ELF_TYPE_EXECUTABLE && header->type != ELF_TYPE_SHARED) return false;
 	return header->endianness == ELF_LITTLE_ENDIAN;
 }
 
@@ -45,6 +45,7 @@ ResultRet<ELF::elf32_header*> ELF::read_header(FileDescriptor& fd) {
 
 	res = fd.read((uint8_t*)header, sizeof(ELF::elf32_header));
 	if(res < 0) return res;
+
 
 	if(!ELF::can_execute(header)) {
 		delete header;
@@ -142,32 +143,38 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, DC::vector<elf32_segmen
 	return current_brk;
 }
 
-ResultRet<uint32_t> ELF::load_elf(FileDescriptor& fd, PageDirectory* page_dir, elf32_header* header) {
-	if(!ELF::can_execute(header)) return -ENOEXEC;
+ResultRet<ELF::ElfInfo> ELF::read_info(const DC::shared_ptr<FileDescriptor>& fd, User& user, bool allow_interpreter) {
+	//Read the ELF header
+	auto header_or_err = ELF::read_header(*fd);
+	if(header_or_err.is_error()) return header_or_err.code();
+	auto* header = header_or_err.value();
 
 	//Read the program headers
-	auto program_headers_res = ELF::read_program_headers(fd, header);
-	if(program_headers_res.is_error())
-		return program_headers_res.code();
-	auto program_headers = program_headers_res.value();
+	auto segments_or_err = ELF::read_program_headers(*fd, header);
+	if(segments_or_err.is_error()) {
+		delete header;
+		return segments_or_err.code();
+	}
+	auto segment_headers = segments_or_err.value();
 
-	//Find the interpreter (if there is one)
-	auto interp_res = ELF::read_interp(fd, program_headers);
-	bool has_interp = true;
-	DC::string interpreter = "";
-	if(interp_res.is_error()) {
-		if(interp_res.code() == -ENOENT) has_interp = false;
-		else return interp_res.code();
-	} else {
-		interpreter = interp_res.value();
+	//Read the interpreter (if there is one)
+	auto interp_or_err = ELF::read_interp(*fd, segment_headers);
+	if(interp_or_err.is_error() && interp_or_err.code() != -ENOENT) {
+		delete header;
+		return interp_or_err.code();
+	} else if(!interp_or_err.is_error()) {
+		delete header;
+		if(!allow_interpreter) return -ENOEXEC;
+
+		//Open the interpreter
+		auto interp_fd_or_err = VFS::inst().open(interp_or_err.value(), O_RDONLY, 0, user, VFS::inst().root_ref());
+		if(interp_fd_or_err.is_error())
+			return interp_fd_or_err.code();
+		auto interp_fd = interp_fd_or_err.value();
+
+		//Read the interpreter's info
+		return read_info(interp_fd, user, false);
 	}
 
-	//We don't support dynamically linked / interpreted executables yet
-	if(has_interp) {
-		printf("Tried to run an executable with an INTERP section!\n");
-		return -ENOEXEC;
-	}
-
-	//Load the appropriate sections of the ELF into memory and return the program break or error.
-	return ELF::load_sections(fd, program_headers, page_dir);
+	return ElfInfo { DC::shared_ptr<elf32_header>(header), segment_headers, fd };
 }

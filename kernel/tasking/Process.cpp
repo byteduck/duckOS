@@ -23,7 +23,7 @@
 #include <kernel/pit.h>
 #include "Process.h"
 #include "TaskManager.h"
-#include "elf.h"
+#include "ELF.h"
 #include "ProcessArgs.h"
 #include "WaitBlocker.h"
 #include <kernel/memory/PageDirectory.h>
@@ -42,18 +42,18 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, User&
 	if(fd_or_error.is_error()) return fd_or_error.code();
 	auto fd = fd_or_error.value();
 
-	//Read the ELF header
-	auto header_or_err = ELF::read_header(*fd);
-	if(header_or_err.is_error()) return header_or_err.code();
-	auto* header = header_or_err.value();
+	//Read info
+	auto info_or_err = ELF::read_info(fd, file_open_user, true);
+	if(info_or_err.is_error())
+		return info_or_err.code();
+	auto info = info_or_err.value();
 
 	//Create the process
-	auto* proc = new Process(VFS::path_base(executable_loc), header->program_entry_position, false, args, parent);
+	auto* proc = new Process(VFS::path_base(executable_loc), info.header->program_entry_position, false, args, parent);
 	proc->_exe = executable_loc;
 
 	//Load the ELF into the process's page directory and set proc->current_brk
-	auto brk_or_err = ELF::load_elf(*fd, proc->page_directory, header);
-	delete header;
+	auto brk_or_err = ELF::load_sections(*info.fd, info.segments, proc->page_directory);
 	if(brk_or_err.is_error()) return brk_or_err.value();
 	proc->current_brk = brk_or_err.value();
 
