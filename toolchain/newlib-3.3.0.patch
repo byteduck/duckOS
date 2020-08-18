@@ -11901,7 +11901,7 @@ index 0000000..3957434
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..f64056f
+index 0000000..d88b969
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
 @@ -0,0 +1,690 @@
@@ -11938,8 +11938,8 @@ index 0000000..f64056f
 +#include "syscall.h"
 +#include "limits.h"
 +
-+void _exit() {
-+	asm volatile("int $0x80" :: "a"(SYS_EXIT));
++void _exit(int status) {
++	asm volatile("int $0x80" :: "a"(SYS_EXIT), "b"(status));
 +}
 +
 +
