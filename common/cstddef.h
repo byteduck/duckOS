@@ -20,8 +20,6 @@
 #ifndef DUCKOS_CSTDDEF_H
 #define DUCKOS_CSTDDEF_H
 
-#ifdef DUCKOS_KERNEL
-
 #define NULL 0
 
 #define __va_argsiz(t)	\
@@ -75,16 +73,5 @@ typedef struct sigaction {
 	sigset_t sa_mask;
 	int sa_flags;
 } sigaction_t;
-
-#else
-#include <stddef.h>
-//TODO: A proper C++ library
-void *operator new(size_t size);
-void *operator new(size_t size, void* ptr);
-void *operator new[](size_t size);
-void *operator new[](size_t size, void* ptr);
-void operator delete(void *p);
-void operator delete[](void *p);
-#endif
 
 #endif //DUCKOS_CSTDDEF_H

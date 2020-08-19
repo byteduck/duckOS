@@ -147,6 +147,7 @@ public:
 	int sys_chown(char* file, uid_t uid, gid_t gid);
 	int sys_fchown(int fd, uid_t uid, gid_t gid);
 	int sys_lchown(char* file, uid_t uid, gid_t gid);
+	int sys_alloc(void* location, size_t size);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;

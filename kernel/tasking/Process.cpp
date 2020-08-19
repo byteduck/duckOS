@@ -483,7 +483,9 @@ size_t Process::sys_sbrk(int amount) {
 	if(amount > 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
-			page_directory->allocate_region((current_brk_page + 1) * PAGE_SIZE, (new_brk_page - current_brk_page) * PAGE_SIZE, true);
+			auto reg = page_directory->allocate_region((current_brk_page + 1) * PAGE_SIZE, (new_brk_page - current_brk_page) * PAGE_SIZE, true);
+			if(!reg.virt)
+				return -ENOMEM;
 		}
 	} else if (amount < 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
@@ -1005,4 +1007,14 @@ int Process::sys_lchown(char* file, uid_t uid, gid_t gid) {
 	check_ptr(file);
 	DC::string filestr(file);
 	return VFS::inst().chown(filestr, uid, gid, _user, _cwd, O_NOFOLLOW).code();
+}
+
+int Process::sys_alloc(void* addressptr, size_t size) {
+	if((size_t) addressptr + size >= HIGHER_HALF)
+		return -EFAULT;
+
+	auto reg = page_directory->allocate_region((size_t) addressptr, size, true);
+	if(!reg.virt)
+		return -ENOMEM;
+	return SUCCESS;
 }

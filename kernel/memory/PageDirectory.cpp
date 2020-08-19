@@ -378,10 +378,8 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t mem_size, bool read_wri
 LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size, bool read_write) {
 	//First, try allocating a region of virtual memory.
 	MemoryRegion *vmem_region = _vmem_map.allocate_region(vaddr, mem_size);
-	if (!vmem_region) {
-		//TODO: Send a signal instead
-		PANIC("NO_VMEM_SPACE", "A program ran out of vmem space.", true);
-	}
+	if (!vmem_region)
+		return {nullptr, nullptr};
 
 	//Next, try allocating the physical pages.
 	MemoryRegion *pmem_region = Memory::pmem_map().allocate_region(mem_size);

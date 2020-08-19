@@ -48,7 +48,7 @@ Programs that take arguments will provide you with the correct usage when you ru
 - Framebuffer scrolling is slow on real hardware. I'm not focusing on fixing this right now until I start working on a window manager.
 - Must be booted off of the master drive on the primary PATA controller as of now.
 - PATA DMA doesn't seem to work on real hardware at the moment, so the `use_pio` grub commandline option should be specified if you're crazy enough to test this on real hardware ;)
-- Binaries are statically linked, so they're larger and take up more memory than usual
+- Libc is statically linked (due to a limitation of newlib), so binaries slightly larger on disk than usual
 - Ext2 triply indirect block pointers cannot be read/written, so there may be issues writing and reading large files
 - A buffer overflow attack on the kernel may be possible, because only pointers passed to syscalls are checked for validity (and not the length of the data to be read/written)
 
