@@ -11481,17 +11481,24 @@ index 0000000..9e15348
 +AC_OUTPUT
 diff --git a/newlib/libc/sys/duckos/crt0.c b/newlib/libc/sys/duckos/crt0.c
 new file mode 100644
-index 0000000..89b1d06
+index 0000000..05d1c7c
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/crt0.c
-@@ -0,0 +1,8 @@
+@@ -0,0 +1,15 @@
 +#include <fcntl.h>
++#include <unistd.h>
 +
 +extern void exit(int code);
 +extern int main(int argc, char **argv, char **env);
++extern void (**__init_array_start)();
++extern void (**__init_array_end)();
 +
-+void _start(int argc, char **argv, char **env){
-+	exit(main(argc, argv, env));
++
++void _start(int argc, char **argv, char **envp){
++	for (void (**p)() = &__init_array_start; p < &__init_array_end; ++p)
++		(*p)();
++	environ = envp;
++	exit(main(argc, argv, envp));
 +}
 diff --git a/newlib/libc/sys/duckos/dirent.c b/newlib/libc/sys/duckos/dirent.c
 new file mode 100644
@@ -11901,10 +11908,10 @@ index 0000000..3957434
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.c b/newlib/libc/sys/duckos/syscall.c
 new file mode 100644
-index 0000000..d88b969
+index 0000000..1b6d21b
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.c
-@@ -0,0 +1,690 @@
+@@ -0,0 +1,688 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -11953,8 +11960,6 @@ index 0000000..d88b969
 +	}
 +	return ret;
 +}
-+
-+char **environ = 0; //TODO
 +
 +int execve(char *name, char **argv, char **env) {
 +	int ret = 0;
@@ -12598,10 +12603,10 @@ index 0000000..d88b969
 \ No newline at end of file
 diff --git a/newlib/libc/sys/duckos/syscall.h b/newlib/libc/sys/duckos/syscall.h
 new file mode 100644
-index 0000000..baaa70e
+index 0000000..ac6dcfd
 --- /dev/null
 +++ b/newlib/libc/sys/duckos/syscall.h
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,87 @@
 +/*
 +    This file is part of duckOS.
 +
@@ -12679,6 +12684,7 @@ index 0000000..baaa70e
 +#define SYS_CHOWN 56
 +#define SYS_FCHOWN 57
 +#define SYS_LCHOWN 58
++#define SYS_INTERNAL_ALLOC 59
 +
 +struct __attribute__((packed)) readlinkat_args {
 +	int fd;
