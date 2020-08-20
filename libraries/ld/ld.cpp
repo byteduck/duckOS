@@ -30,7 +30,7 @@ std::unordered_map<std::string, uintptr_t> global_symbols;
 std::unordered_map<std::string, uintptr_t> symbols;
 std::map<std::string, Object*> objects;
 size_t current_brk = 0;
-bool debug = false;
+bool debug = true;
 
 int main(int argc, char** argv, char** envp) {
 	if(argc < 2) {
@@ -52,24 +52,19 @@ int main(int argc, char** argv, char** envp) {
 	if(executable->load(argv[1], true) < 0)
 		return errno;
 
-	//Relocate the libraries and close their file descriptors
-	for(auto& object_pair : objects) {
-		auto* object = object_pair.second;
-		if(object->name == argv[1])
-			continue;
+	//Relocate the libraries and executable and close their file descriptors
+	auto rev_it = objects.rbegin();
+	while(rev_it != objects.rend()) {
+		auto* object = rev_it->second;
 		object->relocate();
 		close(object->fd);
+		rev_it++;
 	}
 
-	//Relocate the main executable last
-	executable->relocate();
-	close(executable->fd);
-
-	//Call the initializer methods for the libraries
-	for(auto& object_pair : objects) {
-		auto* object = object_pair.second;
-		if(object->name == argv[1])
-			continue;
+	//Call the initializer methods for the libraries and executable
+	rev_it = objects.rbegin();
+	while(rev_it != objects.rend()) {
+		auto* object = rev_it->second;
 		if(object->init_array) {
 			for(size_t i = 0; i < object->init_array_size; i++) {
 				if(debug)
@@ -77,32 +72,19 @@ int main(int argc, char** argv, char** envp) {
 				object->init_array[i]();
 			}
 		}
+		rev_it++;
 	}
 
-	//Call main initializers for the libraries
-	for(auto& object_pair : objects) {
-		auto* object = object_pair.second;
-		if(object->name == argv[1] || !object->init_func)
-			continue;
-		if(debug)
-			printf("Calling main initializer %lx() for %s\n", (size_t) object->init_func, object->name.c_str());
-		object->init_func();
-	}
-
-	//Call initializers for main executable
-	if(executable->init_array) {
-		for(size_t i = 0; i < executable->init_array_size; i++) {
+	//Call main initializers for the libraries and executable
+	rev_it = objects.rbegin();
+	while(rev_it != objects.rend()) {
+		auto* object = rev_it->second;
+		if(object->init_func) {
 			if(debug)
-				printf("Calling initializer 0x%lx() for %s\n", (size_t) executable->init_array[i], executable->name.c_str());
-			executable->init_array[i]();
+				printf("Calling main initializer %lx() for %s\n", (size_t) object->init_func, object->name.c_str());
+			object->init_func();
 		}
-	}
-
-	//Call main initializer for main executable
-	if(executable->init_func) {
-		if(debug)
-			printf("Calling main initializer 0x%lx() for %s\n", (size_t) executable->init_func, executable->name.c_str());
-		executable->init_func();
+		rev_it++;
 	}
 
 	//Set the breakpoint of the program
