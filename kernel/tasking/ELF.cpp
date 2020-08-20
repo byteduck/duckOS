@@ -143,7 +143,7 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, DC::vector<elf32_segmen
 	return current_brk;
 }
 
-ResultRet<ELF::ElfInfo> ELF::read_info(const DC::shared_ptr<FileDescriptor>& fd, User& user, bool allow_interpreter) {
+ResultRet<ELF::ElfInfo> ELF::read_info(const DC::shared_ptr<FileDescriptor>& fd, User& user, DC::string interpreter) {
 	//Read the ELF header
 	auto header_or_err = ELF::read_header(*fd);
 	if(header_or_err.is_error()) return header_or_err.code();
@@ -164,7 +164,7 @@ ResultRet<ELF::ElfInfo> ELF::read_info(const DC::shared_ptr<FileDescriptor>& fd,
 		return interp_or_err.code();
 	} else if(!interp_or_err.is_error()) {
 		delete header;
-		if(!allow_interpreter) return -ENOEXEC;
+		if(interpreter.length()) return -ENOEXEC;
 
 		//Open the interpreter
 		auto interp_fd_or_err = VFS::inst().open(interp_or_err.value(), O_RDONLY, 0, user, VFS::inst().root_ref());
@@ -173,8 +173,8 @@ ResultRet<ELF::ElfInfo> ELF::read_info(const DC::shared_ptr<FileDescriptor>& fd,
 		auto interp_fd = interp_fd_or_err.value();
 
 		//Read the interpreter's info
-		return read_info(interp_fd, user, false);
+		return read_info(interp_fd, user, interp_or_err.value());
 	}
 
-	return ElfInfo { DC::shared_ptr<elf32_header>(header), segment_headers, fd };
+	return ElfInfo { DC::shared_ptr<elf32_header>(header), segment_headers, fd, interpreter };
 }

@@ -148,7 +148,9 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_LCHOWN:
 			return TaskManager::current_process()->sys_lchown((char*)arg1, (uid_t)arg2, (gid_t)arg3);
 		case SYS_INTERNAL_ALLOC:
-			return TaskManager::current_process()->sys_alloc((void*)arg1, (size_t)arg2);
+			return TaskManager::current_process()->sys_internal_alloc((void*) arg1, (size_t) arg2);
+		case SYS_INTERNAL_SETBRK:
+			return TaskManager::current_process()->sys_internal_setbrk((size_t)arg1);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

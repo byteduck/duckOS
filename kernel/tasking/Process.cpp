@@ -43,10 +43,28 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, User&
 	auto fd = fd_or_error.value();
 
 	//Read info
-	auto info_or_err = ELF::read_info(fd, file_open_user, true);
+	auto info_or_err = ELF::read_info(fd, file_open_user);
 	if(info_or_err.is_error())
 		return info_or_err.code();
 	auto info = info_or_err.value();
+
+	//If there's an interpreter, we need to change the arguments accordingly
+	if(info.interpreter.length()) {
+		//Get the full path of the program we're trying to run
+		auto resolv = VFS::inst().resolve_path((DC::string&) executable_loc, args->working_dir, file_open_user);
+		if(resolv.is_error())
+			return resolv.code();
+
+		//Add the interpreter + the full path of the program to the args
+		auto new_argv = DC::vector<DC::string>();
+		new_argv.push_back(info.interpreter);
+		new_argv.push_back(resolv.value()->get_full_path());
+
+		//Add the old arguments to the new argv and replace the argv
+		for(size_t i = 0; i < args->argv.size(); i++)
+			new_argv.push_back(args->argv[i]);
+		args->argv = new_argv;
+	}
 
 	//Create the process
 	auto* proc = new Process(VFS::path_base(executable_loc), info.header->program_entry_position, false, args, parent);
@@ -482,18 +500,23 @@ size_t Process::sys_sbrk(int amount) {
 	size_t current_brk_page = current_brk / PAGE_SIZE;
 	if(amount > 0) {
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
+		if(new_brk_page * PAGE_SIZE > HIGHER_HALF)
+			return -ENOMEM;
 		if(new_brk_page != current_brk_page) {
 			auto reg = page_directory->allocate_region((current_brk_page + 1) * PAGE_SIZE, (new_brk_page - current_brk_page) * PAGE_SIZE, true);
 			if(!reg.virt)
 				return -ENOMEM;
 		}
 	} else if (amount < 0) {
+		if(-amount > current_brk)
+			return -ENOMEM;
 		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
 		if(new_brk_page != current_brk_page) {
 			if(!page_directory->free_region((new_brk_page + 1) * PAGE_SIZE, (current_brk_page - new_brk_page) * PAGE_SIZE))
 				printf("WARNING: Failed to free memory region for PID %d\n", _pid);
 		}
 	}
+
 	size_t prev_brk = current_brk;
 	current_brk += amount;
 	return prev_brk;
@@ -1009,12 +1032,19 @@ int Process::sys_lchown(char* file, uid_t uid, gid_t gid) {
 	return VFS::inst().chown(filestr, uid, gid, _user, _cwd, O_NOFOLLOW).code();
 }
 
-int Process::sys_alloc(void* addressptr, size_t size) {
-	if((size_t) addressptr + size >= HIGHER_HALF)
+int Process::sys_internal_alloc(void* location, size_t size) {
+	if((size_t) location + size >= HIGHER_HALF)
 		return -EFAULT;
 
-	auto reg = page_directory->allocate_region((size_t) addressptr, size, true);
+	auto reg = page_directory->allocate_region((size_t) location, size, true);
 	if(!reg.virt)
 		return -ENOMEM;
 	return SUCCESS;
+}
+
+int Process::sys_internal_setbrk(size_t new_brk) {
+	if(new_brk >= HIGHER_HALF)
+		return -EFAULT;
+	current_brk = new_brk;
+	return 0;
 }

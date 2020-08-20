@@ -97,6 +97,7 @@ namespace ELF {
 		DC::shared_ptr<elf32_header> header;
 		DC::vector<elf32_segment_header> segments;
 		DC::shared_ptr<FileDescriptor> fd;
+		DC::string interpreter;
 	};
 
 	/**
@@ -135,10 +136,10 @@ namespace ELF {
 	 * Gets information about an ELF executable.
 	 * @param fd The file descriptor of the executable. Will be seeked.
 	 * @param user The user executing the executable.
-	 * @param allow_interpreter If false, ENOEXEC will be returned if the executable requests an interpreter.
+	 * @param interpreter If not empty, ENOEXEC will be returned if the executable requests an interpreter.
 	 * @return Information about the ELF executable or an error.
 	 */
-	 ResultRet<ElfInfo> read_info(const DC::shared_ptr<FileDescriptor>& fd, User& user, bool allow_interpreter);
+	 ResultRet<ElfInfo> read_info(const DC::shared_ptr<FileDescriptor>& fd, User& user, DC::string interpreter = DC::string());
 }
 
 #endif

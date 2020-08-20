@@ -79,6 +79,7 @@
 #define SYS_FCHOWN 57
 #define SYS_LCHOWN 58
 #define SYS_INTERNAL_ALLOC 59
+#define SYS_INTERNAL_SETBRK 60
 
 struct __attribute__((packed)) readlinkat_args {
 	int fd;

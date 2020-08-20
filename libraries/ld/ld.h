@@ -23,7 +23,9 @@
 #include <vector>
 #include <unordered_map>
 
-#define MAGIC 0x464C457F //0x7F followed by 'ELF'
+#define PAGE_SIZE 4096
+
+#define ELF_MAGIC 0x464C457F //0x7F followed by 'ELF'
 
 #define ELF32 1
 #define ELF64 2
@@ -97,27 +99,62 @@
 #define DT_LOPROC		0x70000000
 #define DT_HIPROC		0x7fffffff
 
+#define SHT_NULL		0
+#define SHT_PROGBITS	1
+#define SHT_SYMTAB		2
+#define SHT_STRTAB		3
+#define SHT_RELA		4
+#define SHT_HASH		5
+#define SHT_DYNAMIC		6
+#define SHT_NOTE		7
+#define SHT_NOBITS		8
+#define SHT_REL			9
+#define SHT_SHLIB		10
+#define SHT_DYNSYM		11
+#define SHT_NUM			12
+#define SHT_LOPROC		0x70000000
+#define SHT_HIPROC		0x7fffffff
+#define SHT_LOUSER		0x80000000
+#define SHT_HIUSER		0xffffffff
+
+#define STT_NOTYPE  0
+#define STT_OBJECT  1
+#define STT_FUNC    2
+#define STT_SECTION 3
+#define STT_FILE    4
+#define STT_COMMON  5
+#define STT_TLS     6
+
+#define R_386_NONE		0
+#define R_386_32		1
+#define R_386_PC32		2
+#define R_386_GOT32		3
+#define R_386_PLT32		4
+#define R_386_COPY		5
+#define R_386_GLOB_DAT	6
+#define R_386_JMP_SLOT	7
+#define R_386_RELATIVE	8
+#define R_386_TLS_TPOFF	14
+
+#define ELF32_R_SYM(x) ((x) >> 8u)
+#define ELF32_R_TYPE(x) ((x) & 0xffu)
+
 typedef struct {
-	uint32_t magic;
-	uint8_t bits; //1 == 32 bit, 2 == 64 bit
-	uint8_t endianness;
-	uint8_t header_version;
-	uint8_t os_abi;
-	uint8_t padding[8];
-	uint16_t type;
-	uint16_t instruction_set;
-	uint32_t elf_version;
-	uint32_t program_entry_position;
-	uint32_t program_header_table_position;
-	uint32_t section_header_table_position;
-	uint32_t flags; //Not used in x86 ELFs
-	uint16_t header_size;
-	uint16_t program_header_table_entry_size;
-	uint16_t program_header_table_entries;
-	uint16_t section_header_table_entry_size;
-	uint16_t section_header_table_entries;
-	uint16_t section_names_index;
-} elf32_header;
+	unsigned char	e_ident[16];
+	uint16_t		e_type;
+	uint16_t		e_machine;
+	uint32_t		e_version;
+	uint32_t		e_entry;  /* Entry point */
+	uint32_t		e_phoff;
+	uint32_t		e_shoff;
+	uint32_t		e_flags;
+	uint16_t		e_ehsize;
+	uint16_t		e_phentsize;
+	uint16_t		e_phnum;
+	uint16_t		e_shentsize;
+	uint16_t		e_shnum;
+	uint16_t		e_shstrndx;
+} elf32_ehdr;
 
 typedef struct {
 	uint32_t p_type;
@@ -144,23 +181,54 @@ typedef struct {
 	uint16_t	st_shndx;
 } elf32_sym;
 
-int sys_internal_alloc(void* ptr, size_t addr);
+typedef struct {
+	uint32_t	r_offset;
+	uint32_t	r_info;
+} elf32_rel;
+
+typedef struct {
+	uint32_t	r_offset;
+	uint32_t	r_info;
+	int32_t 	r_addend;
+} elf32_rela;
+
+typedef struct {
+	uint32_t	sh_name;
+	uint32_t	sh_type;
+	uint32_t	sh_flags;
+	uint32_t	sh_addr;
+	uint32_t	sh_offset;
+	uint32_t	sh_size;
+	uint32_t	sh_link;
+	uint32_t	sh_info;
+	uint32_t	sh_addralign;
+	uint32_t	sh_entsize;
+} elf32_sheader;
+
+typedef int (*main_t)(int argc, char* argv[], char* envp[]);
 
 class Object {
 public:
 	Object() = default;
 	~Object() = default;
 
-	int load(bool position_independent = true);
+	static Object* open_library(char* library_name);
+
+	int load(char* name_cstr, bool is_main_executable);
 	int calculate_memsz();
 	int read_header();
 	int read_pheaders();
 	int read_dynamic_table();
 	int load_sections();
+	int read_sheaders();
+	int read_copy_relocations();
+	int relocate();
 
+	std::string name;
 	int fd = 0;
-	elf32_header header;
+	elf32_ehdr header;
 	std::vector<elf32_pheader> pheaders;
+	std::vector<elf32_sheader> sheaders;
 	size_t memsz = 0;
 	size_t memloc = 0;
 	size_t calculated_base = 0;
@@ -174,7 +242,11 @@ public:
 	size_t init_array_size = 0;
 	void (*init_func)() = nullptr;
 
-	std::vector<char*> libraries;
+	std::vector<char*> required_libraries;
 };
+
+int sys_internal_alloc(void* ptr, size_t addr);
+int sys_internal_setbrk(size_t new_brk);
+std::string find_library(char* library_name);
 
 #endif //DUCKOS_H

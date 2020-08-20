@@ -1,5 +1,4 @@
 SET(SOURCES main.c)
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
-
 MAKE_PROGRAM(sharedtest)
 TARGET_LINK_LIBRARIES(sharedtest libtest)

@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 /*
     This file is part of duckOS.
     
@@ -19,6 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <stdio.h>
+
 void libtest_helloworld(int num) {
-	printf("Hello, world!\n");
+	printf("Hello from libtest! I was passed the number %d.\n", num);
 }
