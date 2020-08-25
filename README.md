@@ -1,3 +1,5 @@
+# THIS BRANCH WILL NOT COMPILE YET.
+
 # duckOS
 ### A hobby operating system
 

@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <malloc.h>
+#include <sys/types.h>
 
 int main(int argc, char** argv) {
 	if(argc < 3) {

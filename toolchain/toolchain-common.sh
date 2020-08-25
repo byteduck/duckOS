@@ -16,10 +16,6 @@ GCC_VERSION="9.3.0"
 GCC_FILE="gcc-$GCC_VERSION"
 GCC_URL="https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/$GCC_FILE.tar.gz"
 
-NEWLIB_VERSION="3.3.0"
-NEWLIB_FILE="newlib-$NEWLIB_VERSION"
-NEWLIB_URL="ftp://sourceware.org/pub/newlib/$NEWLIB_FILE.tar.gz"
-
 download-binutils () {
   if [ ! -d "$BINUTILS_FILE" ]; then
     printf "Downloading binutils %s...\n" "$BINUTILS_VERSION"
@@ -67,30 +63,5 @@ download-gcc () {
     cd ..
   else
     printf "gcc already downloaded.\n"
-  fi
-}
-
-download-newlib () {
-  if [ ! -d "$NEWLIB_FILE" ]; then
-    printf "Downloading newlib %s...\n" "$NEWLIB_VERSION"
-    curl "$NEWLIB_URL" > "$NEWLIB_FILE.tar.gz" || exit 1
-    printf "Extracting newlib...\n"
-    tar -xzf "$NEWLIB_FILE.tar.gz" || exit 1
-    rm "$NEWLIB_FILE.tar.gz"
-
-    cd "$NEWLIB_FILE" || exit 1
-    printf "Patching newlib...\n"
-    if [ "$1" == "use-git" ]; then
-      git init . > /dev/null || exit 1
-      git add -A > /dev/null || exit 1
-      git commit -m "First commit" > /dev/null || exit 1
-      git apply "$DIR/newlib-$NEWLIB_VERSION.patch" > /dev/null || exit 1
-    else
-      patch -p1 < "$DIR/newlib-$NEWLIB_VERSION.patch" > /dev/null || exit 1
-    fi
-    printf "newlib patched!\n"
-    cd ..
-  else
-    printf "newlib already downloaded.\n"
   fi
 }

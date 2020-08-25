@@ -41,6 +41,7 @@ function(MAKE_PROGRAM PROGNAME)
 endfunction()
 
 INCLUDE_DIRECTORIES(libraries/)
+INCLUDE_DIRECTORIES(libraries/libc)
 ADD_SUBDIRECTORY(kernel/)
 ADD_SUBDIRECTORY(libraries/)
 ADD_SUBDIRECTORY(programs/)

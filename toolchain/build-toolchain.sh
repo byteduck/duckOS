@@ -60,38 +60,6 @@ build_gcc () {
   popd
 }
 
-build_newlib () {
-  pushd .
-  cd "$BUILD"
-
-  export PATH="$PREFIX/bin":$PATH
-
-  if [ "$1" == "edited" ]; then
-    CONFIGURE_SCRIPT="$EDIT/$NEWLIB_FILE/configure"
-    cd "$EDIT"
-  else
-    CONFIGURE_SCRIPT="$BUILD/$NEWLIB_FILE/configure"
-    download-newlib
-  fi
-
-  mkdir -p "$SYSROOT"
-  printf "Configuring newlib...\n"
-  mkdir -p "$BUILD/newlib-$NEWLIB_VERSION-build"
-  cd "$BUILD/newlib-$NEWLIB_VERSION-build"
-  "$CONFIGURE_SCRIPT" --prefix="/usr" --target="i686-pc-duckos" || exit 1
-  printf "Making newlib...\n"
-  make -j "$NUM_JOBS" all || exit 1
-  printf "Installing newlib...\n"
-  if [ -d "${SYSROOT}/usr" ]; then
-    rm -rf "${SYSROOT:?}/usr" # Don't wanna accidentally delete /usr :)
-  fi
-  make DESTDIR="${SYSROOT}" install || exit 1
-  mv "${SYSROOT}/usr/i686-pc-duckos/"* "${SYSROOT}/usr" || exit 1
-  rmdir "${SYSROOT}/usr/i686-pc-duckos" || exit 1
-
-  popd
-}
-
 mkdir -p "$BUILD"
 
 if [ "$1" ]; then
@@ -99,24 +67,16 @@ if [ "$1" ]; then
     build_binutils edited
   elif [ "$1" == "edited-gcc" ]; then
     build_gcc edited
-  elif [ "$1" == "edited-newlib" ]; then
-    build_newlib edited
   else
-    printf "Unknown argument %s. Please pass either edited-binutils, edited-gcc, or edited-newlib to rebuild the respective repo from the edit directory.\n" "$1"
+    printf "Unknown argument %s. Please pass either edited-binutils or edited-gcc to rebuild the respective repo from the edit directory.\n" "$1"
     exit
   fi
   BUILT_SOMETHING="YES"
 else
   if [ ! -d "$PREFIX" ]; then
-    printf "Building binutils...\n"
+    printf "Building binutils and gcc...\n"
     build_binutils
     build_gcc
-    BUILT_SOMETHING="YES"
-  fi
-
-  if [ ! -d "$SYSROOT/usr" ]; then
-    printf "Building newlib...\n"
-    build_newlib
     BUILT_SOMETHING="YES"
   fi
 fi
@@ -124,7 +84,6 @@ fi
 if [ ! "$BUILT_SOMETHING" ]; then
   printf "There's nothing to build.\n"
   printf "To rebuild binutils & gcc, delete %s.\n" "$PREFIX"
-  printf "To rebuild libc (newlib), delete %s.\n" "$SYSROOT"
   exit 1
 else
   printf "Done! The toolchain (%s) is installed at %s and the sysroot is at %s.\n" "$TARGET" "$PREFIX" "$SYSROOT"
