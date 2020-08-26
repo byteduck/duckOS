@@ -1,4 +1,5 @@
 # THIS BRANCH WILL NOT COMPILE YET.
+I am in the process of dumping newlib and creating a c standard library from scratch.
 
 # duckOS
 ### A hobby operating system

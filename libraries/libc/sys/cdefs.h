@@ -25,7 +25,7 @@
 #endif
 
 #ifdef __cplusplus
-#define __DECL_BEGIN extern "C" {
+#define __DECL_BEGIN "C" {
 #define __DECL_END }
 #else
 #define __DECL_BEGIN

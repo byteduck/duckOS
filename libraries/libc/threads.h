@@ -20,6 +20,7 @@
 #ifndef DUCKOS_LIBC_THREADS_H
 #define DUCKOS_LIBC_THREADS_H
 
+#define thread_local _Thread_local
 //TODO
 
 #endif //DUCKOS_LIBC_THREADS_H

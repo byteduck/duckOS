@@ -110,7 +110,7 @@
 
 __DECL_BEGIN
 extern int __errno;
-#define errno __errno;
+#define errno (__errno)
 __DECL_END
 
 #endif //DUCKOS_LIBC_ERRNO_H

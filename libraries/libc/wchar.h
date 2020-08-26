@@ -20,6 +20,17 @@
 #ifndef DUCKOS_LIBC_WCHAR_H
 #define DUCKOS_LIBC_WCHAR_H
 
-//TODO
+#include <sys/cdefs.h>
+#include <stddef.h>
+
+__DECL_BEGIN
+
+typedef unsigned int wint_t;
+
+#ifndef WEOF
+#    define WEOF (0xffffffffu)
+#endif
+
+__DECL_END
 
 #endif //DUCKOS_LIBC_WCHAR_H

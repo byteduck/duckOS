@@ -17,12 +17,12 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBC_STDALIGN_H
-#define DUCKOS_LIBC_STDALIGN_H
+#include <stdio.h>
+#include <sys/types.h>
 
-#define alignas _Alignas
-#define alignof _Alignof
-#define __alignas_is_defined 1
-#define __alignof_is_defined 1
-
-#endif //DUCKOS_LIBC_STDALIGN_H
+struct FILE {
+	int fd;
+	char* read_buf;
+	int available;
+	off_t offset;
+};

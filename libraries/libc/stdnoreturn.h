@@ -20,6 +20,6 @@
 #ifndef DUCKOS_LIBC_STDNORETURN_H
 #define DUCKOS_LIBC_STDNORETURN_H
 
-//TODO
+#define noreturn _Noreturn
 
 #endif //DUCKOS_LIBC_STDNORETURN_H

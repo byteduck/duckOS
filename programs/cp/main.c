@@ -25,7 +25,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <sys/types.h>
 
 int main(int argc, char** argv) {

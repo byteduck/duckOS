@@ -26,7 +26,12 @@
 #define NULL ((void*)0)
 #endif
 
+__DECL_BEGIN
+
 typedef __PTRDIFF_TYPE__ ptrdiff_t;
 typedef __SIZE_TYPE__ size_t;
+typedef int wchar_t;
+
+__DECL_END
 
 #endif //DUCKOS_LIBC_STDDEF_H

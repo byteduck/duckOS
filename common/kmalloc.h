@@ -26,7 +26,7 @@
 
 #else
 
-#include <malloc.h>
+#include <stdlib.h>
 #define kmalloc malloc
 #define kcalloc calloc
 #define kfree free

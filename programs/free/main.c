@@ -4,7 +4,6 @@
 #include <sys/wait.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
 

@@ -20,12 +20,14 @@
 #ifndef DUCKOS_LIBC_ASSERT_H
 #define DUCKOS_LIBC_ASSERT_H
 
+#include <sys/cdefs.h>
+
 __DECL_BEGIN
 
 #ifdef NDEBUG
 #define assert(ignore) ((void)0)
 #else
-extern void __assert(const char* file, int line, const char* func, const char* expr);
+void __assert(const char* file, int line, const char* func, const char* expr);
 #define assert(expr) ((expr) ? (void)0 : __assert(__FILE__, __LINE__, __FUNCTION__, #expr));
 #endif //NDEBUG
 #endif //DUCKOS_LIBC_ASSERT_H

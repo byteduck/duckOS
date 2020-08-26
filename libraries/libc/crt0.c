@@ -18,8 +18,8 @@
 */
 
 int main(int, char**, char**);
-extern void (*__init_array_start[])(int, char**, char**);
-extern void (*__init_array_end[])(int, char**, char**);
+void (*__init_array_start[])(int, char**, char**);
+void (*__init_array_end[])(int, char**, char**);
 
 int _start(int argc, char* argv[], char* env[]) {
 	//environ = env;

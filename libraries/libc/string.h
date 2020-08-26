@@ -20,6 +20,8 @@
 #ifndef DUCKOS_LIBC_STRING_H
 #define DUCKOS_LIBC_STRING_H
 
+#include <stdlib.h>
+
 //TODO
 
 #endif //DUCKOS_LIBC_STRING_H

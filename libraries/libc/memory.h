@@ -17,12 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBC_STDALIGN_H
-#define DUCKOS_LIBC_STDALIGN_H
+#ifndef DUCKOS_LIBC_MEMORY_H
+#define DUCKOS_LIBC_MEMORY_H
 
-#define alignas _Alignas
-#define alignof _Alignof
-#define __alignas_is_defined 1
-#define __alignof_is_defined 1
+#include <string.h>
 
-#endif //DUCKOS_LIBC_STDALIGN_H
+#endif //DUCKOS_LIBC_MEMORY_H

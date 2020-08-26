@@ -23,7 +23,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
-#include <malloc.h>
+#include <stdlib.h>
 #include <map>
 
 std::unordered_map<std::string, uintptr_t> global_symbols;
