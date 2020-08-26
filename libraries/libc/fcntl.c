@@ -17,23 +17,16 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <unistd.h>
-#include <stdlib.h>
+#include <sys/syscall.h>
 
-extern void _init();
+int open(const char* pathname, int flags) {
+	return syscall3(SYS_OPEN, (int) pathname, flags);
+}
 
-int main(int, char**, char**);
-void (**__init_array_start)(int, char**, char**);
-void (**__init_array_end)(int, char**, char**);
+int openat(int dirfd, const char* pathname, int flags) {
+	return -1;
+}
 
-int _start(int argc, char* argv[], char* env[]) {
-	environ = env;
-	_init();
-
-	for (size_t i = 0; i < __init_array_end - __init_array_start; i++)
-		(*__init_array_start[i])(argc, argv, env);
-
-	int ret = main(argc, argv, env);
-	exit(ret);
+int fcntl(int fd, int cmd, ...) {
 	return -1;
 }

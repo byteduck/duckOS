@@ -20,6 +20,8 @@
 #ifndef DUCKOS_LIBC_STDDEF_H
 #define DUCKOS_LIBC_STDDEF_H
 
+#include <sys/cdefs.h>
+
 #ifdef __cplusplus
 #define NULL nullptr
 #else

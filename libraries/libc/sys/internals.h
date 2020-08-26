@@ -17,23 +17,15 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <unistd.h>
-#include <stdlib.h>
+#ifndef DUCKOS_LIBC_INTERNALS_H
+#define DUCKOS_LIBC_INTERNALS_H
 
 extern void _init();
+extern void _fini();
 
-int main(int, char**, char**);
-void (**__init_array_start)(int, char**, char**);
-void (**__init_array_end)(int, char**, char**);
+int __cxa_atexit(void (*exit_function)(void*), void* parameter, void* dso_handle);
+void __cxa_finalize(void* dso_handle);
+_Noreturn void __cxa_pure_virtual() __attribute__((weak));
+_Noreturn void __stack_chk_fail();
 
-int _start(int argc, char* argv[], char* env[]) {
-	environ = env;
-	_init();
-
-	for (size_t i = 0; i < __init_array_end - __init_array_start; i++)
-		(*__init_array_start[i])(argc, argv, env);
-
-	int ret = main(argc, argv, env);
-	exit(ret);
-	return -1;
-}
+#endif //DUCKOS_LIBC_INTERNALS_H

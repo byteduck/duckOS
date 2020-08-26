@@ -23,6 +23,7 @@
 #include <sys/cdefs.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 
 __DECL_BEGIN
 
@@ -53,7 +54,7 @@ int execlp(const char* filename, const char* arg, ...);
 pid_t getpid();
 pid_t getppid();
 pid_t getsid(pid_t pid);
-pid_t getsid();
+pid_t setsid();
 int setpgid(pid_t pid, pid_t pgid);
 pid_t getpgid(pid_t pid);
 pid_t getpgrp();

@@ -17,23 +17,26 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <unistd.h>
-#include <stdlib.h>
+#ifndef DUCKOS_LIBC_STAT_H
+#define DUCKOS_LIBC_STAT_H
 
-extern void _init();
+#include <stddef.h>
+#include <time.h>
 
-int main(int, char**, char**);
-void (**__init_array_start)(int, char**, char**);
-void (**__init_array_end)(int, char**, char**);
+struct stat {
+	dev_t		st_dev;
+	ino_t		st_ino;
+	mode_t	st_mode;
+	nlink_t	st_nlink;
+	uid_t		st_uid;
+	gid_t		st_gid;
+	dev_t		st_rdev;
+	off_t		st_size;
+	struct timespec st_atim;
+	struct timespec st_mtim;
+	struct timespec st_ctim;
+	blksize_t     st_blksize;
+	blkcnt_t	st_blocks;
+};
 
-int _start(int argc, char* argv[], char* env[]) {
-	environ = env;
-	_init();
-
-	for (size_t i = 0; i < __init_array_end - __init_array_start; i++)
-		(*__init_array_start[i])(argc, argv, env);
-
-	int ret = main(argc, argv, env);
-	exit(ret);
-	return -1;
-}
+#endif //DUCKOS_LIBC_STAT_H

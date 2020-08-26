@@ -20,6 +20,15 @@
 #ifndef DUCKOS_LIBC_TIME_H
 #define DUCKOS_LIBC_TIME_H
 
-//TODO
+#include <sys/types.h>
+
+__DECL_BEGIN
+
+struct timespec {
+	time_t tv_sec;
+	long tv_nsec;
+};
+
+__DECL_END
 
 #endif //DUCKOS_LIBC_TIME_H

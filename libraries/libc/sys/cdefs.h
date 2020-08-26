@@ -20,16 +20,16 @@
 #ifndef DUCKOS_LIBC_DECL_H
 #define DUCKOS_LIBC_DECL_H
 
-#ifndef ALWAYS_INLINE
-#define ALWAYS_INLINE inline __attribute__((always_inline))
-#endif
-
 #ifdef __cplusplus
-#define __DECL_BEGIN "C" {
-#define __DECL_END }
+	#ifndef __DECL_BEGIN
+		#define __DECL_BEGIN extern "C" {
+		#define __DECL_END }
+	#endif __DECL_BEGIN
 #else
-#define __DECL_BEGIN
-#define __DECL_END
+	#ifndef __DECL_BEGIN
+		#define __DECL_BEGIN
+		#define __DECL_END
+	#endif
 #endif
 
 #endif //DUCKOS_LIBC_DECL_H

@@ -1,8 +1,13 @@
 SET(SOURCES
-        crt0.c
         assert.c
+        crt0.c
+        cxxabi.c
+        errno.c
         stdio.c
-)
+        stdlib.c
+        sys/syscall.h
+        sys/syscall.c
+        unistd.c)
 
 # Install crt0.o
 ADD_LIBRARY(crt0 STATIC crt0.c)
