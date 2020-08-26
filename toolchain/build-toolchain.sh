@@ -45,18 +45,29 @@ build_gcc () {
   mkdir -p "gcc-$GCC_VERSION-build"
   cd "gcc-$GCC_VERSION-build"
   "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --with-newlib --enable-shared || exit 1
+  printf "gcc configured!\n"
+
   printf "Making gcc...\n"
   make -j "$NUM_JOBS" all-gcc all-target-libgcc || exit 1
   printf "Installing gcc...\n"
   make install-gcc install-target-libgcc || exit 1
   printf "gcc installed!\n"
+
+  printf "Installing libc headers...\n"
+  mkdir -p "$SYSROOT"/usr/include
+  LIBC_HEADERS=$(find "$LIBC_LOC" -name '*.h' -print)
+  while IFS= read -r HEADER; do
+    install -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
+  done <<< "$LIBC_HEADERS"
+  printf "libc headers installed!...\n"
+
   printf "Making libstdc++...\n"
   make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1
   printf "Installing libstdc++...\n"
   make install-gcc install-target-libstdc++-v3
   printf "libstdc++ installed!\n"
-  cd ..
 
+  cd ..
   popd
 }
 

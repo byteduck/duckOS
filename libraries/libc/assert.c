@@ -17,6 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-void __assert(const char* file, int line, const char* func, const char* expr) {
-	//TODO
+#include <stdio.h>
+#include <stdlib.h>
+
+void __assert_failed(const char* file, int line, const char* func, const char* expr) {
+	fprintf(stderr, "Assertion failed in %s:%s (line %d): %s\n", file, func, line, expr);
+	abort();
 }

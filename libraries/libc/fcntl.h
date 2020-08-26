@@ -37,9 +37,9 @@ __DECL_BEGIN
 #define O_NOCTTY  	0x008000
 #define O_CLOEXEC	0x040000
 #define O_NOFOLLOW	0x100000
-#define O_DIRECTORY 0x200000
+#define O_DIRECTORY	0x200000
 #define O_EXEC		0x400000
-#define O_SEARCH	O_EXEC //They're the same
+#define O_SEARCH	O_EXEC
 
 #define S_IXOTH		0000001
 #define S_IWOTH		0000002

@@ -35,6 +35,14 @@ __DECL_BEGIN
 typedef struct FILE FILE;
 typedef long fpos_t;
 
+extern FILE* __stdin;
+extern FILE* __stdout;
+extern FILE* __stderr;
+
+#define stdin __stdin
+#define stdout __stdout
+#define stderr __stderr
+
 //File stuff
 int remove(const char* filename);
 int rename(const char* old, const char* new);

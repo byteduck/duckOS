@@ -1,12 +1,13 @@
 #!/bin/bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+LIBC_LOC=$(realpath "$DIR"/../libraries/libc)
 TARGET="i686-pc-duckos"
 PREFIX="$DIR/tools"
-BUILD="$DIR/build"
+BUILD="$DIR/../cmake-build"
 EDIT="$DIR/edit"
-SYSROOT="$DIR/sysroot"
-NUM_JOBS=$(($(nproc) / 2))
+SYSROOT="$DIR/../cmake-build/root"
+NUM_JOBS=$(nproc)
 
 BINUTILS_VERSION="2.34"
 BINUTILS_FILE="binutils-$BINUTILS_VERSION"

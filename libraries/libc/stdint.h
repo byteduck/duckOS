@@ -485,22 +485,6 @@ typedef unsigned long uintptr_t;
 #define UINTMAX_C(x)	x##ULL
 #endif
 
-#if defined(__UINTPTR_TYPE__)
-typedef __UINTPTR_TYPE__ uintptr_t;
-#elif __have_longlong64
-typedef unsigned long long uintptr_t;
-#else
-typedef unsigned long uintptr_t;
-#endif
-
-#if defined(__INTPTR_TYPE__)
-typedef __INTPTR_TYPE__ intptr_t;
-#elif __have_longlong64
-typedef signed long long intptr_t;
-#else
-typedef signed long intptr_t;
-#endif
-
 __DECL_END
 
 #endif /* _DUCKOS_LIBC_STDINT_H */

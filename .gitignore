@@ -83,7 +83,7 @@ _deps
 .idea/discord.xml
 
 # CMake
-cmake-build-*/
+cmake-build*/
 
 #
 # DUCKOS-SPECIFIC
