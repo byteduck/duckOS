@@ -39,31 +39,31 @@ long long int atoll(const char* nptr) {
 	return -1;
 }
 
-double strtod(const char* restrict nptr, char** restrict endptr) {
+double strtod(const char* nptr, char** endptr) {
 	return -1;
 }
 
-float strtof(const char* restrict nptr, char** restrict endptr) {
+float strtof(const char* nptr, char** endptr) {
 	return -1;
 }
 
-long double strtold(const char* restrict nptr, char** restrict endptr) {
+long double strtold(const char* nptr, char** endptr) {
 	return -1;
 }
 
-long int strtol(const char* restrict nptr, char** restrict endptr, int base) {
+long int strtol(const char* nptr, char** endptr, int base) {
 	return -1;
 }
 
-long long int strtoll(const char* restrict nptr, char** restrict endptr, int base) {
+long long int strtoll(const char* nptr, char** endptr, int base) {
 	return -1;
 }
 
-unsigned long int strtoul(const char* restrict nptr, char** restrict endptr, int base) {
+unsigned long int strtoul(const char* nptr, char** endptr, int base) {
 	return -1;
 }
 
-unsigned long long int strtoull(const char* restrict nptr, char** restrict endptr, int base) {
+unsigned long long int strtoull(const char* nptr, char** endptr, int base) {
 	return -1;
 }
 
@@ -107,7 +107,7 @@ int system(const char* string) {
 	return -1;
 }
 
-_Noreturn void abort() {
+__attribute__((noreturn)) void abort() {
 	while(1);
 }
 
@@ -119,7 +119,7 @@ int at_quick_exit(void (*func)(void)) {
 	return -1;
 }
 
-_Noreturn void exit(int status) {
+__attribute__((noreturn)) void exit(int status) {
 	__cxa_finalize(NULL);
 	_fini();
 	fflush(stdout);
@@ -127,11 +127,11 @@ _Noreturn void exit(int status) {
 	_exit(status);
 }
 
-_Noreturn void _Exit(int status) {
+__attribute__((noreturn)) void _Exit(int status) {
 	_exit(status);
 }
 
-_Noreturn void quick_exit(int status) {
+__attribute__((noreturn)) void quick_exit(int status) {
 	while(1);
 }
 
@@ -178,7 +178,7 @@ int mblen(const char* s, size_t n) {
 	return -1;
 }
 
-int mbtowc(wchar_t* restrict pwc, const char* restrict s, size_t n) {
+int mbtowc(wchar_t* pwc, const char* s, size_t n) {
 	return -1;
 }
 
@@ -186,10 +186,10 @@ int wctomb(char* s, wchar_t wc) {
 	return -1;
 }
 
-size_t mbstowcs(wchar_t* restrict pwcs, const char* restrict s, size_t n) {
+size_t mbstowcs(wchar_t* pwcs, const char* s, size_t n) {
 	return -1;
 }
 
-size_t wcstombs(char* restrict s, const wchar_t* restrict pwcs, size_t n) {
+size_t wcstombs(char* s, const wchar_t* pwcs, size_t n) {
 	return -1;
 }

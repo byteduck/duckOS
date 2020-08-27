@@ -17,15 +17,20 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBC_INTERNALS_H
-#define DUCKOS_LIBC_INTERNALS_H
+#ifndef DUCKOS_ICONV_H
+#define DUCKOS_ICONV_H
 
-extern void _init();
-extern void _fini();
+#include <sys/cdefs.h>
+#include <stddef.h>
 
-int __cxa_atexit(void (*exit_function)(void*), void* parameter, void* dso_handle);
-void __cxa_finalize(void* dso_handle);
-__attribute__((noreturn)) void __cxa_pure_virtual() __attribute__((weak));
-__attribute__((noreturn)) void __stack_chk_fail();
+__DECL_BEGIN
 
-#endif //DUCKOS_LIBC_INTERNALS_H
+typedef void* iconv_t;
+
+iconv_t iconv_open(const char* tocode, const char* fromcode);
+int iconv_close(iconv_t cd);
+size_t iconv(iconv_t cd, char** invbuf, size_t* inbytesleft, char** outbuf, size_t* outbytesleft);
+
+__DECL_END
+
+#endif //DUCKOS_ICONV_H

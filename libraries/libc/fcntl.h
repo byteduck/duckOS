@@ -62,7 +62,7 @@ __DECL_BEGIN
 #define S_IFSOCK	0140000
 #define S_IFMT		0170000
 
-int open(const char* pathname, int flags);
+int open(const char* pathname, int flags, ...);
 int openat(int dirfd, const char* pathname, int flags);
 int fcntl(int fd, int cmd, ...);
 

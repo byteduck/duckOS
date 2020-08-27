@@ -22,14 +22,13 @@
 
 #include <sys/cdefs.h>
 
-__DECL_BEGIN
-
 #ifdef NDEBUG
-#define assert(ignore) ((void)0)
+	#define assert(ignore) ((void)0)
 #else
-void __assert_failed(const char* file, int line, const char* func, const char* expr);
-#define assert(expr) ((expr) ? (void)0 : __assert_failed(__FILE__, __LINE__, __FUNCTION__, #expr));
+	__DECL_BEGIN
+	void __assert_failed(const char* file, int line, const char* func, const char* expr);
+	#define assert(expr) ((expr) ? (void)0 : __assert_failed(__FILE__, __LINE__, __FUNCTION__, #expr));
+	__DECL_END
 #endif //NDEBUG
-#endif //DUCKOS_LIBC_ASSERT_H
 
-__DECL_END
+#endif //DUCKOS_LIBC_ASSERT_H

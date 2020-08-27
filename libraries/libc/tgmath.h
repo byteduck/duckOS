@@ -20,6 +20,9 @@
 #ifndef DUCKOS_LIBC_TGMATH_H
 #define DUCKOS_LIBC_TGMATH_H
 
+#include <math.h>
+#include <complex.h>
+
 //TODO
 
 #endif //DUCKOS_LIBC_TGMATH_H

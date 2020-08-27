@@ -20,12 +20,18 @@
 #ifndef DUCKOS_LIBC_STDBOOL_H
 #define DUCKOS_LIBC_STDBOOL_H
 
+#include <sys/cdefs.h>
+
 #ifndef __cplusplus
+
+__DECL_BEGIN
 
 #define bool _Bool
 #define true 1
 #define false 0
 #define __bool_true_false_are_defined 1
+
+__DECL_END
 
 #endif
 

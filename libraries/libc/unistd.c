@@ -131,10 +131,6 @@ off_t lseek(int fd, off_t off, int whence) {
 	return syscall4(SYS_LSEEK, fd, off, whence);
 }
 
-int fstat(int fd, struct stat* statbuf) {
-	return syscall3(SYS_FSTAT, fd, (int) statbuf);
-}
-
 int fchown(int fd, uid_t uid, gid_t gid) {
 	return syscall4(SYS_FCHOWN, fd, uid, gid);
 }
@@ -145,10 +141,6 @@ int ftruncate(int fd, off_t length) {
 
 int close(int fd) {
 	return syscall2(SYS_CLOSE, fd);
-}
-
-int lstat(const char* path, struct stat* statbuf) {
-	return syscall3(SYS_LSTAT, (int) path, (int) statbuf);
 }
 
 ssize_t readlink(const char* path, char* buf, size_t size) {

@@ -36,7 +36,7 @@ int remove(const char* filename) {
 	return -1;
 }
 
-int rename(const char* old, const char* new) {
+int rename(const char* oldname, const char* newname) {
 	return -1;
 }
 
@@ -56,76 +56,84 @@ int fflush(FILE* stream) {
 	return -1;
 }
 
-FILE* fopen(const char* restrict filename, const char* restrict mode) {
+FILE* fopen(const char* filename, const char* mode) {
 	return NULL;
 }
 
-FILE* freopen(const char* restrict filename, const char* restrict mode, FILE* restrict stream) {
+FILE* fdopen(int fd, const char* mode) {
 	return NULL;
 }
 
-void setbuf(FILE* restrict stream, char* restrict buf) {
+FILE* freopen(const char* filename, const char* mode, FILE* stream) {
+	return NULL;
+}
+
+void setbuf(FILE* stream, char* buf) {
 
 }
 
-int setvbuf(FILE* restrict stream, char* restrict buf, int mode, size_t size) {
+int setvbuf(FILE* stream, char* buf, int mode, size_t size) {
 	return -1;
+}
+
+int fileno(FILE* stream) {
+	return stream->fd;
 }
 
 //Formatted input/output
-int fprintf(FILE* restrict stream, const char* restrict format, ...) {
+int fprintf(FILE* stream, const char* format, ...) {
 	return -1;
 }
 
-int fscanf(FILE* restrict stream, const char* restrict format, ...) {
+int fscanf(FILE* stream, const char* format, ...) {
 	return -1;
 }
 
-int printf(const char* restrict format, ...) {
+int printf(const char* format, ...) {
 	return -1;
 }
 
-int scanf(const char* restrict format, ...) {
+int scanf(const char* format, ...) {
 	return -1;
 }
 
-int snprintf(char* restrict s, size_t n, const char* restrict format, ...) {
+int snprintf(char* s, size_t n, const char* format, ...) {
 	return -1;
 }
 
-int sprintf(char* restrict s, const char* restrict format, ...) {
+int sprintf(char* s, const char* format, ...) {
 	return -1;
 }
 
-int sscanf(const char* restrict s, const char* restrict format, ...) {
+int sscanf(const char* s, const char* format, ...) {
 	return -1;
 }
 
-int vfprintf(FILE* restrict stream, const char* restrict format, va_list arg) {
+int vfprintf(FILE* stream, const char* format, va_list arg) {
 	return -1;
 }
 
-int vfscanf(FILE* restrict stream, const char* restrict format, va_list arg) {
+int vfscanf(FILE* stream, const char* format, va_list arg) {
 	return -1;
 }
 
-int vprintf(const char* restrict format, va_list arg) {
+int vprintf(const char* format, va_list arg) {
 	return -1;
 }
 
-int vscanf(const char* restrict format, va_list arg) {
+int vscanf(const char* format, va_list arg) {
 	return -1;
 }
 
-int vsnprintf(char* restrict s, size_t n, const char* restrict format, va_list arg) {
+int vsnprintf(char* s, size_t n, const char* format, va_list arg) {
 	return -1;
 }
 
-int vsprintf(char* restrict s, const char* restrict format, va_list arg) {
+int vsprintf(char* s, const char* format, va_list arg) {
 	return -1;
 }
 
-int vsscanf(const char* restrict s, const char* restrict format, va_list arg) {
+int vsscanf(const char* s, const char* format, va_list arg) {
 	return -1;
 }
 
@@ -134,7 +142,7 @@ int fgetc(FILE* stream) {
 	return -1;
 }
 
-char* fgets(char* restrict s, int n, FILE* restrict stream) {
+char* fgets(char* s, int n, FILE* stream) {
 	return NULL;
 }
 
@@ -142,7 +150,7 @@ int fputc(int c, FILE* stream) {
 	return -1;
 }
 
-int fputs(const char* restrict s, FILE* restrict stream) {
+int fputs(const char* s, FILE* stream) {
 	return -1;
 }
 
@@ -171,16 +179,16 @@ int ungetc(int c, FILE* stream) {
 }
 
 //Direct input/output
-size_t fread(void* restrict ptr, size_t size, size_t nmemb, FILE* restrict stream) {
+size_t fread(void* ptr, size_t size, size_t nmemb, FILE* stream) {
 	return 0;
 }
 
-size_t fwrite(const void* restrict ptr, size_t size, size_t nmemb, FILE* restrict stream) {
+size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream) {
 	return 0;
 }
 
 //File positioning
-int fgetpos(FILE* restrict stream, fpos_t* restrict pos) {
+int fgetpos(FILE* stream, fpos_t* pos) {
 	return -1;
 }
 

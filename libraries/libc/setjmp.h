@@ -20,6 +20,17 @@
 #ifndef DUCKOS_LIBC_SETJMP_H
 #define DUCKOS_LIBC_SETJMP_H
 
-//TODO
+#include <sys/cdefs.h>
+#include <stddef.h>
+
+__DECL_BEGIN
+
+struct __jmp_struct {}; //TODO
+typedef struct __jmp_struct jmp_buf[1];
+
+int setjmp(jmp_buf env);
+__attribute__((noreturn)) void longjmp(jmp_buf env, int val);
+
+__DECL_END
 
 #endif //DUCKOS_LIBC_SETJMP_H

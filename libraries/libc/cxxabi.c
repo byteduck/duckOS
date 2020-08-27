@@ -47,12 +47,12 @@ void __cxa_finalize(void* dso_handle) {
 	}
 }
 
-_Noreturn __attribute__((weak)) void __cxa_pure_virtual() {
+__attribute__((noreturn)) __attribute__((weak)) void __cxa_pure_virtual() {
 	assert(0);
 	while(1);
 }
 
-_Noreturn void __stack_chk_fail() {
+__attribute__((noreturn)) void __stack_chk_fail() {
 	assert(0);
 	while(1);
 }

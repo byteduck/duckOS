@@ -35,7 +35,6 @@ typedef unsigned short nlink_t;
 typedef unsigned short uid_t;
 typedef unsigned short gid_t;
 typedef long off_t;
-typedef uint64_t time_t;
 typedef long blksize_t;
 typedef long blkcnt_t;
 

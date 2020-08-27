@@ -19,7 +19,8 @@
 
 #include <sys/syscall.h>
 
-int open(const char* pathname, int flags) {
+int open(const char* pathname, int flags, ...) {
+	//TODO: Mode
 	return syscall3(SYS_OPEN, (int) pathname, flags);
 }
 

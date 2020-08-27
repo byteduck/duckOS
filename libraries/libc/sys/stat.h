@@ -22,21 +22,37 @@
 
 #include <stddef.h>
 #include <time.h>
+#include <sys/cdefs.h>
+
+__DECL_BEGIN
 
 struct stat {
 	dev_t		st_dev;
 	ino_t		st_ino;
-	mode_t	st_mode;
-	nlink_t	st_nlink;
+	mode_t		st_mode;
+	nlink_t		st_nlink;
 	uid_t		st_uid;
 	gid_t		st_gid;
 	dev_t		st_rdev;
 	off_t		st_size;
-	struct timespec st_atim;
-	struct timespec st_mtim;
-	struct timespec st_ctim;
-	blksize_t     st_blksize;
+	time_t		st_atime;
+	time_t		st_mtime;
+	time_t		st_ctime;
+	blksize_t	st_blksize;
 	blkcnt_t	st_blocks;
 };
+
+mode_t umask(mode_t new_umask);
+int chmod(const char* pathname, mode_t new_mode);
+int fchmod(int fd, mode_t new_mode);
+int mkdir(const char* pathname, mode_t mode);
+int fstat(int fd, struct stat* statbuf);
+int lstat(const char* path, struct stat* statbuf);
+int stat(const char* path, struct stat* statbuf);
+
+unsigned int major(dev_t dev);
+unsigned int minor(dev_t dev);
+
+__DECL_END
 
 #endif //DUCKOS_LIBC_STAT_H

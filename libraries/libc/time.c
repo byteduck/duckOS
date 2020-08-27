@@ -17,15 +17,44 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBC_INTERNALS_H
-#define DUCKOS_LIBC_INTERNALS_H
+#include <time.h>
 
-extern void _init();
-extern void _fini();
+clock_t clock() {
+	return 0;
+}
 
-int __cxa_atexit(void (*exit_function)(void*), void* parameter, void* dso_handle);
-void __cxa_finalize(void* dso_handle);
-__attribute__((noreturn)) void __cxa_pure_virtual() __attribute__((weak));
-__attribute__((noreturn)) void __stack_chk_fail();
+double difftime(time_t time1, time_t time0) {
+	return 0;
+}
 
-#endif //DUCKOS_LIBC_INTERNALS_H
+time_t mktime(struct tm* timeptr) {
+	return -1;
+}
+
+time_t time(time_t* timer) {
+	return -1;
+}
+
+int timespec_get(struct timespec* ts, int base) {
+	return -1;
+}
+
+char* asctime(const struct tm* timeptr) {
+	return NULL;
+}
+
+char* ctime(const time_t* timer) {
+	return NULL;
+}
+
+struct tm* gmtime(const time_t* timer) {
+	return NULL;
+}
+
+struct tm* localtime(const time_t* timer) {
+	return NULL;
+}
+
+size_t strftime(char* s, size_t maxsize, const char* format, const struct tm* timeptr) {
+	return -1;
+}

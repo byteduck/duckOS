@@ -1,10 +1,13 @@
 SET(SOURCES
         assert.c
         crt0.c
+        ctype.c
         cxxabi.c
         errno.c
+        fcntl.c
         stdio.c
         stdlib.c
+        string.c
         sys/syscall.h
         sys/syscall.c
         unistd.c)

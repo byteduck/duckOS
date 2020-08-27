@@ -17,15 +17,23 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBC_INTERNALS_H
-#define DUCKOS_LIBC_INTERNALS_H
+#include <ctype.h>
 
-extern void _init();
-extern void _fini();
-
-int __cxa_atexit(void (*exit_function)(void*), void* parameter, void* dso_handle);
-void __cxa_finalize(void* dso_handle);
-__attribute__((noreturn)) void __cxa_pure_virtual() __attribute__((weak));
-__attribute__((noreturn)) void __stack_chk_fail();
-
-#endif //DUCKOS_LIBC_INTERNALS_H
+const char _ctype_[256] = {
+		_C, _C, _C, _C, _C, _C, _C, _C,
+		_C, _C | _S, _C | _S, _C | _S, _C | _S, _C | _S, _C, _C,
+		_C, _C, _C, _C, _C, _C, _C, _C,
+		_C, _C, _C, _C, _C, _C, _C, _C,
+		(char)(_S | _B), _P, _P, _P, _P, _P, _P, _P,
+		_P, _P, _P, _P, _P, _P, _P, _P,
+		_N, _N, _N, _N, _N, _N, _N, _N,
+		_N, _N, _P, _P, _P, _P, _P, _P,
+		_P, _U | _X, _U | _X, _U | _X, _U | _X, _U | _X, _U | _X, _U,
+		_U, _U, _U, _U, _U, _U, _U, _U,
+		_U, _U, _U, _U, _U, _U, _U, _U,
+		_U, _U, _U, _P, _P, _P, _P, _P,
+		_P, _L | _X, _L | _X, _L | _X, _L | _X, _L | _X, _L | _X, _L,
+		_L, _L, _L, _L, _L, _L, _L, _L,
+		_L, _L, _L, _L, _L, _L, _L, _L,
+		_L, _L, _L, _P, _P, _P, _P, _C
+};

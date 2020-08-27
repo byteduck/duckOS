@@ -72,12 +72,10 @@ ssize_t pread(int fd, void* buf, size_t count, off_t offset);
 ssize_t write(int fd, const void* buf, size_t count);
 ssize_t pwrite(int fd, const void* buf, size_t count, off_t offset);
 off_t lseek(int fd, off_t off, int whence);
-int fstat(int fd, struct stat* statbuf);
 int fchown(int fd, uid_t uid, gid_t gid);
 int ftruncate(int fd, off_t length);
 int close(int fd);
 
-int lstat(const char* path, struct stat* statbuf);
 ssize_t readlink(const char* path, char* buf, size_t size);
 int link(const char* oldpath, const char* newpath);
 int unlink(const char* pathname);
