@@ -49,10 +49,10 @@ void __cxa_finalize(void* dso_handle) {
 
 __attribute__((noreturn)) __attribute__((weak)) void __cxa_pure_virtual() {
 	assert(0);
-	while(1);
+	__builtin_unreachable();
 }
 
 __attribute__((noreturn)) void __stack_chk_fail() {
 	assert(0);
-	while(1);
+	__builtin_unreachable();
 }

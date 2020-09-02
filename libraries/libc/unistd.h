@@ -51,6 +51,8 @@ int execvp(const char* filename, char* const argv[]);
 int execl(const char* filename, const char* arg, ...);
 int execlp(const char* filename, const char* arg, ...);
 
+void* sbrk(int increment);
+
 pid_t getpid();
 pid_t getppid();
 pid_t getsid(pid_t pid);
@@ -77,6 +79,7 @@ int ftruncate(int fd, off_t length);
 int close(int fd);
 
 ssize_t readlink(const char* path, char* buf, size_t size);
+ssize_t readlinkat(int fd, const char* path, char* buf, size_t size);
 int link(const char* oldpath, const char* newpath);
 int unlink(const char* pathname);
 int symlink(const char* target, const char* linkname);

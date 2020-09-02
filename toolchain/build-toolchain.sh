@@ -61,6 +61,14 @@ build_gcc () {
   done <<< "$LIBC_HEADERS"
   printf "libc headers installed!...\n"
 
+  printf "Installing libm headers...\n"
+  mkdir -p "$SYSROOT"/usr/include
+  LIBM_HEADERS=$(find "$LIBM_LOC" -name '*.h' -print)
+  while IFS= read -r HEADER; do
+    install -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
+  done <<< "$LIBM_HEADERS"
+  printf "libm headers installed!...\n"
+
   printf "Making libstdc++...\n"
   make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1
   printf "Installing libstdc++...\n"

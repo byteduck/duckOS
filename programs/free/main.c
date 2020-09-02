@@ -1,12 +1,3 @@
-#include <signal.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/wait.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <string.h>
-#include <stdlib.h>
-
 /*
     This file is part of duckOS.
     
@@ -27,6 +18,13 @@
 */
 
 // A program that shows memory info
+
+#include <stdio.h>
+#include <unistd.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define GiB 1073742000
 #define MiB 1048576

@@ -28,7 +28,7 @@ SET(KERNEL_SRCS
         tasking/TaskManager.cpp
         pci/pci.cpp
         memory/gdt.cpp
-        memory/kliballoc.cpp
+        memory/liballoc.cpp
         memory/Memory.cpp
         interrupt/idt.cpp
         interrupt/irq.cpp
@@ -44,7 +44,7 @@ SET(KERNEL_SRCS
         filesystem/ext2/Ext2Filesystem.cpp
         filesystem/ext2/Ext2BlockGroup.cpp
         filesystem/ext2/Ext2Inode.cpp
-        memory/kliballoc.cpp
+        memory/liballoc.cpp
         filesystem/VFS.cpp
         filesystem/File.cpp
         filesystem/FileDescriptor.cpp

@@ -51,6 +51,10 @@ int execlp(const char* filename, const char* arg, ...) {
 	return -1;
 }
 
+void* sbrk(int increment) {
+	return (void*) syscall2(SYS_SBRK, increment);
+}
+
 pid_t getpid() {
 	return syscall(SYS_GETPID);
 }
@@ -147,6 +151,17 @@ ssize_t readlink(const char* path, char* buf, size_t size) {
 	return syscall4(SYS_READLINK, (int) path, (int) buf, (int) size);
 }
 
+ssize_t readlinkat(int fd, const char* path, char* buf, size_t size) {
+	struct __attribute__((packed)) readlinkat_args {
+		int fd;
+		const char* path;
+		char* buf;
+		size_t bufsize;
+	};
+	struct readlinkat_args args = {fd, path, buf, size};
+	return syscall2(SYS_READLINKAT, (int) &args);
+}
+
 int link(const char* oldpath, const char* newpath) {
 	return syscall3(SYS_LINK, (int) oldpath, (int) newpath);
 }
@@ -209,6 +224,5 @@ int sleep(unsigned secs) {
 
 void _exit(int status) {
 	syscall2(SYS_EXIT, status);
-	assert(0);
-	while(1);
+	__builtin_unreachable();
 }

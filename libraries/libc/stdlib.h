@@ -47,11 +47,7 @@ int rand();
 void srand(unsigned int seed);
 
 //Memory
-void* malloc(size_t size);
-void* calloc(size_t nmemb, size_t);
-void* realloc(void* ptr, size_t size);
-void free(void* ptr);
-void* alligned_alloc(size_t alignment, size_t size);
+#include <sys/liballoc.h>
 
 //Environment & System
 char* getenv(const char* name);

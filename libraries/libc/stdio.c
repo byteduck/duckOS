@@ -19,25 +19,27 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 struct FILE {
 	int fd;
-	char* read_buf;
-	int available;
 	off_t offset;
 };
 
-FILE* __stdin = NULL;
-FILE* __stdout = NULL;
-FILE* __stderr = NULL;
+FILE __stdin = {STDIN_FILENO};
+FILE __stdout = {STDOUT_FILENO};
+FILE __stderr = {STDERR_FILENO};
 
 //File stuff
 int remove(const char* filename) {
-	return -1;
+	return syscall2(SYS_UNLINK, (int) filename);
 }
 
 int rename(const char* oldname, const char* newname) {
-	return -1;
+	if(syscall3(SYS_LINK, (int) oldname, (int) newname)) return -1;
+	return syscall2(SYS_UNLINK, (int) oldname);
 }
 
 FILE* tmpfile() {
@@ -49,7 +51,7 @@ char* tmpnam(char* s) {
 }
 
 int fclose(FILE* stream) {
-	return -1;
+	return close(stream->fd);
 }
 
 int fflush(FILE* stream) {
@@ -82,7 +84,8 @@ int fileno(FILE* stream) {
 
 //Formatted input/output
 int fprintf(FILE* stream, const char* format, ...) {
-	return -1;
+	//TODO: Formatting
+	return fwrite(format, 1, strlen(format), stream);
 }
 
 int fscanf(FILE* stream, const char* format, ...) {
@@ -90,11 +93,19 @@ int fscanf(FILE* stream, const char* format, ...) {
 }
 
 int printf(const char* format, ...) {
-	return -1;
+	va_list args;
+	va_start(args, format);
+	int ret = fprintf(stdout, format, args);
+	va_end(args);
+	return ret;
 }
 
 int scanf(const char* format, ...) {
-	return -1;
+	va_list args;
+	va_start(args, format);
+	int ret = fscanf(stdin, format, args);
+	va_end(args);
+	return ret;
 }
 
 int snprintf(char* s, size_t n, const char* format, ...) {
@@ -118,11 +129,11 @@ int vfscanf(FILE* stream, const char* format, va_list arg) {
 }
 
 int vprintf(const char* format, va_list arg) {
-	return -1;
+	return vfprintf(stdout, format, arg);
 }
 
 int vscanf(const char* format, va_list arg) {
-	return -1;
+	return vfscanf(stdin, format, arg);
 }
 
 int vsnprintf(char* s, size_t n, const char* format, va_list arg) {
@@ -179,12 +190,12 @@ int ungetc(int c, FILE* stream) {
 }
 
 //Direct input/output
-size_t fread(void* ptr, size_t size, size_t nmemb, FILE* stream) {
-	return 0;
+size_t fread(void* ptr, size_t size, size_t count, FILE* stream) {
+	return read(stream->fd, ptr, count * size);
 }
 
-size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream) {
-	return 0;
+size_t fwrite(const void* ptr, size_t size, size_t count, FILE* stream) {
+	return write(stream->fd, ptr, count * size);
 }
 
 //File positioning
@@ -193,7 +204,7 @@ int fgetpos(FILE* stream, fpos_t* pos) {
 }
 
 int fseek(FILE* stream, long int offset, int whence) {
-	return -1;
+	return lseek(stream->fd, offset, whence);
 }
 
 int fsetpos(FILE* stream, const fpos_t* pos) {
@@ -223,4 +234,9 @@ int ferror(FILE* stream) {
 
 void perror(const char* s) {
 
+}
+
+//Internal
+void __init_stdio() {
+	//TODO
 }

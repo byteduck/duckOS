@@ -114,5 +114,7 @@ char* strerror(int errnum) {
 }
 
 size_t strlen(const char* s) {
-	return 0;
+	const char* c = s;
+	while(*c) c++;
+	return c - s;
 }

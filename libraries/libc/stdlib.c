@@ -18,9 +18,18 @@
 */
 
 #include <stdlib.h>
-#include <libc/sys/internals.h>
+#include <sys/internals.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/syscall.h>
+
+#define MAX_ATEXIT_FUNCS 256
+
+void (*atexit_funcs[MAX_ATEXIT_FUNCS])(void) = { NULL };
+size_t num_atexit = 0;
+
+void (*atqexit_funcs[MAX_ATEXIT_FUNCS])(void) = { NULL };
+size_t num_atqexit = 0;
 
 //String <-> Number conversions
 double atof(const char* nptr) {
@@ -77,27 +86,6 @@ void srand(unsigned int seed) {
 
 }
 
-//Memory
-void* malloc(size_t size) {
-	return NULL;
-}
-
-void* calloc(size_t nmemb, size_t size) {
-	return NULL;
-}
-
-void* realloc(void* ptr, size_t size) {
-	return NULL;
-}
-
-void free(void* ptr) {
-
-}
-
-void* alligned_alloc(size_t alignment, size_t size) {
-	return NULL;
-}
-
 //Environment & System
 char* getenv(const char* name) {
 	return NULL;
@@ -108,23 +96,33 @@ int system(const char* string) {
 }
 
 __attribute__((noreturn)) void abort() {
-	while(1);
+	syscall2(SYS_EXIT, -1);
+	__builtin_unreachable();
 }
 
 int atexit(void (*func)(void)) {
-	return -1;
+	if(num_atexit == MAX_ATEXIT_FUNCS)
+		return -1;
+	atexit_funcs[num_atexit++] = func;
+	return 0;
 }
 
 int at_quick_exit(void (*func)(void)) {
-	return -1;
+	if(num_atqexit == MAX_ATEXIT_FUNCS)
+		return -1;
+	atqexit_funcs[num_atqexit++] = func;
+	return 0;
 }
 
 __attribute__((noreturn)) void exit(int status) {
+	for(int i = num_atexit - 1; i >= 0; i--)
+		atexit_funcs[i]();
 	__cxa_finalize(NULL);
 	_fini();
 	fflush(stdout);
 	fflush(stderr);
 	_exit(status);
+	__builtin_unreachable();
 }
 
 __attribute__((noreturn)) void _Exit(int status) {
@@ -132,7 +130,14 @@ __attribute__((noreturn)) void _Exit(int status) {
 }
 
 __attribute__((noreturn)) void quick_exit(int status) {
-	while(1);
+	for(int i = num_atqexit - 1; i >= 0; i--)
+		atqexit_funcs[i]();
+	__cxa_finalize(NULL);
+	_fini();
+	fflush(stdout);
+	fflush(stderr);
+	_exit(status);
+	__builtin_unreachable();
 }
 
 //Search and sort

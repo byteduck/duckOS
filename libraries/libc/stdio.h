@@ -44,13 +44,13 @@ __DECL_BEGIN
 typedef struct FILE FILE;
 typedef long fpos_t;
 
-extern FILE* __stdin;
-extern FILE* __stdout;
-extern FILE* __stderr;
+extern FILE __stdin;
+extern FILE __stdout;
+extern FILE __stderr;
 
-#define stdin __stdin
-#define stdout __stdout
-#define stderr __stderr
+#define stdin (&__stdin)
+#define stdout (&__stdout)
+#define stderr (&__stderr)
 
 //File stuff
 int remove(const char* filename);
@@ -95,8 +95,8 @@ int puts(const char* s);
 int ungetc(int c, FILE* stream);
 
 //Direct input/output
-size_t fread(void* ptr, size_t size, size_t nmemb, FILE* stream);
-size_t fwrite(const void* ptr, size_t size, size_t nmemb, FILE* stream);
+size_t fread(void* ptr, size_t size, size_t count, FILE* stream);
+size_t fwrite(const void* ptr, size_t size, size_t count, FILE* stream);
 
 //File positioning
 int fgetpos(FILE* stream, fpos_t* pos);
@@ -110,6 +110,9 @@ void clearerr(FILE* stream);
 int feof(FILE* stream);
 int ferror(FILE* stream);
 void perror(const char* s);
+
+//Internal stuff
+void __init_stdio();
 
 __DECL_END
 
