@@ -8,7 +8,7 @@ PREFIX="$DIR/tools"
 BUILD="$DIR/../cmake-build"
 EDIT="$DIR/edit"
 SYSROOT="$DIR/../cmake-build/root"
-NUM_JOBS=$(nproc)
+NUM_JOBS=$(( $(nproc) / 2 ))
 
 BINUTILS_VERSION="2.34"
 BINUTILS_FILE="binutils-$BINUTILS_VERSION"

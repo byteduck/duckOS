@@ -21,6 +21,9 @@
 #define DUCKOS_LIBC_STRING_H
 
 #include <stdlib.h>
+#include <sys/cdefs.h>
+
+__DECL_BEGIN
 
 //Memory manipulation
 void* memcpy(void* dest, const void* src, size_t n);
@@ -53,5 +56,7 @@ char* strtok(char* s1, const char* s2);
 //Misc
 char* strerror(int errnum);
 size_t strlen(const char* s);
+
+__DECL_END
 
 #endif //DUCKOS_LIBC_STRING_H

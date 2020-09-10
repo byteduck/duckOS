@@ -23,16 +23,18 @@
 - Arch: `pacman -S base-devel cmake gmp libmpc mpfr qemu qemu-arch-extra nasm grub`
 
 ## Building the toolchain
-1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site and newlib from the newlib ftp site.)
+1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site.)
 2. Make a cup of coffee or tea and wait. It will take a while to compile.
 3. Once it's done, the toolchain will be in `toolchain/tools`, and the sysroot in `cmake-build/root`.
 
 ### Editing the toolchain
-If you'd like to edit the toolchain, you can run the `edit-toolchain.sh` script to download patch binutils/gcc/newlib and setup a git repository for each one. Then, use the `gen-patches.sh` script to generate patch files for each one.
+If you'd like to edit the c library, you can run `build-toolchain.sh libc` to recompile libc and libstdc++. If you just want to compile libc and not libstdc++, you can run `make libc` in the `cmake-build` folder.
+
+If you'd like to edit gcc or binutils, you can run the `edit-toolchain.sh` script to download patch binutils and gcc and setup a git repository for each one. Then, use the `gen-patches.sh` script to generate patch files for each one.
 
 **DO NOT** git commit in the repositories created by `edit-toolchain` or else `gen-patches` won't work properly.
 
-To build something from the `edit` directory, pass the `edited-[thing]` to the `build-toolchain.sh` script. (ex: `build-toolchain.sh edited-newlib` to build newlib from the edit directory)
+To build something from the `edit` directory, pass the `edited-[thing]` to the `build-toolchain.sh` script. (ex: `build-toolchain.sh edited-gcc` to build gcc from the edit directory)
 
 ## Configuring cmake
 1. Make sure you've built the toolchain first.

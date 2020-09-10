@@ -96,8 +96,7 @@ struct dirent *readdir(DIR *dirp) {
 	return dent;
 }
 
-int readdir_r(DIR *__restrict dirp, struct dirent *__restrict entry,
-			  struct dirent **__restrict result) {
+int readdir_r(DIR* dirp, struct dirent** entry, struct dirent** result) {
 	return -1; //NOT IMPLEMENTED
 }
 

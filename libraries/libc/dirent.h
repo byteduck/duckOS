@@ -49,15 +49,10 @@ typedef struct {
 	struct dirent dd_cur; /* current entry */
 } DIR;
 
-#ifndef __cplusplus
-
-DIR *opendir(const char *);
-struct dirent *readdir(DIR *);
-int readdir_r(DIR *__restrict, struct dirent *__restrict,
-			  struct dirent **__restrict);
-void rewinddir(DIR *);
-int closedir(DIR *);
-
-#endif
+DIR* opendir(const char *dirname);
+struct dirent* readdir(DIR *dirname);
+int readdir_r(DIR* dirp, struct dirent** entry, struct dirent** result);
+void rewinddir(DIR* dirp);
+int closedir(DIR* dirp);
 
 #endif //DUCKOS_LIBC_DIRENT_H

@@ -79,6 +79,19 @@ build_gcc () {
   popd
 }
 
+build_libc() {
+  printf "Making and installing libc...\n"
+  cd "$BUILD"
+  make libc || exit 1
+  printf "Made and installed libc!\nMaking libstdc++...\n"
+  cd "gcc-$GCC_VERSION-build" || exit 1
+  "$BUILD/$GCC_FILE/configure" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --with-newlib --enable-shared || exit 1
+  make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1
+  printf "Installing libstdc++...\n"
+  make install-gcc install-target-libstdc++-v3
+  printf "libstdc++ installed!\nDone building libc and libstdc++!\n"
+}
+
 mkdir -p "$BUILD"
 
 if [ "$1" ]; then
@@ -86,8 +99,10 @@ if [ "$1" ]; then
     build_binutils edited
   elif [ "$1" == "edited-gcc" ]; then
     build_gcc edited
+  elif [ "$1" == "libc" ]; then
+    build_libc
   else
-    printf "Unknown argument %s. Please pass either edited-binutils or edited-gcc to rebuild the respective repo from the edit directory.\n" "$1"
+    printf "Unknown argument %s. Please pass either edited-binutils, edited-gcc or libc to rebuild the respective component from the edit directory.\n" "$1"
     exit
   fi
   BUILT_SOMETHING="YES"

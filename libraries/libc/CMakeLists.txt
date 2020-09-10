@@ -10,8 +10,12 @@ SET(SOURCES
         stdlib.c
         string.c
         sys/liballoc.c
+        sys/stat.c
         sys/syscall.c
         unistd.c)
+
+SET(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-nostdlib -Wall")
+SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-nostdlib -Wall")
 
 # Install crt0.o
 ADD_LIBRARY(crt0 STATIC crt0.c)

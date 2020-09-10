@@ -22,15 +22,39 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <fcntl.h>
 
 struct FILE {
 	int fd;
+	int options;
 	off_t offset;
+	int ungetc;
+	int eof;
 };
 
-FILE __stdin = {STDIN_FILENO};
-FILE __stdout = {STDOUT_FILENO};
-FILE __stderr = {STDERR_FILENO};
+FILE __stdin = {
+		.fd = STDIN_FILENO,
+		.options = O_RDONLY,
+		.offset = 0,
+		.ungetc = -1,
+		.eof = 0
+};
+
+FILE __stdout = {
+		.fd = STDOUT_FILENO,
+		.options = O_WRONLY,
+		.offset = 0,
+		.ungetc = -1,
+		.eof = 0
+};
+
+FILE __stderr = {
+		.fd = STDERR_FILENO,
+		.options = O_WRONLY,
+		.offset = 0,
+		.ungetc = -1,
+		.eof = 0
+};
 
 //File stuff
 int remove(const char* filename) {
@@ -43,10 +67,12 @@ int rename(const char* oldname, const char* newname) {
 }
 
 FILE* tmpfile() {
+	//TODO
 	return NULL;
 }
 
 char* tmpnam(char* s) {
+	//TODO
 	return NULL;
 }
 
@@ -55,15 +81,88 @@ int fclose(FILE* stream) {
 }
 
 int fflush(FILE* stream) {
+	//TODO
 	return -1;
 }
 
+int parse_str_options(const char* mode) {
+	int options;
+	switch(mode[0]) {
+		case 'r':
+			options = O_RDONLY;
+			break;
+		case 'w':
+			options = O_WRONLY | O_CREAT;
+			break;
+		case 'a':
+			options = O_WRONLY | O_APPEND;
+			break;
+		default:
+			return -1;
+	}
+	if(mode[1] == '+') {
+		switch(options) {
+			case O_RDONLY:
+				options = O_RDWR;
+				break;
+			case O_WRONLY | O_CREAT:
+				options = O_RDWR | O_CREAT;
+				break;
+			case O_WRONLY | O_APPEND:
+				options = O_RDWR | O_APPEND;
+				break;
+			default: //Should never happen
+				return -1;
+		}
+	}
+	return options;
+}
+
 FILE* fopen(const char* filename, const char* mode) {
-	return NULL;
+	//Parse options
+	int options = parse_str_options(mode);
+	if(options == -1) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	//Truncate if necessary
+	if(options == (O_WRONLY | O_CREAT) || options == (O_RDWR | O_CREAT))
+		truncate(filename, 0);
+
+	//Open fd
+	int fd = open(filename, options);
+	if(fd == -1)
+		return NULL;
+
+	//Make the file
+	FILE* ret = malloc(sizeof(FILE));
+	ret->fd = fd;
+	ret->offset = 0;
+	ret->options = options;
+	ret->ungetc = -1;
+	ret->eof = 0;
+
+	return ret;
 }
 
 FILE* fdopen(int fd, const char* mode) {
-	return NULL;
+	//Parse options
+	int options = parse_str_options(mode);
+	if(options == -1) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	//Make the file
+	FILE* ret = malloc(sizeof(FILE));
+	ret->fd = fd;
+	ret->offset = -1;
+	ret->options = options;
+	ret->ungetc = -1;
+	ret->eof = 0;
+
+	return 0;
 }
 
 FILE* freopen(const char* filename, const char* mode, FILE* stream) {
@@ -150,47 +249,108 @@ int vsscanf(const char* s, const char* format, va_list arg) {
 
 //Character input/output
 int fgetc(FILE* stream) {
-	return -1;
+	char buf[1];
+	if(fread(buf, 1, 1, stream) <= 0) {
+		stream->eof = 1;
+		return EOF;
+	}
+	return *buf;
 }
 
 char* fgets(char* s, int n, FILE* stream) {
+	int c;
+	char* os = s;
+
+	if(n == 1) {
+		*s = '\0';
+		return os;
+	}
+
+	while((c = fgetc(stream)) > 0) {
+		*s++ = c;
+
+		//If we've read n-1 characters, null-terminate the string and return it
+		n--;
+		if(n == 1) {
+			*s = '\0';
+			return os;
+		}
+
+		//Null-terminate the string at the current position and return it if we encounter a newline
+		if(c == '\n') {
+			*s = '\0';
+			return os;
+		}
+
+		//If we encounter an error, return the string (or null if we haven't read anything)
+		if(c == -1) {
+			stream->eof = 1;
+			return os == s ? NULL : os;
+		}
+	}
+
 	return NULL;
 }
 
 int fputc(int c, FILE* stream) {
-	return -1;
+	if(fwrite(&c, 1, 1, stream) == -1) {
+		stream->eof = 1;
+		return EOF;
+	}
+	return c;
 }
 
 int fputs(const char* s, FILE* stream) {
-	return -1;
+	if(fwrite(s, 1, strlen(s), stream) == -1)
+		return EOF;
+	return 0;
 }
 
 int getc(FILE* stream) {
-	return -1;
+	return fgetc(stream);
 }
 
 int getchar() {
-	return -1;
+	return fgetc(stdin);
 }
 
 int putc(int c, FILE* stream) {
-	return -1;
+	return fputc(c, stdout);
 }
 
 int putchar(int c) {
-	return -1;
+	return fputc(c, stdout);
 }
 
 int puts(const char* s) {
-	return -1;
+	return fputs(s, stdout);
 }
 
 int ungetc(int c, FILE* stream) {
-	return -1;
+	if(stream->ungetc != -1)
+		return EOF;
+
+	stream->ungetc = c;
+	return c;
 }
 
 //Direct input/output
 size_t fread(void* ptr, size_t size, size_t count, FILE* stream) {
+	if(count <= 0)
+		return 0;
+
+	//If we have something in ungetc, account for that
+	if(stream->ungetc >= 0) {
+		stream->ungetc = -1;
+		((char*) ptr)[0] = stream->ungetc;
+
+		ssize_t nread = read(stream->fd, ptr + 1, (count * size) - 1);
+		if(nread == -1)
+			return nread;
+		return nread + 1;
+	}
+
+	//Otherwise, just read
 	return read(stream->fd, ptr, count * size);
 }
 
@@ -200,7 +360,10 @@ size_t fwrite(const void* ptr, size_t size, size_t count, FILE* stream) {
 
 //File positioning
 int fgetpos(FILE* stream, fpos_t* pos) {
-	return -1;
+	long int tell = ftell(stream);
+	if(tell == EOF) return EOF;
+	*pos = tell;
+	return 0;
 }
 
 int fseek(FILE* stream, long int offset, int whence) {
@@ -208,32 +371,32 @@ int fseek(FILE* stream, long int offset, int whence) {
 }
 
 int fsetpos(FILE* stream, const fpos_t* pos) {
-	return -1;
+	return fseek(stream, *pos, SEEK_SET);
 }
 
 long int ftell(FILE* stream) {
-	return -1;
+	return stream->offset; //TODO Handle if file was opened with fdopen
 }
 
 void rewind(FILE* stream) {
-
+	fseek(stream, 0, SEEK_SET);
 }
 
 //Error handling
 void clearerr(FILE* stream) {
-
+	stream->eof = 0;
 }
 
 int feof(FILE* stream) {
-	return -1;
+	return stream->eof;
 }
 
 int ferror(FILE* stream) {
-	return -1;
+	return 0; //TODO
 }
 
 void perror(const char* s) {
-
+	fprintf(stderr, "%s: %s", s, strerror(errno));
 }
 
 //Internal
