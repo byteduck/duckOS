@@ -77,6 +77,7 @@ off_t lseek(int fd, off_t off, int whence);
 int fchown(int fd, uid_t uid, gid_t gid);
 int ftruncate(int fd, off_t length);
 int close(int fd);
+int isatty(int fd);
 
 ssize_t readlink(const char* path, char* buf, size_t size);
 ssize_t readlinkat(int fd, const char* path, char* buf, size_t size);

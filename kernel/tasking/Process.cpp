@@ -835,7 +835,7 @@ int Process::sys_dup2(int oldfd, int newfd) {
 
 int Process::sys_isatty(int file) {
 	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
-	return _file_descriptors[file]->file()->is_tty();
+	return _file_descriptors[file]->file()->is_tty() ? 1 : -ENOTTY;
 }
 
 int Process::sys_symlink(char* file, char* linkname) {

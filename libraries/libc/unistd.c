@@ -147,6 +147,11 @@ int close(int fd) {
 	return syscall2(SYS_CLOSE, fd);
 }
 
+int isatty(int fd) {
+	int res = syscall2(SYS_ISATTY, fd);
+	return res == 1 ? 1 : 0;
+}
+
 ssize_t readlink(const char* path, char* buf, size_t size) {
 	return syscall4(SYS_READLINK, (int) path, (int) buf, (int) size);
 }
