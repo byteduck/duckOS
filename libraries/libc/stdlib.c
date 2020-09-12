@@ -118,7 +118,7 @@ __attribute__((noreturn)) void exit(int status) {
 	for(int i = num_atexit - 1; i >= 0; i--)
 		atexit_funcs[i]();
 	__cxa_finalize(NULL);
-	_fini();
+	//_fini(); TODO: Figure out why this causes a segfault
 	fflush(stdout);
 	fflush(stderr);
 	_exit(status);
@@ -133,7 +133,7 @@ __attribute__((noreturn)) void quick_exit(int status) {
 	for(int i = num_atqexit - 1; i >= 0; i--)
 		atqexit_funcs[i]();
 	__cxa_finalize(NULL);
-	_fini();
+	//_fini(); TODO: Figure out why this causes a segfault
 	fflush(stdout);
 	fflush(stderr);
 	_exit(status);

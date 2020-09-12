@@ -24,16 +24,17 @@
 extern void _init();
 
 int main(int, char**, char**);
-void (**__init_array_start)(int, char**, char**);
-void (**__init_array_end)(int, char**, char**);
+extern void (*__init_array_start[])(int, char**, char**);
+extern void (*__init_array_end[])(int, char**, char**);
 
 int _start(int argc, char* argv[], char* env[]) {
 	environ = env;
-	_init();
 
 	__init_stdio();
+	//_init(); //TODO: Figure out why this causes a segfault...
 
-	for (size_t i = 0; i < __init_array_end - __init_array_start; i++)
+	size_t ninit = __init_array_end - __init_array_start;
+	for (size_t i = 0; i < ninit; i++)
 		(*__init_array_start[i])(argc, argv, env);
 
 	int ret = main(argc, argv, env);

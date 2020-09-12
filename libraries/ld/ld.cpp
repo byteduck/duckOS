@@ -30,7 +30,7 @@ std::unordered_map<std::string, uintptr_t> global_symbols;
 std::unordered_map<std::string, uintptr_t> symbols;
 std::map<std::string, Object*> objects;
 size_t current_brk = 0;
-bool debug = true;
+bool debug = false;
 
 int main(int argc, char** argv, char** envp) {
 	if(argc < 2) {
@@ -428,7 +428,7 @@ int Object::relocate() {
 				}
 
 				if(debug)
-					printf("Relocating %s...\n", symbol_name);
+					printf("Relocating %s for %s...\n", symbol_name, name.c_str());
 
 				//Perform the actual relocation
 				auto* reloc_loc = (void*) (memloc + rel.r_offset);
