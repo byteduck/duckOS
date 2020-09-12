@@ -21,7 +21,7 @@
 #define DUCKOS_LIBC_PRINTF_H
 
 #include <sys/cdefs.h>
-#include <types.h>
+#include <sys/types.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
