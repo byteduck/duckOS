@@ -1,4 +1,4 @@
-# THIS BRANCH WILL NOT COMPILE YET.
+# THIS BRANCH WILL NOT WORK 100% PROPERLY YET.
 I am in the process of dumping newlib and creating a c standard library from scratch.
 
 # duckOS
@@ -14,7 +14,7 @@ If some of this code looks familiar, it's because it's based off of my previous 
 - A virtual filesystem with device files (`/dev/hda`, `/dev/zero`, `/dev/random`, `/dev/fb`, `/dev/tty`, etc)
   - The root filesystem is ext2, and is writeable
 - Filesystem caching (the cache size can be changed by changing `MAX_FILESYSTEM_CACHE_SIZE` in `FileBasedFilesystem.h`)
-- A semicomplete newlib-based C standard library for programs (see [INSTRUCTIONS.md](INSTRUCTIONS.md))
+- A semicomplete dynamically-linked c standard library for programs
 - Dynamic linking with shared libraries
 - A Bochs/Qemu/VirtualBox/Multiboot video driver (640x480x32bpp)
  
@@ -38,7 +38,6 @@ The code for these can be found in [programs](programs/).
 - chmod (/bin/chmod): Changes the mode of a file.
 - chown (/bin/chown): Changes the owner of a file.
 - free (/bin/free): Shows the amount of total, used, and free memory (use the -h flag for human-readable numbers).
-- sharedtest (/bin/sharedtest): A demo showing off usage of dynamic linking with a shared library (libtest.so)
 - dsh (/bin/dsh): A basic userspace shell with support for pipes (`|`) and redirections (`>`/`>>`).
   - There is only support for one redirection at a time right now.
 
@@ -51,13 +50,11 @@ Programs that take arguments will provide you with the correct usage when you ru
 - Framebuffer scrolling is slow on real hardware. I'm not focusing on fixing this right now until I start working on a window manager.
 - Must be booted off of the master drive on the primary PATA controller as of now.
 - PATA DMA doesn't seem to work on real hardware at the moment, so the `use_pio` grub commandline option should be specified if you're crazy enough to test this on real hardware ;)
-- Libc is statically linked (due to a limitation of newlib), so binaries slightly larger on disk than usual
 - Ext2 triply indirect block pointers cannot be read/written, so there may be issues writing and reading large files
 - A buffer overflow attack on the kernel may be possible, because only pointers passed to syscalls are checked for validity (and not the length of the data to be read/written)
 - Dynamic linking does not currently use CoW to share memory between processes, so each process has its own copy of the library in memory
 
 ### Future Goals
-- A C library created from scratch instead of newlib
 - Make shared libraries actually use CoW to save memory
 - A desktop environment with a window manager and compositor
 - Better support for real hardware
