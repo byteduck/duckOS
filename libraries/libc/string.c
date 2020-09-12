@@ -239,7 +239,7 @@ char* strtok(char* s1, const char* s2) {
 char* strtok_r(char* s1, const char* s2, char** saved) {
 	//If we passed NULL for s1, used the saved string
 	if(!s1) {
-		if(!saved)
+		if(!*saved)
 			return NULL;
 		s1 = *saved;
 	}
