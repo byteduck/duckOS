@@ -78,9 +78,10 @@ int vfprintf(FILE* stream, const char* format, va_list arg);
 int vfscanf(FILE* stream, const char* format, va_list arg);
 int vprintf(const char* format, va_list arg);
 int vscanf(const char* format, va_list arg);
-int vsnprintf(char* s, size_t n, const char* format, va_list arg);
 int vsprintf(char* s, const char* format, va_list arg);
 int vsscanf(const char* s, const char* format, va_list arg);
+int vasprintf(char** s, const char* format, va_list arg);
+int vsnprintf(char* s, size_t n, const char* format, va_list arg);
 
 //Character input/output
 int fgetc(FILE* stream);
