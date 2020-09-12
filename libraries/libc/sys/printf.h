@@ -36,8 +36,8 @@ __DECL_BEGIN
 	}
 
 int common_printf(char* s, size_t n, const char* format, va_list arg);
-void dec_str(unsigned int val, char** buf, unsigned int width, size_t n, size_t* len);
-void hex_str(unsigned int val, char** buf, unsigned int width, size_t n, size_t* len, bool upper);
+void dec_str(unsigned int val, char** buf, unsigned int width, size_t n, size_t* len, char pad);
+void hex_str(unsigned int val, char** buf, unsigned int width, size_t n, size_t* len, bool upper, char pad);
 
 __DECL_END
 

@@ -414,7 +414,7 @@ int ferror(FILE* stream) {
 }
 
 void perror(const char* s) {
-	fprintf(stderr, "%s: %s", s, strerror(errno));
+	fprintf(stderr, "%s: %s\n", s, strerror(errno));
 }
 
 //Internal

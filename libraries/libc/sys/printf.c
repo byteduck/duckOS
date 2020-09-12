@@ -18,62 +18,75 @@
 */
 
 #include <sys/printf.h>
+#include <stdio.h>
 
-void hex_str(unsigned int val, char** buf, unsigned int width, size_t n, size_t* len, bool upper) {
+void hex_str(unsigned int val, char** buf, unsigned int width, size_t n, size_t* len, bool upper, char pad) {
 	//Figure out the width of the resulting string
 	size_t num_chars = 0;
 	unsigned int val2 = val;
-	while(val2) {
+	do {
 		num_chars ++;
 		val2 /= 0x10;
-	}
+	} while(val2);
 
-	//Zero pad
+	//Pad
 	for(size_t i = num_chars; i < width && *len < n; i++) {
-		**buf = '0';
+		**buf = pad;
 		(*buf)++;
 		(*len)++;
 	}
+
+	if(*len - n < num_chars)
+		num_chars = *len - n;
 
 	//Print the hex
 	char* hex = upper ? "0123456789ABCDEF" : "0123456789abcdef";
-	for(size_t i = 0; i < num_chars && *len < n; i++) {
-		**buf = hex[(val >> (i * 4)) & 0xFu];
+	for(size_t i = 1; i <= num_chars; i++) {
+		**buf = hex[(val >> ((num_chars - i) * 4)) & 0xFu];
 		(*buf)++;
-		(*len)++;
 	}
+
+	(*len) += num_chars;
 }
 
-void dec_str(unsigned int val, char** buf, unsigned int width, size_t n, size_t* len) {
+void dec_str(unsigned int val, char** buf, unsigned int width, size_t n, size_t* len, char pad) {
 	//Figure out the width of the resulting string
 	size_t num_chars = 0;
 	unsigned int val2 = val;
-	while(val2) {
-		num_chars ++;
+	do {
+		num_chars++;
 		val2 /= 10;
-	}
+	} while(val2);
 
-	//Zero pad
+	//Pad
 	for(size_t i = num_chars; i < width && *len < n; i++) {
-		**buf = '0';
+		**buf = pad;
 		(*buf)++;
 		(*len)++;
 	}
+
+	if(*len - n < num_chars)
+		num_chars = *len - n;
+
+	(*buf) += num_chars - 1;
 
 	//Print the decimal
-	for(size_t i = 0; i < num_chars && *len < n; i++) {
+	for(size_t i = 0; i < num_chars; i++) {
 		**buf = "0123456789"[val % 10];
 		val /= 10;
-		(*buf)++;
-		(*len)++;
+		(*buf)--;
 	}
+
+	(*len) += num_chars;
+	(*buf) += num_chars + 1;
 }
 
 int common_printf(char* s, size_t n, const char* format, va_list arg) {
 	char* buf = s;
-	int precision = -1;
 	size_t len = 0;
 	for(const char* p = format; *p && len < n; p++) {
+		int precision = -1;
+
 		//If it's not a percent, add it to the buffer
 		if(*p != '%') {
 			*buf++ = *p;
@@ -105,7 +118,7 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 			} else if(ch == '*') {
 				arg_width = (char) va_arg(arg, int);
 				p++;
-			} else if(ch == '$') {
+			} else if(ch == '#') {
 				alt_prefix = true;
 				p++;
 			} else if(ch == ' ') {
@@ -153,6 +166,7 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 			case 'p': //Pointer address
 				if(!arg_width)
 					arg_width = 8;
+				zero_pad = true;
 				goto hex;
 			case 'X':
 				uppercase = true;
@@ -166,11 +180,11 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 				if(size == 2) { //long long
 					unsigned long long val = (unsigned long long) va_arg(arg, unsigned long long);
 					if(val > 0xFFFFFFFF)
-						hex_str(val >> 32, &buf, arg_width > 8 ? (arg_width - 8) : 0, n, &len, uppercase);
-					hex_str(val & 0xFFFFFFFF, &buf, arg_width > 8 ? 8 : arg_width, n, &len, uppercase);
+						hex_str(val >> 32, &buf, arg_width > 8 ? (arg_width - 8) : 0, n, &len, uppercase, zero_pad ? '0' : ' ');
+					hex_str(val & 0xFFFFFFFF, &buf, arg_width > 8 ? 8 : arg_width, n, &len, uppercase, zero_pad ? '0' : ' ');
 				} else { //unsigned long or smaller
 					unsigned long val = va_arg(arg, unsigned long);
-					hex_str(val, &buf, arg_width, n, &len, uppercase);
+					hex_str(val, &buf, arg_width, n, &len, uppercase, zero_pad ? '0' : ' ');
 				}
 				break;
 
@@ -196,7 +210,7 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 					len++;
 				}
 
-				dec_str(val, &buf, arg_width, n, &len);
+				dec_str(val, &buf, arg_width, n, &len, zero_pad ? '0' : ' ');
 				break;
 			}
 
@@ -206,7 +220,7 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 				if(size == 2)
 					val = (unsigned long long) va_arg(arg, unsigned long long);
 				else
-				val = (unsigned long long) va_arg(arg, unsigned long);
+					val = (unsigned long long) va_arg(arg, unsigned long);
 
 				//Print sign if necessary
 				if(force_sign) {
@@ -217,15 +231,50 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 					len++;
 				}
 
-				dec_str(val, &buf, arg_width, n, &len);
+				dec_str(val, &buf, arg_width, n, &len, zero_pad ? '0' : ' ');
 				break;
 			}
 
 			case 'F':
 				uppercase = true;
-			case 'f': //Float
-				//TODO
+			case 'f': //Double
+			{
+				double val = (double) va_arg(arg, double);
+
+				//Print sign if necessary
+				if(val < 0) {
+					*buf++ = '-';
+					val = -val;
+					len++;
+				} else if(force_sign) {
+					*buf++ = '+';
+					len++;
+				} else if(space_no_sign) {
+					*buf++ = ' ';
+					len++;
+				}
+
+				//Print before decimal
+				dec_str((int) val, &buf, arg_width, n, &len, zero_pad ? '0' : ' ');
+
+				//Print decimal
+				if(len < n) {
+					*buf++ = '.';
+					len++;
+				}
+
+				//Print decimal places
+				int num_places = (precision > -1 && precision < 8) ? precision : 8;
+				for (int d = 0; d < num_places && len < n; d++) {
+					if ((int) (val * 100000.0) % 100000 == 0 && d != 0)
+						break;
+					val *= 10.0;
+					*buf++ = "0123456789"[((int) val) % 10];
+					len++;
+				}
+
 				break;
+			}
 
 			case 's': //String
 			{

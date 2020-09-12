@@ -22,6 +22,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/syscall.h>
+#include <ctype.h>
+#include <limits.h>
 
 #define MAX_ATEXIT_FUNCS 256
 
@@ -37,15 +39,16 @@ double atof(const char* nptr) {
 }
 
 int atoi(const char* nptr) {
-	return -1;
+	long long value = strtoll(nptr, NULL, 10);
+	return value > INT_MAX ? INT_MAX : (int) value;
 }
 
 long int atol(const char* nptr) {
-	return -1;
+	return strtol(nptr, NULL, 10);
 }
 
 long long int atoll(const char* nptr) {
-	return -1;
+	return strtoll(nptr, NULL, 10);
 }
 
 double strtod(const char* nptr, char** endptr) {
@@ -60,20 +63,164 @@ long double strtold(const char* nptr, char** endptr) {
 	return -1;
 }
 
-long int strtol(const char* nptr, char** endptr, int base) {
+int is_valid_digit(char digit, int base) {
+	if (digit < '0') return 0;
+	if (base <= 10) return digit <= ('0' + base - 1);
+	if (digit > '9' && digit < 'a') return 0;
+	if (digit > 'a' + (base - 10) && digit < 'A') return 1;
+	if ((digit > 'A' + (base - 10)) || (digit >= '0' && digit <= '9')) return 1;
+	return 0;
+}
+
+int digit_value(char digit) {
+	if (digit >= '0' && digit <= '9') return digit - '0';
+	if (digit >= 'a' && digit <= 'z') return digit - 'a' + 0xa;
+	if (digit >= 'A' && digit <= 'Z') return digit - 'A' + 0xa;
 	return -1;
+}
+
+long int strtol(const char* nptr, char** endptr, int base) {
+	long long int val = strtoll(nptr, endptr, base);
+	if(val > LONG_MAX) {
+		errno = ERANGE;
+		return LONG_MAX;
+	} else if(val < LONG_MIN) {
+		errno = ERANGE;
+		return LONG_MIN;
+	}
+	return (long int) val;
 }
 
 long long int strtoll(const char* nptr, char** endptr, int base) {
-	return -1;
+	//Make sure base is valid
+	if(base < 0 || base > 36 || base == 1) {
+		errno = EINVAL;
+		return LONG_LONG_MAX;
+	}
+
+	const char* ch = nptr;
+
+	//Remove whitespace
+	while(*ch && isspace(*ch))
+		ch++;
+
+	//Figure out the sign
+	int sign = 1;
+	if(*ch == '-') {
+		sign = -1;
+		ch++;
+	} else if(*ch == '+')
+		ch++;
+
+	//If the base is zero, figure out what base to use
+	if(base == 0) {
+		if(*ch == '0') {
+			if(tolower(*(ch + 1)) == 'x') {
+				ch += 2;
+				base = 16;
+			} else {
+				ch++;
+				base = 8;
+			}
+		} else {
+			base = 10;
+		}
+	}
+
+	//Remove hex prefix if base 16
+	if(base == 16 && *ch == '0') {
+		ch++;
+		if(tolower(*ch) == 'x')
+			ch++;
+	}
+
+	//Parse value
+	long long int val = 0;
+	int overflow = 0;
+	while(is_valid_digit(*ch, base)) {
+		val *= base;
+		val += digit_value(*ch++);
+		if(val < 0)
+			overflow = 1;
+	}
+
+	//Set endptr if needed
+	if(endptr) *endptr = (char*) ch;
+
+	if(overflow) {
+		errno = ERANGE;
+		if(sign == 1)
+			return LONG_LONG_MAX;
+		else
+			return LONG_LONG_MIN;
+	}
+
+	return sign == -1 ? -val : val;
 }
 
 unsigned long int strtoul(const char* nptr, char** endptr, int base) {
-	return -1;
+	unsigned long long int val = strtoull(nptr, endptr, base);
+	if(val > ULONG_MAX) {
+		errno = ERANGE;
+		return ULONG_MAX;
+	}
+	return (unsigned long int) val;
 }
 
 unsigned long long int strtoull(const char* nptr, char** endptr, int base) {
-	return -1;
+	//Make sure base is valid
+	if(base < 0 || base > 36 || base == 1) {
+		errno = EINVAL;
+		return ULONG_LONG_MAX;
+	}
+
+	const char* ch = nptr;
+
+	//Remove whitespace
+	while(*ch && isspace(*ch))
+		ch++;
+
+	//If the base is zero, figure out what base to use
+	if(base == 0) {
+		if(*ch == '0') {
+			if(tolower(*(ch + 1)) == 'x') {
+				ch += 2;
+				base = 16;
+			} else {
+				ch++;
+				base = 8;
+			}
+		} else {
+			base = 10;
+		}
+	}
+
+	//Remove hex prefix if base 16
+	if(base == 16 && *ch == '0') {
+		ch++;
+		if(tolower(*ch) == 'x')
+			ch++;
+	}
+
+	//Parse value
+	unsigned long long int val = 0;
+	int overflow = 0;
+	while(is_valid_digit(*ch, base)) {
+		if(val * base < val)
+			overflow = 1;
+		val *= base;
+		val += digit_value(*ch++);
+	}
+
+	//Set endptr if needed
+	if(endptr) *endptr = (char*) ch;
+
+	if(overflow) {
+		errno = ERANGE;
+		return ULONG_LONG_MAX;
+	}
+
+	return val;
 }
 
 //Random
