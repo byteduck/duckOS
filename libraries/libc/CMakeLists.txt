@@ -9,6 +9,7 @@ SET(SOURCES
         stdio.c
         stdlib.c
         string.c
+        sys/printf.c
         sys/liballoc.c
         sys/stat.c
         sys/syscall.c
