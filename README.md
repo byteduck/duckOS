@@ -1,6 +1,3 @@
-# THIS BRANCH WILL NOT WORK 100% PROPERLY YET.
-I am in the process of dumping newlib and creating a c standard library from scratch.
-
 # duckOS
 ### A hobby operating system
 
