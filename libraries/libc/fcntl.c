@@ -18,10 +18,19 @@
 */
 
 #include <sys/syscall.h>
+#include <types.h>
+#include <fcntl.h>
+#include <stdarg.h>
 
 int open(const char* pathname, int flags, ...) {
-	//TODO: Mode
-	return syscall3(SYS_OPEN, (int) pathname, flags);
+	mode_t mode = 0;
+    if(flags & O_CREAT) {
+    	va_list list;
+    	va_start(list, flags);
+		mode = (mode_t) va_arg(list, int);
+    }
+
+	return syscall4(SYS_OPEN, (int) pathname, flags, mode);
 }
 
 int openat(int dirfd, const char* pathname, int flags) {

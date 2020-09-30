@@ -52,15 +52,90 @@ long long int atoll(const char* nptr) {
 }
 
 double strtod(const char* nptr, char** endptr) {
-	return -1;
+	return (double) strtold(nptr, endptr);
 }
 
 float strtof(const char* nptr, char** endptr) {
-	return -1;
+	return (float) strtod(nptr, endptr);
 }
 
 long double strtold(const char* nptr, char** endptr) {
-	return -1;
+	//Figure out sign
+	int sign = 1;
+	if(*nptr == '-') {
+		sign = -1;
+		nptr++;
+	} else if(*nptr == '+') {
+		nptr++;
+	}
+
+	//Interpret the part before the decimal
+	long long int before_decimal = 0;
+	while(*nptr && *nptr != '.') {
+		if(*nptr >= '0' && *nptr <= '9') {
+			before_decimal *= 10LL;
+			before_decimal += (long long int)(*nptr - '0');
+			nptr++;
+		} else {
+			break;
+		}
+	}
+
+	//Interpret the part after the decimal
+	long double after_decimal = 0;
+	long double mult = 0.1;
+	if(*nptr == '.') {
+		nptr++;
+
+		while(*nptr) {
+			if(*nptr >= '0' && *nptr <= '9') {
+				after_decimal += mult * (*nptr - '0');
+				mult *= 0.1;
+				nptr++;
+			} else {
+				break;
+			}
+		}
+	}
+
+	//Interpret exponent
+	long double exponent = (long double)sign;
+	if(*nptr == 'e' || *nptr == 'E') {
+		nptr++;
+
+		//Interpret exponent sign
+		int exp_sign = 1;
+		if(*nptr == '-') {
+			exp_sign = -1;
+			nptr++;
+		} else if(*nptr == '+') {
+			nptr++;
+		}
+
+		//Interpret exponent base
+		int exp = 0;
+		while(*nptr) {
+			if(*nptr >= '0' && *nptr <= '9') {
+				exp *= 10LL;
+				exp += (int)(*nptr - '0');
+				nptr++;
+			} else {
+				break;
+			}
+		}
+
+		//Calculate exponent
+		exponent = 1;
+		exp *= exp_sign;
+		if(exp)
+			while(exp--)
+				exponent *= 10;
+	}
+
+	if(endptr)
+		*endptr = (char*)nptr;
+
+	return ((long double)before_decimal + (long double)after_decimal) * exponent;
 }
 
 int is_valid_digit(char digit, int base) {
@@ -289,11 +364,12 @@ __attribute__((noreturn)) void quick_exit(int status) {
 
 //Search and sort
 void* bsearch(const void* key, const void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*)) {
+	//TODO
 	return NULL;
 }
 
 void qsort(void* base, size_t nmemb, size_t size, int (*compar)(const void*, const void*)) {
-
+	//TODO
 }
 
 //Integer arithmetic
