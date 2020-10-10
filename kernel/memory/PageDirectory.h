@@ -198,6 +198,22 @@ public:
 	bool free_region(size_t virtaddr, size_t size);
 
 	/**
+	 * Maps a number of continguous pages in program vmem starting at physaddr.
+	 * @param physaddr The physical address to map to.
+	 * @param mem_size The amount of memory to map.
+	 * @param read_write Whether or not the memory should be marked read/write.
+	 * @return A pointer to where physaddr was mapped to.
+	 */
+	void* mmap(size_t physaddr, size_t mem_size, bool read_write);
+
+	/**
+	 * Unmaps and frees number of contiguous pages in program vmem at virtaddr.
+	 * @param virtaddr The virtual address within the region to be freed.
+	 * @return Whether or not the region could be freed.
+	 */
+	bool munmap(void* virtaddr);
+
+	/**
 	 * @return A pointer to the page directory's vmem map.
 	 */
 	MemoryMap& vmem_map();

@@ -180,6 +180,8 @@ void PageDirectory::k_after_alloc() {
 void PageDirectory::k_free_region(const LinkedMemoryRegion& region) {
 	k_unmap_region(region);
 	kernel_vmem_map.free_region(region.virt);
+	if(region.phys->reserved)
+		return;
 	Memory::pmem_map().free_region(region.phys);
 	used_kernel_pmem -= region.phys->size;
 }
@@ -188,6 +190,7 @@ bool PageDirectory::k_free_region(void* virtaddr) {
 	MemoryRegion* vregion = kernel_vmem_map.find_region((size_t) virtaddr);
 	if(!vregion) return false;
 	if(!vregion->related) PANIC("VREGION_NO_RELATED", "A virtual kernel memory region had no corresponding physical region.", true);
+	if(vregion->related->reserved) return false;
 	LinkedMemoryRegion region(vregion->related, vregion);
 	k_unmap_region(region);
 	kernel_vmem_map.free_region(region.virt);
@@ -200,6 +203,7 @@ void* PageDirectory::k_mmap(size_t physaddr, size_t memsize, bool read_write) {
 	size_t paddr_pagealigned = (physaddr / PAGE_SIZE) * PAGE_SIZE;
 	size_t psize = (((memsize + (physaddr - paddr_pagealigned)) + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
 	MemoryRegion pregion = MemoryRegion(paddr_pagealigned, psize);
+	pregion.reserved = true;
 
 	//First, find a block of $pages contiguous virtual pages in the kernel space
 	MemoryRegion* vregion = kernel_vmem_map.allocate_region(memsize);
@@ -400,6 +404,8 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size,
 void PageDirectory::free_region(const LinkedMemoryRegion& region) {
 	unmap_region(region);
 	_vmem_map.free_region(region.virt);
+	if(region.phys->reserved)
+		return;
 	_used_pmem -= region.phys->size;
 	Memory::pmem_map().free_region(region.phys);
 }
@@ -412,6 +418,7 @@ bool PageDirectory::free_region(size_t virtaddr, size_t size) {
 
 	//Split the physical region
 	auto* pregion = vregion->related;
+	if(pregion->reserved) return false;
 	size_t pregion_split_start = pregion->start + (virtaddr - vregion->start);
 	pregion = Memory::pmem_map().split_region(pregion, pregion_split_start, size);
 	if(!pregion) return false;
@@ -427,6 +434,34 @@ bool PageDirectory::free_region(size_t virtaddr, size_t size) {
 	Memory::pmem_map().free_region(region.phys);
 	_used_pmem -= region.phys->size;
 
+	return true;
+}
+
+void* PageDirectory::mmap(size_t physaddr, size_t memsize, bool read_write) {
+	size_t paddr_pagealigned = (physaddr / PAGE_SIZE) * PAGE_SIZE;
+	size_t psize = (((memsize + (physaddr - paddr_pagealigned)) + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+	MemoryRegion pregion = MemoryRegion(paddr_pagealigned, psize);
+	pregion.reserved = true;
+
+	//First, find a block of $pages contiguous virtual pages in the program space
+	MemoryRegion* vregion = _vmem_map.allocate_region(memsize);
+	if(!vregion) {
+		return nullptr;
+	}
+
+	//Next, map the pages
+	LinkedMemoryRegion region(&pregion, vregion);
+	map_region(region, read_write);
+
+	return (void*)(region.virt->start + (physaddr % PAGE_SIZE));
+}
+
+bool PageDirectory::munmap(void* virtaddr) {
+	MemoryRegion* vregion = _vmem_map.find_region((size_t) virtaddr);
+	if(!vregion) return false;
+	LinkedMemoryRegion region(nullptr, vregion);
+	unmap_region(region);
+	_vmem_map.free_region(region.virt);
 	return true;
 }
 
