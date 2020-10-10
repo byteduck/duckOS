@@ -15,11 +15,18 @@ If some of this code looks familiar, it's because it's based off of my previous 
 - Dynamic linking with shared libraries
 - A Bochs/Qemu/VirtualBox/Multiboot video driver (640x480x32bpp)
  
+### Services
+
+The code for these can be found in [services](services/).
+
+- init (/bin/init): The init system for duckOS.
+- pond (/bin/pond): The (very-WIP) window manager / compositor for duckOS.
+
+ 
 ### Programs
 
 The code for these can be found in [programs](programs/).
 
-- init (/bin/init): The init system for duckOS.
 - ls (/bin/ls): Lists the entries in the current or given directory.
 - cat (/bin/cat): Writes the contents of a file to stdout.
 - cp (/bin/cp): Copies a file.
@@ -50,6 +57,7 @@ Programs that take arguments will provide you with the correct usage when you ru
 - Ext2 triply indirect block pointers cannot be read/written, so there may be issues writing and reading large files
 - A buffer overflow attack on the kernel may be possible, because only pointers passed to syscalls are checked for validity (and not the length of the data to be read/written)
 - Dynamic linking does not currently use CoW to share memory between processes, so each process has its own copy of the library in memory
+- C++ programs must be statically linked due to an incompatibility with the linker
 
 ### Future Goals
 - Make shared libraries actually use CoW to save memory

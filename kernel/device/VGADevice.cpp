@@ -18,5 +18,29 @@
 */
 
 #include "VGADevice.h"
+#include <kernel/tasking/TaskManager.h>
+#include <common/defines.h>
+
 VGADevice* VGADevice::_inst = nullptr;
-VGADevice::VGADevice(): BlockDevice(29, 0) {_inst = this;}
+
+VGADevice::VGADevice(): BlockDevice(29, 0) {
+	_inst = this;
+}
+
+int VGADevice::ioctl(unsigned request, void* argp) {
+	Process* proc = TaskManager::current_process();
+	proc->check_ptr(argp);
+	switch(request) {
+		case IO_VIDEO_WIDTH:
+			*((int*) argp) = get_display_width();
+			return 0;
+		case IO_VIDEO_HEIGHT:
+			*((int*) argp) = get_display_height();
+			return 0;
+		case IO_VIDEO_MAP:
+			*((void**) argp) = map_framebuffer(proc);
+			return 0;
+		default:
+			return -EINVAL;
+	}
+}

@@ -20,9 +20,14 @@
 #ifndef DUCKOS_VGADEVICE_H
 #define DUCKOS_VGADEVICE_H
 
+#define IO_VIDEO_MAP	0x8001
+#define IO_VIDEO_WIDTH	0x8002
+#define IO_VIDEO_HEIGHT	0x8003
+#define IO_VIDEO_PITCH	0x8004
+
+#ifdef DUCKOS_KERNEL
 
 #include "BlockDevice.h"
-
 
 class VGADevice: public BlockDevice {
 public:
@@ -33,9 +38,14 @@ public:
 	virtual size_t get_display_width() = 0;
 	virtual size_t get_display_height() = 0;
 	virtual void clear(uint32_t color) = 0;
+	virtual void* map_framebuffer(Process* proc) = 0;
+
+	//File
+	int ioctl(unsigned request, void* argp) override;
 private:
 	static VGADevice* _inst;
 };
 
+#endif //DUCKOS_KERNEL
 
 #endif //DUCKOS_VGADEVICE_H

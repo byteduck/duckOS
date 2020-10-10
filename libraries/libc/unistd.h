@@ -51,8 +51,6 @@ int execvp(const char* filename, char* const argv[]);
 int execl(const char* filename, const char* arg, ...);
 int execlp(const char* filename, const char* arg, ...);
 
-void* sbrk(int increment);
-
 pid_t getpid();
 pid_t getppid();
 pid_t getsid(pid_t pid);

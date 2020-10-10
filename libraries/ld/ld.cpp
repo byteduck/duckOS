@@ -23,8 +23,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
-#include <stdlib.h>
+#include <cstdlib>
 #include <map>
+#include <sys/memacquire.h>
 
 std::unordered_map<std::string, uintptr_t> global_symbols;
 std::unordered_map<std::string, uintptr_t> symbols;
@@ -87,12 +88,6 @@ int main(int argc, char** argv, char** envp) {
 		rev_it++;
 	}
 
-	//Set the breakpoint of the program
-	if(sys_internal_setbrk(current_brk - 1) < 0) {
-		printf("Failed to set breakpoint to 0x%lx: %s\n", current_brk, strerror(errno));
-		return errno;
-	}
-
 	//Finally, jump to the executable's entry point!
 	if(debug)
 		printf("Calling entry point 0x%lx()...\n", (size_t) executable->header.e_entry);
@@ -129,7 +124,7 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 		memloc = 0;
 		size_t alloc_start = (calculated_base / PAGE_SIZE) * PAGE_SIZE;
 		size_t alloc_size = ((memsz + (calculated_base - alloc_start) + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
-		if (sys_internal_alloc((void*) alloc_start, alloc_size) < 0) {
+		if (memacquire((void*) alloc_start, alloc_size) < (void*) nullptr) {
 			fprintf(stderr, "Failed to allocate memory for %s: %s\n", name_cstr, strerror(errno));
 			return -1;
 		}
@@ -137,7 +132,7 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 	} else {
 		memloc = current_brk;
 		size_t alloc_size = ((memsz + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
-		if (sys_internal_alloc((void*) current_brk, alloc_size) < 0) {
+		if (memacquire((void*) current_brk, alloc_size) < (void*) nullptr) {
 			fprintf(stderr, "Failed to allocate memory for %s: %s\n", name_cstr, strerror(errno));
 			return -1;
 		}
@@ -468,30 +463,6 @@ int Object::relocate() {
 	}
 
 	return 0;
-}
-
-int sys_internal_alloc(void* addr, size_t size) {
-	//TODO: Better way of doing this
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(59), "b"(addr), "c"(size));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	if(ret < 0) {
-		errno = -ret;
-		return -1;
-	}
-	return ret;
-}
-
-int sys_internal_setbrk(size_t new_brk) {
-	//TODO: Better way of doing this
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(60), "b"(new_brk));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	if(ret < 0) {
-		errno = -ret;
-		return -1;
-	}
-	return ret;
 }
 
 std::string find_library(char* library_name) {

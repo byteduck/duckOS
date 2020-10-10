@@ -24,7 +24,6 @@
 #define SYS_FORK 2
 #define SYS_READ 3
 #define SYS_WRITE 4
-#define SYS_SBRK 5
 #define SYS_EXECVE 6
 #define SYS_OPEN 7
 #define SYS_CLOSE 8
@@ -78,17 +77,23 @@
 #define SYS_CHOWN 56
 #define SYS_FCHOWN 57
 #define SYS_LCHOWN 58
-#define SYS_INTERNAL_ALLOC 59
-#define SYS_INTERNAL_SETBRK 60
+#define SYS_MEMACQUIRE 59
+#define SYS_MEMRELEASE 60
+#define SYS_IOCTL 61
+#define SYS_GETPPID 62
 
-struct __attribute__((packed)) readlinkat_args {
+#ifndef DUCKOS_KERNEL
+#include <sys/types.h>
+#else
+extern "C" void syscall_handler(Registers& regs);
+int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+#endif
+
+struct readlinkat_args {
 	int fd;
 	const char* path;
 	char* buf;
 	size_t bufsize;
 };
-
-extern "C" void syscall_handler(Registers& regs);
-int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);
 
 #endif

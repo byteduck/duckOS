@@ -73,7 +73,6 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, User&
 	//Load the ELF into the process's page directory and set proc->current_brk
 	auto brk_or_err = ELF::load_sections(*info.fd, info.segments, proc->page_directory);
 	if(brk_or_err.is_error()) return brk_or_err.value();
-	proc->current_brk = brk_or_err.value();
 
 	return proc;
 }
@@ -218,7 +217,6 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	state = PROCESS_ALIVE;
 	kernel = false;
 	ring = 3;
-	current_brk = to_fork->current_brk;
 	_cwd = to_fork->_cwd;
 	_ppid = to_fork->_pid;
 	_sid = to_fork->_sid;
@@ -494,32 +492,6 @@ ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	check_ptr(buf);
 	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd]) return -EBADF;
 	return _file_descriptors[fd]->write(buf, count);
-}
-
-size_t Process::sys_sbrk(int amount) {
-	size_t current_brk_page = current_brk / PAGE_SIZE;
-	if(amount > 0) {
-		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
-		if(new_brk_page * PAGE_SIZE > HIGHER_HALF)
-			return -ENOMEM;
-		if(new_brk_page != current_brk_page) {
-			auto reg = page_directory->allocate_region((current_brk_page + 1) * PAGE_SIZE, (new_brk_page - current_brk_page) * PAGE_SIZE, true);
-			if(!reg.virt)
-				return -ENOMEM;
-		}
-	} else if (amount < 0) {
-		if(-amount > current_brk)
-			return -ENOMEM;
-		size_t new_brk_page = (current_brk + amount) / PAGE_SIZE;
-		if(new_brk_page != current_brk_page) {
-			if(!page_directory->free_region((new_brk_page + 1) * PAGE_SIZE, (current_brk_page - new_brk_page) * PAGE_SIZE))
-				printf("WARNING: Failed to free memory region for PID %d\n", _pid);
-		}
-	}
-
-	size_t prev_brk = current_brk;
-	current_brk += amount;
-	return prev_brk;
 }
 
 pid_t Process::sys_fork(Registers& regs) {
@@ -1032,19 +1004,31 @@ int Process::sys_lchown(char* file, uid_t uid, gid_t gid) {
 	return VFS::inst().chown(filestr, uid, gid, _user, _cwd, O_NOFOLLOW).code();
 }
 
-int Process::sys_internal_alloc(void* location, size_t size) {
-	if((size_t) location + size >= HIGHER_HALF)
-		return -EFAULT;
-
-	auto reg = page_directory->allocate_region((size_t) location, size, true);
-	if(!reg.virt)
-		return -ENOMEM;
-	return SUCCESS;
+int Process::sys_ioctl(int fd, unsigned request, void* argp) {
+	check_ptr(argp);
+	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd])
+		return -EBADF;
+	return _file_descriptors[fd]->ioctl(request, argp);
 }
 
-int Process::sys_internal_setbrk(size_t new_brk) {
-	if(new_brk >= HIGHER_HALF)
-		return -EFAULT;
-	current_brk = new_brk;
-	return 0;
+void* Process::sys_memacquire(void* addr, size_t size) const {
+	if(addr) {
+		//We requested a specific address
+		auto region = page_directory->allocate_region((size_t) addr, size, true);
+		if(!region.virt)
+			return (void*) -EINVAL;
+		return (void*) region.virt->start;
+	} else {
+		//We didn't request a specific address
+		auto region = page_directory->allocate_region(size, true);
+		if(!region.virt)
+			return (void*) -ENOMEM;
+		return (void*) region.virt->start;
+	}
+}
+
+int Process::sys_memrelease(void* addr, size_t size) const {
+	if(!page_directory->free_region((size_t) addr, size))
+		return -EINVAL;
+	return SUCCESS;
 }

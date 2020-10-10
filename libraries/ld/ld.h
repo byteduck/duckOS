@@ -245,8 +245,6 @@ public:
 	std::vector<char*> required_libraries;
 };
 
-int sys_internal_alloc(void* ptr, size_t addr);
-int sys_internal_setbrk(size_t new_brk);
 std::string find_library(char* library_name);
 
 #endif //DUCKOS_H

@@ -112,3 +112,7 @@ void MultibootVGADevice::clear(uint32_t color) {
 		framebuffer[i] = color;
 	}
 }
+
+void* MultibootVGADevice::map_framebuffer(Process* proc) {
+	return nullptr;
+}

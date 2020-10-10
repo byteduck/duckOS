@@ -9,6 +9,8 @@ SET(SOURCES
         stdio.c
         stdlib.c
         string.c
+        sys/ioctl.c
+        sys/memacquire.c
         sys/printf.c
         sys/liballoc.c
         sys/stat.c

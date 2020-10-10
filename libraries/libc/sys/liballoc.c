@@ -20,6 +20,8 @@
 #include <sys/liballoc.h>
 #include <unistd.h>
 #include <limits.h>
+#include <libc/stdio.h>
+#include "memacquire.h"
 
 void liballoc_lock() {
 	//TODO
@@ -30,11 +32,13 @@ void liballoc_unlock() {
 }
 
 void* liballoc_alloc(int pages) {
-	return sbrk(pages * PAGE_SIZE);
+	return memacquire(NULL, pages * PAGE_SIZE);
 }
 
 extern void	liballoc_free(void* ptr, int pages) {
-	sbrk(-(pages * PAGE_SIZE));
+	if(memrelease(ptr, pages * PAGE_SIZE) < 0) {
+		fprintf(stderr, "WARNING: FAILED TO MEMRELEASE A MALLOC'D REGION");
+	}
 }
 
 /**  Durand's Amazing Super Duper Memory functions.  */

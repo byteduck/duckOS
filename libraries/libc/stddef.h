@@ -22,17 +22,17 @@
 
 #include <sys/cdefs.h>
 
+__DECL_BEGIN
+
 #ifdef __cplusplus
 #define NULL nullptr
 #else
 #define NULL ((void*)0)
+typedef int wchar_t;
 #endif
-
-__DECL_BEGIN
 
 typedef __PTRDIFF_TYPE__ ptrdiff_t;
 typedef __SIZE_TYPE__ size_t;
-typedef int wchar_t;
 
 __DECL_END
 

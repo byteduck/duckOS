@@ -20,8 +20,6 @@
 #ifndef DUCKOS_SIGNAL_H
 #define DUCKOS_SIGNAL_H
 
-#include <common/cstddef.h>
-
 #define SIGNAL_RETURN_FAKE_ADDR 0xFFFFB00F
 
 #define	SIGHUP	1	/* hangup */
@@ -57,17 +55,22 @@
 #define	SIGUSR2 31	/* user defined signal 2 */
 #define NSIG	32
 
-namespace Signal {
-	class SigAction {
-	public:
-		void (*action)(int) = nullptr;
-		int flags = 0;
-	};
+#ifdef DUCKOS_KERNEL
 
-	enum SignalSeverity { NOKILL, KILL, FATAL };
-	extern const char* signal_names[];
-	extern SignalSeverity signal_severities[];
-};
+	#include <common/cstddef.h>
 
+	namespace Signal {
+		class SigAction {
+		public:
+			void (*action)(int) = nullptr;
+			int flags = 0;
+		};
+
+		enum SignalSeverity { NOKILL, KILL, FATAL };
+		extern const char* signal_names[];
+		extern SignalSeverity signal_severities[];
+	}
+
+#endif
 
 #endif //DUCKOS_SIGNAL_H

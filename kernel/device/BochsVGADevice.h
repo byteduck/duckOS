@@ -63,6 +63,7 @@ public:
 	size_t get_display_height() override;
 	void scroll(size_t pixels) override;
 	void clear(uint32_t color) override;
+	void* map_framebuffer(Process* proc) override;
 
 private:
 	BochsVGADevice();

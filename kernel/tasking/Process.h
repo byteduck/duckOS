@@ -93,7 +93,6 @@ public:
 	void sys_exit(int status);
 	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
 	ssize_t sys_write(int fd, uint8_t* buf, size_t count);
-	size_t sys_sbrk(int i);
 	pid_t sys_fork(Registers& regs);
 	int exec(const DC::string& filename, ProcessArgs* args);
 	int sys_execve(char *filename, char **argv, char **envp);
@@ -147,8 +146,9 @@ public:
 	int sys_chown(char* file, uid_t uid, gid_t gid);
 	int sys_fchown(int fd, uid_t uid, gid_t gid);
 	int sys_lchown(char* file, uid_t uid, gid_t gid);
-	int sys_internal_alloc(void* location, size_t size);
-	int sys_internal_setbrk(size_t new_brk);
+	int sys_ioctl(int fd, unsigned request, void* argp);
+	void* sys_memacquire(void* addr, size_t size) const;
+	int sys_memrelease(void* addr, size_t size) const;
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;
@@ -179,9 +179,6 @@ private:
 	int _exit_status = 0;
 	bool _freed_resources = false;
 	bool _just_execed = false;
-
-	//Memory
-	size_t current_brk = 0;
 
 	//Kernel stack
 	void* _kernel_stack_base;

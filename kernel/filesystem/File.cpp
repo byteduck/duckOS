@@ -18,6 +18,7 @@
 */
 
 #include <kernel/kstdio.h>
+#include <common/defines.h>
 #include "File.h"
 
 File::File() {
@@ -51,5 +52,9 @@ ssize_t File::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, si
 
 ssize_t File::read_dir_entry(FileDescriptor &fd, size_t offset, DirectoryEntry *buffer) {
 	return 0;
+}
+
+int File::ioctl(unsigned request, void* argp) {
+	return -ENOTTY;
 }
 

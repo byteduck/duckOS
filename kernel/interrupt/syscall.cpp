@@ -41,8 +41,6 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_read((int)arg1, (uint8_t*)arg2, (size_t)arg3);
 		case SYS_WRITE:
 			return TaskManager::current_process()->sys_write((int)arg1, (uint8_t*)arg2, (size_t)arg3);
-		case SYS_SBRK:
-			return TaskManager::current_process()->sys_sbrk((int)arg1);
 		case SYS_EXECVE:
 			return TaskManager::current_process()->sys_execve((char*)arg1, (char**)arg2, (char**)arg3);
 		case SYS_OPEN:
@@ -147,10 +145,14 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_fchown((int)arg1, (uid_t)arg2, (gid_t)arg3);
 		case SYS_LCHOWN:
 			return TaskManager::current_process()->sys_lchown((char*)arg1, (uid_t)arg2, (gid_t)arg3);
-		case SYS_INTERNAL_ALLOC:
-			return TaskManager::current_process()->sys_internal_alloc((void*) arg1, (size_t) arg2);
-		case SYS_INTERNAL_SETBRK:
-			return TaskManager::current_process()->sys_internal_setbrk((size_t)arg1);
+		case SYS_MEMACQUIRE:
+			return (int) TaskManager::current_process()->sys_memacquire((void*) arg1, (size_t) arg2);
+		case SYS_MEMRELEASE:
+			return TaskManager::current_process()->sys_memrelease((void*) arg1, (size_t) arg2);
+		case SYS_IOCTL:
+			return TaskManager::current_process()->sys_ioctl((int)arg1, (unsigned) arg2, (void*) arg3);
+		case SYS_GETPPID:
+			return TaskManager::current_process()->ppid();
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

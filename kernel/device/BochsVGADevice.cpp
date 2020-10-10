@@ -21,6 +21,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/pci/pci.h>
 #include <common/defines.h>
+#include <kernel/tasking/Process.h>
 
 PCI::ID bochs_qemu_vga = {0x1234, 0x1111};
 PCI::ID vbox_vga = {0x80ee, 0xbeef};
@@ -47,6 +48,7 @@ bool BochsVGADevice::detect() {
 		printf("[VGA] Could not find a bochs-compatible VGA device!\n");
 		return false;
 	}
+
 	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
 	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
 	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
@@ -127,4 +129,8 @@ void BochsVGADevice::clear(uint32_t color) {
 	for(size_t i = 0; i < size; i++) {
 		framebuffer[i] = color;
 	}
+}
+
+void* BochsVGADevice::map_framebuffer(Process* proc) {
+	PageDirectory* dir = proc->page_directory;
 }

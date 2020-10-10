@@ -173,6 +173,10 @@ ssize_t FileDescriptor::write(const uint8_t *buffer, size_t count) {
 	return ret;
 }
 
+int FileDescriptor::ioctl(unsigned request, void* argp) {
+	return _file->ioctl(request, argp);
+}
+
 void FileDescriptor::set_fifo_reader() {
 	_is_fifo_writer = false;
 }

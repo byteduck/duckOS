@@ -50,6 +50,7 @@ public:
 	ssize_t read_dir_entries(char *buffer, size_t len);
 	ssize_t write(const uint8_t* buffer, size_t count);
 	size_t offset();
+	int ioctl(unsigned request, void* argp);
 
 	void set_fifo_reader();
 	void set_fifo_writer();

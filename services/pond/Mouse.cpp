@@ -1,42 +1,45 @@
 /*
     This file is part of duckOS.
-    
+
     duckOS is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     duckOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a copy of the GNU General Public License
     along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
-    
+
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBC_SIGNAL_H
-#define DUCKOS_LIBC_SIGNAL_H
+#include <unistd.h>
+#include "Mouse.h"
 
-#include <sys/cdefs.h>
-#include <stdint.h>
+Mouse::Mouse() {
+	mouse_fd = open("/dev/input/mouse", O_RDONLY);
+	if(mouse_fd < 0) {
+		perror("Failed to open mouse");
+		return;
+	}
+	inited = true;
+}
 
-__DECL_BEGIN
+int Mouse::fd() {
+	return mouse_fd;
+}
 
-#include <kernel/tasking/Signal.h>
-
-typedef uint32_t sig_atomic_t;
-typedef void (*sighandler_t)(int);
-
-#define SIG_DFL ((sighandler_t)0)
-#define SIG_ERR ((sighandler_t)1)
-#define SIG_IGN ((sighandler_t)2)
-
-void (*signal(int sig, sighandler_t func))(int);
-int raise(int sig);
-
-__DECL_END
-
-#endif //DUCKOS_LIBC_SIGNAL_H
+bool Mouse::update() {
+	MouseEvent events[32];
+	ssize_t nread = read(mouse_fd, &events, sizeof(MouseEvent) * 32);
+	if(!nread) return false;
+	int num_events = (int) nread / sizeof(MouseEvent);
+	for(int i = 0; i < num_events; i++) {
+		x += events[i].x;
+		y += events[i].y;
+	}
+}

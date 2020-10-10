@@ -35,6 +35,7 @@ public:
 	virtual ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, DirectoryEntry* buffer);
 	virtual bool is_tty();
 	virtual bool is_fifo();
+	virtual int ioctl(unsigned request, void* argp);
 protected:
 	File();
 };

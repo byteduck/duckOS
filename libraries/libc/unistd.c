@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 #include <stddef.h>
-#include <libc/sys/syscall.h>
+#include <sys/syscall.h>
 #include <assert.h>
 #include <unistd.h>
 
@@ -49,10 +49,6 @@ int execl(const char* filename, const char* arg, ...) {
 
 int execlp(const char* filename, const char* arg, ...) {
 	return -1;
-}
-
-void* sbrk(int increment) {
-	return (void*) syscall2(SYS_SBRK, increment);
 }
 
 pid_t getpid() {
@@ -156,12 +152,6 @@ ssize_t readlink(const char* path, char* buf, size_t size) {
 }
 
 ssize_t readlinkat(int fd, const char* path, char* buf, size_t size) {
-	struct __attribute__((packed)) readlinkat_args {
-		int fd;
-		const char* path;
-		char* buf;
-		size_t bufsize;
-	};
 	struct readlinkat_args args = {fd, path, buf, size};
 	return syscall2(SYS_READLINKAT, (int) &args);
 }
