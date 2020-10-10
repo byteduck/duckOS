@@ -58,3 +58,11 @@ int File::ioctl(unsigned request, void* argp) {
 	return -ENOTTY;
 }
 
+void File::open(FileDescriptor& fd, int options) {
+
+}
+
+void File::close(FileDescriptor& fd) {
+
+}
+

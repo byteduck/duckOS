@@ -75,6 +75,8 @@ public:
 	Result truncate(off_t length) override;
 	Result chmod(mode_t mode) override;
 	Result chown(uid_t uid, gid_t gid) override;
+	void open(FileDescriptor& fd, int options) override;
+	void close(FileDescriptor& fd) override;
 
 private:
 	void read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index, uint8_t* block_buf);

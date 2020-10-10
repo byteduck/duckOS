@@ -68,3 +68,17 @@ ssize_t Pipe::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, si
 bool Pipe::is_fifo() {
 	return true;
 }
+
+void Pipe::open(FileDescriptor& fd, int options) {
+	if(fd.is_fifo_writer())
+		add_writer();
+	else
+		add_reader();
+}
+
+void Pipe::close(FileDescriptor& fd) {
+	if(fd.is_fifo_writer())
+		remove_writer();
+	else
+		remove_reader();
+}

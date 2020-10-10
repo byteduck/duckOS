@@ -49,6 +49,8 @@ public:
 	Result truncate(off_t length) override;
 	Result chmod(mode_t mode) override;
 	Result chown(uid_t uid, gid_t gid) override;
+	void open(FileDescriptor& fd, int options) override;
+	void close(FileDescriptor& fd) override;
 
 private:
 	ProcFS& procfs;

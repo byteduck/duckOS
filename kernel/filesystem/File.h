@@ -36,6 +36,8 @@ public:
 	virtual bool is_tty();
 	virtual bool is_fifo();
 	virtual int ioctl(unsigned request, void* argp);
+	virtual void open(FileDescriptor& fd, int options);
+	virtual void close(FileDescriptor& fd);
 protected:
 	File();
 };

@@ -43,6 +43,7 @@ public:
 	bool append_mode();
 	InodeMetadata metadata();
 	DC::shared_ptr<File> file();
+	void open();
 
 	int seek(off_t offset, int whence);
 	ssize_t read(uint8_t* buffer, size_t count);
@@ -54,6 +55,7 @@ public:
 
 	void set_fifo_reader();
 	void set_fifo_writer();
+	bool is_fifo_writer();
 
 private:
 	DC::shared_ptr<File> _file;
@@ -64,6 +66,7 @@ private:
 	bool _writable {false};
 	bool _can_seek {true};
 	bool _append {false};
+	int _options = 0;
 
 	off_t _seek {0};
 	bool _is_fifo_writer = false;

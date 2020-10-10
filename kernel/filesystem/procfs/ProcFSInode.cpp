@@ -266,3 +266,11 @@ Result ProcFSInode::chmod(mode_t mode) {
 Result ProcFSInode::chown(uid_t uid, gid_t gid) {
 	return -EIO;
 }
+
+void ProcFSInode::open(FileDescriptor& fd, int options) {
+
+}
+
+void ProcFSInode::close(FileDescriptor& fd) {
+
+}

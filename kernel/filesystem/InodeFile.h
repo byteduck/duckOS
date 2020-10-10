@@ -31,6 +31,9 @@ public:
 	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
 	ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, DirectoryEntry* buffer) override;
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
+	void open(FileDescriptor& fd, int options) override;
+	void close(FileDescriptor& fd) override;
+
 private:
 	DC::shared_ptr<Inode> _inode;
 };

@@ -178,6 +178,7 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int option
 	auto file = DC::make_shared<InodeFile>(inode->inode());
 	auto ret = DC::make_shared<FileDescriptor>(file, user);
 	ret->set_options(options);
+	ret->open();
 
 	return ret;
 }
@@ -198,6 +199,7 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int opti
 	auto file = DC::make_shared<InodeFile>(child_or_err.value());
 	auto ret = DC::make_shared<FileDescriptor>(file, user);
 	ret->set_options(options);
+	ret->open();
 
 	return ret;
 }

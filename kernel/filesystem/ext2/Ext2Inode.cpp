@@ -831,4 +831,12 @@ uint32_t Ext2Inode::calculate_num_ptr_blocks(uint32_t num_blocks) {
 	return ret;
 }
 
+void Ext2Inode::open(FileDescriptor& fd, int options) {
+
+}
+
+void Ext2Inode::close(FileDescriptor& fd) {
+
+}
+
 

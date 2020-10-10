@@ -39,24 +39,13 @@ FileDescriptor::FileDescriptor(FileDescriptor& other): _user(other._user) {
 	_readable = other._readable;
 	_writable = other._writable;
 	_seek = other._seek;
+	_options = other._options;
 
-	//Increase pipe reader/writer count if applicable
-	if(_file->is_fifo()) {
-		if (_is_fifo_writer)
-			((Pipe*) _file.get())->add_writer();
-		else
-			((Pipe*) _file.get())->add_reader();
-	}
+	open();
 }
 
 FileDescriptor::~FileDescriptor() {
-	//Decrease pipe reader/writer count if applicable
-	if(_file->is_fifo()) {
-		if (_is_fifo_writer)
-			((Pipe*) _file.get())->remove_writer();
-		else
-			((Pipe*) _file.get())->remove_reader();
-	}
+	_file->close(*this);
 }
 
 
@@ -64,6 +53,7 @@ void FileDescriptor::set_options(int options) {
 	_readable = !(options & O_WRONLY) || (options & O_RDWR);
 	_writable = (options & O_WRONLY) || (options & O_RDWR);
 	_append = options & O_APPEND;
+	_options = options;
 }
 
 bool FileDescriptor::readable() {
@@ -110,6 +100,10 @@ InodeMetadata FileDescriptor::metadata() {
 
 DC::shared_ptr<File> FileDescriptor::file() {
 	return _file;
+}
+
+void FileDescriptor::open() {
+	_file->open(*this, _options);
 }
 
 ssize_t FileDescriptor::read(uint8_t *buffer, size_t count) {
@@ -183,4 +177,8 @@ void FileDescriptor::set_fifo_reader() {
 
 void FileDescriptor::set_fifo_writer() {
 	_is_fifo_writer = true;
+}
+
+bool FileDescriptor::is_fifo_writer() {
+	return _is_fifo_writer;
 }

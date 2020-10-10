@@ -31,6 +31,7 @@
 
 class Filesystem;
 class LinkedInode;
+class FileDescriptor;
 class Inode {
 public:
 	Filesystem& fs;
@@ -53,6 +54,8 @@ public:
 	virtual ResultRet<DC::shared_ptr<LinkedInode>> resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level);
 	virtual Result chmod(mode_t mode) = 0;
 	virtual Result chown(uid_t uid, gid_t gid) = 0;
+	virtual void open(FileDescriptor& fd, int options) = 0;
+	virtual void close(FileDescriptor& fd) = 0;
 
 	virtual InodeMetadata metadata();
 

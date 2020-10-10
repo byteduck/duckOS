@@ -47,4 +47,11 @@ ssize_t InodeFile::write(FileDescriptor &fd, size_t offset, const uint8_t* buffe
 	return _inode->write(offset, count, buffer);
 }
 
+void InodeFile::open(FileDescriptor& fd, int options) {
+	_inode->open(fd, options);
+}
+
+void InodeFile::close(FileDescriptor& fd) {
+	_inode->close(fd);
+}
 
