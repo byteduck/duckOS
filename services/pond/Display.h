@@ -23,9 +23,9 @@
 #include <cstdint>
 
 struct Pixel {
-	uint8_t r;
-	uint8_t g;
 	uint8_t b;
+	uint8_t g;
+	uint8_t r;
 	uint8_t : 8;
 };
 
@@ -35,10 +35,11 @@ public:
 	int width();
 	int height();
 	Pixel* framebuffer();
+	void clear(Pixel color);
 
 private:
-	int _width = 640;
-	int _height = 480;
+	int _width = -1;
+	int _height = -1;
 	int framebuffer_fd = 0;
 	Pixel* _framebuffer;
 };

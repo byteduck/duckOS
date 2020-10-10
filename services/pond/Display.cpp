@@ -20,7 +20,6 @@
 #include "Display.h"
 #include <unistd.h>
 #include <cstdio>
-#include <cerrno>
 #include <sys/ioctl.h>
 #include <kernel/device/VGADevice.h>
 
@@ -46,7 +45,7 @@ Display::Display() {
 		return;
 	}
 
-	printf("Framebuffer opened and mapped.\n");
+	printf("Framebuffer opened and mapped (%d x %d).\n", _width, _height);
 }
 
 int Display::width() {
@@ -59,4 +58,11 @@ int Display::height() {
 
 Pixel* Display::framebuffer() {
 	return _framebuffer;
+}
+
+void Display::clear(Pixel color) {
+	size_t framebuffer_size = _width * _height;
+	for(size_t i = 0; i < framebuffer_size; i++) {
+		_framebuffer[i] = color;
+	}
 }

@@ -24,8 +24,13 @@ int main() {
 	auto* mouse = new Mouse;
 	auto* display = new Display;
 
+	mouse->set_constraints(0, 0, display->width(), display->height());
+	display->clear({50, 50, 50});
+
 	while(1) {
 		//TODO: Implement select() and poll() in kernel so we don't take up CPU time
-		mouse->update();
+		if(mouse->update()) {
+			display->framebuffer()[mouse->x + mouse->y * display->width()] = {255, 255, 255};
+		}
 	}
 }

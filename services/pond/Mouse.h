@@ -34,12 +34,17 @@ public:
 	Mouse();
 	int fd();
 	bool update();
+	void set_constraints(int min_x, int min_y, int max_x, int max_y);
 
 	int x = 0;
 	int y = 0;
 
 private:
 	int mouse_fd;
+	int min_x = 0;
+	int min_y = 0;
+	int max_x = 0;
+	int max_y = 0;
 	bool inited = false;
 };
 
