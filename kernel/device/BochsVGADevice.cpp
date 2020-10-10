@@ -132,5 +132,8 @@ void BochsVGADevice::clear(uint32_t color) {
 }
 
 void* BochsVGADevice::map_framebuffer(Process* proc) {
-	PageDirectory* dir = proc->page_directory;
+	void* ret = proc->page_directory->mmap(framebuffer_paddr, framebuffer_size(), true);
+	if(!ret)
+		return (void*) -ENOMEM;
+	return ret;
 }

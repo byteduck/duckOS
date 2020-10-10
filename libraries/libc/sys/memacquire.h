@@ -26,7 +26,7 @@
 __DECL_BEGIN
 
 void* memacquire(void* addr, size_t size);
-void* memrelease(void* addr, size_t size);
+int memrelease(void* addr, size_t size);
 
 __DECL_END
 

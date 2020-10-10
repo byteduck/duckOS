@@ -45,6 +45,8 @@ Display::Display() {
 		perror("Failed to map framebuffer");
 		return;
 	}
+
+	printf("Framebuffer opened and mapped.\n");
 }
 
 int Display::width() {
@@ -56,5 +58,5 @@ int Display::height() {
 }
 
 Pixel* Display::framebuffer() {
-	return nullptr;
+	return _framebuffer;
 }

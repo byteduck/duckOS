@@ -20,6 +20,7 @@
 #include <common/defines.h>
 #include "MultibootVGADevice.h"
 #include <kernel/memory/PageDirectory.h>
+#include <kernel/tasking/Process.h>
 
 MultibootVGADevice *MultibootVGADevice::create(struct multiboot_info *mboot_header) {
 	auto* ret = new MultibootVGADevice();
@@ -39,6 +40,7 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 		printf("[VGA] Unable to find multiboot framebuffer info!\n");
 		return false;
 	}
+
 	framebuffer_paddr = mboot_header->framebuffer_addr;
 	framebuffer_pitch = mboot_header->framebuffer_pitch;
 	framebuffer_bpp = mboot_header->framebuffer_bpp;
@@ -114,5 +116,8 @@ void MultibootVGADevice::clear(uint32_t color) {
 }
 
 void* MultibootVGADevice::map_framebuffer(Process* proc) {
-	return nullptr;
+	void* ret = proc->page_directory->mmap(framebuffer_paddr, framebuffer_size(), true);
+	if(!ret)
+		return (void*) -ENOMEM;
+	return ret;
 }
