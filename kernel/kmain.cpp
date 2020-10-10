@@ -38,6 +38,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/device/PATADevice.h>
 #include <kernel/filesystem/procfs/ProcFS.h>
+#include <kernel/device/MouseDevice.h>
 #include "CommandLine.h"
 
 uint8_t boot_disk;
@@ -73,6 +74,7 @@ int kmain(uint32_t mbootptr){
 
 void kmain_late(){
 	new KeyboardDevice;
+	new MouseDevice;
 	printf("[kinit] Tasking initialized.\n[kinit] Initializing TTY...\n");
 
 	auto* tty0 = new TTYDevice(0, "tty0", 4, 0);

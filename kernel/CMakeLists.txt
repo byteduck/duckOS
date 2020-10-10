@@ -59,6 +59,7 @@ SET(KERNEL_SRCS
         device/RandomDevice.cpp
         device/NullDevice.cpp
         device/KeyboardDevice.cpp
+        device/MouseDevice.cpp
         interrupt/IRQHandler.cpp
         memory/PageDirectory.cpp
         memory/PageTable.cpp
