@@ -191,12 +191,9 @@ void TaskManager::preempt(){
 		current_proc = next_process();
 		quantum_counter = current_proc->quantum - 1;
 
-		//If we were just in a signal handler or just execed, don't save the esp to old_proc->registers
+		//If we were just in a signal handler, don't save the esp to old_proc->registers
 		unsigned int* old_esp;
 		if(old_proc->in_signal_handler()) {
-			old_esp = &old_proc->signal_registers.esp;
-		} else if(old_proc->just_execed()) {
-			old_proc->just_execed() = false;
 			old_esp = &old_proc->signal_registers.esp;
 		} else {
 			old_esp = &old_proc->registers.esp;

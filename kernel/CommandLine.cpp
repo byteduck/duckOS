@@ -19,6 +19,8 @@
 
 #include <kernel/memory/PageDirectory.h>
 #include <common/vector.hpp>
+#include <common/string.h>
+#include <kernel/kstdio.h>
 #include "CommandLine.h"
 
 namespace CommandLine {

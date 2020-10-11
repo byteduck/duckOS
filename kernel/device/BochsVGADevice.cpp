@@ -102,7 +102,7 @@ ssize_t BochsVGADevice::write(FileDescriptor &fd, size_t offset, const uint8_t *
 }
 
 void BochsVGADevice::set_pixel(size_t x, size_t y, uint32_t value) {
-	if(x > display_width || y > display_height) return;
+	if(x >= display_width || y >= display_height) return;
 	framebuffer[x + y * display_width] = value;
 }
 
@@ -119,7 +119,7 @@ size_t BochsVGADevice::get_display_height() {
 }
 
 void BochsVGADevice::scroll(size_t pixels) {
-	if(pixels > display_height) return;
+	if(pixels >= display_height) return;
 	memcpy(framebuffer, framebuffer + pixels * display_width, (display_height - pixels) * display_width * sizeof(uint32_t));
 	memset(framebuffer + (display_height - pixels) * display_width, 0, display_width * pixels * sizeof(uint32_t));
 }

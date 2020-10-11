@@ -113,10 +113,6 @@ int Process::exit_status() {
 	return _exit_status;
 }
 
-bool& Process::just_execed() {
-	return _just_execed;
-}
-
 Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid): _user(User::root()) {
 	//Disable task switching so we don't screw up paging
 	bool en = TaskManager::enabled();
@@ -522,10 +518,12 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 		_file_descriptors.push_back(ttydesc);
 		_file_descriptors.push_back(ttydesc);
 		_cwd = args->working_dir;
-	} else {
-		for(size_t i = 0; i < 3; i++)
-			new_proc->_file_descriptors[i] = DC::make_shared<FileDescriptor>(*_file_descriptors[i]);
 	}
+
+	//Give new process first three file descriptors and close the rest
+	for(size_t i = 0; i < 3; i++)
+			new_proc->_file_descriptors[i] =_file_descriptors[i];
+	_file_descriptors.resize(0);
 
 	//Manually delete because we won't return from here and we need to clean up resources
 	delete args;
@@ -785,7 +783,7 @@ int Process::sys_pipe(int filedes[2]) {
 	//Make the write FD
 	auto pipe_write_fd = DC::make_shared<FileDescriptor>(pipe, _user);
 	pipe_write_fd->set_options(O_WRONLY);
-	pipe_read_fd->set_fifo_writer();
+	pipe_write_fd->set_fifo_writer();
 	_file_descriptors.push_back(pipe_write_fd);
 	filedes[1] = (int) _file_descriptors.size() - 1;
 

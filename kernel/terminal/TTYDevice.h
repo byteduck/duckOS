@@ -68,7 +68,8 @@ private:
 	size_t _id;
 	bool _active = false;
 	BooleanBlocker _buffer_blocker;
-	SpinLock _lock;
+	SpinLock _output_lock;
+	SpinLock _input_lock;
 };
 
 #endif //DUCKOS_TTYDEVICE_H

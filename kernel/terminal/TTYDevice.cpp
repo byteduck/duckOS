@@ -53,14 +53,15 @@ TTYDevice::~TTYDevice() {
 }
 
 ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
-	LOCK(_lock);
+	LOCK(_output_lock);
 	terminal->write_chars((char*) buffer, count);
 	return count;
 }
 
 ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
-	LOCK(_lock);
-	while(buffered && _input_buffer.empty()) TaskManager::current_process()->block(_buffer_blocker);
+	LOCK(_input_lock);
+	while(buffered && _input_buffer.empty())
+		TaskManager::current_process()->block(_buffer_blocker);
 	count = min(count, _input_buffer.size());
 	size_t count_loop = count;
 	while(count_loop--) *buffer++ = _input_buffer.pop_front();

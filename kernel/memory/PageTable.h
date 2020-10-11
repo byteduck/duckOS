@@ -22,7 +22,6 @@
 
 #include <common/cstddef.h>
 #include <common/shared_ptr.hpp>
-#include "MemoryBitmap.hpp"
 #include <kernel/memory/PageDirectory.h>
 #include "Memory.h"
 

@@ -178,7 +178,6 @@ private:
 	mode_t _umask = 022;
 	int _exit_status = 0;
 	bool _freed_resources = false;
-	bool _just_execed = false;
 
 	//Kernel stack
 	void* _kernel_stack_base;

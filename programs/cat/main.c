@@ -26,11 +26,17 @@
 #include <string.h>
 
 int main(int argc, char** argv) {
-	if(argc < 2) {
+	int f;
+
+	if(!isatty(STDIN_FILENO)) {
+		f = STDIN_FILENO;
+	} else if(argc < 2) {
 		printf("cat: Missing file operand\nUsage: cat FILE\n");
 		return 1;
+	} else {
+		f = open(argv[1], O_RDONLY);
 	}
-	int f = open(argv[1], O_RDONLY);
+
 	if(f != -1) {
 		char buf[512];
 		int nread;
@@ -40,7 +46,7 @@ int main(int argc, char** argv) {
 				return errno;
 			}
 		}
-		if(errno){
+		if(nread < 0 && errno){
 			perror("cat");
 			return errno;
 		}

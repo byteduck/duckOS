@@ -40,12 +40,22 @@ void Pipe::remove_reader() {
 
 void Pipe::remove_writer() {
 	_writers--;
+	if(!_writers) {
+		_blocker.set_ready(true);
+	}
 }
 
 ssize_t Pipe::read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) {
-	if(_writers == 0 || _queue.empty()) return 0;
-	if(count > _queue.size()) count = _queue.size();
-	for(size_t i = 0; i < count; i++) buffer[i] = _queue.pop_front();
+	if(!_writers && _queue.empty()) return 0;
+	if(!_blocker.is_ready())
+		TaskManager::current_process()->block(_blocker);
+	LOCK(_lock);
+	if(count > _queue.size())
+		count = _queue.size();
+	for(size_t i = 0; i < count; i++)
+		buffer[i] = _queue.pop_front();
+	if(_queue.empty() && _writers)
+		_blocker.set_ready(false);
 	return count;
 }
 
@@ -55,6 +65,8 @@ ssize_t Pipe::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, si
 		return -EPIPE;
 	}
 
+	LOCK(_lock);
+
 	size_t nwrote = 0;
 	bool flag = true;
 	while(nwrote < count && flag) {
@@ -62,23 +74,12 @@ ssize_t Pipe::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, si
 		nwrote++;
 	}
 
+	if(nwrote)
+		_blocker.set_ready(true);
+
 	return nwrote;
 }
 
 bool Pipe::is_fifo() {
 	return true;
-}
-
-void Pipe::open(FileDescriptor& fd, int options) {
-	if(fd.is_fifo_writer())
-		add_writer();
-	else
-		add_reader();
-}
-
-void Pipe::close(FileDescriptor& fd) {
-	if(fd.is_fifo_writer())
-		remove_writer();
-	else
-		remove_reader();
 }

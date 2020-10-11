@@ -41,10 +41,28 @@ FileDescriptor::FileDescriptor(FileDescriptor& other): _user(other._user) {
 	_seek = other._seek;
 	_options = other._options;
 
+	//Increase pipe reader/writer count if applicable
+	if(_file->is_fifo()) {
+		if (_is_fifo_writer) {
+			((Pipe*) _file.get())->add_writer();
+		} else {
+			((Pipe*) _file.get())->add_reader();
+		}
+	}
+
 	open();
 }
 
 FileDescriptor::~FileDescriptor() {
+	//Decrease pipe reader/writer count if applicable
+	if(_file->is_fifo()) {
+		if (_is_fifo_writer) {
+			((Pipe*) _file.get())->remove_writer();
+		} else {
+			((Pipe*) _file.get())->remove_reader();
+		}
+	}
+
 	_file->close(*this);
 }
 

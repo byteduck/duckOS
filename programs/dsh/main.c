@@ -33,9 +33,10 @@
 char cwd[4096];
 char cmdbuf[4096];
 struct stat st;
+int current_pipefd[2] = {-1, -1}, prev_pipefd[2] = {-1, -1};
 
 int evaluate_input(char* input);
-pid_t evaluate_command(int argc, char** argv, int infd, int outfd);
+pid_t evaluate_command(int argc, char** argv, int outfd);
 bool evaluate_builtin(int argc, char** argv);
 
 #pragma clang diagnostic push
@@ -99,16 +100,20 @@ int evaluate_input(char* input) {
 	int pidc = 0;
 
 	//Evaluate commands
-	int prev_pipe_in = -1;
 	for(int i = 0; i < cmdc; i++) {
-		//If this isn't the last command, create a new pipe
-		int outfd;
+		int outfd = redirection_fd;
+		prev_pipefd[0] = current_pipefd[0];
+		prev_pipefd[1] = current_pipefd[1];
+
 		if(i != cmdc - 1) {
-			int pipefd[2];
-			pipe(pipefd);
-			outfd = pipefd[1];
-			prev_pipe_in = pipefd[0];
-		} else outfd = redirection_fd;
+			//If this isn't the last command, create a new pipe
+			pipe(current_pipefd);
+			outfd = current_pipefd[1]; //Use the writing end of the newly created pipe
+		} else {
+			//Otherwise, set current_pipefd to -1, -1
+			current_pipefd[0] = -1;
+			current_pipefd[1] = -1;
+		}
 
 		//Split arguments
 		int argc = 0;
@@ -121,10 +126,14 @@ int evaluate_input(char* input) {
 		args[argc] = NULL;
 
 		//If this isn't a builtin command, run the command
-		if(!evaluate_builtin(argc, args)) {
-			pids[pidc++] = evaluate_command(argc, args, prev_pipe_in, outfd);
-		}
+		if(!evaluate_builtin(argc, args))
+			pids[pidc++] = evaluate_command(argc, args, outfd);
 	}
+
+	//Close the reading end of the current pipe since we don't need it anymore
+	//(The writing end was already closed in evaluate_command())
+	if(current_pipefd[0] != -1)
+		close(current_pipefd[0]);
 
 	//Wait for processes
 	int res = 0;
@@ -137,11 +146,14 @@ int evaluate_input(char* input) {
 	return res;
 }
 
-pid_t evaluate_command(int argc, char** argv, int infd, int outfd) {
+pid_t evaluate_command(int argc, char** argv, int outfd) {
 	pid_t pid = fork();
 	if(!pid) {
-		if(infd != -1)
-			dup2(infd, STDIN_FILENO);
+		//If there's a previous pipe to read from, use it for stdin
+		if(prev_pipefd[0] != -1)
+			dup2(prev_pipefd[0], STDIN_FILENO);
+
+		//If outfd is set (either to the current pipe or the redirection), use it for stdout
 		if(outfd != -1)
 			dup2(outfd, STDOUT_FILENO);
 
@@ -149,6 +161,11 @@ pid_t evaluate_command(int argc, char** argv, int infd, int outfd) {
 		perror("Cannot execute");
 		exit(errno);
 	}
+
+	//Close the writing end of the current pipe (if there is one) since we don't need it anymore
+	if(current_pipefd[1] != -1)
+		close(current_pipefd[1]);
+
 	return pid;
 }
 
