@@ -65,6 +65,10 @@ echo "Setting up /proc/..."
 mkdir -p mnt/proc
 chmod 555 mnt/proc
 
+echo "Setting up /sock/..."
+mkdir -p mnt/sock
+chmod 777 mnt/sock
+
 echo "Setting up /etc/..."
 chown -R 0:0 mnt/etc
 

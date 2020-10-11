@@ -334,10 +334,10 @@ bool Process::handle_pending_signal() {
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
-			state = PROCESS_ZOMBIE;
+			free_resources();
 			Process* parent = TaskManager::process_for_pid(_ppid);
 			if(parent && parent != this) parent->kill(SIGCHLD);
-			free_resources();
+			state = PROCESS_ZOMBIE;
 		} else if(signal_actions[signal].action) {
 			//Otherwise, have the process handle the signal
 			call_signal_handler(signal);
@@ -491,7 +491,8 @@ ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	check_ptr(buf);
 	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd]) return -EBADF;
-	return _file_descriptors[fd]->write(buf, count);
+	ssize_t ret = _file_descriptors[fd]->write(buf, count);
+	return ret;
 }
 
 pid_t Process::sys_fork(Registers& regs) {

@@ -14,6 +14,7 @@ If some of this code looks familiar, it's because it's based off of my previous 
 - A semicomplete dynamically-linked c standard library for programs
 - Dynamic linking with shared libraries
 - A Bochs/Qemu/VirtualBox/Multiboot video driver (640x480x32bpp)
+- A filesystem called SocketFS that allows processes to open a socket by creating a file in `/sock/` that other processes can then read and write to using a defined packet struct
  
 ### Services
 
@@ -58,6 +59,7 @@ Programs that take arguments will provide you with the correct usage when you ru
 - A buffer overflow attack on the kernel may be possible, because only pointers passed to syscalls are checked for validity (and not the length of the data to be read/written)
 - Dynamic linking does not currently use CoW to share memory between processes, so each process has its own copy of the library in memory
 - C++ programs must be statically linked due to an incompatibility with the linker
+- It's pretty unstable
 
 ### Future Goals
 - Make shared libraries actually use CoW to save memory

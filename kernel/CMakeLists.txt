@@ -86,7 +86,10 @@ SET(KERNEL_SRCS
         User.cpp
         filesystem/procfs/ProcFS.cpp
         filesystem/procfs/ProcFSInode.cpp
-        filesystem/procfs/ProcFSEntry.cpp)
+        filesystem/procfs/ProcFSEntry.cpp
+        filesystem/socketfs/SocketFS.cpp
+        filesystem/socketfs/SocketFSInode.cpp
+        filesystem/socketfs/SocketFSClient.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

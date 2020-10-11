@@ -33,13 +33,13 @@ namespace DC {
 
 		}
 
-		queue(queue<T>& other): _capacity(other._capacity), _size(other._size), _front(other.front), _back(other._back) {
+		queue(queue<T>& other): _capacity(other._capacity), _size(other._size), _front(other._front), _back(other._back) {
 			_storage = (T*) kcalloc(_size, sizeof(T));
 			for(size_t i = 0; i < _size; i++)
 				new (&_storage[i]) T(other._storage[i]);
 		}
 
-		queue(queue<T>&& other): _capacity(other._capacity), _size(other._size), _front(other.front), _back(other._back) {
+		queue(queue<T>&& other) noexcept : _capacity(other._capacity), _size(other._size), _front(other._front), _back(other._back) {
 			_storage = (T*) kcalloc(_size, sizeof(T));
 			for(size_t i = 0; i < _size; i++)
 				new (&_storage[i]) T(DC::move(other._storage[i]));

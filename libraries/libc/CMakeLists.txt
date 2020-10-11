@@ -13,6 +13,7 @@ SET(SOURCES
         sys/memacquire.c
         sys/printf.c
         sys/liballoc.c
+        sys/socketfs.c
         sys/stat.c
         sys/syscall.c
         sys/wait.c

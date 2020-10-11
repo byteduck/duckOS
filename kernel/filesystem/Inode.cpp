@@ -31,7 +31,7 @@ Inode::~Inode() {
 }
 
 ResultRet<DC::shared_ptr<Inode>> Inode::find(const DC::string& name) {
-	if(!metadata().exists() && metadata().is_directory()) return -EISDIR;
+	if(metadata().exists() && !metadata().is_directory()) return -EISDIR;
 	ino_t id  = find_id(name);
 	if(id != 0) {
 		auto ret = fs.get_inode(id);

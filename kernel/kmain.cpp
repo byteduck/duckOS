@@ -39,6 +39,7 @@
 #include <kernel/device/PATADevice.h>
 #include <kernel/filesystem/procfs/ProcFS.h>
 #include <kernel/device/MouseDevice.h>
+#include <kernel/filesystem/socketfs/SocketFS.h>
 #include "CommandLine.h"
 
 uint8_t boot_disk;
@@ -142,7 +143,21 @@ void kmain_late(){
 	auto* procfs = new ProcFS();
 	auto res = VFS::inst().mount(procfs, proc_or_err.value());
 	if(res.is_error()) {
-		printf("[kinit] Failed to mount proc: %d\n", proc_or_err.code());
+		printf("[kinit] Failed to mount proc: %d\n", res.code());
+		while(true);
+	}
+
+	//Mount SocketFS
+	auto sock_or_err = VFS::inst().resolve_path("/sock", VFS::inst().root_ref(), root_user);
+	if(sock_or_err.is_error()) {
+		printf("[kinit] Failed to mount sock: %d\n", sock_or_err.code());
+		while(true);
+	}
+
+	auto* socketfs = new SocketFS();
+	res = VFS::inst().mount(socketfs, sock_or_err.value());
+	if(res.is_error()) {
+		printf("[kinit] Failed to mount sock: %d\n", res.code());
 		while(true);
 	}
 
