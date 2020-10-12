@@ -21,27 +21,46 @@
 #define DUCKOS_DISPLAY_H
 
 #include <cstdint>
+#include "Graphics.h"
+#include "Geometry.h"
+#include "Window.h"
 
-struct Pixel {
-	uint8_t b;
-	uint8_t g;
-	uint8_t r;
-	uint8_t : 8;
-};
-
+class Window;
 class Display {
 public:
 	Display();
-	int width();
-	int height();
-	Pixel* framebuffer();
-	void clear(Pixel color);
+
+	Rect dimensions();
+	Framebuffer framebuffer();
+	void clear(Color color);
+
+	/**
+	 * Adds a window to the display.
+	 */
+	void add_window(Window* window);
+
+	/**
+	 * Removes a window (if it exists) from the display.
+	 */
+	void remove_window(Window* window);
+
+	/**
+	 * Marks a portion of the display to be redrawn
+	 * @param Rect the absolute rect to be redrawn
+	 */
+	void invalidate(const Rect& rect);
+
+	/**
+	 * Redraws invalid areas.
+	 */
+	void repaint();
 
 private:
-	int _width = -1;
-	int _height = -1;
 	int framebuffer_fd = 0;
-	Pixel* _framebuffer;
+	Framebuffer _framebuffer;
+	Rect _dimensions;
+	std::vector<Rect> invalid_areas;
+	std::vector<Window*> _windows;
 };
 
 

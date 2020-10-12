@@ -463,6 +463,8 @@ void* PageDirectory::mmap(size_t physaddr, size_t memsize, bool read_write) {
 		return nullptr;
 	}
 
+	vregion->reserved = true;
+
 	//Next, map the pages
 	LinkedMemoryRegion region(&pregion, vregion);
 	map_region(region, read_write);
@@ -472,6 +474,7 @@ void* PageDirectory::mmap(size_t physaddr, size_t memsize, bool read_write) {
 
 bool PageDirectory::munmap(void* virtaddr) {
 	MemoryRegion* vregion = _vmem_map.find_region((size_t) virtaddr);
+	if(!vregion->reserved) return false;
 	if(!vregion) return false;
 	LinkedMemoryRegion region(nullptr, vregion);
 	unmap_region(region);
@@ -685,6 +688,9 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 				new_region->is_shm = true;
 				new_region->shm_id = shm_region->shm_id;
 				map_region(LinkedMemoryRegion(shm_region, new_region), write);
+			} else if(parent_region->reserved) {
+				//This is reserved memory (AKA memory-mapped hardware or something), so don't map it to the child
+				_vmem_map.free_region(new_region);
 			} else {
 				if(parent_region->cow.marked_cow) {
 					//If the region is already marked cow, increase the number of refs by one.

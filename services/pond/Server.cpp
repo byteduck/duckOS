@@ -17,30 +17,37 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_MOUSE_H
-#define DUCKOS_MOUSE_H
-
-#include <cstdint>
+#include "Server.h"
 #include <fcntl.h>
 #include <cstdio>
-#include "Geometry.h"
-#include "Window.h"
+#include <cstdlib>
+#include <cerrno>
+#include <sys/socketfs.h>
 
-struct MouseEvent {
-	int x, y, z;
-	uint8_t buttons;
-};
+Server::Server() {
+	socket_fd = open("/sock/pond", O_RDWR | O_CREAT);
+	if(socket_fd < 0) {
+		perror("Couldn't open window server socket");
+		exit(errno);
+	}
+}
 
-class Mouse: public Window {
-public:
-	Mouse(Window* parent);
-	int fd();
-	bool update();
+void Server::handle_packets() {
+	SocketFSPacket* packet;
+	while((packet = read_packet(socket_fd))) {
+		switch(packet->pid) {
+			case SOCKETFS_MSG_CONNECT:
+				printf("New client connected to socket: %d\n", *((pid_t*) packet->data));
+				break;
+			case SOCKETFS_MSG_DISCONNECT:
+				printf("Client disconnected from socket: %d\n", *((pid_t*) packet->data));
+				break;
+			default:
+				packet->data[packet->length - 1] = 0;
+				printf("Packet received from %d: %s\n", packet->pid, packet->data);
+				break;
+		}
 
-private:
-	int mouse_fd;
-	bool inited = false;
-};
-
-
-#endif //DUCKOS_MOUSE_H
+		delete packet;
+	}
+}

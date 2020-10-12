@@ -23,46 +23,77 @@
 #include <sys/ioctl.h>
 #include <kernel/device/VGADevice.h>
 
-Display::Display() {
+Display::Display(): _dimensions({0, 0, 0, 0}) {
 	framebuffer_fd = open("/dev/fb0", O_RDWR);
 	if(framebuffer_fd < -1) {
 		perror("Failed to open framebuffer");
 		return;
 	}
 
-	if(ioctl(framebuffer_fd, IO_VIDEO_WIDTH, &_width) < 0) {
+	if(ioctl(framebuffer_fd, IO_VIDEO_WIDTH, &_dimensions.width) < 0) {
 		perror("Failed to get framebuffer width");
 		return;
 	}
 
-	if(ioctl(framebuffer_fd, IO_VIDEO_HEIGHT, &_height) < 0) {
+	if(ioctl(framebuffer_fd, IO_VIDEO_HEIGHT, &_dimensions.height) < 0) {
 		perror("Failed to get framebuffer height");
 		return;
 	}
 
-	if(ioctl(framebuffer_fd, IO_VIDEO_MAP, &_framebuffer) < 0) {
+	Color* buffer;
+
+	if(ioctl(framebuffer_fd, IO_VIDEO_MAP, &buffer) < 0) {
 		perror("Failed to map framebuffer");
 		return;
 	}
 
-	printf("Framebuffer opened and mapped (%d x %d).\n", _width, _height);
+	_framebuffer = {buffer, _dimensions.width, _dimensions.height};
+
+	printf("Framebuffer opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
 }
 
-int Display::width() {
-	return _width;
+Rect Display::dimensions() {
+	return _dimensions;
 }
 
-int Display::height() {
-	return _height;
-}
-
-Pixel* Display::framebuffer() {
+Framebuffer Display::framebuffer() {
 	return _framebuffer;
 }
 
-void Display::clear(Pixel color) {
-	size_t framebuffer_size = _width * _height;
+void Display::clear(Color color) {
+	size_t framebuffer_size = _dimensions.area();
 	for(size_t i = 0; i < framebuffer_size; i++) {
-		_framebuffer[i] = color;
+		_framebuffer.buffer[i] = color;
 	}
+}
+
+void Display::add_window(Window* window) {
+	_windows.push_back(window);
+}
+
+void Display::remove_window(Window* window) {
+	for(size_t i = 0; i < _windows.size(); i++) {
+		if(_windows[i] == window) {
+			_windows.erase(_windows.begin() + i);
+			return;
+		}
+	}
+}
+
+void Display::invalidate(const Rect& rect) {
+	invalid_areas.push_back(rect);
+}
+
+void Display::repaint() {
+	for(auto& area : invalid_areas) {
+		_framebuffer.fill(area, {50, 50, 50});
+		for(auto& window : _windows) {
+			Rect window_abs = window->absolute_rect();
+			if(window_abs.collides(area)) {
+				Rect overlap_abs = area.overlapping_area(window_abs);
+				_framebuffer.copy(window->framebuffer(), overlap_abs.transform({-window_abs.position.x, -window_abs.position.y}), overlap_abs.position);
+			}
+		}
+	}
+	invalid_areas.resize(0);
 }

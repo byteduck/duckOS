@@ -17,38 +17,18 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <unistd.h>
-#include "Mouse.h"
+#ifndef DUCKOS_SERVER_H
+#define DUCKOS_SERVER_H
 
-Mouse::Mouse(Window* parent): Window(parent, {0, 0, 3, 3}) {
-	mouse_fd = open("/dev/input/mouse", O_RDONLY);
-	if(mouse_fd < 0) {
-		perror("Failed to open mouse");
-		return;
-	}
-	inited = true;
 
-	framebuffer().fill({{0,0}, 3, 3}, {255, 255, 255});
-}
+class Server {
+public:
+	Server();
 
-int Mouse::fd() {
-	return mouse_fd;
-}
+	void handle_packets();
+private:
+	int socket_fd;
+};
 
-bool Mouse::update() {
-	MouseEvent events[32];
-	ssize_t nread = read(mouse_fd, &events, sizeof(MouseEvent) * 32);
-	if(!nread) return false;
-	int num_events = (int) nread / sizeof(MouseEvent);
 
-	Rect dims = rect();
-
-	for(int i = 0; i < num_events; i++) {
-		dims.position.x += events[i].x;
-		dims.position.y -= events[i].y;
-	}
-
-	set_rect(dims);
-
-	return true;
-}
+#endif //DUCKOS_SERVER_H

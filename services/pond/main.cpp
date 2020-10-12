@@ -19,18 +19,21 @@
 
 #include "Mouse.h"
 #include "Display.h"
+#include "Server.h"
+#include "Window.h"
 
 int main() {
-	auto* mouse = new Mouse;
 	auto* display = new Display;
+	auto* server = new Server;
+	auto* main_window = new Window(display);
+	auto* mouse = new Mouse(main_window);
 
-	mouse->set_constraints(0, 0, display->width() - 1, display->height() - 1);
 	display->clear({50, 50, 50});
 
 	while(true) {
 		//TODO: Implement select() and poll() in kernel so we don't take up CPU time
-		if(mouse->update()) {
-			display->framebuffer()[mouse->x + mouse->y * display->width()] = {255, 255, 255};
-		}
+		mouse->update();
+		server->handle_packets();
+		display->repaint();
 	}
 }

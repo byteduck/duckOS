@@ -30,7 +30,7 @@ typedef struct socketfs_packet {
 } socketfs_packet;
 
 #ifdef __cplusplus
-	typedef socketfs_packet SocketFSServerPacket;
+	typedef socketfs_packet SocketFSPacket;
 #endif
 
 __DECL_BEGIN
