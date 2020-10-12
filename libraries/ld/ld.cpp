@@ -25,7 +25,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <map>
-#include <sys/memacquire.h>
+#include <sys/mem.h>
 
 std::unordered_map<std::string, uintptr_t> global_symbols;
 std::unordered_map<std::string, uintptr_t> symbols;

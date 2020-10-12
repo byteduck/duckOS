@@ -240,7 +240,7 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
 
 	//Fork the old page directory
-	page_directory->fork_from(to_fork->page_directory);
+	page_directory->fork_from(to_fork->page_directory, _ppid, _pid);
 
 	//Setup registers and stack
 	registers = regs;
@@ -1030,4 +1030,51 @@ int Process::sys_memrelease(void* addr, size_t size) const {
 	if(!page_directory->free_region((size_t) addr, size))
 		return -EINVAL;
 	return SUCCESS;
+}
+
+int Process::sys_shmcreate(void* addr, size_t size, struct shm* s) {
+	check_ptr(s);
+
+	auto res = page_directory->create_shared_region((size_t) addr, size, _pid);
+	if(res.is_error())
+		return res.code();
+
+	auto reg = res.value();
+	s->size = reg.virt->size;
+	s->ptr = (void*) reg.virt->start;
+	s->id = reg.virt->shm_id;
+
+	return SUCCESS;
+}
+
+int Process::sys_shmattach(int id, void* addr, struct shm* s) {
+	check_ptr(s);
+
+	auto res = page_directory->attach_shared_region(id, (size_t) addr, _pid);
+	if(res.is_error())
+		return res.code();
+
+	auto reg = res.value();
+	s->size = reg.virt->size;
+	s->ptr = (void*) reg.virt->start;
+	s->id = reg.phys->shm_id;
+
+	return SUCCESS;
+}
+
+int Process::sys_shmdetach(int id) {
+	return page_directory->detach_shared_region(id).code();
+}
+
+int Process::sys_shmallow(int id, pid_t pid, int perms) {
+	//TODO: If PIDs end up getting recycled and we previously allowed a PID that was recycled, it could be a security issue
+
+	if(!(perms &  (SHM_READ | SHM_WRITE)))
+		return -EINVAL;
+	if((perms & SHM_WRITE) && !(perms & SHM_READ))
+		return -EINVAL;
+	if(!TaskManager::process_for_pid(pid))
+		return -EINVAL;
+
+	return page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE).code();
 }

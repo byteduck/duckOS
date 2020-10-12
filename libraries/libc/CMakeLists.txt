@@ -10,7 +10,7 @@ SET(SOURCES
         stdlib.c
         string.c
         sys/ioctl.c
-        sys/memacquire.c
+        sys/mem.c
         sys/printf.c
         sys/liballoc.c
         sys/socketfs.c

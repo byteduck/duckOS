@@ -48,6 +48,15 @@ class Blocker;
 
 namespace ELF {struct elf32_header;};
 
+#define SHM_READ 0x1u
+#define SHM_WRITE 0x2u
+
+struct shm {
+	void* ptr;
+	size_t size;
+	int id;
+};
+
 extern const char* PROC_STATUS_NAMES[];
 
 class Process {
@@ -67,7 +76,6 @@ public:
 	DC::shared_ptr<LinkedInode> cwd();
 
 	int exit_status();
-	bool& just_execed();
 	void kill(int signal);
 	void reap();
 	void die_silently();
@@ -149,6 +157,10 @@ public:
 	int sys_ioctl(int fd, unsigned request, void* argp);
 	void* sys_memacquire(void* addr, size_t size) const;
 	int sys_memrelease(void* addr, size_t size) const;
+	int sys_shmcreate(void* addr, size_t size, struct shm* s);
+	int sys_shmattach(int id, void* addr, struct shm* s);
+	int sys_shmdetach(int id);
+	int sys_shmallow(int id, pid_t pid, int perms);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;

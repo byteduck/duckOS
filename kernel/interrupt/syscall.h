@@ -81,6 +81,10 @@
 #define SYS_MEMRELEASE 60
 #define SYS_IOCTL 61
 #define SYS_GETPPID 62
+#define SYS_SHMCREATE 63
+#define SYS_SHMATTACH 64
+#define SYS_SHMDETACH 65
+#define SYS_SHMALLOW 66
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

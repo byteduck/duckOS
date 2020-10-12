@@ -153,6 +153,14 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return TaskManager::current_process()->sys_ioctl((int)arg1, (unsigned) arg2, (void*) arg3);
 		case SYS_GETPPID:
 			return TaskManager::current_process()->ppid();
+		case SYS_SHMCREATE:
+			return TaskManager::current_process()->sys_shmcreate((void*) arg1, (size_t) arg2, (struct shm*) arg3);
+		case SYS_SHMATTACH:
+			return TaskManager::current_process()->sys_shmattach((int) arg1, (void*) arg2, (struct shm*) arg3);
+		case SYS_SHMDETACH:
+			return TaskManager::current_process()->sys_shmdetach((int)arg1);
+		case SYS_SHMALLOW:
+			return TaskManager::current_process()->sys_shmallow((int) arg1, (pid_t) arg2, (int) arg3);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

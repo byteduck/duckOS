@@ -18,6 +18,7 @@
 */
 
 #include <sys/syscall.h>
+#include <sys/mem.h>
 
 void* memacquire(void* addr, size_t size) {
 	return (void*) syscall3(SYS_MEMACQUIRE, (int) addr, (int) size);
@@ -25,4 +26,20 @@ void* memacquire(void* addr, size_t size) {
 
 int memrelease(void* addr, size_t size) {
 	return syscall3(SYS_MEMRELEASE, (int) addr, (size_t) size);
+}
+
+int shmcreate(void* addr, size_t size, struct shm* s) {
+	return syscall4(SYS_SHMCREATE, (int) addr, (int) size, (int) s);
+}
+
+int shmattach(int id, void* addr, struct shm* s) {
+	return syscall4(SYS_SHMATTACH, id, (int) addr, (int) s);
+}
+
+int shmdetach(int id) {
+	return syscall2(SYS_SHMDETACH, id);
+}
+
+int shmallow(int id, pid_t pid, int perms) {
+	return syscall4(SYS_SHMALLOW, id, pid, perms);
 }

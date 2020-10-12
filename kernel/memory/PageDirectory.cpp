@@ -19,6 +19,7 @@
 
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/memory/PageDirectory.h>
+#include <common/defines.h>
 #include "PageTable.h"
 
 PageDirectory::Entry PageDirectory::kernel_entries[256];
@@ -245,7 +246,7 @@ size_t PageDirectory::Entry::Data::get_address() {
  */
 
 
-PageDirectory::PageDirectory(): _vmem_map(PAGE_SIZE, new MemoryRegion(0, HIGHER_HALF)) {
+PageDirectory::PageDirectory(): _vmem_map(PAGE_SIZE, new MemoryRegion(PAGE_SIZE, HIGHER_HALF)) {
 	_entries = (Entry*) k_alloc_region(PAGE_SIZE).virt->start;
 	update_kernel_entries();
 }
@@ -263,7 +264,9 @@ PageDirectory::~PageDirectory() {
 		if(cur->used && cur->related){
 			if(cur->cow.marked_cow) {
 				cur->related->cow_deref();
-			} else {
+			} else if(cur->is_shm) {
+				cur->related->shm_deref();
+			} else if(!cur->reserved) {
 				Memory::pmem_map().free_region(cur->related);
 			}
 		}
@@ -402,12 +405,25 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size,
 }
 
 void PageDirectory::free_region(const LinkedMemoryRegion& region) {
+	//Don't allow the freeing of shared memory regions
+	if(region.virt->is_shm)
+		return;
+
+	//Unmap the region
 	unmap_region(region);
+
 	_vmem_map.free_region(region.virt);
+
+	//If the physical region is reserved (AKA memory-mapped hardware) don't mark it free
 	if(region.phys->reserved)
 		return;
-	_used_pmem -= region.phys->size;
-	Memory::pmem_map().free_region(region.phys);
+	else if(region.virt->cow.marked_cow) {
+		//If the region is marked CoW, just dereference it
+		region.phys->cow_deref();
+	} else {
+		_used_pmem -= region.phys->size;
+		Memory::pmem_map().free_region(region.phys);
+	}
 }
 
 bool PageDirectory::free_region(size_t virtaddr, size_t size) {
@@ -416,12 +432,14 @@ bool PageDirectory::free_region(size_t virtaddr, size_t size) {
 	if(!vregion) return false;
 	if(!vregion->related) PANIC("VREGION_NO_RELATED", "A virtual program memory region had no corresponding physical region.", true);
 
-	//Split the physical region
 	auto* pregion = vregion->related;
 	if(pregion->reserved) return false;
-	size_t pregion_split_start = pregion->start + (virtaddr - vregion->start);
-	pregion = Memory::pmem_map().split_region(pregion, pregion_split_start, size);
-	if(!pregion) return false;
+	if(!vregion->cow.marked_cow) {
+		//Split the physical region if it isn't CoW
+		size_t pregion_split_start = pregion->start + (virtaddr - vregion->start);
+		pregion = Memory::pmem_map().split_region(pregion, pregion_split_start, size);
+		if(!pregion) return false;
+	}
 
 	//Split the virtual region
 	vregion = _vmem_map.split_region(vregion, virtaddr, size);
@@ -429,11 +447,7 @@ bool PageDirectory::free_region(size_t virtaddr, size_t size) {
 
 	//Unmap and free the regions
 	LinkedMemoryRegion region(pregion, vregion);
-	unmap_region(region);
-	_vmem_map.free_region(region.virt);
-	Memory::pmem_map().free_region(region.phys);
-	_used_pmem -= region.phys->size;
-
+	free_region(region);
 	return true;
 }
 
@@ -463,6 +477,125 @@ bool PageDirectory::munmap(void* virtaddr) {
 	unmap_region(region);
 	_vmem_map.free_region(region.virt);
 	return true;
+}
+
+ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, size_t mem_size, pid_t pid) {
+	//First, allocate the region
+	LinkedMemoryRegion region;
+	if(vaddr)
+		region = allocate_region(vaddr, mem_size, true);
+	else
+		region = allocate_region(mem_size, true);
+	if(!region.virt)
+		return -ENOMEM;
+
+	//Then, set up the region
+	region.virt->is_shm = true;
+	region.phys->is_shm = true;
+	region.phys->shm_id = (int) (region.phys->start / PAGE_SIZE);
+	region.virt->shm_id = region.phys->shm_id;
+	region.phys->shm_refs = 1;
+	region.phys->shm_owner = pid;
+	region.phys->shm_allowed = new DC::vector<MemoryRegion::ShmPermissions>();
+	region.phys->shm_allowed->push_back({pid, true});
+
+	return region;
+}
+
+ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t vaddr, pid_t pid) {
+	//Shared memory IDs are just the location of the physcal region divided by page size, so find the region
+	size_t shm_loc = ((size_t) id) * PAGE_SIZE;
+	auto* pmem_region = Memory::pmem_map().find_region(shm_loc);
+	if(!pmem_region || !pmem_region->shm_allowed) //If it doesn't exist or isn't a shared memory region, return ENOENT
+		return -ENOENT;
+
+	//Make sure we have permissions
+	bool has_perms = false;
+	bool write = false;
+	for(size_t i = 0; i < pmem_region->shm_allowed->size(); i++) {
+		auto& perm = pmem_region->shm_allowed->at(i);
+		if(perm.pid == pid) {
+			has_perms = true;
+			write = perm.write;
+			break;
+		}
+	}
+
+	//If we don't have permissions, return ENOENT (We don't use EACCES, because that would reveal that there *is* a region with that ID)
+	if(!has_perms)
+		return -ENOENT;
+
+	//Then, allocate a vmem region for it
+	size_t vaddr_pagealigned = (vaddr / PAGE_SIZE) * PAGE_SIZE;
+	MemoryRegion* vmem_region;
+	if(vaddr)
+		vmem_region = _vmem_map.allocate_region(vaddr_pagealigned, pmem_region->size);
+	else
+		vmem_region = _vmem_map.allocate_region(pmem_region->size);
+
+	//If we failed to allocate the virtual region, error out
+	if(!vmem_region)
+		return -ENOMEM;
+
+	vmem_region->is_shm = true;
+	vmem_region->shm_id = id;
+
+	//Finally, map the region and increase the reference count
+	LinkedMemoryRegion linked_region(pmem_region, vmem_region);
+	map_region(linked_region, write);
+	pmem_region->shm_refs++;
+	//TODO: Should we count this towards the physical memory total for the process?
+
+	return linked_region;
+}
+
+Result PageDirectory::detach_shared_region(int id) {
+	//Find the virtual region in question
+	MemoryRegion* vreg = _vmem_map.first_region();
+	while(vreg) {
+		if(vreg->is_shm && vreg->shm_id == id)
+			break;
+		vreg = vreg->next;
+	}
+
+	//It doesn't exist, return ENOENT
+	if(!vreg)
+		return -ENOENT;
+
+	//Unmap the region and decrease the reference count
+	LinkedMemoryRegion reg(vreg->related, vreg);
+	unmap_region(reg);
+	vreg->related->shm_deref();
+
+	return SUCCESS;
+}
+
+Result PageDirectory::allow_shared_region(int id, pid_t called_pid, pid_t pid, bool write) {
+	//Find the virtual region in question
+	MemoryRegion* vreg = _vmem_map.first_region();
+	while(vreg) {
+		if(vreg->is_shm && vreg->shm_id == id)
+			break;
+		vreg = vreg->next;
+	}
+
+	//It doesn't exist, return ENOENT
+	if(!vreg)
+		return -ENOENT;
+
+	//If we're not the owner, return EPERM
+	if(vreg->related->shm_owner != called_pid)
+		return -EPERM;
+
+	//Make sure we don't already have perms
+	for(size_t i = 0; i < vreg->related->shm_allowed->size(); i++) {
+		if(vreg->related->shm_allowed->at(i).pid == pid)
+			return -EEXIST;
+	}
+
+	//Update the permissions and return success
+	vreg->related->shm_allowed->push_back({pid, write});
+	return SUCCESS;
 }
 
 MemoryMap& PageDirectory::vmem_map() {
@@ -512,7 +645,7 @@ bool PageDirectory::is_mapped(size_t vaddr) {
 	return true;
 }
 
-void PageDirectory::fork_from(PageDirectory *parent) {
+void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new_pid) {
 	//Iterate through every entry of the page directory we're copying from
 	MemoryRegion* parent_region = parent->_vmem_map.first_region();
 	while(parent_region) {
@@ -521,26 +654,61 @@ void PageDirectory::fork_from(PageDirectory *parent) {
 			if(!new_region)
 				PANIC("COW_FAILED", "CoW failed to allocate a vmem region.", true);
 
-			//If the region is already marked cow, increase the number of refs by one. Otherwise, set it to 2
-			if(parent_region->cow.marked_cow)
-				parent_region->related->cow.num_refs += 1;
-			else parent_region->related->cow.num_refs = 2;
+			if(parent_region->is_shm) {
+				//If the region is shared, increase the number of refs on it and map it with the correct permissions.
+				auto* shm_region = parent_region->related;
+				shm_region->shm_refs++;
 
-			parent_region->cow.marked_cow = true;
-			new_region->cow.marked_cow = true;
-			new_region->related = parent_region->related;
+				//Figure out the permission
+				bool found_perms = false;
+				bool write = false;
+				for(size_t i = 0; i < shm_region->shm_allowed->size(); i++) {
+					auto* p = &shm_region->shm_allowed->at(i);
+					if(p->pid == parent_pid) {
+						found_perms = true;
+						write = p->write;
+						break;
+					}
+				}
 
-			//Mark the page table entries in the parent read-only
-			size_t num_pages = parent_region->size / PAGE_SIZE;
-			size_t start_vpage = parent_region->start / PAGE_SIZE;
-			for(size_t page_index = 0; page_index < num_pages; page_index++) {
-				size_t vpage = page_index + start_vpage;
-				parent->_page_tables[(vpage / 1024) % 1024]->entries()[vpage % 1024].data.read_write = false;
+				//Couldn't find the permissions entry for the parent process... Don't map.
+				if(!found_perms) {
+					printf("Permissions of shared memory region at 0x%x set up incorrectly!", shm_region->start);
+					_vmem_map.free_region(new_region);
+					parent_region = parent_region->next;
+					continue;
+				}
+
+				//Add a permissions entry to the region and map it
+				shm_region->shm_allowed->push_back({new_pid, write});
+				new_region->related = shm_region;
+				new_region->is_shm = true;
+				new_region->shm_id = shm_region->shm_id;
+				map_region(LinkedMemoryRegion(shm_region, new_region), write);
+			} else {
+				if(parent_region->cow.marked_cow) {
+					//If the region is already marked cow, increase the number of refs by one.
+					parent_region->related->cow.num_refs++;
+				} else {
+					//Otherwise, set it to 2
+					parent_region->related->cow.num_refs = 2;
+				}
+
+				parent_region->cow.marked_cow = true;
+				new_region->cow.marked_cow = true;
+				new_region->related = parent_region->related;
+
+				//Mark the page table entries in the parent read-only
+				size_t num_pages = parent_region->size / PAGE_SIZE;
+				size_t start_vpage = parent_region->start / PAGE_SIZE;
+				for(size_t page_index = 0; page_index < num_pages; page_index++) {
+					size_t vpage = page_index + start_vpage;
+					parent->_page_tables[(vpage / 1024) % 1024]->entries()[vpage % 1024].data.read_write = false;
+				}
+
+				//Map the page table entries in child as read-only
+				map_region(LinkedMemoryRegion(new_region->related, new_region), false);
 			}
-
-			//Map the page table entries in child as read-only
-			map_region(LinkedMemoryRegion(new_region->related, new_region), false);
-
 
 		}
 		parent_region = parent_region->next;
@@ -567,6 +735,7 @@ bool PageDirectory::try_cow(size_t virtaddr) {
 	region->cow.marked_cow = false;
 	LinkedMemoryRegion new_region(tmp_region.phys, region);
 	map_region(new_region, true);
+	_used_pmem += tmp_region.phys->size;
 
 	return true;
 }

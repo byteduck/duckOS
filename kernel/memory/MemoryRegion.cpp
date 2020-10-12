@@ -20,6 +20,7 @@
 #include <kernel/kstdio.h>
 #include "MemoryRegion.h"
 #include "Memory.h"
+#include <common/vector.hpp>
 
 MemoryRegion::MemoryRegion(size_t start, size_t size): start(start), size(size), next(nullptr), prev(nullptr), heap_allocated(true) {
 
@@ -29,11 +30,20 @@ MemoryRegion::MemoryRegion(const MemoryRegion& region): start(region.start), siz
 
 }
 
-MemoryRegion::~MemoryRegion() = default;
+MemoryRegion::~MemoryRegion() {
+	delete shm_allowed;
+}
 
 void MemoryRegion::cow_deref() {
 	cow.num_refs--;
 	if(!cow.num_refs) {
+		Memory::pmem_map().free_region(this);
+	}
+}
+
+void MemoryRegion::shm_deref() {
+	shm_refs--;
+	if(!shm_refs) {
 		Memory::pmem_map().free_region(this);
 	}
 }

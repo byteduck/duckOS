@@ -23,8 +23,17 @@
 
 #include <common/cstddef.h>
 
+namespace DC {
+	template<typename T> class vector;
+};
+
 class MemoryRegion {
 public:
+	struct ShmPermissions {
+		pid_t pid;
+		bool write;
+	};
+
 	MemoryRegion() = default;
 	MemoryRegion(size_t start, size_t size);
 	MemoryRegion(const MemoryRegion& region);
@@ -32,6 +41,12 @@ public:
 
 	//Used to decrease the number of CoW references on a physical memory region & free the region if necessary.
 	void cow_deref();
+
+	//Used to increase the number of shared memory references on a physical region.
+	void shm_ref();
+
+	//Used to decrease the number of shared memory references on a physical region & free it if necessary.
+	void shm_deref();
 
 	//The memory location start of the region.
 	size_t start;
@@ -46,6 +61,7 @@ public:
 	MemoryRegion* prev;
 
 	//The region related to this one (e.g. the physical region corresponding to a virtual region or vice versa)
+	//Invalid for physical shared memory and physical CoW regions.
 	MemoryRegion* related = nullptr;
 
 	//Whether or not the region is used.
@@ -63,6 +79,21 @@ public:
 		bool marked_cow;
 		size_t num_refs = 0;
 	} cow;
+
+	//Whether or not this region is for shared memory.
+	bool is_shm = false;
+
+	//If this is a physical shared region, this will count the number of processes using it.
+	size_t shm_refs = 0;
+
+	//If applicable, this will be set to the ID of the shared region.
+	int shm_id = 0;
+
+	//If applicable, the PID of the process that created the shared region. If the process dies, it will be set to -1.
+	pid_t shm_owner = -1;
+
+	//If applicable, this will be a list of processes with access to the shared region. Otherwise, it will be nullptr.
+	DC::vector<ShmPermissions>* shm_allowed = nullptr;
 };
 
 

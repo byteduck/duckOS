@@ -20,6 +20,8 @@
 #include <kernel/kstdio.h>
 #include "MemoryMap.h"
 
+//FIXME: Use a lock to fix race conditions
+
 MemoryMap::MemoryMap(size_t page_size, MemoryRegion *first_region): _page_size(page_size), _first_region(first_region) {
 
 }

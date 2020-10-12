@@ -18,10 +18,9 @@
 */
 
 #include <sys/liballoc.h>
-#include <unistd.h>
 #include <limits.h>
 #include <libc/stdio.h>
-#include "memacquire.h"
+#include "mem.h"
 
 void liballoc_lock() {
 	//TODO

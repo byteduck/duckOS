@@ -25,6 +25,7 @@
 #include "MemoryMap.h"
 #include "LinkedMemoryRegion.h"
 #include "PageTable.h"
+#include <kernel/Result.hpp>
 
 class PageTable;
 class PageDirectory {
@@ -214,6 +215,41 @@ public:
 	bool munmap(void* virtaddr);
 
 	/**
+	 * Creates a region of memory in program space starting at vaddr (if nonzero) and returns the region allocated.
+	 * @param vaddr The virtual address to start mapping at, or zero for unspecified. Will be rounded down to be page-aligned.
+	 * @param mem_size The amount of memory to allocate. Will be rounded up to be page-aligned.
+	 * @param pid The pid of the process that will own the region.
+	 * @return The region created, or -ENOMEM if the region could not be created at the specified address.
+	 */
+	ResultRet<LinkedMemoryRegion> create_shared_region(size_t vaddr, size_t mem_size, pid_t pid);
+
+	/**
+	 * Attaches the shared memory region with the specified id to the address space.
+	 * @param id The ID of the shared memory region to attach.
+	 * @param vaddr If nonzero, the region will be attached to the specified address (rounded down to be page-aligned)
+	 * @param pid The PID of the process attaching the region.
+	 * @return The region attached, -ENOENT if it doesn't exist or if the process doesn't have permission to attach it, or -ENOMEM if it couldn't be attached.
+	 */
+	ResultRet<LinkedMemoryRegion> attach_shared_region(int id, size_t vaddr, pid_t pid);
+
+	/**
+	 * Detaches the shared memory region with the specified id from the address space.
+	 * @param id The ID of the shared memory region to detach.
+	 * @return 0 if successful, -ENOENT if it doesn't exist or wasn't attached.
+	 */
+	 Result detach_shared_region(int id);
+
+	/**
+	 * Allows a process access to a shared memory region.
+	 * @param id The ID of the shared memory region to allow the process access to. Must be mapped in this page directory.
+	 * @param called_pid The pid of the process requesting to add access. Will return -EPERM if not the owner of the region.
+	 * @param pid The pid of the process to allow access to.
+	 * @param write Whether to allow write access.
+	 * @return 0 if successful, -ENOENT if it doesn't exist, -EPERM if not the owner of the region, -EEXIST if the process was already given certain permissions.
+	 */
+	Result allow_shared_region(int id, pid_t called_pid, pid_t pid, bool write);
+
+	/**
 	 * @return A pointer to the page directory's vmem map.
 	 */
 	MemoryMap& vmem_map();
@@ -263,9 +299,11 @@ public:
 	/**
 	 * Makes this page directory an identical copy of another, but with different physical memory.
 	 * The page directory we're copying to (this) MUST be the loaded page directory.
-	 * @param directory the page directory to fork from.
+	 * @param directory The page directory to fork from.
+	 * @param parent_pid The PID of the parent process.
+	 * @param new_pid The PID of the new process.
 	 */
-	void fork_from(PageDirectory *directory);
+	void fork_from(PageDirectory *directory, pid_t parent_pid, pid_t new_pid);
 
 	/**
 	 * Tries to Copy-On-Write the page at virtaddr.
@@ -302,6 +340,7 @@ private:
 	uint16_t _page_tables_num_mapped[1024] = {0};
 	//The used pmem in bytes.
 	size_t _used_pmem = 0;
+
 };
 
 #endif //DUCKOS_PAGEDIRECTORY_H
