@@ -35,6 +35,11 @@ public:
 	void clear(Color color);
 
 	/**
+	 * Sets the root window of the display. Its framebuffer will be used to buffer draws.
+	 */
+	void set_root_window(Window* window);
+
+	/**
 	 * Adds a window to the display.
 	 */
 	void add_window(Window* window);
@@ -61,6 +66,7 @@ private:
 	Rect _dimensions;
 	std::vector<Rect> invalid_areas;
 	std::vector<Window*> _windows;
+	Window* _root_window = nullptr;
 };
 
 

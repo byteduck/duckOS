@@ -20,16 +20,19 @@
 #include "Window.h"
 #include <sys/mem.h>
 #include <cstdio>
+#include <cstdlib>
 
 Window::Window(Window* parent, const Rect& rect): _parent(parent), _rect(rect), _display(parent->_display) {
 	alloc_framebuffer();
 	_parent->_children.push_back(this);
 	_display->add_window(this);
+	invalidate();
 }
 
 Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions()), _display(display) {
 	alloc_framebuffer();
-	_display->add_window(this);
+	_display->set_root_window(this);
+	invalidate();
 }
 
 Window::~Window() {
@@ -64,7 +67,7 @@ void Window::set_rect(const Rect& rect) {
 
 void Window::set_position(const Point& position) {
 	invalidate();
-	Rect new_dims = {position.x, position.y, _rect.height, _rect.width};
+	Rect new_dims = {position.x, position.y, _rect.width, _rect.height};
 	if(_parent)
 		_rect = new_dims.constrain_relative(_parent->_rect);
 	else

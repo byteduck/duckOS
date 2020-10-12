@@ -36,6 +36,9 @@ public:
 
 class Framebuffer {
 public:
+	Framebuffer();
+	Framebuffer(Color* buffer, int width, int height);
+
 	Color* buffer = nullptr;
 	int width = 0;
 	int height = 0;

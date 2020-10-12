@@ -28,11 +28,16 @@ int main() {
 	auto* main_window = new Window(display);
 	auto* mouse = new Mouse(main_window);
 
+	auto* window2 = new Window(main_window, {{0, 0}, 150, 100});
+	window2->framebuffer().fill({{0,0}, 150, 100}, {255, 255, 255});
+	window2->framebuffer().fill({{25,25}, 100, 50}, {100, 100, 100});
+
 	display->clear({50, 50, 50});
 
 	while(true) {
 		//TODO: Implement select() and poll() in kernel so we don't take up CPU time
-		mouse->update();
+		if(mouse->update())
+			window2->set_position(mouse->rect().position);
 		server->handle_packets();
 		display->repaint();
 	}

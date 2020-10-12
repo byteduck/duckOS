@@ -23,6 +23,9 @@
 Color::Color(uint8_t r, uint8_t g, uint8_t b): b(b), g(g), r(r), a(0xFF) {}
 Color::Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a): b(b), g(g), r(r), a(a) {}
 
+Framebuffer::Framebuffer(): buffer(nullptr), width(0), height(0) {}
+Framebuffer::Framebuffer(Color* buffer, int width, int height): buffer(buffer), width(width), height(height) {}
+
 void Framebuffer::copy(const Framebuffer& other, Rect other_area, const Point& pos) const {
 	//Make sure pos is in bounds of self
 	if(pos.x < 0 || pos.y < 0 || pos.y >= height || pos.x >= width)

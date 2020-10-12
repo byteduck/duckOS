@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <sys/ioctl.h>
 #include <kernel/device/VGADevice.h>
+#include <cstring>
 
 Display::Display(): _dimensions({0, 0, 0, 0}) {
 	framebuffer_fd = open("/dev/fb0", O_RDWR);
@@ -67,6 +68,10 @@ void Display::clear(Color color) {
 	}
 }
 
+void Display::set_root_window(Window* window) {
+	_root_window = window;
+}
+
 void Display::add_window(Window* window) {
 	_windows.push_back(window);
 }
@@ -85,15 +90,18 @@ void Display::invalidate(const Rect& rect) {
 }
 
 void Display::repaint() {
+	auto fb = _root_window->framebuffer();
 	for(auto& area : invalid_areas) {
-		_framebuffer.fill(area, {50, 50, 50});
+		fb.fill(area, {50, 50, 50});
 		for(auto& window : _windows) {
 			Rect window_abs = window->absolute_rect();
 			if(window_abs.collides(area)) {
 				Rect overlap_abs = area.overlapping_area(window_abs);
-				_framebuffer.copy(window->framebuffer(), overlap_abs.transform({-window_abs.position.x, -window_abs.position.y}), overlap_abs.position);
+				fb.copy(window->framebuffer(), overlap_abs.transform({-window_abs.position.x, -window_abs.position.y}), overlap_abs.position);
 			}
 		}
 	}
+
+	memcpy(_framebuffer.buffer, fb.buffer, sizeof(Color) * _framebuffer.width * _framebuffer.height);
 	invalid_areas.resize(0);
 }
