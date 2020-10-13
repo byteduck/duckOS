@@ -28,20 +28,20 @@ int main() {
 	auto* main_window = new Window(display);
 	auto* mouse = new Mouse(main_window);
 
-	auto* window2 = new Window(main_window, {{200, 200}, 150, 200});
-	window2->framebuffer().fill({{0,0}, 150, 200}, {125, 255, 255});
-	window2->framebuffer().fill({{2,2}, 146, 196}, {100, 100, 100});
+	auto* window2 = new Window(main_window, {{100, 100}, 300, 300});
+	window2->framebuffer().fill({{0,0}, 300, 300}, {125, 255, 255});
+	window2->framebuffer().fill({{2,2}, 296, 296}, {100, 100, 100});
 
-	auto* window3 = new Window(main_window, {{150, 150}, 150, 100});
+	auto* window3 = new Window(window2, {{10, 10}, 150, 100});
 	window3->framebuffer().fill({{0,0}, 150, 100}, {255, 125, 255});
-	window3->framebuffer().fill({{2,2}, 146, 96}, {100, 100, 100});
+	window3->framebuffer().fill({{2,2}, 146, 96}, {80, 80, 80});
 
 	window2->move_to_front();
 
 	while(true) {
 		//TODO: Implement select() and poll() in kernel so we don't take up CPU time
 		if(mouse->update());
-			//window2->set_position(mouse->rect().position);
+			window2->set_position(mouse->rect().position);
 		server->handle_packets();
 		display->repaint();
 	}

@@ -74,6 +74,7 @@ public:
 private:
 	void alloc_framebuffer();
 	Rect calculate_absolute_rect(const Rect& rect);
+	void recalculate_absolute_rect();
 
 	Framebuffer _framebuffer;
 	Rect _rect;
