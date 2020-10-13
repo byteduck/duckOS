@@ -19,16 +19,19 @@
 
 #include <unistd.h>
 #include "Mouse.h"
+#include "Display.h"
 
-Mouse::Mouse(Window* parent): Window(parent, {0, 0, 3, 3}) {
+Mouse::Mouse(Window* parent): Window(parent, {{0,0}, 3, 3}) {
+	display()->set_mouse_window(this);
+
 	mouse_fd = open("/dev/input/mouse", O_RDONLY);
 	if(mouse_fd < 0) {
 		perror("Failed to open mouse");
 		return;
 	}
-	inited = true;
 
 	framebuffer().fill({{0,0}, 3, 3}, {255, 255, 255});
+	*framebuffer().at({1, 1}) = {100, 100, 100};
 }
 
 int Mouse::fd() {

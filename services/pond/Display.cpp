@@ -72,6 +72,10 @@ void Display::set_root_window(Window* window) {
 	_root_window = window;
 }
 
+void Display::set_mouse_window(Mouse* window) {
+	_mouse_window = window;
+}
+
 void Display::add_window(Window* window) {
 	_windows.push_back(window);
 }
@@ -91,17 +95,40 @@ void Display::invalidate(const Rect& rect) {
 
 void Display::repaint() {
 	auto fb = _root_window->framebuffer();
+
 	for(auto& area : invalid_areas) {
+		// Fill the invalid area with the background color.
 		fb.fill(area, {50, 50, 50});
-		for(auto& window : _windows) {
+
+		// See if each window overlaps the invalid area.
+		for(auto window : _windows) {
+			//Don't bother with the mouse window, we draw it separately so it's always on top
+			if(window == _mouse_window)
+				continue;
+
 			Rect window_abs = window->absolute_rect();
 			if(window_abs.collides(area)) {
+				//If it does, redraw the intersection of the window in question and the invalid area
 				Rect overlap_abs = area.overlapping_area(window_abs);
 				fb.copy(window->framebuffer(), overlap_abs.transform({-window_abs.position.x, -window_abs.position.y}), overlap_abs.position);
 			}
 		}
 	}
 
+	//Draw the mouse.
+	fb.copy(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height}, _mouse_window->absolute_rect().position);
+
 	memcpy(_framebuffer.buffer, fb.buffer, sizeof(Color) * _framebuffer.width * _framebuffer.height);
 	invalid_areas.resize(0);
+}
+
+void Display::move_to_front(Window* window) {
+	for (auto it = _windows.begin(); it != _windows.end(); it++) {
+		if(*it == window) {
+			_windows.erase(it);
+			_windows.push_back(window);
+			window->invalidate();
+			return;
+		}
+	}
 }

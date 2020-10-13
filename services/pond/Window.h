@@ -20,10 +20,9 @@
 #ifndef DUCKOS_WINDOW_H
 #define DUCKOS_WINDOW_H
 
-#include <toolchain/tools/i686-pc-duckos/include/c++/9.3.0/vector>
+#include <vector>
 #include "Geometry.h"
 #include "Graphics.h"
-#include "Display.h"
 
 class Display;
 class Window {
@@ -34,6 +33,7 @@ public:
 
 	Window* parent() const;
 	Framebuffer framebuffer() const;
+	Display* display();
 
 	/**
 	 * The rect of the window relative to its parent.
@@ -66,9 +66,14 @@ public:
 	 */
 	void invalidate(const Rect& area);
 
+	/**
+	 * Moves the window to the front of the display's z-order.
+	 */
+	void move_to_front();
+
 private:
 	void alloc_framebuffer();
-	Rect calculate_absolute_rect();
+	Rect calculate_absolute_rect(const Rect& rect);
 
 	Framebuffer _framebuffer;
 	Rect _rect;

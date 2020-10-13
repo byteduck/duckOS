@@ -39,7 +39,6 @@ public:
 
 private:
 	int mouse_fd;
-	bool inited = false;
 };
 
 

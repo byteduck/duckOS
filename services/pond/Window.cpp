@@ -20,18 +20,20 @@
 #include "Window.h"
 #include <sys/mem.h>
 #include <cstdio>
-#include <cstdlib>
+#include "Display.h"
 
 Window::Window(Window* parent, const Rect& rect): _parent(parent), _rect(rect), _display(parent->_display) {
 	alloc_framebuffer();
 	_parent->_children.push_back(this);
 	_display->add_window(this);
+	_absolute_rect = calculate_absolute_rect(_rect);
 	invalidate();
 }
 
 Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions()), _display(display) {
 	alloc_framebuffer();
 	_display->set_root_window(this);
+	_absolute_rect = calculate_absolute_rect(_rect);
 	invalidate();
 }
 
@@ -45,6 +47,10 @@ Window* Window::parent() const {
 
 Framebuffer Window::framebuffer() const {
 	return _framebuffer;
+}
+
+Display* Window::display() {
+	return _display;
 }
 
 Rect Window::rect() const {
@@ -61,7 +67,7 @@ void Window::set_rect(const Rect& rect) {
 		_rect = rect.constrain_relative(_parent->_rect);
 	else
 		_rect = rect;
-	_absolute_rect = calculate_absolute_rect();
+	_absolute_rect = calculate_absolute_rect(_rect);
 	invalidate();
 }
 
@@ -72,7 +78,7 @@ void Window::set_position(const Point& position) {
 		_rect = new_dims.constrain_relative(_parent->_rect);
 	else
 		_rect = new_dims;
-	_absolute_rect = calculate_absolute_rect();
+	_absolute_rect = calculate_absolute_rect(_rect);
 	invalidate();
 }
 
@@ -96,9 +102,13 @@ void Window::alloc_framebuffer() {
 	_framebuffer = {(Color*) shminfo.ptr, _rect.width, _rect.height};
 }
 
-Rect Window::calculate_absolute_rect() {
+Rect Window::calculate_absolute_rect(const Rect& rect) {
 	if(_parent)
-		return _rect.transform(_parent->_rect.position);
+		return _parent->calculate_absolute_rect(rect.transform(_parent->_rect.position));
 	else
-		return _rect;
+		return rect;
+}
+
+void Window::move_to_front() {
+	_display->move_to_front(this);
 }

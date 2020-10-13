@@ -24,8 +24,10 @@
 #include "Graphics.h"
 #include "Geometry.h"
 #include "Window.h"
+#include "Mouse.h"
 
 class Window;
+class Mouse;
 class Display {
 public:
 	Display();
@@ -38,6 +40,11 @@ public:
 	 * Sets the root window of the display. Its framebuffer will be used to buffer draws.
 	 */
 	void set_root_window(Window* window);
+
+	/**
+	 * Sets the mouse window of the display.
+	 */
+	void set_mouse_window(Mouse* window);
 
 	/**
 	 * Adds a window to the display.
@@ -60,12 +67,18 @@ public:
 	 */
 	void repaint();
 
+	/**
+	 * Moves a window to the front.
+	 */
+	void move_to_front(Window* window);
+
 private:
 	int framebuffer_fd = 0;
 	Framebuffer _framebuffer;
 	Rect _dimensions;
 	std::vector<Rect> invalid_areas;
 	std::vector<Window*> _windows;
+	Mouse* _mouse_window = nullptr;
 	Window* _root_window = nullptr;
 };
 
