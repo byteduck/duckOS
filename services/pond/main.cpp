@@ -22,6 +22,7 @@
 #include "Server.h"
 #include "Window.h"
 #include "DecorationWindow.h"
+#include <poll.h>
 
 int main() {
 	auto* display = new Display;
@@ -33,11 +34,23 @@ int main() {
 	auto* window2 = window2_frame->contents();
 	window2->framebuffer().fill({0,0, 300, 300}, {125, 125, 125});
 
+	display->repaint();
+
+	struct pollfd polls[2];
+	polls[0].fd = mouse->fd();
+	polls[0].events = POLLIN;
+	polls[1].fd = server->fd();
+	polls[1].events = POLLIN;
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "EndlessLoop"
 	while(true) {
-		//TODO: Implement select() and poll() in kernel so we don't take up CPU time
-		if(mouse->update());
+		poll(polls, 2, -1);
+		if(mouse->update())
 			window2_frame->set_position(mouse->rect().position());
 		server->handle_packets();
 		display->repaint();
 	}
+#pragma clang diagnostic pop
+
 }

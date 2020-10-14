@@ -25,6 +25,7 @@ class Server {
 public:
 	Server();
 
+	int fd();
 	void handle_packets();
 private:
 	int socket_fd;

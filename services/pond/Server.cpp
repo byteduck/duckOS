@@ -32,6 +32,10 @@ Server::Server() {
 	}
 }
 
+int Server::fd() {
+	return socket_fd;
+}
+
 void Server::handle_packets() {
 	SocketFSPacket* packet;
 	while((packet = read_packet(socket_fd))) {

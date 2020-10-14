@@ -120,6 +120,7 @@ void Display::repaint() {
 	//Draw the mouse.
 	fb.copy(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height}, _mouse_window->absolute_rect().position());
 
+	//TODO: Only do this at most every 1/60 of a second
 	memcpy(_framebuffer.buffer, fb.buffer, sizeof(Color) * _framebuffer.width * _framebuffer.height);
 	invalid_areas.resize(0);
 }
