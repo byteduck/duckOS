@@ -17,25 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef PIT_H
-#define PIT_H
+#include "poll.h"
+#include "syscall.h"
 
-#define PIT_COUNTER0 0x40
-#define PIT_COUNTER1 0x41
-#define PIT_COUNTER2 0x42
-#define PIT_CMD  0x43
-
-#define PIT_FREQUENCY 1000 //Hz
-
-#include <common/cstddef.h>
-
-namespace PIT {
-	extern "C" void pit_handler();
-	void init();
-	void gettimeofday(struct timespec *t, void *z);
-	uint32_t get_seconds();
-	uint32_t get_nseconds();
-	uint32_t get_mseconds();
+int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
+	return syscall4(SYS_POLL, (int) fds, (int) nfds, timeout);
 }
-
-#endif

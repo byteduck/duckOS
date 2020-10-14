@@ -25,12 +25,12 @@
 #include <kernel/kstdio.h>
 #include <kernel/device/Device.h>
 
-FileDescriptor::FileDescriptor(const DC::shared_ptr<File>& file, User& user): _file(file), _user(user) {
+FileDescriptor::FileDescriptor(const DC::shared_ptr<File>& file): _file(file) {
 	if(file->is_inode())
 		_inode = DC::static_pointer_cast<InodeFile>(file)->inode();
 }
 
-FileDescriptor::FileDescriptor(FileDescriptor& other): _user(other._user) {
+FileDescriptor::FileDescriptor(FileDescriptor& other) {
 	_file = other._file;
 	_is_fifo_writer = other._is_fifo_writer;
 	_append = other._append;
@@ -40,6 +40,7 @@ FileDescriptor::FileDescriptor(FileDescriptor& other): _user(other._user) {
 	_writable = other._writable;
 	_seek = other._seek;
 	_options = other._options;
+	_owner = other._owner;
 
 	//Increase pipe reader/writer count if applicable
 	if(_file->is_fifo()) {
@@ -74,15 +75,15 @@ void FileDescriptor::set_options(int options) {
 	_options = options;
 }
 
-bool FileDescriptor::readable() {
+bool FileDescriptor::readable() const {
 	return _readable;
 }
 
-bool FileDescriptor::writable() {
+bool FileDescriptor::writable() const {
 	return _writable;
 }
 
-bool FileDescriptor::append_mode() {
+bool FileDescriptor::append_mode() const {
 	return _append;
 }
 
@@ -124,6 +125,14 @@ void FileDescriptor::open() {
 	_file->open(*this, _options);
 }
 
+Process* FileDescriptor::owner() const {
+	return _owner;
+}
+
+void FileDescriptor::set_owner(Process* owner) {
+	_owner = owner;
+}
+
 ssize_t FileDescriptor::read(uint8_t *buffer, size_t count) {
 	if(!_readable) return -EBADF;
 	LOCK(lock);
@@ -133,7 +142,7 @@ ssize_t FileDescriptor::read(uint8_t *buffer, size_t count) {
 	return ret;
 }
 
-size_t FileDescriptor::offset() {
+size_t FileDescriptor::offset() const {
 	return _seek;
 }
 
@@ -197,6 +206,6 @@ void FileDescriptor::set_fifo_writer() {
 	_is_fifo_writer = true;
 }
 
-bool FileDescriptor::is_fifo_writer() {
+bool FileDescriptor::is_fifo_writer() const {
 	return _is_fifo_writer;
 }

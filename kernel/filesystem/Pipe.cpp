@@ -60,6 +60,7 @@ ssize_t Pipe::read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t co
 }
 
 ssize_t Pipe::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+	//TODO: Block writes bigger than available space
 	if(_readers == 0) {
 		TaskManager::current_process()->kill(SIGPIPE);
 		return -EPIPE;
@@ -82,4 +83,8 @@ ssize_t Pipe::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, si
 
 bool Pipe::is_fifo() {
 	return true;
+}
+
+bool Pipe::can_read(const FileDescriptor& fd) {
+	return !_queue.empty() && !fd.is_fifo_writer();
 }

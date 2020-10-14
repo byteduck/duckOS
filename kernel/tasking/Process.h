@@ -57,6 +57,15 @@ struct shm {
 	int id;
 };
 
+struct pollfd {
+public:
+	int fd;
+	short events;
+	short revents;
+};
+
+typedef size_t nfds_t;
+
 extern const char* PROC_STATUS_NAMES[];
 
 class Process {
@@ -161,6 +170,7 @@ public:
 	int sys_shmattach(int id, void* addr, struct shm* s);
 	int sys_shmdetach(int id);
 	int sys_shmallow(int id, pid_t pid, int perms);
+	int sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;

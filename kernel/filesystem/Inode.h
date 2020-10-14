@@ -56,6 +56,8 @@ public:
 	virtual Result chown(uid_t uid, gid_t gid) = 0;
 	virtual void open(FileDescriptor& fd, int options) = 0;
 	virtual void close(FileDescriptor& fd) = 0;
+	virtual bool can_read(const FileDescriptor& fd);
+	virtual bool can_write(const FileDescriptor& fd);
 
 	virtual InodeMetadata metadata();
 

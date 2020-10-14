@@ -17,25 +17,39 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef PIT_H
-#define PIT_H
+#ifndef DUCKOS_POLLBLOCKER_H
+#define DUCKOS_POLLBLOCKER_H
 
-#define PIT_COUNTER0 0x40
-#define PIT_COUNTER1 0x41
-#define PIT_COUNTER2 0x42
-#define PIT_CMD  0x43
+#include <common/vector.hpp>
+#include "Blocker.h"
+#include <kernel/filesystem/FileDescriptor.h>
 
-#define PIT_FREQUENCY 1000 //Hz
+#define POLLIN 0x01
+#define POLLPRI 0x02
+#define POLLOUT 0x04
+#define POLLERR 0x08
+#define POLLHUP 0x10
+#define POLLINVAL 0x20
 
-#include <common/cstddef.h>
+class PollBlocker: public Blocker {
+public:
+	class PollFD {
+	public:
+		int fd_num;
+		DC::shared_ptr<FileDescriptor>& fd;
+		short events;
+	};
 
-namespace PIT {
-	extern "C" void pit_handler();
-	void init();
-	void gettimeofday(struct timespec *t, void *z);
-	uint32_t get_seconds();
-	uint32_t get_nseconds();
-	uint32_t get_mseconds();
-}
+	PollBlocker(DC::vector<PollFD>& pollfd, int timeout);
+	bool is_ready() override;
 
-#endif
+	int polled;
+	short polled_revent;
+private:
+	DC::vector<PollFD> polls;
+	uint32_t timeout;
+	uint32_t start_time;
+};
+
+
+#endif //DUCKOS_POLLBLOCKER_H

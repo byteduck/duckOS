@@ -40,6 +40,7 @@ public:
 	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 	bool is_fifo() override;
+	bool can_read(const FileDescriptor& fd) override;
 
 private:
 	DC::circular_queue<uint8_t> _queue;

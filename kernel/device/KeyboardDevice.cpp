@@ -51,6 +51,14 @@ ssize_t KeyboardDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *
 	return 0;
 }
 
+bool KeyboardDevice::can_read(const FileDescriptor& fd) {
+	return !_event_buffer.empty();
+}
+
+bool KeyboardDevice::can_write(const FileDescriptor& fd) {
+	return false;
+}
+
 void KeyboardDevice::set_handler(KeyboardHandler *handler) {
 	_handler = handler;
 }

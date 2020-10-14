@@ -26,6 +26,7 @@
 #include "ELF.h"
 #include "ProcessArgs.h"
 #include "WaitBlocker.h"
+#include "PollBlocker.h"
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/syscall.h>
 
@@ -127,7 +128,8 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	quantum = 1;
 
 	if(!kernel) {
-		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty(), _user);
+		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		ttydesc->set_owner(this);
 		ttydesc->set_options(O_RDWR);
 		_file_descriptors.push_back(ttydesc);
 		_file_descriptors.push_back(ttydesc);
@@ -225,8 +227,12 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 		signal_actions[i] = to_fork->signal_actions[i];
 
 	_file_descriptors.resize(to_fork->_file_descriptors.size());
-	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++)
-		if(to_fork->_file_descriptors[i]) _file_descriptors[i] = DC::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
+	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++) {
+		if(to_fork->_file_descriptors[i]) {
+			_file_descriptors[i] = DC::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
+			_file_descriptors[i]->set_owner(this);
+		}
+	}
 
 	//Allocate kernel stack
 	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
@@ -511,7 +517,8 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	new_proc->_blocker = this->_blocker;
 	if(kernel) {
 		//Kernel processes have no file descriptors, so we need to initialize them
-		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty(), _user);
+		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		ttydesc->set_owner(this);
 		ttydesc->set_options(O_RDWR);
 		_file_descriptors.resize(0); //Just in case
 		_file_descriptors.push_back(ttydesc);
@@ -521,8 +528,10 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	}
 
 	//Give new process first three file descriptors and close the rest
-	for(size_t i = 0; i < 3; i++)
-			new_proc->_file_descriptors[i] =_file_descriptors[i];
+	for(size_t i = 0; i < 3; i++) {
+		new_proc->_file_descriptors[i] = _file_descriptors[i];
+		new_proc->_file_descriptors[i]->set_owner(new_proc);
+	}
 	_file_descriptors.resize(0);
 
 	//Manually delete because we won't return from here and we need to clean up resources
@@ -581,6 +590,7 @@ int Process::sys_open(char *filename, int options, int mode) {
 	auto fd_or_err = VFS::inst().open(path, options, mode & (~_umask), _user, _cwd);
 	if(fd_or_err.is_error()) return fd_or_err.code();
 	_file_descriptors.push_back(fd_or_err.value());
+	fd_or_err.value()->set_owner(this);
 	return (int)_file_descriptors.size() - 1;
 }
 
@@ -774,14 +784,16 @@ int Process::sys_pipe(int filedes[2]) {
 	pipe->add_writer();
 
 	//Make the read FD
-	auto pipe_read_fd = DC::make_shared<FileDescriptor>(pipe, _user);
+	auto pipe_read_fd = DC::make_shared<FileDescriptor>(pipe);
+	pipe_read_fd->set_owner(this);
 	pipe_read_fd->set_options(O_RDONLY);
 	pipe_read_fd->set_fifo_reader();
 	_file_descriptors.push_back(pipe_read_fd);
 	filedes[0] = (int) _file_descriptors.size() - 1;
 
 	//Make the write FD
-	auto pipe_write_fd = DC::make_shared<FileDescriptor>(pipe, _user);
+	auto pipe_write_fd = DC::make_shared<FileDescriptor>(pipe);
+	pipe_write_fd->set_owner(this);
 	pipe_write_fd->set_options(O_WRONLY);
 	pipe_write_fd->set_fifo_writer();
 	_file_descriptors.push_back(pipe_write_fd);
@@ -1077,4 +1089,37 @@ int Process::sys_shmallow(int id, pid_t pid, int perms) {
 		return -EINVAL;
 
 	return page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE).code();
+}
+
+int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {
+	check_ptr(pollfd);
+
+	//Build the list of PollBlocker::PollFDs
+	DC::vector<PollBlocker::PollFD> polls;
+	polls.reserve(nfd);
+	for(nfds_t i = 0; i < nfd; i++) {
+		auto& poll = pollfd[i];
+		//Make sure the fd is valid. If not, set revents to POLLINVAL
+		if(poll.fd < 0 || poll.fd >= (int) _file_descriptors.size() || !_file_descriptors[poll.fd]) {
+			poll.revents = POLLINVAL;
+		} else {
+			poll.revents = 0;
+			polls.push_back({poll.fd, _file_descriptors[poll.fd], poll.events});
+		}
+	}
+
+	//Block
+	PollBlocker blocker(polls, timeout);
+	block(blocker);
+
+	//Set appropriate revent
+	for(nfds_t i = 0; i < nfd; i++) {
+		auto& poll = pollfd[i];
+		if(poll.fd == blocker.polled) {
+			poll.revents = blocker.polled_revent;
+			break;
+		}
+	}
+
+	return SUCCESS;
 }

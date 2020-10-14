@@ -184,6 +184,14 @@ void MouseDevice::write(uint8_t value) {
 	outb(I8042_BUFFER, value);
 }
 
+bool MouseDevice::can_read(const FileDescriptor& fd) {
+	return !event_buffer.empty();
+}
+
+bool MouseDevice::can_write(const FileDescriptor& fd) {
+	return false;
+}
+
 void MouseDevice::handle_packet() {
 	packet_state = 0;
 	int x = packet_data[1];

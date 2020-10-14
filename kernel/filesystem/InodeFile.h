@@ -33,6 +33,8 @@ public:
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 	void open(FileDescriptor& fd, int options) override;
 	void close(FileDescriptor& fd) override;
+	virtual bool can_read(const FileDescriptor& fd);
+	virtual bool can_write(const FileDescriptor& fd);
 
 private:
 	DC::shared_ptr<Inode> _inode;

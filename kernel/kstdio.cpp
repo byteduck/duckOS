@@ -131,6 +131,6 @@ void clearScreen(){
 
 void setup_tty() {
 	tty = TTYDevice::current_tty();
-	tty_desc = DC::make_shared<FileDescriptor>(tty, User::root());
+	tty_desc = DC::make_shared<FileDescriptor>(tty);
 	tty_desc->set_options(O_WRONLY);
 }

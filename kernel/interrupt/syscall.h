@@ -85,6 +85,7 @@
 #define SYS_SHMATTACH 64
 #define SYS_SHMDETACH 65
 #define SYS_SHMALLOW 66
+#define SYS_POLL 67
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

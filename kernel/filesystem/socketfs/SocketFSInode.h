@@ -49,6 +49,7 @@ public:
 	Result chown(uid_t uid, gid_t gid) override;
 	void open(FileDescriptor& fd, int options) override;
 	void close(FileDescriptor& fd) override;
+	bool can_read(const FileDescriptor& fd) override;
 
 	Process* owner;
 	SocketFS& fs;

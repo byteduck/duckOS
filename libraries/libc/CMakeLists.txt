@@ -6,6 +6,7 @@ SET(SOURCES
         dirent.c
         errno.c
         fcntl.c
+        poll.c
         stdio.c
         stdlib.c
         string.c

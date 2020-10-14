@@ -69,3 +69,11 @@ bool Inode::exists() {
 void Inode::mark_deleted() {
 	_exists = false;
 }
+
+bool Inode::can_read(const FileDescriptor& fd) {
+	return true;
+}
+
+bool Inode::can_write(const FileDescriptor& fd) {
+	return true;
+}

@@ -70,6 +70,7 @@ SET(KERNEL_SRCS
         tasking/Blocker.cpp
         tasking/WaitBlocker.cpp
         tasking/BooleanBlocker.cpp
+        tasking/PollBlocker.cpp
         device/VGADevice.cpp
         device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp

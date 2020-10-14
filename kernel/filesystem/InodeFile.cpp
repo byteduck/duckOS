@@ -55,3 +55,11 @@ void InodeFile::close(FileDescriptor& fd) {
 	_inode->close(fd);
 }
 
+bool InodeFile::can_read(const FileDescriptor& fd) {
+	return _inode->can_read(fd);
+}
+
+bool InodeFile::can_write(const FileDescriptor& fd) {
+	return _inode->can_write(fd);
+}
+

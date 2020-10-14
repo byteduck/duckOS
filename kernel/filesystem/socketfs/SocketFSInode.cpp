@@ -291,6 +291,15 @@ void SocketFSInode::close(FileDescriptor& fd) {
 	}
 }
 
+bool SocketFSInode::can_read(const FileDescriptor& fd) {
+	for(size_t i = 0; i < clients.size(); i++) {
+		if(clients[i].process == fd.owner())
+			return !clients[i].data_queue->empty();
+	}
+
+	return false;
+}
+
 Result SocketFSInode::write_packet(SocketFSClient& client, pid_t pid, size_t length, const void* buffer) {
 	//Check to make sure there's room in the buffer
 	if(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE)

@@ -66,3 +66,11 @@ void File::close(FileDescriptor& fd) {
 
 }
 
+bool File::can_read(const FileDescriptor& fd) {
+	return true;
+}
+
+bool File::can_write(const FileDescriptor& fd) {
+	return true;
+}
+

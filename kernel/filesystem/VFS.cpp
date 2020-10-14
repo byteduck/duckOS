@@ -168,7 +168,7 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int option
 	if(meta.is_device()) {
 		auto dev_res = Device::get_device(meta.dev_major, meta.dev_minor);
 		if(dev_res.is_error()) return dev_res.code();
-		auto ret = DC::make_shared<FileDescriptor>(dev_res.value(), user);
+		auto ret = DC::make_shared<FileDescriptor>(dev_res.value());
 		ret->set_options(options);
 		return ret;
 	}
@@ -176,7 +176,7 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int option
 	//Make the InodeFile and FileDescriptor
 	if(options & O_TRUNC) inode->inode()->truncate(0);
 	auto file = DC::make_shared<InodeFile>(inode->inode());
-	auto ret = DC::make_shared<FileDescriptor>(file, user);
+	auto ret = DC::make_shared<FileDescriptor>(file);
 	ret->set_options(options);
 	ret->open();
 
@@ -197,7 +197,7 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int opti
 
 	//Return a file descriptor to the new file
 	auto file = DC::make_shared<InodeFile>(child_or_err.value());
-	auto ret = DC::make_shared<FileDescriptor>(file, user);
+	auto ret = DC::make_shared<FileDescriptor>(file);
 	ret->set_options(options);
 	ret->open();
 

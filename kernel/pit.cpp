@@ -42,6 +42,10 @@ namespace PIT {
 		return (long)ticks * 1000;
 	}
 
+	uint32_t get_mseconds() {
+		return (seconds * 1000) + ticks;
+	}
+
 	void gettimeofday(struct timespec *t, void *tz) {
 		t->tv_sec = seconds;
 		t->tv_nsec = (long)ticks * 1000;

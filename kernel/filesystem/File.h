@@ -38,6 +38,8 @@ public:
 	virtual int ioctl(unsigned request, void* argp);
 	virtual void open(FileDescriptor& fd, int options);
 	virtual void close(FileDescriptor& fd);
+	virtual bool can_read(const FileDescriptor& fd);
+	virtual bool can_write(const FileDescriptor& fd);
 protected:
 	File();
 };
