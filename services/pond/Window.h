@@ -33,7 +33,9 @@ public:
 
 	Window* parent() const;
 	Framebuffer framebuffer() const;
-	Display* display();
+	Display* display() const;
+	bool is_decorated() const;
+	void set_decorated(bool decorated);
 
 	/**
 	 * The rect of the window relative to its parent.
@@ -46,9 +48,14 @@ public:
 	Rect absolute_rect() const;
 
 	/**
+	 * The rect of the window's visible contents (ie area not clipped from parent window) in absolute coordinates
+	 */
+	 Rect visible_absolute_rect() const;
+
+	/**
 	 * Sets the rect of the window to the rect given, constrained to fit inside the parent.
 	 */
-	void set_rect(const Rect& rect);
+	void set_dimensions(const Dimensions& dimensions);
 
 	/**
 	 * Sets the position of the window relative to its parent constrained to stay inside the parent.
@@ -72,16 +79,19 @@ public:
 	void move_to_front();
 
 private:
+	friend class DecorationWindow;
 	void alloc_framebuffer();
 	Rect calculate_absolute_rect(const Rect& rect);
-	void recalculate_absolute_rect();
+	void recalculate_rects();
 
 	Framebuffer _framebuffer;
 	Rect _rect;
 	Rect _absolute_rect;
+	Rect _visible_absolute_rect;
 	Window* _parent;
 	Display* _display;
 	std::vector<Window*> _children;
+	bool _decorated = true;
 };
 
 

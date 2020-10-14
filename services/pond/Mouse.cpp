@@ -21,7 +21,7 @@
 #include "Mouse.h"
 #include "Display.h"
 
-Mouse::Mouse(Window* parent): Window(parent, {{0,0}, 3, 3}) {
+Mouse::Mouse(Window* parent): Window(parent, {0, 0, 3, 3}) {
 	display()->set_mouse_window(this);
 
 	mouse_fd = open("/dev/input/mouse", O_RDONLY);
@@ -30,7 +30,7 @@ Mouse::Mouse(Window* parent): Window(parent, {{0,0}, 3, 3}) {
 		return;
 	}
 
-	framebuffer().fill({{0,0}, 3, 3}, {255, 255, 255});
+	framebuffer().fill({0, 0, 3, 3}, {255, 255, 255});
 	*framebuffer().at({1, 1}) = {100, 100, 100};
 }
 
@@ -44,14 +44,14 @@ bool Mouse::update() {
 	if(!nread) return false;
 	int num_events = (int) nread / sizeof(MouseEvent);
 
-	Rect dims = rect();
+	Point new_pos = rect().position();
 
 	for(int i = 0; i < num_events; i++) {
-		dims.position.x += events[i].x;
-		dims.position.y -= events[i].y;
+		new_pos.x += events[i].x;
+		new_pos.y -= events[i].y;
 	}
 
-	set_rect(dims);
+	set_position(new_pos.constrain(parent()->rect()));
 
 	return true;
 }

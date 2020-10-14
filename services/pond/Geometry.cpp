@@ -21,20 +21,20 @@
 #include "Geometry.h"
 
 bool Point::in(const Rect& rect) const {
-	return x >= rect.position.x && x <= rect.position.x + rect.width &&
-		   y >= rect.position.y && y <= rect.position.y + rect.height;
+	return x >= rect.x && x <= rect.x + rect.width &&
+		   y >= rect.y && y <= rect.y + rect.height;
 }
 
 Point Point::constrain(const Rect& rect) const {
 	Point ret = {x, y};
-	if(ret.x < rect.position.x)
-		ret.x = rect.position.x;
-	if(ret.x >= rect.position.x + rect.width)
-		ret.x = rect.position.x + rect.width - (rect.width ? 1 : 0);
-	if(ret.y < rect.position.y)
-		ret.y = rect.position.y;
-	if(ret.y >= rect.position.y + rect.height && rect.height)
-		ret.y = rect.position.y + rect.height - (rect.height ? 1 : 0);
+	if(ret.x < rect.x)
+		ret.x = rect.x;
+	if(ret.x >= rect.x + rect.width)
+		ret.x = rect.x + rect.width - (rect.width ? 1 : 0);
+	if(ret.y < rect.y)
+		ret.y = rect.y;
+	if(ret.y >= rect.y + rect.height && rect.height)
+		ret.y = rect.y + rect.height - (rect.height ? 1 : 0);
 	return ret;
 }
 
@@ -43,11 +43,17 @@ Point Point::transform(const Point& point) const {
 }
 
 
+Point Rect::position() {
+	return {x, y};
+}
 
+Dimensions Rect::dimensions() {
+	return {width, height};
+}
 
 bool Rect::collides(const Rect& other) const {
-	return (position.x < other.position.x + other.width) && (position.x + width > other.position.x) &&
-		(position.y < other.position.y + other.height) && (position.y + height > other.position.y);
+	return (x < other.x + other.width) && (x + width > other.x) &&
+		(y < other.y + other.height) && (y + height > other.y);
 }
 
 int Rect::area() const {
@@ -55,61 +61,65 @@ int Rect::area() const {
 }
 
 Rect Rect::transform(const Point& point) const {
-	return {position.transform(point), width, height};
+	return {x + point.x, y + point.y, width, height};
 }
 
 Rect Rect::constrain_relative(const Rect& other) const {
-	Rect ret = {position, width, height};
+	Rect ret = {x, y, width, height};
 
 	if(ret.width > other.width)
 		ret.width = other.width;
 	if(ret.height > other.height)
 		ret.height = other.height;
-	if(ret.position.x < 0)
-		ret.position.x = 0;
-	if(ret.position.y < 0)
-		ret.position.y = 0;
-	if(ret.position.x + ret.width >= other.width)
-		ret.position.x = other.width - ret.width;
-	if(ret.position.y + ret.height >= other.height)
-		ret.position.y = other.height - ret.height;
+	if(ret.x < 0)
+		ret.x = 0;
+	if(ret.y < 0)
+		ret.y = 0;
+	if(ret.x + ret.width >= other.width)
+		ret.x = other.width - ret.width;
+	if(ret.y + ret.height >= other.height)
+		ret.y = other.height - ret.height;
 
 	return ret;
 }
 
 Rect Rect::constrain(const Rect& other) const {
-	Rect ret = {position, width, height};
+	Rect ret = {x, y, width, height};
 
 	if(ret.width > other.width)
 		ret.width = other.width;
 	if(ret.height > other.height)
 		ret.height = other.height;
-	if(ret.position.x < other.position.x)
-		ret.position.x = other.position.x;
-	if(ret.position.y < other.position.y)
-		ret.position.y = other.position.y;
-	if(ret.position.x + ret.width >= other.position.x + other.width)
-		ret.position.x = other.position.x + other.width - ret.width;
-	if(ret.position.y + ret.height >= other.position.y + other.height)
-		ret.position.y = other.position.y + other.height - ret.height;
+	if(ret.x < other.x)
+		ret.x = other.x;
+	if(ret.y < other.y)
+		ret.y = other.y;
+	if(ret.x + ret.width >= other.x + other.width)
+		ret.x = other.x + other.width - ret.width;
+	if(ret.y + ret.height >= other.y + other.height)
+		ret.y = other.y + other.height - ret.height;
 
 	return ret;
 }
 
 Rect Rect::overlapping_area(const Rect& other) const {
-	Rect ret = {
-		{std::max(position.x, other.position.x), std::max(position.y, other.position.y)},
-		width, height
-	};
+	if(!collides(other))
+		return {x, y, 0, 0};
 
-	if(ret.position.x + ret.width > position.x + width)
-		ret.width = position.x + width - ret.position.x;
-	if(ret.position.x + ret.width > other.position.x + other.width)
-		ret.width = other.position.x + other.width - ret.position.x;
-	if(ret.position.y + ret.height > position.y + height)
-		ret.height = position.y + height - ret.position.y;
-	if(ret.position.y + ret.height > other.position.y + other.height)
-		ret.height = other.position.y + other.height - ret.position.y;
+	Rect ret = {std::max(x, other.x), std::max(y, other.y), width, height};
+
+	if(ret.x + ret.width > x + width)
+		ret.width = x + width - ret.x;
+	if(ret.x + ret.width > other.x + other.width)
+		ret.width = other.x + other.width - ret.x;
+	if(ret.y + ret.height > y + height)
+		ret.height = y + height - ret.y;
+	if(ret.y + ret.height > other.y + other.height)
+		ret.height = other.y + other.height - ret.y;
 
 	return ret;
+}
+
+bool Rect::empty() const {
+	return !width && !height;
 }

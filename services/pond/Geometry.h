@@ -32,13 +32,18 @@ public:
 	Point transform(const Point& point) const;
 };
 
+class Dimensions {
+public:
+	int width;
+	int height;
+};
 
 class Rect {
 public:
-	Point position;
-	int width;
-	int height;
+	int x, y, width, height;
 
+	Point position();
+	Dimensions dimensions();
 	bool collides(const Rect& other) const;
 	int area() const;
 
@@ -70,6 +75,11 @@ public:
 	 * @return
 	 */
 	Rect overlapping_area(const Rect& other) const;
+
+	/**
+	 * Returns true if the rect has an area of zero.
+	 */
+	bool empty() const;
 };
 
 #endif //DUCKOS_POND_GEOMETRY_H

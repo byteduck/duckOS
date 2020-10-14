@@ -18,7 +18,6 @@
 */
 
 #include "Graphics.h"
-#include <cstdio>
 
 Color::Color(uint8_t r, uint8_t g, uint8_t b): b(b), g(g), r(r), a(0xFF) {}
 Color::Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a): b(b), g(g), r(r), a(a) {}
@@ -27,37 +26,34 @@ Framebuffer::Framebuffer(): buffer(nullptr), width(0), height(0) {}
 Framebuffer::Framebuffer(Color* buffer, int width, int height): buffer(buffer), width(width), height(height) {}
 
 void Framebuffer::copy(const Framebuffer& other, Rect other_area, const Point& pos) const {
-	//Make sure pos is in bounds of self
-	if(pos.x < 0 || pos.y < 0 || pos.y >= height || pos.x >= width)
+	//Make sure self_area is in bounds of the framebuffer
+	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};
+	self_area = self_area.overlapping_area({0, 0, width, height});
+	if(self_area.empty())
 		return;
 
-	//If the copy would extend outside self, resize it to fit
-	if(pos.x + other_area.width >= width)
-		other_area.width = width - pos.x;
-	if(pos.y + other_area.height >= height)
-		other_area.height = height - pos.y;
+	//Update other area with the changes made to self_area
+	other_area.x += self_area.x - pos.x;
+	other_area.y += self_area.y - pos.y;
+	other_area.width = self_area.width;
+	other_area.height = self_area.height;
 
-	for(int x = 0; x < other_area.width; x++) {
-		for(int y = 0; y < other_area.height; y++) {
-			buffer[(pos.x + x) + (pos.y + y) * width] = other.buffer[(other_area.position.x + x) + (other_area.position.y + y) * other.width];
+	for(int x = 0; x < self_area.width; x++) {
+		for(int y = 0; y < self_area.height; y++) {
+			buffer[(self_area.x + x) + (self_area.y + y) * width] = other.buffer[(other_area.x + x) + (other_area.y + y) * other.width];
 		}
 	}
 }
 
 void Framebuffer::fill(Rect area, const Color& color) const {
-	//Make sure pos is in bounds of self
-	if(area.position.x < 0 || area.position.y < 0 || area.position.y >= height || area.position.x >= width)
+	//Make sure area is in the bounds of the framebuffer
+	area = area.overlapping_area({0, 0, width, height});
+	if(area.empty())
 		return;
-
-	//If the copy would extend outside self, resize it to fit
-	if(area.position.x + area.width >= width)
-		area.width = width - area.position.x;
-	if(area.position.y + area.height >= height)
-		area.height = height - area.position.y;
 
 	for(int x = 0; x < area.width; x++) {
 		for(int y = 0; y < area.height; y++) {
-			buffer[(area.position.x + x) + (area.position.y + y) * width] = color;
+			buffer[(area.x + x) + (area.y + y) * width] = color;
 		}
 	}
 }

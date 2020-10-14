@@ -26,14 +26,14 @@ Window::Window(Window* parent, const Rect& rect): _parent(parent), _rect(rect), 
 	alloc_framebuffer();
 	_parent->_children.push_back(this);
 	_display->add_window(this);
-	_absolute_rect = calculate_absolute_rect(_rect);
+	recalculate_rects();
 	invalidate();
 }
 
 Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions()), _display(display) {
 	alloc_framebuffer();
 	_display->set_root_window(this);
-	_absolute_rect = calculate_absolute_rect(_rect);
+	recalculate_rects();
 	invalidate();
 }
 
@@ -49,8 +49,17 @@ Framebuffer Window::framebuffer() const {
 	return _framebuffer;
 }
 
-Display* Window::display() {
+Display* Window::display() const {
 	return _display;
+}
+
+bool Window::is_decorated() const {
+	return _decorated;
+}
+
+void Window::set_decorated(bool decorated) {
+	_decorated = decorated;
+	invalidate();
 }
 
 Rect Window::rect() const {
@@ -61,34 +70,34 @@ Rect Window::absolute_rect() const {
 	return _absolute_rect;
 }
 
-void Window::set_rect(const Rect& rect) {
+Rect Window::visible_absolute_rect() const {
+	return _visible_absolute_rect;
+}
+
+void Window::set_dimensions(const Dimensions& dims) {
 	invalidate();
-	if(_parent)
-		_rect = rect.constrain_relative(_parent->_rect);
-	else
-		_rect = rect;
-	recalculate_absolute_rect();
+	_rect = {_rect.x, _rect.y, dims.width, dims.height};
+	recalculate_rects();
 	invalidate();
 }
 
 void Window::set_position(const Point& position) {
 	invalidate();
-	Rect new_dims = {position.x, position.y, _rect.width, _rect.height};
-	if(_parent)
-		_rect = new_dims.constrain_relative(_parent->_rect);
-	else
-		_rect = new_dims;
-	recalculate_absolute_rect();
+	_rect = {position.x, position.y, _rect.width, _rect.height};
+	recalculate_rects();
 	invalidate();
 }
 
 void Window::invalidate() {
-	invalidate({0, 0, _rect.width, _rect.height});
+	_display->invalidate(_visible_absolute_rect);
 }
 
 void Window::invalidate(const Rect& area) {
 	//TODO: Check if there's an overlap between already invalidated areas
-	_display->invalidate(area.transform(_absolute_rect.position));
+	if(_parent)
+		_display->invalidate(area.transform(_absolute_rect.position()).overlapping_area(_parent->_absolute_rect));
+	else
+		_display->invalidate(area.transform(_absolute_rect.position()).overlapping_area(_display->dimensions()));
 }
 
 void Window::move_to_front() {
@@ -110,13 +119,19 @@ void Window::alloc_framebuffer() {
 
 Rect Window::calculate_absolute_rect(const Rect& rect) {
 	if(_parent)
-		return _parent->calculate_absolute_rect(rect.transform(_parent->_rect.position));
+		return _parent->calculate_absolute_rect(rect.transform(_parent->_rect.position()));
 	else
 		return rect;
 }
 
-void Window::recalculate_absolute_rect() {
+void Window::recalculate_rects() {
 	_absolute_rect = calculate_absolute_rect(_rect);
+	if(_parent)
+		_visible_absolute_rect = _absolute_rect.overlapping_area(_parent->_visible_absolute_rect);
+	else
+		_visible_absolute_rect = _absolute_rect.overlapping_area(_display->dimensions());
 	for(auto child : _children)
-		child->recalculate_absolute_rect();
+		child->recalculate_rects();
 }
+
+

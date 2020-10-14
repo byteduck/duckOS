@@ -17,27 +17,4 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "Mouse.h"
-#include "Display.h"
-#include "Server.h"
-#include "Window.h"
-#include "DecorationWindow.h"
-
-int main() {
-	auto* display = new Display;
-	auto* server = new Server;
-	auto* main_window = new Window(display);
-	auto* mouse = new Mouse(main_window);
-
-	auto* window2_frame = new DecorationWindow(main_window, {100, 100, 300, 300});
-	auto* window2 = window2_frame->contents();
-	window2->framebuffer().fill({0,0, 300, 300}, {125, 125, 125});
-
-	while(true) {
-		//TODO: Implement select() and poll() in kernel so we don't take up CPU time
-		if(mouse->update());
-			window2_frame->set_position(mouse->rect().position());
-		server->handle_packets();
-		display->repaint();
-	}
-}
+#include "Client.h"

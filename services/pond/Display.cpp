@@ -90,7 +90,8 @@ void Display::remove_window(Window* window) {
 }
 
 void Display::invalidate(const Rect& rect) {
-	invalid_areas.push_back(rect);
+	if(!rect.empty())
+		invalid_areas.push_back(rect);
 }
 
 void Display::repaint() {
@@ -106,17 +107,18 @@ void Display::repaint() {
 			if(window == _mouse_window)
 				continue;
 
-			Rect window_abs = window->absolute_rect();
-			if(window_abs.collides(area)) {
+			Rect window_vabs = window->visible_absolute_rect();
+			if(window_vabs.collides(area)) {
 				//If it does, redraw the intersection of the window in question and the invalid area
-				Rect overlap_abs = area.overlapping_area(window_abs);
-				fb.copy(window->framebuffer(), overlap_abs.transform({-window_abs.position.x, -window_abs.position.y}), overlap_abs.position);
+				Rect window_abs = window->absolute_rect();
+				Rect overlap_abs = area.overlapping_area(window_vabs);
+				fb.copy(window->framebuffer(), overlap_abs.transform({-window_abs.x, -window_abs.y}), overlap_abs.position());
 			}
 		}
 	}
 
 	//Draw the mouse.
-	fb.copy(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height}, _mouse_window->absolute_rect().position);
+	fb.copy(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height}, _mouse_window->absolute_rect().position());
 
 	memcpy(_framebuffer.buffer, fb.buffer, sizeof(Color) * _framebuffer.width * _framebuffer.height);
 	invalid_areas.resize(0);
