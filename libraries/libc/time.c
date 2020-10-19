@@ -18,9 +18,11 @@
 */
 
 #include <time.h>
+#include <sys/time.h>
+#include <sys/syscall.h>
 
 clock_t clock() {
-	return 0;
+	return -1;
 }
 
 double difftime(time_t time1, time_t time0) {
@@ -32,7 +34,9 @@ time_t mktime(struct tm* timeptr) {
 }
 
 time_t time(time_t* timer) {
-	return -1;
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	return tv.tv_sec;
 }
 
 int timespec_get(struct timespec* ts, int base) {
@@ -44,7 +48,7 @@ char* asctime(const struct tm* timeptr) {
 }
 
 char* ctime(const time_t* timer) {
-	return NULL;
+	return asctime(localtime(timer));
 }
 
 struct tm* gmtime(const time_t* timer) {
@@ -57,4 +61,8 @@ struct tm* localtime(const time_t* timer) {
 
 size_t strftime(char* s, size_t maxsize, const char* format, const struct tm* timeptr) {
 	return -1;
+}
+
+int gettimeofday(struct timeval *tv, struct timezone *tz) {
+	return syscall3(SYS_GETTIMEOFDAY, (int) tv, (int) tz);
 }

@@ -18,6 +18,7 @@ SET(SOURCES
         sys/stat.c
         sys/syscall.c
         sys/wait.c
+        time.c
         unistd.c)
 
 SET(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-nostdlib -Wall")
