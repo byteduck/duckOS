@@ -63,9 +63,14 @@ public:
 	void invalidate(const Rect& rect);
 
 	/**
-	 * Redraws invalid areas.
+	 * Repaints the needed areas of the screen to the hidden screen buffer.
 	 */
 	void repaint();
+
+	/**
+	 * Copies the screen buffer to graphics memory if necessary
+	 */
+	void flip_buffers();
 
 	/**
 	 * Moves a window to the front.

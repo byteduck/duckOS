@@ -45,11 +45,12 @@ int main() {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 	while(true) {
-		poll(polls, 2, -1);
+		poll(polls, 2, 16);
 		if(mouse->update())
 			window2_frame->set_position(mouse->rect().position());
 		server->handle_packets();
 		display->repaint();
+		display->flip_buffers();
 	}
 #pragma clang diagnostic pop
 

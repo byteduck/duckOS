@@ -23,6 +23,7 @@
 #include <sys/ioctl.h>
 #include <kernel/device/VGADevice.h>
 #include <cstring>
+#include <sys/time.h>
 
 Display::Display(): _dimensions({0, 0, 0, 0}) {
 	framebuffer_fd = open("/dev/fb0", O_RDWR);
@@ -94,8 +95,16 @@ void Display::invalidate(const Rect& rect) {
 		invalid_areas.push_back(rect);
 }
 
+timeval paint_time = {0, 0};
+bool display_buffer_dirty = false;
+
 void Display::repaint() {
 	auto fb = _root_window->framebuffer();
+
+	if(!invalid_areas.empty())
+		display_buffer_dirty = true;
+	else
+		return;
 
 	for(auto& area : invalid_areas) {
 		// Fill the invalid area with the background color.
@@ -116,13 +125,26 @@ void Display::repaint() {
 			}
 		}
 	}
+	invalid_areas.resize(0);
 
 	//Draw the mouse.
 	fb.copy(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height}, _mouse_window->absolute_rect().position());
+}
 
-	//TODO: Only do this at most every 1/60 of a second
-	memcpy(_framebuffer.buffer, fb.buffer, sizeof(Color) * _framebuffer.width * _framebuffer.height);
-	invalid_areas.resize(0);
+void Display::flip_buffers() {
+	//If the screen buffer isn't dirty, don't bother
+	if(!display_buffer_dirty)
+		return;
+
+	//If it hasn't been 1/60 of a second since the last buffer flip, don't copy to the display buffer
+	timeval new_time = {0, 0};
+	gettimeofday(&new_time, NULL);
+	if(new_time.tv_sec == paint_time.tv_sec && new_time.tv_usec - paint_time.tv_usec < 16666)
+		return;
+	paint_time = new_time;
+
+	//Copy to the graphics buffer
+	memcpy(_framebuffer.buffer, _root_window->framebuffer().buffer, sizeof(Color) * _framebuffer.width * _framebuffer.height);
 }
 
 void Display::move_to_front(Window* window) {
