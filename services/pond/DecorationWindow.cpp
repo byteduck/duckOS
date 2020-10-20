@@ -21,6 +21,7 @@
 
 DecorationWindow::DecorationWindow(Window* parent, const Rect& contents_rect): Window(parent, calculate_decoration_rect(contents_rect)) {
 	_contents = new Window(this, {DECO_LEFT_SIZE, DECO_TOP_SIZE, contents_rect.width, contents_rect.height});
+	_contents->_decorated = true;
 	_framebuffer.fill({0, 0, _rect.width, _rect.height}, {255, 255, 255});
 }
 

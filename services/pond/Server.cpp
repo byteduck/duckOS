@@ -42,14 +42,26 @@ void Server::handle_packets() {
 		switch(packet->pid) {
 			case SOCKETFS_MSG_CONNECT:
 				printf("New client connected to socket: %d\n", *((pid_t*) packet->data));
+				clients.insert(std::make_pair(*((pid_t*) packet->data), new Client(socket_fd, *((pid_t*) packet->data))));
 				break;
-			case SOCKETFS_MSG_DISCONNECT:
+			case SOCKETFS_MSG_DISCONNECT: {
 				printf("Client disconnected from socket: %d\n", *((pid_t*) packet->data));
+				auto client = clients.find(*((pid_t*) packet->data));
+				if(client != clients.end()) {
+					delete client->second;
+					clients.erase(client);
+				} else
+					fprintf(stderr, "Unknown pid %d disconnected\n", *((pid_t*) packet->data));
 				break;
-			default:
-				packet->data[packet->length - 1] = 0;
-				printf("Packet received from %d: %s\n", packet->pid, packet->data);
+			}
+			default: {
+				auto client = clients.find(packet->pid);
+				if(client != clients.end())
+					client->second->handle_packet(packet);
+				else
+					fprintf(stderr, "Packet received from non-registered pid %d\n", packet->pid);
 				break;
+			}
 		}
 
 		delete packet;

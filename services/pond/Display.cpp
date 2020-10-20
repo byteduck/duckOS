@@ -25,7 +25,10 @@
 #include <cstring>
 #include <sys/time.h>
 
+Display* Display::_inst = nullptr;
+
 Display::Display(): _dimensions({0, 0, 0, 0}) {
+	_inst = this;
 	framebuffer_fd = open("/dev/fb0", O_RDWR);
 	if(framebuffer_fd < -1) {
 		perror("Failed to open framebuffer");
@@ -71,6 +74,10 @@ void Display::clear(Color color) {
 
 void Display::set_root_window(Window* window) {
 	_root_window = window;
+}
+
+Window* Display::root_window() {
+	return _root_window;
 }
 
 void Display::set_mouse_window(Mouse* window) {
@@ -156,4 +163,8 @@ void Display::move_to_front(Window* window) {
 			return;
 		}
 	}
+}
+
+Display& Display::inst() {
+	return *_inst;
 }

@@ -18,7 +18,6 @@
 */
 
 #include "Window.h"
-#include <sys/mem.h>
 #include <cstdio>
 #include "Display.h"
 
@@ -77,6 +76,7 @@ Rect Window::visible_absolute_rect() const {
 void Window::set_dimensions(const Dimensions& dims) {
 	invalidate();
 	_rect = {_rect.x, _rect.y, dims.width, dims.height};
+	alloc_framebuffer();
 	recalculate_rects();
 	invalidate();
 }
@@ -107,14 +107,20 @@ void Window::move_to_front() {
 }
 
 void Window::alloc_framebuffer() {
-	shm shminfo;
+	if(_framebuffer.buffer) {
+		//Deallocate the old framebuffer since there is one
+		if(shmdetach(_framebuffer_shm.id) < 0) {
+			perror("Failed to deallocate framebuffer for window");
+			return;
+		}
+	}
 
-	if(shmcreate(NULL, _rect.width * _rect.height * sizeof(Color), &shminfo) < 0) {
+	if(shmcreate(NULL, _rect.width * _rect.height * sizeof(Color), &_framebuffer_shm) < 0) {
 		perror("Failed to allocate framebuffer for window");
 		return;
 	}
 
-	_framebuffer = {(Color*) shminfo.ptr, _rect.width, _rect.height};
+	_framebuffer = {(Color*) _framebuffer_shm.ptr, _rect.width, _rect.height};
 }
 
 Rect Window::calculate_absolute_rect(const Rect& rect) {
@@ -132,6 +138,10 @@ void Window::recalculate_rects() {
 		_visible_absolute_rect = _absolute_rect.overlapping_area(_display->dimensions());
 	for(auto child : _children)
 		child->recalculate_rects();
+}
+
+shm Window::framebuffer_shm() {
+	return _framebuffer_shm;
 }
 
 

@@ -23,6 +23,7 @@
 #include <vector>
 #include "Geometry.h"
 #include "Graphics.h"
+#include <sys/mem.h>
 
 class Display;
 class Window {
@@ -54,6 +55,7 @@ public:
 
 	/**
 	 * Sets the rect of the window to the rect given, constrained to fit inside the parent.
+	 * The framebuffer will most likely change!
 	 */
 	void set_dimensions(const Dimensions& dimensions);
 
@@ -78,20 +80,26 @@ public:
 	 */
 	void move_to_front();
 
+	/**
+	 * Returns the shm object for the window's framebuffer.
+	 */
+	shm framebuffer_shm();
+
 private:
 	friend class DecorationWindow;
 	void alloc_framebuffer();
 	Rect calculate_absolute_rect(const Rect& rect);
 	void recalculate_rects();
 
-	Framebuffer _framebuffer;
+	Framebuffer _framebuffer = {nullptr, 0, 0};
+	shm _framebuffer_shm;
 	Rect _rect;
 	Rect _absolute_rect;
 	Rect _visible_absolute_rect;
 	Window* _parent;
 	Display* _display;
 	std::vector<Window*> _children;
-	bool _decorated = true;
+	bool _decorated = false;
 };
 
 

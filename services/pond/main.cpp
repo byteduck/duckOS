@@ -23,16 +23,13 @@
 #include "Window.h"
 #include "DecorationWindow.h"
 #include <poll.h>
+#include <unistd.h>
 
 int main() {
 	auto* display = new Display;
 	auto* server = new Server;
 	auto* main_window = new Window(display);
 	auto* mouse = new Mouse(main_window);
-
-	auto* window2_frame = new DecorationWindow(main_window, {100, 100, 300, 300});
-	auto* window2 = window2_frame->contents();
-	window2->framebuffer().fill({0,0, 300, 300}, {125, 125, 125});
 
 	display->repaint();
 
@@ -42,12 +39,17 @@ int main() {
 	polls[1].fd = server->fd();
 	polls[1].events = POLLIN;
 
+	if(!fork()) {
+		char* argv[] = {NULL};
+		char* envp[] = {NULL};
+		execve("/bin/pondtest", argv, envp);
+	}
+
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 	while(true) {
 		poll(polls, 2, 16);
-		if(mouse->update())
-			window2_frame->set_position(mouse->rect().position());
+		mouse->update();
 		server->handle_packets();
 		display->repaint();
 		display->flip_buffers();

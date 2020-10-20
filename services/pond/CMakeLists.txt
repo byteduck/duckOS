@@ -1,5 +1,6 @@
 SET(SOURCES
         main.cpp
+        Client.cpp
         DecorationWindow.cpp
         Display.cpp
         Geometry.cpp

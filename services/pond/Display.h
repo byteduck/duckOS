@@ -42,6 +42,11 @@ public:
 	void set_root_window(Window* window);
 
 	/**
+	 * Gets the root window of the display.
+	 */
+	Window* root_window();
+
+	/**
 	 * Sets the mouse window of the display.
 	 */
 	void set_mouse_window(Mouse* window);
@@ -77,6 +82,10 @@ public:
 	 */
 	void move_to_front(Window* window);
 
+
+	static Display& inst();
+
+
 private:
 	int framebuffer_fd = 0;
 	Framebuffer _framebuffer;
@@ -85,6 +94,8 @@ private:
 	std::vector<Window*> _windows;
 	Mouse* _mouse_window = nullptr;
 	Window* _root_window = nullptr;
+
+	static Display* _inst;
 };
 
 

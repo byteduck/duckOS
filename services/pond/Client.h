@@ -20,9 +20,27 @@
 #ifndef DUCKOS_CLIENT_H
 #define DUCKOS_CLIENT_H
 
+#include <sys/types.h>
+#include <map>
+#include <sys/socketfs.h>
+#include "Window.h"
 
 class Client {
+public:
+	Client(int socketfs_fd, pid_t pid);
+	void handle_packet(socketfs_packet* packet);
 
+private:
+	void open_window(socketfs_packet* packet);
+	void destroy_window(socketfs_packet* packet);
+	void move_window(socketfs_packet* packet);
+	void resize_window(socketfs_packet* packet);
+	void invalidate_window(socketfs_packet* packet);
+
+	pid_t pid;
+	int current_winid = 0;
+	int socketfs_fd;
+	std::map<int, Window*> windows;
 };
 
 

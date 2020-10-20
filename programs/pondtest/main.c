@@ -17,25 +17,23 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_SERVER_H
-#define DUCKOS_SERVER_H
+#include <libpond/pond.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
-#include <sys/types.h>
-#include <map>
-#include "Client.h"
+int main() {
+	if(PInit() < 0)
+		exit(-1);
 
-class Server {
-public:
-	Server();
+	PWindow* window = PCreateWindow(NULL, 10, 10, 100, 100);
+	if(window == NULL)
+		exit(-1);
 
-	int fd();
-	void handle_packets();
+	memset(window->buffer, 0xAA, sizeof(PColor) * window->width * window->height);
+	PInvalidateWindow(window);
 
-private:
-	std::map<pid_t, Client*> clients;
-
-	int socket_fd;
-};
-
-
-#endif //DUCKOS_SERVER_H
+	while(1) {
+		PNextEvent();
+	}
+}
