@@ -34,6 +34,11 @@ int main() {
 	PInvalidateWindow(window);
 
 	while(1) {
-		PNextEvent();
+		PEvent event = PNextEvent();
+		if(event.type == PEVENT_MOUSE) {
+			window->buffer[window->mouse_x + window->mouse_y * window->width].r = 0;
+			//memset(window->buffer, 0xAA, sizeof(PColor) * window->width * window->height);
+			PInvalidateWindow(window);
+		}
 	}
 }

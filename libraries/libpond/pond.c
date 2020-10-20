@@ -23,7 +23,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/mem.h>
 
 int pond_fd = -1;
 
@@ -36,12 +35,7 @@ int PInit() {
 	return 0;
 }
 
-socketfs_packet* prev_packet = NULL;
 PEvent PNextEvent() {
-	//Free the previous packet if necessary
-	if(prev_packet)
-		free(prev_packet);
-
 	//Wait for the socket to be ready for reading
 	struct pollfd pfd = {pond_fd, POLLIN, 0};
 	poll(&pfd, 1, -1);
@@ -50,65 +44,95 @@ PEvent PNextEvent() {
 	socketfs_packet* packet = read_packet(pond_fd);
 	if(!packet) {
 		perror("libpond failed to read packet");
-		PEvent ret = {POND_ERROR, NULL};
+		PEvent ret = {.type = PPKT_ERROR};
 		return ret;
 	}
 
 	//Make sure the packet has an ID
 	if(packet->length < sizeof(short)) {
 		fprintf(stderr, "libpond: Packet was too small!");
-		PEvent ret = {POND_ERROR, NULL};
+		PEvent ret = {.type = PPKT_ERROR};
 		return ret;
 	}
 
-	//Get the packet type, free it, and return
+	//Get the packet type and handle it
+	PEvent ret = {.type = PEVENT_UNKNOWN};
 	short packet_type = *((short*)packet->data);
-	PEvent ret = {packet_type, packet};
+	switch(packet_type) {
+		case PPKT_WINDOW_OPENED:
+			ret.type = PEVENT_WINDOW_CREATE;
+			PHandleOpenWindow(packet, &ret);
+			break;
+		case PPKT_WINDOW_DESTROYED:
+			ret.type = PEVENT_WINDOW_DESTROY;
+			PHandleDestroyWindow(packet, &ret);
+			break;
+		case PPKT_WINDOW_MOVED:
+			ret.type = PEVENT_WINDOW_MOVE;
+			PHandleMoveWindow(packet, &ret);
+			break;
+		case PPKT_WINDOW_RESIZED:
+			ret.type = PEVENT_WINDOW_RESIZE;
+			PHandleResizeWindow(packet, &ret);
+			break;
+		case PPKT_MOUSE_MOVE:
+			ret.type = PEVENT_MOUSE;
+			PHandleMouseMove(packet, &ret);
+			break;
+		case PPKT_MOUSE_BUTTON:
+			ret.type = PEVENT_MOUSE;
+			PHandleMouseButton(packet, &ret);
+			break;
+		case PPKT_KEY_EVENT:
+			ret.type = PEVENT_KEY;
+			PHandleKeyEvent(packet, &ret);
+			break;
+		default:
+			break;
+	}
+	free(packet);
 	return ret;
 }
-
 
 PWindow* PCreateWindow(PWindow* parent, int x, int y, int width, int height) {
 	//Write the packet
 	POpenWindowPkt pkt;
-	pkt._PACKET_ID = POND_OPEN_WINDOW;
+	pkt._PACKET_ID = PPKT_OPEN_WINDOW;
 	pkt.parent = parent ? parent->id : 0;
 	pkt.width = width;
 	pkt.height = height;
 	pkt.x = x;
 	pkt.y = y;
-	write_packet(pond_fd, SOCKETFS_HOST, sizeof(POpenWindowPkt), &pkt);
+	if(write_packet(pond_fd, SOCKETFS_HOST, sizeof(POpenWindowPkt), &pkt) < 0)
+		perror("Pond: Failed to write packet");
 
 	//Wait for the response
 	PEvent event = PNextEvent();
-	if(event.id != POND_OPEN_WINDOW_RESP)
+	if(event.type != PEVENT_WINDOW_CREATE)
 		return NULL;
 
-	//Read the response
-	POpenWindowRsp* resp = (struct POpenWindowRsp*) event.packet->data;
-	if(!resp->successful)
-		return NULL;
-
-	//Open the shared memory for the framebuffer
-	struct shm shm;
-	if(shmattach(resp->window.shm_id, NULL, &shm) < 0) {
-		perror("libpond failed to attach window shm");
-		return NULL;
-	}
-	resp->window.buffer = shm.ptr;
-
-
-	//Make the window to be returned
-	PWindow* ret = malloc(sizeof(PWindow));
-	*ret = resp->window;
-	return ret;
+	//Return the event's window
+	return event.window_create.window;
 }
 
-int PCloseWindow(PWindow* window) {
-	return -1;
+int PDestroyWindow(PWindow* window) {
+	//Write the packet
+	PDestroyWindowPkt pkt;
+	pkt._PACKET_ID = PPKT_OPEN_WINDOW;
+	pkt.window_id = window->id;
+	if(write_packet(pond_fd, SOCKETFS_HOST, sizeof(PDestroyWindowPkt), &pkt) < 0)
+		perror("Pond: Failed to write packet");
+
+	//Wait for the response
+	PEvent event = PNextEvent();
+	if(event.type != PEVENT_WINDOW_DESTROY)
+		return -1;
+
+	return event.window_destroy.successful;
 }
 
 void PInvalidateWindow(PWindow* window) {
-	PInvalidatePkt pkt = {POND_INVALIDATE, window->id};
-	write_packet(pond_fd, SOCKETFS_HOST, sizeof(PInvalidatePkt), &pkt);
+	PInvalidatePkt pkt = {PPKT_INVALIDATE_WINDOW, window->id};
+	if(write_packet(pond_fd, SOCKETFS_HOST, sizeof(PInvalidatePkt), &pkt) < 0)
+		perror("Pond: Failed to write packet");
 }

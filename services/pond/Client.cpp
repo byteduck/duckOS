@@ -32,25 +32,31 @@ void Client::handle_packet(socketfs_packet* packet) {
 
 	short packet_type = *((short*)packet->data);
 	switch(packet_type) {
-		case POND_OPEN_WINDOW:
+		case PPKT_OPEN_WINDOW:
 			open_window(packet);
 			break;
-		case POND_DESTROY_WINDOW:
+		case PPKT_DESTROY_WINDOW:
 			destroy_window(packet);
 			break;
-		case POND_MOVE_WINDOW:
+		case PPKT_MOVE_WINDOW:
 			move_window(packet);
 			break;
-		case POND_RESIZE_WINDOW:
+		case PPKT_RESIZE_WINDOW:
 			resize_window(packet);
 			break;
-		case POND_INVALIDATE:
+		case PPKT_INVALIDATE_WINDOW:
 			invalidate_window(packet);
 			break;
 		default:
 			fprintf(stderr, "Invalid packet sent by client %d\n", pid);
 			return;
 	}
+}
+
+void Client::mouse_moved(Window* window, Point new_position) {
+	PMouseMovePkt pkt = {PPKT_MOUSE_MOVE, window->id(), new_position.x, new_position.y};
+	if(write_packet(socketfs_fd, pid, sizeof(PMouseMovePkt), &pkt) < 0)
+		perror("Failed to write mouse movement packet to client");
 }
 
 void Client::open_window(socketfs_packet* packet) {
@@ -67,9 +73,9 @@ void Client::open_window(socketfs_packet* packet) {
 		auto parent_window = windows.find(params->parent);
 		if(parent_window == windows.end()) {
 			//Write a non-successful response; the parent window couldn't be found
-			POpenWindowRsp response;
+			PWindowOpenedPkt response;
 			response.successful = false;
-			write_packet(socketfs_fd, pid, sizeof(POpenWindowRsp), &response);
+			write_packet(socketfs_fd, pid, sizeof(PWindowOpenedPkt), &response);
 			return;
 		} else {
 			//Make the window with the requested parent
@@ -78,27 +84,26 @@ void Client::open_window(socketfs_packet* packet) {
 	}
 
 	auto* window = deco_window->contents();
-
-	int win_id = ++current_winid;
-	windows.insert(std::make_pair(win_id, window));
+	window->set_client(this);
+	windows.insert(std::make_pair(window->id(), window));
 
 	//Allow the client access to the window shm
 	shmallow(window->framebuffer_shm().id, pid, SHM_WRITE | SHM_READ);
 
 	//Write the response packet
-	POpenWindowRsp resp;
-	resp._PACKET_ID = POND_OPEN_WINDOW_RESP;
+	PWindowOpenedPkt resp;
+	resp._PACKET_ID = PPKT_WINDOW_OPENED;
 	Rect wrect = window->rect();
 	resp.window.width = wrect.width;
 	resp.window.height = wrect.height;
 	resp.window.x = wrect.x;
 	resp.window.y = wrect.y;
-	resp.window.id = win_id;
+	resp.window.id = window->id();
 	resp.window.shm_id = window->framebuffer_shm().id;
 	resp.window.buffer = nullptr;
 	resp.successful = true;
-	if(write_packet(socketfs_fd, pid, sizeof(POpenWindowRsp), &resp) < 0)
-		perror("Failed to write packet to client");
+	if(write_packet(socketfs_fd, pid, sizeof(PWindowOpenedPkt), &resp) < 0)
+		perror("Failed to write window opened packet to client");
 }
 
 void Client::destroy_window(socketfs_packet* packet) {
@@ -107,19 +112,19 @@ void Client::destroy_window(socketfs_packet* packet) {
 
 	auto* params = (PDestroyWindowPkt*) packet->data;
 
-	PDestroyWindowRsp resp = {POND_DESTROY_WINDOW_RESP,false};
-	resp._PACKET_ID = POND_DESTROY_WINDOW_RESP;
+	PWindowDestroyedPkt resp = {PPKT_WINDOW_DESTROYED, false};
+	resp._PACKET_ID = PPKT_WINDOW_DESTROYED;
 
 	//Find the window in question and remove it
-	auto window = windows.find(params->id);
+	auto window = windows.find(params->window_id);
 	if(window != windows.end()) {
 		delete window->second;
 		windows.erase(window);
 		resp.successful = true;
 	}
 
-	if(write_packet(socketfs_fd, pid, sizeof(PDestroyWindowRsp), &resp) < 0)
-		perror("Failed to write packet to client");
+	if(write_packet(socketfs_fd, pid, sizeof(PWindowDestroyedPkt), &resp) < 0)
+		perror("Failed to write window destroyed packet to client");
 }
 
 void Client::move_window(socketfs_packet* packet) {

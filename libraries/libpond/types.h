@@ -17,25 +17,29 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_DECORATIONWINDOW_H
-#define DUCKOS_DECORATIONWINDOW_H
+#ifndef DUCKOS_TYPES_H
+#define DUCKOS_TYPES_H
 
-#include "Window.h"
+#include <sys/types.h>
 
-#define DECO_TOP_SIZE 24
-#define DECO_BOTTOM_SIZE 2
-#define DECO_LEFT_SIZE 2
-#define DECO_RIGHT_SIZE 2
+typedef struct PColor {
+	uint8_t b;
+	uint8_t g;
+	uint8_t r;
+	uint8_t a;
+} PColor;
 
-class DecorationWindow: public Window {
-public:
-	DecorationWindow(Window* parent, const Rect& contents_rect);
-	static Rect calculate_decoration_rect(const Rect& contents_rect);
-	Window* contents();
-	bool is_decoration() const override;
-private:
-	Window* _contents;
-};
+typedef struct PWindow {
+	int id;
+	int width;
+	int height;
+	int x;
+	int y;
+	int shm_id;
+	int mouse_x;
+	int mouse_y;
+	unsigned int mouse_buttons;
+	PColor* buffer;
+} PWindow;
 
-
-#endif //DUCKOS_DECORATIONWINDOW_H
+#endif //DUCKOS_TYPES_H

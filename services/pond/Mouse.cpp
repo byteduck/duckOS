@@ -52,6 +52,7 @@ bool Mouse::update() {
 	}
 
 	set_position(new_pos.constrain(parent()->rect()));
+	Display::inst().create_mouse_events();
 
 	return true;
 }

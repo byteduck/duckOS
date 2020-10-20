@@ -82,6 +82,11 @@ public:
 	 */
 	void move_to_front(Window* window);
 
+	/**
+	 * Sends mouse events to the appropriate window(s). To be called after the mouse moves.
+	 */
+	void create_mouse_events();
+
 
 	static Display& inst();
 

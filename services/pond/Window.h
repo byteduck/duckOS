@@ -23,9 +23,11 @@
 #include <vector>
 #include "Geometry.h"
 #include "Graphics.h"
+#include "Client.h"
 #include <sys/mem.h>
 
 class Display;
+class Client;
 class Window {
 public:
 	Window(Window* parent, const Rect& rect);
@@ -33,10 +35,12 @@ public:
 	~Window();
 
 	Window* parent() const;
+	Client* client() const;
+	void set_client(Client* client);
+	int id() const;
 	Framebuffer framebuffer() const;
 	Display* display() const;
-	bool is_decorated() const;
-	void set_decorated(bool decorated);
+	virtual bool is_decoration() const;
 
 	/**
 	 * The rect of the window relative to its parent.
@@ -85,6 +89,12 @@ public:
 	 */
 	shm framebuffer_shm();
 
+	/**
+	 * Called to tell the window that the mouse moved within it.
+	 * @param relative_pos The new position of the mouse relative to the window.
+	 */
+	void mouse_moved(Point relative_pos);
+
 private:
 	friend class DecorationWindow;
 	void alloc_framebuffer();
@@ -99,7 +109,10 @@ private:
 	Window* _parent;
 	Display* _display;
 	std::vector<Window*> _children;
-	bool _decorated = false;
+	Client* _client = nullptr;
+	int _id;
+
+	static int current_id;
 };
 
 

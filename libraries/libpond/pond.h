@@ -25,98 +25,9 @@
 
 __DECL_BEGIN
 
-#define POND_ERROR (-1)
-#define POND_OPEN_WINDOW 1
-#define POND_OPEN_WINDOW_RESP 2
-#define POND_DESTROY_WINDOW 3
-#define POND_DESTROY_WINDOW_RESP 4
-#define POND_MOVE_WINDOW 5
-#define POND_MOVE_WINDOW_RESP 6
-#define POND_RESIZE_WINDOW 7
-#define POND_RESIZE_WINDOW_RESP 8
-#define POND_INVALIDATE 9
-
-typedef struct PColor {
-	uint8_t b;
-	uint8_t g;
-	uint8_t r;
-	uint8_t a;
-} PColor;
-typedef PColor* PBuffer;
-
-typedef struct PWindow {
-	int id;
-	int width;
-	int height;
-	int x;
-	int y;
-	int shm_id;
-	PBuffer* buffer;
-} PWindow;
-
-typedef struct POpenWindowPkt {
-	short _PACKET_ID; //POND_OPEN_WINDOW
-	int parent;
-	int width;
-	int height;
-	int x;
-	int y;
-} POpenWindowPkt;
-
-typedef struct POpenWindowRsp {
-	short _PACKET_ID; //POND_OPEN_WINDOW_RESP
-	int successful;
-	PWindow window;
-} POpenWindowRsp;
-
-typedef struct PDestroyWindowPkt {
-	short _PACKET_ID; //POND_DESTROY_WINDOW
-	int id;
-} PCloseWindowPkt;
-
-typedef struct PDestroyWindowRsp {
-	short _PACKET_ID; //POND_DESTROY_WINDOW_RESP
-	int successful;
-} PDestroyWindowRsp;
-
-typedef struct PMoveWindowPkt {
-	short _PACKET_ID; //POND_MOVE_WINDOW
-	int id;
-	int x;
-	int y;
-} PMoveWindowPkt;
-
-typedef struct PMoveWindowRsp {
-	short _PACKET_ID; //POND_MOVE_WINDOW_RESP
-	int id;
-	int x;
-	int y;
-} PMoveWindowRsp;
-
-typedef struct PResizeWindowPkt {
-	short _PACKET_ID; //POND_RESIZE_WINDOW
-	int id;
-	int width;
-	int height;
-} PResizeWindowPkt;
-
-typedef struct PResizeWindowRsp {
-	short _PACKET_ID; //POND_RESIZE_WINDOW_RESP
-	int id;
-	int width;
-	int height;
-	int shm_id;
-} PResizeWindowRsp;
-
-typedef struct PInvalidatePkt {
-	short _PACKET_ID; //POND_INVALIDATE
-	int window_id;
-} PInvalidatePkt;
-
-typedef struct PEvent {
-	short id;
-	socketfs_packet* packet;
-} PEvent;
+#include "types.h"
+#include "event.h"
+#include "packet.h"
 
 /**
  * Initializes the connection to pond.
@@ -146,7 +57,7 @@ PWindow* PCreateWindow(PWindow* parent, int x, int y, int width, int height);
  * @param window The window to close.
  * @return 0 if the close was successful, or -1 if not.
  */
-int PCloseWindow(PWindow* window);
+int PDestroyWindow(PWindow* window);
 
 /**
  * Invalidates a window's framebuffer.

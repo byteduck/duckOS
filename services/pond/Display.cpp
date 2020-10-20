@@ -165,6 +165,18 @@ void Display::move_to_front(Window* window) {
 	}
 }
 
+void Display::create_mouse_events() {
+	Point mouse = _mouse_window->absolute_rect().position();
+	for(auto& window : _windows) {
+		if(window == _mouse_window || window == _root_window)
+			continue;
+		if(mouse.in(window->absolute_rect())) {
+			Point window_pos = window->absolute_rect().position();
+			window->mouse_moved({mouse.x - window_pos.x, mouse.y - window_pos.y});
+		}
+	}
+}
+
 Display& Display::inst() {
 	return *_inst;
 }

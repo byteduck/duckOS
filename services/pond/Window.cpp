@@ -21,7 +21,9 @@
 #include <cstdio>
 #include "Display.h"
 
-Window::Window(Window* parent, const Rect& rect): _parent(parent), _rect(rect), _display(parent->_display) {
+int Window::current_id = 0;
+
+Window::Window(Window* parent, const Rect& rect): _parent(parent), _rect(rect), _display(parent->_display), _id(++current_id) {
 	alloc_framebuffer();
 	_parent->_children.push_back(this);
 	_display->add_window(this);
@@ -29,7 +31,7 @@ Window::Window(Window* parent, const Rect& rect): _parent(parent), _rect(rect), 
 	invalidate();
 }
 
-Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions()), _display(display) {
+Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions()), _display(display), _id(++current_id) {
 	alloc_framebuffer();
 	_display->set_root_window(this);
 	recalculate_rects();
@@ -38,10 +40,29 @@ Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions())
 
 Window::~Window() {
 	_display->remove_window(this);
+	if(_framebuffer.buffer) {
+		//Deallocate the old framebuffer since there is one
+		if(shmdetach(_framebuffer_shm.id) < 0) {
+			perror("Failed to deallocate framebuffer for window");
+			return;
+		}
+	}
 }
 
 Window* Window::parent() const {
 	return _parent;
+}
+
+Client* Window::client() const {
+	return _client;
+}
+
+void Window::set_client(Client* client) {
+	_client = client;
+}
+
+int Window::id() const {
+	return _id;
 }
 
 Framebuffer Window::framebuffer() const {
@@ -52,13 +73,8 @@ Display* Window::display() const {
 	return _display;
 }
 
-bool Window::is_decorated() const {
-	return _decorated;
-}
-
-void Window::set_decorated(bool decorated) {
-	_decorated = decorated;
-	invalidate();
+bool Window::is_decoration() const {
+	return false;
 }
 
 Rect Window::rect() const {
@@ -142,6 +158,11 @@ void Window::recalculate_rects() {
 
 shm Window::framebuffer_shm() {
 	return _framebuffer_shm;
+}
+
+void Window::mouse_moved(Point relative_pos) {
+	if(_client)
+		_client->mouse_moved(this, relative_pos);
 }
 
 
