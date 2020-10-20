@@ -53,8 +53,16 @@ int main(int argc, char** argv, char** envp) {
 	if(executable->load(argv[1], true) < 0)
 		return errno;
 
-	//Relocate the libraries and executable and close their file descriptors
+	//Read the symbols from the libraries and executable
 	auto rev_it = objects.rbegin();
+	while(rev_it != objects.rend()) {
+		auto* object = rev_it->second;
+		object->read_symbols();
+		rev_it++;
+	}
+
+	//Relocate the libraries and executable and close their file descriptors
+	rev_it = objects.rbegin();
 	while(rev_it != objects.rend()) {
 		auto* object = rev_it->second;
 		object->relocate();
@@ -98,6 +106,9 @@ int main(int argc, char** argv, char** envp) {
 }
 
 int Object::load(char* name_cstr, bool is_main_executable) {
+	if(loaded)
+		return 0;
+
 	name = name_cstr;
 
 	//Read the header
@@ -177,6 +188,8 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 			fprintf(stderr, "Failed to load required library %s: %s\n", library_name, strerror(errno));
 		}
 	}
+
+	loaded = true;
 
 	return 0;
 }
@@ -372,7 +385,7 @@ int Object::read_copy_relocations() {
 	return 0;
 }
 
-int Object::relocate() {
+int Object::read_symbols() {
 	//Put all the symbols into the symbols map if they aren't there already
 	for(size_t i = 0; i < symbol_table_size; i++) {
 		auto* symbol = &symbol_table[i];
@@ -381,7 +394,10 @@ int Object::relocate() {
 			symbols[symbol_name] = symbol->st_value + memloc;
 		}
 	}
+	return 0;
+}
 
+int Object::relocate() {
 	//Relocate the symbols
 	for(auto & shdr : sheaders) {
 		if(shdr.sh_type == SHT_REL) {

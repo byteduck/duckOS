@@ -222,6 +222,7 @@ public:
 	int load_sections();
 	int read_sheaders();
 	int read_copy_relocations();
+	int read_symbols();
 	int relocate();
 
 	std::string name;
@@ -232,6 +233,7 @@ public:
 	size_t memsz = 0;
 	size_t memloc = 0;
 	size_t calculated_base = 0;
+	bool loaded = false;
 
 	char* string_table = nullptr;
 	size_t string_table_size = 0;
