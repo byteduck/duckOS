@@ -18,10 +18,26 @@
 */
 
 #include "DecorationWindow.h"
+#include "Mouse.h"
+#include "Display.h"
 
 DecorationWindow::DecorationWindow(Window* parent, const Rect& contents_rect): Window(parent, calculate_decoration_rect(contents_rect)) {
 	_contents = new Window(this, {DECO_LEFT_SIZE, DECO_TOP_SIZE, contents_rect.width, contents_rect.height});
 	_framebuffer.fill({0, 0, _rect.width, _rect.height}, {255, 255, 255});
+}
+
+bool DecorationWindow::is_decoration() const {
+	return true;
+}
+
+void DecorationWindow::mouse_moved(Point relative_pos, int delta_x, int delta_y) {
+	if(_mouse_buttons & MOUSE_1)
+		set_position(Point{delta_x, delta_y} + _rect.position());
+	Window::mouse_moved(relative_pos, delta_x, delta_y);
+}
+
+void DecorationWindow::set_mouse_buttons(uint8_t buttons) {
+	Window::set_mouse_buttons(buttons);
 }
 
 Rect DecorationWindow::calculate_decoration_rect(const Rect& contents_rect) {
@@ -35,6 +51,7 @@ Window* DecorationWindow::contents() {
 	return _contents;
 }
 
-bool DecorationWindow::is_decoration() const {
-	return true;
+void DecorationWindow::set_content_dimensions(const Dimensions& dimensions) {
+	_contents->set_dimensions(dimensions);
+	set_dimensions({dimensions.width + DECO_LEFT_SIZE + DECO_RIGHT_SIZE, dimensions.height + DECO_TOP_SIZE + DECO_BOTTOM_SIZE});
 }

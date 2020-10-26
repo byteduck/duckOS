@@ -59,6 +59,12 @@ void Client::mouse_moved(Window* window, Point new_position) {
 		perror("Failed to write mouse movement packet to client");
 }
 
+void Client::mouse_buttons_changed(Window* window, uint8_t new_buttons) {
+	PMouseButtonPkt pkt = {PPKT_MOUSE_BUTTON, window->id(), new_buttons};
+	if(write_packet(socketfs_fd, pid, sizeof(PMouseButtonPkt), &pkt) < 0)
+		perror("Failed to write mouse button packet to client");
+}
+
 void Client::open_window(socketfs_packet* packet) {
 	if(packet->length != sizeof(POpenWindowPkt))
 		return;
@@ -113,7 +119,6 @@ void Client::destroy_window(socketfs_packet* packet) {
 	auto* params = (PDestroyWindowPkt*) packet->data;
 
 	PWindowDestroyedPkt resp = {PPKT_WINDOW_DESTROYED, false};
-	resp._PACKET_ID = PPKT_WINDOW_DESTROYED;
 
 	//Find the window in question and remove it
 	auto window = windows.find(params->window_id);
@@ -128,11 +133,45 @@ void Client::destroy_window(socketfs_packet* packet) {
 }
 
 void Client::move_window(socketfs_packet* packet) {
+	if(packet->length != sizeof(PMoveWindowPkt))
+		return;
 
+	auto* params = (PMoveWindowPkt*) packet->data;
+	auto window_pair = windows.find(params->window_id);
+	if(window_pair != windows.end()) {
+		auto* window = window_pair->second;
+
+		//If this window is decorated, set the position of the decoration window instead
+		if(window->parent() && window->parent()->is_decoration())
+			window->parent()->set_position(Point{params->x, params->y} - window->rect().position());
+		else
+			window->set_position({params->x, params->y});
+
+		PWindowMovedPkt resp = {PPKT_WINDOW_MOVED, window->id(), params->x, params->y};
+		if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &resp) < 0)
+			perror("Failed to write window moved packet to client");
+	}
 }
 
 void Client::resize_window(socketfs_packet* packet) {
+	if(packet->length != sizeof(PResizeWindowPkt))
+		return;
 
+	auto* params = (PResizeWindowPkt*) packet->data;
+	auto window_pair = windows.find(params->window_id);
+	if(window_pair != windows.end()) {
+		auto* window = window_pair->second;
+
+		//If this window is decorated, set the size of the decoration window as well
+		if(window->parent() && window->parent()->is_decoration())
+			((DecorationWindow*) window->parent())->set_content_dimensions({params->width, params->height});
+		else
+			window->set_dimensions({params->width, params->height});
+
+		PWindowResizedPkt resp = {PPKT_WINDOW_MOVED, window->id(), params->width, params->height, window->framebuffer_shm().id};
+		if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &resp) < 0)
+			perror("Failed to write window moved packet to client");
+	}
 }
 
 void Client::invalidate_window(socketfs_packet* packet) {
@@ -141,6 +180,11 @@ void Client::invalidate_window(socketfs_packet* packet) {
 
 	auto* params = (PInvalidatePkt*) packet->data;
 	auto window = windows.find(params->window_id);
-	if(window != windows.end())
-		window->second->invalidate();
+	if(window != windows.end()) {
+		if(params->x < 0 || params->y < 0)
+			window->second->invalidate();
+		else
+			window->second->invalidate({params->x, params->y, params->width, params->height});
+	}
+
 }

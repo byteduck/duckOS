@@ -38,8 +38,20 @@ Point Point::constrain(const Rect& rect) const {
 	return ret;
 }
 
-Point Point::transform(const Point& point) const {
-	return {x + point.x , y + point.y};
+Point Point::operator+(const Point& other) const {
+	return {x + other.x , y + other.y};
+}
+
+Point Point::operator-(const Point& other) const {
+	return {x - other.x, y - other.y};
+}
+
+Point Point::operator*(const int& scalar) const {
+	return {x * scalar, y * scalar};
+}
+
+Point Point::operator/(const int& scalar) const {
+	return {x / scalar, y / scalar};
 }
 
 

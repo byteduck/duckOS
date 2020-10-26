@@ -132,7 +132,13 @@ int PDestroyWindow(PWindow* window) {
 }
 
 void PInvalidateWindow(PWindow* window) {
-	PInvalidatePkt pkt = {PPKT_INVALIDATE_WINDOW, window->id};
+	PInvalidatePkt pkt = {PPKT_INVALIDATE_WINDOW, window->id, -1, -1, -1, -1};
+	if(write_packet(pond_fd, SOCKETFS_HOST, sizeof(PInvalidatePkt), &pkt) < 0)
+		perror("Pond: Failed to write packet");
+}
+
+void PInvalidateWindowArea(PWindow* window, int x, int y, int width, int height) {
+	PInvalidatePkt pkt = {PPKT_INVALIDATE_WINDOW, window->id, x, y, width, height};
 	if(write_packet(pond_fd, SOCKETFS_HOST, sizeof(PInvalidatePkt), &pkt) < 0)
 		perror("Pond: Failed to write packet");
 }

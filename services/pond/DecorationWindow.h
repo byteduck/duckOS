@@ -22,7 +22,7 @@
 
 #include "Window.h"
 
-#define DECO_TOP_SIZE 24
+#define DECO_TOP_SIZE 8
 #define DECO_BOTTOM_SIZE 2
 #define DECO_LEFT_SIZE 2
 #define DECO_RIGHT_SIZE 2
@@ -30,9 +30,16 @@
 class DecorationWindow: public Window {
 public:
 	DecorationWindow(Window* parent, const Rect& contents_rect);
+
+	//Window
+	bool is_decoration() const override;
+	void mouse_moved(Point relative_pos, int delta_x, int delta_y) override;
+	void set_mouse_buttons(uint8_t buttons) override;
+
 	static Rect calculate_decoration_rect(const Rect& contents_rect);
 	Window* contents();
-	bool is_decoration() const override;
+	void set_content_dimensions(const Dimensions& dimensions);
+
 private:
 	Window* _contents;
 };

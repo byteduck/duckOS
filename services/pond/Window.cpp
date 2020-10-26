@@ -122,6 +122,22 @@ void Window::move_to_front() {
 		child->move_to_front();
 }
 
+void Window::mouse_moved(Point relative_pos, int delta_x, int delta_y) {
+	_mouse_position = relative_pos;
+	if(_client)
+		_client->mouse_moved(this, relative_pos);
+}
+
+void Window::set_mouse_buttons(uint8_t buttons) {
+	_mouse_buttons = buttons;
+	if(buttons != _mouse_buttons && _client)
+		_client->mouse_buttons_changed(this, buttons);
+}
+
+uint8_t Window::mouse_buttons() {
+	return _mouse_buttons;
+}
+
 void Window::alloc_framebuffer() {
 	if(_framebuffer.buffer) {
 		//Deallocate the old framebuffer since there is one
@@ -158,11 +174,6 @@ void Window::recalculate_rects() {
 
 shm Window::framebuffer_shm() {
 	return _framebuffer_shm;
-}
-
-void Window::mouse_moved(Point relative_pos) {
-	if(_client)
-		_client->mouse_moved(this, relative_pos);
 }
 
 

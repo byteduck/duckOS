@@ -31,6 +31,7 @@ public:
 	Client(int socketfs_fd, pid_t pid);
 	void handle_packet(socketfs_packet* packet);
 	void mouse_moved(Window* window, Point new_position);
+	void mouse_buttons_changed(Window* window, uint8_t new_buttons);
 
 private:
 	void open_window(socketfs_packet* packet);

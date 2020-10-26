@@ -91,6 +91,10 @@ typedef struct PWindowResizedPkt {
 typedef struct PInvalidatePkt {
 	short _PACKET_ID; //PPKT_INVALIDATE_WINDOW
 	int window_id;
+	int x;
+	int y;
+	int width;
+	int height;
 } PInvalidatePkt;
 
 typedef struct PMouseMovePkt {
@@ -103,8 +107,7 @@ typedef struct PMouseMovePkt {
 typedef struct PMouseButtonPkt {
 	short _PACKET_ID; //PPKT_MOUSE_BUTTON
 	int window_id;
-	unsigned int button;
-	uint8_t state;
+	uint8_t buttons;
 } PMouseButtonPkt;
 
 typedef struct PKeyEventPkt {

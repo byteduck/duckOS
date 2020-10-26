@@ -114,6 +114,17 @@ void PHandleResizeWindow(socketfs_packet* packet, PEvent* event) {
 		event->window_resize.old_height = window->height;
 		window->width = resp->width;
 		window->height = resp->height;
+		//Open the new shared memory for the framebuffer if necessary
+		if(resp->shm_id != window->shm_id) {
+			shmdetach(window->shm_id);
+			struct shm shm;
+			if(shmattach(window->shm_id, NULL, &shm) < 0) {
+				perror("libpond failed to attach window shm");
+				event->window_create.window = NULL;
+				return;
+			}
+			window->buffer = shm.ptr;
+		}
 	} else {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "Could not find window for window resize event!\n");
@@ -148,12 +159,9 @@ void PHandleMouseButton(socketfs_packet* packet, PEvent* event) {
 	if(window) {
 		event->mouse.window = window;
 		event->mouse.old_buttons = window->mouse_buttons;
-		event->mouse.old_x = window->mouse_x;
-		event->mouse.old_y = window->mouse_y;
-		if(resp->state)
-			window->mouse_buttons |= resp->button;
-		else
-			window->mouse_buttons &= ~resp->button;
+		event->mouse.old_x = -1;
+		event->mouse.old_y = -1;
+		window->mouse_buttons = resp->buttons;
 	} else {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "Could not find window for window mouse button event!\n");

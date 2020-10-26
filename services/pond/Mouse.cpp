@@ -44,15 +44,14 @@ bool Mouse::update() {
 	if(!nread) return false;
 	int num_events = (int) nread / sizeof(MouseEvent);
 
-	Point new_pos = rect().position();
-
 	for(int i = 0; i < num_events; i++) {
+		Point new_pos = rect().position();
 		new_pos.x += events[i].x;
 		new_pos.y -= events[i].y;
+		set_position(new_pos.constrain(parent()->rect()));
+		_mouse_buttons = events[i].buttons;
+		Display::inst().create_mouse_events(events[i].x, -events[i].y, events[i].buttons);
 	}
-
-	set_position(new_pos.constrain(parent()->rect()));
-	Display::inst().create_mouse_events();
 
 	return true;
 }

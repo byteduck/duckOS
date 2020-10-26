@@ -26,6 +26,10 @@
 #include "Geometry.h"
 #include "Window.h"
 
+#define MOUSE_1 1u
+#define MOUSE_2 2u
+#define MOUSE_3 4u
+
 struct MouseEvent {
 	int x, y, z;
 	uint8_t buttons;

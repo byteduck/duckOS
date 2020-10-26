@@ -55,7 +55,7 @@ public:
 	/**
 	 * The rect of the window's visible contents (ie area not clipped from parent window) in absolute coordinates
 	 */
-	 Rect visible_absolute_rect() const;
+	Rect visible_absolute_rect() const;
 
 	/**
 	 * Sets the rect of the window to the rect given, constrained to fit inside the parent.
@@ -93,10 +93,22 @@ public:
 	 * Called to tell the window that the mouse moved within it.
 	 * @param relative_pos The new position of the mouse relative to the window.
 	 */
-	void mouse_moved(Point relative_pos);
+	virtual void mouse_moved(Point relative_pos, int delta_x, int delta_y);
+
+	/**
+	 * Called to tell the window that the mouse's button states changed.
+	 * @param buttons The new states of the mouse buttons.
+	 */
+	virtual void set_mouse_buttons(uint8_t buttons);
+
+	/**
+	 * Returns the current state of the window's mouse buttons.
+	 */
+	uint8_t mouse_buttons();
 
 private:
 	friend class DecorationWindow;
+	friend class Mouse;
 	void alloc_framebuffer();
 	Rect calculate_absolute_rect(const Rect& rect);
 	void recalculate_rects();
@@ -111,6 +123,8 @@ private:
 	std::vector<Window*> _children;
 	Client* _client = nullptr;
 	int _id;
+	uint8_t _mouse_buttons;
+	Point _mouse_position;
 
 	static int current_id;
 };

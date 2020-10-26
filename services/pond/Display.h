@@ -52,6 +52,11 @@ public:
 	void set_mouse_window(Mouse* window);
 
 	/**
+	 * Returns the mouse window of the display.
+	 */
+	Mouse* mouse_window();
+
+	/**
 	 * Adds a window to the display.
 	 */
 	void add_window(Window* window);
@@ -85,7 +90,7 @@ public:
 	/**
 	 * Sends mouse events to the appropriate window(s). To be called after the mouse moves.
 	 */
-	void create_mouse_events();
+	void create_mouse_events(int delta_x, int delta_y, uint8_t buttons);
 
 
 	static Display& inst();

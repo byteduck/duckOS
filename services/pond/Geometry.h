@@ -29,7 +29,11 @@ public:
 
 	bool in(const Rect& rect) const;
 	Point constrain(const Rect& rect) const;
-	Point transform(const Point& point) const;
+
+	Point operator+(const Point& other) const;
+	Point operator-(const Point& other) const;
+	Point operator*(const int& scalar) const;
+	Point operator/(const int& scalar) const;
 };
 
 class Dimensions {

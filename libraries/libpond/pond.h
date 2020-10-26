@@ -36,7 +36,7 @@ __DECL_BEGIN
 int PInit();
 
 /**
- * Waits for the next event from pond.
+ * Waits for the next event from pond and returns it.
  * @return The event.
  */
 PEvent PNextEvent();
@@ -60,10 +60,21 @@ PWindow* PCreateWindow(PWindow* parent, int x, int y, int width, int height);
 int PDestroyWindow(PWindow* window);
 
 /**
- * Invalidates a window's framebuffer.
+ * Tells the compositor to redraw the entire window.
  * @param window The window to invalidate.
  */
 void PInvalidateWindow(PWindow* window);
+
+/**
+ * Tells the compositor to redraw a portion of a window.
+ * If given a position with negative coordinates, the entire will be redrawn equivalent to PInvalidateWindow(window).
+ * @param window The window to invalidate.
+ * @param x The x position of the area to invalidate.
+ * @param y The y position of the area to invalidate.
+ * @param width The width of the area to invalidate.
+ * @param height The height of the area to invalidate.
+ */
+void PInvalidateWindowArea(PWindow* window, int x, int y, int width, int height);
 
 __DECL_END
 

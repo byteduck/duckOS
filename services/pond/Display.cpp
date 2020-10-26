@@ -84,6 +84,10 @@ void Display::set_mouse_window(Mouse* window) {
 	_mouse_window = window;
 }
 
+Mouse* Display::mouse_window() {
+	return _mouse_window;
+}
+
 void Display::add_window(Window* window) {
 	_windows.push_back(window);
 }
@@ -165,14 +169,17 @@ void Display::move_to_front(Window* window) {
 	}
 }
 
-void Display::create_mouse_events() {
+void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	Point mouse = _mouse_window->absolute_rect().position();
-	for(auto& window : _windows) {
+	for (auto it = _windows.rbegin(); it != _windows.rend(); it++) {
+		auto* window = *it;
 		if(window == _mouse_window || window == _root_window)
 			continue;
 		if(mouse.in(window->absolute_rect())) {
 			Point window_pos = window->absolute_rect().position();
-			window->mouse_moved({mouse.x - window_pos.x, mouse.y - window_pos.y});
+			window->mouse_moved({mouse.x - window_pos.x, mouse.y - window_pos.y}, delta_x, delta_y);
+			window->set_mouse_buttons(_mouse_window->mouse_buttons());
+			return;
 		}
 	}
 }
