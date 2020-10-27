@@ -136,6 +136,35 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer) {
 			return length;
 		}
 
+		case RootCpuInfo: {
+			char numbuf[4];
+			double percent_used = (1.00 - PIT::percent_idle()) * 100.0;
+
+			DC::string str = "Utilization: ";
+
+			itoa((int) percent_used, numbuf, 10);
+			str += numbuf;
+			str += ".";
+
+			percent_used -= (int) percent_used;
+			if(percent_used == 0)
+				str += "0";
+			int num_decimals = 0;
+			while(percent_used > 0 && num_decimals < 3) {
+				percent_used *= 10;
+				itoa((int)percent_used, numbuf, 10);
+				str += numbuf;
+				percent_used -= (int) percent_used;
+				num_decimals++;
+			}
+
+			str += "%\n";
+			if(start + length > str.length())
+				length = str.length() - start;
+			memcpy(buffer, str.c_str() + start, length);
+			return length;
+		}
+
 		case ProcStatus: {
 			auto* proc = TaskManager::process_for_pid(pid);
 			if(!proc) return -EIO;

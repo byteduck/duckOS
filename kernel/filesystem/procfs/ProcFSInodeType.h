@@ -30,6 +30,7 @@ enum ProcFSInodeType {
 	RootMemInfo,
 	RootCmdLine,
 	RootUptime,
+	RootCpuInfo,
 
 	//Process entries
 	ProcExe,

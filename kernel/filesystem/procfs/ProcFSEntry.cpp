@@ -68,6 +68,12 @@ ProcFSEntry::ProcFSEntry(ProcFSInodeType type, pid_t pid): type(type), pid(pid) 
 			parent = 1;
 			break;
 
+		case RootCpuInfo:
+			name = "cpuinfo";
+			dirent_type = TYPE_FILE;
+			parent = 1;
+			break;
+
 		case ProcCwd:
 			name = "cwd";
 			dirent_type = TYPE_SYMLINK;
