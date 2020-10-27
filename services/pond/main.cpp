@@ -31,13 +31,13 @@ int main() {
 	auto* main_window = new Window(display);
 	auto* mouse = new Mouse(main_window);
 
-	display->repaint();
-
-	struct pollfd polls[2];
+	struct pollfd polls[3];
 	polls[0].fd = mouse->fd();
 	polls[0].events = POLLIN;
 	polls[1].fd = server->fd();
 	polls[1].events = POLLIN;
+	polls[2].fd = display->keyboard_fd();
+	polls[2].events = POLLIN;
 
 	if(!fork()) {
 		char* argv[] = {NULL};
@@ -49,8 +49,9 @@ int main() {
 #pragma ide diagnostic ignored "EndlessLoop"
 	while(true) {
 		//Poll with a timeout of 17ms if the buffer is dirty to ensure it gets updated if another event doesn't occur
-		poll(polls, 2, display->buffer_is_dirty() ? 17 : -1);
+		poll(polls, 3, display->buffer_is_dirty() ? 17 : -1);
 		mouse->update();
+		display->update_keyboard();
 		server->handle_packets();
 		display->repaint();
 		display->flip_buffers();

@@ -177,7 +177,7 @@ void PHandleKeyEvent(socketfs_packet* packet, PEvent* event) {
 	if(window) {
 		event->key.window = window;
 		event->key.character = resp->character;
-		event->key.flags = resp->flags;
+		event->key.modifiers = resp->modifiers;
 		event->key.key = resp->key;
 		event->key.scancode = resp->scancode;
 	} else {

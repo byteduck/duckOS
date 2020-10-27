@@ -76,7 +76,7 @@ typedef struct PKeyEvent {
 	uint16_t scancode; ///< The scancode of the key pressed or released.
 	uint8_t key; ///< The key pressed or released.
 	uint8_t character; ///< The character of the key pressed or released.
-	uint8_t flags; ///< The bitfield of flags related to the event, including the state of the key in question
+	uint8_t modifiers; ///< The bitfield of modifier keys active for the key event
 	PWindow* window; ///< The window the event was triggered on
 } PKeyEvent;
 

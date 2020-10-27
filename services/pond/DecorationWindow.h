@@ -35,6 +35,7 @@ public:
 	bool is_decoration() const override;
 	void mouse_moved(Point relative_pos, int delta_x, int delta_y) override;
 	void set_mouse_buttons(uint8_t buttons) override;
+	void handle_keyboard_event(const KeyboardEvent& event) override;
 
 	static Rect calculate_decoration_rect(const Rect& contents_rect);
 	Window* contents();

@@ -116,7 +116,7 @@ typedef struct PKeyEventPkt {
 	uint16_t scancode;
 	uint8_t key;
 	uint8_t character;
-	uint8_t flags;
+	uint8_t modifiers;
 } PKeyEventPkt;
 
 #endif //DUCKOS_PACKET_H

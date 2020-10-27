@@ -23,6 +23,7 @@
 #include <sys/ioctl.h>
 #include <kernel/device/VGADevice.h>
 #include <cstring>
+#include <sys/input.h>
 
 Display* Display::_inst = nullptr;
 
@@ -52,8 +53,10 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 	}
 
 	_framebuffer = {buffer, _dimensions.width, _dimensions.height};
-
 	printf("Framebuffer opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
+
+	if((_keyboard_fd = open("/dev/input/keyboard", O_RDONLY)) < 0)
+		perror("Failed to open keyboard");
 }
 
 Rect Display::dimensions() {
@@ -166,6 +169,11 @@ void Display::move_to_front(Window* window) {
 	}
 }
 
+void Display::focus(Window* window) {
+	_focused_window = window;
+}
+
+
 void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	static Window* prev_mouse_window = nullptr;
 
@@ -207,6 +215,23 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 
 bool Display::buffer_is_dirty() {
 	return display_buffer_dirty;
+}
+
+bool Display::update_keyboard() {
+	KeyboardEvent events[32];
+	ssize_t nread = read(_keyboard_fd, &events, sizeof(KeyboardEvent) * 32);
+	if(!nread) return false;
+	int num_events = (int) nread / sizeof(KeyboardEvent);
+	if(_focused_window) {
+		for(int i = 0; i < num_events; i++) {
+			_focused_window->handle_keyboard_event(events[i]);
+		}
+	}
+	return true;
+}
+
+int Display::keyboard_fd() {
+	return _keyboard_fd;
 }
 
 Display& Display::inst() {

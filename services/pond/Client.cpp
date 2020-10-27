@@ -65,6 +65,12 @@ void Client::mouse_buttons_changed(Window* window, uint8_t new_buttons) {
 		perror("Failed to write mouse button packet to client");
 }
 
+void Client::keyboard_event(Window* window, const KeyboardEvent& event) {
+	PKeyEventPkt pkt = {PPKT_KEY_EVENT, window->id(), event.scancode, event.key, event.character, event.modifiers};
+	if(write_packet(socketfs_fd, pid, sizeof(PKeyEventPkt), &pkt) < 0)
+		perror("Failed to write keyboard event packet to client");
+}
+
 void Client::open_window(socketfs_packet* packet) {
 	if(packet->length != sizeof(POpenWindowPkt))
 		return;

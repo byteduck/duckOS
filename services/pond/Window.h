@@ -25,6 +25,7 @@
 #include "Graphics.h"
 #include "Client.h"
 #include <sys/mem.h>
+#include <sys/input.h>
 
 class Display;
 class Client;
@@ -81,8 +82,15 @@ public:
 
 	/**
 	 * Moves the window to the front of the display's z-order.
+	 * This does not focus the window.
 	 */
 	void move_to_front();
+
+	/**
+	 * Focuses the window.
+	 * This does not bring the window to the front.
+	 */
+	void focus();
 
 	/**
 	 * Returns the shm object for the window's framebuffer.
@@ -118,6 +126,11 @@ public:
 	 */
 	bool gets_global_mouse();
 
+	/**
+	 * Handles a number of keyboard events for this window.
+	 * @param event The event to handle.
+	 */
+	virtual void handle_keyboard_event(const KeyboardEvent& event);
 
 private:
 	friend class DecorationWindow;

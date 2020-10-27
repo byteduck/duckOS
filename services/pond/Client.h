@@ -24,6 +24,7 @@
 #include <map>
 #include <sys/socketfs.h>
 #include "Window.h"
+#include <sys/input.h>
 
 class Window;
 class Client {
@@ -32,6 +33,7 @@ public:
 	void handle_packet(socketfs_packet* packet);
 	void mouse_moved(Window* window, Point new_position);
 	void mouse_buttons_changed(Window* window, uint8_t new_buttons);
+	void keyboard_event(Window* window, const KeyboardEvent& event);
 
 private:
 	void open_window(socketfs_packet* packet);

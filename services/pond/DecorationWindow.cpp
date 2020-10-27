@@ -42,13 +42,23 @@ void DecorationWindow::mouse_moved(Point relative_pos, int delta_x, int delta_y)
 }
 
 void DecorationWindow::set_mouse_buttons(uint8_t buttons) {
-	if(_mouse_position.in({0, 0, _rect.width, _rect.height}))
+	if(_mouse_position.in({0, 0, _rect.width, _rect.height})) {
 		dragging = buttons & MOUSE_1;
-	else if(!(buttons & MOUSE_1)) {
+		if(dragging)
+			focus();
+	} else if(!(buttons & MOUSE_1)) {
 		dragging = false;
 		drag_start = {-1, -1};
 	}
 	Window::set_mouse_buttons(buttons);
+}
+
+void DecorationWindow::handle_keyboard_event(const KeyboardEvent& event) {
+	if(event.key == 0x3E && event.modifiers & KBD_MOD_ALT && KBD_ISPRESSED(event)) {
+		//TODO: ALT+F4
+		return;
+	}
+	_contents->handle_keyboard_event(event);
 }
 
 Rect DecorationWindow::calculate_decoration_rect(const Rect& contents_rect) {
@@ -66,3 +76,4 @@ void DecorationWindow::set_content_dimensions(const Dimensions& dimensions) {
 	_contents->set_dimensions(dimensions);
 	set_dimensions({dimensions.width + DECO_LEFT_SIZE + DECO_RIGHT_SIZE, dimensions.height + DECO_TOP_SIZE + DECO_BOTTOM_SIZE});
 }
+

@@ -39,6 +39,9 @@ int main() {
 			window->buffer[window->mouse_x + window->mouse_y * window->width].r = 0;
 			//memset(window->buffer, 0xAA, sizeof(PColor) * window->width * window->height);
 			PInvalidateWindow(window);
+		} else if(event.type == PEVENT_KEY) {
+			window->buffer[event.key.scancode].g = 0;
+			PInvalidateWindow(window);
 		}
 	}
 }

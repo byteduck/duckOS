@@ -89,6 +89,11 @@ public:
 	void move_to_front(Window* window);
 
 	/**
+	 * Focuses a window so that it will receive keyboard events.
+	 */
+	void focus(Window* window);
+
+	/**
 	 * Sends mouse events to the appropriate window(s). To be called after the mouse moves.
 	 */
 	void create_mouse_events(int delta_x, int delta_y, uint8_t buttons);
@@ -97,6 +102,17 @@ public:
 	 * Whether or not the display buffer is dirty.
 	 */
 	bool buffer_is_dirty();
+
+	/**
+	 * Handles keyboard events if there are any.
+	 * @return Whether or not there were any keyboard events.
+	 */
+	bool update_keyboard();
+
+	/**
+	 * Returns the file descriptor for the keyboard.
+	 */
+	int keyboard_fd();
 
 	static Display& inst();
 
@@ -111,6 +127,8 @@ private:
 	Window* _root_window = nullptr;
 	timeval paint_time = {0, 0};
 	bool display_buffer_dirty = true;
+	int _keyboard_fd;
+	Window* _focused_window = nullptr;
 
 	static Display* _inst;
 };

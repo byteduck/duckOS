@@ -122,6 +122,10 @@ void Window::move_to_front() {
 		child->move_to_front();
 }
 
+void Window::focus() {
+	_display->focus(this);
+}
+
 void Window::mouse_moved(Point relative_pos, int delta_x, int delta_y) {
 	_mouse_position = relative_pos;
 	if(_client)
@@ -144,6 +148,13 @@ void Window::set_global_mouse(bool global) {
 
 bool Window::gets_global_mouse() {
 	return _global_mouse;
+}
+
+void Window::handle_keyboard_event(const KeyboardEvent& event) {
+	if(_client)
+		_client->keyboard_event(this, event);
+	else if(_parent)
+		_parent->handle_keyboard_event(event);
 }
 
 void Window::alloc_framebuffer() {
