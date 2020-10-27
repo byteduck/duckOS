@@ -138,6 +138,14 @@ uint8_t Window::mouse_buttons() {
 	return _mouse_buttons;
 }
 
+void Window::set_global_mouse(bool global) {
+	_global_mouse = global;
+}
+
+bool Window::gets_global_mouse() {
+	return _global_mouse;
+}
+
 void Window::alloc_framebuffer() {
 	if(_framebuffer.buffer) {
 		//Deallocate the old framebuffer since there is one

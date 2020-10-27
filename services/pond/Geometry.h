@@ -34,6 +34,7 @@ public:
 	Point operator-(const Point& other) const;
 	Point operator*(const int& scalar) const;
 	Point operator/(const int& scalar) const;
+	bool operator==(const Point& other) const;
 };
 
 class Dimensions {

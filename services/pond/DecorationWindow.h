@@ -42,6 +42,8 @@ public:
 
 private:
 	Window* _contents;
+	bool dragging = false;
+	Point drag_start = {-1, -1};
 };
 
 

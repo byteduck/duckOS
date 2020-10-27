@@ -170,18 +170,42 @@ void Display::move_to_front(Window* window) {
 }
 
 void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
+	static Window* prev_mouse_window = nullptr;
+
 	Point mouse = _mouse_window->absolute_rect().position();
+
+	//Do global mouse events first so that window dragging works correctly
+	for(auto& window : _windows) {
+		if(window->gets_global_mouse()) {
+			window->mouse_moved(mouse - window->absolute_rect().position(), delta_x, delta_y);
+			window->set_mouse_buttons(_mouse_window->mouse_buttons());
+		}
+	}
+
+	Window* event_window = nullptr;
 	for (auto it = _windows.rbegin(); it != _windows.rend(); it++) {
 		auto* window = *it;
 		if(window == _mouse_window || window == _root_window)
 			continue;
 		if(mouse.in(window->absolute_rect())) {
-			Point window_pos = window->absolute_rect().position();
-			window->mouse_moved({mouse.x - window_pos.x, mouse.y - window_pos.y}, delta_x, delta_y);
+			event_window = window;
+			window->mouse_moved(mouse - window->absolute_rect().position(), delta_x, delta_y);
 			window->set_mouse_buttons(_mouse_window->mouse_buttons());
-			return;
+			break;
 		}
 	}
+
+	// If the mouse was previously in a different window, update the mouse position in that window
+	if(event_window != prev_mouse_window && prev_mouse_window != nullptr) {
+		Dimensions window_dims = prev_mouse_window->rect().dimensions();
+		//Constrain the mouse position in the window to the window's rect
+		Point new_mouse_pos = (mouse - prev_mouse_window->absolute_rect().position()).constrain({0, 0, window_dims.width, window_dims.height});
+		prev_mouse_window->mouse_moved(new_mouse_pos, delta_x, delta_y);
+		prev_mouse_window->set_mouse_buttons(_mouse_window->mouse_buttons());
+	}
+
+	prev_mouse_window = event_window;
+
 }
 
 Display& Display::inst() {

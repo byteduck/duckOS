@@ -24,6 +24,7 @@
 DecorationWindow::DecorationWindow(Window* parent, const Rect& contents_rect): Window(parent, calculate_decoration_rect(contents_rect)) {
 	_contents = new Window(this, {DECO_LEFT_SIZE, DECO_TOP_SIZE, contents_rect.width, contents_rect.height});
 	_framebuffer.fill({0, 0, _rect.width, _rect.height}, {255, 255, 255});
+	set_global_mouse(true);
 }
 
 bool DecorationWindow::is_decoration() const {
@@ -31,12 +32,22 @@ bool DecorationWindow::is_decoration() const {
 }
 
 void DecorationWindow::mouse_moved(Point relative_pos, int delta_x, int delta_y) {
-	if(_mouse_buttons & MOUSE_1)
-		set_position(Point{delta_x, delta_y} + _rect.position());
+	if(dragging) {
+		if(drag_start == Point{-1, -1})
+			drag_start = relative_pos;
+		else
+			set_position(relative_pos + _absolute_rect.position() - drag_start);
+	}
 	Window::mouse_moved(relative_pos, delta_x, delta_y);
 }
 
 void DecorationWindow::set_mouse_buttons(uint8_t buttons) {
+	if(_mouse_position.in({0, 0, _rect.width, _rect.height}))
+		dragging = buttons & MOUSE_1;
+	else if(!(buttons & MOUSE_1)) {
+		dragging = false;
+		drag_start = {-1, -1};
+	}
 	Window::set_mouse_buttons(buttons);
 }
 

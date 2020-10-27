@@ -54,6 +54,10 @@ Point Point::operator/(const int& scalar) const {
 	return {x / scalar, y / scalar};
 }
 
+bool Point::operator==(const Point& other) const {
+	return other.x == x && other.y == y;
+}
+
 
 Point Rect::position() {
 	return {x, y};

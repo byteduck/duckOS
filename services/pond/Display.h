@@ -92,7 +92,6 @@ public:
 	 */
 	void create_mouse_events(int delta_x, int delta_y, uint8_t buttons);
 
-
 	static Display& inst();
 
 

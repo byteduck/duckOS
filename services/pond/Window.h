@@ -92,6 +92,8 @@ public:
 	/**
 	 * Called to tell the window that the mouse moved within it.
 	 * @param relative_pos The new position of the mouse relative to the window.
+	 * @param delta_x The amount of change in the x axis.
+	 * @param delta_y The amount of change in the y axis.
 	 */
 	virtual void mouse_moved(Point relative_pos, int delta_x, int delta_y);
 
@@ -105,6 +107,17 @@ public:
 	 * Returns the current state of the window's mouse buttons.
 	 */
 	uint8_t mouse_buttons();
+
+	/**
+	 * Sets whether or not the window should receive mouse events that happen outside of its bounds.
+	 */
+	void set_global_mouse(bool global);
+
+	/**
+	 * Whether or not the window receives mouse events that happen outside of its bounds.
+	 */
+	bool gets_global_mouse();
+
 
 private:
 	friend class DecorationWindow;
@@ -125,6 +138,7 @@ private:
 	int _id;
 	uint8_t _mouse_buttons;
 	Point _mouse_position;
+	bool _global_mouse = false;
 
 	static int current_id;
 };
