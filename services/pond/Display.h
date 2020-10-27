@@ -25,6 +25,7 @@
 #include "Geometry.h"
 #include "Window.h"
 #include "Mouse.h"
+#include <sys/time.h>
 
 class Window;
 class Mouse;
@@ -92,6 +93,11 @@ public:
 	 */
 	void create_mouse_events(int delta_x, int delta_y, uint8_t buttons);
 
+	/**
+	 * Whether or not the display buffer is dirty.
+	 */
+	bool buffer_is_dirty();
+
 	static Display& inst();
 
 
@@ -103,6 +109,8 @@ private:
 	std::vector<Window*> _windows;
 	Mouse* _mouse_window = nullptr;
 	Window* _root_window = nullptr;
+	timeval paint_time = {0, 0};
+	bool display_buffer_dirty = true;
 
 	static Display* _inst;
 };

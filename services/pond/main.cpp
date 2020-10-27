@@ -48,7 +48,8 @@ int main() {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 	while(true) {
-		poll(polls, 2, 16);
+		//Poll with a timeout of 17ms if the buffer is dirty to ensure it gets updated if another event doesn't occur
+		poll(polls, 2, display->buffer_is_dirty() ? 17 : -1);
 		mouse->update();
 		server->handle_packets();
 		display->repaint();

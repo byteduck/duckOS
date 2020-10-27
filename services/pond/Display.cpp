@@ -23,7 +23,6 @@
 #include <sys/ioctl.h>
 #include <kernel/device/VGADevice.h>
 #include <cstring>
-#include <sys/time.h>
 
 Display* Display::_inst = nullptr;
 
@@ -106,9 +105,6 @@ void Display::invalidate(const Rect& rect) {
 		invalid_areas.push_back(rect);
 }
 
-timeval paint_time = {0, 0};
-bool display_buffer_dirty = false;
-
 void Display::repaint() {
 	auto fb = _root_window->framebuffer();
 
@@ -154,8 +150,9 @@ void Display::flip_buffers() {
 		return;
 	paint_time = new_time;
 
-	//Copy to the graphics buffer
+	//Copy to the graphics buffer and mark the display buffer clean
 	memcpy(_framebuffer.buffer, _root_window->framebuffer().buffer, sizeof(Color) * _framebuffer.width * _framebuffer.height);
+	display_buffer_dirty = false;
 }
 
 void Display::move_to_front(Window* window) {
@@ -206,6 +203,10 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 
 	prev_mouse_window = event_window;
 
+}
+
+bool Display::buffer_is_dirty() {
+	return display_buffer_dirty;
 }
 
 Display& Display::inst() {
