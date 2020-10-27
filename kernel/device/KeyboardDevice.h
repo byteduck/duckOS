@@ -25,12 +25,12 @@
 #include <common/circular_queue.hpp>
 #include <kernel/interrupt/IRQHandler.h>
 
-class __attribute__((packed)) KeyEvent {
+class KeyEvent {
 public:
 	uint16_t scancode;
 	uint8_t key;
 	uint8_t character;
-	uint8_t flags;
+	uint8_t modifiers;
 	bool pressed() const;
 };
 

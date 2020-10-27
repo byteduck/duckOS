@@ -22,7 +22,7 @@
 
 //KeyEvent
 
-bool KeyEvent::pressed() const {return flags & KBD_IS_PRESSED;}
+bool KeyEvent::pressed() const {return !(scancode & KBD_IS_PRESSED);}
 
 //KeyboardDevice
 
@@ -98,7 +98,7 @@ void KeyboardDevice::handle_irq(Registers *regs) {
 
 		//TODO: Switch TTY with ALT+NUM
 
-		set_key_state(key, key_pressed);
+		set_key_state(scancode, key_pressed);
 	}
 
 	TaskManager::yield_if_idle();
@@ -110,10 +110,10 @@ void KeyboardDevice::set_mod(uint8_t mod, bool state) {
 }
 
 //TODO: Numpad, e0 prefixed characters, caps lock
-void KeyboardDevice::set_key_state(uint8_t key, bool pressed) {
+void KeyboardDevice::set_key_state(uint8_t scancode, bool pressed) {
+	uint8_t key = scancode & 0x7fu;
 	char character = (_modifiers & KBD_MOD_SHIFT) ? kbd_us_shift_map[key] : kbd_us_map[key];
-	KeyEvent event = {(uint16_t) (_e0_flag ? 0xe000u + key : key), key, (uint8_t) character, _modifiers};
-	if(pressed) event.flags |= KBD_IS_PRESSED;
+	KeyEvent event = {(uint16_t) (_e0_flag ? 0xe000u + scancode : scancode), key, (uint8_t) character, _modifiers};
 	if (_handler != nullptr) _handler->handle_key(event);
 	_event_buffer.push(event);
 	_e0_flag = false;
