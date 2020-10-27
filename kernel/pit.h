@@ -32,10 +32,12 @@
 namespace PIT {
 	extern "C" void pit_handler();
 	void init();
+	void init_idle_counter();
 	void gettimeofday(struct timespec *t, void *z);
 	uint32_t get_seconds();
 	uint32_t get_nseconds();
 	uint32_t get_mseconds();
+	double percent_idle();
 }
 
 #endif

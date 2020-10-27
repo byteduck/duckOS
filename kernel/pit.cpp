@@ -25,13 +25,22 @@ namespace PIT {
 	uint32_t ticks = 0;
 	uint32_t seconds = 0;
 
+	DC::circular_queue<bool>* idle_ticks = nullptr;
+
 	void pit_handler(){
 		if(++ticks == 1000) {
 			ticks = 0;
 			seconds++;
 		}
 
-		TaskManager::preempt();
+		if(idle_ticks) {
+			if(idle_ticks->size() == 100)
+				idle_ticks->pop_front();
+			idle_ticks->push(TaskManager::is_idle());
+		}
+
+		if(ticks % 10 == 0)
+			TaskManager::preempt();
 	}
 
 	uint32_t get_seconds() {
@@ -68,5 +77,20 @@ namespace PIT {
 		// set frequency rate
 		pit_send_data(divisor & 0xffu, 0);
 		pit_send_data((divisor >> 8u) & 0xffu, 0);
+	}
+
+	void init_idle_counter() {
+		idle_ticks = new DC::circular_queue<bool>(100);
+	}
+
+	double percent_idle() {
+		if(!idle_ticks)
+			return 0;
+		bool* ticks_storage = idle_ticks->storage();
+		int num_idle = 0;
+		for(size_t i = 0; i < 100; i++)
+			if(ticks_storage[i])
+				num_idle++;
+		return (double) num_idle / 100.0;
 	}
 }

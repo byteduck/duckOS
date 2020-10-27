@@ -353,6 +353,7 @@ bool Process::has_pending_signals() {
 }
 
 void Process::call_signal_handler(int signal) {
+	//TODO: Do this without switching page directories
 	if(signal < 1 || signal >= 32) return;
 	auto signal_loc = (size_t) signal_actions[signal].action;
 	if(!signal_loc || signal_loc >= HIGHER_HALF) return;

@@ -17,6 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <kernel/tasking/TaskManager.h>
 #include "KeyboardDevice.h"
 
 //KeyEvent
@@ -67,7 +68,7 @@ void KeyboardDevice::handle_irq(Registers *regs) {
 	while(true) {
 		auto status = inb(KBD_PORT_STATUS);
 		//If there's nothing in the buffer or we're not reading the ps/2 keyboard buffer, return
-		if(!(!(status & KBD_STATUS_WHICHBUF) && (status & KBD_STATUS_OUTBUF_FULL))) return;
+		if(!(!(status & KBD_STATUS_WHICHBUF) && (status & KBD_STATUS_OUTBUF_FULL))) break;
 
 		auto scancode = inb(0x60);
 		auto key = scancode & 0x7fu;
@@ -99,6 +100,8 @@ void KeyboardDevice::handle_irq(Registers *regs) {
 
 		set_key_state(key, key_pressed);
 	}
+
+	TaskManager::yield_if_idle();
 }
 
 void KeyboardDevice::set_mod(uint8_t mod, bool state) {

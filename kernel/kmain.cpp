@@ -74,6 +74,7 @@ int kmain(uint32_t mbootptr){
 }
 
 void kmain_late(){
+	PIT::init_idle_counter();
 	new KeyboardDevice;
 	new MouseDevice;
 	printf("[kinit] Tasking initialized.\n[kinit] Initializing TTY...\n");

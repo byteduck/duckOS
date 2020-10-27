@@ -18,6 +18,7 @@
 */
 
 #include <kernel/random.h>
+#include <kernel/tasking/TaskManager.h>
 #include "MouseDevice.h"
 
 MouseDevice* MouseDevice::instance;
@@ -128,7 +129,7 @@ void MouseDevice::handle_irq(Registers *regs) {
 	while(true) {
 		uint8_t status = inb(I8042_STATUS);
 		if (!(((status & I8042_WHICH_BUFFER) == I8042_MOUSE_BUFFER) && (status & I8042_BUFFER_FULL)))
-			return;
+			break;
 
 		uint8_t data = inb(I8042_BUFFER);
 		packet_data[packet_state] = data;
@@ -151,6 +152,8 @@ void MouseDevice::handle_irq(Registers *regs) {
 				break;
 		}
 	}
+
+	TaskManager::yield_if_idle();
 }
 
 void MouseDevice::wait_read() {

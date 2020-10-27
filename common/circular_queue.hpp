@@ -85,6 +85,10 @@ namespace DC {
 		size_t size() const {
 			return _size;
 		}
+
+		T* storage() const {
+			return _storage;
+		}
 	private:
 		T* _storage;
 		size_t _capacity;

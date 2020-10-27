@@ -33,6 +33,7 @@ namespace TaskManager {
 
 	void init();
 	bool& enabled();
+	bool is_idle();
 	void print_tasks();
 
 	uint32_t add_process(Process *p);
@@ -43,6 +44,7 @@ namespace TaskManager {
 	Process *process_for_sid(pid_t sid, pid_t exclude = -1);
 
 	void yield();
+	void yield_if_idle();
 
 	void notify_current(uint32_t sig);
 

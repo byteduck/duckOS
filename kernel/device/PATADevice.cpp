@@ -475,4 +475,5 @@ void PATADevice::handle_irq(Registers *regs) {
 	uint8_t bus_status = inb(_bus_master_base + ATA_BM_STATUS);
 	if(!(bus_status & 0x4u)) return; //Interrupt wasn't for this
 	_blocker.set_ready(true);
+	TaskManager::yield_if_idle();
 }

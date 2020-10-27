@@ -91,6 +91,10 @@ bool& TaskManager::enabled(){
 	return tasking_enabled;
 }
 
+bool TaskManager::is_idle() {
+	return current_proc == kidle_proc;
+}
+
 pid_t TaskManager::get_new_pid(){
 	return __cpid__++;
 }
@@ -137,9 +141,15 @@ void TaskManager::notify_current(uint32_t sig){
 
 Process *TaskManager::next_process() {
 	Process* next_proc = current_proc->next;
-	//Don't switch to a blocking/zombie process
-	while(next_proc->state != PROCESS_ALIVE)
+
+	//Don't switch to a blocking/zombie process or the kidle proc
+	while((next_proc->state != PROCESS_ALIVE || next_proc == kidle_proc) && next_proc != current_proc)
 		next_proc = next_proc->next;
+
+	//There are no processes alive, switch to kidle
+	if(next_proc == current_proc && current_proc->state != PROCESS_ALIVE)
+		next_proc = kidle_proc;
+
 	return next_proc;
 }
 
@@ -147,24 +157,41 @@ Process *TaskManager::next_process() {
 static uint8_t quantum_counter = 0;
 
 void TaskManager::yield() {
-	if(Interrupt::in_interrupt()) return;
-	quantum_counter = 0;
-	preempt_now_asm();
+	if(Interrupt::in_interrupt()) {
+		preempt();
+	} else {
+		quantum_counter = 0;
+		preempt_now_asm();
+	}
+}
+
+void TaskManager::yield_if_idle() {
+	if(current_proc == kidle_proc)
+		yield();
 }
 
 void TaskManager::preempt(){
 	if(!tasking_enabled) return;
+
+	static bool prev_alive = false; // Whether or not there was an alive process last preemption
+	bool any_alive = false;
 
 	//Handle pending signals, cleanup dead processes, and release zombie processes' resources
 	Process *current = kidle_proc->next;
 	do {
 		switch(current->state) {
 			case PROCESS_BLOCKED:
-				if(current->should_unblock())
+				if(current->should_unblock()) {
 					current->unblock();
+					any_alive = true;
+				}
+				current->handle_pending_signal();
+				current = current->next;
+				break;
 			case PROCESS_ALIVE:
 				current->handle_pending_signal();
 				current = current->next;
+				any_alive = true;
 				break;
 			case PROCESS_DEAD: {
 				current->prev->next = current->next;
@@ -184,12 +211,20 @@ void TaskManager::preempt(){
 		}
 	} while(current != kidle_proc);
 
-	//If it's time to switch, switch
-	if(quantum_counter == 0) {
+	/*
+	 * If it's time to switch, switch.
+	 * A task switch will occur if the current process's quantum is up, if there were previously no running processes
+	 * and one has become ready, and only if there is more than one running process.
+	 */
+	bool force_switch = !prev_alive && any_alive;
+	prev_alive = any_alive;
+	if(quantum_counter == 0 || force_switch) {
 		//Pick a new process and decrease the quantum counter
 		auto old_proc = current_proc;
 		current_proc = next_process();
 		quantum_counter = current_proc->quantum - 1;
+
+		bool should_preempt = old_proc != current_proc;
 
 		//If we were just in a signal handler, don't save the esp to old_proc->registers
 		unsigned int* old_esp;
@@ -201,12 +236,14 @@ void TaskManager::preempt(){
 
 		//If we just finished handling a signal, set in_signal_handler to false.
 		if(old_proc->just_finished_signal()) {
+			should_preempt = true;
 			old_proc->just_finished_signal() = false;
 			old_proc->in_signal_handler() = false;
 		}
 
 		//If we're about to start handling a signal, set in_signal_handler to true.
 		if(current_proc->ready_to_handle_signal()) {
+			should_preempt = true;
 			current_proc->in_signal_handler() = true;
 			current_proc->ready_to_handle_signal() = false;
 		}
@@ -221,8 +258,10 @@ void TaskManager::preempt(){
 			tss.esp0 = (size_t) current_proc->kernel_stack_top();
 		}
 
-		//Switch the stacks.
-		preempt_asm(old_esp, new_esp, current_proc->page_directory_loc);
+		//Switch tasks.
+		if(should_preempt) {
+			preempt_asm(old_esp, new_esp, current_proc->page_directory_loc);
+		}
 	} else {
 		quantum_counter--;
 	}
