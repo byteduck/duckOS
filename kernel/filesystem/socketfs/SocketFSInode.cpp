@@ -292,6 +292,9 @@ void SocketFSInode::close(FileDescriptor& fd) {
 }
 
 bool SocketFSInode::can_read(const FileDescriptor& fd) {
+	if(fd.owner() == host.process)
+		return !host.data_queue->empty();
+
 	for(size_t i = 0; i < clients.size(); i++) {
 		if(clients[i].process == fd.owner())
 			return !clients[i].data_queue->empty();
