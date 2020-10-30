@@ -22,24 +22,14 @@
 
 #include <sys/types.h>
 #include "Geometry.h"
-
-typedef struct Color {
-public:
-	Color(uint8_t r, uint8_t g, uint8_t b);
-	Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
-
-	uint8_t b;
-	uint8_t g;
-	uint8_t r;
-	uint8_t a;
-} Color;
+#include <graphics/graphics.h>
 
 class Framebuffer {
 public:
 	Framebuffer();
-	Framebuffer(Color* buffer, int width, int height);
+	Framebuffer(uint32_t* buffer, int width, int height);
 
-	Color* buffer = nullptr;
+	uint32_t* buffer = nullptr;
 	int width = 0;
 	int height = 0;
 
@@ -54,12 +44,12 @@ public:
 	/**
 	 * Fills an area of the framebuffer with a color.
 	 */
-	void fill(Rect area, const Color& color) const;
+	void fill(Rect area, uint32_t color) const;
 
 	/**
 	 * Returns a pointer to the framebuffer at a certain position. Returns NULL if outside the constraints.
 	 */
-	Color* at(const Point& position) const;
+	uint32_t* at(const Point& position) const;
 };
 
 #endif //DUCKOS_POND_GRAPHICS_H

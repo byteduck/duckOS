@@ -39,7 +39,12 @@ Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions())
 }
 
 Window::~Window() {
+	for(auto& child : _children)
+		delete child;
 	_display->remove_window(this);
+	if(_client)
+		_client->window_destroyed(this);
+	invalidate();
 	if(_framebuffer.buffer) {
 		//Deallocate the old framebuffer since there is one
 		if(shmdetach(_framebuffer_shm.id) < 0) {
@@ -166,12 +171,12 @@ void Window::alloc_framebuffer() {
 		}
 	}
 
-	if(shmcreate(NULL, _rect.width * _rect.height * sizeof(Color), &_framebuffer_shm) < 0) {
+	if(shmcreate(NULL, IMGSIZE(_rect.width, _rect.height), &_framebuffer_shm) < 0) {
 		perror("Failed to allocate framebuffer for window");
 		return;
 	}
 
-	_framebuffer = {(Color*) _framebuffer_shm.ptr, _rect.width, _rect.height};
+	_framebuffer = {(uint32_t*) _framebuffer_shm.ptr, _rect.width, _rect.height};
 }
 
 Rect Window::calculate_absolute_rect(const Rect& rect) {

@@ -30,8 +30,8 @@ Mouse::Mouse(Window* parent): Window(parent, {0, 0, 3, 3}) {
 		return;
 	}
 
-	framebuffer().fill({0, 0, 3, 3}, {255, 255, 255});
-	*framebuffer().at({1, 1}) = {100, 100, 100};
+	framebuffer().fill({0, 0, 3, 3}, RGB(255,255,255));
+	*framebuffer().at({1, 1}) = RGB(100,100,100);
 }
 
 int Mouse::fd() {

@@ -69,7 +69,7 @@ void PHandleOpenWindow(socketfs_packet* packet, PEvent* event) {
 void PHandleDestroyWindow(socketfs_packet* packet, PEvent* event) {
 	//Read the response
 	PWindowDestroyedPkt* resp = (struct PWindowDestroyedPkt*) packet->data;
-	event->window_destroy.successful = resp->successful;
+	event->window_destroy.id = resp->window_id;
 
 	//Remove the window from the array
 	uint8_t removing = 0;

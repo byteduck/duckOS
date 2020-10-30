@@ -26,6 +26,23 @@ Client::Client(int socketfs_fd, pid_t pid): socketfs_fd(socketfs_fd), pid(pid) {
 
 }
 
+Client::~Client() {
+	std::vector<Window*> to_delete;
+	for(auto& window : windows) {
+		if(window.second->parent()) {
+			if(windows.find(window.second->parent()->id()) != windows.end())
+				continue; //Don't remove a window if its parent is owned by this client; deleting the parent deletes all children.
+			else if(window.second->parent()->is_decoration())
+				to_delete.push_back(window.second->parent()); //Delete the decoration window if it's decorated
+		} else {
+			to_delete.push_back(window.second);
+		}
+	}
+
+	for(auto& window : to_delete)
+		delete window;
+}
+
 void Client::handle_packet(socketfs_packet* packet) {
 	if(packet->length < sizeof(short))
 		return; //Doesn't even include a packet header
@@ -69,6 +86,12 @@ void Client::keyboard_event(Window* window, const KeyboardEvent& event) {
 	PKeyEventPkt pkt = {PPKT_KEY_EVENT, window->id(), event.scancode, event.key, event.character, event.modifiers};
 	if(write_packet(socketfs_fd, pid, sizeof(PKeyEventPkt), &pkt) < 0)
 		perror("Failed to write keyboard event packet to client");
+}
+
+void Client::window_destroyed(Window* window) {
+	PWindowDestroyedPkt pkt = {PPKT_WINDOW_DESTROYED, window->id()};
+	if(write_packet(socketfs_fd, pid, sizeof(PWindowDestroyedPkt), &pkt) < 0)
+		perror("Failed to write window destroyed packet to client");
 }
 
 void Client::open_window(socketfs_packet* packet) {
@@ -127,11 +150,14 @@ void Client::destroy_window(socketfs_packet* packet) {
 	PWindowDestroyedPkt resp = {PPKT_WINDOW_DESTROYED, false};
 
 	//Find the window in question and remove it
-	auto window = windows.find(params->window_id);
-	if(window != windows.end()) {
-		delete window->second;
-		windows.erase(window);
-		resp.successful = true;
+	auto window_pair = windows.find(params->window_id);
+	if(window_pair != windows.end()) {
+		auto* window = window_pair->second;
+		if(window->parent() && window->parent()->is_decoration())
+			window = window->parent();
+		resp.window_id = window->id();
+		delete window;
+		windows.erase(window_pair);
 	}
 
 	if(write_packet(socketfs_fd, pid, sizeof(PWindowDestroyedPkt), &resp) < 0)

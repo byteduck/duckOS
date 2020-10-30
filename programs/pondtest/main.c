@@ -30,18 +30,18 @@ int main() {
 	if(window == NULL)
 		exit(-1);
 
-	memset(window->buffer, 0xAA, sizeof(PColor) * window->width * window->height);
+	memset(window->buffer, 0xAA, sizeof(*window->buffer) * window->width * window->height);
 	PInvalidateWindow(window);
 
 	while(1) {
 		PEvent event = PNextEvent();
 		if(event.type == PEVENT_MOUSE) {
-			window->buffer[window->mouse_x + window->mouse_y * window->width].r = 0;
-			//memset(window->buffer, 0xAA, sizeof(PColor) * window->width * window->height);
-			PInvalidateWindow(window);
+			window->buffer[window->mouse_x + window->mouse_y * window->width] = RGB(200,0,200);
+			PInvalidateWindowArea(window, window->mouse_x, window->mouse_y, 1, 1);
 		} else if(event.type == PEVENT_KEY) {
-			window->buffer[event.key.scancode].g = 0;
-			PInvalidateWindow(window);
-		}
+			if(event.key.character == 'q')
+				exit(0);
+		} else if(event.type == PEVENT_WINDOW_DESTROY)
+			break;
 	}
 }

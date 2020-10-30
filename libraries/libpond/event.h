@@ -45,7 +45,6 @@ typedef struct PWindowCreateEvent {
 
 typedef struct PWindowDestroyEvent {
 	int type; ///< Equal to PEVENT_WINDOW_DESTROY
-	int successful; ///< True if the destruction was successful
 	int id; ///< The ID of the window destroyed
 } PWindowDestroyEvent;
 

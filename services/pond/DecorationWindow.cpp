@@ -23,7 +23,7 @@
 
 DecorationWindow::DecorationWindow(Window* parent, const Rect& contents_rect): Window(parent, calculate_decoration_rect(contents_rect)) {
 	_contents = new Window(this, {DECO_LEFT_SIZE, DECO_TOP_SIZE, contents_rect.width, contents_rect.height});
-	_framebuffer.fill({0, 0, _rect.width, _rect.height}, {255, 255, 255});
+	_framebuffer.fill({0, 0, _rect.width, _rect.height}, RGB(255,255,255));
 	set_global_mouse(true);
 }
 
@@ -32,25 +32,27 @@ bool DecorationWindow::is_decoration() const {
 }
 
 void DecorationWindow::mouse_moved(Point relative_pos, int delta_x, int delta_y) {
-	if(dragging) {
-		if(drag_start == Point{-1, -1})
-			drag_start = relative_pos;
-		else
-			set_position(relative_pos + _absolute_rect.position() - drag_start);
-	}
 	Window::mouse_moved(relative_pos, delta_x, delta_y);
+	if(dragging) {
+		set_position((relative_pos - drag_start) + _absolute_rect.position());
+	}
 }
 
 void DecorationWindow::set_mouse_buttons(uint8_t buttons) {
+	if(buttons == _mouse_buttons)
+		return;
+	_mouse_buttons = buttons;
 	if(_mouse_position.in({0, 0, _rect.width, _rect.height})) {
-		dragging = buttons & MOUSE_1;
-		if(dragging)
-			focus();
+		focus();
+		move_to_front();
+		if(!_mouse_position.in(_contents->_rect)) {
+			dragging = buttons & MOUSE_1;
+			if(dragging)
+				drag_start = _mouse_position;
+		}
 	} else if(!(buttons & MOUSE_1)) {
 		dragging = false;
-		drag_start = {-1, -1};
 	}
-	Window::set_mouse_buttons(buttons);
 }
 
 void DecorationWindow::handle_keyboard_event(const KeyboardEvent& event) {

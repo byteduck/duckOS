@@ -21,16 +21,7 @@
 #define DUCKOS_TYPES_H
 
 #include <sys/types.h>
-
-/**
- * A 32-bit BRGA-format color that pond's framebuffers use.
- */
-typedef struct PColor {
-	uint8_t b;
-	uint8_t g;
-	uint8_t r;
-	uint8_t a;
-} PColor;
+#include "graphics/graphics.h"
 
 /**
  * A window Object representing a window in the Pond window system.
@@ -45,7 +36,7 @@ typedef struct PWindow {
 	int mouse_x; ///< The last-known x position of the mouse inside the window.
 	int mouse_y; ///< The last-known y position of the mouse inside the window.
 	unsigned int mouse_buttons; ///< A bitfield containing the last-known pressed mouse buttons inside the window.
-	PColor* buffer; ///< The window's framebuffer of size sizeof(PColor) * width * height.
+	uint32_t* buffer; ///< The window's framebuffer of size sizeof(uint32_t) * width * height.
 } PWindow;
 
 #endif //DUCKOS_TYPES_H

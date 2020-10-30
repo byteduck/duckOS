@@ -56,7 +56,7 @@ typedef struct PDestroyWindowPkt {
 
 typedef struct PWindowDestroyedPkt {
 	short _PACKET_ID; //PPKT_WINDOW_DESTROYED
-	int successful;
+	int window_id;
 } PWindowDestroyedPkt;
 
 typedef struct PMoveWindowPkt {

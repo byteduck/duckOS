@@ -19,11 +19,8 @@
 
 #include "Graphics.h"
 
-Color::Color(uint8_t r, uint8_t g, uint8_t b): b(b), g(g), r(r), a(0xFF) {}
-Color::Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a): b(b), g(g), r(r), a(a) {}
-
 Framebuffer::Framebuffer(): buffer(nullptr), width(0), height(0) {}
-Framebuffer::Framebuffer(Color* buffer, int width, int height): buffer(buffer), width(width), height(height) {}
+Framebuffer::Framebuffer(uint32_t* buffer, int width, int height): buffer(buffer), width(width), height(height) {}
 
 void Framebuffer::copy(const Framebuffer& other, Rect other_area, const Point& pos) const {
 	//Make sure self_area is in bounds of the framebuffer
@@ -45,7 +42,7 @@ void Framebuffer::copy(const Framebuffer& other, Rect other_area, const Point& p
 	}
 }
 
-void Framebuffer::fill(Rect area, const Color& color) const {
+void Framebuffer::fill(Rect area, uint32_t color) const {
 	//Make sure area is in the bounds of the framebuffer
 	area = area.overlapping_area({0, 0, width, height});
 	if(area.empty())
@@ -58,7 +55,7 @@ void Framebuffer::fill(Rect area, const Color& color) const {
 	}
 }
 
-Color* Framebuffer::at(const Point& position) const {
+uint32_t* Framebuffer::at(const Point& position) const {
 	if(position.x < 0 || position.y < 0 || position.y >= height || position.x >= width)
 		return NULL;
 

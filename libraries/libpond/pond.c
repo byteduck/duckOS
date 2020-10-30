@@ -118,17 +118,14 @@ PWindow* PCreateWindow(PWindow* parent, int x, int y, int width, int height) {
 int PDestroyWindow(PWindow* window) {
 	//Write the packet
 	PDestroyWindowPkt pkt;
-	pkt._PACKET_ID = PPKT_OPEN_WINDOW;
+	pkt._PACKET_ID = PPKT_DESTROY_WINDOW;
 	pkt.window_id = window->id;
-	if(write_packet(pond_fd, SOCKETFS_HOST, sizeof(PDestroyWindowPkt), &pkt) < 0)
+	if(write_packet(pond_fd, SOCKETFS_HOST, sizeof(PDestroyWindowPkt), &pkt) < 0) {
 		perror("Pond: Failed to write packet");
-
-	//Wait for the response
-	PEvent event = PNextEvent();
-	if(event.type != PEVENT_WINDOW_DESTROY)
 		return -1;
+	}
 
-	return event.window_destroy.successful;
+	return 0;
 }
 
 void PInvalidateWindow(PWindow* window) {

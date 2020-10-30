@@ -24,6 +24,7 @@
 #include <kernel/device/VGADevice.h>
 #include <cstring>
 #include <sys/input.h>
+#include <libgraphics/png.h>
 
 Display* Display::_inst = nullptr;
 
@@ -45,7 +46,7 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 		return;
 	}
 
-	Color* buffer;
+	uint32_t* buffer;
 
 	if(ioctl(framebuffer_fd, IO_VIDEO_MAP, &buffer) < 0) {
 		perror("Failed to map framebuffer");
@@ -67,7 +68,7 @@ Framebuffer Display::framebuffer() {
 	return _framebuffer;
 }
 
-void Display::clear(Color color) {
+void Display::clear(uint32_t color) {
 	size_t framebuffer_size = _dimensions.area();
 	for(size_t i = 0; i < framebuffer_size; i++) {
 		_framebuffer.buffer[i] = color;
@@ -76,6 +77,21 @@ void Display::clear(Color color) {
 
 void Display::set_root_window(Window* window) {
 	_root_window = window;
+
+	FILE* wallpaper = fopen("/usr/share/wallpapers/duck.png", "r");
+	if(!wallpaper) {
+		perror("Failed to open wallpaper");
+		return;
+	}
+
+	Image* png = load_png(wallpaper);
+	if(!png) {
+		fprintf(stderr, "Failed to load wallpaper.\n");
+		return;
+	}
+
+	_wallpaper = Framebuffer(png->data, png->width, png->height);
+	_root_window->framebuffer().copy(_wallpaper,{0, 0, png->width, png->height},{0, 0});
 }
 
 Window* Display::root_window() {
@@ -95,6 +111,8 @@ void Display::add_window(Window* window) {
 }
 
 void Display::remove_window(Window* window) {
+	if(window == _focused_window)
+		_focused_window = nullptr;
 	for(size_t i = 0; i < _windows.size(); i++) {
 		if(_windows[i] == window) {
 			_windows.erase(_windows.begin() + i);
@@ -117,8 +135,11 @@ void Display::repaint() {
 		return;
 
 	for(auto& area : invalid_areas) {
-		// Fill the invalid area with the background color.
-		fb.fill(area, {50, 50, 50});
+		// Fill the invalid area with the background.
+		if(_wallpaper.buffer)
+			fb.copy(_wallpaper, area, area.position());
+		else
+			fb.fill(area, RGB(50, 50, 50));
 
 		// See if each window overlaps the invalid area.
 		for(auto window : _windows) {
@@ -153,8 +174,8 @@ void Display::flip_buffers() {
 		return;
 	paint_time = new_time;
 
-	//Copy to the graphics buffer and mark the display buffer clean
-	memcpy(_framebuffer.buffer, _root_window->framebuffer().buffer, sizeof(Color) * _framebuffer.width * _framebuffer.height);
+	//Copy to the libgraphics buffer and mark the display buffer clean
+	memcpy(_framebuffer.buffer, _root_window->framebuffer().buffer, IMGSIZE(_framebuffer.width, _framebuffer.height));
 	display_buffer_dirty = false;
 }
 

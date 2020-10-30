@@ -35,7 +35,7 @@ public:
 
 	Rect dimensions();
 	Framebuffer framebuffer();
-	void clear(Color color);
+	void clear(uint32_t color);
 
 	/**
 	 * Sets the root window of the display. Its framebuffer will be used to buffer draws.
@@ -79,7 +79,7 @@ public:
 	void repaint();
 
 	/**
-	 * Copies the screen buffer to graphics memory if necessary
+	 * Copies the screen buffer to libgraphics memory if necessary
 	 */
 	void flip_buffers();
 
@@ -120,6 +120,7 @@ public:
 private:
 	int framebuffer_fd = 0;
 	Framebuffer _framebuffer;
+	Framebuffer _wallpaper = {nullptr, 0, 0};
 	Rect _dimensions;
 	std::vector<Rect> invalid_areas;
 	std::vector<Window*> _windows;
