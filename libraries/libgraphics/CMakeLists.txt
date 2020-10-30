@@ -1,2 +1,2 @@
 SET(SOURCES png.c deflate.c)
-MAKE_LIBRARY(graphics)
+MAKE_LIBRARY(libgraphics)
