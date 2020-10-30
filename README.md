@@ -15,6 +15,7 @@ If some of this code looks familiar, it's because it's based off of my previous 
 - Dynamic linking with shared libraries
 - A Bochs/Qemu/VirtualBox/Multiboot video driver (640x480x32bpp)
 - A filesystem called SocketFS that allows processes to open a socket by creating a file in `/sock/` that other processes can then read and write to using a defined packet struct
+- An experimental window manager / compositor called pond
  
 ### Services
 
@@ -47,6 +48,14 @@ The code for these can be found in [programs](programs/).
   - There is only support for one redirection at a time right now.
 
 Programs that take arguments will provide you with the correct usage when you run them without arguments.
+
+
+### Libraries
+
+- [libc](libraries/libc): The standard C library.
+- [libm](libraries/libm): The math portion of the standard C library.
+- [libpond](libraries/libpond): The library used for interfacing with the pond window manager / compositor.
+- [libgraphics](libraries/graphics): A library which provides a few utilities for working with graphics such as image format loading.
 
 ### Ports
 - DOOM ([duckos-doom](https://github.com/byteduck/duckos-doom)): A port of DOOM. A little buggy at the moment, but playable. I'm waiting to  fix the bugs until I have a proper window manager since there's no sense in dedicating time to making it work in a graphical TTY.

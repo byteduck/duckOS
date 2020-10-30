@@ -270,7 +270,7 @@ int fgetc(FILE* stream) {
 		stream->eof = 1;
 		return EOF;
 	}
-	return *buf;
+	return (unsigned char) *buf;
 }
 
 char* fgets(char* s, int n, FILE* stream) {
