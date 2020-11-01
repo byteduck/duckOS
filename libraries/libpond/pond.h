@@ -36,6 +36,12 @@ __DECL_BEGIN
 int PInit();
 
 /**
+ * Returns a nonzero value if there is an event waiting to be handled by PNextEvent.
+ * @return 0 if there are no events waiting, a nonzero value if there are
+ */
+int PHasEvent();
+
+/**
  * Waits for the next event from pond and returns it.
  * @return The event.
  */

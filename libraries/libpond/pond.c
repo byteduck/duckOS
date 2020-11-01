@@ -35,6 +35,12 @@ int PInit() {
 	return 0;
 }
 
+int PHasEvent() {
+	struct pollfd pfd = {pond_fd, POLLIN, 0};
+	poll(&pfd, 1, 0);
+	return pfd.revents & POLLIN;
+}
+
 PEvent PNextEvent() {
 	//Wait for the socket to be ready for reading
 	struct pollfd pfd = {pond_fd, POLLIN, 0};
