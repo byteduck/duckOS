@@ -20,7 +20,7 @@
 #include <kernel/kstddef.h>
 #include <kernel/interrupt/idt.h>
 #include <kernel/interrupt/irq.h>
-#include <kernel/kstdio.h>
+#include <kernel/tasking/TaskManager.h>
 #include "IRQHandler.h"
 
 namespace Interrupt {
@@ -93,6 +93,9 @@ namespace Interrupt {
 		outb(PIC1_COMMAND, 0x20); //Send EOI to controller
 
 		_in_interrupt = false;
+
+		//If we need to yield asynchronously after the interrupt because we called TaskManager::yield() during it, do so
+		TaskManager::do_yield_async();
 	}
 
 	bool in_interrupt() {

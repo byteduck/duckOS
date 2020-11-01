@@ -25,9 +25,6 @@ PollBlocker::PollBlocker(DC::vector<PollFD>& pollfd, int timeout): polls(pollfd)
 }
 
 bool PollBlocker::is_ready() {
-	if(timeout >= 0 && PIT::get_mseconds() - start_time >= timeout)
-		return true;
-
 	for(size_t i = 0; i < polls.size(); i++) {
 		auto& poll = polls[i];
 
@@ -43,6 +40,9 @@ bool PollBlocker::is_ready() {
 			return true;
 		}
 	}
+
+	if(timeout >= 0 && PIT::get_mseconds() - start_time >= timeout)
+		return true;
 
 	return false;
 }

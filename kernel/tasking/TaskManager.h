@@ -43,8 +43,9 @@ namespace TaskManager {
 	Process *process_for_ppid(pid_t ppid, pid_t exclude = -1);
 	Process *process_for_sid(pid_t sid, pid_t exclude = -1);
 
-	void yield();
-	void yield_if_idle();
+	bool yield();
+	bool yield_if_idle();
+	void do_yield_async();
 
 	void notify_current(uint32_t sig);
 

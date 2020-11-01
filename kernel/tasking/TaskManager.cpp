@@ -33,6 +33,7 @@ Process *kidle_proc;
 
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
+bool yield_async = false;
 
 void kidle(){
 	tasking_enabled = true;
@@ -156,18 +157,29 @@ Process *TaskManager::next_process() {
 
 static uint8_t quantum_counter = 0;
 
-void TaskManager::yield() {
+bool TaskManager::yield() {
+	quantum_counter = 0;
 	if(Interrupt::in_interrupt()) {
-		preempt();
+		// We can't yield in an interrupt. Instead, we'll yield immediately after we exit the interrupt
+		yield_async = true;
+		return false;
 	} else {
-		quantum_counter = 0;
 		preempt_now_asm();
+		return true;
 	}
 }
 
-void TaskManager::yield_if_idle() {
+bool TaskManager::yield_if_idle() {
 	if(current_proc == kidle_proc)
-		yield();
+		return yield();
+	return false;
+}
+
+void TaskManager::do_yield_async() {
+	if(yield_async) {
+		yield_async = false;
+		preempt_now_asm();
+	}
 }
 
 void TaskManager::preempt(){
@@ -259,9 +271,8 @@ void TaskManager::preempt(){
 		}
 
 		//Switch tasks.
-		if(should_preempt) {
+		if(should_preempt)
 			preempt_asm(old_esp, new_esp, current_proc->page_directory_loc);
-		}
 	} else {
 		quantum_counter--;
 	}
