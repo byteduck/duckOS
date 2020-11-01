@@ -100,6 +100,7 @@ FILE* filelist_last = &__stderr;
 
 void filelist_insert(FILE* file) {
 	filelist_last->next = file;
+	file->prev = filelist_last;
 	filelist_last = file;
 }
 
@@ -315,6 +316,7 @@ int fprintf(FILE* stream, const char* format, ...) {
 }
 
 int fscanf(FILE* stream, const char* format, ...) {
+	//TODO
 	return -1;
 }
 
@@ -335,11 +337,19 @@ int scanf(const char* format, ...) {
 }
 
 int snprintf(char* s, size_t n, const char* format, ...) {
-	return -1;
+	va_list args;
+	va_start(args, format);
+	int ret = vsnprintf(s, n, format, args);
+	va_end(args);
+	return ret;
 }
 
 int sprintf(char* s, const char* format, ...) {
-	return -1;
+	va_list args;
+	va_start(args, format);
+	int ret = vsprintf(s, format, args);
+	va_end(args);
+	return ret;
 }
 
 int sscanf(const char* s, const char* format, ...) {
@@ -367,7 +377,7 @@ int vscanf(const char* format, va_list arg) {
 }
 
 int vsprintf(char* s, const char* format, va_list arg) {
-	return -1;
+	return vsnprintf(s, SIZE_MAX, format, arg);
 }
 
 int vsscanf(const char* s, const char* format, va_list arg) {

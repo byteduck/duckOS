@@ -177,6 +177,13 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 					*buf++ = 'x';
 					len += 2;
 				}
+
+				//Precision can also be used for zero padding with ints / hex
+				if(precision != -1) {
+					arg_width = precision;
+					zero_pad = true;
+				}
+
 				if(size == 2) { //long long
 					unsigned long long val = (unsigned long long) va_arg(arg, unsigned long long);
 					if(val > 0xFFFFFFFF)
@@ -210,6 +217,12 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 					len++;
 				}
 
+				//Precision can also be used for zero padding with ints / hex
+				if(precision != -1) {
+					arg_width = precision;
+					zero_pad = true;
+				}
+
 				dec_str(val, &buf, arg_width, n, &len, zero_pad ? '0' : ' ');
 				break;
 			}
@@ -229,6 +242,12 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 				} else if(space_no_sign) {
 					*buf++ = ' ';
 					len++;
+				}
+
+				//Precision can also be used for zero padding with ints / hex
+				if(precision != -1) {
+					arg_width = precision;
+					zero_pad = true;
 				}
 
 				dec_str(val, &buf, arg_width, n, &len, zero_pad ? '0' : ' ');

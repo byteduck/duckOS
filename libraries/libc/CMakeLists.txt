@@ -10,6 +10,7 @@ SET(SOURCES
         stdio.c
         stdlib.c
         string.c
+        strings.c
         sys/ioctl.c
         sys/mem.c
         sys/printf.c
