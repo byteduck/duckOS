@@ -55,7 +55,7 @@ Programs that take arguments will provide you with the correct usage when you ru
 - [libc](libraries/libc): The standard C library.
 - [libm](libraries/libm): The math portion of the standard C library.
 - [libpond](libraries/libpond): The library used for interfacing with the pond window manager / compositor.
-- [libgraphics](libraries/graphics): A library which provides a few utilities for working with graphics such as image format loading.
+- [libgraphics](libraries/libgraphics): A library which provides a few utilities for working with graphics such as image format loading.
 
 ### Ports
 - DOOM ([duckos-doom](https://github.com/byteduck/duckos-doom)): A port of DOOM. A little buggy at the moment, but playable. I'm waiting to  fix the bugs until I have a proper window manager since there's no sense in dedicating time to making it work in a graphical TTY.

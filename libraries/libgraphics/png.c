@@ -38,6 +38,7 @@ const uint8_t PNG_HEADER[] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
 
 #define STATE_SCANLINE_BEGIN 1
 #define STATE_READPIXEL 2
+#define STATE_DONE 3
 
 #define PNG_FILTERTYPE_NONE 0
 #define PNG_FILTERTYPE_SUB 1
@@ -87,9 +88,13 @@ void put_pixel(PNG* png, uint32_t color) {
 	png->pixel_buffer_pos = 0;
 	png->pixel_x++;
 	if(png->pixel_x == png->ihdr.width) {
-		png->state = STATE_SCANLINE_BEGIN;
-		png->pixel_x = 0;
-		png->pixel_y++;
+		if(png->pixel_y == png->ihdr.height - 1) {
+			png->state = STATE_DONE;
+		} else {
+			png->state = STATE_SCANLINE_BEGIN;
+			png->pixel_x = 0;
+			png->pixel_y++;
+		}
 	}
 }
 
@@ -244,8 +249,7 @@ uint8_t png_read(void* png_void) {
 	PNG* png = (PNG*) png_void;
 	if(png->chunk_size == 0) {
 		//Reached end of IDAT, read next one
-		fseek(png->file, 4, SEEK_CUR); //Ignore CRC
-
+		fget32(png->file); //Ignore CRC
 		png->chunk_size = fget32(png->file);
 		png->chunk_type = fget32(png->file);
 		if(png->chunk_type != CHUNK_IDAT)
@@ -277,7 +281,8 @@ Image* load_png(FILE* file) {
 	while(1) {
 		png.chunk_size = fget32(file);
 		png.chunk_type = fget32(file);
-		if(feof(file)) break;
+		if(feof(file) || png.state == STATE_DONE)
+			break;
 
 		if(chunk == 0 && png.chunk_type != CHUNK_IHDR) {
 			fprintf(stderr, "PNG: No IHDR chunk 0x%lx\n", png.chunk_type);
@@ -328,8 +333,8 @@ Image* load_png(FILE* file) {
 			png.image.data = malloc(IMGSIZE(png.image.width, png.image.height));
 
 			//Skip unused bytes
-			if(png.chunk_size > 13)
-				fseek(file, png.chunk_size - 13, SEEK_CUR);
+			for(size_t i = 13; i < png.chunk_size; i++)
+				fgetc(file);
 		} else if(png.chunk_type == CHUNK_IDAT) {
 			uint8_t zlib_method = fgetc(file);
 			if((zlib_method & 0xFu) != 0x8) {
@@ -354,10 +359,12 @@ Image* load_png(FILE* file) {
 		} else if(png.chunk_type == CHUNK_IEND) {
 			break;
 		} else {
-			fseek(file, png.chunk_size, SEEK_CUR);
+			//Since fseek() clears the read buffer, this is usually faster
+			for(uint32_t i = 0; i < png.chunk_size; i++)
+				fgetc(file);
 		}
 
-		fseek(file, 4, SEEK_CUR); //Skip CRC
+		fget32(file); //Skip CRC
 		chunk++;
 	}
 
