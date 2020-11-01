@@ -67,12 +67,10 @@ Programs that take arguments will provide you with the correct usage when you ru
 - Ext2 triply indirect block pointers cannot be read/written, so there may be issues writing and reading large files
 - A buffer overflow attack on the kernel may be possible, because only pointers passed to syscalls are checked for validity (and not the length of the data to be read/written)
 - Dynamic linking does not currently use CoW to share memory between processes, so each process has its own copy of the library in memory
-- C++ programs must be statically linked due to an incompatibility with the linker
 - It's pretty unstable
 
 ### Future Goals
-- Make shared libraries actually use CoW to save memory
-- A desktop environment with a window manager and compositor
+- Make shared libraries use CoW to save memory
 - Better support for real hardware
 - Network support
 - Sound support

@@ -315,7 +315,7 @@ int Object::read_dynamic_table() {
 						break;
 
 					case DT_INIT_ARRAYSZ:
-						init_array_size = dynamic.d_val;
+						init_array_size = dynamic.d_val / sizeof(uintptr_t);
 						break;
 				}
 			}
