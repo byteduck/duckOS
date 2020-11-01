@@ -92,6 +92,19 @@ size_t strxfrm(char* dest, const char* src, size_t n) {
 	return i;
 }
 
+char* strdup(const char* s) {
+	char* ret = malloc(strlen(s) + 1);
+	strcpy(ret, s);
+	return ret;
+}
+
+char* strndup(const char* s, size_t n) {
+	size_t len = strlen(s);
+	char* ret = malloc(len > n ? n : len);
+	strncpy(ret, s, n);
+	return ret;
+}
+
 //Comparison
 
 int memcmp(const void* a, const void* b, size_t n) {

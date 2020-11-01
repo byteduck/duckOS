@@ -36,6 +36,9 @@ char* strncpy(char* dest, const char* src, size_t n);
 char* strcat(char* dest, const char* src);
 char* strncat(char* dest, const char* src, size_t n);
 size_t strxfrm(char* dest, const char* src, size_t n);
+char* strdup(const char* s);
+char* strndup(const char* s, size_t n);
+
 
 //Comparison
 int memcmp(const void* a, const void* b, size_t n);
