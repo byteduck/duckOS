@@ -29,36 +29,89 @@
 struct FILE {
 	int fd;
 	int options;
-	off_t offset;
 	int ungetc;
 	int eof;
+	ssize_t err;
+	char* buffer;
+	uint8_t bufmode; //The buffer mode (_IOFBF, _IOLBF, _IONBF)
+	size_t offset; //The current offset into the buffer
+	size_t bufavail; //The amount of bytes from the beginning of the buffer that can be read
+	size_t bufsiz; //The size of the buffer
+	FILE* next; //The next file in the linked list of all open files
+	FILE* prev; //The previous file in the linked list of all open files
 };
+
+bool can_read(FILE* file) {
+	return file->options & O_RDWR || !(file->options & O_WRONLY);
+}
+
+bool can_write(FILE* file) {
+	return file->options & O_RDWR || file->options & O_WRONLY;
+}
 
 FILE __stdin = {
 		.fd = STDIN_FILENO,
 		.options = O_RDONLY,
-		.offset = 0,
 		.ungetc = -1,
-		.eof = 0
+		.eof = 0,
+		.err = 0,
+		.buffer = NULL,
+		.bufmode = _IONBF,
+		.offset = 0,
+		.bufavail = 0,
+		.bufsiz = 0,
+		.next = &__stdout,
+		.prev = NULL
 };
 
 FILE __stdout = {
 		.fd = STDOUT_FILENO,
 		.options = O_WRONLY,
-		.offset = 0,
 		.ungetc = -1,
-		.eof = 0
+		.eof = 0,
+		.err = 0,
+		.buffer = NULL,
+		.bufmode = _IONBF,
+		.offset = 0,
+		.bufavail = 0,
+		.bufsiz = 0,
+		.next = &__stderr,
+		.prev = &__stdin
 };
 
 FILE __stderr = {
 		.fd = STDERR_FILENO,
 		.options = O_WRONLY,
-		.offset = 0,
 		.ungetc = -1,
-		.eof = 0
+		.eof = 0,
+		.err = 0,
+		.buffer = NULL,
+		.bufmode = _IONBF,
+		.offset = 0,
+		.bufavail = 0,
+		.bufsiz = 0,
+		.next = NULL,
+		.prev = &__stdout
 };
 
 //File stuff
+FILE* filelist_first = &__stdin;
+FILE* filelist_last = &__stderr;
+
+void filelist_insert(FILE* file) {
+	filelist_last->next = file;
+	filelist_last = file;
+}
+
+void filelist_remove(FILE* file) {
+	if(file->next)
+		file->next->prev = file->prev;
+	if(file->prev)
+		file->prev->next = file->next;
+	if(file == filelist_last)
+		filelist_last = file->prev;
+}
+
 int remove(const char* filename) {
 	return syscall2(SYS_UNLINK, (int) filename);
 }
@@ -79,12 +132,45 @@ char* tmpnam(char* s) {
 }
 
 int fclose(FILE* stream) {
-	return close(stream->fd);
+	int flush_result = fflush(stream);
+	int close_result = close(stream->fd);
+	if(flush_result < 0)
+		errno = stream->err;
+	filelist_remove(stream);
+	return !flush_result && !close_result ? 0 : -1;
 }
 
 int fflush(FILE* stream) {
-	//TODO
-	return -1;
+	if(stream->bufmode == _IONBF)
+		return 0;
+
+	if(can_write(stream) && !stream->bufavail) {
+		//Flush the data written to the buffer
+		int res = write(stream->fd, stream->buffer, stream->offset);
+		if(res < 0)
+			stream->err = errno;
+	}
+
+	if(can_read(stream) && stream->bufavail) {
+		//Seek back to where we were in the read buffer so it's where the user expects
+		int res = lseek(stream->fd, -(stream->bufavail - stream->offset), SEEK_CUR);
+		if(res < 0) {
+			//Can't seek pipes, we don't care
+			if(errno == ESPIPE) {
+				errno = 0;
+				return 0;
+			}
+
+			stream->err = errno;
+			return -1;
+		}
+	}
+
+	//Clear the buffer
+	stream->offset = 0;
+	stream->bufavail = 0;
+
+	return 0;
 }
 
 int parse_str_options(const char* mode) {
@@ -140,10 +226,16 @@ FILE* fopen(const char* filename, const char* mode) {
 	//Make the file
 	FILE* ret = malloc(sizeof(FILE));
 	ret->fd = fd;
-	ret->offset = 0;
 	ret->options = options;
 	ret->ungetc = -1;
 	ret->eof = 0;
+	ret->err = 0;
+	ret->bufsiz = 0;
+	ret->buffer = NULL;
+	ret->bufavail = 0;
+	ret->offset = 0;
+	setvbuf(ret, NULL, _IOFBF, BUFSIZ);
+	filelist_insert(ret);
 
 	return ret;
 }
@@ -159,24 +251,53 @@ FILE* fdopen(int fd, const char* mode) {
 	//Make the file
 	FILE* ret = malloc(sizeof(FILE));
 	ret->fd = fd;
-	ret->offset = -1;
 	ret->options = options;
 	ret->ungetc = -1;
 	ret->eof = 0;
+	ret->err = 0;
+	ret->bufsiz = 0;
+	ret->buffer = NULL;
+	ret->bufavail = 0;
+	ret->offset = 0;
+	setvbuf(ret, NULL, _IOFBF, BUFSIZ);
 
 	return 0;
 }
 
 FILE* freopen(const char* filename, const char* mode, FILE* stream) {
+	stream->err = 0;
 	return NULL;
 }
 
 void setbuf(FILE* stream, char* buf) {
-
+	setvbuf(stream, buf, buf ? _IOFBF : _IONBF, BUFSIZ);
 }
 
 int setvbuf(FILE* stream, char* buf, int mode, size_t size) {
-	return -1;
+	if(mode != _IOFBF && mode != _IOLBF && mode != _IONBF)
+		return -1;
+
+	//Free the previous buffer if there is one
+	fflush(stream);
+	if(stream->buffer)
+		free(stream->buffer);
+
+	//If the mode is _IONBF, don't set a buffer
+	stream->bufmode = mode;
+	if(mode == _IONBF) {
+		stream->buffer = NULL;
+		stream->bufsiz = 0;
+		return 0;
+	}
+
+	//Allocate or set the buffer
+	if(buf)
+		stream->buffer = buf;
+	else
+		stream->buffer = malloc(size);
+	stream->bufsiz = size;
+
+	return 0;
 }
 
 int fileno(FILE* stream) {
@@ -266,10 +387,7 @@ int vsnprintf(char* s, size_t n, const char* format, va_list arg) {
 //Character input/output
 int fgetc(FILE* stream) {
 	char buf[1];
-	if(fread(buf, 1, 1, stream) <= 0) {
-		stream->eof = 1;
-		return EOF;
-	}
+	fread(buf, 1, 1, stream);
 	return (unsigned char) *buf;
 }
 
@@ -354,26 +472,106 @@ int ungetc(int c, FILE* stream) {
 
 //Direct input/output
 size_t fread(void* ptr, size_t size, size_t count, FILE* stream) {
-	if(count <= 0)
+	if(!count || !size)
 		return 0;
 
-	//If we have something in ungetc, account for that
-	if(stream->ungetc >= 0) {
-		stream->ungetc = -1;
-		((char*) ptr)[0] = stream->ungetc;
+	char* buf = (char*) ptr;
+	size_t len = count * size;
+	size_t nread = 0;
 
-		ssize_t nread = read(stream->fd, ptr + 1, (count * size) - 1);
-		if(nread == -1)
-			return nread;
-		return nread + 1;
+	//If we have something in ungetc, first account for that
+	if(stream->ungetc >= 0) {
+		*(buf++) = stream->ungetc;
+		stream->ungetc = -1;
+		nread++;
+		len--;
 	}
 
-	//Otherwise, just read
-	return read(stream->fd, ptr, count * size);
+	//If we don't have a buffer, just read directly
+	if(stream->bufmode == _IONBF) {
+		//Read directly from the file
+		ssize_t res = read(stream->fd, buf, len);
+		if(res < 0)
+			stream->err = res;
+		else if(res < len)
+			stream->eof = 1;
+		else
+			nread += res;
+
+		return nread / size;
+	}
+
+	while(len) {
+		size_t bufleft = stream->bufavail - stream->offset;
+		size_t nbuf = bufleft < len ? bufleft : len;
+
+		//If there's nothing left in the buffer, read into it
+		if(!nbuf) {
+			//If we previously reached eof, break
+			if(stream->eof)
+				break;
+			fflush(stream);
+			ssize_t res = read(stream->fd, stream->buffer, stream->bufsiz);
+			if(res < 0) {
+				stream->err = errno;
+				break;
+			} else if(res == 0)
+				stream->eof = 1;
+			stream->bufavail = res;
+			continue;
+		}
+
+		//Copy from the buffer
+		memcpy(buf, stream->buffer + stream->offset, nbuf);
+		buf += nbuf;
+		nread += nbuf;
+		len -= nbuf;
+		stream->offset += nbuf;
+	}
+
+	return nread / size;
 }
 
 size_t fwrite(const void* ptr, size_t size, size_t count, FILE* stream) {
-	return write(stream->fd, ptr, count * size);
+	//If we're in no buffer mode, write directly
+	if(stream->bufmode == _IONBF) {
+		int res = write(stream->fd, ptr, count * size);
+		if(res < 0) {
+			stream->err = errno;
+			return 0;
+		}
+		return res;
+	}
+
+	const char* buf = (const char*) ptr;
+	size_t len = count * size;
+	size_t nwrote = 0;
+
+	while(len) {
+		size_t bufleft = stream->bufsiz - stream->offset;
+		size_t nbuf = bufleft < len ? bufleft : len;
+
+		//If there's no space left in the buffer or we had previously used it for reading, flush
+		if(!nbuf || stream->bufavail) {
+			fflush(stream);
+			continue;
+		}
+
+		//Copy to the buffer
+		memcpy(stream->buffer + stream->offset, buf, nbuf);
+		nwrote += nbuf;
+		len -= nbuf;
+		stream->offset += nbuf;
+		stream->bufavail = 0;
+
+		//If we are in line buffered mode and we wrote a newline, flush
+		if(stream->bufmode == _IOLBF && memchr(buf, '\n', nwrote))
+			fflush(stream);
+
+		buf += nbuf;
+	}
+
+	return nwrote / size;
 }
 
 //File positioning
@@ -385,6 +583,9 @@ int fgetpos(FILE* stream, fpos_t* pos) {
 }
 
 int fseek(FILE* stream, long int offset, int whence) {
+	fflush(stream);
+	stream->eof = 0;
+	stream->ungetc = -1;
 	return lseek(stream->fd, offset, whence);
 }
 
@@ -393,7 +594,9 @@ int fsetpos(FILE* stream, const fpos_t* pos) {
 }
 
 long int ftell(FILE* stream) {
-	return stream->offset; //TODO Handle if file was opened with fdopen
+	if(fflush(stream) < 0)
+		return -1;
+	return lseek(stream->fd, 0, SEEK_CUR);
 }
 
 void rewind(FILE* stream) {
@@ -403,6 +606,7 @@ void rewind(FILE* stream) {
 //Error handling
 void clearerr(FILE* stream) {
 	stream->eof = 0;
+	stream->err = 0;
 }
 
 int feof(FILE* stream) {
@@ -410,7 +614,7 @@ int feof(FILE* stream) {
 }
 
 int ferror(FILE* stream) {
-	return 0; //TODO
+	return stream->err;
 }
 
 void perror(const char* s) {
@@ -419,5 +623,15 @@ void perror(const char* s) {
 
 //Internal
 void __init_stdio() {
-	//TODO
+	setvbuf(&__stdin, NULL, _IOLBF, BUFSIZ);
+	setvbuf(&__stdout, NULL, _IOLBF, BUFSIZ);
+	setvbuf(&__stderr, NULL, _IOLBF, BUFSIZ);
+}
+
+void __cleanup_stdio() {
+	FILE* cur = filelist_first;
+	while(cur) {
+		fclose(cur);
+		cur = cur->next;
+	}
 }

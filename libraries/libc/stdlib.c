@@ -341,8 +341,7 @@ __attribute__((noreturn)) void exit(int status) {
 		atexit_funcs[i]();
 	__cxa_finalize(NULL);
 	//_fini(); TODO: Figure out why this causes a segfault
-	fflush(stdout);
-	fflush(stderr);
+	__cleanup_stdio();
 	_exit(status);
 	__builtin_unreachable();
 }

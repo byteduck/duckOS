@@ -114,6 +114,7 @@ void perror(const char* s);
 
 //Internal stuff
 void __init_stdio();
+void __cleanup_stdio();
 
 __DECL_END
 
