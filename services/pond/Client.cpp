@@ -20,7 +20,7 @@
 #include "Client.h"
 #include "DecorationWindow.h"
 #include "Display.h"
-#include <libpond/pond.h>
+#include <libpond/PContext.h>
 
 Client::Client(int socketfs_fd, pid_t pid): socketfs_fd(socketfs_fd), pid(pid) {
 
@@ -71,25 +71,25 @@ void Client::handle_packet(socketfs_packet* packet) {
 }
 
 void Client::mouse_moved(Window* window, Point new_position) {
-	PMouseMovePkt pkt = {PPKT_MOUSE_MOVE, window->id(), new_position.x, new_position.y};
+	PMouseMovePkt pkt {window->id(), new_position.x, new_position.y};
 	if(write_packet(socketfs_fd, pid, sizeof(PMouseMovePkt), &pkt) < 0)
 		perror("Failed to write mouse movement packet to client");
 }
 
 void Client::mouse_buttons_changed(Window* window, uint8_t new_buttons) {
-	PMouseButtonPkt pkt = {PPKT_MOUSE_BUTTON, window->id(), new_buttons};
+	PMouseButtonPkt pkt {window->id(), new_buttons};
 	if(write_packet(socketfs_fd, pid, sizeof(PMouseButtonPkt), &pkt) < 0)
 		perror("Failed to write mouse button packet to client");
 }
 
 void Client::keyboard_event(Window* window, const KeyboardEvent& event) {
-	PKeyEventPkt pkt = {PPKT_KEY_EVENT, window->id(), event.scancode, event.key, event.character, event.modifiers};
+	PKeyEventPkt pkt {window->id(), event.scancode, event.key, event.character, event.modifiers};
 	if(write_packet(socketfs_fd, pid, sizeof(PKeyEventPkt), &pkt) < 0)
 		perror("Failed to write keyboard event packet to client");
 }
 
 void Client::window_destroyed(Window* window) {
-	PWindowDestroyedPkt pkt = {PPKT_WINDOW_DESTROYED, window->id()};
+	PWindowDestroyedPkt pkt {window->id()};
 	if(write_packet(socketfs_fd, pid, sizeof(PWindowDestroyedPkt), &pkt) < 0)
 		perror("Failed to write window destroyed packet to client");
 }
@@ -108,8 +108,7 @@ void Client::open_window(socketfs_packet* packet) {
 		auto parent_window = windows.find(params->parent);
 		if(parent_window == windows.end()) {
 			//Write a non-successful response; the parent window couldn't be found
-			PWindowOpenedPkt response;
-			response.successful = false;
+			PWindowOpenedPkt response(-1);
 			write_packet(socketfs_fd, pid, sizeof(PWindowOpenedPkt), &response);
 			return;
 		} else {
@@ -126,17 +125,10 @@ void Client::open_window(socketfs_packet* packet) {
 	shmallow(window->framebuffer_shm().id, pid, SHM_WRITE | SHM_READ);
 
 	//Write the response packet
-	PWindowOpenedPkt resp;
-	resp._PACKET_ID = PPKT_WINDOW_OPENED;
 	Rect wrect = window->rect();
-	resp.window.width = wrect.width;
-	resp.window.height = wrect.height;
-	resp.window.x = wrect.x;
-	resp.window.y = wrect.y;
-	resp.window.id = window->id();
-	resp.window.shm_id = window->framebuffer_shm().id;
-	resp.window.buffer = nullptr;
-	resp.successful = true;
+	PWindow pwindow;
+	PWindowOpenedPkt resp {window->id(), wrect.x, wrect.y, wrect.width, wrect.height, window->framebuffer_shm().id};
+	resp._PACKET_ID = PPKT_WINDOW_OPENED;
 	if(write_packet(socketfs_fd, pid, sizeof(PWindowOpenedPkt), &resp) < 0)
 		perror("Failed to write window opened packet to client");
 }
@@ -147,7 +139,7 @@ void Client::destroy_window(socketfs_packet* packet) {
 
 	auto* params = (PDestroyWindowPkt*) packet->data;
 
-	PWindowDestroyedPkt resp = {PPKT_WINDOW_DESTROYED, false};
+	PWindowDestroyedPkt resp { -1 };
 
 	//Find the window in question and remove it
 	auto window_pair = windows.find(params->window_id);
@@ -179,7 +171,7 @@ void Client::move_window(socketfs_packet* packet) {
 		else
 			window->set_position({params->x, params->y});
 
-		PWindowMovedPkt resp = {PPKT_WINDOW_MOVED, window->id(), params->x, params->y};
+		PWindowMovedPkt resp {window->id(), params->x, params->y};
 		if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &resp) < 0)
 			perror("Failed to write window moved packet to client");
 	}
@@ -200,7 +192,7 @@ void Client::resize_window(socketfs_packet* packet) {
 		else
 			window->set_dimensions({params->width, params->height});
 
-		PWindowResizedPkt resp = {PPKT_WINDOW_MOVED, window->id(), params->width, params->height, window->framebuffer_shm().id};
+		PWindowResizedPkt resp {window->id(), params->width, params->height, window->framebuffer_shm().id};
 		if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &resp) < 0)
 			perror("Failed to write window moved packet to client");
 	}

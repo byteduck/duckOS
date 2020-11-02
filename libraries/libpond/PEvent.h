@@ -20,7 +20,7 @@
 #ifndef DUCKOS_LIBPOND_EVENT_H
 #define DUCKOS_LIBPOND_EVENT_H
 
-#include "types.h"
+#include "PWindow.h"
 #include <sys/socketfs.h>
 
 #define PEVENT_UNKNOWN 0
@@ -88,13 +88,5 @@ typedef union PEvent {
 	PMouseEvent mouse;
 	PKeyEvent key;
 } PEvent;
-
-void PHandleOpenWindow(socketfs_packet* packet, PEvent* event);
-void PHandleDestroyWindow(socketfs_packet* packet, PEvent* event);
-void PHandleMoveWindow(socketfs_packet* packet, PEvent* event);
-void PHandleResizeWindow(socketfs_packet* packet, PEvent* event);
-void PHandleMouseMove(socketfs_packet* packet, PEvent* event);
-void PHandleMouseButton(socketfs_packet* packet, PEvent* event);
-void PHandleKeyEvent(socketfs_packet* packet, PEvent* event);
 
 #endif //DUCKOS_LIBPOND_EVENT_H

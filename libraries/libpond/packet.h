@@ -34,89 +34,106 @@
 #define PPKT_MOUSE_BUTTON 11
 #define PPKT_KEY_EVENT 12
 
-typedef struct POpenWindowPkt {
-	short _PACKET_ID; //PPKT_OPEN_WINDOW
+struct POpenWindowPkt {
+	explicit POpenWindowPkt(int parent, int width, int height, int x, int y): parent(parent), width(width), height(height), x(x), y(y) {}
+	short _PACKET_ID = PPKT_OPEN_WINDOW;
 	int parent;
 	int width;
 	int height;
 	int x;
 	int y;
-} POpenWindowPkt;
+};
 
-typedef struct PWindowOpenedPkt {
-	short _PACKET_ID; //PPKT_WINDOW_OPENED
-	int successful;
-	PWindow window;
-} PWindowOpenedPkt;
+struct PWindowOpenedPkt {
+	explicit PWindowOpenedPkt(int window_id): window_id(window_id) {}
+	explicit PWindowOpenedPkt(int window_id, int x, int y, int width, int height, int shm_id): window_id(window_id), x(x), y(y), width(width), height(height), shm_id(shm_id) {}
+	short _PACKET_ID = PPKT_WINDOW_OPENED;
+	int window_id = -1;
+	int x = -1;
+	int y = -1;
+	int width = -1;
+	int height = -1;
+	int shm_id = -1;
+};
 
-typedef struct PDestroyWindowPkt {
-	short _PACKET_ID; //PPKT_DESTROY_WINDOW
+struct PDestroyWindowPkt {
+	explicit PDestroyWindowPkt(int window_id): window_id(window_id) {}
+	short _PACKET_ID = PPKT_DESTROY_WINDOW;
 	int window_id;
-} PDestroyWindowPkt;
+};
 
-typedef struct PWindowDestroyedPkt {
-	short _PACKET_ID; //PPKT_WINDOW_DESTROYED
+struct PWindowDestroyedPkt {
+	explicit PWindowDestroyedPkt(int window_id): window_id(window_id) {}
+	short _PACKET_ID = PPKT_WINDOW_DESTROYED;
 	int window_id;
-} PWindowDestroyedPkt;
+};
 
-typedef struct PMoveWindowPkt {
-	short _PACKET_ID; //PPKT_MOVE_WINDOW
+struct PMoveWindowPkt {
+	explicit PMoveWindowPkt(int window_id, int x, int y): window_id(window_id), x(x), y(y) {}
+	short _PACKET_ID = PPKT_MOVE_WINDOW;
 	int window_id;
 	int x;
 	int y;
-} PMoveWindowPkt;
+};
 
-typedef struct PWindowMovedPkt {
-	short _PACKET_ID; //PPKT_WINDOW_MOVED
+struct PWindowMovedPkt {
+	explicit PWindowMovedPkt(int window_id, int x, int y): window_id(window_id), x(x), y(y) {}
+	short _PACKET_ID = PPKT_WINDOW_MOVED;
 	int window_id;
 	int x;
 	int y;
-} PWindowMovedPkt;
+};
 
-typedef struct PResizeWindowPkt {
-	short _PACKET_ID; //PPKT_RESIZE_WINDOW
+struct PResizeWindowPkt {
+	explicit PResizeWindowPkt(int window_id, int width, int height): window_id(window_id), width(width), height(height) {}
+	short _PACKET_ID = PPKT_RESIZE_WINDOW;
 	int window_id;
 	int width;
 	int height;
-} PResizeWindowPkt;
+};
 
-typedef struct PWindowResizedPkt {
-	short _PACKET_ID; //PPKT_WINDOW_RESIZED
+struct PWindowResizedPkt {
+	explicit PWindowResizedPkt(int window_id, int width, int height, int shm_id): window_id(window_id), width(width), height(height), shm_id(shm_id) {}
+	short _PACKET_ID = PPKT_WINDOW_RESIZED;
 	int window_id;
 	int width;
 	int height;
 	int shm_id;
-} PWindowResizedPkt;
+};
 
-typedef struct PInvalidatePkt {
-	short _PACKET_ID; //PPKT_INVALIDATE_WINDOW
+struct PInvalidatePkt {
+	explicit PInvalidatePkt(int window_id, int x, int y, int width, int height): window_id(window_id), x(x), y(y), width(width), height(height) {}
+	short _PACKET_ID = PPKT_INVALIDATE_WINDOW;
 	int window_id;
 	int x;
 	int y;
 	int width;
 	int height;
-} PInvalidatePkt;
+};
 
-typedef struct PMouseMovePkt {
-	short _PACKET_ID; //PPKT_MOUSE_MOVE
+struct PMouseMovePkt {
+	explicit PMouseMovePkt(int window_id, int x, int y): window_id(window_id), x(x), y(y) {}
+	short _PACKET_ID = PPKT_MOUSE_MOVE;
 	int window_id;
 	int x;
 	int y;
-} PMouseMovePkt;
+};
 
-typedef struct PMouseButtonPkt {
-	short _PACKET_ID; //PPKT_MOUSE_BUTTON
+struct PMouseButtonPkt {
+	explicit PMouseButtonPkt(int window_id, uint8_t buttons): window_id(window_id), buttons(buttons) {}
+	short _PACKET_ID = PPKT_MOUSE_BUTTON;
 	int window_id;
 	uint8_t buttons;
-} PMouseButtonPkt;
+};
 
-typedef struct PKeyEventPkt {
-	short _PACKET_ID; //PPKT_KEY_EVENT
+struct PKeyEventPkt {
+	explicit PKeyEventPkt(int window_id, uint16_t scancode, uint8_t key, uint8_t character, uint8_t modifiers): window_id(window_id), scancode(scancode), key(key), character(character), modifiers(modifiers) {}
+	short _PACKET_ID = PPKT_KEY_EVENT;
 	int window_id;
 	uint16_t scancode;
 	uint8_t key;
 	uint8_t character;
 	uint8_t modifiers;
-} PKeyEventPkt;
+};
 
 #endif //DUCKOS_PACKET_H

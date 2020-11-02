@@ -17,31 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <libpond/pond.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#include "PContext.h"
+#include <sys/mem.h>
+#include <cstdio>
+#include <map>
 
-int main() {
-	if(PInit() < 0)
-		exit(-1);
-
-	PWindow* window = PCreateWindow(NULL, 10, 10, 100, 100);
-	if(window == NULL)
-		exit(-1);
-
-	memset(window->buffer, 0xAA, sizeof(*window->buffer) * window->width * window->height);
-	PInvalidateWindow(window);
-
-	while(1) {
-		PEvent event = PNextEvent();
-		if(event.type == PEVENT_MOUSE) {
-			window->buffer[window->mouse_x + window->mouse_y * window->width] = RGB(200,0,200);
-			PInvalidateWindowArea(window, window->mouse_x, window->mouse_y, 1, 1);
-		} else if(event.type == PEVENT_KEY) {
-			if(event.key.character == 'q')
-				exit(0);
-		} else if(event.type == PEVENT_WINDOW_DESTROY)
-			break;
-	}
-}
