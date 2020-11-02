@@ -138,6 +138,9 @@ int fclose(FILE* stream) {
 	if(flush_result < 0)
 		errno = stream->err;
 	filelist_remove(stream);
+	if(stream->buffer)
+		free(stream->buffer);
+	free(stream);
 	return !flush_result && !close_result ? 0 : -1;
 }
 
@@ -377,7 +380,7 @@ int vscanf(const char* format, va_list arg) {
 }
 
 int vsprintf(char* s, const char* format, va_list arg) {
-	return vsnprintf(s, SIZE_MAX, format, arg);
+	return vsnprintf(s, SIZE_MAX / 2, format, arg);
 }
 
 int vsscanf(const char* s, const char* format, va_list arg) {
