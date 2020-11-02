@@ -31,7 +31,8 @@ int main() {
 	if(!window)
 		exit(-1);
 
-	memset(window->buffer, 0xAA, sizeof(*window->buffer) * window->width * window->height);
+	for(size_t i = 0; i < window->width * window->height; i++)
+		window->buffer[i] = RGBA(0, 0, 0, 200);
 	window->invalidate();
 
 	while(1) {

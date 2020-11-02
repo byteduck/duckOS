@@ -152,14 +152,14 @@ void Display::repaint() {
 				//If it does, redraw the intersection of the window in question and the invalid area
 				Rect window_abs = window->absolute_rect();
 				Rect overlap_abs = area.overlapping_area(window_vabs);
-				fb.copy(window->framebuffer(), overlap_abs.transform({-window_abs.x, -window_abs.y}), overlap_abs.position());
+				fb.blend(window->framebuffer(), overlap_abs.transform({-window_abs.x, -window_abs.y}), overlap_abs.position());
 			}
 		}
 	}
 	invalid_areas.resize(0);
 
 	//Draw the mouse.
-	fb.copy(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height}, _mouse_window->absolute_rect().position());
+	fb.blend(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height}, _mouse_window->absolute_rect().position());
 }
 
 void Display::flip_buffers() {

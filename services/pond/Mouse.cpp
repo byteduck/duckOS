@@ -20,8 +20,9 @@
 #include <unistd.h>
 #include "Mouse.h"
 #include "Display.h"
+#include <graphics/png.h>
 
-Mouse::Mouse(Window* parent): Window(parent, {0, 0, 3, 3}) {
+Mouse::Mouse(Window* parent): Window(parent, {0, 0, 1, 1}) {
 	display()->set_mouse_window(this);
 
 	mouse_fd = open("/dev/input/mouse", O_RDONLY);
@@ -30,8 +31,21 @@ Mouse::Mouse(Window* parent): Window(parent, {0, 0, 3, 3}) {
 		return;
 	}
 
-	framebuffer().fill({0, 0, 3, 3}, RGB(255,255,255));
-	*framebuffer().at({1, 1}) = RGB(100,100,100);
+	FILE* cursor = fopen("/usr/share/cursors/cursor.png", "r");
+	if(!cursor) {
+		perror("Failed to open cursor icon");
+		return;
+	}
+
+	Image* cursor_image = load_png(cursor);
+	fclose(cursor);
+	if(!cursor_image) {
+		perror("Failed to load cursor icon");
+		return;
+	}
+
+	set_dimensions({cursor_image->width, cursor_image->height});
+	_framebuffer.copy({cursor_image->data, cursor_image->width, cursor_image->height}, {0,0, cursor_image->width, cursor_image->height} ,{0,0});
 }
 
 int Mouse::fd() {

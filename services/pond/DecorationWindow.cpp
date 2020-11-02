@@ -23,7 +23,11 @@
 
 DecorationWindow::DecorationWindow(Window* parent, const Rect& contents_rect): Window(parent, calculate_decoration_rect(contents_rect)) {
 	_contents = new Window(this, {DECO_LEFT_SIZE, DECO_TOP_SIZE, contents_rect.width, contents_rect.height});
-	_framebuffer.fill({0, 0, _rect.width, _rect.height}, RGB(255,255,255));
+	_framebuffer.fill({0, 0, _rect.width, DECO_TOP_SIZE}, RGB(50,50,50));
+	_framebuffer.fill({0, DECO_TOP_SIZE + contents_rect.height, _rect.width, DECO_BOTTOM_SIZE}, RGB(50,50,50));
+	_framebuffer.fill({0, 0, DECO_LEFT_SIZE, _rect.height}, RGB(50,50,50));
+	_framebuffer.fill({DECO_LEFT_SIZE + contents_rect.width, 0, DECO_RIGHT_SIZE, _rect.height}, RGB(50,50,50));
+	_framebuffer.fill({DECO_LEFT_SIZE, DECO_TOP_SIZE, contents_rect.width, contents_rect.height}, RGBA(0,0,0,0));
 }
 
 bool DecorationWindow::is_decoration() const {

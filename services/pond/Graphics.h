@@ -42,6 +42,14 @@ public:
 	void copy(const Framebuffer& other, Rect other_area, const Point& pos) const;
 
 	/**
+	 * Copies part of another framebuffer with to one with alpha blending.
+	 * @param other The other framebuffer to copy from.
+	 * @param other_area The area of the other framebuffer to copy.
+	 * @param pos The position of this framebuffer to copy to.
+	 */
+	void blend(const Framebuffer& other, Rect other_area, const Point& pos) const;
+
+	/**
 	 * Fills an area of the framebuffer with a color.
 	 */
 	void fill(Rect area, uint32_t color) const;
