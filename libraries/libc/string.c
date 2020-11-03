@@ -48,7 +48,7 @@ void* memset(void* dest, int c, size_t n) {
 
 //String manipulation
 
-void* strcpy(char* dest, const char* src) {
+char* strcpy(char* dest, const char* src) {
 	char* odest = dest;
 	while ((*dest++ = *src++) != '\0');
 	return odest;
