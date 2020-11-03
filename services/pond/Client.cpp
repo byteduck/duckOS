@@ -20,6 +20,7 @@
 #include "Client.h"
 #include "DecorationWindow.h"
 #include "Display.h"
+#include "FontManager.h"
 #include <libpond/PContext.h>
 
 Client::Client(int socketfs_fd, pid_t pid): socketfs_fd(socketfs_fd), pid(pid) {
@@ -63,6 +64,12 @@ void Client::handle_packet(socketfs_packet* packet) {
 			break;
 		case PPKT_INVALIDATE_WINDOW:
 			invalidate_window(packet);
+			break;
+		case PPKT_GET_FONT:
+			get_font(packet);
+			break;
+		case PPKT_SET_TITLE:
+			set_title(packet);
 			break;
 		default:
 			fprintf(stderr, "Invalid packet sent by client %d\n", pid);
@@ -211,4 +218,36 @@ void Client::invalidate_window(socketfs_packet* packet) {
 			window->second->invalidate({params->x, params->y, params->width, params->height});
 	}
 
+}
+
+void Client::get_font(socketfs_packet* packet) {
+	if(packet->length != sizeof(PGetFontPkt))
+		return;
+
+	auto* params = (PGetFontPkt*) packet->data;
+	params->font_name[(sizeof(params->font_name) / sizeof(*params->font_name)) - 1] = '\0'; //Make sure we don't overflow
+	auto* font = FontManager::inst().get_font(params->font_name);
+
+	if(font) {
+		if(shmallow(font->shm_id(), pid, SHM_READ) < 0) {
+			perror("Failed to grant client access to font shm");
+			font = nullptr;
+		}
+	}
+
+	PFontResponsePkt pkt(font ? font->shm_id() : -1);
+	if(!send_packet(pkt))
+		perror("Failed to write font response packet to client");
+}
+
+void Client::set_title(socketfs_packet* packet) {
+	if(packet->length != sizeof(PSetTitlePkt))
+		return;
+
+	auto* params = (PSetTitlePkt*) packet->data;
+	params->title[(sizeof(params->title) / sizeof(*params->title)) - 1] = '\0'; //Make sure we don't overflow
+
+	auto* window = windows[params->window_id];
+	if(window)
+		windows[params->window_id]->set_title(params->title);
 }

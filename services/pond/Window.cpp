@@ -20,6 +20,8 @@
 #include "Window.h"
 #include <cstdio>
 #include "Display.h"
+#include <memory.h>
+#include "DecorationWindow.h"
 
 int Window::current_id = 0;
 
@@ -177,6 +179,7 @@ void Window::alloc_framebuffer() {
 	}
 
 	_framebuffer = {(uint32_t*) _framebuffer_shm.ptr, _rect.width, _rect.height};
+	_framebuffer.fill({0, 0, _rect.width, _rect.height}, RGB(0,0,0));
 }
 
 Rect Window::calculate_absolute_rect(const Rect& rect) {
@@ -198,6 +201,17 @@ void Window::recalculate_rects() {
 
 shm Window::framebuffer_shm() {
 	return _framebuffer_shm;
+}
+
+const char* Window::title() {
+	return _title ? _title : "";
+}
+
+void Window::set_title(const char* title) {
+	delete _title;
+	_title = strdup(title);
+	if(_parent && _parent->is_decoration())
+		((DecorationWindow*) _parent)->redraw_frame();
 }
 
 

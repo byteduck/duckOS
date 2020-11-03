@@ -243,6 +243,10 @@ int Font::size() {
 	return data->size;
 }
 
+int Font::shm_id() {
+	return uses_shm ? fontshm.id : -1;
+}
+
 FontGlyph* Font::glyph(uint32_t codepoint) {
 	auto* glyph = glyphs[codepoint];
 	return glyph ? glyph : unknown_glyph;

@@ -108,6 +108,7 @@ void Image::draw_glyph(FontGlyph* glyph, const Point& pos, uint32_t color) {
 	double r_mult = COLOR_R(color) / 255.0;
 	double g_mult = COLOR_G(color) / 255.0;
 	double b_mult = COLOR_B(color) / 255.0;
+	double alpha_mult = COLOR_A(color) / 255.0;
 
 	//Make sure self_area is in bounds of the framebuffer
 	Rect self_area = {pos.x, pos.y, glyph_area.width, glyph_area.height};
@@ -125,7 +126,7 @@ void Image::draw_glyph(FontGlyph* glyph, const Point& pos, uint32_t color) {
 		for(int y = 0; y < self_area.height; y++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = glyph->bitmap[(glyph_area.x + x) + (glyph_area.y + y) * glyph->width];
-			double alpha = COLOR_A(other_val) / 255.00;
+			double alpha = (COLOR_A(other_val) / 255.00) * alpha_mult;
 			if(alpha == 0)
 				continue;
 			double oneminusalpha = 1.00 - alpha;

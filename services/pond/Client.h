@@ -39,11 +39,18 @@ public:
 	void window_destroyed(Window* window);
 
 private:
+	template<typename T>
+	bool send_packet(const T& packet) {
+		return write_packet(socketfs_fd, pid, sizeof(T), (void*) &packet) >= 0;
+	}
+
 	void open_window(socketfs_packet* packet);
 	void destroy_window(socketfs_packet* packet);
 	void move_window(socketfs_packet* packet);
 	void resize_window(socketfs_packet* packet);
 	void invalidate_window(socketfs_packet* packet);
+	void get_font(socketfs_packet* packet);
+	void set_title(socketfs_packet* packet);
 
 	pid_t pid;
 	int socketfs_fd;

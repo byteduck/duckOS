@@ -20,14 +20,11 @@
 #include "DecorationWindow.h"
 #include "Mouse.h"
 #include "Display.h"
+#include "FontManager.h"
 
 DecorationWindow::DecorationWindow(Window* parent, const Rect& contents_rect): Window(parent, calculate_decoration_rect(contents_rect)) {
 	_contents = new Window(this, {DECO_LEFT_SIZE, DECO_TOP_SIZE, contents_rect.width, contents_rect.height});
-	_framebuffer.fill({0, 0, _rect.width, DECO_TOP_SIZE}, RGB(50,50,50));
-	_framebuffer.fill({0, DECO_TOP_SIZE + contents_rect.height, _rect.width, DECO_BOTTOM_SIZE}, RGB(50,50,50));
-	_framebuffer.fill({0, 0, DECO_LEFT_SIZE, _rect.height}, RGB(50,50,50));
-	_framebuffer.fill({DECO_LEFT_SIZE + contents_rect.width, 0, DECO_RIGHT_SIZE, _rect.height}, RGB(50,50,50));
-	_framebuffer.fill({DECO_LEFT_SIZE, DECO_TOP_SIZE, contents_rect.width, contents_rect.height}, RGBA(0,0,0,0));
+	redraw_frame();
 }
 
 bool DecorationWindow::is_decoration() const {
@@ -83,5 +80,19 @@ Window* DecorationWindow::contents() {
 void DecorationWindow::set_content_dimensions(const Dimensions& dimensions) {
 	_contents->set_dimensions(dimensions);
 	set_dimensions({dimensions.width + DECO_LEFT_SIZE + DECO_RIGHT_SIZE, dimensions.height + DECO_TOP_SIZE + DECO_BOTTOM_SIZE});
+}
+
+void DecorationWindow::redraw_frame() {
+	_framebuffer.fill({0, 0, _rect.width, _rect.height}, RGBA(0,0,0,0));
+	_framebuffer.fill({0, 0, _rect.width, DECO_TOP_SIZE}, RGB(50,50,50));
+	_framebuffer.fill({0, _rect.height - DECO_BOTTOM_SIZE, _rect.width, DECO_BOTTOM_SIZE}, RGB(50,50,50));
+	_framebuffer.fill({0, 0, DECO_LEFT_SIZE, _rect.height}, RGB(50,50,50));
+	_framebuffer.fill({_rect.width - DECO_RIGHT_SIZE, 0, DECO_RIGHT_SIZE, _rect.height}, RGB(50,50,50));
+
+	Font* title_font = FontManager::inst().get_font("gohu-11");
+	if(title_font)
+		_framebuffer.draw_text(_contents->title(), {DECO_LEFT_SIZE, 1}, title_font, RGB(255,255,255));
+
+	invalidate();
 }
 

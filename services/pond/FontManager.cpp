@@ -17,33 +17,28 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <libpond/pond.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <libgraphics/font.h>
+#include "FontManager.h"
 
-int main() {
-	auto* pond = PContext::init();
-	if(!pond)
-		exit(-1);
+FontManager* instance;
 
-	PWindow* window = pond->create_window(nullptr, 50, 50, 100, 100);
-	if(!window)
-		exit(-1);
+FontManager::FontManager() {
+	instance = this;
+	load_font("gohu-14", "/usr/share/fonts/gohufont-14.bdf");
+	load_font("gohu-11", "/usr/share/fonts/gohufont-11.bdf");
+}
 
-	window->set_title("Hello World");
-	window->framebuffer.fill({0, 0, 100, 100}, RGBA(0, 0, 0, 200));
-	Font* font = pond->get_font("gohu-14");
-	window->framebuffer.draw_text("This is text", {3,43}, font, RGB(255, 255, 255));
-	window->invalidate();
+FontManager& FontManager::inst() {
+	return *instance;
+}
 
-	while(1) {
-		PEvent event = pond->next_event();
-		if(event.type == PEVENT_KEY) {
-			if(event.key.character == 'q')
-				exit(0);
-		} else if(event.type == PEVENT_WINDOW_DESTROY)
-			break;
-	}
+Font* FontManager::get_font(const std::string& name) {
+	return fonts[name];
+}
+
+bool FontManager::load_font(const char* name, const char* path) {
+	auto* font = Font::load_bdf_shm(path);
+	if(!font)
+		return false;
+	fonts[name] = font;
+	return true;
 }

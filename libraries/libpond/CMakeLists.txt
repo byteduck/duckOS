@@ -1,2 +1,2 @@
-SET(SOURCES PEvent.cpp PContext.cpp PWindow.cpp)
+SET(SOURCES packet.cpp PEvent.cpp PContext.cpp PWindow.cpp)
 MAKE_LIBRARY(libpond)

@@ -22,7 +22,7 @@
 
 #include "Window.h"
 
-#define DECO_TOP_SIZE 8
+#define DECO_TOP_SIZE 13
 #define DECO_BOTTOM_SIZE 2
 #define DECO_LEFT_SIZE 2
 #define DECO_RIGHT_SIZE 2
@@ -40,8 +40,10 @@ public:
 	static Rect calculate_decoration_rect(const Rect& contents_rect);
 	Window* contents();
 	void set_content_dimensions(const Dimensions& dimensions);
+	void redraw_frame();
 
 private:
+
 	Window* _contents;
 	bool dragging = false;
 	Point drag_start = {-1, -1};

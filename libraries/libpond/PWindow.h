@@ -51,6 +51,12 @@ public:
 	 */
 	void invalidate_area(int x, int y, int width, int height);
 
+	/**
+	 * Sets the title of the window.
+	 * @param title The new title.
+	 */
+	void set_title(const char* title);
+
 	int id = -1; ///< The ID of the window.
 	int width = 0; ///< The width of the window.
 	int height = 0; ///< The height of the window.
@@ -60,7 +66,7 @@ public:
 	int mouse_x = 0; ///< The last-known x position of the mouse inside the window.
 	int mouse_y = 0; ///< The last-known y position of the mouse inside the window.
 	unsigned int mouse_buttons = 0; ///< A bitfield containing the last-known pressed mouse buttons inside the window.
-	uint32_t* buffer = nullptr; ///< The window's framebuffer of size sizeof(uint32_t) * width * height.
+	Image framebuffer; ///< The window's framebuffer.
 	PContext* context = nullptr; ///< The context associated with the window.
 };
 

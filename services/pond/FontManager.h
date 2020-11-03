@@ -17,33 +17,25 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <libpond/pond.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
+#ifndef DUCKOS_FONTMANAGER_H
+#define DUCKOS_FONTMANAGER_H
+
 #include <libgraphics/font.h>
+#include <map>
+#include <string>
 
-int main() {
-	auto* pond = PContext::init();
-	if(!pond)
-		exit(-1);
+class FontManager {
+public:
+	FontManager();
+	static FontManager& inst();
 
-	PWindow* window = pond->create_window(nullptr, 50, 50, 100, 100);
-	if(!window)
-		exit(-1);
+	Font* get_font(const std::string& name);
 
-	window->set_title("Hello World");
-	window->framebuffer.fill({0, 0, 100, 100}, RGBA(0, 0, 0, 200));
-	Font* font = pond->get_font("gohu-14");
-	window->framebuffer.draw_text("This is text", {3,43}, font, RGB(255, 255, 255));
-	window->invalidate();
+private:
+	bool load_font(const char* name, const char* path);
 
-	while(1) {
-		PEvent event = pond->next_event();
-		if(event.type == PEVENT_KEY) {
-			if(event.key.character == 'q')
-				exit(0);
-		} else if(event.type == PEVENT_WINDOW_DESTROY)
-			break;
-	}
-}
+	std::map<std::string, Font*> fonts;
+};
+
+
+#endif //DUCKOS_FONTMANAGER_H

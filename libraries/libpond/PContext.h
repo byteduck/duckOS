@@ -63,6 +63,13 @@ public:
 	PWindow* create_window(PWindow* parent, int x, int y, int width, int height);
 
 	/**
+	 * Gets a font from the Pond server.
+	 * @param font The name of the font to get.
+	 * @return A pointer to the font, or NULL if the font isn't loaded by pond.
+	 */
+	Font* get_font(const char* font);
+
+	/**
 	 * Sends a packet to the pond server.
 	 * @return Whether or not the write was successful.
 	 */
@@ -81,9 +88,11 @@ private:
 	void handle_mouse_move(socketfs_packet* packet, PEvent* event);
 	void handle_mouse_button(socketfs_packet* packet, PEvent* event);
 	void handle_key(socketfs_packet* packet, PEvent* event);
+	void handle_font_response(socketfs_packet* packet, PEvent* event);
 
 	int fd;
 	std::map<int, PWindow*> windows;
+	std::map<std::string, Font*> fonts;
 };
 
 #endif //DUCKOS_LIBPOND_PCONTEXT_H

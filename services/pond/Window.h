@@ -132,6 +132,17 @@ public:
 	 */
 	virtual void handle_keyboard_event(const KeyboardEvent& event);
 
+	/**
+	 * @return The title of the window.
+	 */
+	const char* title();
+
+	/**
+	 * Sets the title of the window.
+	 * @param title The new title.
+	 */
+	void set_title(const char* title);
+
 private:
 	friend class DecorationWindow;
 	friend class Mouse;
@@ -152,6 +163,7 @@ private:
 	uint8_t _mouse_buttons;
 	Point _mouse_position;
 	bool _global_mouse = false;
+	char* _title = nullptr;
 
 	static int current_id;
 };

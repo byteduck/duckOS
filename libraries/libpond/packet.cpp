@@ -17,33 +17,13 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <libpond/pond.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <libgraphics/font.h>
+#include "packet.h"
+#include <cstring>
 
-int main() {
-	auto* pond = PContext::init();
-	if(!pond)
-		exit(-1);
+PGetFontPkt::PGetFontPkt(const char* name) {
+	strncpy(font_name, name, 255);
+}
 
-	PWindow* window = pond->create_window(nullptr, 50, 50, 100, 100);
-	if(!window)
-		exit(-1);
-
-	window->set_title("Hello World");
-	window->framebuffer.fill({0, 0, 100, 100}, RGBA(0, 0, 0, 200));
-	Font* font = pond->get_font("gohu-14");
-	window->framebuffer.draw_text("This is text", {3,43}, font, RGB(255, 255, 255));
-	window->invalidate();
-
-	while(1) {
-		PEvent event = pond->next_event();
-		if(event.type == PEVENT_KEY) {
-			if(event.key.character == 'q')
-				exit(0);
-		} else if(event.type == PEVENT_WINDOW_DESTROY)
-			break;
-	}
+PSetTitlePkt::PSetTitlePkt(int window_id, const char* new_title): window_id(window_id) {
+	strncpy(title, new_title, 255);
 }

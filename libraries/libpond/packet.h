@@ -33,6 +33,11 @@
 #define PPKT_MOUSE_MOVE 10
 #define PPKT_MOUSE_BUTTON 11
 #define PPKT_KEY_EVENT 12
+#define PPKT_GET_FONT 13
+#define PPKT_FONT_RESPONSE 14
+#define PPKT_SET_TITLE 15
+
+#include <cstdint>
 
 struct POpenWindowPkt {
 	explicit POpenWindowPkt(int parent, int width, int height, int x, int y): parent(parent), width(width), height(height), x(x), y(y) {}
@@ -134,6 +139,25 @@ struct PKeyEventPkt {
 	uint8_t key;
 	uint8_t character;
 	uint8_t modifiers;
+};
+
+struct PGetFontPkt {
+	explicit PGetFontPkt(const char* name);
+	short _PACKET_ID = PPKT_GET_FONT;
+	char font_name[256];
+};
+
+struct PFontResponsePkt {
+	explicit PFontResponsePkt(int shm_id): font_shm_id(shm_id) {}
+	short _PACKET_ID = PPKT_FONT_RESPONSE;
+	int font_shm_id;
+};
+
+struct PSetTitlePkt {
+	explicit PSetTitlePkt(int window_id, const char* title);
+	short _PACKET_ID = PPKT_SET_TITLE;
+	int window_id;
+	char title[256];
 };
 
 #endif //DUCKOS_PACKET_H

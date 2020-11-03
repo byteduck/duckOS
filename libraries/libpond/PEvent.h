@@ -30,6 +30,7 @@
 #define PEVENT_WINDOW_RESIZE 4
 #define PEVENT_MOUSE 5
 #define PEVENT_KEY 6
+#define PEVENT_FONT_RESPONSE 7
 
 #define POND_MOUSE1 1
 #define POND_MOUSE2 2
@@ -79,6 +80,11 @@ typedef struct PKeyEvent {
 	PWindow* window; ///< The window the event was triggered on
 } PKeyEvent;
 
+typedef struct PFontResponseEvent {
+	int type; ///< Equal to PEVENT_FONT_RESPONSE
+	Font* font;
+};
+
 typedef union PEvent {
 	int type; ///< The type of event that this PEvent refers to.
 	PWindowCreateEvent window_create;
@@ -87,6 +93,7 @@ typedef union PEvent {
 	PWindowResizeEvent window_resize;
 	PMouseEvent mouse;
 	PKeyEvent key;
+	PFontResponseEvent font_response;
 } PEvent;
 
 #endif //DUCKOS_LIBPOND_EVENT_H

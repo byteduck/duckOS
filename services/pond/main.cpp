@@ -22,6 +22,7 @@
 #include "Server.h"
 #include "Window.h"
 #include "DecorationWindow.h"
+#include "FontManager.h"
 #include <poll.h>
 #include <unistd.h>
 
@@ -44,6 +45,8 @@ int main() {
 		char* envp[] = {NULL};
 		execve("/bin/pondtest", argv, envp);
 	}
+
+	auto* font_manager = new FontManager();
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"

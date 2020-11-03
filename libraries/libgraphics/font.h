@@ -63,6 +63,7 @@ public:
 	static Font* load_from_shm(shm shm);
 
 	int size();
+	int shm_id();
 	FontData::BoundingBox bounding_box();
 	FontGlyph* glyph(uint32_t codepoint);
 

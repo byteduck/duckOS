@@ -24,6 +24,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sys/mem.h>
+#include <libgraphics/font.h>
 
 PContext::PContext(int _fd): fd(_fd) {}
 
@@ -94,6 +95,9 @@ PEvent PContext::next_event() {
 			ret.type = PEVENT_KEY;
 			handle_key(packet, &ret);
 			break;
+		case PPKT_FONT_RESPONSE:
+			ret.type = PEVENT_FONT_RESPONSE;
+			handle_font_response(packet, &ret);
 		default:
 			break;
 	}
@@ -114,6 +118,27 @@ PWindow* PContext::create_window(PWindow* parent, int x, int y, int width, int h
 
 	//Return the event's window
 	return event.window_create.window;
+}
+
+Font* PContext::get_font(const char* font) {
+	//If we've already loaded the font, just return it
+	if(fonts[font])
+		return fonts[font];
+
+	//Write the packet
+	if(!send_packet(PGetFontPkt(font)))
+		perror("Pond: Failed to write packet");
+
+	//Wait for the response
+	PEvent event = next_event();
+	if(event.type != PEVENT_FONT_RESPONSE)
+		return NULL;
+
+	//Add the font to the map
+	if(event.font_response.font)
+		fonts[font] = event.font_response.font;
+
+	return event.font_response.font;
 }
 
 void PContext::handle_open_window(socketfs_packet* packet, PEvent* event) {
@@ -140,7 +165,7 @@ void PContext::handle_open_window(socketfs_packet* packet, PEvent* event) {
 			.x = resp->x,
 			.y = resp->y,
 			.shm_id = resp->shm_id,
-			.buffer = (uint32_t*) shm.ptr,
+			.framebuffer = {(uint32_t*) shm.ptr, resp->width, resp->height},
 			.context = this,
 	};
 	event->window_create.window = window;
@@ -201,7 +226,7 @@ void PContext::handle_resize_window(socketfs_packet* packet, PEvent* event) {
 				event->window_create.window = NULL;
 				return;
 			}
-			window->buffer = (uint32_t*) shm.ptr;
+			window->framebuffer = {(uint32_t*) shm.ptr, window->width, window->height};
 		}
 	} else {
 		event->type = PEVENT_UNKNOWN;
@@ -262,4 +287,25 @@ void PContext::handle_key(socketfs_packet* packet, PEvent* event) {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "libpond: Could not find window for window key event!\n");
 	}
+}
+
+void PContext::handle_font_response(socketfs_packet* packet, PEvent* event) {
+	//Read the response
+	auto* resp = (struct PFontResponsePkt*) packet->data;
+
+	if(resp->font_shm_id < 0) {
+		event->font_response.font = nullptr;
+		return;
+	}
+
+	//Try attaching the shared memory
+	shm fontshm;
+	if(shmattach(resp->font_shm_id, nullptr, &fontshm) < 0) {
+		perror("libpond: Failed to attach font shm");
+		event->font_response.font = nullptr;
+		return;
+	}
+
+	//Load the font (if it errors out, a message should be printed and it will return nullptr)
+	event->font_response.font = Font::load_from_shm(fontshm);
 }
