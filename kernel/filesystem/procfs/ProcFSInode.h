@@ -39,10 +39,10 @@ public:
 	//Inode
 	InodeMetadata metadata() override;
 	ino_t find_id(const DC::string& name) override;
-	ssize_t read(size_t start, size_t length, uint8_t *buffer) override;
+	ssize_t read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) override;
 	ResultRet<DC::shared_ptr<LinkedInode>> resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) override;
-	ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer) override;
-	ssize_t write(size_t start, size_t length, const uint8_t* buf) override;
+	ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) override;
+	ssize_t write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) override;
 	Result add_entry(const DC::string& name, Inode& inode) override;
 	ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) override;
 	Result remove_entry(const DC::string& name) override;

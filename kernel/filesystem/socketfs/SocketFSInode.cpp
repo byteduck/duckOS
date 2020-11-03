@@ -47,6 +47,7 @@ SocketFSInode::~SocketFSInode() {
 InodeMetadata SocketFSInode::metadata() {
 	if(owner) return _metadata;
 
+	LOCK(fs.lock);
 	InodeMetadata ret = _metadata;
 	ret.size = SOCKETFS_PDIR_ENTRY_SIZE + SOCKETFS_CDIR_ENTRY_SIZE;
 	for(size_t i = 0; i < fs.sockets.size(); i++)
@@ -63,7 +64,7 @@ ino_t SocketFSInode::find_id(const DC::string& find_name) {
 	return -ENOENT;
 }
 
-ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer) {
+ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) {
 	if(!is_open) return -ENOENT;
 	LOCK(lock);
 
@@ -106,7 +107,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> SocketFSInode::resolve_link(const DC::sha
 	return -ENOLINK;
 }
 
-ssize_t SocketFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer) {
+ssize_t SocketFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) {
 	if(owner) return -ENOTDIR;
 
 	if(start == 0) {
@@ -136,7 +137,7 @@ ssize_t SocketFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer) {
 	return 0;
 }
 
-ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf) {
+ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) {
 	if(!is_open) return -ENOENT;
 
 	LOCK(lock);

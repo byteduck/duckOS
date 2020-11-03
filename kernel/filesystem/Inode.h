@@ -44,9 +44,9 @@ public:
 
 	virtual ResultRet<DC::shared_ptr<Inode>> find(const DC::string& name);
 	virtual ino_t find_id(const DC::string& name) = 0;
-	virtual ssize_t read(size_t start, size_t length, uint8_t *buffer) = 0;
-	virtual ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer) = 0;
-	virtual ssize_t write(size_t start, size_t length, const uint8_t* buf) = 0;
+	virtual ssize_t read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) = 0;
+	virtual ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) = 0;
+	virtual ssize_t write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) = 0;
 	virtual Result add_entry(const DC::string& name, Inode& inode) = 0;
 	virtual ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) = 0;
 	virtual Result remove_entry(const DC::string& name) = 0;

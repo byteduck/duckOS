@@ -263,7 +263,7 @@ Result VFS::symlink(DC::string& file, DC::string& link_name, User& user, const D
 	if(symlink_res.is_error()) return symlink_res.code();
 
 	//Write the symlink data
-	ssize_t nwritten = symlink_res.value()->write(0, file.length(), (uint8_t*) file.c_str());
+	ssize_t nwritten = symlink_res.value()->write(0, file.length(), (uint8_t*) file.c_str(), nullptr);
 	if(nwritten != file.length()) {
 		if(nwritten < 0) return nwritten;
 		return -EIO;
@@ -281,7 +281,7 @@ ResultRet<DC::string> VFS::readlink(DC::string& path, User& user, const DC::shar
 
 	//Read it
 	auto* buf = new uint8_t[inode->metadata().size + 1];
-	size = inode->read(0, inode->metadata().size, buf);
+	size = inode->read(0, inode->metadata().size, buf, nullptr);
 	buf[inode->metadata().size] = '\0';
 	if(size < 0) {
 		delete[] buf;

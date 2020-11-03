@@ -74,7 +74,7 @@ ino_t ProcFSInode::find_id(const DC::string& name) {
 	return -ENOENT;
 }
 
-ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer) {
+ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) {
 	if(_metadata.is_directory()) return -EISDIR;
 	switch(type) {
 		case Root:
@@ -240,7 +240,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> ProcFSInode::resolve_link(const DC::share
 	return VFS::inst().resolve_path(loc, base, user, parent_storage, options, recursion_level);
 }
 
-ssize_t ProcFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer) {
+ssize_t ProcFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) {
 	if(!_metadata.is_directory()) return -ENOTDIR;
 	LOCK(procfs.lock);
 
@@ -268,7 +268,7 @@ ssize_t ProcFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer) {
 	return 0;
 }
 
-ssize_t ProcFSInode::write(size_t start, size_t length, const uint8_t* buf) {
+ssize_t ProcFSInode::write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) {
 	return -EIO;
 }
 

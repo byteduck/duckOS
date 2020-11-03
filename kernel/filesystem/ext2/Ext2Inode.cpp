@@ -117,7 +117,7 @@ void Ext2Inode::free_all_blocks() {
 	ext2fs().free_blocks(pointer_blocks);
 }
 
-ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
+ssize_t Ext2Inode::read(size_t start, size_t length, uint8_t* buf, FileDescriptor* fd) {
 	if(_metadata.is_device()) return 0;
 	if(_metadata.size == 0) return 0;
 	if(start > _metadata.size) return 0;
@@ -167,7 +167,7 @@ ssize_t Ext2Inode::read(uint32_t start, uint32_t length, uint8_t *buf) {
 	return length;
 }
 
-ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
+ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) {
 	if(_metadata.is_device()) return 0;
 	if(length == 0) return 0;
 	if(!exists()) return -ENOENT; //Inode was deleted
@@ -233,13 +233,13 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t *buf) {
 	return length;
 }
 
-ssize_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry *buffer) {
+ssize_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) {
 	LOCK(lock);
 
 	auto* buf = new uint8_t[ext2fs().block_size()];
 	size_t block = start / ext2fs().block_size();
 	size_t start_in_block = start % ext2fs().block_size();
-	if(read(block * ext2fs().block_size(), ext2fs().block_size(), buf) == 0) {
+	if(read(block * ext2fs().block_size(), ext2fs().block_size(), buf, fd) == 0) {
 		delete[] buf;
 		return 0;
 	}
@@ -300,7 +300,7 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 	size_t offset = 0;
 	ssize_t nread;
 	auto* buf = new DirectoryEntry;
-	while((nread = read_dir_entry(offset, buf))) {
+	while((nread = read_dir_entry(offset, buf, nullptr))) {
 		offset += nread;
 		buf->name[buf->name_length] = '\0';
 		if(name == buf->name) {
@@ -376,7 +376,7 @@ Result Ext2Inode::remove_entry(const DC::string &name) {
 	bool found = false;
 	size_t i = 0;
 	auto* buf = new DirectoryEntry;
-	while((nread = read_dir_entry(offset, buf))) {
+	while((nread = read_dir_entry(offset, buf, nullptr))) {
 		offset += nread;
 		buf->name[buf->name_length] = '\0';
 		if(name == buf->name) {
@@ -780,7 +780,7 @@ Result Ext2Inode::try_remove_dir() {
 	size_t offset = 0;
 	size_t num_entries = 0;
 	DC::vector<DirectoryEntry> entries;
-	while((nread = read_dir_entry(offset, buf))) {
+	while((nread = read_dir_entry(offset, buf, nullptr))) {
 		if(num_entries >= 2) {
 			delete buf;
 			return -ENOTEMPTY;
