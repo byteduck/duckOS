@@ -84,14 +84,13 @@ void Display::set_root_window(Window* window) {
 		return;
 	}
 
-	Image* png = load_png(wallpaper);
-	if(!png) {
+	_wallpaper = load_png(wallpaper);
+	if(!_wallpaper) {
 		fprintf(stderr, "Failed to load wallpaper.\n");
 		return;
 	}
 
-	_wallpaper = Image(png->data, png->width, png->height);
-	_root_window->framebuffer().copy(_wallpaper,{0, 0, png->width, png->height},{0, 0});
+	_root_window->invalidate();
 }
 
 Window* Display::root_window() {
@@ -136,8 +135,8 @@ void Display::repaint() {
 
 	for(auto& area : invalid_areas) {
 		// Fill the invalid area with the background.
-		if(_wallpaper.data)
-			fb.copy(_wallpaper, area, area.position());
+		if(_wallpaper)
+			fb.copy_tiled(*_wallpaper, area, area.position());
 		else
 			fb.fill(area, RGB(50, 50, 50));
 
@@ -152,7 +151,7 @@ void Display::repaint() {
 				//If it does, redraw the intersection of the window in question and the invalid area
 				Rect window_abs = window->absolute_rect();
 				Rect overlap_abs = area.overlapping_area(window_vabs);
-				fb.draw_image(window->framebuffer(), overlap_abs.transform({-window_abs.x, -window_abs.y}),
+				fb.copy(window->framebuffer(), overlap_abs.transform({-window_abs.x, -window_abs.y}),
 							  overlap_abs.position());
 			}
 		}

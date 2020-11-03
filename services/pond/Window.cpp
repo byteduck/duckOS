@@ -179,7 +179,6 @@ void Window::alloc_framebuffer() {
 	}
 
 	_framebuffer = {(uint32_t*) _framebuffer_shm.ptr, _rect.width, _rect.height};
-	_framebuffer.fill({0, 0, _rect.width, _rect.height}, RGB(0,0,0));
 }
 
 Rect Window::calculate_absolute_rect(const Rect& rect) {

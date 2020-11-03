@@ -50,12 +50,22 @@ public:
 	int height = 0;
 
 	/**
+	 * Frees the data associated with the image.
+	 */
+	void free();
+
+	/**
 	 * Copies a part of another image to this one.
 	 * @param other The other image to copy from.
 	 * @param other_area The area of the other image to copy.
 	 * @param pos The position of this image to copy to.
 	 */
 	void copy(const Image& other, Rect other_area, const Point& pos) const;
+
+	/**
+	 * Identical to ::copy(), but will tile the image.
+	 */
+	void copy_tiled(const Image& other, Rect other_area, const Point& pos) const;
 
 	/**
 	 * Draws another image on top of this one with alpha blending.

@@ -44,6 +44,7 @@ int main() {
 		char* argv[] = {NULL};
 		char* envp[] = {NULL};
 		execve("/bin/pondtest", argv, envp);
+		exit(-1);
 	}
 
 	auto* font_manager = new FontManager();

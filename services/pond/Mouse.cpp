@@ -46,6 +46,8 @@ Mouse::Mouse(Window* parent): Window(parent, {0, 0, 1, 1}) {
 
 	set_dimensions({cursor_image->width, cursor_image->height});
 	_framebuffer.copy({cursor_image->data, cursor_image->width, cursor_image->height}, {0,0, cursor_image->width, cursor_image->height} ,{0,0});
+	cursor_image->free();
+	delete cursor_image;
 }
 
 int Mouse::fd() {

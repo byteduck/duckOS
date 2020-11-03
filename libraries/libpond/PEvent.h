@@ -83,7 +83,7 @@ typedef struct PKeyEvent {
 typedef struct PFontResponseEvent {
 	int type; ///< Equal to PEVENT_FONT_RESPONSE
 	Font* font;
-};
+} PFontResponseEvent;
 
 typedef union PEvent {
 	int type; ///< The type of event that this PEvent refers to.

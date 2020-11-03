@@ -120,7 +120,7 @@ public:
 private:
 	int framebuffer_fd = 0;
 	Image _framebuffer;
-	Image _wallpaper = {nullptr, 0, 0};
+	Image* _wallpaper = nullptr;
 	Rect _dimensions;
 	std::vector<Rect> invalid_areas;
 	std::vector<Window*> _windows;
