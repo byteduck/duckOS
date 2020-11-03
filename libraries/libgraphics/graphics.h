@@ -17,8 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_GRAPHICS_H
-#define DUCKOS_GRAPHICS_H
+#ifndef DUCKOS_LIBGRAPHICS_GRAPHICS_H
+#define DUCKOS_LIBGRAPHICS_GRAPHICS_H
 
 #include <sys/types.h>
 
@@ -33,14 +33,53 @@ __DECL_BEGIN
 
 #define IMGSIZE(width, height) (sizeof(uint32_t) * (width) * (height))
 #define IMGPIXEL(img, x, y) (img).data[(x) + (y) * (img).width]
-#define IMGPTRPIXEL(img, x, y) (img)->data[(x) + (y) * (img)->width]
+#define IMGPTRPIXEL(img, x, y) (img)->buffer[(x) + (y) * (img)->width]
 
-typedef struct Image {
-	int width;
-	int height;
-	uint32_t* data;
-} Image;
+#include <sys/types.h>
+#include "geometry.h"
+
+class Font;
+class Image {
+public:
+	Image();
+	Image(uint32_t* buffer, int width, int height);
+
+	uint32_t* data = nullptr;
+	int width = 0;
+	int height = 0;
+
+	/**
+	 * Copies a part of another image to this one.
+	 * @param other The other image to copy from.
+	 * @param other_area The area of the other image to copy.
+	 * @param pos The position of this image to copy to.
+	 */
+	void copy(const Image& other, Rect other_area, const Point& pos) const;
+
+	/**
+	 * Copies part of another image with to one with alpha blending.
+	 * @param other The other image to copy from.
+	 * @param other_area The area of the other image to copy.
+	 * @param pos The position of this image to copy to.
+	 */
+	void blend(const Image& other, Rect other_area, const Point& pos) const;
+
+	/**
+	 * Fills an area of the image with a color.
+	 */
+	void fill(Rect area, uint32_t color) const;
+
+	/**
+	 * Draws text on the image with a certain color.
+	 */
+	void draw_text(const char* str, const Point& point, Font* font, uint32_t color);
+
+	/**
+	 * Returns a pointer to the image buffer at a certain position. Returns NULL if outside the constraints.
+	 */
+	uint32_t* at(const Point& position) const;
+};
 
 __DECL_END
 
-#endif //DUCKOS_GRAPHICS_H
+#endif //DUCKOS_LIBGRAPHICS_GRAPHICS_H

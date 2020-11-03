@@ -21,6 +21,7 @@
 #define DUCKOS_LIBC_STDDEF_H
 
 #include <sys/cdefs.h>
+#include <stdint.h>
 
 __DECL_BEGIN
 

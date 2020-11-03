@@ -20,7 +20,7 @@
 #include <unistd.h>
 #include "Mouse.h"
 #include "Display.h"
-#include <graphics/png.h>
+#include <libgraphics/png.h>
 
 Mouse::Mouse(Window* parent): Window(parent, {0, 0, 1, 1}) {
 	display()->set_mouse_window(this);

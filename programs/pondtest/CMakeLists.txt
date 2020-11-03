@@ -1,4 +1,4 @@
 SET(SOURCES main.cpp)
 SET(CMAKE_SHARED_LIBRARY_LINK_CXX_FLAGS "")
 MAKE_PROGRAM(pondtest)
-TARGET_LINK_LIBRARIES(pondtest libpond)
+TARGET_LINK_LIBRARIES(pondtest libpond libgraphics)

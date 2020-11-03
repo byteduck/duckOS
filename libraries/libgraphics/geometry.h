@@ -17,8 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_POND_GEOMETRY_H
-#define DUCKOS_POND_GEOMETRY_H
+#ifndef DUCKOS_LIBGRAPHICS_GEOMETRY_H
+#define DUCKOS_LIBGRAPHICS_GEOMETRY_H
 
 class Rect;
 
@@ -87,4 +87,4 @@ public:
 	bool empty() const;
 };
 
-#endif //DUCKOS_POND_GEOMETRY_H
+#endif //DUCKOS_LIBGRAPHICS_GEOMETRY_H

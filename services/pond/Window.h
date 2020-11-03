@@ -21,8 +21,8 @@
 #define DUCKOS_WINDOW_H
 
 #include <vector>
-#include "Geometry.h"
-#include "Graphics.h"
+#include <libgraphics/geometry.h>
+#include <libgraphics/graphics.h>
 #include "Client.h"
 #include <sys/mem.h>
 #include <sys/input.h>
@@ -39,7 +39,7 @@ public:
 	Client* client() const;
 	void set_client(Client* client);
 	int id() const;
-	Framebuffer framebuffer() const;
+	Image framebuffer() const;
 	Display* display() const;
 	virtual bool is_decoration() const;
 
@@ -139,7 +139,7 @@ private:
 	Rect calculate_absolute_rect(const Rect& rect);
 	void recalculate_rects();
 
-	Framebuffer _framebuffer = {nullptr, 0, 0};
+	Image _framebuffer = {nullptr, 0, 0};
 	shm _framebuffer_shm;
 	Rect _rect;
 	Rect _absolute_rect;

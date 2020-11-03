@@ -18,7 +18,7 @@
 */
 
 #include <algorithm>
-#include "Geometry.h"
+#include "geometry.h"
 
 bool Point::in(const Rect& rect) const {
 	return x >= rect.x && x <= rect.x + rect.width &&

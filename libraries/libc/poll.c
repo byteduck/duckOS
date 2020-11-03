@@ -18,7 +18,7 @@
 */
 
 #include "poll.h"
-#include "syscall.h"
+#include "sys/syscall.h"
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
 	return syscall4(SYS_POLL, (int) fds, (int) nfds, timeout);

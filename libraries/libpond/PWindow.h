@@ -21,7 +21,7 @@
 #define DUCKOS_LIBPOND_PWINDOW_H
 
 #include <sys/types.h>
-#include "graphics/graphics.h"
+#include <libgraphics/graphics.h>
 
 /**
  * A window Object representing a window in the Pond window system.

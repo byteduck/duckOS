@@ -21,8 +21,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <libgraphics/font.h>
 
 int main() {
+	auto* font = Font::load_bdf_shm("/usr/share/fonts/gohufont-11.bdf");
+	if(!font)
+		exit(-1);
+
 	auto* pond = PContext::init();
 	if(!pond)
 		exit(-1);
@@ -33,14 +38,16 @@ int main() {
 
 	for(size_t i = 0; i < window->width * window->height; i++)
 		window->buffer[i] = RGBA(0, 0, 0, 200);
+
+	Image window_buf = {window->buffer, window->width, window->height};
+	window_buf.draw_text("Hello world!", {0,0}, font, RGB(255, 255, 255));
+
 	window->invalidate();
+
 
 	while(1) {
 		PEvent event = pond->next_event();
-		if(event.type == PEVENT_MOUSE) {
-			window->buffer[window->mouse_x + window->mouse_y * window->width] = RGB(200,0,200);
-			window->invalidate_area(window->mouse_x, window->mouse_y, 1, 1);
-		} else if(event.type == PEVENT_KEY) {
+		if(event.type == PEVENT_KEY) {
 			if(event.key.character == 'q')
 				exit(0);
 		} else if(event.type == PEVENT_WINDOW_DESTROY)

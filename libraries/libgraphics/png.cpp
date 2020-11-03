@@ -330,7 +330,7 @@ Image* load_png(FILE* file) {
 			png.image.width = png.ihdr.width;
 			png.image.height = png.ihdr.height;
 
-			png.image.data = malloc(IMGSIZE(png.image.width, png.image.height));
+			png.image.data = new uint32_t[png.image.width * png.image.height];
 
 			//Skip unused bytes
 			for(size_t i = 13; i < png.chunk_size; i++)
@@ -351,7 +351,7 @@ Image* load_png(FILE* file) {
 
 			png.chunk_size -= 2;
 
-			DEFLATE* def = malloc(sizeof(DEFLATE));
+			auto* def = new DEFLATE;
 			def->arg = &png;
 			def->write = png_write;
 			def->read = png_read;
@@ -368,7 +368,7 @@ Image* load_png(FILE* file) {
 		chunk++;
 	}
 
-	Image* ret = malloc(sizeof(Image));
+	auto* ret = new Image;
 	ret->width = png.image.width;
 	ret->height = png.image.height;
 	ret->data = png.image.data;

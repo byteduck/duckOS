@@ -17,12 +17,14 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "Graphics.h"
+#include "graphics.h"
+#include "font.h"
+#include <cstring>
 
-Framebuffer::Framebuffer(): buffer(nullptr), width(0), height(0) {}
-Framebuffer::Framebuffer(uint32_t* buffer, int width, int height): buffer(buffer), width(width), height(height) {}
+Image::Image(): data(nullptr), width(0), height(0) {}
+Image::Image(uint32_t* buffer, int width, int height): data(buffer), width(width), height(height) {}
 
-void Framebuffer::copy(const Framebuffer& other, Rect other_area, const Point& pos) const {
+void Image::copy(const Image& other, Rect other_area, const Point& pos) const {
 	//Make sure self_area is in bounds of the framebuffer
 	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};
 	self_area = self_area.overlapping_area({0, 0, width, height});
@@ -37,12 +39,12 @@ void Framebuffer::copy(const Framebuffer& other, Rect other_area, const Point& p
 
 	for(int x = 0; x < self_area.width; x++) {
 		for(int y = 0; y < self_area.height; y++) {
-			buffer[(self_area.x + x) + (self_area.y + y) * width] = other.buffer[(other_area.x + x) + (other_area.y + y) * other.width];
+			data[(self_area.x + x) + (self_area.y + y) * width] = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
 		}
 	}
 }
 
-void Framebuffer::blend(const Framebuffer& other, Rect other_area, const Point& pos) const {
+void Image::blend(const Image& other, Rect other_area, const Point& pos) const {
 //Make sure self_area is in bounds of the framebuffer
 	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};
 	self_area = self_area.overlapping_area({0, 0, width, height});
@@ -57,8 +59,8 @@ void Framebuffer::blend(const Framebuffer& other, Rect other_area, const Point& 
 
 	for(int x = 0; x < self_area.width; x++) {
 		for(int y = 0; y < self_area.height; y++) {
-			auto& this_val = buffer[(self_area.x + x) + (self_area.y + y) * width];
-			auto& other_val = other.buffer[(other_area.x + x) + (other_area.y + y) * other.width];
+			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
+			auto& other_val = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
 			double alpha = COLOR_A(other_val) / 255.00;
 			if(alpha == 0.0)
 				continue;
@@ -73,7 +75,7 @@ void Framebuffer::blend(const Framebuffer& other, Rect other_area, const Point& 
 	}
 }
 
-void Framebuffer::fill(Rect area, uint32_t color) const {
+void Image::fill(Rect area, uint32_t color) const {
 	//Make sure area is in the bounds of the framebuffer
 	area = area.overlapping_area({0, 0, width, height});
 	if(area.empty())
@@ -81,14 +83,26 @@ void Framebuffer::fill(Rect area, uint32_t color) const {
 
 	for(int x = 0; x < area.width; x++) {
 		for(int y = 0; y < area.height; y++) {
-			buffer[(area.x + x) + (area.y + y) * width] = color;
+			data[(area.x + x) + (area.y + y) * width] = color;
 		}
 	}
 }
 
-uint32_t* Framebuffer::at(const Point& position) const {
+void Image::draw_text(const char* str, const Point& point, Font* font, uint32_t color) {
+	int current_x = point.x;
+	int current_y = point.y;
+	while(*str) {
+		auto* glyph = font->glyph(*str);
+		blend({glyph->bitmap, glyph->width, glyph->height}, {0, 0, glyph->width, glyph->height}, {current_x, current_y + (font->size() - glyph->height)});
+		current_x += glyph->next_offset.x;
+		current_y += glyph->next_offset.y;
+		str++;
+	}
+}
+
+uint32_t* Image::at(const Point& position) const {
 	if(position.x < 0 || position.y < 0 || position.y >= height || position.x >= width)
 		return NULL;
 
-	return &buffer[position.x + position.y * width];
+	return &data[position.x + position.y * width];
 }

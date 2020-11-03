@@ -45,7 +45,7 @@ Window::~Window() {
 	if(_client)
 		_client->window_destroyed(this);
 	invalidate();
-	if(_framebuffer.buffer) {
+	if(_framebuffer.data) {
 		//Deallocate the old framebuffer since there is one
 		if(shmdetach(_framebuffer_shm.id) < 0) {
 			perror("Failed to deallocate framebuffer for window");
@@ -70,7 +70,7 @@ int Window::id() const {
 	return _id;
 }
 
-Framebuffer Window::framebuffer() const {
+Image Window::framebuffer() const {
 	return _framebuffer;
 }
 
@@ -163,7 +163,7 @@ void Window::handle_keyboard_event(const KeyboardEvent& event) {
 }
 
 void Window::alloc_framebuffer() {
-	if(_framebuffer.buffer) {
+	if(_framebuffer.data) {
 		//Deallocate the old framebuffer since there is one
 		if(shmdetach(_framebuffer_shm.id) < 0) {
 			perror("Failed to deallocate framebuffer for window");

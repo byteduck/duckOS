@@ -3,8 +3,8 @@ SET(SOURCES
         Client.cpp
         DecorationWindow.cpp
         Display.cpp
-        Geometry.cpp
-        Graphics.cpp
+        ../../libraries/libgraphics/geometry.cpp
+        ../../libraries/libgraphics/graphics.cpp
         Mouse.cpp
         Window.cpp
         Server.cpp)

@@ -54,7 +54,7 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 	}
 
 	_framebuffer = {buffer, _dimensions.width, _dimensions.height};
-	printf("Framebuffer opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
+	printf("Image opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
 
 	if((_keyboard_fd = open("/dev/input/keyboard", O_RDONLY)) < 0)
 		perror("Failed to open keyboard");
@@ -64,14 +64,14 @@ Rect Display::dimensions() {
 	return _dimensions;
 }
 
-Framebuffer Display::framebuffer() {
+Image Display::framebuffer() {
 	return _framebuffer;
 }
 
 void Display::clear(uint32_t color) {
 	size_t framebuffer_size = _dimensions.area();
 	for(size_t i = 0; i < framebuffer_size; i++) {
-		_framebuffer.buffer[i] = color;
+		_framebuffer.data[i] = color;
 	}
 }
 
@@ -90,7 +90,7 @@ void Display::set_root_window(Window* window) {
 		return;
 	}
 
-	_wallpaper = Framebuffer(png->data, png->width, png->height);
+	_wallpaper = Image(png->data, png->width, png->height);
 	_root_window->framebuffer().copy(_wallpaper,{0, 0, png->width, png->height},{0, 0});
 }
 
@@ -136,7 +136,7 @@ void Display::repaint() {
 
 	for(auto& area : invalid_areas) {
 		// Fill the invalid area with the background.
-		if(_wallpaper.buffer)
+		if(_wallpaper.data)
 			fb.copy(_wallpaper, area, area.position());
 		else
 			fb.fill(area, RGB(50, 50, 50));
@@ -175,7 +175,7 @@ void Display::flip_buffers() {
 	paint_time = new_time;
 
 	//Copy to the libgraphics buffer and mark the display buffer clean
-	memcpy(_framebuffer.buffer, _root_window->framebuffer().buffer, IMGSIZE(_framebuffer.width, _framebuffer.height));
+	memcpy(_framebuffer.data, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
 	display_buffer_dirty = false;
 }
 

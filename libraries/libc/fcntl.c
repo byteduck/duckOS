@@ -18,7 +18,6 @@
 */
 
 #include <sys/syscall.h>
-#include <types.h>
 #include <fcntl.h>
 #include <stdarg.h>
 

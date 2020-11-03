@@ -21,8 +21,8 @@
 #define DUCKOS_DISPLAY_H
 
 #include <cstdint>
-#include "Graphics.h"
-#include "Geometry.h"
+#include <libgraphics/graphics.h>
+#include <libgraphics/geometry.h>
 #include "Window.h"
 #include "Mouse.h"
 #include <sys/time.h>
@@ -34,7 +34,7 @@ public:
 	Display();
 
 	Rect dimensions();
-	Framebuffer framebuffer();
+	Image framebuffer();
 	void clear(uint32_t color);
 
 	/**
@@ -119,8 +119,8 @@ public:
 
 private:
 	int framebuffer_fd = 0;
-	Framebuffer _framebuffer;
-	Framebuffer _wallpaper = {nullptr, 0, 0};
+	Image _framebuffer;
+	Image _wallpaper = {nullptr, 0, 0};
 	Rect _dimensions;
 	std::vector<Rect> invalid_areas;
 	std::vector<Window*> _windows;
