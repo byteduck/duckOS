@@ -69,9 +69,9 @@ Font* Font::load_bdf_shm(const char* path) {
 			auto& bbx = font.bounding_box;
 			bbx.width = atol(strtok(NULL, " "));
 			bbx.height = atoi(strtok(NULL, " "));
-			bbx.start_x = atoi(strtok(NULL, " "));
-			bbx.start_y = atoi(strtok(NULL, " "));
-			if(bbx.width == INT_MAX || bbx.height == INT_MAX || bbx.start_x == INT_MAX || bbx.start_y == INT_MAX) {
+			bbx.base_x = atoi(strtok(NULL, " "));
+			bbx.base_y = atoi(strtok(NULL, " "));
+			if(bbx.width == INT_MAX || bbx.height == INT_MAX || bbx.base_x == INT_MAX || bbx.base_y == INT_MAX) {
 				fprintf(stderr, "Couldn't load font: Invalid FONTBOUNDINGBOX");
 				return nullptr;
 			}
@@ -233,6 +233,10 @@ Font::~Font() {
 	}
 
 	delete unknown_glyph;
+}
+
+FontData::BoundingBox Font::bounding_box() {
+	return data->bounding_box;
 }
 
 int Font::size() {

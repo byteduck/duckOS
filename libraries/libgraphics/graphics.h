@@ -39,6 +39,7 @@ __DECL_BEGIN
 #include "geometry.h"
 
 class Font;
+struct FontGlyph;
 class Image {
 public:
 	Image();
@@ -57,22 +58,43 @@ public:
 	void copy(const Image& other, Rect other_area, const Point& pos) const;
 
 	/**
-	 * Copies part of another image with to one with alpha blending.
-	 * @param other The other image to copy from.
-	 * @param other_area The area of the other image to copy.
-	 * @param pos The position of this image to copy to.
+	 * Draws another image on top of this one with alpha blending.
+	 * @param other The image to draw.
+	 * @param other_area The area of the other image to draw.
+	 * @param pos The position on this image to draw on.
 	 */
-	void blend(const Image& other, Rect other_area, const Point& pos) const;
+	void draw_image(const Image& other, Rect other_area, const Point& pos) const;
+
+	/**
+	 * Draws another image on top of this one with alpha blending.
+	 * @param other The image to draw.
+	 * @param pos The position on this image to draw on.
+	 */
+	void draw_image(const Image& other, const Point& pos) const;
 
 	/**
 	 * Fills an area of the image with a color.
+	 * @param area The area to fill.
+	 * @param color The color to fill the area with.
 	 */
 	void fill(Rect area, uint32_t color) const;
 
 	/**
 	 * Draws text on the image with a certain color.
+	 * @param str The string to draw.
+	 * @param pos The top-left position of where to draw.
+	 * @param font The font to use.
+	 * @param color The color to draw in.
 	 */
-	void draw_text(const char* str, const Point& point, Font* font, uint32_t color);
+	void draw_text(const char* str, const Point& pos, Font* font, uint32_t color);
+
+	/**
+	 * Draws a glyph on the image with a certain color.
+	 * @param glyph The glyph to draw.
+	 * @param pos The position to draw the glyph at.
+	 * @param color The color to draw the glyph in.
+	 */
+	void draw_glyph(FontGlyph* glyph, const Point& pos, uint32_t color);
 
 	/**
 	 * Returns a pointer to the image buffer at a certain position. Returns NULL if outside the constraints.

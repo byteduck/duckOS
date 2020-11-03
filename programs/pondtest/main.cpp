@@ -40,7 +40,7 @@ int main() {
 		window->buffer[i] = RGBA(0, 0, 0, 200);
 
 	Image window_buf = {window->buffer, window->width, window->height};
-	window_buf.draw_text("Hello world!", {0,0}, font, RGB(255, 255, 255));
+	window_buf.draw_text("ghijklmnop", {0,0}, font, RGB(0, 200, 200));
 
 	window->invalidate();
 

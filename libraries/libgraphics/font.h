@@ -46,12 +46,13 @@ struct FontData {
 	char MAGIC[6] = "@FONT";
 	char id[128];
 	int size;
-	struct {
+	typedef struct {
 		int width;
 		int height;
-		int start_x;
-		int start_y;
-	} bounding_box;
+		int base_x;
+		int base_y;
+	} BoundingBox;
+	BoundingBox bounding_box;
 	int num_glyphs;
 	FontGlyph glyphs[];
 };
@@ -62,6 +63,7 @@ public:
 	static Font* load_from_shm(shm shm);
 
 	int size();
+	FontData::BoundingBox bounding_box();
 	FontGlyph* glyph(uint32_t codepoint);
 
 private:
