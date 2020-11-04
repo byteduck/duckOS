@@ -37,6 +37,18 @@ bool File::is_tty() {
 	return false;
 }
 
+bool File::is_pty_controller() {
+	return false;
+}
+
+bool File::is_pty_mux() {
+	return false;
+}
+
+bool File::is_pty() {
+	return false;
+}
+
 bool File::is_fifo() {
 	return false;
 }

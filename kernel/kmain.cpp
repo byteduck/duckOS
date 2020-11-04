@@ -30,7 +30,7 @@
 #include <kernel/device/PartitionDevice.h>
 #include <kernel/kmain.h>
 #include <kernel/filesystem/VFS.h>
-#include <kernel/terminal/TTYDevice.h>
+#include <kernel/terminal/VirtualTTY.h>
 #include <kernel/device/KeyboardDevice.h>
 #include <common/defines.h>
 #include <kernel/device/BochsVGADevice.h>
@@ -40,6 +40,8 @@
 #include <kernel/filesystem/procfs/ProcFS.h>
 #include <kernel/device/MouseDevice.h>
 #include <kernel/filesystem/socketfs/SocketFS.h>
+#include <kernel/filesystem/ptyfs/PTYFS.h>
+#include <kernel/terminal/PTYMuxDevice.h>
 #include "CommandLine.h"
 
 uint8_t boot_disk;
@@ -75,11 +77,9 @@ int kmain(uint32_t mbootptr){
 
 void kmain_late(){
 	PIT::init_idle_counter();
-	new KeyboardDevice;
-	new MouseDevice;
 	printf("[kinit] Tasking initialized.\n[kinit] Initializing TTY...\n");
 
-	auto* tty0 = new TTYDevice(0, "tty0", 4, 0);
+	auto* tty0 = new VirtualTTY(4, 0);
 	tty0->set_active();
 	setup_tty();
 
@@ -159,6 +159,20 @@ void kmain_late(){
 	res = VFS::inst().mount(socketfs, sock_or_err.value());
 	if(res.is_error()) {
 		printf("[kinit] Failed to mount sock: %d\n", res.code());
+		while(true);
+	}
+
+	//Mount PTYFS
+	auto pts_or_err = VFS::inst().resolve_path("/dev/pts", VFS::inst().root_ref(), root_user);
+	if(pts_or_err.is_error()) {
+		printf("[kinit] Failed to mount pts: %d\n", pts_or_err.code());
+		while(true);
+	}
+
+	auto* ptyfs = new PTYFS();
+	res = VFS::inst().mount(ptyfs, pts_or_err.value());
+	if(res.is_error()) {
+		printf("[kinit] Failed to mount pts: %d\n", res.code());
 		while(true);
 	}
 

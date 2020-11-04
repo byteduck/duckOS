@@ -57,6 +57,8 @@ mknod mnt/dev/fb0 b 29 0
 mkdir -p mnt/dev/input
 mknod mnt/dev/input/keyboard c 13 0
 mknod mnt/dev/input/mouse c 13 1
+mknod mnt/dev/ptmx c 5 2
+mkdir -p mnt/dev/pts
 echo "Done setting up devices!"
 echo "Setting up directories..."
 chmod -R g+rX,o+rX mnt/

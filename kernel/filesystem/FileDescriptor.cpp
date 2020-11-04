@@ -23,11 +23,20 @@
 #include "Pipe.h"
 #include <common/defines.h>
 #include <kernel/kstdio.h>
-#include <kernel/device/Device.h>
+#include <kernel/terminal/PTYMuxDevice.h>
+#include <kernel/terminal/PTYDevice.h>
 
 FileDescriptor::FileDescriptor(const DC::shared_ptr<File>& file): _file(file) {
 	if(file->is_inode())
 		_inode = DC::static_pointer_cast<InodeFile>(file)->inode();
+
+	//If we're opening the pty multiplexer, we should open a new PTY controller instead.
+	if(file->is_pty_mux())
+		_file = ((DC::shared_ptr<PTYMuxDevice>) _file)->create_new();
+
+	//Increase pty ref count if applicable
+	if(_file->is_pty())
+		((PTYDevice*) _file.get())->ref_inc();
 }
 
 FileDescriptor::FileDescriptor(FileDescriptor& other) {
@@ -51,6 +60,14 @@ FileDescriptor::FileDescriptor(FileDescriptor& other) {
 		}
 	}
 
+	//Increase pty controller ref count if applicable
+	if(_file->is_pty_controller())
+		((PTYControllerDevice*) _file.get())->ref_inc();
+
+	//Increase pty ref count if applicable
+	if(_file->is_pty())
+		((PTYDevice*) _file.get())->ref_inc();
+
 	open();
 }
 
@@ -63,6 +80,14 @@ FileDescriptor::~FileDescriptor() {
 			((Pipe*) _file.get())->remove_reader();
 		}
 	}
+
+	//Decrease pty controller ref count if applicable
+	if(_file->is_pty_controller())
+		((PTYControllerDevice*) _file.get())->ref_dec();
+
+	//Decrease pty ref count if applicable
+	if(_file->is_pty())
+		((PTYDevice*) _file.get())->ref_dec();
 
 	_file->close(*this);
 }

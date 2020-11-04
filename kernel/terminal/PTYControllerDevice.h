@@ -17,37 +17,36 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_TTYDEVICE_H
-#define DUCKOS_TTYDEVICE_H
+#ifndef DUCKOS_PTYCONTROLLERDEVICE_H
+#define DUCKOS_PTYCONTROLLERDEVICE_H
 
-#include <common/circular_queue.hpp>
 #include <kernel/device/CharacterDevice.h>
-#include <kernel/device/KeyboardDevice.h>
-#include "Terminal.h"
+#include <common/circular_queue.hpp>
 
-#define NUM_TTYS 8
-
-class TTYDevice: public CharacterDevice {
+class PTYDevice;
+class PTYControllerDevice: public CharacterDevice {
 public:
-	TTYDevice(unsigned major, unsigned minor);
+	PTYControllerDevice(unsigned int id);
 
-	//Device
+	//File
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
+	bool is_pty_controller() override;
 	bool can_read(const FileDescriptor& fd) override;
 	bool can_write(const FileDescriptor& fd) override;
 
-	bool is_tty() override;
-	void putchar(uint8_t c);
-	virtual size_t tty_write(const uint8_t* buffer, size_t count) = 0;
-private:
+	size_t putchars(const uint8_t* buffer, size_t count);
+	void notify_pty_closed();
+	void ref_inc();
+	void ref_dec();
+	PTYDevice* pty();
 
-	DC::string _name;
-	DC::circular_queue<uint8_t> _input_buffer;
-	DC::circular_queue<uint8_t> _buffered_input_buffer;
-	BooleanBlocker _buffer_blocker;
-	SpinLock _input_lock;
-	bool buffered = true;
+private:
+	SpinLock _output_lock, _write_lock, _ref_lock;
+	DC::circular_queue<uint8_t> _output_buffer;
+	PTYDevice* _pty;
+	unsigned int num_refs = 1;
 };
 
-#endif //DUCKOS_TTYDEVICE_H
+
+#endif //DUCKOS_PTYCONTROLLERDEVICE_H

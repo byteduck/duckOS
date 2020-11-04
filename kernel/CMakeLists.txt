@@ -83,6 +83,10 @@ SET(KERNEL_SRCS
         filesystem/DirectoryEntry.cpp
         filesystem/Pipe.cpp
         terminal/TTYDevice.cpp
+        terminal/VirtualTTY.cpp
+        terminal/PTYDevice.cpp
+        terminal/PTYControllerDevice.cpp
+        terminal/PTYMuxDevice.cpp
         terminal/Terminal.cpp
         User.cpp
         filesystem/procfs/ProcFS.cpp
@@ -90,7 +94,9 @@ SET(KERNEL_SRCS
         filesystem/procfs/ProcFSEntry.cpp
         filesystem/socketfs/SocketFS.cpp
         filesystem/socketfs/SocketFSInode.cpp
-        filesystem/socketfs/SocketFSClient.cpp)
+        filesystem/socketfs/SocketFSClient.cpp
+        filesystem/ptyfs/PTYFS.cpp
+        filesystem/ptyfs/PTYFSInode.cpp)
 
 SET(COMMON_SRCS
         ../common/cstring.cpp

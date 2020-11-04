@@ -18,10 +18,13 @@
 */
 
 #include <common/defines.h>
+#include <kernel/terminal/PTYMuxDevice.h>
 #include "Device.h"
 #include "ZeroDevice.h"
 #include "RandomDevice.h"
 #include "NullDevice.h"
+#include "KeyboardDevice.h"
+#include "MouseDevice.h"
 
 DC::vector<DC::shared_ptr<Device>> Device::_devices;
 
@@ -30,6 +33,9 @@ void Device::init() {
 	new ZeroDevice();
 	new RandomDevice();
 	new NullDevice();
+	new KeyboardDevice();
+	new MouseDevice();
+	new PTYMuxDevice();
 }
 
 Device::Device(unsigned major, unsigned minor): _major(major), _minor(minor) {
@@ -50,7 +56,7 @@ unsigned Device::major() {
 }
 
 unsigned Device::minor() {
-	return _major;
+	return _minor;
 }
 
 

@@ -21,11 +21,11 @@
 #include <kernel/kstdio.h>
 #include <common/stdlib.h>
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/terminal/TTYDevice.h>
+#include <kernel/terminal/VirtualTTY.h>
 #include <common/defines.h>
 
 DC::shared_ptr<FileDescriptor> tty_desc(nullptr);
-DC::shared_ptr<TTYDevice> tty(nullptr);
+DC::shared_ptr<VirtualTTY> tty(nullptr);
 
 void putch(char c){
 	if(tty) tty_desc->write((uint8_t*) &c, 1);
@@ -130,7 +130,7 @@ void clearScreen(){
 }
 
 void setup_tty() {
-	tty = TTYDevice::current_tty();
+	tty = VirtualTTY::current_tty();
 	tty_desc = DC::make_shared<FileDescriptor>(tty);
 	tty_desc->set_options(O_WRONLY);
 }

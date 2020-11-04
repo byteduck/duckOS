@@ -34,6 +34,9 @@ public:
 	virtual ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count);
 	virtual ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, DirectoryEntry* buffer);
 	virtual bool is_tty();
+	virtual bool is_pty_controller();
+	virtual bool is_pty_mux();
+	virtual bool is_pty();
 	virtual bool is_fifo();
 	virtual int ioctl(unsigned request, void* argp);
 	virtual void open(FileDescriptor& fd, int options);

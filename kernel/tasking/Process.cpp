@@ -29,6 +29,9 @@
 #include "PollBlocker.h"
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/syscall.h>
+#include <kernel/terminal/VirtualTTY.h>
+#include <kernel/terminal/PTYControllerDevice.h>
+#include <kernel/terminal/PTYDevice.h>
 
 const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 
@@ -128,7 +131,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	quantum = 1;
 
 	if(!kernel) {
-		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		auto ttydesc = DC::make_shared<FileDescriptor>(VirtualTTY::current_tty());
 		ttydesc->set_owner(this);
 		ttydesc->set_options(O_RDWR);
 		_file_descriptors.push_back(ttydesc);
@@ -518,7 +521,7 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	new_proc->_blocker = this->_blocker;
 	if(kernel) {
 		//Kernel processes have no file descriptors, so we need to initialize them
-		auto ttydesc = DC::make_shared<FileDescriptor>(TTYDevice::current_tty());
+		auto ttydesc = DC::make_shared<FileDescriptor>(VirtualTTY::current_tty());
 		ttydesc->set_owner(this);
 		ttydesc->set_options(O_RDWR);
 		_file_descriptors.resize(0); //Just in case
@@ -1122,5 +1125,24 @@ int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {
 		}
 	}
 
+	return SUCCESS;
+}
+
+int Process::sys_ptsname(int fd, char* buf, size_t bufsize) {
+	check_ptr(buf);
+	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd]) return -EBADF;
+	auto file = _file_descriptors[fd];
+
+	//Check to make sure it's a PTY Controller
+	if(!file->file()->is_pty_controller())
+		return -ENOTTY;
+
+	//Make sure the name isn't too long
+	auto name = ((PTYControllerDevice*) file->file().get())->pty()->name();
+	if(name.length() + 1 > bufsize)
+		return -ERANGE;
+
+	//Copy the name into the buffer and return success
+	strcpy(buf, name.c_str());
 	return SUCCESS;
 }
