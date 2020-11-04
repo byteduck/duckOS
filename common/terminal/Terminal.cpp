@@ -17,10 +17,15 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/cstring.h>
-#include <kernel/kstdio.h>
-#include <common/stdlib.h>
 #include "Terminal.h"
+
+#ifdef DUCKOS_KERNEL
+#include <common/cstring.h>
+#include <common/stdlib.h>
+#else
+#include <cstring>
+#include <stdlib.h>
+#endif
 
 Terminal::Terminal(const Size& dimensions, Listener& listener):
 dimensions(dimensions),

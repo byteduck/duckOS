@@ -21,6 +21,7 @@
 #define DUCKOS_VIRTUALTTY_H
 
 #include "TTYDevice.h"
+#include <common/terminal/Terminal.h>
 
 class VirtualTTY: public TTYDevice, private KeyboardHandler, private Terminal::Listener {
 public:

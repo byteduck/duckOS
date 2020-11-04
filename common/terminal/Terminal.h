@@ -17,10 +17,14 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_TERMINAL_H
-#define DUCKOS_TERMINAL_H
+#ifndef DUCKOS_COMMON_TERMINAL_H
+#define DUCKOS_COMMON_TERMINAL_H
 
+#ifdef DUCKOS_KERNEL
 #include <common/cstddef.h>
+#else
+#include <stddef.h>
+#endif
 
 #define TERM_COLOR_BLACK 0
 #define TERM_COLOR_RED 1

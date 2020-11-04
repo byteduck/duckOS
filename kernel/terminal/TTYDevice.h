@@ -23,7 +23,6 @@
 #include <common/circular_queue.hpp>
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/device/KeyboardDevice.h>
-#include "Terminal.h"
 
 #define NUM_TTYS 8
 

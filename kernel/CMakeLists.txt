@@ -87,7 +87,7 @@ SET(KERNEL_SRCS
         terminal/PTYDevice.cpp
         terminal/PTYControllerDevice.cpp
         terminal/PTYMuxDevice.cpp
-        terminal/Terminal.cpp
+        ../common/terminal/Terminal.cpp
         User.cpp
         filesystem/procfs/ProcFS.cpp
         filesystem/procfs/ProcFSInode.cpp
