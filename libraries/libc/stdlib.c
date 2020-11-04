@@ -420,3 +420,24 @@ size_t mbstowcs(wchar_t* pwcs, const char* s, size_t n) {
 size_t wcstombs(char* s, const wchar_t* pwcs, size_t n) {
 	return -1;
 }
+
+int posix_openpt(int flags) {
+	//PTY can only have O_RDWR, O_CLOEXEC, O_NOCTTY options
+	if(flags & ~(O_RDWR | O_CLOEXEC | O_NOCTTY)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	return open("/dev/ptmx", flags);
+}
+
+static char ptsnamebuf[128];
+char* ptsname(int fd) {
+	if(ptsname_r(fd, ptsnamebuf, 128) < 0)
+		return NULL;
+	return ptsnamebuf;
+}
+
+int ptsname_r(int fd, char* buf, size_t buflen) {
+	return syscall4(SYS_PTSNAME, fd, (int) buf, (int) buflen);
+}

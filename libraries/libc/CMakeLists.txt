@@ -7,6 +7,7 @@ SET(SOURCES
         errno.c
         fcntl.c
         poll.c
+        signal.c
         stdio.c
         stdlib.c
         string.c

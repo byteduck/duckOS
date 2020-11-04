@@ -20,8 +20,9 @@
 #ifndef DUCKOS_LIBC_SIGNAL_H
 #define DUCKOS_LIBC_SIGNAL_H
 
-#include <sys/cdefs.h>
-#include <stdint.h>
+#include "sys/cdefs.h"
+#include "stdint.h"
+#include "sys/types.h"
 
 __DECL_BEGIN
 
@@ -29,6 +30,12 @@ __DECL_BEGIN
 
 typedef uint32_t sig_atomic_t;
 typedef void (*sighandler_t)(int);
+typedef unsigned long sigset_t;
+typedef struct sigaction {
+	sighandler_t sa_sigaction;
+	sigset_t sa_mask;
+	int sa_flags;
+} sigaction_t;
 
 #define SIG_DFL ((sighandler_t)0)
 #define SIG_ERR ((sighandler_t)1)
@@ -36,6 +43,8 @@ typedef void (*sighandler_t)(int);
 
 void (*signal(int sig, sighandler_t func))(int);
 int raise(int sig);
+int kill(pid_t pid, int sig);
+void sigaction(int signum, const struct sigaction* act, const struct sigaction* oldact);
 
 __DECL_END
 

@@ -94,6 +94,11 @@ int wctomb(char* s, wchar_t wc);
 size_t mbstowcs(wchar_t* pwcs, const char* s, size_t n);
 size_t wcstombs(char* s, const wchar_t* pwcs, size_t n);
 
+//PTY stuff
+int posix_openpt(int flags);
+char* ptsname(int fd);
+int ptsname_r(int fd, char* buf, size_t buflen);
+
 __DECL_END
 
 #endif //DUCKOS_LIBC_STDLIB_H
