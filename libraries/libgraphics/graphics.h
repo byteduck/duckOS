@@ -100,11 +100,13 @@ public:
 
 	/**
 	 * Draws a glyph on the image with a certain color.
-	 * @param glyph The glyph to draw.
+	 * @param font The font to use.
+	 * @param codepoint The codepoint of the character.
 	 * @param pos The position to draw the glyph at.
 	 * @param color The color to draw the glyph in.
+	 * @return The position where the next character should be drawn.
 	 */
-	void draw_glyph(FontGlyph* glyph, const Point& pos, uint32_t color);
+	Point draw_glyph(Font* font, uint32_t codepoint, const Point& pos, uint32_t color);
 
 	/**
 	 * Returns a pointer to the image buffer at a certain position. Returns NULL if outside the constraints.

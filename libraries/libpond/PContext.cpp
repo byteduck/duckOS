@@ -141,6 +141,10 @@ Font* PContext::get_font(const char* font) {
 	return event.font_response.font;
 }
 
+int PContext::connection_fd() {
+	return fd;
+}
+
 void PContext::handle_open_window(socketfs_packet* packet, PEvent* event) {
 	//Read the response
 	auto* resp = (struct PWindowOpenedPkt*) packet->data;

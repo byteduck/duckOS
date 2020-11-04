@@ -91,7 +91,7 @@ void DecorationWindow::redraw_frame() {
 
 	Font* title_font = FontManager::inst().get_font("gohu-11");
 	if(title_font)
-		_framebuffer.draw_text(_contents->title(), {DECO_LEFT_SIZE, 1}, title_font, RGB(255,255,255));
+		_framebuffer.draw_text(_contents->title(), {1 + DECO_LEFT_SIZE, 1}, title_font, RGB(255,255,255));
 
 	invalidate();
 }

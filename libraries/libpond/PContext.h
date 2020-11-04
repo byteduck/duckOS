@@ -78,6 +78,13 @@ public:
 		return write_packet(fd, SOCKETFS_HOST, sizeof(T), (void*) &packet) >= 0;
 	}
 
+	/**
+	 * Returns the file descriptor for the socket used to listen for events. This can be used to wait on
+	 * events from pond as well as other file descriptors with select(), poll(), or similar.
+	 * @return The file descriptor used to connect to pond's socket.
+	 */
+	int connection_fd();
+
 private:
 	explicit PContext(int _fd);
 

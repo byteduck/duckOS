@@ -43,7 +43,7 @@ int main() {
 	if(!fork()) {
 		char* argv[] = {NULL};
 		char* envp[] = {NULL};
-		execve("/bin/pondtest", argv, envp);
+		execve("/bin/terminal", argv, envp);
 		exit(-1);
 	}
 
