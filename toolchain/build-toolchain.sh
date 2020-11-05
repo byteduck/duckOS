@@ -83,7 +83,19 @@ build_libc() {
   printf "Making and installing libc...\n"
   cd "$BUILD"
   make libc || exit 1
-  printf "Made and installed libc!\nMaking libstdc++...\n"
+  printf "Made and installed libc!\Installing libc headers...\n"
+  mkdir -p "$SYSROOT"/usr/include
+  LIBC_HEADERS=$(find "$LIBC_LOC" -name '*.h' -print)
+  while IFS= read -r HEADER; do
+    install -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
+  done <<< "$LIBC_HEADERS"
+  printf "libc headers installed!\nInstalling libm headers...\n"
+  mkdir -p "$SYSROOT"/usr/include
+  LIBM_HEADERS=$(find "$LIBM_LOC" -name '*.h' -print)
+  while IFS= read -r HEADER; do
+    install -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
+  done <<< "$LIBM_HEADERS"
+  printf "libm headers installed!\nBuilding libstdc++...\n"
   cd "gcc-$GCC_VERSION-build" || exit 1
   "$BUILD/$GCC_FILE/configure" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --with-newlib --enable-shared || exit 1
   make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1

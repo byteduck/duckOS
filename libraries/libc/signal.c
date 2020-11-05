@@ -18,7 +18,7 @@
 */
 
 #include "signal.h"
-#include "syscall.h"
+#include "sys/syscall.h"
 #include "unistd.h"
 
 void (*signal(int sig, sighandler_t func))(int) {
