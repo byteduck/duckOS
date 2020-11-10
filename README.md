@@ -58,7 +58,10 @@ Programs that take arguments will provide you with the correct usage when you ru
 - [libgraphics](libraries/libgraphics): A library which provides a few utilities for working with graphics such as image format loading.
 
 ### Ports
-- DOOM ([duckos-doom](https://github.com/byteduck/duckos-doom)): A port of DOOM. A little buggy at the moment, but playable. I'm waiting to  fix the bugs until I have a proper window manager since there's no sense in dedicating time to making it work in a graphical TTY.
+
+Ports will only compile if their corresponding submodule is downloaded with `git submodule init` and `git submodule update`.
+
+- [DOOM](ports/doom): A little buggy at the moment, but playable. With the current multitasking and window manager implementation, it can be a little slow.
 
 ### Known Issues / Limitations
 - Framebuffer scrolling is slow on real hardware. I'm not focusing on fixing this right now until I start working on a window manager.

@@ -1,0 +1,3 @@
+IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/doom/" AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/doom/doomgeneric")
+        ADD_SUBDIRECTORY(doom/doomgeneric)
+ENDIF()
