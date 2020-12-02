@@ -218,6 +218,7 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 			event_window = window;
 			window->mouse_moved(mouse - window->absolute_rect().position(), delta_x, delta_y);
 			window->set_mouse_buttons(_mouse_window->mouse_buttons());
+			window->focus();
 			break;
 		}
 	}

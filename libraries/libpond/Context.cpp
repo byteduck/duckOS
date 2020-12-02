@@ -17,7 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "PContext.h"
+#include "Context.h"
+#include "Window.h"
 #include <sys/socketfs.h>
 #include <poll.h>
 #include <unistd.h>
@@ -26,24 +27,26 @@
 #include <sys/mem.h>
 #include <libgraphics/font.h>
 
-PContext::PContext(int _fd): fd(_fd) {}
+using namespace Pond;
 
-PContext* PContext::init() {
+Context::Context(int _fd): fd(_fd) {}
+
+Context* Context::init() {
 	int fd = open("/sock/pond", O_RDWR);
 	if(fd < 0) {
 		perror("libpond: Failed to open socket");
 		return nullptr;
 	}
-	return new PContext(fd);
+	return new Context(fd);
 }
 
-bool PContext::has_event() {
+bool Context::has_event() {
 	struct pollfd pfd = {fd, POLLIN, 0};
 	poll(&pfd, 1, 0);
 	return pfd.revents & POLLIN;
 }
 
-PEvent PContext::next_event() {
+Event Context::next_event() {
 	//Wait for the socket to be ready for reading
 	struct pollfd pfd = {fd, POLLIN, 0};
 	poll(&pfd, 1, -1);
@@ -52,19 +55,19 @@ PEvent PContext::next_event() {
 	socketfs_packet* packet = read_packet(fd);
 	if(!packet) {
 		perror("libpond failed to read packet");
-		PEvent ret = {.type = PPKT_ERROR};
+		Event ret = {.type = PPKT_ERROR};
 		return ret;
 	}
 
 	//Make sure the packet has an ID
 	if(packet->length < sizeof(short)) {
 		fprintf(stderr, "libpond: Packet was too small!");
-		PEvent ret = {.type = PPKT_ERROR};
+		Event ret = {.type = PPKT_ERROR};
 		return ret;
 	}
 
 	//Get the packet type and handle it
-	PEvent ret = {.type = PEVENT_UNKNOWN};
+	Event ret = {.type = PEVENT_UNKNOWN};
 	short packet_type = *((short*)packet->data);
 	switch(packet_type) {
 		case PPKT_WINDOW_OPENED:
@@ -106,13 +109,13 @@ PEvent PContext::next_event() {
 	return ret;
 }
 
-PWindow* PContext::create_window(PWindow* parent, int x, int y, int width, int height) {
+Window* Context::create_window(Window* parent, int x, int y, int width, int height) {
 	//Write the packet
 	if(!send_packet(POpenWindowPkt(parent ? parent->id : 0, width, height, x, y)))
 		perror("Pond: Failed to write packet");
 
 	//Wait for the response
-	PEvent event = next_event();
+	Event event = next_event();
 	if(event.type != PEVENT_WINDOW_CREATE)
 		return NULL;
 
@@ -120,7 +123,7 @@ PWindow* PContext::create_window(PWindow* parent, int x, int y, int width, int h
 	return event.window_create.window;
 }
 
-Font* PContext::get_font(const char* font) {
+Font* Context::get_font(const char* font) {
 	//If we've already loaded the font, just return it
 	if(fonts[font])
 		return fonts[font];
@@ -130,7 +133,7 @@ Font* PContext::get_font(const char* font) {
 		perror("Pond: Failed to write packet");
 
 	//Wait for the response
-	PEvent event = next_event();
+	Event event = next_event();
 	if(event.type != PEVENT_FONT_RESPONSE)
 		return NULL;
 
@@ -141,11 +144,11 @@ Font* PContext::get_font(const char* font) {
 	return event.font_response.font;
 }
 
-int PContext::connection_fd() {
+int Context::connection_fd() {
 	return fd;
 }
 
-void PContext::handle_open_window(socketfs_packet* packet, PEvent* event) {
+void Context::handle_open_window(socketfs_packet* packet, Event* event) {
 	//Read the response
 	auto* resp = (struct PWindowOpenedPkt*) packet->data;
 	if(resp->window_id < 0) {
@@ -162,7 +165,7 @@ void PContext::handle_open_window(socketfs_packet* packet, PEvent* event) {
 	}
 
 	//Allocate the new window object and put it in the PEvent
-	auto* window = new PWindow {
+	auto* window = new Window {
 			.id = resp->window_id,
 			.width = resp->width,
 			.height = resp->height,
@@ -178,7 +181,7 @@ void PContext::handle_open_window(socketfs_packet* packet, PEvent* event) {
 	windows[window->id] = window;
 }
 
-void PContext::handle_destroy_window(socketfs_packet* packet, PEvent* event) {
+void Context::handle_destroy_window(socketfs_packet* packet, Event* event) {
 	//Read the response
 	auto* resp = (struct PWindowDestroyedPkt*) packet->data;
 	event->window_destroy.id = resp->window_id;
@@ -191,12 +194,12 @@ void PContext::handle_destroy_window(socketfs_packet* packet, PEvent* event) {
 		fprintf(stderr, "libpond: Failed to find window with id %d in map for removal\n", resp->window_id);
 }
 
-void PContext::handle_move_window(socketfs_packet* packet, PEvent* event) {
+void Context::handle_move_window(socketfs_packet* packet, Event* event) {
 	//Read the response
 	auto* resp = (struct PWindowMovedPkt*) packet->data;
 
 	//Find the window and update the event & window
-	PWindow* window = windows[resp->window_id];
+	Window* window = windows[resp->window_id];
 	if(window) {
 		event->window_move.window = window;
 		event->window_move.old_x = window->x;
@@ -209,12 +212,12 @@ void PContext::handle_move_window(socketfs_packet* packet, PEvent* event) {
 	}
 }
 
-void PContext::handle_resize_window(socketfs_packet* packet, PEvent* event) {
+void Context::handle_resize_window(socketfs_packet* packet, Event* event) {
 	//Read the response
 	auto* resp = (struct PWindowResizedPkt*) packet->data;
 
 	//Find the window and update the event & window
-	PWindow* window = windows[resp->window_id];
+	Window* window = windows[resp->window_id];
 	if(window) {
 		event->window_resize.window = window;
 		event->window_resize.old_width = window->width;
@@ -238,12 +241,12 @@ void PContext::handle_resize_window(socketfs_packet* packet, PEvent* event) {
 	}
 }
 
-void PContext::handle_mouse_move(socketfs_packet* packet, PEvent* event) {
+void Context::handle_mouse_move(socketfs_packet* packet, Event* event) {
 	//Read the response
 	auto* resp = (struct PMouseMovePkt*) packet->data;
 
 	//Find the window and update the event & window
-	PWindow* window = windows[resp->window_id];
+	Window* window = windows[resp->window_id];
 	if(window) {
 		event->mouse.window = window;
 		event->mouse.old_buttons = window->mouse_buttons;
@@ -257,12 +260,12 @@ void PContext::handle_mouse_move(socketfs_packet* packet, PEvent* event) {
 	}
 }
 
-void PContext::handle_mouse_button(socketfs_packet* packet, PEvent* event) {
+void Context::handle_mouse_button(socketfs_packet* packet, Event* event) {
 	//Read the response
 	auto* resp = (struct PMouseButtonPkt*) packet->data;
 
 	//Find the window and update the event & window
-	PWindow* window = windows[resp->window_id];
+	Window* window = windows[resp->window_id];
 	if(window) {
 		event->mouse.window = window;
 		event->mouse.old_buttons = window->mouse_buttons;
@@ -275,12 +278,12 @@ void PContext::handle_mouse_button(socketfs_packet* packet, PEvent* event) {
 	}
 }
 
-void PContext::handle_key(socketfs_packet* packet, PEvent* event) {
+void Context::handle_key(socketfs_packet* packet, Event* event) {
 	//Read the response
 	auto* resp = (struct PKeyEventPkt*) packet->data;
 
 	//Find the window and update the event & window
-	PWindow* window = windows[resp->window_id];
+	Window* window = windows[resp->window_id];
 	if(window) {
 		event->key.window = window;
 		event->key.character = resp->character;
@@ -293,7 +296,7 @@ void PContext::handle_key(socketfs_packet* packet, PEvent* event) {
 	}
 }
 
-void PContext::handle_font_response(socketfs_packet* packet, PEvent* event) {
+void Context::handle_font_response(socketfs_packet* packet, Event* event) {
 	//Read the response
 	auto* resp = (struct PFontResponsePkt*) packet->data;
 

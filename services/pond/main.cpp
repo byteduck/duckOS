@@ -21,7 +21,6 @@
 #include "Display.h"
 #include "Server.h"
 #include "Window.h"
-#include "DecorationWindow.h"
 #include "FontManager.h"
 #include <poll.h>
 #include <unistd.h>

@@ -41,7 +41,6 @@ public:
 	int id() const;
 	Image framebuffer() const;
 	Display* display() const;
-	virtual bool is_decoration() const;
 
 	/**
 	 * The rect of the window relative to its parent.
@@ -144,7 +143,6 @@ public:
 	void set_title(const char* title);
 
 private:
-	friend class DecorationWindow;
 	friend class Mouse;
 	void alloc_framebuffer();
 	Rect calculate_absolute_rect(const Rect& rect);

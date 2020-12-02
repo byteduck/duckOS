@@ -24,10 +24,12 @@
 #include <sys/input.h>
 #include <common/terminal/Terminal.h>
 #include <libgraphics/font.h>
-#include <signal.h>
+#include <csignal>
+#include <libpond/Window.h>
+#include <libpond/Context.h>
 
-PContext* pond;
-PWindow* window;
+Pond::Context* pond;
+Pond::Window* window;
 Font* font;
 Terminal* term;
 int pty_fd;
@@ -59,7 +61,6 @@ public:
 		Point pos = {(int) position.x * font->bounding_box().width, (int) position.y * font->size()};
 		window->framebuffer.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[character.attributes.background]);
 		window->framebuffer.draw_glyph(font, character.codepoint, pos, color_palette[character.attributes.foreground]);
-		window->invalidate();
 	}
 
 	void on_cursor_change(const Terminal::Position& position) override {
@@ -72,18 +73,15 @@ public:
 
 	void on_clear() {
 		window->framebuffer.fill({0,0,window->width,window->height}, RGB(0,0,0));
-		window->invalidate();
 	}
 
 	void on_clear_line(size_t line) {
 		window->framebuffer.fill({0,(int) line * font->size(), window->width, font->size()}, RGB(0,0,0));
-		window->invalidate();
 	}
 
 	void on_scroll(size_t lines) {
 		window->framebuffer.copy(window->framebuffer, {0, (int)lines * font->size(),  window->width, window->height - ((int) lines * font->size())}, {0, });
 		window->framebuffer.fill({0, window->height - ((int) lines * font->size()), window->width, (int)lines * font->size()}, RGB(0,0,0));
-		window->invalidate();
 	}
 
 	void on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) {
@@ -96,7 +94,7 @@ void sigchld_handler(int sig) {
 }
 
 int main() {
-	pond = PContext::init();
+	pond = Pond::Context::init();
 	if(!pond)
 		exit(-1);
 
@@ -123,7 +121,7 @@ int main() {
 	Listener term_listener;
 	term = new Terminal({window->width / (size_t) font->bounding_box().width, window->height / (size_t) font->size()}, term_listener);
 
-	signal(SIGCHLD, sigchld_handler);
+	std::signal(SIGCHLD, sigchld_handler);
 
 	run("/bin/dsh");
 
@@ -131,20 +129,24 @@ int main() {
 		poll(loop_pollfd, 2, -1);
 		if(loop_pollfd[0].revents & POLLIN) {
 			//Pond event
-			PEvent event = pond->next_event();
-			if(event.type == PEVENT_KEY) {
-				if(KBD_ISPRESSED(event.key) && event.key.character) {
-					write(pty_fd, &event.key.character, 1);
-					term->write_char(event.key.character);
-				}
-			} else if(event.type == PEVENT_WINDOW_DESTROY)
-				break;
+			while(pond->has_event()) {
+				Pond::Event event = pond->next_event();
+				if(event.type == PEVENT_KEY) {
+					if(KBD_ISPRESSED(event.key) && event.key.character) {
+						write(pty_fd, &event.key.character, 1);
+						term->write_char(event.key.character);
+						window->invalidate();
+					}
+				} else if(event.type == PEVENT_WINDOW_DESTROY)
+					exit(0);
+			}
 		} else if(loop_pollfd[1].revents & POLLIN) {
 			char buf[128];
 			size_t nread;
 			while((nread = read(pty_fd, buf, 128))) {
 				term->write_chars(buf, nread);
 			}
+			window->invalidate();
 		}
 	}
 }

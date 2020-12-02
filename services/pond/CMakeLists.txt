@@ -1,7 +1,6 @@
 SET(SOURCES
         main.cpp
         Client.cpp
-        DecorationWindow.cpp
         Display.cpp
         FontManager.cpp
         Mouse.cpp

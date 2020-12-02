@@ -140,7 +140,7 @@ Point Image::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph_pos, 
 	Rect self_area = {pos.x, pos.y, glyph_area.width, glyph_area.height};
 	self_area = self_area.overlapping_area({0, 0, width, height});
 	if(self_area.empty())
-		return pos;
+		return glyph_pos + Point {glyph->next_offset.x, glyph->next_offset.y};
 
 	//Update glyph_area with the changes made to self_area
 	glyph_area.x += self_area.x - pos.x;

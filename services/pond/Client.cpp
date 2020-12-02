@@ -18,10 +18,9 @@
 */
 
 #include "Client.h"
-#include "DecorationWindow.h"
 #include "Display.h"
 #include "FontManager.h"
-#include <libpond/PContext.h>
+#include <libpond/packet.h>
 
 Client::Client(int socketfs_fd, pid_t pid): socketfs_fd(socketfs_fd), pid(pid) {
 
@@ -33,8 +32,6 @@ Client::~Client() {
 		if(window.second->parent()) {
 			if(windows.find(window.second->parent()->id()) != windows.end())
 				continue; //Don't remove a window if its parent is owned by this client; deleting the parent deletes all children.
-			else if(window.second->parent()->is_decoration())
-				to_delete.push_back(window.second->parent()); //Delete the decoration window if it's decorated
 		} else {
 			to_delete.push_back(window.second);
 		}
@@ -107,10 +104,10 @@ void Client::open_window(socketfs_packet* packet) {
 
 	auto* params = (POpenWindowPkt*) packet->data;
 
-	DecorationWindow* deco_window;
+	Window* window;
 
 	if(!params->parent) {
-		deco_window = new DecorationWindow(Display::inst().root_window(), {params->x, params->y, params->width, params->height});
+		window = new Window(Display::inst().root_window(), {params->x, params->y, params->width, params->height});
 	} else {
 		auto parent_window = windows.find(params->parent);
 		if(parent_window == windows.end()) {
@@ -120,11 +117,10 @@ void Client::open_window(socketfs_packet* packet) {
 			return;
 		} else {
 			//Make the window with the requested parent
-			deco_window = new DecorationWindow(parent_window->second, {params->x, params->y, params->width, params->height});
+			window = new Window(parent_window->second, {params->x, params->y, params->width, params->height});
 		}
 	}
 
-	auto* window = deco_window->contents();
 	window->set_client(this);
 	windows.insert(std::make_pair(window->id(), window));
 
@@ -133,7 +129,6 @@ void Client::open_window(socketfs_packet* packet) {
 
 	//Write the response packet
 	Rect wrect = window->rect();
-	PWindow pwindow;
 	PWindowOpenedPkt resp {window->id(), wrect.x, wrect.y, wrect.width, wrect.height, window->framebuffer_shm().id};
 	resp._PACKET_ID = PPKT_WINDOW_OPENED;
 	if(write_packet(socketfs_fd, pid, sizeof(PWindowOpenedPkt), &resp) < 0)
@@ -152,8 +147,6 @@ void Client::destroy_window(socketfs_packet* packet) {
 	auto window_pair = windows.find(params->window_id);
 	if(window_pair != windows.end()) {
 		auto* window = window_pair->second;
-		if(window->parent() && window->parent()->is_decoration())
-			window = window->parent();
 		resp.window_id = window->id();
 		delete window;
 		windows.erase(window_pair);
@@ -172,11 +165,7 @@ void Client::move_window(socketfs_packet* packet) {
 	if(window_pair != windows.end()) {
 		auto* window = window_pair->second;
 
-		//If this window is decorated, set the position of the decoration window instead
-		if(window->parent() && window->parent()->is_decoration())
-			window->parent()->set_position(Point{params->x, params->y} - window->rect().position());
-		else
-			window->set_position({params->x, params->y});
+		window->set_position({params->x, params->y});
 
 		PWindowMovedPkt resp {window->id(), params->x, params->y};
 		if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &resp) < 0)
@@ -193,11 +182,7 @@ void Client::resize_window(socketfs_packet* packet) {
 	if(window_pair != windows.end()) {
 		auto* window = window_pair->second;
 
-		//If this window is decorated, set the size of the decoration window as well
-		if(window->parent() && window->parent()->is_decoration())
-			((DecorationWindow*) window->parent())->set_content_dimensions({params->width, params->height});
-		else
-			window->set_dimensions({params->width, params->height});
+		window->set_dimensions({params->width, params->height});
 
 		PWindowResizedPkt resp {window->id(), params->width, params->height, window->framebuffer_shm().id};
 		if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &resp) < 0)

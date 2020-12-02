@@ -21,7 +21,6 @@
 #include <cstdio>
 #include "Display.h"
 #include <memory.h>
-#include "DecorationWindow.h"
 
 int Window::current_id = 0;
 
@@ -78,10 +77,6 @@ Image Window::framebuffer() const {
 
 Display* Window::display() const {
 	return _display;
-}
-
-bool Window::is_decoration() const {
-	return false;
 }
 
 Rect Window::rect() const {
@@ -209,8 +204,6 @@ const char* Window::title() {
 void Window::set_title(const char* title) {
 	delete _title;
 	_title = strdup(title);
-	if(_parent && _parent->is_decoration())
-		((DecorationWindow*) _parent)->redraw_frame();
 }
 
 

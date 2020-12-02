@@ -17,11 +17,5 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBPOND_POND_H
-#define DUCKOS_LIBPOND_POND_H
-
-#include "Context.h"
-#include "Event.h"
 #include "Window.h"
-
-#endif //DUCKOS_LIBPOND_POND_H
+using namespace UI;

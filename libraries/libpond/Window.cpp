@@ -17,11 +17,13 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "PWindow.h"
-#include "PContext.h"
+#include "Window.h"
+#include "Context.h"
 #include <cstdio>
 
-int PWindow::destroy() {
+using namespace Pond;
+
+int Window::destroy() {
 	if(!context->send_packet(PDestroyWindowPkt(id))) {
 		perror("Pond: Failed to write destroy window packet");
 		return -1;
@@ -29,17 +31,17 @@ int PWindow::destroy() {
 	return 0;
 }
 
-void PWindow::invalidate() {
+void Window::invalidate() {
 	if(!context->send_packet(PInvalidatePkt(id, -1, -1, -1, -1)))
 		perror("Pond: Failed to write invalidate packet");
 }
 
-void PWindow::invalidate_area(int area_x, int area_y, int area_width, int area_height) {
+void Window::invalidate_area(int area_x, int area_y, int area_width, int area_height) {
 	if(!context->send_packet(PInvalidatePkt(id, area_x, area_y, area_width, area_height)))
 		perror("Pond: Failed to write invalidate area packet");
 }
 
-void PWindow::set_title(const char* title) {
+void Window::set_title(const char* title) {
 	if(!context->send_packet(PSetTitlePkt(id, title)))
 		perror("Pond: failed to write set title packet");
 }
