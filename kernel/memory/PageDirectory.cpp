@@ -569,6 +569,10 @@ Result PageDirectory::detach_shared_region(int id) {
 	LinkedMemoryRegion reg(vreg->related, vreg);
 	unmap_region(reg);
 	vreg->related->shm_deref();
+	vreg->related = nullptr;
+	vreg->is_shm = false;
+	vreg->shm_id = 0;
+	_vmem_map.free_region(vreg);
 
 	return SUCCESS;
 }
@@ -715,7 +719,6 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 				//Map the page table entries in child as read-only
 				map_region(LinkedMemoryRegion(new_region->related, new_region), false);
 			}
-
 		}
 		parent_region = parent_region->next;
 	}
