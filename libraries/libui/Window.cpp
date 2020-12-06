@@ -23,6 +23,7 @@ using namespace UI;
 
 Window::Window() {
 	_window = pond_context->create_window(nullptr, -1, -1, 1, 1);
+	UI::__register_window(this, _window->id);
 }
 
 Window* Window::create() {

@@ -24,6 +24,8 @@
 #include <libgraphics/geometry.h>
 #include <libpond/Window.h>
 #include <string>
+#include <functional>
+#include <libpond/Event.h>
 
 #define DECO_TOP_SIZE 13
 #define DECO_BOTTOM_SIZE 2
@@ -53,6 +55,8 @@ namespace UI {
 
 		Pond::Window* pond_window();
 
+		std::function<bool(Pond::KeyEvent)> on_keypress = nullptr;
+		std::function<bool(Pond::MouseEvent)> on_mouse = nullptr;
 	protected:
 		Window();
 

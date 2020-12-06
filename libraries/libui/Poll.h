@@ -17,27 +17,18 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_H
-#define DUCKOS_LIBUI_H
+#ifndef DUCKOS_LIBUI_POLL_H
+#define DUCKOS_LIBUI_POLL_H
 
-#include <libpond/pond.h>
-#include <libpond/Event.h>
-#include "Widget.h"
-#include "Window.h"
-#include "Poll.h"
+#include <functional>
 
 namespace UI {
-	extern Pond::Context* pond_context;
-
-	void init(char** argv, char** envp);
-	void run();
-
-	void add_poll(const Poll& poll);
-
-	void __register_window(UI::Window* window, int id);
-	void __deregister_window(int id);
-	void __register_widget(UI::Widget* widget, int id);
-	void __deregister_widget(int id);
+	class Poll {
+	public:
+		int fd;
+		std::function<void()> on_ready_to_read = nullptr;
+		std::function<void()> on_ready_to_write = nullptr;
+	};
 }
 
-#endif //DUCKOS_LIBUI_H
+#endif //DUCKOS_LIBUI_POLL_H

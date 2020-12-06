@@ -22,6 +22,7 @@
 
 #include <libpond/Window.h>
 #include <vector>
+#include <functional>
 
 namespace UI {
 	class Window;
@@ -30,6 +31,8 @@ namespace UI {
 		virtual Dimensions preferred_size();
 		void repaint();
 
+		std::function<bool(Pond::KeyEvent)> on_keypress = nullptr;
+		std::function<bool(Pond::MouseEvent)> on_mouse = nullptr;
 	protected:
 		friend class Window;
 		void set_window(UI::Window* window);

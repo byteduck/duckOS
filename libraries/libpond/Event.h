@@ -22,6 +22,7 @@
 
 #include "Window.h"
 #include <sys/socketfs.h>
+#include <sys/input.h>
 
 #define PEVENT_UNKNOWN 0
 #define PEVENT_WINDOW_CREATE 1
