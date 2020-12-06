@@ -22,10 +22,11 @@
 #include "Server.h"
 #include "Window.h"
 #include "FontManager.h"
+#include <string.h>
 #include <poll.h>
 #include <unistd.h>
 
-int main() {
+int main(int argc, char** argv, char** envp) {
 	auto* display = new Display;
 	auto* server = new Server;
 	auto* main_window = new Window(display);
@@ -47,6 +48,7 @@ int main() {
 	}
 
 	auto* font_manager = new FontManager();
+	bool hide = argc > 1 && !strcmp(argv[1], "-h");
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
@@ -57,7 +59,8 @@ int main() {
 		display->update_keyboard();
 		server->handle_packets();
 		display->repaint();
-		display->flip_buffers();
+		if(!hide)
+			display->flip_buffers();
 	}
 #pragma clang diagnostic pop
 

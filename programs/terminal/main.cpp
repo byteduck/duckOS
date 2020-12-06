@@ -17,7 +17,6 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <libpond/pond.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
@@ -25,101 +24,52 @@
 #include <common/terminal/Terminal.h>
 #include <libgraphics/font.h>
 #include <csignal>
-#include <libpond/Window.h>
 #include <libpond/Context.h>
+#include <libui/libui.h>
+#include "TerminalWidget.h"
 
-Pond::Context* pond;
-Pond::Window* window;
+UI::Window* window;
 Font* font;
 Terminal* term;
 int pty_fd;
 
 void run(const char* command);
 
-static const uint32_t color_palette[] = {
-		0xFF000000,
-		0xFFAA0000,
-		0xFF00AA00,
-		0xFFAA5500,
-		0xFF0000AA,
-		0xFFAA00AA,
-		0xFF00AAAA,
-		0xFFAAAAAA,
-		0xFF555555,
-		0xFFFF5555,
-		0xFF55FF55,
-		0xFFFFFF55,
-		0xFF5555FF,
-		0xFFFF55FF,
-		0xFF55FFFF,
-		0xFFFFFFFF
-};
-
 class Listener: public Terminal::Listener {
 public:
-	void on_character_change(const Terminal::Position& position, const Terminal::Character& character) override {
-		Point pos = {(int) position.x * font->bounding_box().width, (int) position.y * font->size()};
-		window->framebuffer.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[character.attributes.background]);
-		window->framebuffer.draw_glyph(font, character.codepoint, pos, color_palette[character.attributes.foreground]);
-	}
 
-	void on_cursor_change(const Terminal::Position& position) override {
-
-	}
-
-	void on_backspace(const Terminal::Position& position) {
-		term->set_character(position, {0, term->get_current_attribute()});
-	}
-
-	void on_clear() {
-		window->framebuffer.fill({0,0,window->width,window->height}, RGB(0,0,0));
-	}
-
-	void on_clear_line(size_t line) {
-		window->framebuffer.fill({0,(int) line * font->size(), window->width, font->size()}, RGB(0,0,0));
-	}
-
-	void on_scroll(size_t lines) {
-		window->framebuffer.copy(window->framebuffer, {0, (int)lines * font->size(),  window->width, window->height - ((int) lines * font->size())}, {0, });
-		window->framebuffer.fill({0, window->height - ((int) lines * font->size()), window->width, (int)lines * font->size()}, RGB(0,0,0));
-	}
-
-	void on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) {
-
-	}
 };
 
 void sigchld_handler(int sig) {
 	term->write_chars("[Shell Exited]", 14);
 }
 
-int main() {
-	pond = Pond::Context::init();
-	if(!pond)
-		exit(-1);
+int main(int argc, char** argv, char** envp) {
+	UI::init(nullptr, nullptr);
 
-	window = pond->create_window(nullptr, 50, 50, 450, 300);
-	if(!window)
-		exit(-1);
+	window = UI::Window::create();
 
-	font = pond->get_font("gohu-11");
+	font = UI::pond_context->get_font("gohu-11");
 	if(!font)
 		exit(-1);
 
 	window->set_title("Terminal");
-	window->framebuffer.fill({0, 0, 100, 100}, RGBA(0, 0, 0, 255));
+	window->set_position(10, 10);
+
+	auto* termwidget = new TerminalWidget();
+	window->set_contents(termwidget);
 
 	pty_fd = posix_openpt(O_RDWR);
 	if(pty_fd < 0)
 		exit(-1);
 
 	pollfd loop_pollfd[2] = {
-			{pond->connection_fd(), POLLIN},
+			{UI::pond_context->connection_fd(), POLLIN},
 			{pty_fd, POLLIN}
 	};
 
-	Listener term_listener;
-	term = new Terminal({window->width / (size_t) font->bounding_box().width, window->height / (size_t) font->size()}, term_listener);
+	term = new Terminal({400 / (size_t) font->bounding_box().width, 300 / (size_t) font->size()}, *termwidget);
+	termwidget->set_terminal(term);
 
 	std::signal(SIGCHLD, sigchld_handler);
 
@@ -129,13 +79,12 @@ int main() {
 		poll(loop_pollfd, 2, -1);
 		if(loop_pollfd[0].revents & POLLIN) {
 			//Pond event
-			while(pond->has_event()) {
-				Pond::Event event = pond->next_event();
+			while(UI::pond_context->has_event()) {
+				Pond::Event event = UI::pond_context->next_event();
 				if(event.type == PEVENT_KEY) {
 					if(KBD_ISPRESSED(event.key) && event.key.character) {
 						write(pty_fd, &event.key.character, 1);
 						term->write_char(event.key.character);
-						window->invalidate();
 					}
 				} else if(event.type == PEVENT_WINDOW_DESTROY)
 					exit(0);
@@ -146,8 +95,8 @@ int main() {
 			while((nread = read(pty_fd, buf, 128))) {
 				term->write_chars(buf, nread);
 			}
-			window->invalidate();
 		}
+		termwidget->handle_term_events();
 	}
 }
 

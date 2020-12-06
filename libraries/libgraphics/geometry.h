@@ -50,6 +50,8 @@ public:
 	Point position();
 	Dimensions dimensions();
 	bool collides(const Rect& other) const;
+	bool inside(const Rect& other) const;
+	bool contains(const Rect& other) const;
 	int area() const;
 
 	/**

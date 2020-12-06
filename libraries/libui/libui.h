@@ -17,20 +17,16 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_SOCKETFSCLIENT_H
-#define DUCKOS_SOCKETFSCLIENT_H
+#ifndef DUCKOS_LIBUI_H
+#define DUCKOS_LIBUI_H
 
-#include <kernel/tasking/Process.h>
+#include <libpond/pond.h>
+#include "Widget.h"
+#include "Window.h"
 
-class SocketFSClient {
-public:
-	SocketFSClient(Process* process, pid_t pid);
+namespace UI {
+	extern Pond::Context* pond_context;
+	void init(char** argv, char** envp);
+}
 
-	Process* process;
-	pid_t pid;
-	DC::shared_ptr<DC::queue<uint8_t>> data_queue;
-	BooleanBlocker _blocker;
-	SpinLock _lock;
-};
-
-#endif //DUCKOS_SOCKETFSCLIENT_H
+#endif //DUCKOS_LIBUI_H

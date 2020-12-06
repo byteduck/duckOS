@@ -17,51 +17,33 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_WINDOW_H
-#define DUCKOS_LIBUI_WINDOW_H
+#ifndef DUCKOS_WIDGET_H
+#define DUCKOS_WIDGET_H
 
-#include "Widget.h"
-#include <libgraphics/geometry.h>
 #include <libpond/Window.h>
-#include <string>
-
-#define DECO_TOP_SIZE 13
-#define DECO_BOTTOM_SIZE 2
-#define DECO_LEFT_SIZE 2
-#define DECO_RIGHT_SIZE 2
+#include <vector>
 
 namespace UI {
-	class Window {
+	class Window;
+	class Widget {
 	public:
-		static Window* create();
-
-		void resize(int width, int height);
-		int width();
-		int height();
-
-		void set_position(int x, int y);
-		int x_position();
-		int y_position();
-
-		void set_contents(Widget* contents);
-		Widget* contents();
-
-		void set_title(const std::string& title);
-		std::string title();
-
+		virtual Dimensions preferred_size();
 		void repaint();
 
-		Pond::Window* pond_window();
-
 	protected:
-		Window();
+		friend class Window;
+		void set_window(UI::Window* window);
+		void set_parent(UI::Widget* widget);
+		virtual void do_repaint(Image& framebuffer);
 
 	private:
-		friend class Widget;
-		Pond::Window* _window;
-		Widget* _contents;
-		std::string _title;
+		UI::Widget* _parent = nullptr;
+		UI::Window* _parent_window = nullptr;
+		Pond::Window* _window = nullptr;
+		std::vector<Widget*> children;
+
+		void parent_window_created();
 	};
 }
 
-#endif //DUCKOS_LIBUI_WINDOW_H
+#endif //DUCKOS_WIDGET_H

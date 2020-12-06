@@ -59,6 +59,27 @@ Window* Window::parent() const {
 	return _parent;
 }
 
+void Window::reparent(Window* new_parent) {
+	//If we have a parent, remove ourself from its children
+	if(_parent) {
+		for(auto it = _parent->_children.begin(); it < _parent->_children.end(); it++) {
+			if(*it == this)
+				_parent->_children.erase(it);
+		}
+		_parent->invalidate(_rect);
+	}
+
+	//If new_parent isn't null, add ourselves to the new parent's children
+	if(new_parent) {
+		new_parent->_children.push_back(this);
+	}
+
+	//Set the parent and recalculate/invalidate
+	_parent = new_parent;
+	recalculate_rects();
+	invalidate();
+}
+
 Client* Window::client() const {
 	return _client;
 }
@@ -172,6 +193,8 @@ void Window::alloc_framebuffer() {
 		perror("Failed to allocate framebuffer for window");
 		return;
 	}
+
+
 
 	_framebuffer = {(uint32_t*) _framebuffer_shm.ptr, _rect.width, _rect.height};
 }

@@ -54,10 +54,30 @@ namespace Pond {
 		void invalidate_area(int x, int y, int width, int height);
 
 		/**
+		 * Resizes a window.
+		 * @param width The width of the window.
+		 * @param height The height of the window.
+		 */
+		void resize(int width, int height);
+
+		/**
+		 * Sets the position of a window.
+		 * @param x The new x position of the window.
+		 * @param y The new y position of the window.
+		 */
+		void set_position(int x, int y);
+
+		/**
 		 * Sets the title of the window.
 		 * @param title The new title.
 		 */
 		void set_title(const char* title);
+
+		/**
+		 * Sets the parent of the window.
+		 * @param window Null for no parent, or a pointer to the window that will be this window's new parent.
+		 */
+		void reparent(Window* window);
 
 		int id = -1; ///< The ID of the window.
 		int width = 0; ///< The width of the window.

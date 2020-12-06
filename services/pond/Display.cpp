@@ -133,6 +133,22 @@ void Display::repaint() {
 	else
 		return;
 
+	//Remove areas that completely overlap
+	auto it = invalid_areas.begin();
+	while(it != invalid_areas.end()) {
+		bool remove_area = false;
+		for(auto & other_area : invalid_areas) {
+			if(&*it != &other_area && it->inside(other_area)) {
+				remove_area = true;
+				break;
+			}
+		}
+		if(remove_area)
+			invalid_areas.erase(it);
+		else
+			it++;
+	}
+
 	for(auto& area : invalid_areas) {
 		// Fill the invalid area with the background.
 		if(_wallpaper)

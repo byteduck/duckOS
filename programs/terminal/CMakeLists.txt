@@ -1,3 +1,3 @@
-SET(SOURCES main.cpp ../../common/terminal/Terminal.cpp)
+SET(SOURCES main.cpp TerminalWidget.cpp ../../common/terminal/Terminal.cpp)
 MAKE_PROGRAM(terminal)
-TARGET_LINK_LIBRARIES(terminal libpond)
+TARGET_LINK_LIBRARIES(terminal libui)

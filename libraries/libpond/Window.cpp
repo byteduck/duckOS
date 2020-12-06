@@ -41,7 +41,30 @@ void Window::invalidate_area(int area_x, int area_y, int area_width, int area_he
 		perror("Pond: Failed to write invalidate area packet");
 }
 
+void Window::resize(int width, int height) {
+	if(!context->send_packet(PResizeWindowPkt(id, width, height)))
+		return perror("Pond: failed to write resize window packet");
+	//TODO This is hacky and will break things.
+	context->next_event();
+	this->width = width;
+	this->height = height;
+}
+
+void Window::set_position(int x, int y) {
+	if(!context->send_packet(PMoveWindowPkt(id, x, y)))
+		return perror("Pond: failed to write resize window packet");
+	//TODO This is hacky and will break things.
+	context->next_event();
+	this->x = x;
+	this->x = y;
+}
+
 void Window::set_title(const char* title) {
 	if(!context->send_packet(PSetTitlePkt(id, title)))
 		perror("Pond: failed to write set title packet");
+}
+
+void Window::reparent(Window* window) {
+	if(!context->send_packet(PReparentPkt(id, window ? window->id : 0)))
+		perror("Pond: failed to write set parent packet");
 }

@@ -36,6 +36,7 @@ public:
 	~Window();
 
 	Window* parent() const;
+	void reparent(Window* new_parent);
 	Client* client() const;
 	void set_client(Client* client);
 	int id() const;

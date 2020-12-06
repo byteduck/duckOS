@@ -51,6 +51,7 @@ private:
 	void invalidate_window(socketfs_packet* packet);
 	void get_font(socketfs_packet* packet);
 	void set_title(socketfs_packet* packet);
+	void reparent(socketfs_packet* packet);
 
 	pid_t pid;
 	int socketfs_fd;

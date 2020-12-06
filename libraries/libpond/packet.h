@@ -36,6 +36,7 @@
 #define PPKT_GET_FONT 13
 #define PPKT_FONT_RESPONSE 14
 #define PPKT_SET_TITLE 15
+#define PPKT_REPARENT 16
 
 #include <cstdint>
 
@@ -158,6 +159,13 @@ struct PSetTitlePkt {
 	short _PACKET_ID = PPKT_SET_TITLE;
 	int window_id;
 	char title[256];
+};
+
+struct PReparentPkt {
+	explicit PReparentPkt(int window_id, int parent_id): window_id(window_id), parent_id(parent_id) {}
+	short _PACKET_ID = PPKT_REPARENT;
+	int window_id;
+	int parent_id;
 };
 
 #endif //DUCKOS_PACKET_H

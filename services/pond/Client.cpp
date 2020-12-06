@@ -68,6 +68,9 @@ void Client::handle_packet(socketfs_packet* packet) {
 		case PPKT_SET_TITLE:
 			set_title(packet);
 			break;
+		case PPKT_REPARENT:
+			reparent(packet);
+			break;
 		default:
 			fprintf(stderr, "Invalid packet sent by client %d\n", pid);
 			return;
@@ -183,10 +186,11 @@ void Client::resize_window(socketfs_packet* packet) {
 		auto* window = window_pair->second;
 
 		window->set_dimensions({params->width, params->height});
+		shmallow(window->framebuffer_shm().id, pid, SHM_WRITE | SHM_READ);
 
 		PWindowResizedPkt resp {window->id(), params->width, params->height, window->framebuffer_shm().id};
-		if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &resp) < 0)
-			perror("Failed to write window moved packet to client");
+		if(write_packet(socketfs_fd, pid, sizeof(PWindowResizedPkt), &resp) < 0)
+			perror("Failed to write window resized packet to client");
 	}
 }
 
@@ -235,4 +239,14 @@ void Client::set_title(socketfs_packet* packet) {
 	auto* window = windows[params->window_id];
 	if(window)
 		windows[params->window_id]->set_title(params->title);
+}
+
+void Client::reparent(socketfs_packet* packet) {
+	if(packet->length != sizeof(PReparentPkt))
+		return;
+
+	auto* params = (PReparentPkt*) packet->data;
+	auto* window = windows[params->window_id];
+	if(window)
+		window->reparent(windows[params->parent_id]);
 }

@@ -227,6 +227,7 @@ void Context::handle_resize_window(socketfs_packet* packet, Event* event) {
 		//Open the new shared memory for the framebuffer if necessary
 		if(resp->shm_id != window->shm_id) {
 			shmdetach(window->shm_id);
+			window->shm_id = resp->shm_id;
 			struct shm shm;
 			if(shmattach(window->shm_id, NULL, &shm) < 0) {
 				perror("libpond failed to attach window shm");

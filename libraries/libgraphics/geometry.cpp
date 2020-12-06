@@ -72,6 +72,14 @@ bool Rect::collides(const Rect& other) const {
 		(y < other.y + other.height) && (y + height > other.y);
 }
 
+bool Rect::inside(const Rect& other) const {
+	return x >= other.x && y >= other.y && (x + width) <= (other.x + other.width) && (y + height) <= (other.y + other.height);
+}
+
+bool Rect::contains(const Rect& other) const {
+	return other.inside(*this);
+}
+
 int Rect::area() const {
 	return width * height;
 }
