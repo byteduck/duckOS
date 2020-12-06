@@ -57,7 +57,7 @@ public:
 	DC::string name;
 
 private:
-	static Result write_packet(SocketFSClient& client, pid_t pid, size_t size, const void* buffer);
+	static Result write_packet(SocketFSClient& client, pid_t pid, size_t size, const void* buffer, bool nonblock);
 
 	DC::vector<SocketFSClient> clients;
 	SocketFSClient host;

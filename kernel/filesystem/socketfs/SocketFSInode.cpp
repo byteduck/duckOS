@@ -86,7 +86,7 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 		//Couldn't find the client it came from... Probably a forked process. Create a new client.
 		pid_t pid = current_proc->pid();
 		clients.push_back(SocketFSClient(current_proc, pid));
-		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(pid_t), &pid);
+		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(pid_t), &pid, true);
 		return 0;
 	}
 
@@ -99,6 +99,8 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 		*buffer++ = queue->front();
 		queue->pop();
 	}
+
+	reader->_blocker.set_ready(true);
 
 	return length;
 }
@@ -164,7 +166,7 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 		//Couldn't find the client it came from... Probably a forked process. Create a new client.
 		pid_t pid = current_proc->pid();
 		clients.push_back(SocketFSClient(current_proc, pid));
-		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(pid_t), &pid);
+		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(pid_t), &pid, true);
 		sender = &clients[clients.size() - 1];
 	}
 
@@ -172,7 +174,7 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 		//If it's a broadcast, send it to all clients
 		for(size_t i = 0; i < clients.size(); i++) {
 			//We don't care about errors here, we should just continue sending it to the rest of the clients
-			write_packet(clients[i], SOCKETFS_HOST, packet->length, packet->data);
+			write_packet(clients[i], SOCKETFS_HOST, packet->length, packet->data, fd->nonblock());
 		}
 		return SUCCESS;
 	} else if(sender == &host) {
@@ -195,7 +197,7 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 
 	//Finally, write the packet to the correct queue
 	pid_t from_pid = sender == &host ? SOCKETFS_HOST : sender->pid;
-	auto res = write_packet(*recipient, from_pid, packet->length, packet->data);
+	auto res = write_packet(*recipient, from_pid, packet->length, packet->data, fd->nonblock());
 	return res.code();
 }
 
@@ -263,7 +265,7 @@ void SocketFSInode::open(FileDescriptor& fd, int options) {
 	//Add the client and send the connect message to the host
 	pid_t pid = current_proc->pid();
 	clients.push_back(SocketFSClient(current_proc, pid));
-	write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(pid_t), &pid);
+	write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(pid_t), &pid, true);
 }
 
 void SocketFSInode::close(FileDescriptor& fd) {
@@ -285,7 +287,7 @@ void SocketFSInode::close(FileDescriptor& fd) {
 
 	for(size_t i = 0; i < clients.size(); i++) {
 		if(clients[i].process == TaskManager::current_process()) {
-			write_packet(host, SOCKETFS_MSG_DISCONNECT, sizeof(pid_t), &clients[i].pid);
+			write_packet(host, SOCKETFS_MSG_DISCONNECT, sizeof(pid_t), &clients[i].pid, true);
 			clients.erase(i);
 			break;
 		}
@@ -304,10 +306,17 @@ bool SocketFSInode::can_read(const FileDescriptor& fd) {
 	return false;
 }
 
-Result SocketFSInode::write_packet(SocketFSClient& client, pid_t pid, size_t length, const void* buffer) {
-	//Check to make sure there's room in the buffer
-	if(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE)
-		return -ENOSPC;
+Result SocketFSInode::write_packet(SocketFSClient& client, pid_t pid, size_t length, const void* buffer, bool nonblock) {
+	//If there's room in the buffer, block (if O_NONBLOCK isn't set)
+	while(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE) {
+		if(!nonblock) {
+			client._blocker.set_ready(false);
+			TaskManager::current_process()->block(client._blocker);
+		}
+	}
+
+	//Acquire the lock
+	LOCK(client._lock);
 
 	//Write the packet header
 	SocketFSPacket packet_header = {pid, length};

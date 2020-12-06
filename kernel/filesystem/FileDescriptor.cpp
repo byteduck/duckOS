@@ -112,6 +112,10 @@ bool FileDescriptor::append_mode() const {
 	return _append;
 }
 
+bool FileDescriptor::nonblock() const {
+	return _options & O_NONBLOCK;
+}
+
 int FileDescriptor::seek(off_t offset, int whence) {
 	if(!_can_seek) return -ESPIPE;
 	off_t new_seek = _seek;

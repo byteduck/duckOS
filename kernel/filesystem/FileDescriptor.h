@@ -41,6 +41,7 @@ public:
 	bool readable() const;
 	bool writable() const;
 	bool append_mode() const;
+	bool nonblock() const;
 	InodeMetadata metadata();
 	DC::shared_ptr<File> file();
 	void open();
