@@ -19,6 +19,7 @@
 
 #include "TerminalWidget.h"
 #include <libgraphics/font.h>
+#include <unistd.h>
 
 static const uint32_t color_palette[] = {
 		0xFF000000,
@@ -81,8 +82,21 @@ void TerminalWidget::do_repaint(Image& framebuffer) {
 	events.clear();
 }
 
+bool TerminalWidget::on_keyboard(Pond::KeyEvent event) {
+	if(KBD_ISPRESSED(event) && event.character) {
+		write(pty_fd, &event.character, 1);
+		term->write_char(event.character);
+	}
+	handle_term_events();
+	return true;
+}
+
 void TerminalWidget::set_terminal(Terminal* term) {
 	this->term = term;
+}
+
+void TerminalWidget::set_ptyfd(int pty_fd) {
+	this->pty_fd = pty_fd;
 }
 
 void TerminalWidget::handle_term_events() {

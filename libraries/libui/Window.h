@@ -55,8 +55,8 @@ namespace UI {
 
 		Pond::Window* pond_window();
 
-		std::function<bool(Pond::KeyEvent)> on_keypress = nullptr;
-		std::function<bool(Pond::MouseEvent)> on_mouse = nullptr;
+		void on_keyboard(Pond::KeyEvent evt);
+		void on_mouse(Pond::MouseEvent evt);
 	protected:
 		Window();
 
@@ -65,6 +65,8 @@ namespace UI {
 		Pond::Window* _window;
 		Widget* _contents;
 		std::string _title;
+		Point drag_start;
+		bool dragging = false;
 	};
 }
 

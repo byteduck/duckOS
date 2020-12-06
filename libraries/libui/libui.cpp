@@ -48,12 +48,26 @@ void handle_pond_events() {
 			case PEVENT_KEY: {
 				auto& evt = event.key;
 				auto* window = windows[evt.window->id];
-				if(window && window->on_keypress)
-					window->on_keypress(evt);
-				else if(!window) {
+				if(window) {
+					window->on_keyboard(evt);
+				} else {
 					auto* widget = widgets[evt.window->id];
-					if(widget && widget->on_keypress)
-						widget->on_keypress(evt);
+					if(!widget)
+						break;
+
+					//Propagate the event through parent widgets / window as appropriate
+					bool continue_propagating = true;
+					while(true) {
+						if(widget->on_keyboard(evt)) {
+							continue_propagating = false;
+							break;
+						}
+						if(!widget->parent())
+							break;
+						widget = widget->parent();
+					}
+					if(continue_propagating && !widget->on_keyboard(evt) && widget->parent_window())
+						widget->parent_window()->on_keyboard(evt);
 				}
 				break;
 			}
@@ -61,12 +75,26 @@ void handle_pond_events() {
 			case PEVENT_MOUSE: {
 				auto& evt = event.mouse;
 				auto* window = windows[evt.window->id];
-				if(window && window->on_mouse)
+				if(window) {
 					window->on_mouse(evt);
-				else if(!window) {
+				} else {
 					auto* widget = widgets[evt.window->id];
-					if(widget && widget->on_mouse)
-						widget->on_mouse(evt);
+					if(!widget)
+						break;
+
+					//Propagate the event through parent widgets / window as appropriate
+					bool continue_propagating = true;
+					while(true) {
+						if(widget->on_mouse(evt)) {
+							continue_propagating = false;
+							break;
+						}
+						if(!widget->parent())
+							break;
+						widget = widget->parent();
+					}
+					if(continue_propagating && !widget->on_mouse(evt) && widget->parent_window())
+						widget->parent_window()->on_mouse(evt);
 				}
 				break;
 			}

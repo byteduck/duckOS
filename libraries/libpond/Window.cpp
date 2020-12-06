@@ -56,7 +56,7 @@ void Window::set_position(int x, int y) {
 	//TODO This is hacky and will break things.
 	context->next_event();
 	this->x = x;
-	this->x = y;
+	this->y = y;
 }
 
 void Window::set_title(const char* title) {

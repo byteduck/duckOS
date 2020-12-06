@@ -62,20 +62,11 @@ int main(int argc, char** argv, char** envp) {
 	term = new Terminal({400 / (size_t) font->bounding_box().width, 300 / (size_t) font->size()}, *termwidget);
 	termwidget->set_terminal(term);
 
-	//Handle keypress on terminal widget
-	termwidget->on_keypress = [&] (Pond::KeyEvent event) -> bool {
-		if(KBD_ISPRESSED(event) && event.character) {
-			write(pty_fd, &event.character, 1);
-			term->write_char(event.character);
-		}
-		termwidget->handle_term_events();
-		return true;
-	};
-
 	//Set up PTY + SIGCHLD and run command
 	pty_fd = posix_openpt(O_RDWR);
 	if(pty_fd < 0)
 		exit(-1);
+	termwidget->set_ptyfd(pty_fd);
 	std::signal(SIGCHLD, sigchld_handler);
 	run("/bin/dsh");
 

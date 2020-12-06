@@ -95,3 +95,22 @@ void Window::repaint() {
 Pond::Window* Window::pond_window() {
 	return _window;
 }
+
+void Window::on_keyboard(Pond::KeyEvent evt) {
+	if(_contents)
+		_contents->on_keyboard(evt);
+}
+
+void Window::on_mouse(Pond::MouseEvent evt) {
+	if(!(evt.old_buttons & POND_MOUSE1) && evt.window->mouse_buttons & POND_MOUSE1) {
+		dragging = true;
+		drag_start = {evt.window->mouse_x, evt.window->mouse_y};
+	} else if(!(evt.window->mouse_buttons & POND_MOUSE1)) {
+		dragging = false;
+	}
+
+	if(dragging) {
+		Point new_pos = Point {evt.window->mouse_x, evt.window->mouse_y} - drag_start + Point {evt.window->x, evt.window->y};
+		_window->set_position(new_pos.x, new_pos.y);
+	}
+}

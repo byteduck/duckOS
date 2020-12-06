@@ -33,6 +33,22 @@ void Widget::repaint() {
 	}
 }
 
+bool Widget::on_keyboard(Pond::KeyEvent evt) {
+	return false;
+}
+
+bool Widget::on_mouse(Pond::MouseEvent evt) {
+	return false;
+}
+
+Widget* Widget::parent() {
+	return _parent;
+}
+
+Window* Widget::parent_window() {
+	return _parent_window;
+}
+
 void Widget::set_window(UI::Window* window) {
 	if(_parent || _parent_window)
 		return;

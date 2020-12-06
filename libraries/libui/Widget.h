@@ -22,7 +22,6 @@
 
 #include <libpond/Window.h>
 #include <vector>
-#include <functional>
 
 namespace UI {
 	class Window;
@@ -31,10 +30,35 @@ namespace UI {
 		virtual Dimensions preferred_size();
 		void repaint();
 
-		std::function<bool(Pond::KeyEvent)> on_keypress = nullptr;
-		std::function<bool(Pond::MouseEvent)> on_mouse = nullptr;
+		/**
+		 * This function is called whenever a keyboard event happens on the widget.
+		 * @param evt The event in question.
+		 * @return Whether or not the event was handled and should stop propagating to the parent.
+		 */
+		virtual bool on_keyboard(Pond::KeyEvent evt);
+
+		/**
+		 * This function is called whenever a mouse event happens on the widget.
+		 * @param evt The event in question.
+		 * @return Whether or not the event was handled and should stop propagating to the parent.
+		 */
+		virtual bool on_mouse(Pond::MouseEvent evt);
+
+		/**
+		 * The parent of this widget.
+		 * @return A pointer to the parent widget, or nullptr if there isn't one.
+		 */
+		Widget* parent();
+
+		/**
+		 * The parent window of this widget. Will only be non-null if this is a top-level widget.
+		 * @return A pointer to the parent window, or nullptr if the parent is another widget.
+		 */
+		Window* parent_window();
+
 	protected:
 		friend class Window;
+
 		void set_window(UI::Window* window);
 		void set_parent(UI::Widget* widget);
 		virtual void do_repaint(Image& framebuffer);

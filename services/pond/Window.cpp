@@ -156,9 +156,12 @@ void Window::mouse_moved(Point relative_pos, int delta_x, int delta_y) {
 }
 
 void Window::set_mouse_buttons(uint8_t buttons) {
-	_mouse_buttons = buttons;
-	if(buttons != _mouse_buttons && _client)
+	if(buttons != _mouse_buttons && _client) {
+		_mouse_buttons = buttons;
 		_client->mouse_buttons_changed(this, buttons);
+	} else {
+		_mouse_buttons = buttons;
+	}
 }
 
 uint8_t Window::mouse_buttons() {

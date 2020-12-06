@@ -26,9 +26,13 @@
 class TerminalWidget: public UI::Widget, public Terminal::Listener {
 public:
 	TerminalWidget();
+
 	Dimensions preferred_size() override;
 	void do_repaint(Image& framebuffer) override;
+	bool on_keyboard(Pond::KeyEvent evt) override;
+
 	void set_terminal(Terminal* term);
+	void set_ptyfd(int pty_fd);
 	void handle_term_events();
 
 	void on_character_change(const Terminal::Position& position, const Terminal::Character& character) override;
@@ -42,6 +46,7 @@ public:
 private:
 	Font* font = nullptr;
 	Terminal* term = nullptr;
+	int pty_fd = -1;
 
 	struct TerminalEvent {
 		enum type {CHARACTER, CLEAR, CLEAR_LINE, SCROLL} type;
