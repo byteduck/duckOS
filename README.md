@@ -24,8 +24,13 @@ The code for these can be found in [services](services/).
 - init (/bin/init): The init system for duckOS.
 - pond (/bin/pond): The (very-WIP) window manager / compositor for duckOS.
 
+### GUI Programs
+
+The code for these can be found in [programs](/programs)
+
+- terminal (/bin/terminal): A LibUI-based terminal application.
  
-### Programs
+### CLI Programs
 
 The code for these can be found in [programs](programs/).
 
@@ -56,6 +61,7 @@ Programs that take arguments will provide you with the correct usage when you ru
 - [libm](libraries/libm): The math portion of the standard C library.
 - [libpond](libraries/libpond): The library used for interfacing with the pond window manager / compositor.
 - [libgraphics](libraries/libgraphics): A library which provides a few utilities for working with graphics such as image format loading.
+- [libui](/libraries/libui): A library which provides a UI framework for applications.
 
 ### Ports
 
