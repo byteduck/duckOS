@@ -17,117 +17,25 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/input.h>
-#include <common/terminal/Terminal.h>
 #include <libgraphics/font.h>
-#include <csignal>
-#include <libpond/Context.h>
 #include <libui/libui.h>
 #include "TerminalWidget.h"
 
-UI::Window* window;
-Font* font;
-Terminal* term;
-int pty_fd;
-
-void run(const char* command);
-
-class Listener: public Terminal::Listener {
-public:
-
-};
-
-void sigchld_handler(int sig) {
-	term->write_chars("[Shell Exited]", 14);
-}
-
 int main(int argc, char** argv, char** envp) {
-	UI::init(nullptr, nullptr);
-
-	//Get font
-	font = UI::pond_context->get_font("gohu-11");
-	if(!font)
-		exit(-1);
+	//Init LibUI
+	UI::init(argv, envp);
 
 	//Make window
-	window = UI::Window::create();
+	auto* window = UI::Window::create();
 	window->set_title("Terminal");
-	window->set_position(10, 10);
 
 	//Create terminal widget
 	auto* termwidget = new TerminalWidget();
 	window->set_contents(termwidget);
-	term = new Terminal({400 / (size_t) font->bounding_box().width, 300 / (size_t) font->size()}, *termwidget);
-	termwidget->set_terminal(term);
-
-	//Set up PTY + SIGCHLD and run command
-	pty_fd = posix_openpt(O_RDWR);
-	if(pty_fd < 0)
-		exit(-1);
-	termwidget->set_ptyfd(pty_fd);
-	std::signal(SIGCHLD, sigchld_handler);
-	run("/bin/dsh");
-
-	//Set up pty poll
-	UI::Poll pty_poll = {pty_fd};
-	pty_poll.on_ready_to_read = [&]{
-			char buf[128];
-			size_t nread;
-			while((nread = read(pty_fd, buf, 128))) {
-				term->write_chars(buf, nread);
-			}
-			termwidget->handle_term_events();
-	};
-	UI::add_poll(pty_poll);
+	termwidget->run("/bin/dsh");
 
 	//Run event loop
 	UI::run();
 
 	return 0;
-}
-
-void run(const char* command) {
-	pid_t pid = fork();
-	if(!pid) {
-		//Get the pts name and open it
-		char* pts_name = ptsname(pty_fd);
-		if(!pts_name) {
-			perror("ptsname");
-			exit(-1);
-		}
-
-		int pts = open(pts_name, O_RDWR);
-		if(pts < 0) {
-			perror("open");
-			exit(-1);
-		}
-
-		//Replace stdin/out/err with the pts
-		int res = dup2(pts, 0);
-		if(res < 0) {
-			perror("dup2");
-			exit(-1);
-		}
-
-		res = dup2(pts, 1);
-		if(res < 0) {
-			perror("dup2");
-			exit(-1);
-		}
-
-		res = dup2(pts, 2);
-		if(res < 0) {
-			perror("dup2");
-			exit(-1);
-		}
-
-		//Close the pts and exec
-		close(pts);
-		char* args[] = {NULL};
-		char* env[] = {NULL};
-		execve(command, args, env);
-		exit(-1);
-	}
 }

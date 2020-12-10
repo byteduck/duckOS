@@ -27,14 +27,15 @@ class TerminalWidget: public UI::Widget, public Terminal::Listener {
 public:
 	TerminalWidget();
 
+	//Widget
 	Dimensions preferred_size() override;
 	void do_repaint(Image& framebuffer) override;
 	bool on_keyboard(Pond::KeyEvent evt) override;
 
-	void set_terminal(Terminal* term);
-	void set_ptyfd(int pty_fd);
 	void handle_term_events();
+	void run(const char* command);
 
+	//Terminal::Listener
 	void on_character_change(const Terminal::Position& position, const Terminal::Character& character) override;
 	void on_cursor_change(const Terminal::Position& position) override;
 	void on_backspace(const Terminal::Position& position) override;
