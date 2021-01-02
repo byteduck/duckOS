@@ -252,3 +252,27 @@ FontGlyph* Font::glyph(uint32_t codepoint) {
 	return glyph ? glyph : unknown_glyph;
 }
 
+Dimensions Font::size_of(const char* string) {
+	int min_y = 0;
+	int max_y = 0;
+	int min_x = 0;
+	int max_x = 0;
+	Point cpos = {0, 0};
+	while(*string) {
+		auto glph = glyph(*string);
+		int y_offset = (data->bounding_box.base_y - glph->base_y) + (data->size - glph->height);
+		if(y_offset + cpos.y < min_y)
+			min_y = y_offset + cpos.y;
+		if(y_offset + glph->height + cpos.y > max_y)
+			max_y = y_offset + glph->height + cpos.y;
+		int x_offset = glph->base_x - data->bounding_box.base_x;
+		if(x_offset + cpos.x < min_x)
+			min_x = x_offset + cpos.x;
+		if(x_offset + cpos.x + glph->width > max_x)
+			max_x = x_offset + cpos.x + glph->width;
+		cpos = cpos + Point {glph->next_offset.x, glph->next_offset.y};
+		string++;
+	}
+	return {max_x - min_x, max_y - min_y};
+}
+

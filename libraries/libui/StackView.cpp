@@ -17,30 +17,28 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_H
-#define DUCKOS_LIBUI_H
+#include "StackView.h"
 
-#include <libpond/pond.h>
-#include <libpond/Event.h>
-#include "Widget.h"
-#include "Window.h"
-#include "Poll.h"
+UI::StackView::StackView(Direction direction): direction(direction) {
 
-namespace UI {
-	extern Pond::Context* pond_context;
-
-	void init(char** argv, char** envp);
-	void run();
-
-	void add_poll(const Poll& poll);
-
-	Font* font();
-	Font* font_mono();
-
-	void __register_window(UI::Window* window, int id);
-	void __deregister_window(int id);
-	void __register_widget(UI::Widget* widget, int id);
-	void __deregister_widget(int id);
 }
 
-#endif //DUCKOS_LIBUI_H
+Dimensions UI::StackView::preferred_size() {
+	return direction == HORIZONTAL ? Dimensions {current_pos, max_dim} : Dimensions {max_dim, current_pos};
+}
+
+void UI::StackView::on_child_added(UI::Widget* child) {
+	if(direction == HORIZONTAL) {
+		child->set_position(child->position() + Point {current_pos, 0});
+		auto sz = child->preferred_size();
+		current_pos += sz.width;
+		if(sz.height > max_dim)
+			max_dim = sz.height;
+	} else if(direction == VERTICAL) {
+		child->set_position(child->position() + Point {0, current_pos});
+		auto sz = child->preferred_size();
+		current_pos += sz.height;
+		if(sz.width > max_dim)
+			max_dim = sz.width;
+	}
+}

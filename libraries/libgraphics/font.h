@@ -67,6 +67,8 @@ public:
 	FontData::BoundingBox bounding_box();
 	FontGlyph* glyph(uint32_t codepoint);
 
+	Dimensions size_of(const char* string);
+
 private:
 	Font(shm fontshm);
 	~Font();

@@ -49,12 +49,30 @@ Window* Widget::parent_window() {
 	return _parent_window;
 }
 
+void Widget::add_child(Widget* child) {
+	if(child->parent() || child->parent_window())
+		return;
+	children.push_back(child);
+	child->set_parent(this);
+	on_child_added(child);
+}
+
+void Widget::set_position(const Point& position) {
+	if(_window)
+		_window->set_position(position.x, position.y);
+	_position = position;
+}
+
+Point Widget::position() {
+	return _position;
+}
+
 void Widget::set_window(UI::Window* window) {
 	if(_parent || _parent_window)
 		return;
 
 	Dimensions size = preferred_size();
-	_window = pond_context->create_window(window->_window, 0, 0, size.width, size.height);
+	_window = pond_context->create_window(window->_window, _position.x, _position.y, size.width, size.height);
 	__register_widget(this, _window->id);
 	repaint();
 	for(auto& child : children)
@@ -65,9 +83,11 @@ void Widget::set_parent(UI::Widget* widget) {
 	if(_parent || _parent_window)
 		return;
 
+	_parent = widget;
+
 	if(widget->_window) {
 		Dimensions size = preferred_size();
-		_window = pond_context->create_window(widget->_window, 0, 0, size.width, size.height);
+		_window = pond_context->create_window(widget->_window, _position.x, _position.y, size.width, size.height);
 		__register_widget(this, _window->id);
 		repaint();
 		for(auto& child : children)
@@ -81,9 +101,13 @@ void Widget::do_repaint(Image& framebuffer) {
 
 void Widget::parent_window_created() {
 	Dimensions size = preferred_size();
-	_window = pond_context->create_window(_parent ? _parent->_window : _parent_window->_window, 0, 0, size.width, size.height);
+	_window = pond_context->create_window(_parent ? _parent->_window : _parent_window->_window, _position.x, _position.y, size.width, size.height);
 	__register_widget(this, _window->id);
 	repaint();
 	for(auto& child : children)
 		child->parent_window_created();
+}
+
+void Widget::on_child_added(UI::Widget* child) {
+
 }

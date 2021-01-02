@@ -56,18 +56,38 @@ namespace UI {
 		 */
 		Window* parent_window();
 
+		/**
+		 * Adds a child to the widget.
+		 * @param child The child to add.
+		 */
+		void add_child(Widget* child);
+
+		/**
+		 * Sets the position of the widget.
+		 * @param position The new position of the widget.
+		 */
+		void set_position(const Point& position);
+
+		/**
+		 * Gets the position of the widget.
+		 * @return The position of the widget.
+		 */
+		 Point position();
+
 	protected:
 		friend class Window;
 
 		void set_window(UI::Window* window);
 		void set_parent(UI::Widget* widget);
 		virtual void do_repaint(Image& framebuffer);
+		virtual void on_child_added(UI::Widget* child);
 
+		std::vector<Widget*> children;
 	private:
 		UI::Widget* _parent = nullptr;
 		UI::Window* _parent_window = nullptr;
 		Pond::Window* _window = nullptr;
-		std::vector<Widget*> children;
+		Point _position = {0, 0};
 
 		void parent_window_created();
 	};

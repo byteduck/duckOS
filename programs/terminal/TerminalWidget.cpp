@@ -41,7 +41,7 @@ static const uint32_t color_palette[] = {
 };
 
 TerminalWidget::TerminalWidget() {
-	font = UI::pond_context->get_font("gohu-11");
+	font = UI::font_mono();
 	term = new Terminal({400 / (size_t) font->bounding_box().width, 300 / (size_t) font->size()}, *this);
 
 	//Setup PTY

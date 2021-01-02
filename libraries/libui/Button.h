@@ -17,30 +17,37 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_H
-#define DUCKOS_LIBUI_H
+#ifndef DUCKOS_LIBUI_BUTTON_H
+#define DUCKOS_LIBUI_BUTTON_H
 
-#include <libpond/pond.h>
-#include <libpond/Event.h>
 #include "Widget.h"
-#include "Window.h"
-#include "Poll.h"
+#include <string>
+#include <functional>
+
+#define UI_BUTTON_PADDING 5
 
 namespace UI {
-	extern Pond::Context* pond_context;
+	class Button: public Widget {
+	public:
+		Button(const std::string& label);
 
-	void init(char** argv, char** envp);
-	void run();
+		//Button
+		std::string label();
+		void set_label(const std::string& new_label);
 
-	void add_poll(const Poll& poll);
+		//Widget
+		virtual bool on_mouse(Pond::MouseEvent evt) override;
+		virtual Dimensions preferred_size() override;
 
-	Font* font();
-	Font* font_mono();
+		std::function<void()> on_pressed = nullptr;
+		std::function<void()> on_released = nullptr;
+	private:
+		//Widget
+		void do_repaint(Image& framebuffer) override;
 
-	void __register_window(UI::Window* window, int id);
-	void __deregister_window(int id);
-	void __register_widget(UI::Widget* widget, int id);
-	void __deregister_widget(int id);
+		std::string _label;
+		bool _pressed = false;
+	};
 }
 
-#endif //DUCKOS_LIBUI_H
+#endif //DUCKOS_LIBUI_BUTTON_H
