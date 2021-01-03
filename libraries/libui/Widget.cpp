@@ -26,6 +26,12 @@ Dimensions Widget::preferred_size() {
 	return {1, 1};
 }
 
+Dimensions Widget::current_size() {
+	if(!_initialized_size)
+		_size = preferred_size();
+	return _size;
+}
+
 void Widget::repaint() {
 	if(_window) {
 		do_repaint(_window->framebuffer);
@@ -71,8 +77,9 @@ void Widget::set_window(UI::Window* window) {
 	if(_parent || _parent_window)
 		return;
 
-	Dimensions size = preferred_size();
-	_window = pond_context->create_window(window->_window, _position.x, _position.y, size.width, size.height);
+	_parent_window = window;
+	_size = preferred_size();
+	_window = pond_context->create_window(window->_window, _position.x, _position.y, _size.width, _size.height);
 	__register_widget(this, _window->id);
 	repaint();
 	for(auto& child : children)
@@ -86,8 +93,8 @@ void Widget::set_parent(UI::Widget* widget) {
 	_parent = widget;
 
 	if(widget->_window) {
-		Dimensions size = preferred_size();
-		_window = pond_context->create_window(widget->_window, _position.x, _position.y, size.width, size.height);
+		_size = preferred_size();
+		_window = pond_context->create_window(widget->_window, _position.x, _position.y, _size.width, _size.height);
 		__register_widget(this, _window->id);
 		repaint();
 		for(auto& child : children)
@@ -95,13 +102,28 @@ void Widget::set_parent(UI::Widget* widget) {
 	}
 }
 
+void Widget::update_size() {
+	_size = preferred_size();
+
+	if(_window) {
+		_window->resize(_size.width, _size.height);
+		repaint();
+	}
+
+	if(_parent)
+		_parent->update_size();
+
+	if(_parent_window)
+		_parent_window->resize(_size.width, _size.height);
+}
+
 void Widget::do_repaint(Image& framebuffer) {
 
 }
 
 void Widget::parent_window_created() {
-	Dimensions size = preferred_size();
-	_window = pond_context->create_window(_parent ? _parent->_window : _parent_window->_window, _position.x, _position.y, size.width, size.height);
+	_size = preferred_size();
+	_window = pond_context->create_window(_parent ? _parent->_window : _parent_window->_window, _position.x, _position.y, _size.width, _size.height);
 	__register_widget(this, _window->id);
 	repaint();
 	for(auto& child : children)

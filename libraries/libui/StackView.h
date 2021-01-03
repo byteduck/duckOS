@@ -30,16 +30,20 @@ namespace UI {
 			VERTICAL
 		};
 
-		StackView(Direction direction);
+		StackView(Direction direction, int spacing = 0);
+
+		void set_spacing(int new_spacing);
 
 		//Widget
 		virtual Dimensions preferred_size() override;
 	protected:
 		//Widget
 		virtual void on_child_added(UI::Widget* child) override;
+		virtual void do_repaint(Image& fb) override;
 
 		int current_pos = 0;
 		int max_dim = 0;
+		int spacing = 0;
 		Direction direction;
 	};
 }

@@ -19,26 +19,40 @@
 
 #include "StackView.h"
 
-UI::StackView::StackView(Direction direction): direction(direction) {
+UI::StackView::StackView(Direction direction, int spacing): direction(direction), spacing(spacing) {
 
 }
 
 Dimensions UI::StackView::preferred_size() {
+	max_dim = 0;
+	current_pos = 0;
+	for(auto& child : children) {
+		if(direction == HORIZONTAL) {
+			child->set_position(Point{current_pos, 0});
+			auto sz = child->current_size();
+			current_pos += sz.width + spacing;
+			if(sz.height > max_dim)
+				max_dim = sz.height;
+		} else if(direction == VERTICAL) {
+			child->set_position(Point{0, current_pos});
+			auto sz = child->current_size();
+			current_pos += sz.height + spacing;
+			if(sz.width > max_dim)
+				max_dim = sz.width;
+		}
+	}
 	return direction == HORIZONTAL ? Dimensions {current_pos, max_dim} : Dimensions {max_dim, current_pos};
 }
 
+void UI::StackView::set_spacing(int new_spacing) {
+	spacing = new_spacing;
+	update_size();
+}
+
 void UI::StackView::on_child_added(UI::Widget* child) {
-	if(direction == HORIZONTAL) {
-		child->set_position(child->position() + Point {current_pos, 0});
-		auto sz = child->preferred_size();
-		current_pos += sz.width;
-		if(sz.height > max_dim)
-			max_dim = sz.height;
-	} else if(direction == VERTICAL) {
-		child->set_position(child->position() + Point {0, current_pos});
-		auto sz = child->preferred_size();
-		current_pos += sz.height;
-		if(sz.width > max_dim)
-			max_dim = sz.width;
-	}
+	update_size();
+}
+
+void UI::StackView::do_repaint(Image& fb) {
+	fb.fill({0, 0, fb.width, fb.height}, RGB(40, 40, 40));
 }

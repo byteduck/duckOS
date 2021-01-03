@@ -27,7 +27,21 @@ namespace UI {
 	class Window;
 	class Widget {
 	public:
+		/**
+		 * Returns the preferred size of the widget (which may not be its current size).
+		 * @return The preferred size of the widget.
+		 */
 		virtual Dimensions preferred_size();
+
+		/**
+		 * Returns the current size of the widget (may not be its preferred size).
+		 * @return The current size of the widget.
+		 */
+		Dimensions current_size();
+
+		/**
+		 * This function is called to repaint the contents of the widget.
+		 */
 		void repaint();
 
 		/**
@@ -77,9 +91,33 @@ namespace UI {
 	protected:
 		friend class Window;
 
+		/**
+		 * Sets the parent window of the widget.
+		 * @param window The parent window of the widget.
+		 */
 		void set_window(UI::Window* window);
+
+		/**
+		 * Sets the parent widget of the widget.
+		 * @param widget The parent widget.
+		 */
 		void set_parent(UI::Widget* widget);
+
+		/**
+		 * Updates the current size of the widget to its preferred size.
+		 */
+		void update_size();
+
+		/**
+		 * Called when the widget needs to be repainted.
+		 * @param framebuffer The framebuffer of the widget.
+		 */
 		virtual void do_repaint(Image& framebuffer);
+
+		/**
+		 * Called when a child is added to the widget.
+		 * @param child The child added.
+		 */
 		virtual void on_child_added(UI::Widget* child);
 
 		std::vector<Widget*> children;
@@ -88,6 +126,8 @@ namespace UI {
 		UI::Window* _parent_window = nullptr;
 		Pond::Window* _window = nullptr;
 		Point _position = {0, 0};
+		Dimensions _size = {-1, -1};
+		bool _initialized_size = false;
 
 		void parent_window_created();
 	};

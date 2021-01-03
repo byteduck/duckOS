@@ -19,6 +19,8 @@
 
 #include <libgraphics/font.h>
 #include <libui/libui.h>
+#include <libui/StackView.h>
+#include <libui/Button.h>
 #include "TerminalWidget.h"
 
 int main(int argc, char** argv, char** envp) {
@@ -29,10 +31,21 @@ int main(int argc, char** argv, char** envp) {
 	auto* window = UI::Window::create();
 	window->set_title("Terminal");
 
+	auto* mainview = new UI::StackView(UI::StackView::VERTICAL);
+	window->set_contents(mainview);
+
+	auto* toolbar = new UI::StackView(UI::StackView::HORIZONTAL, 3);
+	mainview->add_child(toolbar);
+
+	toolbar->add_child(new UI::Button("Button A"));
+	toolbar->add_child(new UI::Button("Button B"));
+	toolbar->add_child(new UI::Button("Button C"));
+	toolbar->add_child(new UI::Button("Button D"));
+
 	//Create terminal widget
 	auto* termwidget = new TerminalWidget();
-	window->set_contents(termwidget);
 	termwidget->run("/bin/dsh");
+	mainview->add_child(termwidget);
 
 	//Run event loop
 	UI::run();

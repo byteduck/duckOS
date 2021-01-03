@@ -60,7 +60,7 @@ void Window::set_contents(Widget* contents) {
 	_contents = contents;
 	_contents->set_window(this);
 	_contents->_window->set_position(DECO_LEFT_SIZE, DECO_TOP_SIZE);
-	Dimensions contents_size = _contents->preferred_size();
+	Dimensions contents_size = _contents->current_size();
 	_window->resize(DECO_LEFT_SIZE + DECO_RIGHT_SIZE + contents_size.width, DECO_TOP_SIZE + DECO_BOTTOM_SIZE + contents_size.height);
 	repaint();
 }
