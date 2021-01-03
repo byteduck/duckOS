@@ -483,12 +483,16 @@ bool PageDirectory::munmap(void* virtaddr) {
 }
 
 ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, size_t mem_size, pid_t pid) {
+	if(!mem_size)
+		mem_size = 1; //Make sure we're allocating at least one byte...
+
 	//First, allocate the region
 	LinkedMemoryRegion region;
 	if(vaddr)
 		region = allocate_region(vaddr, mem_size, true);
 	else
 		region = allocate_region(mem_size, true);
+
 	if(!region.virt)
 		return -ENOMEM;
 
