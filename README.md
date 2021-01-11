@@ -3,9 +3,9 @@
 
 A hobby UNIX-like OS with a graphical window manager for x86 computers.
 
-![Build toolchain](https://github.com/byteduck/duckOS/workflows/Build%20toolchain/badge.svg)
-![Build Kernel](https://github.com/byteduck/duckOS/workflows/Build%20Kernel/badge.svg)
-![Build OS](https://github.com/byteduck/duckOS/workflows/Build%20OS/badge.svg)
+![Toolchain](https://github.com/byteduck/duckOS/workflows/Toolchain/badge.svg)
+![Kernel](https://github.com/byteduck/duckOS/workflows/Kernel/badge.svg)
+![duckOS](https://github.com/byteduck/duckOS/workflows/duckOS/badge.svg)
 
 ### What's working
 - Booting off of the primary master IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)

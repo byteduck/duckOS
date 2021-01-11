@@ -1,4 +1,4 @@
-name: Build Kernel
+name: Kernel
 
 # Controls when the action will run. 
 on:
