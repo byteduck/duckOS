@@ -4,6 +4,7 @@
 A hobby UNIX-like OS with a graphical window manager for x86 computers.
 
 ![Build toolchain](https://github.com/byteduck/duckOS/workflows/Build%20toolchain/badge.svg)
+![Build Kernel](https://github.com/byteduck/duckOS/workflows/Build%20Kernel/badge.svg)
 ![Build OS](https://github.com/byteduck/duckOS/workflows/Build%20OS/badge.svg)
 
 ### What's working
