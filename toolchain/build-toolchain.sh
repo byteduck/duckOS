@@ -68,6 +68,14 @@ build_gcc () {
     install -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
   done <<< "$LIBM_HEADERS"
   printf "libm headers installed!...\n"
+  
+  printf "Installing kernel headers...\n"
+  mkdir -p "$SYSROOT"/usr/include/kernel
+  KERNEL_HEADERS=$(find "$KERNEL_LOC" -name '*.h' -print)
+  while IFS= read -r HEADER; do
+    install -D "$HEADER" "$SYSROOT/usr/include/kernel/$(echo "$HEADER" | sed -e "s@$KERNEL_LOC@@")"
+  done <<< "$KERNEL_HEADERS"
+  printf "kernel headers installed!...\n"
 
   printf "Making libstdc++...\n"
   make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1
