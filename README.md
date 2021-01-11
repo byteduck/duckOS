@@ -1,9 +1,10 @@
 # duckOS
 ### A hobby operating system
 
-This is just a little hobby OS that aims to be at least partially POSIX/UNIX compliant.
+A hobby UNIX-like OS with a graphical window manager for x86 computers.
 
-If some of this code looks familiar, it's because it's based off of my previous hobby OS, [codeOS2](https://github.com/byteduck/codeOS2). Most of the code is new/rewritten at this point though.
+![Build toolchain](https://github.com/byteduck/duckOS/workflows/Build%20toolchain/badge.svg)
+![Build OS](https://github.com/byteduck/duckOS/workflows/Build%20OS/badge.svg)
 
 ### What's working
 - Booting off of the primary master IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
