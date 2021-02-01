@@ -133,6 +133,16 @@ public:
 	bool gets_global_mouse();
 
 	/**
+	 * Sets whether or not the window is draggable.
+	 */
+	void set_draggable(bool draggable);
+
+	/**
+	 * Whether or not the window is draggable.
+	 */
+	bool draggable();
+
+	/**
 	 * Handles a number of keyboard events for this window.
 	 * @param event The event to handle.
 	 */
@@ -175,6 +185,7 @@ private:
 	uint8_t _mouse_buttons;
 	Point _mouse_position;
 	bool _global_mouse = false;
+	bool _draggable = false;
 	char* _title = nullptr;
 
 	static int current_id;

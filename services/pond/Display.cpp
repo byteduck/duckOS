@@ -214,12 +214,21 @@ void Display::focus(Window* window) {
 
 void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	static Window* prev_mouse_window = nullptr;
+	static Window* drag_window = nullptr;
 	static uint8_t prev_mouse_buttons = 0;
 
 	Point mouse = _mouse_window->absolute_rect().position();
 	Point delta = {delta_x, delta_y};
 
-	//Do global mouse events first so that window dragging works correctly
+	//Drag or stop dragging the current draggable window, if any
+	if(drag_window) {
+		if(!(buttons & 1))
+			drag_window = nullptr;
+		else
+			drag_window->set_position(drag_window->rect().position() + delta);
+	}
+
+	//Process global mouse events
 	for(auto& window : _windows) {
 		if(window->gets_global_mouse()) {
 			window->mouse_moved(delta, mouse - window->absolute_rect().position(), mouse);
@@ -238,8 +247,12 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 				window->mouse_moved(delta, mouse - window->absolute_rect().position(), mouse);
 				window->set_mouse_buttons(_mouse_window->mouse_buttons());
 			}
+			//If we mouse down on a window, focus it
 			if(!(prev_mouse_buttons & 1) && (buttons & 1)) {
 				window->focus();
+				//Additionally, if it's draggable, start dragging it
+				if(window->draggable())
+					drag_window = window;
 			}
 			break;
 		}

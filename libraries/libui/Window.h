@@ -68,9 +68,6 @@ namespace UI {
 		Pond::Window* _window;
 		Widget* _contents;
 		std::string _title;
-		Point drag_start;
-		bool dragging = false;
-		bool mouse_in_window = false;
 	};
 }
 

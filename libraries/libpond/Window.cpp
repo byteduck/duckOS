@@ -71,3 +71,8 @@ void Window::set_global_mouse(bool global) {
 	if(!context->send_packet(PWindowHintPkt(id, PWINDOW_HINT_GLOBALMOUSE, global)))
 		perror("Pond: failed to write set hint packet");
 }
+
+void Window::set_draggable(bool draggable) {
+	if(!context->send_packet(PWindowHintPkt(id, PWINDOW_HINT_DRAGGABLE, draggable)))
+		perror("Pond: failed to write set hint packet");
+}

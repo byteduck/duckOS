@@ -25,6 +25,7 @@
 #include "Context.h"
 
 #define PWINDOW_HINT_GLOBALMOUSE 0x1
+#define PWINDOW_HINT_DRAGGABLE 0x2
 
 /**
  * A window Object representing a window in the Pond window system.
@@ -87,6 +88,12 @@ namespace Pond {
 		 * @param global Whether or not the window should get global mouse events.
 		 */
 		void set_global_mouse(bool global);
+
+		/**
+		 * Sets whether or not the window should be draggable.
+		 * @param draggable Whether or not the window is draggable.
+		 */
+		void set_draggable(bool draggable);
 
 		int id = -1; ///< The ID of the window.
 		int width = 0; ///< The width of the window.

@@ -182,6 +182,14 @@ bool Window::gets_global_mouse() {
 	return _global_mouse;
 }
 
+void Window::set_draggable(bool draggable) {
+	_draggable = draggable;
+}
+
+bool Window::draggable() {
+	return _draggable;
+}
+
 void Window::handle_keyboard_event(const KeyboardEvent& event) {
 	if(_client)
 		_client->keyboard_event(this, event);
@@ -242,6 +250,9 @@ void Window::set_hint(int hint, int value) {
 	switch(hint) {
 		case PWINDOW_HINT_GLOBALMOUSE:
 			set_global_mouse(value);
+			break;
+		case PWINDOW_HINT_DRAGGABLE:
+			set_draggable(value);
 			break;
 		default:
 			fprintf(stderr, "pond: Unknown window hint %d!\n", hint);
