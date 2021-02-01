@@ -36,7 +36,7 @@ void Button::set_label(const std::string& new_label) {
 	repaint();
 }
 
-bool Button::on_mouse(Pond::MouseEvent evt) {
+bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if(!(evt.old_buttons & POND_MOUSE1) && evt.window->mouse_buttons & POND_MOUSE1) {
 		_pressed = true;
 		if(on_pressed)
@@ -52,6 +52,15 @@ bool Button::on_mouse(Pond::MouseEvent evt) {
 	}
 
 	return false;
+}
+
+void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
+	if(_pressed) {
+		_pressed = false;
+		if(on_released)
+			on_released();
+		repaint();
+	}
 }
 
 Dimensions Button::preferred_size() {

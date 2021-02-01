@@ -78,11 +78,11 @@ void handle_pond_events() {
 				break;
 			}
 
-			case PEVENT_MOUSE: {
-				auto& evt = event.mouse;
+			case PEVENT_MOUSE_MOVE: {
+				auto& evt = event.mouse_move;
 				auto* window = windows[evt.window->id];
 				if(window) {
-					window->on_mouse(evt);
+					window->on_mouse_move(evt);
 				} else {
 					auto* widget = widgets[evt.window->id];
 					if(!widget)
@@ -91,7 +91,7 @@ void handle_pond_events() {
 					//Propagate the event through parent widgets / window as appropriate
 					bool continue_propagating = true;
 					while(true) {
-						if(widget->on_mouse(evt)) {
+						if(widget->on_mouse_move(evt)) {
 							continue_propagating = false;
 							break;
 						}
@@ -99,8 +99,49 @@ void handle_pond_events() {
 							break;
 						widget = widget->parent();
 					}
-					if(continue_propagating && !widget->on_mouse(evt) && widget->parent_window())
-						widget->parent_window()->on_mouse(evt);
+					if(continue_propagating && !widget->on_mouse_move(evt) && widget->parent_window())
+						widget->parent_window()->on_mouse_move(evt);
+				}
+				break;
+			}
+
+			case PEVENT_MOUSE_BUTTON: {
+				auto& evt = event.mouse_button;
+				auto* window = windows[evt.window->id];
+				if(window) {
+					window->on_mouse_button(evt);
+				} else {
+					auto* widget = widgets[evt.window->id];
+					if(!widget)
+						break;
+
+					//Propagate the event through parent widgets / window as appropriate
+					bool continue_propagating = true;
+					while(true) {
+						if(widget->on_mouse_button(evt)) {
+							continue_propagating = false;
+							break;
+						}
+						if(!widget->parent())
+							break;
+						widget = widget->parent();
+					}
+					if(continue_propagating && !widget->on_mouse_button(evt) && widget->parent_window())
+						widget->parent_window()->on_mouse_button(evt);
+				}
+				break;
+			}
+
+			case PEVENT_MOUSE_LEAVE: {
+				auto& evt = event.mouse_leave;
+				auto* window = windows[evt.window->id];
+				if(window) {
+					window->on_mouse_leave(evt);
+				} else {
+					auto* widget = widgets[evt.window->id];
+					if(!widget)
+						break;
+					widget->on_mouse_leave(evt);
 				}
 				break;
 			}

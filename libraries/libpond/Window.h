@@ -24,6 +24,8 @@
 #include <libgraphics/graphics.h>
 #include "Context.h"
 
+#define PWINDOW_HINT_GLOBALMOUSE 0x1
+
 /**
  * A window Object representing a window in the Pond window system.
  */
@@ -78,6 +80,13 @@ namespace Pond {
 		 * @param window Null for no parent, or a pointer to the window that will be this window's new parent.
 		 */
 		void reparent(Window* window);
+
+
+		/**
+		 * Sets whether or not the window gets global mouse events.
+		 * @param global Whether or not the window should get global mouse events.
+		 */
+		void set_global_mouse(bool global);
 
 		int id = -1; ///< The ID of the window.
 		int width = 0; ///< The width of the window.

@@ -37,6 +37,8 @@
 #define PPKT_FONT_RESPONSE 14
 #define PPKT_SET_TITLE 15
 #define PPKT_REPARENT 16
+#define PPKT_MOUSE_LEAVE 17
+#define PPKT_WINDOW_HINT 18
 
 #include <cstdint>
 
@@ -118,11 +120,15 @@ struct PInvalidatePkt {
 };
 
 struct PMouseMovePkt {
-	explicit PMouseMovePkt(int window_id, int x, int y): window_id(window_id), x(x), y(y) {}
+	explicit PMouseMovePkt(int window_id, int dx, int dy, int rx, int ry, int ax, int ay): window_id(window_id), delta_x(dx), delta_y(dy), relative_x(rx), relative_y(ry), absolute_x(ax), absolute_y(ay) {}
 	short _PACKET_ID = PPKT_MOUSE_MOVE;
 	int window_id;
-	int x;
-	int y;
+	int delta_x;
+	int delta_y;
+	int relative_x;
+	int relative_y;
+	int absolute_x;
+	int absolute_y;
 };
 
 struct PMouseButtonPkt {
@@ -130,6 +136,12 @@ struct PMouseButtonPkt {
 	short _PACKET_ID = PPKT_MOUSE_BUTTON;
 	int window_id;
 	uint8_t buttons;
+};
+
+struct PMouseLeavePkt {
+	explicit PMouseLeavePkt(int window_id): window_id(window_id) {}
+	short _PACKET_ID = PPKT_MOUSE_LEAVE;
+	int window_id;
 };
 
 struct PKeyEventPkt {
@@ -166,6 +178,14 @@ struct PReparentPkt {
 	short _PACKET_ID = PPKT_REPARENT;
 	int window_id;
 	int parent_id;
+};
+
+struct PWindowHintPkt {
+	explicit PWindowHintPkt(int window_id, int hint, int value): window_id(window_id), hint(hint), value(value) {}
+	short _PACKET_ID = PPKT_WINDOW_HINT;
+	int window_id;
+	int hint;
+	int value;
 };
 
 #endif //DUCKOS_PACKET_H

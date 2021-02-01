@@ -44,8 +44,7 @@ void Window::invalidate_area(int area_x, int area_y, int area_width, int area_he
 void Window::resize(int width, int height) {
 	if(!context->send_packet(PResizeWindowPkt(id, width, height)))
 		return perror("Pond: failed to write resize window packet");
-	//TODO This is hacky and will break things.
-	context->next_event();
+	context->next_event(PEVENT_WINDOW_RESIZE);
 	this->width = width;
 	this->height = height;
 }
@@ -53,8 +52,7 @@ void Window::resize(int width, int height) {
 void Window::set_position(int x, int y) {
 	if(!context->send_packet(PMoveWindowPkt(id, x, y)))
 		return perror("Pond: failed to write resize window packet");
-	//TODO This is hacky and will break things.
-	context->next_event();
+	context->next_event(PEVENT_WINDOW_MOVE);
 	this->x = x;
 	this->y = y;
 }
@@ -67,4 +65,9 @@ void Window::set_title(const char* title) {
 void Window::reparent(Window* window) {
 	if(!context->send_packet(PReparentPkt(id, window ? window->id : 0)))
 		perror("Pond: failed to write set parent packet");
+}
+
+void Window::set_global_mouse(bool global) {
+	if(!context->send_packet(PWindowHintPkt(id, PWINDOW_HINT_GLOBALMOUSE, global)))
+		perror("Pond: failed to write set hint packet");
 }

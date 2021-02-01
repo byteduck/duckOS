@@ -52,11 +52,24 @@ namespace UI {
 		virtual bool on_keyboard(Pond::KeyEvent evt);
 
 		/**
-		 * This function is called whenever a mouse event happens on the widget.
+		 * This function is called whenever a mouse movement event happens on the widget.
 		 * @param evt The event in question.
 		 * @return Whether or not the event was handled and should stop propagating to the parent.
 		 */
-		virtual bool on_mouse(Pond::MouseEvent evt);
+		virtual bool on_mouse_move(Pond::MouseMoveEvent evt);
+
+		/**
+		 * This function is called whenever a mouse button event happens on the widget.
+		 * @param evt The event in question.
+		 * @return Whether or not the event was handled and should stop propagating to the parent.
+		 */
+		virtual bool on_mouse_button(Pond::MouseButtonEvent evt);
+
+		/**
+		 * This function is called whenever the mouse leaves the widget (or enters a child widget).
+		 * @param evt The event in question.
+		 */
+		virtual void on_mouse_leave(Pond::MouseLeaveEvent evt);
 
 		/**
 		 * The parent of this widget.

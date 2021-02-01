@@ -27,6 +27,7 @@
 #include "Window.h"
 #include "Event.h"
 #include "packet.h"
+#include <deque>
 
 namespace Pond {
 	/**
@@ -51,6 +52,13 @@ namespace Pond {
 		 * @return The event.
 		 */
 		Event next_event();
+
+		/**
+		 * Waits for the next event from pond of a certain type and returns it.
+		 * @param The type of event to wait for.
+		 * @return The event.
+		 */
+		Event next_event(int type);
 
 		/**
 		 * Creates a window.
@@ -89,18 +97,22 @@ namespace Pond {
 	private:
 		explicit Context(int _fd);
 
+		void read_events(bool block);
+
 		void handle_open_window(socketfs_packet* packet, Event* event);
 		void handle_destroy_window(socketfs_packet* packet, Event* event);
 		void handle_move_window(socketfs_packet* packet, Event* event);
 		void handle_resize_window(socketfs_packet* packet, Event* event);
 		void handle_mouse_move(socketfs_packet* packet, Event* event);
 		void handle_mouse_button(socketfs_packet* packet, Event* event);
+		void handle_mouse_leave(socketfs_packet* packet, Event* event);
 		void handle_key(socketfs_packet* packet, Event* event);
 		void handle_font_response(socketfs_packet* packet, Event* event);
 
 		int fd;
 		std::map<int, Window*> windows;
 		std::map<std::string, Font*> fonts;
+		std::deque<Event> events;
 	};
 }
 

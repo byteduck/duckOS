@@ -24,6 +24,7 @@ using namespace UI;
 Window::Window() {
 	_window = pond_context->create_window(nullptr, -1, -1, 1, 1);
 	UI::__register_window(this, _window->id);
+	_window->set_global_mouse(true);
 }
 
 Window* Window::create() {
@@ -101,16 +102,23 @@ void Window::on_keyboard(Pond::KeyEvent evt) {
 		_contents->on_keyboard(evt);
 }
 
-void Window::on_mouse(Pond::MouseEvent evt) {
-	if(!(evt.old_buttons & POND_MOUSE1) && evt.window->mouse_buttons & POND_MOUSE1) {
+void Window::on_mouse_move(Pond::MouseMoveEvent evt) {
+	if(evt.new_x >= 0 && evt.new_x < width() && evt.new_y >= 0 && evt.new_y < height())
+		mouse_in_window = true;
+	else
+		mouse_in_window = false;
+	if(dragging)
+		_window->set_position(evt.delta_x + _window->x, evt.delta_y + _window->y);
+}
+
+void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
+	if(mouse_in_window && !(evt.old_buttons & POND_MOUSE1) && evt.new_buttons & POND_MOUSE1) {
 		dragging = true;
 		drag_start = {evt.window->mouse_x, evt.window->mouse_y};
-	} else if(!(evt.window->mouse_buttons & POND_MOUSE1)) {
+	} else if(!(evt.new_buttons & POND_MOUSE1)) {
 		dragging = false;
 	}
+}
 
-	if(dragging) {
-		Point new_pos = Point {evt.window->mouse_x, evt.window->mouse_y} - drag_start + Point {evt.window->x, evt.window->y};
-		_window->set_position(new_pos.x, new_pos.y);
-	}
+void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 }

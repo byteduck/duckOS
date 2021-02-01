@@ -36,7 +36,8 @@ namespace UI {
 		void set_label(const std::string& new_label);
 
 		//Widget
-		virtual bool on_mouse(Pond::MouseEvent evt) override;
+		virtual bool on_mouse_button(Pond::MouseButtonEvent evt) override;
+		virtual void on_mouse_leave(Pond::MouseLeaveEvent evt) override;
 		virtual Dimensions preferred_size() override;
 
 		std::function<void()> on_pressed = nullptr;

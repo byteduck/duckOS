@@ -71,14 +71,16 @@ void Client::handle_packet(socketfs_packet* packet) {
 		case PPKT_REPARENT:
 			reparent(packet);
 			break;
+		case PPKT_WINDOW_HINT:
+			set_hint(packet);
 		default:
 			fprintf(stderr, "Invalid packet sent by client %d\n", pid);
 			return;
 	}
 }
 
-void Client::mouse_moved(Window* window, Point new_position) {
-	PMouseMovePkt pkt {window->id(), new_position.x, new_position.y};
+void Client::mouse_moved(Window* window, Point delta, Point relative_pos, Point absolute_pos) {
+	PMouseMovePkt pkt {window->id(), delta.x, delta.y, relative_pos.x, relative_pos.y, absolute_pos.x, absolute_pos.y};
 	if(write_packet(socketfs_fd, pid, sizeof(PMouseMovePkt), &pkt) < 0)
 		perror("Failed to write mouse movement packet to client");
 }
@@ -87,6 +89,12 @@ void Client::mouse_buttons_changed(Window* window, uint8_t new_buttons) {
 	PMouseButtonPkt pkt {window->id(), new_buttons};
 	if(write_packet(socketfs_fd, pid, sizeof(PMouseButtonPkt), &pkt) < 0)
 		perror("Failed to write mouse button packet to client");
+}
+
+void Client::mouse_left(Window* window) {
+	PMouseLeavePkt pkt {window->id()};
+	if(write_packet(socketfs_fd, pid, sizeof(PMouseLeavePkt), &pkt) < 0)
+		perror("Failed to write mouse left packet to client");
 }
 
 void Client::keyboard_event(Window* window, const KeyboardEvent& event) {
@@ -249,4 +257,14 @@ void Client::reparent(socketfs_packet* packet) {
 	auto* window = windows[params->window_id];
 	if(window)
 		window->reparent(windows[params->parent_id]);
+}
+
+void Client::set_hint(socketfs_packet* packet) {
+	if(packet->length != sizeof(PWindowHintPkt))
+		return;
+
+	auto* params = (PWindowHintPkt*) packet->data;
+	auto* window = windows[params->window_id];
+	if(window)
+		window->set_hint(params->hint, params->value);
 }

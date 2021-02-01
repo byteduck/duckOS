@@ -100,16 +100,22 @@ public:
 	/**
 	 * Called to tell the window that the mouse moved within it.
 	 * @param relative_pos The new position of the mouse relative to the window.
+	 * @param absolute_pos The new position of the mouse relative to the screen.
 	 * @param delta_x The amount of change in the x axis.
 	 * @param delta_y The amount of change in the y axis.
 	 */
-	virtual void mouse_moved(Point relative_pos, int delta_x, int delta_y);
+	virtual void mouse_moved(Point delta, Point relative_pos, Point absolute_pos);
 
 	/**
 	 * Called to tell the window that the mouse's button states changed.
 	 * @param buttons The new states of the mouse buttons.
 	 */
 	virtual void set_mouse_buttons(uint8_t buttons);
+
+	/**
+	 * Called to tell the window that the mouse left its bounding box.
+	 */
+	virtual void mouse_left();
 
 	/**
 	 * Returns the current state of the window's mouse buttons.
@@ -142,6 +148,13 @@ public:
 	 * @param title The new title.
 	 */
 	void set_title(const char* title);
+
+	/**
+	 * Sets various window hints.
+	 * @param hint The hint to set.
+	 * @param value The value to set it to.
+	 */
+	 void set_hint(int hint, int value);
 
 private:
 	friend class Mouse;

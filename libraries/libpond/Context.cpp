@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <sys/mem.h>
 #include <libgraphics/font.h>
+#include <vector>
 
 using namespace Pond;
 
@@ -41,72 +42,37 @@ Context* Context::init() {
 }
 
 bool Context::has_event() {
-	struct pollfd pfd = {fd, POLLIN, 0};
-	poll(&pfd, 1, 0);
-	return pfd.revents & POLLIN;
+	read_events(false);
+	return !events.empty();
 }
 
 Event Context::next_event() {
-	//Wait for the socket to be ready for reading
-	struct pollfd pfd = {fd, POLLIN, 0};
-	poll(&pfd, 1, -1);
-
-	//Read the packet
-	socketfs_packet* packet = read_packet(fd);
-	if(!packet) {
-		perror("libpond failed to read packet");
-		Event ret = {.type = PPKT_ERROR};
-		return ret;
-	}
-
-	//Make sure the packet has an ID
-	if(packet->length < sizeof(short)) {
-		fprintf(stderr, "libpond: Packet was too small!");
-		Event ret = {.type = PPKT_ERROR};
-		return ret;
-	}
-
-	//Get the packet type and handle it
-	Event ret = {.type = PEVENT_UNKNOWN};
-	short packet_type = *((short*)packet->data);
-	switch(packet_type) {
-		case PPKT_WINDOW_OPENED:
-			ret.type = PEVENT_WINDOW_CREATE;
-			handle_open_window(packet, &ret);
-			break;
-		case PPKT_WINDOW_DESTROYED:
-			ret.type = PEVENT_WINDOW_DESTROY;
-			handle_destroy_window(packet, &ret);
-			break;
-		case PPKT_WINDOW_MOVED:
-			ret.type = PEVENT_WINDOW_MOVE;
-			handle_move_window(packet, &ret);
-			break;
-		case PPKT_WINDOW_RESIZED:
-			ret.type = PEVENT_WINDOW_RESIZE;
-			handle_resize_window(packet, &ret);
-			break;
-		case PPKT_MOUSE_MOVE:
-			ret.type = PEVENT_MOUSE;
-			handle_mouse_move(packet, &ret);
-			break;
-		case PPKT_MOUSE_BUTTON:
-			ret.type = PEVENT_MOUSE;
-			handle_mouse_button(packet, &ret);
-			break;
-		case PPKT_KEY_EVENT:
-			ret.type = PEVENT_KEY;
-			handle_key(packet, &ret);
-			break;
-		case PPKT_FONT_RESPONSE:
-			ret.type = PEVENT_FONT_RESPONSE;
-			handle_font_response(packet, &ret);
-		default:
-			break;
-	}
-
-	free(packet);
+	if(events.empty())
+		read_events(true);
+	else
+		read_events(false);
+	Event ret = events.front();
+	events.pop_front();
 	return ret;
+}
+
+Event Context::next_event(int type) {
+	while(true) {
+		if(events.empty())
+			read_events(true);
+		else
+			read_events(false);
+
+		auto it = events.begin();
+		while(it != events.end()) {
+			if(it->type == type) {
+				Event ret = *it;
+				events.erase(it);
+				return ret;
+			}
+			it++;
+		}
+	}
 }
 
 Window* Context::create_window(Window* parent, int x, int y, int width, int height) {
@@ -146,6 +112,65 @@ Font* Context::get_font(const char* font) {
 
 int Context::connection_fd() {
 	return fd;
+}
+
+void Context::read_events(bool block) {
+	struct pollfd pfd = {fd, POLLIN, 0};
+	poll(&pfd, 1, block ? -1 : 0);
+	socketfs_packet* packet;
+	while((packet = read_packet(fd))) {
+		//Make sure the packet has an ID
+		if(packet->length < sizeof(short)) {
+			fprintf(stderr, "libpond: Packet was too small!");
+			continue;
+		}
+
+		//Get the packet type and handle it
+		Event evt = {.type = PEVENT_UNKNOWN};
+		short packet_type = *((short*)packet->data);
+		switch(packet_type) {
+			case PPKT_WINDOW_OPENED:
+				evt.type = PEVENT_WINDOW_CREATE;
+				handle_open_window(packet, &evt);
+				break;
+			case PPKT_WINDOW_DESTROYED:
+				evt.type = PEVENT_WINDOW_DESTROY;
+				handle_destroy_window(packet, &evt);
+				break;
+			case PPKT_WINDOW_MOVED:
+				evt.type = PEVENT_WINDOW_MOVE;
+				handle_move_window(packet, &evt);
+				break;
+			case PPKT_WINDOW_RESIZED:
+				evt.type = PEVENT_WINDOW_RESIZE;
+				handle_resize_window(packet, &evt);
+				break;
+			case PPKT_MOUSE_MOVE:
+				evt.type = PEVENT_MOUSE_MOVE;
+				handle_mouse_move(packet, &evt);
+				break;
+			case PPKT_MOUSE_BUTTON:
+				evt.type = PEVENT_MOUSE_BUTTON;
+				handle_mouse_button(packet, &evt);
+				break;
+			case PPKT_MOUSE_LEAVE:
+				evt.type = PEVENT_MOUSE_LEAVE;
+				handle_mouse_leave(packet, &evt);
+				break;
+			case PPKT_KEY_EVENT:
+				evt.type = PEVENT_KEY;
+				handle_key(packet, &evt);
+				break;
+			case PPKT_FONT_RESPONSE:
+				evt.type = PEVENT_FONT_RESPONSE;
+				handle_font_response(packet, &evt);
+			default:
+				break;
+		}
+
+		free(packet);
+		events.push_back(evt);
+	}
 }
 
 void Context::handle_open_window(socketfs_packet* packet, Event* event) {
@@ -249,12 +274,15 @@ void Context::handle_mouse_move(socketfs_packet* packet, Event* event) {
 	//Find the window and update the event & window
 	Window* window = windows[resp->window_id];
 	if(window) {
-		event->mouse.window = window;
-		event->mouse.old_buttons = window->mouse_buttons;
-		event->mouse.old_x = window->mouse_x;
-		event->mouse.old_y = window->mouse_y;
-		window->mouse_x = resp->x;
-		window->mouse_y = resp->y;
+		event->mouse_move.window = window;
+		event->mouse_move.delta_x = resp->delta_x;
+		event->mouse_move.delta_y = resp->delta_y;
+		event->mouse_move.new_x = resp->relative_x;
+		event->mouse_move.new_y = resp->relative_y;
+		event->mouse_move.abs_x = resp->absolute_x;
+		event->mouse_move.abs_y = resp->absolute_y;
+		window->mouse_x = resp->relative_x;
+		window->mouse_y = resp->relative_y;
 	} else {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "libpond: Could not find window for window mouse move event!\n");
@@ -268,11 +296,26 @@ void Context::handle_mouse_button(socketfs_packet* packet, Event* event) {
 	//Find the window and update the event & window
 	Window* window = windows[resp->window_id];
 	if(window) {
-		event->mouse.window = window;
-		event->mouse.old_buttons = window->mouse_buttons;
-		event->mouse.old_x = -1;
-		event->mouse.old_y = -1;
+		event->mouse_button.window = window;
+		event->mouse_button.old_buttons = window->mouse_buttons;
+		event->mouse_button.new_buttons = resp->buttons;
 		window->mouse_buttons = resp->buttons;
+	} else {
+		event->type = PEVENT_UNKNOWN;
+		fprintf(stderr, "libpond: Could not find window for window mouse button event!\n");
+	}
+}
+
+void Context::handle_mouse_leave(socketfs_packet* packet, Event* event) {
+	//Read the response
+	auto* resp = (struct PMouseLeavePkt*) packet->data;
+
+	//Find the window and update the event & window
+	Window* window = windows[resp->window_id];
+	if(window) {
+		event->mouse_leave.window = window;
+		event->mouse_leave.last_x = window->mouse_x;
+		event->mouse_leave.last_y = window->mouse_y;
 	} else {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "libpond: Could not find window for window mouse button event!\n");

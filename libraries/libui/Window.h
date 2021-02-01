@@ -56,7 +56,10 @@ namespace UI {
 		Pond::Window* pond_window();
 
 		void on_keyboard(Pond::KeyEvent evt);
-		void on_mouse(Pond::MouseEvent evt);
+		void on_mouse_move(Pond::MouseMoveEvent evt);
+		void on_mouse_button(Pond::MouseButtonEvent evt);
+		void on_mouse_leave(Pond::MouseLeaveEvent evt);
+
 	protected:
 		Window();
 
@@ -67,6 +70,7 @@ namespace UI {
 		std::string _title;
 		Point drag_start;
 		bool dragging = false;
+		bool mouse_in_window = false;
 	};
 }
 

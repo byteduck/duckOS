@@ -214,13 +214,15 @@ void Display::focus(Window* window) {
 
 void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	static Window* prev_mouse_window = nullptr;
+	static uint8_t prev_mouse_buttons = 0;
 
 	Point mouse = _mouse_window->absolute_rect().position();
+	Point delta = {delta_x, delta_y};
 
 	//Do global mouse events first so that window dragging works correctly
 	for(auto& window : _windows) {
 		if(window->gets_global_mouse()) {
-			window->mouse_moved(mouse - window->absolute_rect().position(), delta_x, delta_y);
+			window->mouse_moved(delta, mouse - window->absolute_rect().position(), mouse);
 			window->set_mouse_buttons(_mouse_window->mouse_buttons());
 		}
 	}
@@ -232,24 +234,29 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 			continue;
 		if(mouse.in(window->absolute_rect())) {
 			event_window = window;
-			window->mouse_moved(mouse - window->absolute_rect().position(), delta_x, delta_y);
-			window->set_mouse_buttons(_mouse_window->mouse_buttons());
-			window->focus();
+			if(!window->gets_global_mouse()) {
+				window->mouse_moved(delta, mouse - window->absolute_rect().position(), mouse);
+				window->set_mouse_buttons(_mouse_window->mouse_buttons());
+			}
+			if(!(prev_mouse_buttons & 1) && (buttons & 1)) {
+				window->focus();
+			}
 			break;
 		}
 	}
 
 	// If the mouse was previously in a different window, update the mouse position in that window
-	if(event_window != prev_mouse_window && prev_mouse_window != nullptr) {
+	if(event_window != prev_mouse_window && prev_mouse_window != nullptr && !prev_mouse_window->gets_global_mouse()) {
 		Dimensions window_dims = prev_mouse_window->rect().dimensions();
 		//Constrain the mouse position in the window to the window's rect
 		Point new_mouse_pos = (mouse - prev_mouse_window->absolute_rect().position()).constrain({0, 0, window_dims.width, window_dims.height});
-		prev_mouse_window->mouse_moved(new_mouse_pos, delta_x, delta_y);
+		prev_mouse_window->mouse_moved(delta, new_mouse_pos, new_mouse_pos + prev_mouse_window->absolute_rect().position());
 		prev_mouse_window->set_mouse_buttons(_mouse_window->mouse_buttons());
+		prev_mouse_window->mouse_left();
 	}
 
 	prev_mouse_window = event_window;
-
+	prev_mouse_buttons = buttons;
 }
 
 bool Display::buffer_is_dirty() {

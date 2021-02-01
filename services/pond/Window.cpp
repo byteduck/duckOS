@@ -21,6 +21,7 @@
 #include <cstdio>
 #include "Display.h"
 #include <memory.h>
+#include <libpond/Window.h>
 
 int Window::current_id = 0;
 
@@ -149,10 +150,10 @@ void Window::focus() {
 	_display->focus(this);
 }
 
-void Window::mouse_moved(Point relative_pos, int delta_x, int delta_y) {
+void Window::mouse_moved(Point delta, Point relative_pos, Point absolute_pos) {
 	_mouse_position = relative_pos;
 	if(_client)
-		_client->mouse_moved(this, relative_pos);
+		_client->mouse_moved(this, delta, relative_pos, absolute_pos);
 }
 
 void Window::set_mouse_buttons(uint8_t buttons) {
@@ -162,6 +163,11 @@ void Window::set_mouse_buttons(uint8_t buttons) {
 	} else {
 		_mouse_buttons = buttons;
 	}
+}
+
+void Window::mouse_left() {
+	if(_client)
+		_client->mouse_left(this);
 }
 
 uint8_t Window::mouse_buttons() {
@@ -230,6 +236,16 @@ const char* Window::title() {
 void Window::set_title(const char* title) {
 	delete _title;
 	_title = strdup(title);
+}
+
+void Window::set_hint(int hint, int value) {
+	switch(hint) {
+		case PWINDOW_HINT_GLOBALMOUSE:
+			set_global_mouse(value);
+			break;
+		default:
+			fprintf(stderr, "pond: Unknown window hint %d!\n", hint);
+	}
 }
 
 

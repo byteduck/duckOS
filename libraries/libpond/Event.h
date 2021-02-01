@@ -29,9 +29,11 @@
 #define PEVENT_WINDOW_DESTROY 2
 #define PEVENT_WINDOW_MOVE 3
 #define PEVENT_WINDOW_RESIZE 4
-#define PEVENT_MOUSE 5
+#define PEVENT_MOUSE_MOVE 5
 #define PEVENT_KEY 6
 #define PEVENT_FONT_RESPONSE 7
+#define PEVENT_MOUSE_BUTTON 8
+#define PEVENT_MOUSE_LEAVE 9
 
 #define POND_MOUSE1 1
 #define POND_MOUSE2 2
@@ -66,13 +68,30 @@ namespace Pond {
 		Window* window; ///< The window that was resized
 	};
 
-	struct MouseEvent {
-		int type; ///< Equal to PEVENT_MOUSE
-		int old_x; ///< -1 if this is a button event, or the previous x position of the mouse.
-		int old_y; ///< -1 if this is a button event, or the previous y position of the mouse.
-		uint8_t old_buttons; ///< The previous button bitfield of the mouse.
+	struct MouseMoveEvent {
+		int type; ///< Equal to PEVENT_MOUSE_MOVE
+		int delta_x; ///< The change in x position of the mouse.
+		int delta_y; ///< The change in y position of the mouse.
+		int new_x; ///< The new relative x position of the mouse.
+		int new_y; ///< The new relative y position of the mouse.
+		int abs_x; ///< The absolute x position of the mouse relative to the display.
+		int abs_y; ///< The absolute y position of the mouse relative to the display.
 		Window* window;
-	} ;
+	};
+
+	struct MouseButtonEvent {
+		int type; ///< Equal to PEVENT_MOUSE_BUTTON
+		unsigned int old_buttons; ///< The previous buttons of the mouse.
+		unsigned int new_buttons; ///< The new buttons of the mouse.
+		Window* window;
+	};
+
+	struct MouseLeaveEvent {
+		int type; ///< Equal to PEVENT_MOUSE_LEAVE
+		int last_x; ///< The last relative x position of the mouse in the window.
+		int last_y; ///< The last relative y position of the mouse in the window.
+		Window* window;
+	};
 
 	struct KeyEvent {
 		int type; ///< Equal to PEVENT_KEY
@@ -94,7 +113,9 @@ namespace Pond {
 		WindowDestroyEvent window_destroy;
 		WindowMoveEvent window_move;
 		WindowResizeEvent window_resize;
-		MouseEvent mouse;
+		MouseMoveEvent mouse_move;
+		MouseButtonEvent mouse_button;
+		MouseLeaveEvent mouse_leave;
 		KeyEvent key;
 		FontResponseEvent font_response;
 	};

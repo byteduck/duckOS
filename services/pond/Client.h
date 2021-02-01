@@ -33,8 +33,9 @@ public:
 	~Client();
 
 	void handle_packet(socketfs_packet* packet);
-	void mouse_moved(Window* window, Point new_position);
+	void mouse_moved(Window* window, Point delta, Point relative_pos, Point absolute_pos);
 	void mouse_buttons_changed(Window* window, uint8_t new_buttons);
+	void mouse_left(Window* window);
 	void keyboard_event(Window* window, const KeyboardEvent& event);
 	void window_destroyed(Window* window);
 
@@ -52,6 +53,7 @@ private:
 	void get_font(socketfs_packet* packet);
 	void set_title(socketfs_packet* packet);
 	void reparent(socketfs_packet* packet);
+	void set_hint(socketfs_packet* packet);
 
 	pid_t pid;
 	int socketfs_fd;
