@@ -250,9 +250,11 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 			//If we mouse down on a window, focus it
 			if(!(prev_mouse_buttons & 1) && (buttons & 1)) {
 				window->focus();
-				//Additionally, if it's draggable, start dragging it
-				if(window->draggable())
+				//Additionally, if it's draggable, start dragging it and move it to the front
+				if(window->draggable()) {
 					drag_window = window;
+					window->move_to_front();
+				}
 			}
 			break;
 		}

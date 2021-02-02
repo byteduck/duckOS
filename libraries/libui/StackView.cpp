@@ -18,6 +18,7 @@
 */
 
 #include "StackView.h"
+#include "Theme.h"
 
 UI::StackView::StackView(Direction direction, int spacing): direction(direction), spacing(spacing) {
 
@@ -54,5 +55,5 @@ void UI::StackView::on_child_added(UI::Widget* child) {
 }
 
 void UI::StackView::do_repaint(Image& fb) {
-	fb.fill({0, 0, fb.width, fb.height}, RGB(40, 40, 40));
+	fb.fill({0, 0, fb.width, fb.height}, Theme::color("bg"));
 }

@@ -162,7 +162,7 @@ public:
 	/**
 	 * Sets various window hints.
 	 * @param hint The hint to set.
-	 * @param value The value to set it to.
+	 * @param value The get_value to set it to.
 	 */
 	 void set_hint(int hint, int value);
 

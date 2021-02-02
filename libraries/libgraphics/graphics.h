@@ -50,66 +50,66 @@ public:
 	int height = 0;
 
 	/**
-	 * Frees the data associated with the image.
+	 * Frees the data associated with the get_image.
 	 */
 	void free();
 
 	/**
-	 * Copies a part of another image to this one.
-	 * @param other The other image to copy from.
-	 * @param other_area The area of the other image to copy.
-	 * @param pos The position of this image to copy to.
+	 * Copies a part of another get_image to this one.
+	 * @param other The other get_image to copy from.
+	 * @param other_area The area of the other get_image to copy.
+	 * @param pos The position of this get_image to copy to.
 	 */
 	void copy(const Image& other, Rect other_area, const Point& pos) const;
 
 	/**
-	 * Identical to ::copy(), but will tile the image.
+	 * Identical to ::copy(), but will tile the get_image.
 	 */
 	void copy_tiled(const Image& other, Rect other_area, const Point& pos) const;
 
 	/**
-	 * Draws another image on top of this one with alpha blending.
-	 * @param other The image to draw.
-	 * @param other_area The area of the other image to draw.
-	 * @param pos The position on this image to draw on.
+	 * Draws another get_image on top of this one with alpha blending.
+	 * @param other The get_image to draw.
+	 * @param other_area The area of the other get_image to draw.
+	 * @param pos The position on this get_image to draw on.
 	 */
 	void draw_image(const Image& other, Rect other_area, const Point& pos) const;
 
 	/**
-	 * Draws another image on top of this one with alpha blending.
-	 * @param other The image to draw.
-	 * @param pos The position on this image to draw on.
+	 * Draws another get_image on top of this one with alpha blending.
+	 * @param other The get_image to draw.
+	 * @param pos The position on this get_image to draw on.
 	 */
 	void draw_image(const Image& other, const Point& pos) const;
 
 	/**
-	 * Fills an area of the image with a color.
+	 * Fills an area of the get_image with a get_color.
 	 * @param area The area to fill.
-	 * @param color The color to fill the area with.
+	 * @param color The get_color to fill the area with.
 	 */
 	void fill(Rect area, uint32_t color) const;
 
 	/**
-	 * Draws text on the image with a certain color.
+	 * Draws text on the get_image with a certain get_color.
 	 * @param str The string to draw.
 	 * @param pos The top-left position of where to draw.
 	 * @param font The font to use.
-	 * @param color The color to draw in.
+	 * @param color The get_color to draw in.
 	 */
 	void draw_text(const char* str, const Point& pos, Font* font, uint32_t color);
 
 	/**
-	 * Draws a glyph on the image with a certain color.
+	 * Draws a glyph on the get_image with a certain get_color.
 	 * @param font The font to use.
 	 * @param codepoint The codepoint of the character.
 	 * @param pos The position to draw the glyph at.
-	 * @param color The color to draw the glyph in.
+	 * @param color The get_color to draw the glyph in.
 	 * @return The position where the next character should be drawn.
 	 */
 	Point draw_glyph(Font* font, uint32_t codepoint, const Point& pos, uint32_t color);
 
 	/**
-	 * Returns a pointer to the image buffer at a certain position. Returns NULL if outside the constraints.
+	 * Returns a pointer to the get_image buffer at a certain position. Returns NULL if outside the constraints.
 	 */
 	uint32_t* at(const Point& position) const;
 };

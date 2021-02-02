@@ -18,6 +18,7 @@
 */
 
 #include "libui.h"
+#include "Theme.h"
 #include <poll.h>
 #include <map>
 
@@ -30,9 +31,6 @@ std::map<int, Window*> windows;
 std::map<int, Widget*> widgets;
 bool should_exit = false;
 
-Font* _font;
-Font* _font_mono;
-
 void handle_pond_events();
 
 void UI::init(char** argv, char** envp) {
@@ -43,8 +41,7 @@ void UI::init(char** argv, char** envp) {
 	pond_poll.on_ready_to_read = handle_pond_events;
 	add_poll(pond_poll);
 
-	_font = pond_context->get_font("gohu-11");
-	_font_mono = _font;
+	Theme::current();
 }
 
 void handle_pond_events() {
@@ -174,14 +171,6 @@ void UI::add_poll(const Poll& poll) {
 		pfd.events |= POLLOUT;
 	polls[poll.fd] = poll;
 	pollfds.push_back(pfd);
-}
-
-Font* UI::font() {
-	return _font;
-}
-
-Font* UI::font_mono() {
-	return _font_mono;
 }
 
 void UI::__register_window(UI::Window* window, int id) {

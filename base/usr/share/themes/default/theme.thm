@@ -1,0 +1,24 @@
+# Colors
+Color bg = #323232
+Color fg = #ffffff
+Color window = #323232
+Color window-title = #ffffff
+Color shadow-1 = #505050
+Color shadow-2 = #141414
+Color button = #424242
+Color button-text = #ffffff
+
+# Values
+Value deco-top-size = 13
+Value deco-bottom-size = 2
+Value deco-left-size = 2
+Value deco-right-size = 2
+Value button-padding = 5
+
+# Strings
+String font = gohu-11
+String font-mono = gohu-11
+
+# Images
+Image win-close = res/close.png
+Image win-close-hover = res/close-hover.png

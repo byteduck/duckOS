@@ -24,8 +24,6 @@
 #include <string>
 #include <functional>
 
-#define UI_BUTTON_PADDING 5
-
 namespace UI {
 	class Button: public Widget {
 	public:

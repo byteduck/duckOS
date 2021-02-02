@@ -62,7 +62,7 @@ Programs that take arguments will provide you with the correct usage when you ru
 - [libc](libraries/libc): The standard C library.
 - [libm](libraries/libm): The math portion of the standard C library.
 - [libpond](libraries/libpond): The library used for interfacing with the pond window manager / compositor.
-- [libgraphics](libraries/libgraphics): A library which provides a few utilities for working with graphics such as image format loading.
+- [libgraphics](libraries/libgraphics): A library which provides a few utilities for working with graphics such as get_image format loading.
 - [libui](/libraries/libui): A library which provides a UI framework for applications.
 
 ### Ports

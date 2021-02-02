@@ -73,6 +73,7 @@ void Client::handle_packet(socketfs_packet* packet) {
 			break;
 		case PPKT_WINDOW_HINT:
 			set_hint(packet);
+			break;
 		default:
 			fprintf(stderr, "Invalid packet sent by client %d\n", pid);
 			return;

@@ -19,6 +19,8 @@
 
 #include "Window.h"
 #include "libui.h"
+#include "Theme.h"
+
 using namespace UI;
 
 Window::Window() {
@@ -32,7 +34,11 @@ Window* Window::create() {
 }
 
 void Window::resize(int width, int height) {
-	_window->resize(width, height);
+	int top_size = Theme::value("deco-top-size");
+	int bottom_size = Theme::value("deco-bottom-size");
+	int left_size = Theme::value("deco-left-size");
+	int right_size = Theme::value("deco-right-size");
+	_window->resize(left_size + right_size + width, top_size + bottom_size + height);
 	repaint();
 }
 
@@ -60,9 +66,13 @@ int Window::y_position() {
 void Window::set_contents(Widget* contents) {
 	_contents = contents;
 	_contents->set_window(this);
-	_contents->_window->set_position(DECO_LEFT_SIZE, DECO_TOP_SIZE);
+	int top_size = Theme::value("deco-top-size");
+	int bottom_size = Theme::value("deco-bottom-size");
+	int left_size = Theme::value("deco-left-size");
+	int right_size = Theme::value("deco-right-size");
+	_contents->_window->set_position(left_size, top_size);
 	Dimensions contents_size = _contents->current_size();
-	_window->resize(DECO_LEFT_SIZE + DECO_RIGHT_SIZE + contents_size.width, DECO_TOP_SIZE + DECO_BOTTOM_SIZE + contents_size.height);
+	_window->resize(left_size + right_size + contents_size.width, top_size + bottom_size + contents_size.height);
 	repaint();
 }
 
@@ -81,14 +91,21 @@ std::string Window::title() {
 
 void Window::repaint() {
 	auto& framebuffer = _window->framebuffer;
-	framebuffer.fill({0, 0, _window->width, DECO_TOP_SIZE}, RGB(50,50,50));
-	framebuffer.fill({0, _window->height - DECO_BOTTOM_SIZE, _window->width, DECO_BOTTOM_SIZE}, RGB(50,50,50));
-	framebuffer.fill({0, 0, DECO_LEFT_SIZE, _window->height}, RGB(50,50,50));
-	framebuffer.fill({_window->width - DECO_RIGHT_SIZE, 0, DECO_RIGHT_SIZE, _window->height}, RGB(50,50,50));
+	int top_size = Theme::value("deco-top-size");
+	int bottom_size = Theme::value("deco-bottom-size");
+	int left_size = Theme::value("deco-left-size");
+	int right_size = Theme::value("deco-right-size");
+	uint32_t color = Theme::color("window");
+	framebuffer.fill({0, 0, _window->width, top_size}, color);
+	framebuffer.fill({0, _window->height - bottom_size, _window->width, bottom_size}, color);
+	framebuffer.fill({0, 0, left_size, _window->height}, color);
+	framebuffer.fill({_window->width - right_size, 0, right_size, _window->height}, color);
 
-	Font* title_font = pond_context->get_font("gohu-11");
+	framebuffer.draw_image(Theme::current()->get_image("win-close"), {_window->width - 11 - right_size, 1});
+
+	Font* title_font = Theme::font();
 	if(title_font)
-		framebuffer.draw_text(_title.c_str(), {1 + DECO_LEFT_SIZE, 1}, title_font, RGB(255,255,255));
+		framebuffer.draw_text(_title.c_str(), {1 + left_size, 1}, title_font, Theme::color("window-title"));
 
 	_window->invalidate();
 }

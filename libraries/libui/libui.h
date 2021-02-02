@@ -25,6 +25,7 @@
 #include "Widget.h"
 #include "Window.h"
 #include "Poll.h"
+#include "Theme.h"
 
 namespace UI {
 	extern Pond::Context* pond_context;
@@ -33,9 +34,6 @@ namespace UI {
 	void run();
 
 	void add_poll(const Poll& poll);
-
-	Font* font();
-	Font* font_mono();
 
 	void __register_window(UI::Window* window, int id);
 	void __deregister_window(int id);

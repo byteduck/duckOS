@@ -27,11 +27,6 @@
 #include <functional>
 #include <libpond/Event.h>
 
-#define DECO_TOP_SIZE 13
-#define DECO_BOTTOM_SIZE 2
-#define DECO_LEFT_SIZE 2
-#define DECO_RIGHT_SIZE 2
-
 namespace UI {
 	class Window {
 	public:
