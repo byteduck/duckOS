@@ -141,9 +141,9 @@ long double strtold(const char* nptr, char** endptr) {
 int is_valid_digit(char digit, int base) {
 	if (digit < '0') return 0;
 	if (base <= 10) return digit <= ('0' + base - 1);
-	if (digit > '9' && digit < 'a') return 0;
-	if (digit > 'a' + (base - 10) && digit < 'A') return 1;
-	if ((digit > 'A' + (base - 10)) || (digit >= '0' && digit <= '9')) return 1;
+	if (digit >= '0' && digit <= '9') return 1;
+	if (digit >= 'A' && digit < 'A' + (base - 10)) return 1;
+	if (digit >= 'a' && digit < 'a' + (base - 10)) return 1;
 	return 0;
 }
 
