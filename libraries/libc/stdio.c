@@ -400,7 +400,10 @@ int vsnprintf(char* s, size_t n, const char* format, va_list arg) {
 //Character input/output
 int fgetc(FILE* stream) {
 	char buf[1];
-	fread(buf, 1, 1, stream);
+	if(fread(buf, 1, 1, stream) != 1) {
+		stream->eof = 1;
+		return EOF;
+	}
 	return (unsigned char) *buf;
 }
 
@@ -423,17 +426,17 @@ char* fgets(char* s, int n, FILE* stream) {
 			return os;
 		}
 
-		//Null-terminate the string at the current position and return it if we encounter a newline
+		//Return it if we encounter a newline
+		*s = '\0';
 		if(c == '\n') {
-			*s = '\0';
 			return os;
 		}
+	}
 
-		//If we encounter an error, return the string (or null if we haven't read anything)
-		if(c == -1) {
-			stream->eof = 1;
-			return os == s ? NULL : os;
-		}
+	//If we encounter an error, return the string (or null if we haven't read anything)
+	if(c == -1) {
+		stream->eof = 1;
+		return os == s ? NULL : os;
 	}
 
 	return NULL;
