@@ -55,9 +55,9 @@ void Server::handle_packets() {
 				break;
 			}
 			default: {
-				auto client = clients.find(packet->pid);
-				if(client != clients.end())
-					client->second->handle_packet(packet);
+				auto client = clients[packet->pid];
+				if(client)
+					client->handle_packet(packet);
 				else
 					fprintf(stderr, "Packet received from non-registered pid %d\n", packet->pid);
 				break;

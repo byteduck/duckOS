@@ -28,6 +28,7 @@ Pond::Context* UI::pond_context = nullptr;
 std::vector<pollfd> pollfds;
 std::map<int, Poll> polls;
 std::map<int, Window*> windows;
+int num_windows = 0;
 std::map<int, Widget*> widgets;
 bool should_exit = false;
 
@@ -142,6 +143,11 @@ void handle_pond_events() {
 				}
 				break;
 			}
+
+			case PEVENT_WINDOW_DESTROY: {
+				if(windows[event.window_destroy.id])
+					__deregister_window(event.window_destroy.id);
+			}
 		}
 	}
 }
@@ -155,7 +161,7 @@ void UI::run() {
 				if(poll.on_ready_to_read && pollfd.revents & POLLIN)
 					poll.on_ready_to_read();
 				if(poll.on_ready_to_write && pollfd.revents & POLLOUT)
-					poll.on_ready_to_write;
+					poll.on_ready_to_write();
 			}
 		}
 	}
@@ -175,10 +181,17 @@ void UI::add_poll(const Poll& poll) {
 
 void UI::__register_window(UI::Window* window, int id) {
 	windows[id] = window;
+	num_windows++;
 }
 
 void UI::__deregister_window(int id) {
 	windows.erase(id);
+
+	//Exit if all windows are closed
+	//TODO Add a way to override this behavior
+	if(!(--num_windows)) {
+		should_exit = true;
+	}
 }
 
 void UI::__register_widget(UI::Widget* widget, int id) {

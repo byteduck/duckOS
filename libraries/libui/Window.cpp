@@ -110,6 +110,10 @@ void Window::repaint() {
 	_window->invalidate();
 }
 
+void Window::close() {
+	_window->destroy();
+}
+
 Pond::Window* Window::pond_window() {
 	return _window;
 }
@@ -120,11 +124,16 @@ void Window::on_keyboard(Pond::KeyEvent evt) {
 }
 
 void Window::on_mouse_move(Pond::MouseMoveEvent evt) {
-
+	_mouse = {evt.new_x, evt.new_y};
 }
 
 void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
-
+	if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
+		int right_size = Theme::value("deco-right-size");
+		if(_mouse.in({_window->width - 11 - right_size, 1, 10, 10})) {
+			close();
+		}
+	}
 }
 
 void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {

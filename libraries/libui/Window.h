@@ -47,6 +47,7 @@ namespace UI {
 		std::string title();
 
 		void repaint();
+		void close();
 
 		Pond::Window* pond_window();
 
@@ -63,6 +64,8 @@ namespace UI {
 		Pond::Window* _window;
 		Widget* _contents;
 		std::string _title;
+		Point _mouse;
+
 	};
 }
 

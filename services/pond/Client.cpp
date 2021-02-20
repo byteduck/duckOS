@@ -153,19 +153,12 @@ void Client::destroy_window(socketfs_packet* packet) {
 
 	auto* params = (PDestroyWindowPkt*) packet->data;
 
-	PWindowDestroyedPkt resp { -1 };
-
 	//Find the window in question and remove it
 	auto window_pair = windows.find(params->window_id);
 	if(window_pair != windows.end()) {
-		auto* window = window_pair->second;
-		resp.window_id = window->id();
-		delete window;
+		delete window_pair->second;
 		windows.erase(window_pair);
 	}
-
-	if(write_packet(socketfs_fd, pid, sizeof(PWindowDestroyedPkt), &resp) < 0)
-		perror("Failed to write window destroyed packet to client");
 }
 
 void Client::move_window(socketfs_packet* packet) {
