@@ -18,9 +18,8 @@
 */
 
 #include <kernel/kstdio.h>
+#include <kernel/tasking/Process.h>
 #include "MemoryMap.h"
-
-//FIXME: Use a lock to fix race conditions
 
 MemoryMap::MemoryMap(size_t page_size, MemoryRegion *first_region): _page_size(page_size), _first_region(first_region) {
 
@@ -38,6 +37,9 @@ MemoryMap::~MemoryMap() {
 
 MemoryRegion* MemoryMap::allocate_region(size_t minimum_size, MemoryRegion* storage) {
 	if(minimum_size == 0) return nullptr;
+
+	lock.acquire();
+
 	MemoryRegion* cur = _first_region;
 	//Round size up to be a multiple of the page size
 	size_t size = ((minimum_size + _page_size - 1) / _page_size) * _page_size;
@@ -52,6 +54,7 @@ MemoryRegion* MemoryMap::allocate_region(size_t minimum_size, MemoryRegion* stor
 		bytes_used += size;
 		if(cur->size == size) {
 			cur->used = true;
+			lock.release();
 			return cur;
 		}
 
@@ -71,14 +74,21 @@ MemoryRegion* MemoryMap::allocate_region(size_t minimum_size, MemoryRegion* stor
 		cur->size = size;
 		cur->used = true;
 
+		lock.release();
+
 		return cur;
 	}
+
+	lock.release();
 
 	return nullptr;
 }
 
 MemoryRegion* MemoryMap::allocate_region(size_t address, size_t minimum_size, MemoryRegion storage[2]) {
 	if(minimum_size == 0) return nullptr;
+
+	lock.acquire();
+
 	MemoryRegion* cur = _first_region;
 	//Round size up to be a multiple of the page size
 	size_t address_pagealigned = (address / _page_size) * _page_size;
@@ -91,16 +101,23 @@ MemoryRegion* MemoryMap::allocate_region(size_t address, size_t minimum_size, Me
 		}
 
 		//If the current region is past the address or is not big enough, return nullptr
-		if(cur->start > address_pagealigned || (cur->start + cur->size) < (address_pagealigned + size)) return nullptr;
+		if(cur->start > address_pagealigned || (cur->start + cur->size) < (address_pagealigned + size)) {
+			lock.release();
+			return nullptr;
+		}
 
 		//If the current region is used, return nullptr
-		if(cur->used) return nullptr;
+		if(cur->used) {
+			lock.release();
+			return nullptr;
+		}
 
 		bytes_used += size;
 
 		//If the current region is the same size as the requested size, just mark it as used and return
 		if(cur->start == address_pagealigned && cur->size == size) {
 			cur->used = true;
+			lock.release();
 			return cur;
 		}
 
@@ -131,24 +148,33 @@ MemoryRegion* MemoryMap::allocate_region(size_t address, size_t minimum_size, Me
 			} else {
 				new_region = new MemoryRegion(cur->start, address_pagealigned - cur->start);
 			}
-			if (cur->prev) cur->prev->next = new_region;
+			if (cur->prev)
+				cur->prev->next = new_region;
 			new_region->prev = cur->prev;
 			new_region->next = cur;
 			cur->prev = new_region;
 			cur->start += new_region->size;
-			if(cur == _first_region) _first_region = new_region;
+			if(cur == _first_region)
+				_first_region = new_region;
 		}
 
 		cur->size = size;
 
+		lock.release();
+
 		return cur;
 	}
+
+	lock.release();
 
 	return nullptr;
 }
 
 void MemoryMap::free_region(MemoryRegion *region) {
 	if(!region->used) return;
+
+	lock.acquire();
+
 	region->used = false;
 	bytes_used -= region->size;
 
@@ -156,7 +182,8 @@ void MemoryMap::free_region(MemoryRegion *region) {
 	if(region->prev && !region->prev->used) {
 		region->start = region->prev->start;
 		region->size += region->prev->size;
-		if(region->prev->prev) region->prev->prev->next = region;
+		if(region->prev->prev)
+			region->prev->prev->next = region;
 		MemoryRegion* old_prev = region->prev;
 		region->prev = region->prev->prev;
 		if(old_prev->heap_allocated)
@@ -167,12 +194,15 @@ void MemoryMap::free_region(MemoryRegion *region) {
 	//If the next region is also free, merge them
 	if(region->next && !region->next->used) {
 		region->size += region->next->size;
-		if(region->next->next) region->next->next->prev = region;
+		if(region->next->next)
+			region->next->next->prev = region;
 		MemoryRegion* old_next = region->next;
 		region->next = region->next->next;
 		if(old_next->heap_allocated)
 			delete old_next;
 	}
+
+	lock.release();
 }
 
 MemoryRegion* MemoryMap::split_region(MemoryRegion* region, size_t split_start, size_t split_size) {
@@ -180,20 +210,25 @@ MemoryRegion* MemoryMap::split_region(MemoryRegion* region, size_t split_start, 
 	size_t split_end = split_start + split_size - 1;
 	if(split_end >= region->start + region->size) return nullptr;
 
+	lock.acquire();
+
 	//Create a new region before split_start if necessary and update the linked list
 	if(split_start != region->start) {
 		auto* new_region = new MemoryRegion(region->start, split_start - region->start);
-		if (region->prev) region->prev->next = new_region;
+		if (region->prev)
+			region->prev->next = new_region;
 		new_region->prev = region->prev;
 		new_region->next = region;
 		region->prev = new_region;
-		if(region == _first_region) _first_region = new_region;
+		if(region == _first_region)
+			_first_region = new_region;
 	}
 
 	//Create a new region after split_end if necessary
 	if(split_end != region->start + region->size - 1) {
 		auto* new_region = new MemoryRegion(split_start + split_size, (region->start + region->size) - split_end);
-		if (region->next) region->next->prev = new_region;
+		if (region->next)
+			region->next->prev = new_region;
 		new_region->next = region->next;
 		new_region->prev = region;
 		region->next = new_region;
@@ -202,6 +237,9 @@ MemoryRegion* MemoryMap::split_region(MemoryRegion* region, size_t split_start, 
 	//Update the region's start and size
 	region->start = split_start;
 	region->size = split_size;
+
+	lock.release();
+
 	return region;
 }
 
@@ -222,21 +260,27 @@ size_t MemoryMap::reserved_memory() {
 }
 
 MemoryRegion *MemoryMap::find_region(size_t address) {
+	lock.acquire();
 	MemoryRegion* cur = _first_region;
 	while(cur) {
-		if(address >= cur->start && cur->start + cur->size > address)
+		if(address >= cur->start && cur->start + cur->size > address) {
+			lock.release();
 			return cur;
+		}
 		cur = cur->next;
 	}
+	lock.release();
 	return nullptr;
 }
 
 void MemoryMap::replace_entry(MemoryRegion *old_region, MemoryRegion *new_region) {
+	lock.acquire();
 	if(old_region->next) old_region->next->prev = new_region;
 	if(old_region->prev) old_region->prev->next = new_region;
 	new_region->next = old_region->next;
 	new_region->prev = old_region->prev;
 	if(old_region == _first_region) _first_region = new_region;
+	lock.release();
 }
 
 void MemoryMap::recalculate_memory_totals() {

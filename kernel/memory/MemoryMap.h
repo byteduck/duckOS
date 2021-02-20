@@ -98,6 +98,7 @@ private:
 	MemoryRegion* _first_region = nullptr;
 	size_t bytes_used = 0;
 	size_t bytes_reserved = 0;
+	SpinLock lock;
 };
 
 

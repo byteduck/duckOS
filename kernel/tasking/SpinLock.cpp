@@ -46,6 +46,9 @@ bool SpinLock::locked() {
 }
 
 void SpinLock::release() {
+	if(!TaskManager::enabled())
+		return;
+
 	//Decrease counter
 	atomic_dec(&_times_locked);
 
@@ -59,7 +62,7 @@ void SpinLock::release() {
 
 void SpinLock::acquire() {
 	auto* cur_proc = TaskManager::current_process();
-	if(!cur_proc) return; //Tasking isn't initialized yet
+	if(!TaskManager::enabled() || !cur_proc) return; //Tasking isn't initialized yet
 
 	//Loop while the lock is held
 	while(atomic_swap(&_locked, 1)) {
