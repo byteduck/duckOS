@@ -125,6 +125,8 @@ private:
 	std::vector<Rect> invalid_areas;
 	std::vector<Window*> _windows;
 	Mouse* _mouse_window = nullptr;
+	Window* _prev_mouse_window = nullptr;
+	Window* _drag_window = nullptr;
 	Window* _root_window = nullptr;
 	timeval paint_time = {0, 0};
 	bool display_buffer_dirty = true;

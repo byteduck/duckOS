@@ -112,6 +112,10 @@ void Display::add_window(Window* window) {
 void Display::remove_window(Window* window) {
 	if(window == _focused_window)
 		_focused_window = nullptr;
+	if(window == _prev_mouse_window)
+		_prev_mouse_window = nullptr;
+	if(window == _drag_window)
+		_drag_window = nullptr;
 	for(size_t i = 0; i < _windows.size(); i++) {
 		if(_windows[i] == window) {
 			_windows.erase(_windows.begin() + i);
@@ -213,19 +217,17 @@ void Display::focus(Window* window) {
 
 
 void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
-	static Window* prev_mouse_window = nullptr;
-	static Window* drag_window = nullptr;
 	static uint8_t prev_mouse_buttons = 0;
 
 	Point mouse = _mouse_window->absolute_rect().position();
 	Point delta = {delta_x, delta_y};
 
 	//Drag or stop dragging the current draggable window, if any
-	if(drag_window) {
+	if(_drag_window) {
 		if(!(buttons & 1))
-			drag_window = nullptr;
+			_drag_window = nullptr;
 		else
-			drag_window->set_position(drag_window->rect().position() + delta);
+			_drag_window->set_position(_drag_window->rect().position() + delta);
 	}
 
 	//Process global mouse events
@@ -252,7 +254,7 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 				window->focus();
 				//Additionally, if it's draggable, start dragging it and move it to the front
 				if(window->draggable()) {
-					drag_window = window;
+					_drag_window = window;
 					window->move_to_front();
 				}
 			}
@@ -261,16 +263,16 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	}
 
 	// If the mouse was previously in a different window, update the mouse position in that window
-	if(event_window != prev_mouse_window && prev_mouse_window != nullptr && !prev_mouse_window->gets_global_mouse()) {
-		Dimensions window_dims = prev_mouse_window->rect().dimensions();
+	if(event_window != _prev_mouse_window && _prev_mouse_window != nullptr && !_prev_mouse_window->gets_global_mouse()) {
+		Dimensions window_dims = _prev_mouse_window->rect().dimensions();
 		//Constrain the mouse position in the window to the window's rect
-		Point new_mouse_pos = (mouse - prev_mouse_window->absolute_rect().position()).constrain({0, 0, window_dims.width, window_dims.height});
-		prev_mouse_window->mouse_moved(delta, new_mouse_pos, new_mouse_pos + prev_mouse_window->absolute_rect().position());
-		prev_mouse_window->set_mouse_buttons(_mouse_window->mouse_buttons());
-		prev_mouse_window->mouse_left();
+		Point new_mouse_pos = (mouse - _prev_mouse_window->absolute_rect().position()).constrain({0, 0, window_dims.width, window_dims.height});
+		_prev_mouse_window->mouse_moved(delta, new_mouse_pos, new_mouse_pos + _prev_mouse_window->absolute_rect().position());
+		_prev_mouse_window->set_mouse_buttons(_mouse_window->mouse_buttons());
+		_prev_mouse_window->mouse_left();
 	}
 
-	prev_mouse_window = event_window;
+	_prev_mouse_window = event_window;
 	prev_mouse_buttons = buttons;
 }
 
