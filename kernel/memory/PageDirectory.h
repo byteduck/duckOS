@@ -337,9 +337,11 @@ private:
 	//An array of pointers to the page tables that the directory points to.
 	PageTable* _page_tables[768] = {nullptr};
 	//An array of u16s that stores the number of pages mapped in each page table, used to deallocate a page table once no longer needed
-	uint16_t _page_tables_num_mapped[1024] = {0};
+	volatile int _page_tables_num_mapped[1024] = {0};
 	//The used pmem in bytes.
 	size_t _used_pmem = 0;
+	//A lock used to prevent race conditions.
+	SpinLock _lock;
 
 };
 

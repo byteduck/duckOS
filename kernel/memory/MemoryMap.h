@@ -93,12 +93,12 @@ public:
 
 	void replace_entry(MemoryRegion *old_region, MemoryRegion *new_region);
 
+	SpinLock lock;
 private:
 	size_t _page_size = 0;
 	MemoryRegion* _first_region = nullptr;
 	size_t bytes_used = 0;
 	size_t bytes_reserved = 0;
-	SpinLock lock;
 };
 
 

@@ -175,7 +175,7 @@ void MemoryMap::free_region(MemoryRegion *region) {
 
 	lock.acquire();
 
-	region->used = false;
+	region->free();
 	bytes_used -= region->size;
 
 	//If the previous region is also free, merge them

@@ -20,8 +20,8 @@
 #ifndef DUCKOS_MEMORYREGION_H
 #define DUCKOS_MEMORYREGION_H
 
-
 #include <common/cstddef.h>
+#include <kernel/tasking/SpinLock.h>
 
 namespace DC {
 	template<typename T> class vector;
@@ -39,6 +39,9 @@ public:
 	MemoryRegion(const MemoryRegion& region);
 	~MemoryRegion();
 
+	//Used to reset all of the region's properties to defaults for a free region
+	void free();
+
 	//Used to decrease the number of CoW references on a physical memory region & free the region if necessary.
 	void cow_deref();
 
@@ -49,20 +52,23 @@ public:
 	void shm_deref();
 
 	//The memory location start of the region.
-	size_t start;
+	size_t start = 0;
 
 	//The size, in bytes, of the region.
-	size_t size;
+	size_t size = 0;
 
 	//The next region in the linked list of regions.
-	MemoryRegion* next;
+	MemoryRegion* next = nullptr;
 
 	//The previous region in the linked list of regions.
-	MemoryRegion* prev;
+	MemoryRegion* prev = nullptr;
 
 	//The region related to this one (e.g. the physical region corresponding to a virtual region or vice versa)
 	//Invalid for physical shared memory and physical CoW regions.
 	MemoryRegion* related = nullptr;
+
+	//This lock will be used for various operations on the region.
+	SpinLock lock;
 
 	//Whether or not the region is used.
 	bool used = false;
@@ -84,7 +90,7 @@ public:
 	bool is_shm = false;
 
 	//If this is a physical shared region, this will count the number of processes using it.
-	size_t shm_refs = 0;
+	int shm_refs = 0;
 
 	//If applicable, this will be set to the ID of the shared region.
 	int shm_id = 0;

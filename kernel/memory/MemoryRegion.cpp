@@ -34,16 +34,41 @@ MemoryRegion::~MemoryRegion() {
 	delete shm_allowed;
 }
 
+void MemoryRegion::free() {
+	delete shm_allowed;
+	related = nullptr;
+	used = false;
+	reserved = false;
+	cow.num_refs = 0;
+	is_shm = false;
+	shm_refs = 0;
+	shm_id = 0;
+	shm_owner = -1;
+	shm_allowed = nullptr;
+}
+
 void MemoryRegion::cow_deref() {
+	lock.acquire();
 	cow.num_refs--;
 	if(!cow.num_refs) {
 		Memory::pmem_map().free_region(this);
 	}
+	lock.release();
+}
+
+void MemoryRegion::shm_ref() {
+	lock.acquire();
+	shm_refs++;
+	lock.release();
 }
 
 void MemoryRegion::shm_deref() {
+	lock.acquire();
 	shm_refs--;
 	if(!shm_refs) {
+		lock.release();
 		Memory::pmem_map().free_region(this);
+		return;
 	}
+	lock.release();
 }

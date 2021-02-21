@@ -20,6 +20,7 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/memory/PageDirectory.h>
 #include <common/defines.h>
+#include <kernel/Atomic.h>
 #include "PageTable.h"
 
 PageDirectory::Entry PageDirectory::kernel_entries[256];
@@ -255,9 +256,9 @@ PageDirectory::~PageDirectory() {
 	k_free_region(_entries); //Free entries
 
 	//Free page tables
-	for(auto & table : _page_tables) if(table) {
-		delete table;
-	}
+	for(auto & table : _page_tables)
+		if(table)
+			delete table;
 
 	MemoryRegion* cur = _vmem_map.first_region();
 	while(cur) {
@@ -307,7 +308,7 @@ void PageDirectory::map_region(const LinkedMemoryRegion& region, bool read_write
 
 		//Set up the pagetable entry
 		size_t table_index = vpage % 1024;
-		_page_tables_num_mapped[directory_index]++;
+		Atomic::inc(&_page_tables_num_mapped[directory_index]);
 		PageTable::Entry *entry = &_page_tables[directory_index]->entries()[table_index];
 		entry->data.present = true;
 		entry->data.read_write = read_write;
@@ -325,9 +326,9 @@ void PageDirectory::unmap_region(const LinkedMemoryRegion& region) {
 	for(auto page = start_page; page < start_page + num_pages; page++) {
 		size_t directory_index = (page / 1024) % 1024;
 		size_t table_index = page % 1024;
-		_page_tables_num_mapped[directory_index]--;
 		PageTable::Entry *table = &_page_tables[directory_index]->entries()[table_index];
 		table->value = 0;
+		Atomic::dec(&_page_tables_num_mapped[directory_index]);
 		if (_page_tables_num_mapped[directory_index] == 0)
 			dealloc_page_table(directory_index);
 
@@ -412,12 +413,13 @@ void PageDirectory::free_region(const LinkedMemoryRegion& region) {
 	//Unmap the region
 	unmap_region(region);
 
+	bool was_cow = region.virt->cow.marked_cow;
 	_vmem_map.free_region(region.virt);
 
 	//If the physical region is reserved (AKA memory-mapped hardware) don't mark it free
 	if(region.phys->reserved)
 		return;
-	else if(region.virt->cow.marked_cow) {
+	else if(was_cow) {
 		//If the region is marked CoW, just dereference it
 		region.phys->cow_deref();
 	} else {
@@ -550,8 +552,8 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 	//Finally, map the region and increase the reference count
 	LinkedMemoryRegion linked_region(pmem_region, vmem_region);
 	map_region(linked_region, write);
-	pmem_region->shm_refs++;
-	//TODO: Should we count this towards the physical memory total for the process?
+	pmem_region->shm_ref();
+	_used_pmem += pmem_region->size;
 
 	return linked_region;
 }
@@ -614,6 +616,11 @@ MemoryMap& PageDirectory::vmem_map() {
 }
 
 PageTable *PageDirectory::alloc_page_table(size_t tables_index) {
+	_lock.acquire();
+	//If one was already allocated, return it
+	if(_page_tables[tables_index])
+		return _page_tables[tables_index];
+
 	auto *table = new PageTable(tables_index * PAGE_SIZE * 1024, this);
 	_page_tables[tables_index] = table;
 	PageDirectory::Entry *direntry = &_entries[tables_index];
@@ -621,13 +628,18 @@ PageTable *PageDirectory::alloc_page_table(size_t tables_index) {
 	direntry->data.present = true;
 	direntry->data.user = true;
 	direntry->data.read_write = true;
+	_lock.release();
 	return table;
 }
 
 void PageDirectory::dealloc_page_table(size_t tables_index) {
+	_lock.acquire();
+	if(!_page_tables[tables_index])
+		return;
 	delete _page_tables[tables_index];
 	_page_tables[tables_index] = nullptr;
 	_entries[tables_index].value = 0;
+	_lock.release();
 }
 
 void PageDirectory::update_kernel_entries() {
@@ -658,6 +670,7 @@ bool PageDirectory::is_mapped(size_t vaddr) {
 
 void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new_pid) {
 	//Iterate through every entry of the page directory we're copying from
+	LOCK(parent->_vmem_map.lock);
 	MemoryRegion* parent_region = parent->_vmem_map.first_region();
 	while(parent_region) {
 		if(parent_region->used) {
@@ -668,7 +681,7 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 			if(parent_region->is_shm) {
 				//If the region is shared, increase the number of refs on it and map it with the correct permissions.
 				auto* shm_region = parent_region->related;
-				shm_region->shm_refs++;
+				shm_region->shm_ref();
 
 				//Figure out the permission
 				bool found_perms = false;
@@ -732,6 +745,8 @@ bool PageDirectory::try_cow(size_t virtaddr) {
 	auto* region = _vmem_map.find_region(virtaddr);
 	if(!region || !region->cow.marked_cow) return false;
 
+	TaskManager::enabled() = false;
+
 	//Allocate a temporary kernel region to copy the memory into
 	LinkedMemoryRegion tmp_region = k_alloc_region(region->size);
 	if(!tmp_region.virt) PANIC("COW_COPY_FAIL", "CoW failed to allocate a memory region to copy.", true);
@@ -749,6 +764,8 @@ bool PageDirectory::try_cow(size_t virtaddr) {
 	LinkedMemoryRegion new_region(tmp_region.phys, region);
 	map_region(new_region, true);
 	_used_pmem += tmp_region.phys->size;
+
+	TaskManager::enabled() = true;
 
 	return true;
 }
