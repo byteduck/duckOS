@@ -31,6 +31,7 @@ The code for these can be found in [services](services/).
 The code for these can be found in [programs](/programs)
 
 - terminal (/bin/terminal): A LibUI-based terminal application.
+- 4 in a row (/bin/4inarow): A basic four-in-a-row game. Play with two players or against the computer.
  
 ### CLI Programs
 
