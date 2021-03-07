@@ -445,7 +445,8 @@ void Process::handle_pagefault(Registers *regs) {
 		page_directory->free_region(_sighandler_ustack_region);
 		TaskManager::yield();
 	}
-	if(!page_directory->try_cow(err_pos)) kill(SIGSEGV);
+	if(!page_directory->try_cow(err_pos))
+		kill(SIGSEGV);
 }
 
 void *Process::kernel_stack_top() {

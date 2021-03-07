@@ -205,15 +205,9 @@ void TaskManager::preempt(){
 				current = current->next;
 				any_alive = true;
 				break;
-			case PROCESS_DEAD: {
-				current->prev->next = current->next;
-				current->next->prev = current->prev;
-				Process* to_delete = current;
+			case PROCESS_DEAD:
 				current = current->next;
-				ProcFS::inst().proc_remove(to_delete);
-				delete to_delete;
 				break;
-			}
 			case PROCESS_ZOMBIE:
 				current->free_resources();
 				current = current->next;
@@ -240,14 +234,17 @@ void TaskManager::preempt(){
 
 		//If we were just in a signal handler, don't save the esp to old_proc->registers
 		unsigned int* old_esp;
-		if(old_proc->in_signal_handler()) {
+		unsigned int dummy_esp;
+		if(!old_proc) {
+			old_esp = &dummy_esp;
+		} if(old_proc->in_signal_handler()) {
 			old_esp = &old_proc->signal_registers.esp;
 		} else {
 			old_esp = &old_proc->registers.esp;
 		}
 
 		//If we just finished handling a signal, set in_signal_handler to false.
-		if(old_proc->just_finished_signal()) {
+		if(old_proc && old_proc->just_finished_signal()) {
 			should_preempt = true;
 			old_proc->just_finished_signal() = false;
 			old_proc->in_signal_handler() = false;
@@ -276,4 +273,19 @@ void TaskManager::preempt(){
 	} else {
 		quantum_counter--;
 	}
+
+	/*
+	 * Clean up old, dead processes
+	 */
+	current = kidle_proc->next;
+	do {
+		if(current->state == PROCESS_DEAD) {
+			current->prev->next = current->next;
+			current->next->prev = current->prev;
+			Process* to_delete = current;
+			ProcFS::inst().proc_remove(to_delete);
+			delete to_delete;
+		}
+		current = current->next;
+	} while(current != kidle_proc);
 }

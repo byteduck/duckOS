@@ -142,6 +142,9 @@ LinkedMemoryRegion PageDirectory::k_alloc_region(size_t mem_size) {
 }
 
 void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
+	if(region_buffer_needs_attention) {
+		PANIC("KRNL_MULTI_ALLOC", "liballoc attempted to allocate multiple regions at once for the heap.", true);
+	}
 	region_buffer_needs_attention = true;
 
 	MemoryRegion* vmem_region = kernel_vmem_map.allocate_region(mem_size, &vmem_region_buffer);
