@@ -17,27 +17,33 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <libgraphics/font.h>
-#include <libui/libui.h>
-#include <libui/widget/StackView.h>
-#include <libui/widget/Button.h>
-#include "TerminalWidget.h"
+#ifndef DUCKOS_LIBUI_LABEL_H
+#define DUCKOS_LIBUI_LABEL_H
 
-int main(int argc, char** argv, char** envp) {
-	//Init LibUI
-	UI::init(argv, envp);
+#include "Widget.h"
 
-	//Make window
-	auto* window = UI::Window::create();
-	window->set_title("Terminal");
+namespace UI {
+	class Label: public Widget {
+	public:
+		Label(const std::string& label);
 
-	//Create terminal widget
-	auto* termwidget = new TerminalWidget();
-	termwidget->run("/bin/dsh");
-	window->set_contents(termwidget);
+		//Label
+		std::string label();
+		void set_label(const std::string& new_label);
 
-	//Run event loop
-	UI::run();
+		Color color();
+		void set_color(Color new_color);
 
-	return 0;
+		//Widget
+		virtual Dimensions preferred_size() override;
+
+	private:
+		//Widget
+		void do_repaint(const DrawContext& ctx) override;
+
+		std::string _label;
+		Color _color;
+	};
 }
+
+#endif //DUCKOS_LIBUI_LABEL_H

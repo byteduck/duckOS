@@ -21,11 +21,11 @@
 #define DUCKOS_4INAROW_GAMEWIDGET_H
 
 #include "4inarow.h"
-#include <libui/Widget.h>
+#include <libui/widget/Widget.h>
 #include <libgraphics/graphics.h>
 
 #define CELL_SIZE 28
-#define CELL_COLOR RGB(50, 50, 50)
+#define CELL_COLOR UI::Theme::bg()
 #define EMPTY_COLOR RGB(25, 25, 25)
 #define PLAYER1_COLOR RGB(240, 50, 50)
 #define PLAYER2_COLOR RGB(50, 50, 240)
@@ -40,7 +40,7 @@ public:
 
 	//Widget
 	Dimensions preferred_size() override;
-	void do_repaint(Image& framebuffer) override;
+	void do_repaint(const UI::DrawContext& framebuffer) override;
 	bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 	bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 

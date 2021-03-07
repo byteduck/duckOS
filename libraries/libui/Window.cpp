@@ -34,11 +34,7 @@ Window* Window::create() {
 }
 
 void Window::resize(int width, int height) {
-	int top_size = Theme::value("deco-top-size");
-	int bottom_size = Theme::value("deco-bottom-size");
-	int left_size = Theme::value("deco-left-size");
-	int right_size = Theme::value("deco-right-size");
-	_window->resize(left_size + right_size + width, top_size + bottom_size + height);
+	_window->resize(UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2 + width, UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3 + height);
 	repaint();
 }
 
@@ -66,14 +62,9 @@ int Window::y_position() {
 void Window::set_contents(Widget* contents) {
 	_contents = contents;
 	_contents->set_window(this);
-	int top_size = Theme::value("deco-top-size");
-	int bottom_size = Theme::value("deco-bottom-size");
-	int left_size = Theme::value("deco-left-size");
-	int right_size = Theme::value("deco-right-size");
-	_contents->_window->set_position(left_size, top_size);
+	_contents->_window->set_position(UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING, UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2);
 	Dimensions contents_size = _contents->current_size();
-	_window->resize(left_size + right_size + contents_size.width, top_size + bottom_size + contents_size.height);
-	repaint();
+	resize(contents_size.width, contents_size.height);
 }
 
 Widget* Window::contents() {
@@ -91,21 +82,33 @@ std::string Window::title() {
 
 void Window::repaint() {
 	auto& framebuffer = _window->framebuffer;
-	int top_size = Theme::value("deco-top-size");
-	int bottom_size = Theme::value("deco-bottom-size");
-	int left_size = Theme::value("deco-left-size");
-	int right_size = Theme::value("deco-right-size");
-	uint32_t color = Theme::color("window");
-	framebuffer.fill({0, 0, _window->width, top_size}, color);
-	framebuffer.fill({0, _window->height - bottom_size, _window->width, bottom_size}, color);
-	framebuffer.fill({0, 0, left_size, _window->height}, color);
-	framebuffer.fill({_window->width - right_size, 0, right_size, _window->height}, color);
+	auto ctx = DrawContext(framebuffer);
+	Color color = Theme::window();
 
-	framebuffer.draw_image(Theme::current()->get_image("win-close"), {_window->width - 11 - right_size, 1});
+	//Window background/border
+	ctx.draw_outset_rect({0, 0, ctx.width(), ctx.height()}, color);
 
-	Font* title_font = Theme::font();
-	if(title_font)
-		framebuffer.draw_text(_title.c_str(), {1 + left_size, 1}, title_font, Theme::color("window-title"));
+	//Title bar
+	Rect titlebar_rect = {
+			UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
+			UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
+			ctx.width() - UI_WINDOW_BORDER_SIZE * 2 - UI_WINDOW_PADDING * 2,
+			UI_TITLEBAR_HEIGHT
+	};
+	ctx.fill_gradient_h(titlebar_rect, Theme::window_titlebar_a(), Theme::window_titlebar_b());
+	int font_height = Theme::font()->bounding_box().height;
+	Point title_pos = titlebar_rect.position() + Point {4, titlebar_rect.height/2 - font_height/2};
+	ctx.draw_text(_title.c_str(), title_pos, Theme::window_title());
+
+	//Buttons
+	int button_size = titlebar_rect.height - 4;
+	_close_button.area = {
+			titlebar_rect.x + titlebar_rect.width - UI_WINDOW_PADDING - button_size,
+			titlebar_rect.y + 2,
+			button_size,
+			button_size
+	};
+	ctx.draw_button(_close_button.area, Theme::image(_close_button.image), _close_button.pressed);
 
 	_window->invalidate();
 }
@@ -125,12 +128,22 @@ void Window::on_keyboard(Pond::KeyEvent evt) {
 
 void Window::on_mouse_move(Pond::MouseMoveEvent evt) {
 	_mouse = {evt.new_x, evt.new_y};
+	if(_close_button.pressed && !_mouse.in(_close_button.area)) {
+		_close_button.pressed = false;
+		_window->set_draggable(true);
+		repaint();
+	}
 }
 
 void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
-		int right_size = Theme::value("deco-right-size");
-		if(_mouse.in({_window->width - 11 - right_size, 1, 10, 10})) {
+		if(_mouse.in(_close_button.area)) {
+			_close_button.pressed = true;
+			_window->set_draggable(false);
+			repaint();
+		}
+	} else if((evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1)) {
+		if(_close_button.pressed) {
 			close();
 		}
 	}

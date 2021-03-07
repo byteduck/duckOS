@@ -63,37 +63,38 @@ TerminalWidget::TerminalWidget() {
 }
 
 Dimensions TerminalWidget::preferred_size() {
-	return {400, 300};
+	return {404, 304};
 }
 
-void TerminalWidget::do_repaint(Image& framebuffer) {
+void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 	if(!term)
 		return;
 	for(auto evt : events) {
 		switch(evt.type) {
 			case TerminalEvent::CHARACTER: {
 				auto& data = evt.data.character;
-				Point pos = {(int) data.pos.x * font->bounding_box().width, (int) data.pos.y * font->size()};
-				framebuffer.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[data.character.attributes.background]);
-				framebuffer.draw_glyph(font, data.character.codepoint, pos, color_palette[data.character.attributes.foreground]);
+				Point pos = {(int) data.pos.x * font->bounding_box().width + 2, (int) data.pos.y * font->size() + 2};
+				ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[data.character.attributes.background]);
+				ctx.draw_glyph(font, data.character.codepoint, pos, color_palette[data.character.attributes.foreground]);
 				break;
 			}
 
 			case TerminalEvent::CLEAR: {
-				framebuffer.fill({0, 0, framebuffer.width, framebuffer.height}, evt.data.clear.attribute.background);
+				ctx.draw_inset_rect({0, 0, ctx.width(), ctx.height()}, color_palette[evt.data.clear.attribute.background]);
 				break;
 			}
 
 			case TerminalEvent::CLEAR_LINE: {
 				auto& data = evt.data.clear_line;
-				framebuffer.fill({0,(int) data.line * font->size(), framebuffer.width, font->size()}, data.attribute.background);
+				ctx.fill({2,(int) data.line * font->size(), ctx.width() - 4, font->size()}, color_palette[data.attribute.background]);
 				break;
 			}
 
 			case TerminalEvent::SCROLL: {
 				auto& data = evt.data.scroll;
-				framebuffer.copy(framebuffer, {0, (int) data.lines * font->size(), framebuffer.width, framebuffer.height - ((int) data.lines * font->size())}, {0, 0});
-				framebuffer.fill({0, framebuffer.height - ((int) data.lines * font->size()), framebuffer.width, (int) data.lines * font->size()}, data.attribute.background);
+				auto& framebuffer = ctx.framebuffer();
+				framebuffer.copy(framebuffer, {2, (int) data.lines * font->size() + 2, framebuffer.width - 4, framebuffer.height - 4 - ((int) data.lines * font->size())}, {2, 2});
+				ctx.fill({2, framebuffer.height - ((int) data.lines * font->size()) - 4, framebuffer.width - 4, (int) data.lines * font->size()}, color_palette[data.attribute.background]);
 			}
 		}
 	}

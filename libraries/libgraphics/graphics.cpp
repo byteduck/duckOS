@@ -47,6 +47,33 @@ void Image::copy(const Image& other, Rect other_area, const Point& pos) const {
 	}
 }
 
+void Image::copy_blitting(const Image& other, Rect other_area, const Point& pos) const {
+	//Make sure self_area is in bounds of the framebuffer
+	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};
+	self_area = self_area.overlapping_area({0, 0, width, height});
+	if(self_area.empty())
+		return;
+
+	//Update other area with the changes made to self_area
+	other_area.x += self_area.x - pos.x;
+	other_area.y += self_area.y - pos.y;
+	other_area.width = self_area.width;
+	other_area.height = self_area.height;
+
+	for(int x = 0; x < self_area.width; x++) {
+		for(int y = 0; y < self_area.height; y++) {
+			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
+			auto& other_val = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
+			unsigned int alpha = COLOR_A(other_val) + 1;
+			unsigned int inv_alpha = 256 - COLOR_A(other_val);
+			this_val = RGB(
+					(uint8_t)((alpha * COLOR_R(other_val) + inv_alpha * COLOR_R(this_val)) >> 8),
+					(uint8_t)((alpha * COLOR_G(other_val) + inv_alpha * COLOR_G(this_val)) >> 8),
+					(uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8));
+		}
+	}
+}
+
 void Image::copy_tiled(const Image& other, Rect other_area, const Point& pos) const {
 	//Make sure self_area is in bounds of the framebuffer
 	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};
@@ -84,16 +111,12 @@ void Image::draw_image(const Image& other, Rect other_area, const Point& pos) co
 		for(int y = 0; y < self_area.height; y++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
-			double alpha = COLOR_A(other_val) / 255.00;
-			if(alpha == 0.0)
-				continue;
-			else if(alpha == 1.0)
-				this_val = other_val;
-			double oneminusalpha = 1.00 - alpha;
+			unsigned int alpha = COLOR_A(other_val) + 1;
+			unsigned int inv_alpha = 256 - COLOR_A(other_val);
 			this_val = RGB(
-					(uint8_t) (COLOR_R(this_val) * oneminusalpha + COLOR_R(other_val) * alpha),
-					(uint8_t) (COLOR_G(this_val) * oneminusalpha + COLOR_G(other_val) * alpha),
-					(uint8_t) (COLOR_B(this_val) * oneminusalpha + COLOR_B(other_val) * alpha));
+					(uint8_t)((alpha * COLOR_R(other_val) + inv_alpha * COLOR_R(this_val)) >> 8),
+					(uint8_t)((alpha * COLOR_G(other_val) + inv_alpha * COLOR_G(this_val)) >> 8),
+					(uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8));
 		}
 	}
 }
@@ -115,7 +138,7 @@ void Image::fill(Rect area, uint32_t color) const {
 	}
 }
 
-void Image::draw_text(const char* str, const Point& pos, Font* font, uint32_t color) {
+void Image::draw_text(const char* str, const Point& pos, Font* font, uint32_t color) const {
 	Point current_pos = pos;
 	while(*str) {
 		current_pos = draw_glyph(font, *str, current_pos, color);
@@ -123,7 +146,7 @@ void Image::draw_text(const char* str, const Point& pos, Font* font, uint32_t co
 	}
 }
 
-Point Image::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph_pos, uint32_t color) {
+Point Image::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph_pos, uint32_t color) const {
 	auto* glyph = font->glyph(codepoint);
 	int y_offset = (font->bounding_box().base_y - glyph->base_y) + (font->size() - glyph->height);
 	int x_offset = glyph->base_x - font->bounding_box().base_x;

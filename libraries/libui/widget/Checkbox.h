@@ -17,36 +17,38 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_BUTTON_H
-#define DUCKOS_LIBUI_BUTTON_H
+#ifndef DUCKOS_LIBUI_CHECKBOX_H
+#define DUCKOS_LIBUI_CHECKBOX_H
 
 #include "Widget.h"
 #include <string>
 #include <functional>
 
 namespace UI {
-	class Button: public Widget {
+	class Checkbox: public Widget {
 	public:
-		Button(const std::string& label);
+		Checkbox();
+		Checkbox(std::string  label);
 
-		//Button
+		//Checkbox
+		bool checked();
+		void set_checked(bool checked);
+
 		std::string label();
 		void set_label(const std::string& new_label);
 
 		//Widget
 		virtual bool on_mouse_button(Pond::MouseButtonEvent evt) override;
-		virtual void on_mouse_leave(Pond::MouseLeaveEvent evt) override;
 		virtual Dimensions preferred_size() override;
 
-		std::function<void()> on_pressed = nullptr;
-		std::function<void()> on_released = nullptr;
+		std::function<void(bool)> on_change = nullptr;
 	private:
 		//Widget
-		void do_repaint(Image& framebuffer) override;
+		void do_repaint(const DrawContext& ctx) override;
 
+		bool _checked = false;
 		std::string _label;
-		bool _pressed = false;
 	};
 }
 
-#endif //DUCKOS_LIBUI_BUTTON_H
+#endif //DUCKOS_LIBUI_CHECKBOX_H

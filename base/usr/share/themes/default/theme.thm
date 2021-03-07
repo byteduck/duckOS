@@ -3,16 +3,15 @@ Color bg = #323232
 Color fg = #ffffff
 Color window = #323232
 Color window-title = #ffffff
-Color shadow-1 = #505050
+Color window-titlebar-a = #1a1a1a
+Color window-titlebar-b = #2d2d2d
+Color shadow-1 = #202020
 Color shadow-2 = #141414
-Color button = #424242
+Color highlight = #494949
+Color button = #323232
 Color button-text = #ffffff
 
 # Values
-Value deco-top-size = 13
-Value deco-bottom-size = 2
-Value deco-left-size = 2
-Value deco-right-size = 2
 Value button-padding = 5
 
 # Strings
@@ -21,4 +20,4 @@ String font-mono = gohu-11
 
 # Images
 Image win-close = res/close.png
-Image win-close-hover = res/close-hover.png
+Image check = res/check.png

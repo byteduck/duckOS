@@ -18,7 +18,7 @@
 */
 
 #include "StackView.h"
-#include "Theme.h"
+#include "libui/Theme.h"
 
 UI::StackView::StackView(Direction direction, int spacing): direction(direction), spacing(spacing) {
 
@@ -42,6 +42,8 @@ Dimensions UI::StackView::preferred_size() {
 				max_dim = sz.width;
 		}
 	}
+	if(current_pos >= spacing)
+		current_pos -= spacing;
 	return direction == HORIZONTAL ? Dimensions {current_pos, max_dim} : Dimensions {max_dim, current_pos};
 }
 
@@ -54,6 +56,6 @@ void UI::StackView::on_child_added(UI::Widget* child) {
 	update_size();
 }
 
-void UI::StackView::do_repaint(Image& fb) {
-	fb.fill({0, 0, fb.width, fb.height}, Theme::color("bg"));
+void UI::StackView::do_repaint(const DrawContext& ctx) {
+	ctx.fill({0, 0, ctx.width(), ctx.height()}, Theme::bg());
 }

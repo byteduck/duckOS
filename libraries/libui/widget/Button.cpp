@@ -18,8 +18,8 @@
 */
 
 #include "Button.h"
-#include "libui.h"
-#include "Theme.h"
+#include "libui/libui.h"
+#include "libui/Theme.h"
 #include <libgraphics/font.h>
 
 using namespace UI;
@@ -66,20 +66,12 @@ void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 
 Dimensions Button::preferred_size() {
 	auto dims =  Dimensions { Theme::font()->size_of(_label.c_str()).width, Theme::font()->bounding_box().height };
-	int padding = Theme::value("button-padding") * 2;
+	int padding = Theme::button_padding() * 2;
 	dims.width += padding;
 	dims.height += padding;
 	return dims;
 }
 
-void Button::do_repaint(Image& framebuffer) {
-	uint32_t color_a = _pressed ? Theme::color("shadow-2") : Theme::color("shadow-1");
-	uint32_t color_b = _pressed ? Theme::color("shadow-1") : Theme::color("shadow-2");
-	framebuffer.fill({0, 0, framebuffer.width, framebuffer.height}, Theme::color("button"));
-	framebuffer.fill({0, 0, 1, framebuffer.height - 1}, color_a);
-	framebuffer.fill({0, 0, framebuffer.width, 1}, color_a);
-	framebuffer.fill({0, framebuffer.height - 1, framebuffer.width, 1}, color_b);
-	framebuffer.fill({framebuffer.width - 1, 1, 1, framebuffer.height - 1}, color_b);
-	int padding = Theme::value("button-padding");
-	framebuffer.draw_text(_label.c_str(), {padding, padding}, Theme::font(), Theme::color("button-text"));
+void Button::do_repaint(const DrawContext& ctx) {
+	ctx.draw_button({0, 0, ctx.width(), ctx.height()}, _label, _pressed);
 }

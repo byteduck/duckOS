@@ -20,12 +20,16 @@
 #ifndef DUCKOS_LIBUI_WINDOW_H
 #define DUCKOS_LIBUI_WINDOW_H
 
-#include "Widget.h"
+#include "libui/widget/Widget.h"
 #include <libgraphics/geometry.h>
 #include <libpond/Window.h>
 #include <string>
 #include <functional>
 #include <libpond/Event.h>
+
+#define UI_TITLEBAR_HEIGHT 16
+#define UI_WINDOW_BORDER_SIZE 2
+#define UI_WINDOW_PADDING 2
 
 namespace UI {
 	class Window {
@@ -65,6 +69,13 @@ namespace UI {
 		Widget* _contents;
 		std::string _title;
 		Point _mouse;
+
+		struct TitleButton {
+			std::string image;
+			bool pressed = false;
+			Rect area = {0,0,0,0};
+		};
+		TitleButton _close_button = {"win-close"};
 
 	};
 }

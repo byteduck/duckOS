@@ -30,26 +30,44 @@
 namespace UI {
 	class Theme {
 	public:
-		//STATIC
+		///NON-STATIC
+		~Theme();
+
+		Image& get_image(const std::string& key);
+		int get_value(const std::string& key);
+		Color get_color(const std::string& key);
+		std::string get_string(const std::string& key);
+		Font* get_font();
+		Font* get_font_mono();
+
+		///STATIC
 		static Theme* get_theme(const std::string& name);
 		static Theme* current();
 
 		static Image& image(const std::string& key);
 		static int value(const std::string& key);
-		static uint32_t color(const std::string& key);
+		static Color color(const std::string& key);
 		static std::string string(const std::string& key);
+
+		//Standard fonts
 		static Font* font();
 		static Font* font_mono();
 
-		//NON-STATIC
-		~Theme();
+		//Standard colors
+		static Color bg();
+		static Color fg();
+		static Color window();
+		static Color window_title();
+		static Color window_titlebar_a();
+		static Color window_titlebar_b();
+		static Color shadow_1();
+		static Color shadow_2();
+		static Color highlight();
+		static Color button();
+		static Color button_text();
 
-		Image& get_image(const std::string& key);
-		int get_value(const std::string& key);
-		uint32_t get_color(const std::string& key);
-		std::string get_string(const std::string& key);
-		Font* get_font();
-		Font* get_font_mono();
+		//Standard values
+		static int button_padding();
 
 	private:
 		//STATIC
@@ -62,7 +80,7 @@ namespace UI {
 
 		std::string name;
 		std::map<std::string, Image*> images;
-		std::map<std::string, uint32_t> colors;
+		std::map<std::string, Color> colors;
 		std::map<std::string, int> values;
 		std::map<std::string, std::string> strings;
 

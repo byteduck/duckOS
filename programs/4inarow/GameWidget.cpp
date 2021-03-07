@@ -36,11 +36,12 @@ void GameWidget::reset(bool vs_cpu) {
 }
 
 Dimensions GameWidget::preferred_size() {
-	return {COLUMNS * CELL_SIZE, ROWS * CELL_SIZE + 14};
+	return {COLUMNS * CELL_SIZE + 4, ROWS * CELL_SIZE + 17};
 }
 
-void GameWidget::do_repaint(Image& framebuffer) {
-	framebuffer.fill({0, 0, framebuffer.width, framebuffer.height}, CELL_COLOR);
+void GameWidget::do_repaint(const UI::DrawContext& ctx) {
+	ctx.fill({0, 0, ctx.width(), ctx.height()}, CELL_COLOR);
+	ctx.draw_inset_rect({0, 0, ctx.width(), ROWS * CELL_SIZE + 4}, CELL_COLOR);
 	for(int row = 0; row < ROWS; row++) {
 		for(int col = 0; col < COLUMNS; col++) {
 			uint32_t color;
@@ -59,12 +60,12 @@ void GameWidget::do_repaint(Image& framebuffer) {
 						break;
 				}
 			}
-			framebuffer.fill({
-					col * CELL_SIZE + 2, row * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4
+			ctx.fill({
+					col * CELL_SIZE + 4, row * CELL_SIZE + 4, CELL_SIZE - 4, CELL_SIZE - 4
 				}, color);
 		}
 	}
-	framebuffer.draw_text(status.c_str(), {2, ROWS * CELL_SIZE + 1}, UI::Theme::font(), RGB(255, 255, 255));
+	ctx.draw_text(status.c_str(), {2, ROWS * CELL_SIZE + 6}, UI::Theme::font(), RGB(255, 255, 255));
 }
 
 bool GameWidget::on_mouse_move(Pond::MouseMoveEvent evt) {

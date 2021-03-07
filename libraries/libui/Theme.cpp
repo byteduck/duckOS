@@ -58,7 +58,7 @@ int Theme::value(const std::string& key) {
 	return current()->get_value(key);
 }
 
-uint32_t Theme::color(const std::string& key) {
+Color Theme::color(const std::string& key) {
 	return current()->get_color(key);
 }
 
@@ -85,7 +85,7 @@ Image& Theme::get_image(const std::string& key) {
 	return ret ? *ret : *blank_image;
 }
 
-uint32_t Theme::get_color(const std::string& key) {
+Color Theme::get_color(const std::string& key) {
 	return colors[key];
 }
 
@@ -144,12 +144,13 @@ bool Theme::load() {
 		} else if(type == "Color") {
 			if(value[0] == '#')
 				value = value.substr(1);
-			uint32_t color = strtoul(value.c_str(), nullptr, 16);
+			Color color = strtoul(value.c_str(), nullptr, 16);
 			if(value.length() == 6)
 				color += 0xFF000000;
 			colors[key] = color;
 		} else if(type == "Value") {
-			values[key] = strtol(value.c_str(), nullptr, 0);
+			int val = strtol(value.c_str(), nullptr, 0);
+			values[key] = val;
 		} else if(type == "String") {
 			if(value[0] == '\"' && value[value.length() - 1] == '\"')
 				value = value.substr(1, value.length() - 1);
@@ -163,4 +164,52 @@ bool Theme::load() {
 
 	fclose(theme_info);
 	return true;
+}
+
+Color Theme::bg() {
+	return current()->colors["bg"];
+}
+
+Color Theme::fg() {
+	return current()->colors["fg"];
+}
+
+Color Theme::window() {
+	return current()->colors["window"];
+}
+
+Color Theme::window_title() {
+	return current()->colors["window-title"];
+}
+
+Color Theme::window_titlebar_a() {
+	return current()->colors["window-titlebar-a"];
+}
+
+Color Theme::window_titlebar_b() {
+	return current()->colors["window-titlebar-b"];
+}
+
+Color Theme::shadow_1() {
+	return current()->colors["shadow-1"];
+}
+
+Color Theme::shadow_2() {
+	return current()->colors["shadow-2"];
+}
+
+Color Theme::highlight() {
+	return current()->colors["highlight"];
+}
+
+Color Theme::button() {
+	return current()->colors["button"];
+}
+
+Color Theme::button_text() {
+	return current()->colors["button-text"];
+}
+
+int Theme::button_padding() {
+	return current()->values["button-padding"];
 }

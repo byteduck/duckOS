@@ -17,27 +17,36 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include "Label.h"
 #include <libgraphics/font.h>
-#include <libui/libui.h>
-#include <libui/widget/StackView.h>
-#include <libui/widget/Button.h>
-#include "TerminalWidget.h"
 
-int main(int argc, char** argv, char** envp) {
-	//Init LibUI
-	UI::init(argv, envp);
+using namespace UI;
 
-	//Make window
-	auto* window = UI::Window::create();
-	window->set_title("Terminal");
+Label::Label(const std::string& label): _label(label) {
+	_color = Theme::fg();
+}
 
-	//Create terminal widget
-	auto* termwidget = new TerminalWidget();
-	termwidget->run("/bin/dsh");
-	window->set_contents(termwidget);
+std::string Label::label() {
+	return _label;
+}
 
-	//Run event loop
-	UI::run();
+void Label::set_label(const std::string& new_label) {
+	_label = new_label;
+	update_size();
+}
 
-	return 0;
+Color Label::color() {
+	return _color;
+}
+
+void Label::set_color(Color new_color) {
+	_color = new_color;
+}
+
+Dimensions Label::preferred_size() {
+	return Theme::font()->size_of(_label.c_str());
+}
+
+void Label::do_repaint(const DrawContext& ctx) {
+	ctx.draw_text(_label.c_str(), {0, 0}, _color);
 }

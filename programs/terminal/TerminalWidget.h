@@ -29,7 +29,7 @@ public:
 
 	//Widget
 	Dimensions preferred_size() override;
-	void do_repaint(Image& framebuffer) override;
+	void do_repaint(const UI::DrawContext& ctx) override;
 	bool on_keyboard(Pond::KeyEvent evt) override;
 
 	void handle_term_events();

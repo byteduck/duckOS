@@ -19,8 +19,9 @@
 
 #include "GameWidget.h"
 #include <libui/libui.h>
-#include <libui/StackView.h>
-#include <libui/Button.h>
+#include <libui/widget/StackView.h>
+#include <libui/widget/Button.h>
+#include <libui/widget/Checkbox.h>
 
 int main(int argc, char** argv, char** envp) {
 	//Init LibUI
@@ -30,26 +31,27 @@ int main(int argc, char** argv, char** envp) {
 	auto* window = UI::Window::create();
 	window->set_title("4 in a row");
 
-	auto* mainview = new UI::StackView(UI::StackView::VERTICAL);
+	auto* mainview = new UI::StackView(UI::StackView::HORIZONTAL, 2);
 	window->set_contents(mainview);
 
-	auto* toolbar = new UI::StackView(UI::StackView::HORIZONTAL, 3);
-	mainview->add_child(toolbar);
+	auto* toolbar = new UI::StackView(UI::StackView::VERTICAL, 2);
 
 	auto* pvp_button = new UI::Button("New Game");
-	auto* pvcpu_button = new UI::Button("New Game (CPU)");
+	auto* cpu_checkbox = new UI::Checkbox("CPU");
 	toolbar->add_child(pvp_button);
-	toolbar->add_child(pvcpu_button);
+	toolbar->add_child(cpu_checkbox);
 
 	//Create connect 4 widget
 	auto* gamewidget = new GameWidget();
-	mainview->add_child(gamewidget);
 	pvp_button->on_pressed = [&]{
-			gamewidget->reset(false);
+			gamewidget->reset(cpu_checkbox->checked());
 	};
-	pvcpu_button->on_pressed = [&]{
-		gamewidget->reset(true);
+	cpu_checkbox->on_change = [&](bool cpu){
+		gamewidget->reset(cpu);
 	};
+
+	mainview->add_child(gamewidget);
+	mainview->add_child(toolbar);
 
 	//Run event loop
 	UI::run();

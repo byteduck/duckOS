@@ -18,7 +18,7 @@
 */
 
 #include "Widget.h"
-#include "libui.h"
+#include "libui/libui.h"
 
 using namespace UI;
 
@@ -125,7 +125,7 @@ void Widget::update_size() {
 		_parent_window->resize(_size.width, _size.height);
 }
 
-void Widget::do_repaint(Image& framebuffer) {
+void Widget::do_repaint(const DrawContext& framebuffer) {
 
 }
 

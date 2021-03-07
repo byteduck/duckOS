@@ -22,6 +22,7 @@
 
 #include <libpond/Window.h>
 #include <vector>
+#include "../DrawContext.h"
 
 namespace UI {
 	class Window;
@@ -123,9 +124,9 @@ namespace UI {
 
 		/**
 		 * Called when the widget needs to be repainted.
-		 * @param framebuffer The framebuffer of the widget.
+		 * @param ctx The drawing context of the widget.
 		 */
-		virtual void do_repaint(Image& framebuffer);
+		virtual void do_repaint(const DrawContext& ctx);
 
 		/**
 		 * Called when a child is added to the widget.

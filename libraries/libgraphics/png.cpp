@@ -304,9 +304,9 @@ Image* load_png(FILE* file) {
 			}
 			if(png.ihdr.color_type != 0 && png.ihdr.color_type != 2 && png.ihdr.color_type != 4 && png.ihdr.color_type != 6) {
 				if(png.ihdr.color_type == 3)
-					fprintf(stderr, "PNG: Indexed get_color is not supported!\n");
+					fprintf(stderr, "PNG: Indexed color is not supported!\n");
 				else
-					fprintf(stderr, "PNG: Invalid get_color type %d\n", png.ihdr.color_type);
+					fprintf(stderr, "PNG: Invalid color type %d\n", png.ihdr.color_type);
 				return NULL;
 			}
 			if(png.ihdr.compression_method != 0) {

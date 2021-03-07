@@ -38,6 +38,8 @@ __DECL_BEGIN
 #include <sys/types.h>
 #include "geometry.h"
 
+typedef uint32_t Color;
+
 class Font;
 struct FontGlyph;
 class Image {
@@ -50,66 +52,74 @@ public:
 	int height = 0;
 
 	/**
-	 * Frees the data associated with the get_image.
+	 * Frees the data associated with the Image.
 	 */
 	void free();
 
 	/**
-	 * Copies a part of another get_image to this one.
-	 * @param other The other get_image to copy from.
-	 * @param other_area The area of the other get_image to copy.
-	 * @param pos The position of this get_image to copy to.
+	 * Copies a part of another Image to this one.
+	 * @param other The other Image to copy from.
+	 * @param other_area The area of the other Image to copy.
+	 * @param pos The position of this Image to copy to.
 	 */
 	void copy(const Image& other, Rect other_area, const Point& pos) const;
 
 	/**
-	 * Identical to ::copy(), but will tile the get_image.
+	 * Copies a part of another Image to this one, with alpha blending.
+	 * @param other The other Image to copy from.
+	 * @param other_area The area of the other Image to copy.
+	 * @param pos The position of this Image to copy to.
+	 */
+	void copy_blitting(const Image& other, Rect other_area, const Point& pos) const;
+
+	/**
+	 * Identical to ::copy(), but will tile the Image.
 	 */
 	void copy_tiled(const Image& other, Rect other_area, const Point& pos) const;
 
 	/**
-	 * Draws another get_image on top of this one with alpha blending.
-	 * @param other The get_image to draw.
-	 * @param other_area The area of the other get_image to draw.
-	 * @param pos The position on this get_image to draw on.
+	 * Draws another Image on top of this one with alpha blending.
+	 * @param other The Image to draw.
+	 * @param other_area The area of the other Image to draw.
+	 * @param pos The position on this Image to draw on.
 	 */
 	void draw_image(const Image& other, Rect other_area, const Point& pos) const;
 
 	/**
-	 * Draws another get_image on top of this one with alpha blending.
-	 * @param other The get_image to draw.
-	 * @param pos The position on this get_image to draw on.
+	 * Draws another Image on top of this one with alpha blending.
+	 * @param other The Image to draw.
+	 * @param pos The position on this Image to draw on.
 	 */
 	void draw_image(const Image& other, const Point& pos) const;
 
 	/**
-	 * Fills an area of the get_image with a get_color.
+	 * Fills an area of the Image with a color.
 	 * @param area The area to fill.
-	 * @param color The get_color to fill the area with.
+	 * @param color The color to fill the area with.
 	 */
 	void fill(Rect area, uint32_t color) const;
 
 	/**
-	 * Draws text on the get_image with a certain get_color.
+	 * Draws text on the Image with a certain color.
 	 * @param str The string to draw.
 	 * @param pos The top-left position of where to draw.
 	 * @param font The font to use.
-	 * @param color The get_color to draw in.
+	 * @param color The color to draw in.
 	 */
-	void draw_text(const char* str, const Point& pos, Font* font, uint32_t color);
+	void draw_text(const char* str, const Point& pos, Font* font, uint32_t color) const;
 
 	/**
-	 * Draws a glyph on the get_image with a certain get_color.
+	 * Draws a glyph on the Image with a certain color.
 	 * @param font The font to use.
 	 * @param codepoint The codepoint of the character.
 	 * @param pos The position to draw the glyph at.
-	 * @param color The get_color to draw the glyph in.
+	 * @param color The color to draw the glyph in.
 	 * @return The position where the next character should be drawn.
 	 */
-	Point draw_glyph(Font* font, uint32_t codepoint, const Point& pos, uint32_t color);
+	Point draw_glyph(Font* font, uint32_t codepoint, const Point& pos, uint32_t color) const;
 
 	/**
-	 * Returns a pointer to the get_image buffer at a certain position. Returns NULL if outside the constraints.
+	 * Returns a pointer to the Image buffer at a certain position. Returns NULL if outside the constraints.
 	 */
 	uint32_t* at(const Point& position) const;
 };

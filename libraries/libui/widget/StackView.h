@@ -39,7 +39,7 @@ namespace UI {
 	protected:
 		//Widget
 		virtual void on_child_added(UI::Widget* child) override;
-		virtual void do_repaint(Image& fb) override;
+		virtual void do_repaint(const DrawContext& ctx) override;
 
 		int current_pos = 0;
 		int max_dim = 0;
