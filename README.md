@@ -7,6 +7,8 @@ A hobby UNIX-like OS with a graphical window manager for x86 computers.
 ![Kernel](https://github.com/byteduck/duckOS/workflows/Kernel/badge.svg)
 ![duckOS](https://github.com/byteduck/duckOS/workflows/duckOS/badge.svg)
 
+![Screenshot](screenshot.png)
+
 ### What's working
 - Booting off of the primary master IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
 - PATA DMA or PIO access (force PIO by using the `use_pio` grub kernel argument)
