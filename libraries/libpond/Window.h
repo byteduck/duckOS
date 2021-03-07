@@ -95,6 +95,11 @@ namespace Pond {
 		 */
 		void set_draggable(bool draggable);
 
+		/**
+		 * Brings the window to the front.
+		 */
+		void bring_to_front();
+
 		int id = -1; ///< The ID of the window.
 		int width = 0; ///< The width of the window.
 		int height = 0; ///< The height of the window.

@@ -54,6 +54,7 @@ private:
 	void set_title(socketfs_packet* packet);
 	void reparent(socketfs_packet* packet);
 	void set_hint(socketfs_packet* packet);
+	void bring_to_front(socketfs_packet* packet);
 
 	pid_t pid;
 	int socketfs_fd;

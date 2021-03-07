@@ -58,6 +58,9 @@ int Window::y_position() {
 	return _window->y;
 }
 
+void Window::bring_to_front() {
+	_window->bring_to_front();
+}
 
 void Window::set_contents(Widget* contents) {
 	_contents = contents;

@@ -85,6 +85,12 @@ namespace UI {
 		Window* parent_window();
 
 		/**
+		 * The root window of this widget.
+		 * @return A pointer to the root window of this widget.
+		 */
+		Window* root_window();
+
+		/**
 		 * Adds a child to the widget.
 		 * @param child The child to add.
 		 */

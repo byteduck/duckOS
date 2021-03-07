@@ -39,6 +39,7 @@
 #define PPKT_REPARENT 16
 #define PPKT_MOUSE_LEAVE 17
 #define PPKT_WINDOW_HINT 18
+#define PPKT_WINDOW_TO_FRONT 19
 
 #include <cstdint>
 
@@ -186,6 +187,12 @@ struct PWindowHintPkt {
 	int window_id;
 	int hint;
 	int value;
+};
+
+struct PWindowToFrontPkt {
+	explicit PWindowToFrontPkt(int window_id): window_id(window_id) {};
+	short _PACKET_ID = PPKT_WINDOW_TO_FRONT;
+	int window_id;
 };
 
 #endif //DUCKOS_PACKET_H

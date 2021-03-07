@@ -113,6 +113,9 @@ void handle_pond_events() {
 					if(!widget)
 						break;
 
+					//Bring the root window to the front
+					widget->root_window()->bring_to_front();
+
 					//Propagate the event through parent widgets / window as appropriate
 					bool continue_propagating = true;
 					while(true) {

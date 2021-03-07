@@ -76,3 +76,8 @@ void Window::set_draggable(bool draggable) {
 	if(!context->send_packet(PWindowHintPkt(id, PWINDOW_HINT_DRAGGABLE, draggable)))
 		perror("Pond: failed to write set hint packet");
 }
+
+void Window::bring_to_front() {
+	if(!context->send_packet(PWindowToFrontPkt(id)))
+		perror("Pond: failed to write bring to front packet");
+}

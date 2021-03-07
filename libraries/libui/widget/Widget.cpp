@@ -63,6 +63,10 @@ Window* Widget::parent_window() {
 	return _parent_window;
 }
 
+Window* Widget::root_window() {
+	return _parent_window ? _parent_window : _parent->root_window();
+}
+
 void Widget::add_child(Widget* child) {
 	if(child->parent() || child->parent_window())
 		return;

@@ -43,6 +43,7 @@ namespace UI {
 		void set_position(int x, int y);
 		int x_position();
 		int y_position();
+		void bring_to_front();
 
 		void set_contents(Widget* contents);
 		Widget* contents();

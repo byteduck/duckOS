@@ -74,6 +74,9 @@ void Client::handle_packet(socketfs_packet* packet) {
 		case PPKT_WINDOW_HINT:
 			set_hint(packet);
 			break;
+		case PPKT_WINDOW_TO_FRONT:
+			bring_to_front(packet);
+			break;
 		default:
 			fprintf(stderr, "Invalid packet sent by client %d\n", pid);
 			return;
@@ -261,4 +264,14 @@ void Client::set_hint(socketfs_packet* packet) {
 	auto* window = windows[params->window_id];
 	if(window)
 		window->set_hint(params->hint, params->value);
+}
+
+void Client::bring_to_front(socketfs_packet* packet) {
+	if(packet->length != sizeof(PWindowToFrontPkt))
+		return;
+
+	auto* params = (PWindowToFrontPkt*) packet->data;
+	auto* window = windows[params->window_id];
+	if(window)
+		window->move_to_front();
 }
