@@ -101,6 +101,7 @@ FILE* filelist_last = &__stderr;
 void filelist_insert(FILE* file) {
 	filelist_last->next = file;
 	file->prev = filelist_last;
+	file->next = NULL;
 	filelist_last = file;
 }
 
