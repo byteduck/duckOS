@@ -47,8 +47,10 @@ class Rect {
 public:
 	int x, y, width, height;
 
-	Point position();
-	Dimensions dimensions();
+	Point position() const;
+	void set_position(Point pos);
+	Dimensions dimensions() const;
+	void set_dimensions(Dimensions dims);
 	bool collides(const Rect& other) const;
 	bool inside(const Rect& other) const;
 	bool contains(const Rect& other) const;

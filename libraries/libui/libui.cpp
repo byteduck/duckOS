@@ -51,11 +51,11 @@ void handle_pond_events() {
 		switch(event.type) {
 			case PEVENT_KEY: {
 				auto& evt = event.key;
-				auto* window = windows[evt.window->id];
+				auto* window = windows[evt.window->id()];
 				if(window) {
 					window->on_keyboard(evt);
 				} else {
-					auto* widget = widgets[evt.window->id];
+					auto* widget = widgets[evt.window->id()];
 					if(!widget)
 						break;
 
@@ -78,11 +78,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_MOVE: {
 				auto& evt = event.mouse_move;
-				auto* window = windows[evt.window->id];
+				auto* window = windows[evt.window->id()];
 				if(window) {
 					window->on_mouse_move(evt);
 				} else {
-					auto* widget = widgets[evt.window->id];
+					auto* widget = widgets[evt.window->id()];
 					if(!widget)
 						break;
 
@@ -105,11 +105,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_BUTTON: {
 				auto& evt = event.mouse_button;
-				auto* window = windows[evt.window->id];
+				auto* window = windows[evt.window->id()];
 				if(window) {
 					window->on_mouse_button(evt);
 				} else {
-					auto* widget = widgets[evt.window->id];
+					auto* widget = widgets[evt.window->id()];
 					if(!widget)
 						break;
 
@@ -135,11 +135,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_LEAVE: {
 				auto& evt = event.mouse_leave;
-				auto* window = windows[evt.window->id];
+				auto* window = windows[evt.window->id()];
 				if(window) {
 					window->on_mouse_leave(evt);
 				} else {
-					auto* widget = widgets[evt.window->id];
+					auto* widget = widgets[evt.window->id()];
 					if(!widget)
 						break;
 					widget->on_mouse_leave(evt);

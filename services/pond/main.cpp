@@ -30,6 +30,7 @@ int main(int argc, char** argv, char** envp) {
 	auto* display = new Display;
 	auto* server = new Server;
 	auto* main_window = new Window(display);
+	main_window->set_hidden(false);
 	auto* mouse = new Mouse(main_window);
 
 	struct pollfd polls[3];

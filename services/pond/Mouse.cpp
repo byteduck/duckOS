@@ -22,7 +22,7 @@
 #include "Display.h"
 #include <libgraphics/png.h>
 
-Mouse::Mouse(Window* parent): Window(parent, {0, 0, 1, 1}) {
+Mouse::Mouse(Window* parent): Window(parent, {0, 0, 1, 1}, false) {
 	display()->set_mouse_window(this);
 
 	mouse_fd = open("/dev/input/mouse", O_RDONLY);

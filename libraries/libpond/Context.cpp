@@ -75,9 +75,9 @@ Event Context::next_event(int type) {
 	}
 }
 
-Window* Context::create_window(Window* parent, int x, int y, int width, int height) {
+Window* Context::create_window(Window* parent, Rect rect, bool hidden) {
 	//Write the packet
-	if(!send_packet(POpenWindowPkt(parent ? parent->id : 0, width, height, x, y)))
+	if(!send_packet(POpenWindowPkt(parent ? parent->id() : 0, rect, hidden)))
 		perror("Pond: Failed to write packet");
 
 	//Wait for the response
@@ -190,20 +190,11 @@ void Context::handle_open_window(socketfs_packet* packet, Event* event) {
 	}
 
 	//Allocate the new window object and put it in the PEvent
-	auto* window = new Window {
-			.id = resp->window_id,
-			.width = resp->width,
-			.height = resp->height,
-			.x = resp->x,
-			.y = resp->y,
-			.shm_id = resp->shm_id,
-			.framebuffer = {(uint32_t*) shm.ptr, resp->width, resp->height},
-			.context = this,
-	};
+	auto* window = new Window(resp->window_id, resp->rect, shm, this);
 	event->window_create.window = window;
 
 	//Add the window to the map
-	windows[window->id] = window;
+	windows[window->_id] = window;
 }
 
 void Context::handle_destroy_window(socketfs_packet* packet, Event* event) {
@@ -227,10 +218,8 @@ void Context::handle_move_window(socketfs_packet* packet, Event* event) {
 	Window* window = windows[resp->window_id];
 	if(window) {
 		event->window_move.window = window;
-		event->window_move.old_x = window->x;
-		event->window_move.old_y = window->y;
-		window->x = resp->x;
-		window->y = resp->y;
+		event->window_move.old_pos = window->position();
+		window->_rect.set_position(resp->pos);
 	} else {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "libpond: Could not find window for window move event!\n");
@@ -245,21 +234,19 @@ void Context::handle_resize_window(socketfs_packet* packet, Event* event) {
 	Window* window = windows[resp->window_id];
 	if(window) {
 		event->window_resize.window = window;
-		event->window_resize.old_width = window->width;
-		event->window_resize.old_height = window->height;
-		window->width = resp->width;
-		window->height = resp->height;
+		event->window_resize.old_dims = window->dimensions();
+		window->_rect.set_dimensions(resp->dims);
 		//Open the new shared memory for the framebuffer if necessary
-		if(resp->shm_id != window->shm_id) {
-			shmdetach(window->shm_id);
-			window->shm_id = resp->shm_id;
+		if(resp->shm_id != window->_shm_id) {
+			shmdetach(window->_shm_id);
+			window->_shm_id = resp->shm_id;
 			struct shm shm;
-			if(shmattach(window->shm_id, NULL, &shm) < 0) {
+			if(shmattach(window->_shm_id, NULL, &shm) < 0) {
 				perror("libpond failed to attach window shm");
 				event->window_create.window = NULL;
 				return;
 			}
-			window->framebuffer = {(uint32_t*) shm.ptr, window->width, window->height};
+			window->_framebuffer = {(uint32_t*) shm.ptr, window->_rect.width, window->_rect.height};
 		}
 	} else {
 		event->type = PEVENT_UNKNOWN;
@@ -275,14 +262,10 @@ void Context::handle_mouse_move(socketfs_packet* packet, Event* event) {
 	Window* window = windows[resp->window_id];
 	if(window) {
 		event->mouse_move.window = window;
-		event->mouse_move.delta_x = resp->delta_x;
-		event->mouse_move.delta_y = resp->delta_y;
-		event->mouse_move.new_x = resp->relative_x;
-		event->mouse_move.new_y = resp->relative_y;
-		event->mouse_move.abs_x = resp->absolute_x;
-		event->mouse_move.abs_y = resp->absolute_y;
-		window->mouse_x = resp->relative_x;
-		window->mouse_y = resp->relative_y;
+		event->mouse_move.delta = resp->delta;
+		event->mouse_move.new_pos = resp->relative;
+		event->mouse_move.abs_pos = resp->absolute;
+		window->_mouse_pos = resp->relative;
 	} else {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "libpond: Could not find window for window mouse move event!\n");
@@ -297,9 +280,9 @@ void Context::handle_mouse_button(socketfs_packet* packet, Event* event) {
 	Window* window = windows[resp->window_id];
 	if(window) {
 		event->mouse_button.window = window;
-		event->mouse_button.old_buttons = window->mouse_buttons;
+		event->mouse_button.old_buttons = window->_mouse_buttons;
 		event->mouse_button.new_buttons = resp->buttons;
-		window->mouse_buttons = resp->buttons;
+		window->_mouse_buttons = resp->buttons;
 	} else {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "libpond: Could not find window for window mouse button event!\n");
@@ -314,8 +297,7 @@ void Context::handle_mouse_leave(socketfs_packet* packet, Event* event) {
 	Window* window = windows[resp->window_id];
 	if(window) {
 		event->mouse_leave.window = window;
-		event->mouse_leave.last_x = window->mouse_x;
-		event->mouse_leave.last_y = window->mouse_y;
+		event->mouse_leave.last_pos = window->_mouse_pos;
 	} else {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "libpond: Could not find window for window mouse button event!\n");

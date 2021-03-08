@@ -63,13 +63,11 @@ namespace Pond {
 		/**
 		 * Creates a window.
 		 * @param parent NULL, or the parent window.
-		 * @param x The x position of the window.
-		 * @param y The y position of the window.
-		 * @param width The width of the window.
-		 * @param height The height of the window.
+		 * @param rect The rect defining the window.
+		 * @param hidden Whether the window should be hidden.
 		 * @return A PWindow object or NULL if the creation failed.
 		 */
-		Window* create_window(Window* parent, int x, int y, int width, int height);
+		Window* create_window(Window* parent, Rect rect, bool hidden);
 
 		/**
 		 * Gets a font from the Pond server.

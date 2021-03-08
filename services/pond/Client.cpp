@@ -84,7 +84,7 @@ void Client::handle_packet(socketfs_packet* packet) {
 }
 
 void Client::mouse_moved(Window* window, Point delta, Point relative_pos, Point absolute_pos) {
-	PMouseMovePkt pkt {window->id(), delta.x, delta.y, relative_pos.x, relative_pos.y, absolute_pos.x, absolute_pos.y};
+	PMouseMovePkt pkt {window->id(), delta, relative_pos, absolute_pos};
 	if(write_packet(socketfs_fd, pid, sizeof(PMouseMovePkt), &pkt) < 0)
 		perror("Failed to write mouse movement packet to client");
 }
@@ -122,7 +122,7 @@ void Client::open_window(socketfs_packet* packet) {
 	Window* window;
 
 	if(!params->parent) {
-		window = new Window(Display::inst().root_window(), {params->x, params->y, params->width, params->height});
+		window = new Window(Display::inst().root_window(), params->rect, params->hidden);
 	} else {
 		auto parent_window = windows.find(params->parent);
 		if(parent_window == windows.end()) {
@@ -132,7 +132,7 @@ void Client::open_window(socketfs_packet* packet) {
 			return;
 		} else {
 			//Make the window with the requested parent
-			window = new Window(parent_window->second, {params->x, params->y, params->width, params->height});
+			window = new Window(parent_window->second, params->rect, params->hidden);
 		}
 	}
 
@@ -144,7 +144,7 @@ void Client::open_window(socketfs_packet* packet) {
 
 	//Write the response packet
 	Rect wrect = window->rect();
-	PWindowOpenedPkt resp {window->id(), wrect.x, wrect.y, wrect.width, wrect.height, window->framebuffer_shm().id};
+	PWindowOpenedPkt resp {window->id(), wrect, window->framebuffer_shm().id};
 	resp._PACKET_ID = PPKT_WINDOW_OPENED;
 	if(write_packet(socketfs_fd, pid, sizeof(PWindowOpenedPkt), &resp) < 0)
 		perror("Failed to write window opened packet to client");
@@ -173,9 +173,9 @@ void Client::move_window(socketfs_packet* packet) {
 	if(window_pair != windows.end()) {
 		auto* window = window_pair->second;
 
-		window->set_position({params->x, params->y});
+		window->set_position(params->pos);
 
-		PWindowMovedPkt resp {window->id(), params->x, params->y};
+		PWindowMovedPkt resp {window->id(), params->pos};
 		if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &resp) < 0)
 			perror("Failed to write window moved packet to client");
 	}
@@ -190,10 +190,10 @@ void Client::resize_window(socketfs_packet* packet) {
 	if(window_pair != windows.end()) {
 		auto* window = window_pair->second;
 
-		window->set_dimensions({params->width, params->height});
+		window->set_dimensions(params->dims);
 		shmallow(window->framebuffer_shm().id, pid, SHM_WRITE | SHM_READ);
 
-		PWindowResizedPkt resp {window->id(), params->width, params->height, window->framebuffer_shm().id};
+		PWindowResizedPkt resp {window->id(), params->dims, window->framebuffer_shm().id};
 		if(write_packet(socketfs_fd, pid, sizeof(PWindowResizedPkt), &resp) < 0)
 			perror("Failed to write window resized packet to client");
 	}
@@ -206,10 +206,10 @@ void Client::invalidate_window(socketfs_packet* packet) {
 	auto* params = (PInvalidatePkt*) packet->data;
 	auto window = windows.find(params->window_id);
 	if(window != windows.end()) {
-		if(params->x < 0 || params->y < 0)
+		if(params->area.x < 0 || params->area.y < 0)
 			window->second->invalidate();
 		else
-			window->second->invalidate({params->x, params->y, params->width, params->height});
+			window->second->invalidate(params->area);
 	}
 
 }

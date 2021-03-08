@@ -162,8 +162,8 @@ void Display::repaint() {
 
 		// See if each window overlaps the invalid area.
 		for(auto window : _windows) {
-			//Don't bother with the mouse window, we draw it separately so it's always on top
-			if(window == _mouse_window)
+			//Don't bother with the mouse window or hidden windows, we draw it separately so it's always on top
+			if(window == _mouse_window || window->hidden())
 				continue;
 
 			Rect window_vabs = window->visible_absolute_rect();
@@ -241,7 +241,7 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	Window* event_window = nullptr;
 	for (auto it = _windows.rbegin(); it != _windows.rend(); it++) {
 		auto* window = *it;
-		if(window == _mouse_window || window == _root_window)
+		if(window == _mouse_window || window == _root_window || window->hidden())
 			continue;
 		if(mouse.in(window->absolute_rect())) {
 			event_window = window;
@@ -295,6 +295,15 @@ bool Display::update_keyboard() {
 
 int Display::keyboard_fd() {
 	return _keyboard_fd;
+}
+
+void Display::window_hidden(Window* window) {
+	if(_mouse_window && _mouse_window->hidden())
+		_mouse_window = nullptr;
+	if(_focused_window && _focused_window->hidden())
+		_focused_window = nullptr;
+	if(_drag_window && _drag_window->hidden())
+		_drag_window = nullptr;
 }
 
 Display& Display::inst() {

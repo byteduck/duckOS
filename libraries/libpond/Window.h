@@ -23,9 +23,11 @@
 #include <sys/types.h>
 #include <libgraphics/graphics.h>
 #include "Context.h"
+#include <sys/mem.h>
 
 #define PWINDOW_HINT_GLOBALMOUSE 0x1
 #define PWINDOW_HINT_DRAGGABLE 0x2
+#define PWINDOW_HINT_HIDDEN 0x3
 
 /**
  * A window Object representing a window in the Pond window system.
@@ -49,12 +51,15 @@ namespace Pond {
 		/**
 		 * Tells the compositor to redraw a portion of a window.
 		 * If given a position with negative coordinates, the entire window will be redrawn.
-		 * @param x The x position of the area to invalidate.
-		 * @param y The y position of the area to invalidate.
-		 * @param width The width of the area to invalidate.
-		 * @param height The height of the area to invalidate.
+		 * @param area The area to invalidate.
 		 */
-		void invalidate_area(int x, int y, int width, int height);
+		void invalidate_area(Rect area);
+
+		/**
+		 * Resizes a window.
+		 * @param dims The new dimensions of the window.
+		 */
+		void resize(Dimensions dims);
 
 		/**
 		 * Resizes a window.
@@ -65,10 +70,34 @@ namespace Pond {
 
 		/**
 		 * Sets the position of a window.
+		 * @param pos The new position of the window.
+		 */
+		void set_position(Point pos);
+
+		/**
+		 * Sets the position of a window.
 		 * @param x The new x position of the window.
 		 * @param y The new y position of the window.
 		 */
 		void set_position(int x, int y);
+
+		/**
+		 * Gets the position of the window.
+		 * @return The position of the window.
+		 */
+		Point position() const;
+
+		/**
+		 * Gets the dimensions of the window.
+		 * @return The dimensions of the window.
+		 */
+		Dimensions dimensions() const;
+
+		/**
+		 * Gets the rect defining the window.
+		 * @return The rect defining the window.
+		 */
+		Rect rect() const;
 
 		/**
 		 * Sets the title of the window.
@@ -81,7 +110,6 @@ namespace Pond {
 		 * @param window Null for no parent, or a pointer to the window that will be this window's new parent.
 		 */
 		void reparent(Window* window);
-
 
 		/**
 		 * Sets whether or not the window gets global mouse events.
@@ -100,17 +128,49 @@ namespace Pond {
 		 */
 		void bring_to_front();
 
-		int id = -1; ///< The ID of the window.
-		int width = 0; ///< The width of the window.
-		int height = 0; ///< The height of the window.
-		int x = 0; ///< The x position of the window.
-		int y = 0; ///< The y position of the window.
-		int shm_id = 0; ///< The shared memory ID of the window's framebuffer.
-		int mouse_x = 0; ///< The last-known x position of the mouse inside the window.
-		int mouse_y = 0; ///< The last-known y position of the mouse inside the window.
-		unsigned int mouse_buttons = 0; ///< A bitfield containing the last-known pressed mouse buttons inside the window.
-		Image framebuffer; ///< The window's framebuffer.
-		Context* context = nullptr; ///< The context associated with the window.
+		/**
+		 * Hides or unhides the window.
+		 * @param hidden Whether or not the window should be hidden.
+		 */
+		void set_hidden(bool hidden);
+
+		/**
+		 * Gets the ID of the window.
+		 * @return The ID of the window.
+		 */
+		int id() const;
+
+		/**
+		 * Gets the window's framebuffer.
+		 * @return The framebuffer of the window.
+		 */
+		Image framebuffer() const;
+
+		/**
+		 * Gets the current mouse buttons of the window.
+		 * @return The current mouse buttons of the window.
+		 */
+		unsigned int mouse_buttons() const;
+
+		/**
+		 * Gets the current position of the mouse in the window.
+		 * @return The current position of the mouse in the window.
+		 */
+		Point mouse_pos() const;
+
+	private:
+		friend class Context;
+
+		Window(int id, Rect rect, struct shm shm, Context* ctx);
+
+		int _id = -1; ///< The ID of the window.
+		Rect _rect; ///< The rect of the window.
+		int _shm_id = 0; ///< The shared memory ID of the window's framebuffer.
+		Point _mouse_pos = {-1, -1}; ///< The position of the mouse inside the window.
+		unsigned int _mouse_buttons = 0; ///< A bitfield containing the last-known pressed mouse buttons inside the window.
+		bool _hidden = true; ///< Whether or not the window is hidden.
+		Image _framebuffer; ///< The window's framebuffer.
+		Context* _context = nullptr; ///< The context associated with the window.
 	};
 }
 

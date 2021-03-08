@@ -42,26 +42,22 @@
 #define PPKT_WINDOW_TO_FRONT 19
 
 #include <cstdint>
+#include <libgraphics/geometry.h>
 
 struct POpenWindowPkt {
-	explicit POpenWindowPkt(int parent, int width, int height, int x, int y): parent(parent), width(width), height(height), x(x), y(y) {}
+	explicit POpenWindowPkt(int parent, Rect rect, bool hidden): parent(parent), rect(rect), hidden(hidden) {}
 	short _PACKET_ID = PPKT_OPEN_WINDOW;
 	int parent;
-	int width;
-	int height;
-	int x;
-	int y;
+	Rect rect;
+	bool hidden;
 };
 
 struct PWindowOpenedPkt {
 	explicit PWindowOpenedPkt(int window_id): window_id(window_id) {}
-	explicit PWindowOpenedPkt(int window_id, int x, int y, int width, int height, int shm_id): window_id(window_id), x(x), y(y), width(width), height(height), shm_id(shm_id) {}
+	explicit PWindowOpenedPkt(int window_id, Rect rect, int shm_id): window_id(window_id), rect(rect), shm_id(shm_id) {}
 	short _PACKET_ID = PPKT_WINDOW_OPENED;
 	int window_id = -1;
-	int x = -1;
-	int y = -1;
-	int width = -1;
-	int height = -1;
+	Rect rect;
 	int shm_id = -1;
 };
 
@@ -78,58 +74,48 @@ struct PWindowDestroyedPkt {
 };
 
 struct PMoveWindowPkt {
-	explicit PMoveWindowPkt(int window_id, int x, int y): window_id(window_id), x(x), y(y) {}
+	explicit PMoveWindowPkt(int window_id, Point pos): window_id(window_id), pos(pos) {}
 	short _PACKET_ID = PPKT_MOVE_WINDOW;
 	int window_id;
-	int x;
-	int y;
+	Point pos;
 };
 
 struct PWindowMovedPkt {
-	explicit PWindowMovedPkt(int window_id, int x, int y): window_id(window_id), x(x), y(y) {}
+	explicit PWindowMovedPkt(int window_id, Point pos): window_id(window_id), pos(pos) {}
 	short _PACKET_ID = PPKT_WINDOW_MOVED;
 	int window_id;
-	int x;
-	int y;
+	Point pos;
 };
 
 struct PResizeWindowPkt {
-	explicit PResizeWindowPkt(int window_id, int width, int height): window_id(window_id), width(width), height(height) {}
+	explicit PResizeWindowPkt(int window_id, Dimensions dims): window_id(window_id), dims(dims) {}
 	short _PACKET_ID = PPKT_RESIZE_WINDOW;
 	int window_id;
-	int width;
-	int height;
+	Dimensions dims;
 };
 
 struct PWindowResizedPkt {
-	explicit PWindowResizedPkt(int window_id, int width, int height, int shm_id): window_id(window_id), width(width), height(height), shm_id(shm_id) {}
+	explicit PWindowResizedPkt(int window_id, Dimensions dims, int shm_id): window_id(window_id), dims(dims), shm_id(shm_id) {}
 	short _PACKET_ID = PPKT_WINDOW_RESIZED;
 	int window_id;
-	int width;
-	int height;
+	Dimensions dims;
 	int shm_id;
 };
 
 struct PInvalidatePkt {
-	explicit PInvalidatePkt(int window_id, int x, int y, int width, int height): window_id(window_id), x(x), y(y), width(width), height(height) {}
+	explicit PInvalidatePkt(int window_id, Rect area): window_id(window_id), area(area) {}
 	short _PACKET_ID = PPKT_INVALIDATE_WINDOW;
 	int window_id;
-	int x;
-	int y;
-	int width;
-	int height;
+	Rect area;
 };
 
 struct PMouseMovePkt {
-	explicit PMouseMovePkt(int window_id, int dx, int dy, int rx, int ry, int ax, int ay): window_id(window_id), delta_x(dx), delta_y(dy), relative_x(rx), relative_y(ry), absolute_x(ax), absolute_y(ay) {}
+	explicit PMouseMovePkt(int window_id, Point del, Point rel, Point abs): window_id(window_id), delta(del), relative(rel), absolute(abs) {}
 	short _PACKET_ID = PPKT_MOUSE_MOVE;
 	int window_id;
-	int delta_x;
-	int delta_y;
-	int relative_x;
-	int relative_y;
-	int absolute_x;
-	int absolute_y;
+	Point delta;
+	Point relative;
+	Point absolute;
 };
 
 struct PMouseButtonPkt {

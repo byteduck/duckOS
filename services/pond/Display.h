@@ -114,6 +114,12 @@ public:
 	 */
 	int keyboard_fd();
 
+	/**
+	 * Called when a window is hidden.
+	 * @param window The window that was hidden.
+	 */
+	void window_hidden(Window* window);
+
 	static Display& inst();
 
 

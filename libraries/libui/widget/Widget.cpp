@@ -28,13 +28,13 @@ Dimensions Widget::preferred_size() {
 
 Dimensions Widget::current_size() {
 	if(!_initialized_size)
-		_size = preferred_size();
-	return _size;
+		_rect.set_dimensions(preferred_size());
+	return _rect.dimensions();
 }
 
 void Widget::repaint() {
 	if(_window) {
-		do_repaint(_window->framebuffer);
+		do_repaint(_window->framebuffer());
 		_window->invalidate();
 	}
 }
@@ -78,11 +78,21 @@ void Widget::add_child(Widget* child) {
 void Widget::set_position(const Point& position) {
 	if(_window)
 		_window->set_position(position.x, position.y);
-	_position = position;
+	_rect.set_position(position);
 }
 
 Point Widget::position() {
-	return _position;
+	return _rect.position();
+}
+
+void Widget::hide() {
+	if(_window)
+		_window->set_hidden(true);
+}
+
+void Widget::show() {
+	if(_window)
+		_window->set_hidden(false);
 }
 
 void Widget::set_window(UI::Window* window) {
@@ -90,9 +100,9 @@ void Widget::set_window(UI::Window* window) {
 		return;
 
 	_parent_window = window;
-	_size = preferred_size();
-	_window = pond_context->create_window(window->_window, _position.x, _position.y, _size.width, _size.height);
-	__register_widget(this, _window->id);
+	_rect.set_dimensions(preferred_size());
+	_window = pond_context->create_window(window->_window, _rect, false);
+	__register_widget(this, _window->id());
 	repaint();
 	for(auto& child : children)
 		child->parent_window_created();
@@ -105,9 +115,9 @@ void Widget::set_parent(UI::Widget* widget) {
 	_parent = widget;
 
 	if(widget->_window) {
-		_size = preferred_size();
-		_window = pond_context->create_window(widget->_window, _position.x, _position.y, _size.width, _size.height);
-		__register_widget(this, _window->id);
+		_rect.set_dimensions(preferred_size());
+		_window = pond_context->create_window(widget->_window, _rect, false);
+		__register_widget(this, _window->id());
 		repaint();
 		for(auto& child : children)
 			child->parent_window_created();
@@ -115,10 +125,10 @@ void Widget::set_parent(UI::Widget* widget) {
 }
 
 void Widget::update_size() {
-	_size = preferred_size();
+	_rect.set_dimensions(preferred_size());
 
 	if(_window) {
-		_window->resize(_size.width, _size.height);
+		_window->resize(_rect.dimensions());
 		repaint();
 	}
 
@@ -126,7 +136,7 @@ void Widget::update_size() {
 		_parent->update_size();
 
 	if(_parent_window)
-		_parent_window->resize(_size.width, _size.height);
+		_parent_window->resize(_rect.dimensions());
 }
 
 void Widget::do_repaint(const DrawContext& framebuffer) {
@@ -134,9 +144,9 @@ void Widget::do_repaint(const DrawContext& framebuffer) {
 }
 
 void Widget::parent_window_created() {
-	_size = preferred_size();
-	_window = pond_context->create_window(_parent ? _parent->_window : _parent_window->_window, _position.x, _position.y, _size.width, _size.height);
-	__register_widget(this, _window->id);
+	_rect.set_dimensions(preferred_size());
+	_window = pond_context->create_window(_parent ? _parent->_window : _parent_window->_window, _rect, false);
+	__register_widget(this, _window->id());
 	repaint();
 	for(auto& child : children)
 		child->parent_window_created();

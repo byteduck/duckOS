@@ -53,6 +53,9 @@ int main(int argc, char** argv, char** envp) {
 	mainview->add_child(gamewidget);
 	mainview->add_child(toolbar);
 
+	//Show the main window
+	window->show();
+
 	//Run event loop
 	UI::run();
 

@@ -56,26 +56,21 @@ namespace Pond {
 
 	struct WindowMoveEvent {
 		int type; ///< Equal to PEVENT_WINDOW_MOVE
-		int old_x; ///< The previous x position of the window
-		int old_y; ///< The previous y position of the window
+		Point old_pos; ///< The previous position of the window
 		Window* window; ///< The window that moved
 	};
 
 	struct WindowResizeEvent {
 		int type; ///< Equal to PEVENT_WINDOW_RESIZE
-		int old_width; ///< The previous width of the window
-		int old_height; ///< The previous height of the window
+		Dimensions old_dims; ///< The previous dimensions of the window
 		Window* window; ///< The window that was resized
 	};
 
 	struct MouseMoveEvent {
 		int type; ///< Equal to PEVENT_MOUSE_MOVE
-		int delta_x; ///< The change in x position of the mouse.
-		int delta_y; ///< The change in y position of the mouse.
-		int new_x; ///< The new relative x position of the mouse.
-		int new_y; ///< The new relative y position of the mouse.
-		int abs_x; ///< The absolute x position of the mouse relative to the display.
-		int abs_y; ///< The absolute y position of the mouse relative to the display.
+		Point delta; ///< The change in position of the mouse.
+		Point new_pos; ///< The new position of the mouse.
+		Point abs_pos; ///< The absolute position of the mouse relative to the display.
 		Window* window;
 	};
 
@@ -88,8 +83,7 @@ namespace Pond {
 
 	struct MouseLeaveEvent {
 		int type; ///< Equal to PEVENT_MOUSE_LEAVE
-		int last_x; ///< The last relative x position of the mouse in the window.
-		int last_y; ///< The last relative y position of the mouse in the window.
+		Point last_pos; ///< The last relative position of the mouse in the window.
 		Window* window;
 	};
 

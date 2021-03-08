@@ -36,6 +36,9 @@ int main(int argc, char** argv, char** envp) {
 	termwidget->run("/bin/dsh");
 	window->set_contents(termwidget);
 
+	//Show the window
+	window->show();
+
 	//Run event loop
 	UI::run();
 

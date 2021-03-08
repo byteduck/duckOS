@@ -23,9 +23,8 @@
 
 using namespace UI;
 
-Window::Window() {
-	_window = pond_context->create_window(nullptr, -1, -1, 1, 1);
-	UI::__register_window(this, _window->id);
+Window::Window(): _window(pond_context->create_window(nullptr, {-1, -1, -1, -1}, true)) {
+	UI::__register_window(this, _window->id());
 	_window->set_draggable(true);
 }
 
@@ -33,41 +32,31 @@ Window* Window::create() {
 	return new Window();
 }
 
-void Window::resize(int width, int height) {
-	_window->resize(UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2 + width, UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3 + height);
+void Window::resize(Dimensions dims) {
+	_window->resize({
+		UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2 + dims.width,
+		UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3 + dims.height
+	});
 	repaint();
 }
 
-int Window::width() {
-	return _window->width;
+Dimensions Window::dimensions() {
+	return _window->dimensions();
 }
 
-int Window::height() {
-	return _window->height;
+void Window::set_position(Point pos) {
+	_window->set_position(pos);
 }
 
-void Window::set_position(int x, int y) {
-	_window->set_position(x, y);
-}
-
-int Window::x_position() {
-	return _window->x;
-}
-
-int Window::y_position() {
-	return _window->y;
-}
-
-void Window::bring_to_front() {
-	_window->bring_to_front();
+Point Window::position() {
+	return _window->position();
 }
 
 void Window::set_contents(Widget* contents) {
 	_contents = contents;
 	_contents->set_window(this);
 	_contents->_window->set_position(UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING, UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2);
-	Dimensions contents_size = _contents->current_size();
-	resize(contents_size.width, contents_size.height);
+	resize(_contents->current_size());
 }
 
 Widget* Window::contents() {
@@ -83,8 +72,12 @@ std::string Window::title() {
 	return _title;
 }
 
+void Window::bring_to_front() {
+	_window->bring_to_front();
+}
+
 void Window::repaint() {
-	auto& framebuffer = _window->framebuffer;
+	auto framebuffer = _window->framebuffer();
 	auto ctx = DrawContext(framebuffer);
 	Color color = Theme::window();
 
@@ -120,6 +113,14 @@ void Window::close() {
 	_window->destroy();
 }
 
+void Window::show() {
+	_window->set_hidden(false);
+}
+
+void Window::hide() {
+	_window->set_hidden(true);
+}
+
 Pond::Window* Window::pond_window() {
 	return _window;
 }
@@ -130,7 +131,7 @@ void Window::on_keyboard(Pond::KeyEvent evt) {
 }
 
 void Window::on_mouse_move(Pond::MouseMoveEvent evt) {
-	_mouse = {evt.new_x, evt.new_y};
+	_mouse = evt.new_pos;
 	if(_close_button.pressed && !_mouse.in(_close_button.area)) {
 		_close_button.pressed = false;
 		_window->set_draggable(true);

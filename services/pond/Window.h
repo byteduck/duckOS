@@ -31,7 +31,7 @@ class Display;
 class Client;
 class Window {
 public:
-	Window(Window* parent, const Rect& rect);
+	Window(Window* parent, const Rect& rect, bool hidden);
 	explicit Window(Display* display);
 	~Window();
 
@@ -143,6 +143,16 @@ public:
 	bool draggable();
 
 	/**
+	 * Sets whether or not the window is hidden.
+	 */
+	void set_hidden(bool hidden);
+
+	/**
+	 * Whether the window or any of its parents are hidden.
+	 */
+	bool hidden();
+
+	/**
 	 * Handles a number of keyboard events for this window.
 	 * @param event The event to handle.
 	 */
@@ -187,6 +197,7 @@ private:
 	bool _global_mouse = false;
 	bool _draggable = false;
 	char* _title = nullptr;
+	bool _hidden = true;
 
 	static int current_id;
 };

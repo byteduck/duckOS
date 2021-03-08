@@ -69,7 +69,7 @@ void GameWidget::do_repaint(const UI::DrawContext& ctx) {
 }
 
 bool GameWidget::on_mouse_move(Pond::MouseMoveEvent evt) {
-	int new_hovered_cell = evt.new_x / CELL_SIZE;
+	int new_hovered_cell = evt.new_pos.x / CELL_SIZE;
 	if(new_hovered_cell != hovered_cell.x) {
 		int row = ROWS;
 		for(int i = ROWS - 1; i >= 0; i--) {

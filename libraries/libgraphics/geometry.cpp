@@ -59,12 +59,22 @@ bool Point::operator==(const Point& other) const {
 }
 
 
-Point Rect::position() {
+Point Rect::position() const {
 	return {x, y};
 }
 
-Dimensions Rect::dimensions() {
+void Rect::set_position(Point pos) {
+	x = pos.x;
+	y = pos.y;
+}
+
+Dimensions Rect::dimensions() const {
 	return {width, height};
+}
+
+void Rect::set_dimensions(Dimensions dims) {
+	width = dims.width;
+	height = dims.height;
 }
 
 bool Rect::collides(const Rect& other) const {

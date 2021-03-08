@@ -108,6 +108,16 @@ namespace UI {
 		 */
 		 Point position();
 
+		 /**
+		  * Hides the widget.
+		  */
+		 void hide();
+
+		 /**
+		  * Shows the widget.
+		  */
+		 void show();
+
 	protected:
 		friend class Window;
 
@@ -145,8 +155,7 @@ namespace UI {
 		UI::Widget* _parent = nullptr;
 		UI::Window* _parent_window = nullptr;
 		Pond::Window* _window = nullptr;
-		Point _position = {0, 0};
-		Dimensions _size = {-1, -1};
+		Rect _rect = {0, 0, -1, -1};
 		bool _initialized_size = false;
 
 		void parent_window_created();

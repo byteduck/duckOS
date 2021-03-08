@@ -36,26 +36,27 @@ namespace UI {
 	public:
 		static Window* create();
 
-		void resize(int width, int height);
-		int width();
-		int height();
-
-		void set_position(int x, int y);
-		int x_position();
-		int y_position();
-		void bring_to_front();
-
+		///Getters and setters
+		void resize(Dimensions dims);
+		Dimensions dimensions();
+		void set_position(Point pos);
+		Point position();
 		void set_contents(Widget* contents);
 		Widget* contents();
-
 		void set_title(const std::string& title);
 		std::string title();
 
+		///Window management
+		void bring_to_front();
 		void repaint();
 		void close();
+		void show();
+		void hide();
 
+		///Pond
 		Pond::Window* pond_window();
 
+		///Events
 		void on_keyboard(Pond::KeyEvent evt);
 		void on_mouse_move(Pond::MouseMoveEvent evt);
 		void on_mouse_button(Pond::MouseButtonEvent evt);

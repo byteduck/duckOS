@@ -50,7 +50,7 @@ struct shm {
 	void* ptr;
 	size_t size;
 	int id;
-};
+} __attribute__((aligned(16)));
 
 /**
  * Allocates an area of memory that can be shared. Child processes created with fork() will automatically have access.

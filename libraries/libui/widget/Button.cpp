@@ -38,13 +38,13 @@ void Button::set_label(const std::string& new_label) {
 }
 
 bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
-	if(!(evt.old_buttons & POND_MOUSE1) && evt.window->mouse_buttons & POND_MOUSE1) {
+	if(!(evt.old_buttons & POND_MOUSE1) && evt.window->mouse_buttons() & POND_MOUSE1) {
 		_pressed = true;
 		if(on_pressed)
 			on_pressed();
 		repaint();
 		return true;
-	} else if(evt.old_buttons & POND_MOUSE1 && !(evt.window->mouse_buttons & POND_MOUSE1)){
+	} else if(evt.old_buttons & POND_MOUSE1 && !(evt.window->mouse_buttons() & POND_MOUSE1)){
 		_pressed = false;
 		if(on_released)
 			on_released();

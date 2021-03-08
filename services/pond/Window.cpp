@@ -25,7 +25,7 @@
 
 int Window::current_id = 0;
 
-Window::Window(Window* parent, const Rect& rect): _parent(parent), _rect(rect), _display(parent->_display), _id(++current_id) {
+Window::Window(Window* parent, const Rect& rect, bool hidden): _parent(parent), _rect(rect), _display(parent->_display), _id(++current_id), _hidden(hidden) {
 	alloc_framebuffer();
 	_parent->_children.push_back(this);
 	_display->add_window(this);
@@ -129,11 +129,13 @@ void Window::set_position(const Point& position) {
 }
 
 void Window::invalidate() {
-	_display->invalidate(_visible_absolute_rect);
+	if(!hidden())
+		_display->invalidate(_visible_absolute_rect);
 }
 
 void Window::invalidate(const Rect& area) {
-	//TODO: Check if there's an overlap between already invalidated areas
+	if(hidden())
+		return;
 	if(_parent)
 		_display->invalidate(area.transform(_absolute_rect.position()).overlapping_area(_parent->_absolute_rect));
 	else
@@ -188,6 +190,23 @@ void Window::set_draggable(bool draggable) {
 
 bool Window::draggable() {
 	return _draggable;
+}
+
+void Window::set_hidden(bool hidden) {
+	if(hidden == _hidden)
+		return;
+	_hidden = hidden;
+	_display->invalidate(_visible_absolute_rect);
+	_display->window_hidden(this);
+}
+
+bool Window::hidden() {
+	if(_hidden)
+		return true;
+	else if(_parent)
+		return _parent->hidden();
+	else
+		return false;
 }
 
 void Window::handle_keyboard_event(const KeyboardEvent& event) {
@@ -253,6 +272,9 @@ void Window::set_hint(int hint, int value) {
 			break;
 		case PWINDOW_HINT_DRAGGABLE:
 			set_draggable(value);
+			break;
+		case PWINDOW_HINT_HIDDEN:
+			set_hidden(value);
 			break;
 		default:
 			fprintf(stderr, "pond: Unknown window hint %d!\n", hint);
