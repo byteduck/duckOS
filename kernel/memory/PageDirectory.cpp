@@ -74,6 +74,8 @@ void PageDirectory::map_kernel(MemoryRegion* kernel_pmem_region) {
 	kernel_vmem_map.recalculate_memory_totals();
 	used_kernel_pmem = early_vmem_regions[0].size;
 
+	kernel_pmem_region->related = &early_vmem_regions[0];
+	early_vmem_regions[0].related = kernel_pmem_region;
 	LinkedMemoryRegion kregion(kernel_pmem_region, &early_vmem_regions[0]);
 
 	k_map_region(kregion, true);
@@ -133,6 +135,8 @@ LinkedMemoryRegion PageDirectory::k_alloc_region(size_t mem_size) {
 	used_kernel_pmem += pmem_region->size;
 
 	//Finally, map the pages.
+	pmem_region->related = vmem_region;
+	vmem_region->related = pmem_region;
 	LinkedMemoryRegion region(pmem_region, vmem_region);
 	k_map_region(region, true);
 
@@ -163,6 +167,8 @@ void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
 	used_kernel_pmem += pmem_region->size;
 
 	//Finally, map the pages and zero out.
+	pmem_region->related = vmem_region;
+	vmem_region->related = pmem_region;
 	LinkedMemoryRegion region(pmem_region, vmem_region);
 	k_map_region(region, true);
 	memset((void*)vmem_region->start, 0x00, vmem_region->size);
@@ -217,6 +223,7 @@ void* PageDirectory::k_mmap(size_t physaddr, size_t memsize, bool read_write) {
 	}
 
 	//Next, map the pages
+	vregion->related = &pregion;
 	LinkedMemoryRegion region(&pregion, vregion);
 	k_map_region(region, read_write);
 
@@ -250,7 +257,7 @@ size_t PageDirectory::Entry::Data::get_address() {
  */
 
 
-PageDirectory::PageDirectory(): _vmem_map(PAGE_SIZE, new MemoryRegion(PAGE_SIZE, HIGHER_HALF)) {
+PageDirectory::PageDirectory(): _vmem_map(PAGE_SIZE, new MemoryRegion(PAGE_SIZE, HIGHER_HALF - PAGE_SIZE)) {
 	_entries = (Entry*) k_alloc_region(PAGE_SIZE).virt->start;
 	update_kernel_entries();
 }
@@ -325,7 +332,7 @@ void PageDirectory::map_region(const LinkedMemoryRegion& region, bool read_write
 void PageDirectory::unmap_region(const LinkedMemoryRegion& region) {
 	MemoryRegion* vregion = region.virt;
 	size_t num_pages = vregion->size / PAGE_SIZE;
-	size_t start_page = vregion->start/ PAGE_SIZE;
+	size_t start_page = vregion->start / PAGE_SIZE;
 	for(auto page = start_page; page < start_page + num_pages; page++) {
 		size_t directory_index = (page / 1024) % 1024;
 		size_t table_index = page % 1024;
@@ -378,6 +385,8 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t mem_size, bool read_wri
 	_used_pmem += pmem_region->size;
 
 	//Finally, map the pages.
+	pmem_region->related = vmem_region;
+	vmem_region->related = pmem_region;
 	LinkedMemoryRegion region(pmem_region, vmem_region);
 	map_region(region, read_write);
 
@@ -400,6 +409,8 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size,
 	_used_pmem += pmem_region->size;
 
 	//Finally, map the pages.
+	pmem_region->related = vmem_region;
+	vmem_region->related = pmem_region;
 	LinkedMemoryRegion region(pmem_region, vmem_region);
 	map_region(region, read_write);
 
@@ -435,9 +446,12 @@ bool PageDirectory::free_region(size_t virtaddr, size_t size) {
 	//Find the appropriate region
 	MemoryRegion* vregion = _vmem_map.find_region(virtaddr);
 	if(!vregion) return false;
+	if(!vregion->used) return false;
+	if(vregion->is_shm) return false;
 	if(!vregion->related) PANIC("VREGION_NO_RELATED", "A virtual program memory region had no corresponding physical region.", true);
 
 	auto* pregion = vregion->related;
+	if(pregion->is_shm) return false;
 	if(pregion->reserved) return false;
 	if(!vregion->cow.marked_cow) {
 		//Split the physical region if it isn't CoW
@@ -448,7 +462,8 @@ bool PageDirectory::free_region(size_t virtaddr, size_t size) {
 
 	//Split the virtual region
 	vregion = _vmem_map.split_region(vregion, virtaddr, size);
-	if(!vregion) PANIC("VREGION_SPLIT_FAIL", "A virtual program memory region couldn't be split after its physical region was split.", true);
+	if(!vregion)
+		PANIC("VREGION_SPLIT_FAIL", "A virtual program memory region couldn't be split after its physical region was split.", true);
 
 	//Unmap and free the regions
 	LinkedMemoryRegion region(pregion, vregion);
@@ -471,6 +486,7 @@ void* PageDirectory::mmap(size_t physaddr, size_t memsize, bool read_write) {
 	vregion->reserved = true;
 
 	//Next, map the pages
+	vregion->related = &pregion;
 	LinkedMemoryRegion region(&pregion, vregion);
 	map_region(region, read_write);
 
@@ -553,6 +569,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 	vmem_region->shm_id = id;
 
 	//Finally, map the region and increase the reference count
+	vmem_region->related = pmem_region;
 	LinkedMemoryRegion linked_region(pmem_region, vmem_region);
 	map_region(linked_region, write);
 	pmem_region->shm_ref();
@@ -764,6 +781,9 @@ bool PageDirectory::try_cow(size_t virtaddr) {
 	//Reduce reference count of physical region and map new physical region to virtual region
 	region->related->cow_deref();
 	region->cow.marked_cow = false;
+
+	region->related = tmp_region.phys;
+	tmp_region.phys->related = region;
 	LinkedMemoryRegion new_region(tmp_region.phys, region);
 	map_region(new_region, true);
 	_used_pmem += tmp_region.phys->size;

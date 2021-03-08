@@ -21,9 +21,6 @@
 #include "LinkedMemoryRegion.h"
 
 LinkedMemoryRegion::LinkedMemoryRegion(MemoryRegion* phys, MemoryRegion* virt): phys(phys), virt(virt) {
-	if(phys && virt) ASSERT(virt->size == phys->size);
-	if(phys)
-		phys->related = virt;
-	if(virt)
-		virt->related = phys;
+	if(phys && virt)
+		ASSERT(virt->size == phys->size);
 }

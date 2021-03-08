@@ -132,6 +132,8 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, DC::vector<elf32_segmen
 			PageDirectory::kernel_vmem_map.free_region(tmp_region.virt);
 
 			//Map the physical region to the program's vmem region
+			vmem_region->related = tmp_region.phys;
+			tmp_region.phys->related = vmem_region;
 			LinkedMemoryRegion prog_region(tmp_region.phys, vmem_region);
 			page_directory->map_region(prog_region, header.p_flags & ELF_PF_W);
 
