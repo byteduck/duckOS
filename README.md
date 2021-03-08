@@ -54,6 +54,7 @@ The code for these can be found in [programs](programs/).
 - chmod (/bin/chmod): Changes the mode of a file.
 - chown (/bin/chown): Changes the owner of a file.
 - free (/bin/free): Shows the amount of total, used, and free memory (use the -h flag for human-readable numbers).
+- ps (/bin/ps): Shows the currently running processes.
 - dsh (/bin/dsh): A basic userspace shell with support for pipes (`|`) and redirections (`>`/`>>`).
   - There is only support for one redirection at a time right now.
 

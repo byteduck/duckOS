@@ -1,0 +1,2 @@
+SET(SOURCES main.cpp)
+MAKE_PROGRAM(ps)
