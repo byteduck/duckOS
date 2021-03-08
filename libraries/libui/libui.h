@@ -34,6 +34,7 @@ namespace UI {
 
 	void init(char** argv, char** envp);
 	void run();
+	void update(int timeout);
 
 	void add_poll(const Poll& poll);
 

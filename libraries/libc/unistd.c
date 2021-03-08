@@ -20,6 +20,8 @@
 #include <sys/syscall.h>
 #include <assert.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
+#include <termios.h>
 
 char** environ = NULL;
 
@@ -215,6 +217,14 @@ char* getwd(char* buf) {
 int sleep(unsigned secs) {
 	//TODO
 	return -1;
+}
+
+pid_t tcgetpgrp(int fd) {
+	return ioctl(fd, TIOCGPGRP);
+}
+
+int tcsetpgrp(int fd, pid_t pgid) {
+	return ioctl(fd, TIOCSPGRP, pgid);
 }
 
 void _exit(int status) {

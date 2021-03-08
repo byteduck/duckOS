@@ -17,32 +17,16 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <libgraphics/font.h>
-#include <libui/libui.h>
-#include <libui/widget/StackView.h>
-#include <libui/widget/Button.h>
-#include "TerminalWidget.h"
+#ifndef DUCKOS_COMMON_KEYBOARD_H
+#define DUCKOS_COMMON_KEYBOARD_H
 
-int main(int argc, char** argv, char** envp) {
-	//Init LibUI
-	UI::init(argv, envp);
+#define KBD_MOD_NONE 0x0u
+#define KBD_MOD_ALT 0x1u
+#define KBD_MOD_CTRL 0x2u
+#define KBD_MOD_SHIFT 0x4u
+#define KBD_MOD_SUPER 0x8u
+#define KBD_MOD_ALTGR 0x10u
+#define KBD_MOD_MASK 0x1Fu
+#define KBD_ISPRESSED(evt) (!((evt).scancode & 0x80u))
 
-	//Make window
-	auto* window = UI::Window::create();
-	window->set_title("Terminal");
-
-	//Create terminal widget
-	auto* termwidget = new TerminalWidget();
-	termwidget->run("/bin/dsh");
-	window->set_contents(termwidget);
-
-	//Show the window
-	window->show();
-
-	//Run event loop
-	UI::run();
-
-	delete termwidget;
-
-	return 0;
-}
+#endif //DUCKOS_COMMON_KEYBOARD_H

@@ -29,7 +29,7 @@ ssize_t PTYControllerDevice::write(FileDescriptor& fd, size_t offset, const uint
 		return 0;
 	LOCK(_write_lock);
 	while(count--)
-		_pty->putchar(*(buffer++));
+		_pty->emit(*(buffer++));
 	return count;
 }
 

@@ -17,32 +17,11 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <libgraphics/font.h>
-#include <libui/libui.h>
-#include <libui/widget/StackView.h>
-#include <libui/widget/Button.h>
-#include "TerminalWidget.h"
+#ifndef DUCKOS_LIBC_TERMIOS_H
+#define DUCKOS_LIBC_TERMIOS_H
 
-int main(int argc, char** argv, char** envp) {
-	//Init LibUI
-	UI::init(argv, envp);
+#define TIOCSCTTY 1
+#define TIOCGPGRP 2
+#define TIOCSPGRP 3
 
-	//Make window
-	auto* window = UI::Window::create();
-	window->set_title("Terminal");
-
-	//Create terminal widget
-	auto* termwidget = new TerminalWidget();
-	termwidget->run("/bin/dsh");
-	window->set_contents(termwidget);
-
-	//Show the window
-	window->show();
-
-	//Run event loop
-	UI::run();
-
-	delete termwidget;
-
-	return 0;
-}
+#endif //DUCKOS_LIBC_TERMIOS_H

@@ -26,6 +26,7 @@
 class TerminalWidget: public UI::Widget, public Terminal::Listener {
 public:
 	TerminalWidget();
+	~TerminalWidget();
 
 	//Widget
 	Dimensions preferred_size() override;
@@ -43,11 +44,13 @@ public:
 	void on_clear_line(size_t line) override;
 	void on_scroll(size_t lines) override;
 	void on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) override;
+	void emit(const uint8_t* data, size_t size);
 
 private:
 	Font* font = nullptr;
 	Terminal* term = nullptr;
 	int pty_fd = -1;
+	pid_t proc_pid = -1;
 
 	struct TerminalEvent {
 		enum type {CHARACTER, CLEAR, CLEAR_LINE, SCROLL} type;

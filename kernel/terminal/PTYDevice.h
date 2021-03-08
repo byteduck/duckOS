@@ -40,6 +40,7 @@ public:
 private:
 	//TTYDevice
 	size_t tty_write(const uint8_t* chars, size_t count) override;
+	void echo(uint8_t c) override;
 
 	PTYControllerDevice* _controller;
 	DC::string _name;

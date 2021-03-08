@@ -81,6 +81,28 @@ void Terminal::backspace() {
 	listener.on_backspace(cursor_position);
 }
 
+void Terminal::handle_keypress(uint16_t keycode, uint32_t codepoint, uint8_t modifiers) {
+	if(modifiers & KBD_MOD_CTRL) {
+		//Send ctrl codepoint
+		if(codepoint >= 'a' && codepoint <= 'z')
+			codepoint -= ('a' - 1);
+	}
+
+	if(modifiers & KBD_MOD_ALT)
+		emit_str("\033");
+
+	if(!codepoint)
+		return;
+
+	//TODO Unicode
+	char str[2] = {(char) codepoint, '\0'};
+	emit_str(str);
+}
+
+void Terminal::emit_str(const char* str) {
+	listener.emit((const uint8_t*) str, strlen(str));
+}
+
 void Terminal::write_char(char c) {
 	write_codepoint((uint32_t) c);
 }

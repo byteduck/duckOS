@@ -93,6 +93,10 @@ pid_t Process::ppid() {
 	return _ppid;
 }
 
+void Process::set_ppid(pid_t ppid) {
+	_ppid = ppid;
+}
+
 pid_t Process::sid() {
 	return _sid;
 }
@@ -111,6 +115,10 @@ DC::string Process::exe() {
 
 DC::shared_ptr<LinkedInode> Process::cwd() {
 	return _cwd;
+}
+
+void Process::set_tty(TTYDevice* tty) {
+	_tty = tty;
 }
 
 int Process::exit_status() {
@@ -318,7 +326,8 @@ void Process::reap() {
 
 void Process::kill(int signal) {
 	pending_signals.push(signal);
-	if(TaskManager::current_process() == this) TaskManager::yield();
+	if(TaskManager::current_process() == this)
+		TaskManager::yield();
 }
 
 void Process::die_silently() {
@@ -341,8 +350,10 @@ bool Process::handle_pending_signal() {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
 			free_resources();
 			Process* parent = TaskManager::process_for_pid(_ppid);
-			if(parent && parent != this) parent->kill(SIGCHLD);
+			if(parent && parent != this)
+				parent->kill(SIGCHLD);
 			state = PROCESS_ZOMBIE;
+			TaskManager::reparent_orphans(this);
 		} else if(signal_actions[signal].action) {
 			//Otherwise, have the process handle the signal
 			call_signal_handler(signal);
@@ -898,7 +909,7 @@ int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
 
 	//Validate specified pid
 	Process* proc = pid ? TaskManager::process_for_pid(pid) : this;
-	if(!proc || proc->_pid != _pid || proc->_ppid != _pid) return -ESRCH; //Process doesn't exist or is not self or child
+	if(!proc || (proc->_pid != _pid && proc->_ppid != _pid)) return -ESRCH; //Process doesn't exist or is not self or child
 	if(proc->_ppid == _pid && proc->_sid != _sid) return -EPERM; //Process is a child but not in the same session
 	if(proc->_pid == proc->_sid) return -EPERM; //Process is session leader
 
@@ -911,7 +922,7 @@ int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
 	}
 	if(new_sid != _sid) return -EPERM;
 
-	_pgid = new_pgid;
+	proc->_pgid = new_pgid;
 	return SUCCESS;
 }
 

@@ -98,6 +98,9 @@ char* getwd(char* buf);
 
 int sleep(unsigned secs);
 
+pid_t tcgetpgrp(int fd);
+int tcsetpgrp(int fd, pid_t pgid);
+
 void _exit(int status);
 
 __DECL_END

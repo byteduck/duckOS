@@ -36,7 +36,7 @@ struct stat st;
 int current_pipefd[2] = {-1, -1}, prev_pipefd[2] = {-1, -1};
 
 int evaluate_input(char* input);
-pid_t evaluate_command(int argc, char** argv, int outfd);
+pid_t evaluate_command(int argc, char** argv, int outfd, bool is_first, pid_t first_pid);
 bool evaluate_builtin(int argc, char** argv);
 
 #pragma clang diagnostic push
@@ -44,6 +44,7 @@ bool evaluate_builtin(int argc, char** argv);
 int main() {
 	int res = 0;
 	bool stdinistty = isatty(STDIN_FILENO);
+	setsid();
 	while(true) {
 		getcwd(cwd, 4096);
 		char* color_code = res ? "31" : "39";
@@ -127,7 +128,7 @@ int evaluate_input(char* input) {
 
 		//If this isn't a builtin command, run the command
 		if(!evaluate_builtin(argc, args))
-			pids[pidc++] = evaluate_command(argc, args, outfd);
+			pids[pidc++] = evaluate_command(argc, args, outfd, i == 0, pids[0]);
 	}
 
 	//Close the reading end of the current pipe since we don't need it anymore
@@ -146,7 +147,7 @@ int evaluate_input(char* input) {
 	return res;
 }
 
-pid_t evaluate_command(int argc, char** argv, int outfd) {
+pid_t evaluate_command(int argc, char** argv, int outfd, bool is_first, pid_t first_pid) {
 	pid_t pid = fork();
 	if(!pid) {
 		//If there's a previous pipe to read from, use it for stdin
@@ -160,6 +161,16 @@ pid_t evaluate_command(int argc, char** argv, int outfd) {
 		execvp(argv[0], argv);
 		perror("Cannot execute");
 		exit(errno);
+	}
+
+	pid_t pgid = is_first ? pid : first_pid;
+	if(setpgid(pid, pgid) < 0)
+		perror("setpgid");
+	if(is_first) {
+		if(tcsetpgrp(STDOUT_FILENO, pgid) < 0)
+			perror("tcsetpgrp(stdout)");
+		if(tcsetpgrp(STDIN_FILENO, pgid) < 0)
+			perror("tcsetpgrp(stdin)");
 	}
 
 	//Close the writing end of the current pipe (if there is one) since we don't need it anymore

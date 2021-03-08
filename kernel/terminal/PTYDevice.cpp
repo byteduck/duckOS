@@ -66,3 +66,8 @@ size_t PTYDevice::tty_write(const uint8_t* chars, size_t count) {
 		return 0;
 	return _controller->putchars(chars, count);
 }
+
+void PTYDevice::echo(uint8_t c) {
+	if(_controller)
+		_controller->putchars(&c, 1);
+}

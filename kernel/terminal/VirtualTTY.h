@@ -47,6 +47,7 @@ private:
 
 	//TTYDevice
 	size_t tty_write(const uint8_t* buffer, size_t count) override;
+	void echo(uint8_t c) override;
 
 	//Terminal::Listener
 	void on_character_change(const Terminal::Position& position, const Terminal::Character& character) override;
@@ -56,6 +57,7 @@ private:
 	void on_clear_line(size_t line) override;
 	void on_scroll(size_t lines) override;
 	void on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) override;
+	void emit(const uint8_t* data, size_t size);
 
 	bool _active = false;
 };

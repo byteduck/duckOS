@@ -24,15 +24,7 @@
 
 __DECL_BEGIN
 
-#define KBD_MOD_NONE 0x0u
-#define KBD_MOD_ALT 0x1u
-#define KBD_MOD_CTRL 0x2u
-#define KBD_MOD_SHIFT 0x4u
-#define KBD_MOD_SUPER 0x8u
-#define KBD_MOD_ALTGR 0x10u
-#define KBD_MOD_MASK 0x1Fu
-
-#define KBD_ISPRESSED(evt) (!((evt).scancode & 0x80u))
+#include <sys/keyboard.h>
 
 struct mouse_event {
 	int x, y, z;

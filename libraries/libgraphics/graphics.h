@@ -65,6 +65,14 @@ public:
 	void copy(const Image& other, Rect other_area, const Point& pos) const;
 
 	/**
+	 * Copies a part of another Image to this one, ignoring alpha.
+	 * @param other The other Image to copy from.
+	 * @param other_area The area of the other Image to copy.
+	 * @param pos The position of this Image to copy to.
+	 */
+	void copy_noalpha(const Image& other, Rect other_area, const Point& pos) const;
+
+	/**
 	 * Copies a part of another Image to this one, with alpha blending.
 	 * @param other The other Image to copy from.
 	 * @param other_area The area of the other Image to copy.

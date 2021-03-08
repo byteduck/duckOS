@@ -27,18 +27,19 @@ Client::Client(int socketfs_fd, pid_t pid): socketfs_fd(socketfs_fd), pid(pid) {
 }
 
 Client::~Client() {
+	disconnected = true;
 	std::vector<Window*> to_delete;
 	for(auto& window : windows) {
 		if(window.second->parent()) {
 			if(windows.find(window.second->parent()->id()) != windows.end())
 				continue; //Don't remove a window if its parent is owned by this client; deleting the parent deletes all children.
-		} else {
-			to_delete.push_back(window.second);
 		}
+		to_delete.push_back(window.second);
 	}
 
-	for(auto& window : to_delete)
+	for(auto& window : to_delete) {
 		delete window;
+	}
 }
 
 void Client::handle_packet(socketfs_packet* packet) {
@@ -108,6 +109,9 @@ void Client::keyboard_event(Window* window, const KeyboardEvent& event) {
 }
 
 void Client::window_destroyed(Window* window) {
+	//Don't try to send packets to the client; they disconnected
+	if(disconnected)
+		return;
 	PWindowDestroyedPkt pkt {window->id()};
 	if(write_packet(socketfs_fd, pid, sizeof(PWindowDestroyedPkt), &pkt) < 0)
 		perror("Failed to write window destroyed packet to client");

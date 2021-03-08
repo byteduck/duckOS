@@ -157,15 +157,19 @@ void handle_pond_events() {
 
 void UI::run() {
 	while(!should_exit) {
-		poll(pollfds.data(), pollfds.size(), -1);
-		for(auto& pollfd : pollfds) {
-			if(pollfd.revents) {
-				auto& poll = polls[pollfd.fd];
-				if(poll.on_ready_to_read && pollfd.revents & POLLIN)
-					poll.on_ready_to_read();
-				if(poll.on_ready_to_write && pollfd.revents & POLLOUT)
-					poll.on_ready_to_write();
-			}
+		update(-1);
+	}
+}
+
+void UI::update(int timeout) {
+	poll(pollfds.data(), pollfds.size(), timeout);
+	for(auto& pollfd : pollfds) {
+		if(pollfd.revents) {
+			auto& poll = polls[pollfd.fd];
+			if(poll.on_ready_to_read && pollfd.revents & POLLIN)
+				poll.on_ready_to_read();
+			if(poll.on_ready_to_write && pollfd.revents & POLLOUT)
+				poll.on_ready_to_write();
 		}
 	}
 }

@@ -59,6 +59,7 @@ private:
 	pid_t pid;
 	int socketfs_fd;
 	std::map<int, Window*> windows;
+	bool disconnected = false;
 };
 
 

@@ -26,6 +26,8 @@
 #include <stddef.h>
 #endif
 
+#include <sys/keyboard.h>
+
 #define TERM_COLOR_BLACK 0
 #define TERM_COLOR_RED 1
 #define TERM_COLOR_GREEN 2
@@ -77,6 +79,7 @@ public:
 		virtual void on_clear_line(size_t line) = 0;
 		virtual void on_scroll(size_t lines) = 0;
 		virtual void on_resize(const Size& old_size, const Size& new_size) = 0;
+		virtual void emit(const uint8_t* data, size_t length) = 0;
 	};
 
 	Terminal() = delete;
@@ -89,6 +92,9 @@ public:
 	void set_cursor(const Position& position);
 	Position get_cursor();
 	void backspace();
+
+	void handle_keypress(uint16_t keycode, uint32_t codepoint, uint8_t modifiers);
+	void emit_str(const char* str);
 
 	void write_char(char c);
 	void write_codepoint(uint32_t codepoint);

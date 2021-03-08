@@ -47,6 +47,26 @@ void Image::copy(const Image& other, Rect other_area, const Point& pos) const {
 	}
 }
 
+void Image::copy_noalpha(const Image& other, Rect other_area, const Point& pos) const {
+	//Make sure self_area is in bounds of the framebuffer
+	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};
+	self_area = self_area.overlapping_area({0, 0, width, height});
+	if(self_area.empty())
+		return;
+
+	//Update other area with the changes made to self_area
+	other_area.x += self_area.x - pos.x;
+	other_area.y += self_area.y - pos.y;
+	other_area.width = self_area.width;
+	other_area.height = self_area.height;
+
+	for(int x = 0; x < self_area.width; x++) {
+		for(int y = 0; y < self_area.height; y++) {
+			data[(self_area.x + x) + (self_area.y + y) * width] = RGBA(0, 0, 0, 255) | other.data[(other_area.x + x) + (other_area.y + y) * other.width];
+		}
+	}
+}
+
 void Image::copy_blitting(const Image& other, Rect other_area, const Point& pos) const {
 	//Make sure self_area is in bounds of the framebuffer
 	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};

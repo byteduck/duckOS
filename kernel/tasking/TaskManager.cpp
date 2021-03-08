@@ -79,6 +79,15 @@ Process* TaskManager::process_for_sid(pid_t sid, pid_t excl){
 	return (Process *) nullptr;
 }
 
+void TaskManager::kill_pgid(pid_t pgid, int sig) {
+	Process *current = kidle_proc;
+	do {
+		if(current->pgid() == pgid)
+			current->kill(sig);
+		current = current->next;
+	} while(current != kidle_proc);
+}
+
 void TaskManager::print_tasks(){
 	Process *current = kidle_proc;
 	printf("Running processes: ([PID] name state usermem)\n");
@@ -86,6 +95,17 @@ void TaskManager::print_tasks(){
 		printf("[%d] '%s' %d %dKiB\n", current->pid(), current->name().c_str(), current->state, current->ring == 3 ? current->page_directory->used_pmem() : 0);
 		current = current->next;
 	} while(current != kidle_proc);
+}
+
+void TaskManager::reparent_orphans(Process* proc) {
+	tasking_enabled = false;
+	auto* cchild = kidle_proc->next;
+	do {
+		if(cchild->ppid() == proc->pid())
+			cchild->set_ppid(1);
+		cchild = cchild->next;
+	} while(cchild != kidle_proc);
+	tasking_enabled = true;
 }
 
 bool& TaskManager::enabled(){
@@ -206,10 +226,7 @@ void TaskManager::preempt(){
 				any_alive = true;
 				break;
 			case PROCESS_DEAD:
-				current = current->next;
-				break;
 			case PROCESS_ZOMBIE:
-				current->free_resources();
 				current = current->next;
 				break;
 			default:

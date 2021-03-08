@@ -19,6 +19,7 @@
 
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/device/VGADevice.h>
+#include <common/defines.h>
 #include "TTYDevice.h"
 
 
@@ -47,7 +48,13 @@ bool TTYDevice::is_tty() {
 	return true;
 }
 
-void TTYDevice::putchar(uint8_t c) {
+void TTYDevice::emit(uint8_t c) {
+	//Check if we should generate a signal
+	if(c == '\x03') {
+		generate_signal(SIGINT);
+		return;
+	}
+
 	if(buffered) {
 		if(c == '\n') {
 			_buffered_input_buffer.push('\n');
@@ -65,6 +72,8 @@ void TTYDevice::putchar(uint8_t c) {
 	} else {
 		_input_buffer.push(c);
 	}
+
+	echo(c);
 }
 
 bool TTYDevice::can_read(const FileDescriptor& fd) {
@@ -73,4 +82,36 @@ bool TTYDevice::can_read(const FileDescriptor& fd) {
 
 bool TTYDevice::can_write(const FileDescriptor& fd) {
 	return true;
+}
+
+int TTYDevice::ioctl(unsigned int request, void* argp) {
+	auto* cur_proc = TaskManager::current_process();
+	switch(request) {
+		case TIOCSCTTY:
+			cur_proc->set_tty(this);
+			return SUCCESS;
+		case TIOCGPGRP:
+			return _pgid;
+		case TIOCSPGRP: {
+			auto pgid = (pid_t) argp;
+			if(pgid <= 0)
+				return -EINVAL;
+			auto* proc = TaskManager::process_for_pgid(pgid);
+			if(!proc)
+				return -EINVAL;
+			if(cur_proc->sid() != proc->sid())
+				return -EPERM;
+			_pgid = pgid;
+			return SUCCESS;
+		}
+
+		default:
+			return -EINVAL;
+	}
+}
+
+void TTYDevice::generate_signal(int sig) {
+	if(_pgid == 0)
+		return;
+	TaskManager::kill_pgid(_pgid, sig);
 }

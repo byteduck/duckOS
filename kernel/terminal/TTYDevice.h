@@ -25,6 +25,9 @@
 #include <kernel/device/KeyboardDevice.h>
 
 #define NUM_TTYS 8
+#define TIOCSCTTY 1
+#define TIOCGPGRP 2
+#define TIOCSPGRP 3
 
 class TTYDevice: public CharacterDevice {
 public:
@@ -35,18 +38,23 @@ public:
 	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
 	bool can_read(const FileDescriptor& fd) override;
 	bool can_write(const FileDescriptor& fd) override;
+	int ioctl(unsigned request, void* argp) override;
 
 	bool is_tty() override;
-	void putchar(uint8_t c);
+	void emit(uint8_t c);
+	virtual void echo(uint8_t c) = 0;
 	virtual size_t tty_write(const uint8_t* buffer, size_t count) = 0;
-private:
 
+private:
 	DC::string _name;
 	DC::circular_queue<uint8_t> _input_buffer;
 	DC::circular_queue<uint8_t> _buffered_input_buffer;
 	BooleanBlocker _buffer_blocker;
 	SpinLock _input_lock;
 	bool buffered = true;
+	pid_t _pgid = 0;
+
+	void generate_signal(int sig);
 };
 
 #endif //DUCKOS_TTYDEVICE_H

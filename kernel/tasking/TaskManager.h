@@ -35,6 +35,7 @@ namespace TaskManager {
 	bool& enabled();
 	bool is_idle();
 	void print_tasks();
+	void reparent_orphans(Process* proc);
 
 	uint32_t add_process(Process *p);
 	Process *current_process();
@@ -42,6 +43,8 @@ namespace TaskManager {
 	Process *process_for_pgid(pid_t pgid, pid_t exclude = -1);
 	Process *process_for_ppid(pid_t ppid, pid_t exclude = -1);
 	Process *process_for_sid(pid_t sid, pid_t exclude = -1);
+
+	void kill_pgid(pid_t pgid, int sig);
 
 	bool yield();
 	bool yield_if_idle();

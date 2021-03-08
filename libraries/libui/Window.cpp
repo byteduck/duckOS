@@ -66,6 +66,7 @@ Widget* Window::contents() {
 void Window::set_title(const std::string& title) {
 	_title = title;
 	_window->set_title(title.c_str());
+	repaint();
 }
 
 std::string Window::title() {

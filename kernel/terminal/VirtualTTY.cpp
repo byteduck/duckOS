@@ -60,14 +60,16 @@ void VirtualTTY::clear() {
 
 void VirtualTTY::handle_key(KeyEvent event) {
 	if(!event.pressed()) return;
-	if(!event.character) return;
-	terminal->write_char(event.character);
-	TTYDevice::putchar(event.character);
+	terminal->handle_keypress(event.scancode, event.character, event.modifiers);
 }
 
 size_t VirtualTTY::tty_write(const uint8_t* buffer, size_t count) {
 	terminal->write_chars((const char*) buffer, count);
 	return count;
+}
+
+void VirtualTTY::echo(uint8_t c) {
+	terminal->write_char(c);
 }
 
 uint32_t vga_color_palette[] = {
@@ -136,4 +138,9 @@ void VirtualTTY::on_scroll(size_t lines) {
 
 void VirtualTTY::on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) {
 	//TODO
+}
+
+void VirtualTTY::emit(const uint8_t* data, size_t size) {
+	for(size_t i = 0; i < size; i++)
+		TTYDevice::emit(data[i]);
 }

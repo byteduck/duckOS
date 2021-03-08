@@ -20,6 +20,7 @@
 #include "TerminalWidget.h"
 #include <libgraphics/font.h>
 #include <unistd.h>
+#include <csignal>
 
 static const uint32_t color_palette[] = {
 		0xFF000000,
@@ -62,6 +63,11 @@ TerminalWidget::TerminalWidget() {
 	UI::add_poll(pty_poll);
 }
 
+TerminalWidget::~TerminalWidget() {
+	if(kill(proc_pid, SIGTERM) < 0)
+		perror("kill");
+}
+
 Dimensions TerminalWidget::preferred_size() {
 	return {404, 304};
 }
@@ -102,10 +108,8 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 }
 
 bool TerminalWidget::on_keyboard(Pond::KeyEvent event) {
-	if(KBD_ISPRESSED(event) && event.character) {
-		write(pty_fd, &event.character, 1);
-		term->write_char(event.character);
-	}
+	if(KBD_ISPRESSED(event))
+		term->handle_keypress(event.scancode, event.character, event.modifiers);
 	handle_term_events();
 	return true;
 }
@@ -157,6 +161,8 @@ void TerminalWidget::run(const char* command) {
 		execve(command, args, env);
 		exit(-1);
 	}
+
+	proc_pid = pid;
 }
 
 void TerminalWidget::on_character_change(const Terminal::Position& position, const Terminal::Character& character) {
@@ -190,4 +196,8 @@ void TerminalWidget::on_scroll(size_t lines) {
 
 void TerminalWidget::on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) {
 	//TODO
+}
+
+void TerminalWidget::emit(const uint8_t* data, size_t size) {
+	write(pty_fd, data, size);
 }

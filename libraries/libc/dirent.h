@@ -22,6 +22,8 @@
 
 #include <sys/types.h>
 
+__DECL_BEGIN
+
 #define MAXNAMELEN 256		/* sizeof(struct dirent.d_name)-1 */
 
 #define DT_UNKNOWN 0
@@ -54,5 +56,7 @@ struct dirent* readdir(DIR *dirname);
 int readdir_r(DIR* dirp, struct dirent** entry, struct dirent** result);
 void rewinddir(DIR* dirp);
 int closedir(DIR* dirp);
+
+__DECL_END
 
 #endif //DUCKOS_LIBC_DIRENT_H
