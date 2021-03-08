@@ -271,7 +271,7 @@ void SocketFSInode::open(FileDescriptor& fd, int options) {
 void SocketFSInode::close(FileDescriptor& fd) {
 	LOCK(lock);
 
-	if(TaskManager::current_process() == host.process) {
+	if(fd.owner() == host.process) {
 		//Remove the socket
 		is_open = false;
 		ScopedLocker __locker2(fs.lock);
@@ -286,7 +286,7 @@ void SocketFSInode::close(FileDescriptor& fd) {
 	}
 
 	for(size_t i = 0; i < clients.size(); i++) {
-		if(clients[i].process == TaskManager::current_process()) {
+		if(clients[i].process == fd.owner()) {
 			write_packet(host, SOCKETFS_MSG_DISCONNECT, sizeof(pid_t), &clients[i].pid, true);
 			clients.erase(i);
 			break;
