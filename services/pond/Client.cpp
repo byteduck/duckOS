@@ -109,9 +109,13 @@ void Client::keyboard_event(Window* window, const KeyboardEvent& event) {
 }
 
 void Client::window_destroyed(Window* window) {
+	//Remove the window from the windows map
+	windows.erase(window->id());
+
 	//Don't try to send packets to the client; they disconnected
 	if(disconnected)
 		return;
+
 	PWindowDestroyedPkt pkt {window->id()};
 	if(write_packet(socketfs_fd, pid, sizeof(PWindowDestroyedPkt), &pkt) < 0)
 		perror("Failed to write window destroyed packet to client");
@@ -160,12 +164,10 @@ void Client::destroy_window(socketfs_packet* packet) {
 
 	auto* params = (PDestroyWindowPkt*) packet->data;
 
-	//Find the window in question and remove it
+	//Find the window in question and remove it and its children
 	auto window_pair = windows.find(params->window_id);
-	if(window_pair != windows.end()) {
+	if(window_pair != windows.end())
 		delete window_pair->second;
-		windows.erase(window_pair);
-	}
 }
 
 void Client::move_window(socketfs_packet* packet) {
