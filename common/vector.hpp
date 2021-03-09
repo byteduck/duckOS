@@ -104,9 +104,9 @@ namespace DC {
 
 		void erase(size_t elem) {
 			if(elem >= _size) return;
-			_storage[elem].~T();
 			for(size_t i = elem; i < _size - 1; i++)
-				_storage[i] = DC::move(_storage[i + 1]);
+				_storage[i] = _storage[i + 1];
+			_storage[_size - 1].~T();
 			_size--;
 		}
 
