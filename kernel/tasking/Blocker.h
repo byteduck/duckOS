@@ -20,10 +20,21 @@
 #ifndef DUCKOS_BLOCKER_H
 #define DUCKOS_BLOCKER_H
 
+class Process;
 class Blocker {
 public:
-	virtual ~Blocker() {}
+	~Blocker();
 	virtual bool is_ready() = 0;
+
+	void unblock();
+
+protected:
+	friend class Process;
+	void assign_process(Process* proc);
+	void clear_process();
+
+private:
+	Process* _proc = nullptr;
 };
 
 #endif //DUCKOS_BLOCKER_H

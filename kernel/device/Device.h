@@ -43,6 +43,7 @@ protected:
 
 private:
 	static DC::vector<DC::shared_ptr<Device>> _devices;
+	static SpinLock _lock;
 
 	unsigned _major = 0;
 	unsigned _minor = 0;

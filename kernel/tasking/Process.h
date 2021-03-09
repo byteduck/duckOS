@@ -32,6 +32,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <common/queue.hpp>
 #include "Signal.h"
+#include "Blocker.h"
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/interrupt/syscall.h>
 

@@ -273,6 +273,19 @@ MemoryRegion *MemoryMap::find_region(size_t address) {
 	return nullptr;
 }
 
+MemoryRegion *MemoryMap::find_shared_region(int id) {
+	lock.acquire();
+	MemoryRegion* cur = _first_region;
+	while(cur) {
+		if(cur->is_shm && cur->shm_id == id)
+			return cur;
+		cur = cur->next;
+	}
+	lock.release();
+	return nullptr;
+}
+
+
 void MemoryMap::replace_entry(MemoryRegion *old_region, MemoryRegion *new_region) {
 	lock.acquire();
 	if(old_region->next) old_region->next->prev = new_region;

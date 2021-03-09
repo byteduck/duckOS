@@ -27,9 +27,11 @@
 #include "MouseDevice.h"
 
 DC::vector<DC::shared_ptr<Device>> Device::_devices;
+SpinLock Device::_lock;
 
 void Device::init() {
-	_devices = DC::vector<DC::shared_ptr<Device>>();
+	new (&_devices) DC::vector<DC::shared_ptr<Device>>();
+	new (&_lock) SpinLock();
 	new ZeroDevice();
 	new RandomDevice();
 	new NullDevice();
@@ -39,6 +41,7 @@ void Device::init() {
 }
 
 Device::Device(unsigned major, unsigned minor): _major(major), _minor(minor) {
+	LOCK(_lock);
 	auto res = get_device(_major, _minor);
 	if (res.is_error() && res.code() == -ENODEV) {
 		_devices.push_back(DC::shared_ptr<Device>(this));
@@ -65,15 +68,18 @@ DC::vector<DC::shared_ptr<Device>> Device::devices() {
 }
 
 ResultRet<DC::shared_ptr<Device>> Device::get_device(unsigned major, unsigned minor) {
+	LOCK(_lock);
 	for(size_t i = 0; i < _devices.size(); i++) {
 		if(_devices[i]){
-			if(_devices[i]->_major == major && _devices[i]->_minor == minor) return _devices[i];
+			if(_devices[i]->_major == major && _devices[i]->_minor == minor)
+				return _devices[i];
 		}
 	}
 	return -ENODEV;
 }
 
 void Device::remove_device(unsigned major, unsigned minor) {
+	LOCK(_lock);
 	for(auto i = 0; i < _devices.size(); i++) {
 		if(_devices[i]){
 			if(_devices[i]->_major == major && _devices[i]->_minor == minor){

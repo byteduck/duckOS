@@ -18,3 +18,23 @@
 */
 
 #include "Blocker.h"
+#include "Process.h"
+
+Blocker::~Blocker() {
+	if(_proc)
+		_proc->unblock();
+}
+
+void Blocker::unblock() {
+	if(_proc)
+		_proc->unblock();
+}
+
+void Blocker::assign_process(Process* proc) {
+	ASSERT(!_proc);
+	_proc = proc;
+}
+
+void Blocker::clear_process() {
+	_proc = nullptr;
+}

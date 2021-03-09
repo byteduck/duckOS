@@ -70,6 +70,13 @@ public:
 	MemoryRegion* find_region(size_t address);
 
 	/**
+	 * Finds the shared region corresponding to the id.
+	 * @param id The id of the shared region.
+	 * @return The region corresponding to the id. nullptr if not found.
+	 */
+	MemoryRegion* find_shared_region(int id);
+
+	/**
 	 * @return The amount of memory used in bytes. Doesn't count reserved memory.
 	 */
 	size_t used_memory();

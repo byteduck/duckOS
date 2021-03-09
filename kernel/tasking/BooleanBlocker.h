@@ -25,7 +25,7 @@
 class BooleanBlocker: public Blocker {
 public:
 	BooleanBlocker() = default;
-	~BooleanBlocker() override = default;
+	~BooleanBlocker() = default;
 	bool is_ready() override;
 	void set_ready(bool value);
 private:

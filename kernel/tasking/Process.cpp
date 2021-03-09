@@ -43,7 +43,8 @@ Process* Process::create_kernel(const DC::string& name, void (*func)()){
 ResultRet<Process*> Process::create_user(const DC::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
 	//Open the executable
 	auto fd_or_error = VFS::inst().open((DC::string&) executable_loc, O_RDONLY, 0, file_open_user, args->working_dir);
-	if(fd_or_error.is_error()) return fd_or_error.code();
+	if(fd_or_error.is_error())
+		return fd_or_error.code();
 	auto fd = fd_or_error.value();
 
 	//Read info
@@ -76,7 +77,8 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, User&
 
 	//Load the ELF into the process's page directory and set proc->current_brk
 	auto brk_or_err = ELF::load_sections(*info.fd, info.segments, proc->page_directory);
-	if(brk_or_err.is_error()) return brk_or_err.value();
+	if(brk_or_err.is_error())
+		return brk_or_err.code();
 
 	return proc;
 }
@@ -218,7 +220,8 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 }
 
 Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
-	if(to_fork->kernel) PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
+	if(to_fork->kernel)
+		PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
 
 	TaskManager::enabled() = false;
 	_name = to_fork->_name;
@@ -310,11 +313,13 @@ Process::~Process() {
 }
 
 void Process::free_resources() {
-	if(_freed_resources) return;
+	if(_freed_resources)
+		return;
 	LOCK(_lock);
 	_freed_resources = true;
 	delete page_directory;
-	if(_kernel_stack_base) PageDirectory::k_free_region(_kernel_stack_base);
+	if(_kernel_stack_base)
+		PageDirectory::k_free_region(_kernel_stack_base);
 	_file_descriptors.resize(0);
 }
 
@@ -332,11 +337,13 @@ void Process::kill(int signal) {
 
 void Process::die_silently() {
 	state = PROCESS_DEAD;
-	if(TaskManager::current_process() == this) TaskManager::yield();
+	if(TaskManager::current_process() == this)
+		TaskManager::yield();
 }
 
 bool Process::handle_pending_signal() {
-	if(pending_signals.empty() || _in_signal) return false;
+	if(pending_signals.empty() || _in_signal)
+		return false;
 	int signal = pending_signals.front();
 	pending_signals.pop();
 	if(signal >= 0 && signal <= 32) {
@@ -368,9 +375,11 @@ bool Process::has_pending_signals() {
 
 void Process::call_signal_handler(int signal) {
 	//TODO: Do this without switching page directories
-	if(signal < 1 || signal >= 32) return;
+	if(signal < 1 || signal >= 32)
+		return;
 	auto signal_loc = (size_t) signal_actions[signal].action;
-	if(!signal_loc || signal_loc >= HIGHER_HALF) return;
+	if(!signal_loc || signal_loc >= HIGHER_HALF)
+		return;
 
 	//Load the page directory so we can write to the userspace stack
 	asm volatile("mov %0, %%cr3" :: "r"(page_directory_loc));
@@ -456,8 +465,10 @@ void Process::handle_pagefault(Registers *regs) {
 		page_directory->free_region(_sighandler_ustack_region);
 		TaskManager::yield();
 	}
-	if(!page_directory->try_cow(err_pos))
+	if(!page_directory->try_cow(err_pos)) {
+		printf("SIGSEGV AT %x %x\n", err_pos, regs->eip);
 		kill(SIGSEGV);
+	}
 }
 
 void *Process::kernel_stack_top() {
@@ -469,10 +480,12 @@ void Process::block(Blocker& blocker) {
 	ASSERT(!_blocker);
 	state = PROCESS_BLOCKED;
 	_blocker = &blocker;
+	_blocker->assign_process(this);
 	TaskManager::yield();
 }
 
 void Process::unblock() {
+	_blocker->clear_process();
 	_blocker = nullptr;
 	state = PROCESS_ALIVE;
 }
@@ -502,13 +515,15 @@ void Process::sys_exit(int status) {
 
 ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
 	check_ptr(buf);
-	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd]) return -EBADF;
+	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd])
+		return -EBADF;
 	return _file_descriptors[fd]->read(buf, count);
 }
 
 ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 	check_ptr(buf);
-	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd]) return -EBADF;
+	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd])
+		return -EBADF;
 	ssize_t ret = _file_descriptors[fd]->write(buf, count);
 	return ret;
 }
@@ -522,7 +537,8 @@ pid_t Process::sys_fork(Registers& regs) {
 int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	//Create the new process
 	auto R_new_proc = Process::create_user(filename, _user, args, _ppid);
-	if(R_new_proc.is_error()) return R_new_proc.code();
+	if(R_new_proc.is_error())
+		return R_new_proc.code();
 	auto* new_proc = R_new_proc.value();
 
 	//Properly set new process's PID, blocker, and stdout/in/err
@@ -604,14 +620,16 @@ int Process::sys_open(char *filename, int options, int mode) {
 	DC::string path = filename;
 	mode &= 04777; //We just want the permission bits
 	auto fd_or_err = VFS::inst().open(path, options, mode & (~_umask), _user, _cwd);
-	if(fd_or_err.is_error()) return fd_or_err.code();
+	if(fd_or_err.is_error())
+		return fd_or_err.code();
 	_file_descriptors.push_back(fd_or_err.value());
 	fd_or_err.value()->set_owner(this);
 	return (int)_file_descriptors.size() - 1;
 }
 
 int Process::sys_close(int file) {
-	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
+		return -EBADF;
 	_file_descriptors[file] = DC::shared_ptr<FileDescriptor>(nullptr);
 	return 0;
 }
@@ -620,15 +638,18 @@ int Process::sys_chdir(char *path) {
 	check_ptr(path);
 	DC::string strpath = path;
 	auto inode_or_error = VFS::inst().resolve_path(strpath, _cwd, _user);
-	if(inode_or_error.is_error()) return inode_or_error.code();
-	if(!inode_or_error.value()->inode()->metadata().is_directory()) return -ENOTDIR;
+	if(inode_or_error.is_error())
+		return inode_or_error.code();
+	if(!inode_or_error.value()->inode()->metadata().is_directory())
+		return -ENOTDIR;
 	_cwd = inode_or_error.value();
 	return SUCCESS;
 }
 
 int Process::sys_getcwd(char *buf, size_t length) {
 	check_ptr(buf);
-	if(_cwd->name().length() > length) return -ENAMETOOLONG;
+	if(_cwd->name().length() > length)
+		return -ENAMETOOLONG;
 	DC::string path = _cwd->get_full_path();
 	memcpy(buf, path.c_str(), min(length, path.length()));
 	buf[path.length()] = '\0';
@@ -637,12 +658,14 @@ int Process::sys_getcwd(char *buf, size_t length) {
 
 int Process::sys_readdir(int file, char *buf, size_t len) {
 	check_ptr(buf);
-	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
+		return -EBADF;
 	return _file_descriptors[file]->read_dir_entries(buf, len);
 }
 
 int Process::sys_fstat(int file, char *buf) {
-	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
+		return -EBADF;
 	_file_descriptors[file]->metadata().stat((struct stat*)buf);
 	return 0;
 }
@@ -652,7 +675,8 @@ int Process::sys_stat(char *file, char *buf) {
 	check_ptr(buf);
 	DC::string path(file);
 	auto inode_or_err = VFS::inst().resolve_path(path, _cwd, _user);
-	if(inode_or_err.is_error()) return inode_or_err.code();
+	if(inode_or_err.is_error())
+		return inode_or_err.code();
 	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
 	return 0;
 }
@@ -662,23 +686,28 @@ int Process::sys_lstat(char *file, char *buf) {
 	check_ptr(buf);
 	DC::string path(file);
 	auto inode_or_err = VFS::inst().resolve_path(path, _cwd, _user, nullptr, O_INTERNAL_RETLINK);
-	if(inode_or_err.is_error()) return inode_or_err.code();
+	if(inode_or_err.is_error())
+		return inode_or_err.code();
 	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
 	return 0;
 }
 
 int Process::sys_lseek(int file, off_t off, int whence) {
-	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
+		return -EBADF;
 	return _file_descriptors[file]->seek(off, whence);
 }
 
 int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 	//TODO: Flags
-	if(status) check_ptr(status);
+	if(status)
+		check_ptr(status);
 	WaitBlocker blocker(this, pid);
 	block(blocker);
-	if(blocker.error()) return blocker.error();
-	if(status) *status = blocker.exit_status();
+	if(blocker.error())
+		return blocker.error();
+	if(status)
+		*status = blocker.exit_status();
 	return blocker.waited_pid();
 }
 
@@ -693,7 +722,8 @@ int Process::sys_sigaction(int sig, sigaction_t *new_action, sigaction_t *old_ac
 	check_ptr(new_action);
 	check_ptr(old_action);
 	check_ptr((void*) new_action->sa_sigaction);
-	if(sig == SIGSTOP || sig == SIGKILL || sig < 1 || sig >= 32) return -EINVAL;
+	if(sig == SIGSTOP || sig == SIGKILL || sig < 1 || sig >= 32)
+		return -EINVAL;
 	cli(); //We don't want this interrupted or else we'd have a problem if it's needed before it's done
 	if(old_action) {
 		memcpy(&old_action->sa_sigaction, &signal_actions[sig].action, sizeof(Signal::SigAction::action));
@@ -707,14 +737,18 @@ int Process::sys_sigaction(int sig, sigaction_t *new_action, sigaction_t *old_ac
 
 int Process::sys_kill(pid_t pid, int sig) {
 	//TODO: Permission check
-	if(sig == 0) return 0;
-	if(sig < 0 || sig >= NSIG) return -EINVAL;
-	if(pid == _pid) kill(sig);
+	if(sig == 0)
+		return 0;
+	if(sig < 0 || sig >= NSIG)
+		return -EINVAL;
+	if(pid == _pid)
+		kill(sig);
 	else if(pid == 0) {
 		//Kill all processes with _pgid == this->_pgid
 		Process* c_proc = this->next;
 		while(c_proc != this) {
-			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pgid == _pgid && c_proc->_pid != 1) c_proc->kill(sig);
+			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pgid == _pgid && c_proc->_pid != 1)
+				c_proc->kill(sig);
 			c_proc = c_proc->next;
 		}
 		kill(sig);
@@ -722,7 +756,8 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//kill all processes for which we have permission to kill except init
 		Process* c_proc = this->next;
 		while(c_proc != this) {
-			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pid != 1) c_proc->kill(sig);
+			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pid != 1)
+				c_proc->kill(sig);
 			c_proc = c_proc->next;
 		}
 		kill(sig);
@@ -730,15 +765,18 @@ int Process::sys_kill(pid_t pid, int sig) {
 		//Kill all processes with _pgid == -pid
 		Process* c_proc = this->next;
 		while(c_proc != this) {
-			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pgid == -pid && c_proc->_pid != 1) c_proc->kill(sig);
+			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pgid == -pid && c_proc->_pid != 1)
+				c_proc->kill(sig);
 			c_proc = c_proc->next;
 		}
 		kill(sig);
 	} else {
 		//Kill process with _pid == pid
 		Process* proc = TaskManager::process_for_pid(pid);
-		if(!proc) return -ESRCH;
-		if((_user.uid != 0 && proc->_user.uid != _user.uid) || proc->_pid == 1) return -EPERM;
+		if(!proc)
+			return -ESRCH;
+		if((_user.uid != 0 && proc->_user.uid != _user.uid) || proc->_pid == 1)
+			return -EPERM;
 		proc->kill(sig);
 	}
 	return 0;
@@ -748,7 +786,8 @@ int Process::sys_unlink(char* name) {
 	check_ptr(name);
 	DC::string path(name);
 	auto ret = VFS::inst().unlink(path, _user, _cwd);
-	if(ret.is_error()) return ret.code();
+	if(ret.is_error())
+		return ret.code();
 	return 0;
 }
 
@@ -764,7 +803,8 @@ int Process::sys_rmdir(char* name) {
 	check_ptr(name);
 	DC::string path(name);
 	auto ret = VFS::inst().rmdir(path, _user, _cwd);
-	if(ret.is_error()) return ret.code();
+	if(ret.is_error())
+		return ret.code();
 	return 0;
 }
 
@@ -773,7 +813,8 @@ int Process::sys_mkdir(char *path, mode_t mode) {
 	DC::string strpath(path);
 	mode &= 04777; //We just want the permission bits
 	auto ret = VFS::inst().mkdir(strpath, mode, _user, _cwd);
-	if(ret.is_error()) return ret.code();
+	if(ret.is_error())
+		return ret.code();
 	return 0;
 }
 
@@ -819,21 +860,26 @@ int Process::sys_pipe(int filedes[2]) {
 }
 
 int Process::sys_dup(int oldfd) {
-	if(oldfd < 0 || oldfd >= (int) _file_descriptors.size() || !_file_descriptors[oldfd]) return -EBADF;
+	if(oldfd < 0 || oldfd >= (int) _file_descriptors.size() || !_file_descriptors[oldfd])
+		return -EBADF;
 	_file_descriptors.push_back(_file_descriptors[oldfd]);
 	return (int) _file_descriptors.size() - 1;
 }
 
 int Process::sys_dup2(int oldfd, int newfd) {
-	if(oldfd < 0 || oldfd >= (int) _file_descriptors.size() || !_file_descriptors[oldfd]) return -EBADF;
-	if(newfd == oldfd) return oldfd;
-	if(newfd >= _file_descriptors.size()) _file_descriptors.resize(newfd + 1);
+	if(oldfd < 0 || oldfd >= (int) _file_descriptors.size() || !_file_descriptors[oldfd])
+		return -EBADF;
+	if(newfd == oldfd)
+		return oldfd;
+	if(newfd >= _file_descriptors.size())
+		_file_descriptors.resize(newfd + 1);
 	_file_descriptors[newfd] = _file_descriptors[oldfd];
 	return newfd;
 }
 
 int Process::sys_isatty(int file) {
-	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file]) return -EBADF;
+	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
+		return -EBADF;
 	return _file_descriptors[file]->file()->is_tty() ? 1 : -ENOTTY;
 }
 
@@ -850,14 +896,16 @@ int Process::sys_symlinkat(char* file, int dirfd, char* linkname) {
 }
 
 int Process::sys_readlink(char* file, char* buf, size_t bufsize) {
-	if(bufsize < 0) return -EINVAL;
+	if(bufsize < 0)
+		return -EINVAL;
 	check_ptr(file);
 	check_ptr(buf);
 	DC::string file_str(file);
 
 	ssize_t ret;
 	auto ret_perhaps = VFS::inst().readlink(file_str, _user, _cwd, ret);
-	if(ret_perhaps.is_error()) return ret_perhaps.code();
+	if(ret_perhaps.is_error())
+		return ret_perhaps.code();
 
 	auto& link_value = ret_perhaps.value();
 	memcpy(buf, link_value.c_str(), min(link_value.length(), bufsize - 1));
@@ -872,10 +920,13 @@ int Process::sys_readlinkat(struct readlinkat_args* args) {
 }
 
 int Process::sys_getsid(pid_t pid) {
-	if(pid == 0) return _sid;
+	if(pid == 0)
+		return _sid;
 	auto* proc = TaskManager::process_for_pid(pid);
-	if(!proc) return -ESRCH;
-	if(proc->_sid != _sid) return -EPERM;
+	if(!proc)
+		return -ESRCH;
+	if(proc->_sid != _sid)
+		return -EPERM;
 	return proc->_sid;
 }
 
@@ -883,7 +934,8 @@ int Process::sys_setsid() {
 	//Make sure there's no other processes in the group
 	Process* c_proc = this->next;
 	while(c_proc != this) {
-		if(c_proc->_pgid == _pid) return -EPERM;
+		if(c_proc->_pgid == _pid)
+			return -EPERM;
 		c_proc = c_proc->next;
 	}
 
@@ -893,9 +945,11 @@ int Process::sys_setsid() {
 }
 
 int Process::sys_getpgid(pid_t pid) {
-	if(pid == 0) return _pgid;
+	if(pid == 0)
+		return _pgid;
 	Process* proc = TaskManager::process_for_pid(pid);
-	if(!proc) return -ESRCH;
+	if(!proc)
+		return -ESRCH;
 	return proc->_pgid;
 }
 
@@ -904,23 +958,30 @@ int Process::sys_getpgrp() {
 }
 
 int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
-	if(pid < 0) return -EINVAL;
-	if(!new_pgid) new_pgid = _pid;
+	if(pid < 0)
+		return -EINVAL;
+	if(!new_pgid)
+		new_pgid = _pid;
 
 	//Validate specified pid
 	Process* proc = pid ? TaskManager::process_for_pid(pid) : this;
-	if(!proc || (proc->_pid != _pid && proc->_ppid != _pid)) return -ESRCH; //Process doesn't exist or is not self or child
-	if(proc->_ppid == _pid && proc->_sid != _sid) return -EPERM; //Process is a child but not in the same session
-	if(proc->_pid == proc->_sid) return -EPERM; //Process is session leader
+	if(!proc || (proc->_pid != _pid && proc->_ppid != _pid))
+		return -ESRCH; //Process doesn't exist or is not self or child
+	if(proc->_ppid == _pid && proc->_sid != _sid)
+		return -EPERM; //Process is a child but not in the same session
+	if(proc->_pid == proc->_sid)
+		return -EPERM; //Process is session leader
 
 	//Make sure we're not switching to another session
 	Process* c_proc = this->next;
 	pid_t new_sid = _sid;
 	while(c_proc != this) {
-		if(c_proc->_pgid == new_pgid) new_sid = c_proc->_sid;
+		if(c_proc->_pgid == new_pgid)
+			new_sid = c_proc->_sid;
 		c_proc = c_proc->next;
 	}
-	if(new_sid != _sid) return -EPERM;
+	if(new_sid != _sid)
+		return -EPERM;
 
 	proc->_pgid = new_pgid;
 	return SUCCESS;
@@ -978,8 +1039,10 @@ gid_t Process::sys_getegid() {
 
 int Process::sys_setgroups(size_t count, const gid_t* gids) {
 	check_ptr(gids);
-	if(count < 0) return -EINVAL;
-	if(!_user.can_setgid()) return -EPERM;
+	if(count < 0)
+		return -EINVAL;
+	if(!_user.can_setgid())
+		return -EPERM;
 
 	if(!count) {
 		_user.groups.resize(0);
@@ -992,9 +1055,12 @@ int Process::sys_setgroups(size_t count, const gid_t* gids) {
 }
 
 int Process::sys_getgroups(int count, gid_t* gids) {
-	if(count < 0) return -EINVAL;
-	if(count == 0) return _user.groups.size();
-	if(count <  _user.groups.size()) return -EINVAL;
+	if(count < 0)
+		return -EINVAL;
+	if(count == 0)
+		return _user.groups.size();
+	if(count <  _user.groups.size())
+		return -EINVAL;
 	for(size_t i = 0; i <  _user.groups.size(); i++) gids[i] = _user.groups[i];
 	return SUCCESS;
 }
@@ -1142,7 +1208,8 @@ int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {
 
 int Process::sys_ptsname(int fd, char* buf, size_t bufsize) {
 	check_ptr(buf);
-	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd]) return -EBADF;
+	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd])
+		return -EBADF;
 	auto file = _file_descriptors[fd];
 
 	//Check to make sure it's a PTY Controller

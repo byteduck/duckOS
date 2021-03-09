@@ -200,6 +200,7 @@ void PageDirectory::k_free_region(const LinkedMemoryRegion& region) {
 bool PageDirectory::k_free_region(void* virtaddr) {
 	MemoryRegion* vregion = kernel_vmem_map.find_region((size_t) virtaddr);
 	if(!vregion) return false;
+	if(vregion->reserved) return false;
 	if(!vregion->related) PANIC("VREGION_NO_RELATED", "A virtual kernel memory region had no corresponding physical region.", true);
 	if(vregion->related->reserved) return false;
 	LinkedMemoryRegion region(vregion->related, vregion);
@@ -223,7 +224,6 @@ void* PageDirectory::k_mmap(size_t physaddr, size_t memsize, bool read_write) {
 	}
 
 	//Next, map the pages
-	vregion->related = &pregion;
 	LinkedMemoryRegion region(&pregion, vregion);
 	k_map_region(region, read_write);
 
@@ -486,7 +486,6 @@ void* PageDirectory::mmap(size_t physaddr, size_t memsize, bool read_write) {
 	vregion->reserved = true;
 
 	//Next, map the pages
-	vregion->related = &pregion;
 	LinkedMemoryRegion region(&pregion, vregion);
 	map_region(region, read_write);
 
@@ -495,8 +494,8 @@ void* PageDirectory::mmap(size_t physaddr, size_t memsize, bool read_write) {
 
 bool PageDirectory::munmap(void* virtaddr) {
 	MemoryRegion* vregion = _vmem_map.find_region((size_t) virtaddr);
-	if(!vregion->reserved) return false;
 	if(!vregion) return false;
+	if(!vregion->reserved) return false;
 	LinkedMemoryRegion region(nullptr, vregion);
 	unmap_region(region);
 	_vmem_map.free_region(region.virt);
@@ -540,6 +539,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 	//Make sure we have permissions
 	bool has_perms = false;
 	bool write = false;
+	pmem_region->lock.acquire();
 	for(size_t i = 0; i < pmem_region->shm_allowed->size(); i++) {
 		auto& perm = pmem_region->shm_allowed->at(i);
 		if(perm.pid == pid) {
@@ -548,6 +548,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 			break;
 		}
 	}
+	pmem_region->lock.release();
 
 	//If we don't have permissions, return ENOENT (We don't use EACCES, because that would reveal that there *is* a region with that ID)
 	if(!has_perms)
@@ -579,15 +580,8 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 }
 
 Result PageDirectory::detach_shared_region(int id) {
-	//Find the virtual region in question
-	MemoryRegion* vreg = _vmem_map.first_region();
-	while(vreg) {
-		if(vreg->is_shm && vreg->shm_id == id)
-			break;
-		vreg = vreg->next;
-	}
-
-	//It doesn't exist, return ENOENT
+	//Find the virtual region in question and if it doesn't exist, return ENOENT
+	MemoryRegion* vreg = _vmem_map.find_shared_region(id);
 	if(!vreg)
 		return -ENOENT;
 
@@ -604,15 +598,8 @@ Result PageDirectory::detach_shared_region(int id) {
 }
 
 Result PageDirectory::allow_shared_region(int id, pid_t called_pid, pid_t pid, bool write) {
-	//Find the virtual region in question
-	MemoryRegion* vreg = _vmem_map.first_region();
-	while(vreg) {
-		if(vreg->is_shm && vreg->shm_id == id)
-			break;
-		vreg = vreg->next;
-	}
-
-	//It doesn't exist, return ENOENT
+	//Find the virtual region in question and if it doesn't exist, return ENOENT
+	MemoryRegion* vreg = _vmem_map.find_shared_region(id);
 	if(!vreg)
 		return -ENOENT;
 
@@ -621,6 +608,7 @@ Result PageDirectory::allow_shared_region(int id, pid_t called_pid, pid_t pid, b
 		return -EPERM;
 
 	//Make sure we don't already have perms
+	LOCK(vreg->related->lock);
 	for(size_t i = 0; i < vreg->related->shm_allowed->size(); i++) {
 		if(vreg->related->shm_allowed->at(i).pid == pid)
 			return -EEXIST;
@@ -744,6 +732,7 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 				parent_region->cow.marked_cow = true;
 				new_region->cow.marked_cow = true;
 				new_region->related = parent_region->related;
+				parent_region->related->related = nullptr;
 
 				//Mark the page table entries in the parent read-only
 				size_t num_pages = parent_region->size / PAGE_SIZE;
