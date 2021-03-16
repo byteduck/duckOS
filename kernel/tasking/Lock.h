@@ -36,5 +36,6 @@ private:
 };
 
 #define LOCK(lock) ScopedLocker __locker((lock))
+#define LOCK_N(lock, name) ScopedLocker name((lock))
 
 #endif //DUCKOS_LOCK_H

@@ -27,11 +27,8 @@ PageDirectory::Entry PageDirectory::kernel_entries[256];
 PageTable PageDirectory::kernel_page_tables[256];
 size_t PageDirectory::kernel_page_tables_physaddr[1024];
 MemoryMap PageDirectory::kernel_vmem_map(0, nullptr);
-MemoryRegion PageDirectory::early_vmem_regions[2] = {{0, 0}, {0, 0}};
+MemoryRegion PageDirectory::early_vmem_regions[3] = {{0, 0}, {0, 0}, {0, 0}};
 PageTable::Entry kernel_page_table_entries[256][1024] __attribute__((aligned(4096)));
-MemoryRegion vmem_region_buffer(0,0);
-MemoryRegion pmem_region_buffer(0,0);
-bool region_buffer_needs_attention = false;
 size_t PageDirectory::used_kernel_pmem;
 size_t PageDirectory::used_kheap_pmem;
 
@@ -60,25 +57,35 @@ void PageDirectory::init_kmem() {
 	}
 }
 
-void PageDirectory::map_kernel(MemoryRegion* kernel_pmem_region) {
-	early_vmem_regions[0] = MemoryRegion(KERNEL_START, KERNEL_SIZE_PAGES * PAGE_SIZE);
+void PageDirectory::map_kernel(MemoryRegion* text_region, MemoryRegion* data_region) {
+	early_vmem_regions[0] = MemoryRegion(KERNEL_TEXT, KERNEL_TEXT_SIZE);
 	early_vmem_regions[0].heap_allocated = false;
 	early_vmem_regions[0].used = true;
 	early_vmem_regions[0].next = &early_vmem_regions[1];
 
-	early_vmem_regions[1] = MemoryRegion(KERNEL_START + early_vmem_regions[0].size, 0xFFFFFFFF - (KERNEL_START + early_vmem_regions[0].size));
+	early_vmem_regions[1] = MemoryRegion(KERNEL_DATA, KERNEL_DATA_SIZE);
 	early_vmem_regions[1].heap_allocated = false;
+	early_vmem_regions[1].used = true;
+	early_vmem_regions[1].next = &early_vmem_regions[2];
 	early_vmem_regions[1].prev = &early_vmem_regions[0];
+
+	early_vmem_regions[2] = MemoryRegion(KERNEL_DATA_END, 0xFFFFFFFF - KERNEL_DATA_END);
+	early_vmem_regions[2].heap_allocated = false;
+	early_vmem_regions[2].prev = &early_vmem_regions[1];
 
 	kernel_vmem_map = MemoryMap(PAGE_SIZE, &early_vmem_regions[0]);
 	kernel_vmem_map.recalculate_memory_totals();
 	used_kernel_pmem = early_vmem_regions[0].size;
 
-	kernel_pmem_region->related = &early_vmem_regions[0];
-	early_vmem_regions[0].related = kernel_pmem_region;
-	LinkedMemoryRegion kregion(kernel_pmem_region, &early_vmem_regions[0]);
+	text_region->related = &early_vmem_regions[0];
+	early_vmem_regions[0].related = text_region;
+	LinkedMemoryRegion ktext(text_region, &early_vmem_regions[0]);
+	k_map_region(ktext, false);
 
-	k_map_region(kregion, true);
+	data_region->related = &early_vmem_regions[1];
+	early_vmem_regions[1].related = data_region;
+	LinkedMemoryRegion kdata(data_region, &early_vmem_regions[1]);
+	k_map_region(kdata, true);
 }
 
 void PageDirectory::k_map_region(const LinkedMemoryRegion& region, bool read_write) {
@@ -145,25 +152,37 @@ LinkedMemoryRegion PageDirectory::k_alloc_region(size_t mem_size) {
 	return region;
 }
 
-void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
-	if(region_buffer_needs_attention) {
-		PANIC("KRNL_MULTI_ALLOC", "liballoc attempted to allocate multiple regions at once for the heap.", true);
-	}
-	region_buffer_needs_attention = true;
+bool new_heap_region = false;
+bool allocing_new_heap_region = false;
+MemoryRegion first_kmalloc_vregion, first_kmalloc_pregion;
+LinkedMemoryRegion next_kmalloc_region(nullptr, nullptr);
 
-	MemoryRegion* vmem_region = kernel_vmem_map.allocate_region(mem_size, &vmem_region_buffer);
-	vmem_region_buffer.heap_allocated = false;
+void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
+	if(allocing_new_heap_region)
+		PANIC("KRNL_HEAP_FAIL", "The kernel tried to allocate more heap memory while already doing so.", true);
+
+	//Use the first regions if we need to
+	MemoryRegion *vregion_storage, *pregion_storage;
+	if(next_kmalloc_region.virt == nullptr) {
+		vregion_storage = &first_kmalloc_vregion;
+		pregion_storage = &first_kmalloc_pregion;
+	} else {
+		vregion_storage = next_kmalloc_region.virt;
+		pregion_storage = next_kmalloc_region.phys;
+	}
+
+	auto* vmem_region = kernel_vmem_map.allocate_region(mem_size, vregion_storage);
 	if(!vmem_region) {
 		Memory::kernel_page_directory.dump();
 		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region for the heap.", true);
 	}
 
-	//Next, try allocating the physical pages.
-	MemoryRegion* pmem_region = Memory::pmem_map().allocate_region(mem_size, &pmem_region_buffer);
-	pmem_region_buffer.heap_allocated = false;
+	auto* pmem_region = Memory::pmem_map().allocate_region(mem_size, pregion_storage);
 	if(!pmem_region) {
+		Memory::kernel_page_directory.dump();
 		PANIC("NO_MEM", "There's no more physical memory left.", true);
 	}
+
 	used_kernel_pmem += pmem_region->size;
 
 	//Finally, map the pages and zero out.
@@ -173,18 +192,19 @@ void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
 	k_map_region(region, true);
 	memset((void*)vmem_region->start, 0x00, vmem_region->size);
 
+	//Set new_heap_region to true so we allocate a new one next time.
+	new_heap_region = true;
+
 	return (void*) region.virt->start;
 }
 
 void PageDirectory::k_after_alloc() {
-	if(region_buffer_needs_attention) {
-		region_buffer_needs_attention = false;
-		auto* new_vmem = new MemoryRegion(vmem_region_buffer);
-		auto* new_pmem = new MemoryRegion(pmem_region_buffer);
-		new_vmem->related = new_pmem;
-		new_pmem->related = new_vmem;
-		kernel_vmem_map.replace_entry(&vmem_region_buffer, new_vmem);
-		Memory::pmem_map().replace_entry(&pmem_region_buffer, new_pmem);
+	if(new_heap_region) {
+		new_heap_region = false;
+		allocing_new_heap_region = true;
+		next_kmalloc_region.virt = new MemoryRegion();
+		next_kmalloc_region.phys = new MemoryRegion();
+		allocing_new_heap_region = false;
 	}
 }
 

@@ -20,6 +20,7 @@
 #include "multiboot.h"
 
 extern "C" void asm_syscall_handler();
+extern "C" void preempt_now_asm();
 extern void load_gdt();
 void interrupts_init();
 struct multiboot_info parse_mboot(uint32_t physaddr);

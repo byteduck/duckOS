@@ -332,20 +332,16 @@ void Process::reap() {
 void Process::kill(int signal) {
 	pending_signals.push(signal);
 	if(TaskManager::current_process() == this)
-		TaskManager::yield();
+		ASSERT(TaskManager::yield());
 }
 
-void Process::die_silently() {
-	state = PROCESS_DEAD;
-	if(TaskManager::current_process() == this)
-		TaskManager::yield();
-}
-
-bool Process::handle_pending_signal() {
+bool Process::handle_pending_signal(bool unhandled_only) {
 	if(pending_signals.empty() || _in_signal)
 		return false;
+
 	int signal = pending_signals.front();
 	pending_signals.pop();
+
 	if(signal >= 0 && signal <= 32) {
 		Signal::SignalSeverity severity = Signal::signal_severities[signal];
 
@@ -361,9 +357,13 @@ bool Process::handle_pending_signal() {
 				parent->kill(SIGCHLD);
 			state = PROCESS_ZOMBIE;
 			TaskManager::reparent_orphans(this);
-		} else if(signal_actions[signal].action) {
+		} else if(signal_actions[signal].action && !unhandled_only) {
 			//Otherwise, have the process handle the signal
 			call_signal_handler(signal);
+		} else if(signal_actions[signal].action && unhandled_only) {
+			//We were only doing handled signals, so push this signal back
+			pending_signals.push(signal);
+			return false;
 		}
 	}
 	return true;
@@ -458,17 +458,18 @@ void* Process::signal_stack_top() {
 void Process::handle_pagefault(Registers *regs) {
 	size_t err_pos;
 	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
+
 	//If the fault is at the fake signal return address, exit the signal handler
 	if(_in_signal && err_pos == SIGNAL_RETURN_FAKE_ADDR) {
 		_just_finished_signal = true;
 		PageDirectory::k_free_region(_sighandler_kstack_region);
 		page_directory->free_region(_sighandler_ustack_region);
-		TaskManager::yield();
+		ASSERT(TaskManager::yield());
 	}
-	if(!page_directory->try_cow(err_pos)) {
-		printf("SIGSEGV AT %x %x\n", err_pos, regs->eip);
+
+	//Otherwise, try CoW and kill the process if it doesn't work
+	if(!page_directory->try_cow(err_pos))
 		kill(SIGSEGV);
-	}
 }
 
 void *Process::kernel_stack_top() {
@@ -478,16 +479,19 @@ void *Process::kernel_stack_top() {
 void Process::block(Blocker& blocker) {
 	ASSERT(state == PROCESS_ALIVE);
 	ASSERT(!_blocker);
+	TaskManager::enabled() = false;
 	state = PROCESS_BLOCKED;
 	_blocker = &blocker;
-	_blocker->assign_process(this);
-	TaskManager::yield();
+	TaskManager::enabled() = true;
+	ASSERT(TaskManager::yield());
 }
 
 void Process::unblock() {
-	_blocker->clear_process();
+	if(!_blocker)
+		return;
 	_blocker = nullptr;
-	state = PROCESS_ALIVE;
+	if(state == PROCESS_BLOCKED)
+		state = PROCESS_ALIVE;
 }
 
 bool Process::is_blocked() {
@@ -546,7 +550,6 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	new_proc->_user = _user;
 	new_proc->_pgid = _pgid;
 	new_proc->_sid = _sid;
-	new_proc->_blocker = this->_blocker;
 	if(kernel) {
 		//Kernel processes have no file descriptors, so we need to initialize them
 		auto ttydesc = DC::make_shared<FileDescriptor>(VirtualTTY::current_tty());
@@ -571,10 +574,11 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	filename.~string();
 
 	//Add the new process to the process list
-	cli();
+	TaskManager::enabled() = false;
 	_pid = -1;
 	state = PROCESS_DEAD;
 	TaskManager::add_process(new_proc);
+	TaskManager::enabled() = true;
 	TaskManager::yield();
 	ASSERT(false);
 	return -1;

@@ -33,7 +33,6 @@ irq0
 
 [global preempt_now_asm]
 preempt_now_asm:
-    cli
     push eax
     push ebx
     push ecx
@@ -45,7 +44,7 @@ preempt_now_asm:
     push es
     push fs
     push gs
-    call preempt
+	call preempt
     pop gs
     pop fs
     pop es
@@ -59,8 +58,7 @@ preempt_now_asm:
 	mov eax, 0x20
 	out 0x20, al
 	pop eax
-	sti
-    ret
+	iret
 
 [global preempt_init_asm]
 preempt_init_asm: ;Pretty much the same as preempt_asm, but without storing the state of the current process

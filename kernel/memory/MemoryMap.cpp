@@ -65,6 +65,7 @@ MemoryRegion* MemoryMap::allocate_region(size_t minimum_size, MemoryRegion* stor
 		else {
 			new_region = storage;
 			*storage = MemoryRegion(cur->start + size, cur->size - size);
+			storage->heap_allocated = false;
 		}
 
 		new_region->prev = cur;
@@ -130,6 +131,7 @@ MemoryRegion* MemoryMap::allocate_region(size_t address, size_t minimum_size, Me
 			if(storage) {
 				new_region = &storage[0];
 				storage[0] = MemoryRegion(address + size, size_after);
+				storage[0].heap_allocated = false;
 			} else {
 				new_region = new MemoryRegion(address + size, size_after);
 			}
@@ -145,6 +147,7 @@ MemoryRegion* MemoryMap::allocate_region(size_t address, size_t minimum_size, Me
 			if(storage) {
 				new_region = &storage[1];
 				storage[1] = MemoryRegion(cur->start, address_pagealigned - cur->start);
+				storage[1].heap_allocated = false;
 			} else {
 				new_region = new MemoryRegion(cur->start, address_pagealigned - cur->start);
 			}
@@ -288,11 +291,16 @@ MemoryRegion *MemoryMap::find_shared_region(int id) {
 
 void MemoryMap::replace_entry(MemoryRegion *old_region, MemoryRegion *new_region) {
 	lock.acquire();
-	if(old_region->next) old_region->next->prev = new_region;
-	if(old_region->prev) old_region->prev->next = new_region;
+	if(old_region->next)
+		old_region->next->prev = new_region;
+	if(old_region->prev)
+		old_region->prev->next = new_region;
+	if(old_region->related && old_region->related->related == old_region)
+		old_region->related->related = new_region;
 	new_region->next = old_region->next;
 	new_region->prev = old_region->prev;
-	if(old_region == _first_region) _first_region = new_region;
+	if(old_region == _first_region)
+		_first_region = new_region;
 	lock.release();
 }
 

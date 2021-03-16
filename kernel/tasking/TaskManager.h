@@ -37,7 +37,7 @@ namespace TaskManager {
 	void print_tasks();
 	void reparent_orphans(Process* proc);
 
-	uint32_t add_process(Process *p);
+	int add_process(Process *p);
 	Process *current_process();
 	Process *process_for_pid(pid_t pid);
 	Process *process_for_pgid(pid_t pgid, pid_t exclude = -1);
@@ -56,7 +56,6 @@ namespace TaskManager {
 	Process* next_process();
 
 	extern "C" void preempt();
-	extern "C" void preempt_now_asm();
 	extern "C" void __attribute((cdecl)) preempt_init_asm(unsigned int new_esp);
 	extern "C" void __attribute((cdecl)) preempt_asm(unsigned int *old_esp, unsigned int *new_esp, uint32_t new_cr3);
 	extern "C" void proc_first_preempt();

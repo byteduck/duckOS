@@ -30,12 +30,15 @@
 #define PAGE_SIZE 4096
 #define PAGE_SIZE_FLAG PAGING_4KiB
 #define HIGHER_HALF 0xC0000000
-#define KERNEL_START ((size_t)&_KERNEL_START)
+#define KERNEL_TEXT ((size_t)&_KERNEL_TEXT)
+#define KERNEL_TEXT_END ((size_t)&_KERNEL_TEXT_END)
+#define KERNEL_DATA ((size_t)&_KERNEL_DATA)
+#define KERNEL_DATA_END ((size_t)&_KERNEL_DATA_END)
 #define KERNEL_END ((size_t)&_KERNEL_END)
 #define PAGETABLES_START ((size_t)&_PAGETABLES_START)
 #define PAGETABLES_END ((size_t)&_PAGETABLES_END)
-#define KERNEL_SIZE (KERNEL_END - KERNEL_START)
-#define KERNEL_SIZE_PAGES ((KERNEL_SIZE + (PAGE_SIZE - 1)) / PAGE_SIZE)
+#define KERNEL_TEXT_SIZE (KERNEL_TEXT_END - KERNEL_TEXT)
+#define KERNEL_DATA_SIZE (KERNEL_DATA_END - KERNEL_DATA)
 #define KERNEL_END_VIRTADDR (HIGHER_HALF + KERNEL_SIZE_PAGES * PAGE_SIZE)
 
 /**
@@ -63,8 +66,10 @@
 
 class PageTable;
 class PageDirectory;
-extern "C" long _KERNEL_START;
-extern "C" long _KERNEL_END;
+extern "C" long _KERNEL_TEXT;
+extern "C" long _KERNEL_TEXT_END;
+extern "C" long _KERNEL_DATA;
+extern "C" long _KERNEL_DATA_END;
 extern "C" long _PAGETABLES_START;
 extern "C" long _PAGETABLES_END;
 

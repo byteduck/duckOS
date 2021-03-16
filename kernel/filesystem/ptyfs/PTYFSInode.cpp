@@ -21,8 +21,9 @@
 #include <kernel/terminal/PTYDevice.h>
 #include <common/defines.h>
 #include "PTYFS.h"
+#include <kernel/terminal/PTYControllerDevice.h>
 
-PTYFSInode::PTYFSInode(PTYFS& fs, Type type, PTYDevice* pty): Inode(fs, type == PTY ? pty->id() + 2 : 1), type(type), _pty(pty), ptyfs(fs) {
+PTYFSInode::PTYFSInode(PTYFS& fs, Type type, const DC::shared_ptr<PTYDevice>& pty): Inode(fs, type == PTY ? pty->id() + 2 : 1), type(type), _pty(pty), ptyfs(fs) {
 	// Inode ID 1 = Root, 2+ = (pty ID + 2)
 	DC::string name;
 	uint8_t dtype;
@@ -51,7 +52,7 @@ PTYFSInode::PTYFSInode(PTYFS& fs, Type type, PTYDevice* pty): Inode(fs, type == 
 	dir_entry = DirectoryEntry(id, dtype, name);
 }
 
-PTYDevice* PTYFSInode::pty() {
+DC::shared_ptr<PTYDevice> PTYFSInode::pty() {
 	return _pty;
 }
 

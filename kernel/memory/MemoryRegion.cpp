@@ -26,8 +26,22 @@ MemoryRegion::MemoryRegion(size_t start, size_t size): start(start), size(size),
 
 }
 
-MemoryRegion::MemoryRegion(const MemoryRegion& region): start(region.start), size(region.size), next(region.next), prev(region.prev), heap_allocated(true) {
-
+MemoryRegion::MemoryRegion(const MemoryRegion& region):
+	start(region.start),
+	size(region.size),
+	related(region.related),
+	used(region.used),
+	heap_allocated(true),
+	reserved(region.reserved),
+	cow(region.cow),
+	is_shm(region.is_shm),
+	shm_refs(region.shm_refs),
+	shm_id(region.shm_id),
+	shm_owner(region.shm_owner)
+{
+	if(region.shm_allowed) {
+		shm_allowed = new DC::vector<ShmPermissions>(*region.shm_allowed);
+	}
 }
 
 MemoryRegion::~MemoryRegion() {

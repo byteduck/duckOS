@@ -62,6 +62,14 @@ unsigned Device::minor() {
 	return _minor;
 }
 
+DC::shared_ptr<Device> Device::shared_ptr() {
+	auto res = get_device(major(), minor());
+	if(res.is_error() || res.value().get() != this)
+		return DC::shared_ptr<Device>(nullptr);
+	else
+		return res.value();
+}
+
 
 DC::vector<DC::shared_ptr<Device>> Device::devices() {
 	return _devices;

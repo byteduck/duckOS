@@ -98,14 +98,12 @@ void TaskManager::print_tasks(){
 }
 
 void TaskManager::reparent_orphans(Process* proc) {
-	tasking_enabled = false;
 	auto* cchild = kidle_proc->next;
 	do {
 		if(cchild->ppid() == proc->pid())
 			cchild->set_ppid(1);
 		cchild = cchild->next;
 	} while(cchild != kidle_proc);
-	tasking_enabled = true;
 }
 
 bool& TaskManager::enabled(){
@@ -144,8 +142,7 @@ Process* TaskManager::current_process(){
 	return current_proc;
 }
 
-uint32_t TaskManager::add_process(Process *p){
-	ASSERT(tasking_enabled)
+int TaskManager::add_process(Process *p){
 	tasking_enabled = false;
 	ProcFS::inst().proc_add(p);
 	p->next = current_proc->next;
@@ -184,7 +181,7 @@ bool TaskManager::yield() {
 		yield_async = true;
 		return false;
 	} else {
-		preempt_now_asm();
+		asm volatile("int $0x81");
 		return true;
 	}
 }
@@ -198,7 +195,7 @@ bool TaskManager::yield_if_idle() {
 void TaskManager::do_yield_async() {
 	if(yield_async) {
 		yield_async = false;
-		preempt_now_asm();
+		asm volatile("int $0x81");
 	}
 }
 
@@ -213,19 +210,27 @@ void TaskManager::preempt(){
 	do {
 		switch(current->state) {
 			case PROCESS_BLOCKED:
+				current->handle_pending_signal(true);
 				if(current->should_unblock()) {
 					current->unblock();
 					any_alive = true;
 				}
-				current->handle_pending_signal();
 				current = current->next;
 				break;
 			case PROCESS_ALIVE:
-				current->handle_pending_signal();
+				current->handle_pending_signal(false);
 				current = current->next;
 				any_alive = true;
 				break;
-			case PROCESS_DEAD:
+			case PROCESS_DEAD: {
+				current->prev->next = current->next;
+				current->next->prev = current->prev;
+				Process* to_delete = current;
+				current = current->next;
+				ProcFS::inst().proc_remove(to_delete);
+				delete to_delete;
+				break;
+			}
 			case PROCESS_ZOMBIE:
 				current = current->next;
 				break;
@@ -239,7 +244,7 @@ void TaskManager::preempt(){
 	 * A task switch will occur if the current process's quantum is up, if there were previously no running processes
 	 * and one has become ready, and only if there is more than one running process.
 	 */
-	bool force_switch = !prev_alive && any_alive;
+	bool force_switch = (!prev_alive && any_alive) || (prev_alive && !any_alive);
 	prev_alive = any_alive;
 	if(quantum_counter == 0 || force_switch) {
 		//Pick a new process and decrease the quantum counter
@@ -285,24 +290,13 @@ void TaskManager::preempt(){
 		}
 
 		//Switch tasks.
-		if(should_preempt)
+		ASSERT(current_proc->state == PROCESS_ALIVE);
+		if(should_preempt) {
+			tss.esp0 = (size_t) current_proc->kernel_stack_top();
 			preempt_asm(old_esp, new_esp, current_proc->page_directory_loc);
+		}
 	} else {
+		ASSERT(current_proc->state == PROCESS_ALIVE);
 		quantum_counter--;
 	}
-
-	/*
-	 * Clean up old, dead processes
-	 */
-	current = kidle_proc->next;
-	do {
-		if(current->state == PROCESS_DEAD) {
-			current->prev->next = current->next;
-			current->next->prev = current->prev;
-			Process* to_delete = current;
-			ProcFS::inst().proc_remove(to_delete);
-			delete to_delete;
-		}
-		current = current->next;
-	} while(current != kidle_proc);
 }

@@ -59,7 +59,7 @@ public:
 	static MemoryMap kernel_vmem_map;
 	static PageTable kernel_page_tables[256] __attribute__((aligned(4096)));
 	static size_t kernel_page_tables_physaddr[1024];
-	static MemoryRegion early_vmem_regions[2];
+	static MemoryRegion early_vmem_regions[3];
 	static size_t used_kernel_pmem;
 	static size_t used_kheap_pmem;
 
@@ -71,7 +71,7 @@ public:
 	/**
 	 * Map the kernel into memory.
 	 */
-	static void map_kernel(MemoryRegion* kernel_pmem_region);
+	static void map_kernel(MemoryRegion* text_region, MemoryRegion* data_region);
 
 	/**
 	 * Maps a number of pages at virtaddr (must be in kernel space) to physaddr

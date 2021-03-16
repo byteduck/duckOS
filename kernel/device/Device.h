@@ -34,6 +34,7 @@ public:
 
 	unsigned major();
 	unsigned minor();
+	DC::shared_ptr<Device> shared_ptr();
 
 	virtual bool is_block_device();
 	virtual bool is_character_device();

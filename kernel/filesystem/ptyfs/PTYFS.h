@@ -30,8 +30,8 @@ public:
 	static PTYFS& inst();
 	PTYFS();
 
-	void add_pty(PTYDevice* pty);
-	void remove_pty(PTYDevice* pty);
+	void add_pty(const DC::shared_ptr<PTYDevice>& pty);
+	void remove_pty(const DC::shared_ptr<PTYDevice>& pty);
 
 	//Filesystem
 	char* name() override;

@@ -26,7 +26,7 @@
 class PTYDevice;
 class PTYControllerDevice: public CharacterDevice {
 public:
-	PTYControllerDevice(unsigned int id);
+	explicit PTYControllerDevice(unsigned int id);
 
 	//File
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
@@ -39,12 +39,12 @@ public:
 	void notify_pty_closed();
 	void ref_inc();
 	void ref_dec();
-	PTYDevice* pty();
+	DC::shared_ptr<PTYDevice> pty();
 
 private:
 	SpinLock _output_lock, _write_lock, _ref_lock;
 	DC::circular_queue<uint8_t> _output_buffer;
-	PTYDevice* _pty;
+	DC::shared_ptr<PTYDevice> _pty;
 	unsigned int num_refs = 1;
 };
 

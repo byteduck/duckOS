@@ -85,7 +85,7 @@ start:
 
     ;Turn on paging
     mov ecx, cr0
-    or ecx, 0x80000000
+    or ecx, 0x80010000
     mov cr0, ecx
 
     lea ecx, [start_hh]
@@ -124,3 +124,6 @@ align 32
 [global stack]
 stack:
     resb 0x4000      ; reserve 16k stack on a uint64_t boundary
+[global heap]
+heap:
+    resb 0x

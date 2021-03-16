@@ -18,6 +18,8 @@
 */
 
 #include "PTYMuxDevice.h"
+#include "PTYControllerDevice.h"
+#include "PTYDevice.h"
 
 PTYMuxDevice::PTYMuxDevice(): CharacterDevice(5, 2) {
 
@@ -29,9 +31,8 @@ bool PTYMuxDevice::is_pty_mux() {
 
 DC::shared_ptr<PTYControllerDevice> PTYMuxDevice::create_new() {
 	LOCK(lock);
-	new PTYControllerDevice(current_pty);
-	auto pty_shared_res = Device::get_device(300, current_pty++);
-	if(pty_shared_res.is_error())
+	auto pty = (new PTYControllerDevice(current_pty++))->shared_ptr();
+	if(!pty)
 		PANIC("PTY_CREATE_FAILED", "The PTY Multiplexer failed to create a new PTY Controller and PTY.", true);
-	return pty_shared_res.value();
+	return pty;
 }

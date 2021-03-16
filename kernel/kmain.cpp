@@ -217,6 +217,8 @@ void interrupts_init(){
 	Interrupt::isr_init();
 	//Setup the syscall handler
 	Interrupt::idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
+	//Setup the immediate preemption handler
+	Interrupt::idt_set_gate(0x81, (unsigned)preempt_now_asm, 0x08, 0x8F);
 	//Setup the PIT used for timing / preemption
 	PIT::init();
 	//Setup IRQ handlers

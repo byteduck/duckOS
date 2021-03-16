@@ -34,7 +34,8 @@ namespace Memory {
 	MemoryMap _pmem_map(0,nullptr);
 	MemoryRegion kernel_pmem_region = {0,0};
 	MemoryRegion multiboot_memory_regions[32];
-	MemoryRegion early_pmem_region_storage[2];
+	MemoryRegion early_pmem_text_region_storage[2];
+	MemoryRegion early_pmem_data_region_storage[2];
 	uint8_t num_multiboot_memory_regions = 0;
 
 	size_t usable_bytes_ram = 0;
@@ -45,7 +46,7 @@ namespace Memory {
 	//TODO: Assumes computer has at least 4GiB of memory. Should detect memory in future.
 	void setup_paging() {
 		//Assert that the kernel doesn't exceed 7MiB
-		ASSERT(KERNEL_END - KERNEL_START <= 0x700000);
+		ASSERT(KERNEL_DATA_END - KERNEL_TEXT <= 0x700000);
 
 		kernel_page_directory.set_entries(kernel_page_directory_entries);
 		PageDirectory::init_kmem();
@@ -78,18 +79,18 @@ namespace Memory {
 				: : "a"((size_t) kernel_page_directory.entries() - HIGHER_HALF)
 		);
 
-		//Mark the kernel region as used
-		size_t k_start_pagealigned = ((KERNEL_START - HIGHER_HALF) / PAGE_SIZE) * PAGE_SIZE;
-
 		//Setup the pmem map
 		_pmem_map = MemoryMap(PAGE_SIZE, &multiboot_memory_regions[0]);
-		MemoryRegion* kernel_region = _pmem_map.allocate_region(k_start_pagealigned, KERNEL_SIZE_PAGES * PAGE_SIZE, early_pmem_region_storage);
-		if(!kernel_region)
-			PANIC("KRNL_MAP_FAIL", "The kernel could not be allocated in the physical memory map.\n", true);
+		MemoryRegion* text_region = _pmem_map.allocate_region(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, early_pmem_text_region_storage);
+		if(!text_region)
+			PANIC("KRNL_MAP_FAIL", "The kernel's text section could not be allocated in the physical memory map.\n", true);
+		MemoryRegion* data_region = _pmem_map.allocate_region(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, early_pmem_data_region_storage);
+		if(!text_region)
+			PANIC("KRNL_MAP_FAIL", "The kernel's data section could not be allocated in the physical memory map.\n", true);
 		_pmem_map.recalculate_memory_totals();
 
 		//Now, map and write everything to the directory
-		PageDirectory::map_kernel(kernel_region);
+		PageDirectory::map_kernel(text_region, data_region);
 		kernel_page_directory.update_kernel_entries();
 	}
 
@@ -204,6 +205,7 @@ namespace Memory {
 					if(region.reserved) reserved_bytes_ram += region.size;
 					if(mmap_entry->type == MULTIBOOT_MEMORY_BADRAM) bad_bytes_ram += region.size;
 					num_multiboot_memory_regions++;
+					printf("[kinit] Adding memory region from 0x%x -> 0x%x (%s, %s)\n", region.start, region.start + (region.size - 1), region.used ? "Used" : "Unused", region.reserved ? "Reserved" : "Unreserved");
 				} else {
 					//Otherwise, ignore it
 					printf("[kinit] Ignoring too-small memory region at 0x%x\n", mmap_entry->addr_low);
@@ -235,9 +237,13 @@ int liballoc_unlock() {
 	return 0;
 }
 
+bool _ALLOC_ENABLED = true;
 void *liballoc_alloc(int pages) {
 	PageDirectory::used_kheap_pmem += pages * PAGE_SIZE;
-	return PageDirectory::k_alloc_region_for_heap(pages * PAGE_SIZE);
+	_ALLOC_ENABLED = false;
+	auto* ret = PageDirectory::k_alloc_region_for_heap(pages * PAGE_SIZE);
+	_ALLOC_ENABLED = true;
+	return ret;
 }
 
 void liballoc_afteralloc(void* ptr_alloced) {

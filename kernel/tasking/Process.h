@@ -91,12 +91,11 @@ public:
 	int exit_status();
 	void kill(int signal);
 	void reap();
-	void die_silently();
 	void free_resources();
 	void handle_pagefault(Registers *regs);
 	void* kernel_stack_top();
 
-	bool handle_pending_signal();
+	bool handle_pending_signal(bool unhandled_only);
 	bool has_pending_signals();
 	void call_signal_handler(int signal);
 	bool& in_signal_handler();

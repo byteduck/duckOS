@@ -17,8 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "PTYFS.h"
 #include <kernel/terminal/PTYDevice.h>
+#include <kernel/terminal/PTYControllerDevice.h>
+#include "PTYFS.h"
 #include <common/defines.h>
 
 PTYFS* _inst = nullptr;
@@ -29,15 +30,15 @@ PTYFS& PTYFS::inst() {
 
 PTYFS::PTYFS() {
 	_inst = this;
-	_entries.push_back(DC::make_shared<PTYFSInode>(*this, PTYFSInode::ROOT, nullptr));
+	_entries.push_back(DC::make_shared<PTYFSInode>(*this, PTYFSInode::ROOT, DC::shared_ptr<PTYDevice>(nullptr)));
 }
 
-void PTYFS::add_pty(PTYDevice* pty) {
+void PTYFS::add_pty(const DC::shared_ptr<PTYDevice>& pty) {
 	LOCK(_lock);
 	_entries.push_back(DC::make_shared<PTYFSInode>(*this, PTYFSInode::PTY, pty));
 }
 
-void PTYFS::remove_pty(PTYDevice* pty) {
+void PTYFS::remove_pty(const DC::shared_ptr<PTYDevice>& pty) {
 	LOCK(_lock);
 	for(size_t i = 0; i < _entries.size(); i++) {
 		if(_entries[i]->pty() == pty) {

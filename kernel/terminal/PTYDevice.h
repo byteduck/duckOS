@@ -26,7 +26,7 @@ class PTYControllerDevice;
 class PTYFS;
 class PTYDevice: public TTYDevice {
 public:
-	PTYDevice(unsigned int id, PTYControllerDevice* controller);
+	PTYDevice(unsigned int id, const DC::shared_ptr<PTYControllerDevice>& controller);
 
 	void ref_inc();
 	void ref_dec();
@@ -35,14 +35,14 @@ public:
 	DC::string name();
 
 	//File
-	bool is_pty();
+	bool is_pty() override;
 
 private:
 	//TTYDevice
 	size_t tty_write(const uint8_t* chars, size_t count) override;
 	void echo(uint8_t c) override;
 
-	PTYControllerDevice* _controller;
+	DC::shared_ptr<PTYControllerDevice> _controller;
 	DC::string _name;
 	unsigned int num_refs = 1;
 	SpinLock _lock;

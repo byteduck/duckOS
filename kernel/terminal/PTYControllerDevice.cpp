@@ -21,13 +21,14 @@
 #include "PTYDevice.h"
 
 PTYControllerDevice::PTYControllerDevice(unsigned int id): CharacterDevice(300, id), _output_buffer(1024) {
-	_pty = new PTYDevice(id, this);
+	_pty = (new PTYDevice(id, shared_ptr()))->shared_ptr();
 }
 
 ssize_t PTYControllerDevice::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+	LOCK_N(_write_lock, write_locker);
+	LOCK_N(_ref_lock, ref_locker);
 	if(!_pty)
 		return 0;
-	LOCK(_write_lock);
 	while(count--)
 		_pty->emit(*(buffer++));
 	return count;
@@ -50,7 +51,8 @@ bool PTYControllerDevice::can_read(const FileDescriptor& fd) {
 }
 
 bool PTYControllerDevice::can_write(const FileDescriptor& fd) {
-	return _pty != nullptr;
+	LOCK(_ref_lock);
+	return _pty.get() != nullptr;
 }
 
 size_t PTYControllerDevice::putchars(const uint8_t* buffer, size_t count) {
@@ -62,7 +64,7 @@ size_t PTYControllerDevice::putchars(const uint8_t* buffer, size_t count) {
 }
 
 void PTYControllerDevice::notify_pty_closed() {
-	_pty = nullptr;
+	_pty = DC::shared_ptr<PTYDevice>(nullptr);
 }
 
 void PTYControllerDevice::ref_inc() {
@@ -80,6 +82,6 @@ void PTYControllerDevice::ref_dec() {
 	}
 }
 
-PTYDevice* PTYControllerDevice::pty() {
+DC::shared_ptr<PTYDevice> PTYControllerDevice::pty() {
 	return _pty;
 }

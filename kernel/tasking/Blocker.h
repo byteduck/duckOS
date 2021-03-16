@@ -23,18 +23,7 @@
 class Process;
 class Blocker {
 public:
-	~Blocker();
 	virtual bool is_ready() = 0;
-
-	void unblock();
-
-protected:
-	friend class Process;
-	void assign_process(Process* proc);
-	void clear_process();
-
-private:
-	Process* _proc = nullptr;
 };
 
 #endif //DUCKOS_BLOCKER_H

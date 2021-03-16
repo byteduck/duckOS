@@ -47,7 +47,10 @@ void serial_putch(char c) {
 
 	while (!(inb(0x3FD) & 0x20u));
 
-	if(c == '\n') outb(0x3F8, '\r');
+	if(c == '\n') {
+		outb(0x3F8, '\r');
+		while (!(inb(0x3FD) & 0x20u));
+	}
 	outb(0x3F8, c);
 }
 

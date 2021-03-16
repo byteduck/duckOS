@@ -34,8 +34,8 @@ public:
 		ROOT = 1, PTY = 2
 	};
 
-	PTYFSInode(PTYFS& fs, Type type, PTYDevice* pty);
-	PTYDevice* pty();
+	PTYFSInode(PTYFS& fs, Type type, const DC::shared_ptr<PTYDevice>& pty);
+	DC::shared_ptr<PTYDevice> pty();
 
 	//Inode
 	InodeMetadata metadata() override;
@@ -56,7 +56,7 @@ public:
 
 private:
 	Type type;
-	PTYDevice* _pty;
+	DC::shared_ptr<PTYDevice> _pty;
 	PTYFS& ptyfs;
 	DirectoryEntry dir_entry;
 };
