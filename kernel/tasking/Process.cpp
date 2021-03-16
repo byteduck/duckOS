@@ -27,6 +27,7 @@
 #include "ProcessArgs.h"
 #include "WaitBlocker.h"
 #include "PollBlocker.h"
+#include "SleepBlocker.h"
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/syscall.h>
 #include <kernel/terminal/VirtualTTY.h>
@@ -275,7 +276,7 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	TaskManager::enabled() = true;
 }
 
-void Process::setup_stack(uint32_t*& kernel_stack, uint32_t* userstack, Registers& regs) {
+void Process::setup_stack(uint32_t*& kernel_stack, const uint32_t* userstack, Registers& regs) {
 	//If usermode, push ss and useresp
 	if(ring != 0) {
 		*--kernel_stack = 0x23;
@@ -335,7 +336,7 @@ void Process::kill(int signal) {
 		ASSERT(TaskManager::yield());
 }
 
-bool Process::handle_pending_signal(bool unhandled_only) {
+bool Process::handle_pending_signal() {
 	if(pending_signals.empty() || _in_signal)
 		return false;
 
@@ -357,13 +358,20 @@ bool Process::handle_pending_signal(bool unhandled_only) {
 				parent->kill(SIGCHLD);
 			state = PROCESS_ZOMBIE;
 			TaskManager::reparent_orphans(this);
-		} else if(signal_actions[signal].action && !unhandled_only) {
-			//Otherwise, have the process handle the signal
+		} else if(signal_actions[signal].action) {
+			//We have a signal handler for this. If the process is blocked but can be interrupted, do so.
+			if(is_blocked()) {
+				if(_blocker->can_be_interrupted()) {
+					_blocker->interrupt();
+					unblock();
+				} else {
+					pending_signals.push(signal);
+					return false;
+				}
+			}
+
+			//Call the signal handler.
 			call_signal_handler(signal);
-		} else if(signal_actions[signal].action && unhandled_only) {
-			//We were only doing handled signals, so push this signal back
-			pending_signals.push(signal);
-			return false;
 		}
 	}
 	return true;
@@ -374,15 +382,11 @@ bool Process::has_pending_signals() {
 }
 
 void Process::call_signal_handler(int signal) {
-	//TODO: Do this without switching page directories
 	if(signal < 1 || signal >= 32)
 		return;
 	auto signal_loc = (size_t) signal_actions[signal].action;
 	if(!signal_loc || signal_loc >= HIGHER_HALF)
 		return;
-
-	//Load the page directory so we can write to the userspace stack
-	asm volatile("mov %0, %%cr3" :: "r"(page_directory_loc));
 
 	//Allocate a userspace stack
 	_sighandler_ustack_region = page_directory->allocate_region(HIGHER_HALF - PROCESS_STACK_SIZE * 2, PROCESS_STACK_SIZE, true);
@@ -400,12 +404,18 @@ void Process::call_signal_handler(int signal) {
 		return;
 	}
 
-	auto* user_stack = (size_t*) (_sighandler_ustack_region.virt->start + PROCESS_STACK_SIZE);
+	//Map the user stack into the kernel temporarily
+	auto k_ustack_region = PageDirectory::k_map_physical_region(_sighandler_ustack_region.phys, true);
+
+	auto* user_stack = (size_t*) (k_ustack_region.virt->start + PROCESS_STACK_SIZE);
 	_signal_stack_top = _sighandler_kstack_region.virt->start + _sighandler_kstack_region.virt->size;
 
 	//Push signal number and fake return address to the stack
 	*--user_stack = signal;
 	*--user_stack = SIGNAL_RETURN_FAKE_ADDR;
+
+	//Calculate the current location in the user stack in program space
+	size_t real_userstack = _sighandler_ustack_region.virt->start + PROCESS_STACK_SIZE - sizeof(size_t) * 2;
 
 	//Setup signal registers
 	signal_registers.eflags = 0x202;
@@ -415,7 +425,7 @@ void Process::call_signal_handler(int signal) {
 	signal_registers.ebx = 0;
 	signal_registers.ecx = 0;
 	signal_registers.edx = 0;
-	signal_registers.ebp = (size_t) user_stack;
+	signal_registers.ebp = real_userstack;
 	signal_registers.edi = 0;
 	signal_registers.esi = 0;
 	if(ring == 0) {
@@ -430,11 +440,17 @@ void Process::call_signal_handler(int signal) {
 		signal_registers.gs = 0x23; // gs
 	}
 
-	//Setup signal stack
-	setup_stack(user_stack, user_stack, signal_registers);
+	//Take note of the stack location before
+	auto* stack_before = user_stack;
 
-	//Load back page directory of current process
-	asm volatile("mov %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
+	//Set up the stack
+	setup_stack(user_stack, (uint32_t*) real_userstack, signal_registers);
+
+	//Set the esp register using the real user stack location
+	signal_registers.esp = real_userstack - ((size_t) stack_before - (size_t) user_stack);
+
+	//Unmap the user stack from kernel space
+	PageDirectory::k_free_virtual_region(k_ustack_region);
 
 	_ready_to_handle_signal = true;
 }
@@ -1228,4 +1244,10 @@ int Process::sys_ptsname(int fd, char* buf, size_t bufsize) {
 	//Copy the name into the buffer and return success
 	strcpy(buf, name.c_str());
 	return SUCCESS;
+}
+
+int Process::sys_sleep(unsigned int seconds) {
+	SleepBlocker blocker(seconds);
+	block(blocker);
+	return blocker.time_left();
 }

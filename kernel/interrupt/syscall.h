@@ -87,6 +87,7 @@
 #define SYS_SHMALLOW 66
 #define SYS_POLL 67
 #define SYS_PTSNAME 68
+#define SYS_SLEEP 69
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

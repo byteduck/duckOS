@@ -312,6 +312,8 @@ Result SocketFSInode::write_packet(SocketFSClient& client, pid_t pid, size_t len
 		if(!nonblock) {
 			client._blocker.set_ready(false);
 			TaskManager::current_process()->block(client._blocker);
+		} else {
+			return -ENOSPC;
 		}
 	}
 

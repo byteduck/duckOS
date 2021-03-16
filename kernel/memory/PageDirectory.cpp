@@ -127,6 +127,24 @@ void PageDirectory::k_unmap_region(const LinkedMemoryRegion& region) {
 	}
 }
 
+LinkedMemoryRegion PageDirectory::k_map_physical_region(MemoryRegion* physregion, bool read_write) {
+	//First, try allocating a region of virtual memory.
+	MemoryRegion* virtregion = kernel_vmem_map.allocate_region(physregion->size);
+	if(!virtregion) {
+		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region.", true);
+	}
+
+	//Then, map it.
+	LinkedMemoryRegion reg(physregion, virtregion);
+	k_map_region(reg, read_write);
+	return reg;
+}
+
+void PageDirectory::k_free_virtual_region(LinkedMemoryRegion region) {
+	k_unmap_region(region);
+	kernel_vmem_map.free_region(region.virt);
+}
+
 LinkedMemoryRegion PageDirectory::k_alloc_region(size_t mem_size) {
 	//First, try allocating a region of virtual memory.
 	MemoryRegion* vmem_region = kernel_vmem_map.allocate_region(mem_size);
@@ -698,7 +716,7 @@ bool PageDirectory::is_mapped(size_t vaddr) {
 
 void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new_pid) {
 	//Iterate through every entry of the page directory we're copying from
-	LOCK(parent->_vmem_map.lock);
+	TaskManager::enabled() = false;
 	MemoryRegion* parent_region = parent->_vmem_map.first_region();
 	while(parent_region) {
 		if(parent_region->used) {
@@ -768,6 +786,7 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 		}
 		parent_region = parent_region->next;
 	}
+	TaskManager::enabled() = true;
 }
 
 bool PageDirectory::try_cow(size_t virtaddr) {

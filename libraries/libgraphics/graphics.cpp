@@ -86,10 +86,11 @@ void Image::copy_blitting(const Image& other, Rect other_area, const Point& pos)
 			auto& other_val = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
 			unsigned int alpha = COLOR_A(other_val) + 1;
 			unsigned int inv_alpha = 256 - COLOR_A(other_val);
-			this_val = RGB(
+			this_val = RGBA(
 					(uint8_t)((alpha * COLOR_R(other_val) + inv_alpha * COLOR_R(this_val)) >> 8),
 					(uint8_t)((alpha * COLOR_G(other_val) + inv_alpha * COLOR_G(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8));
+					(uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8),
+					(uint8_t)((alpha * COLOR_A(other_val) + inv_alpha * COLOR_A(this_val)) >> 8));
 		}
 	}
 }

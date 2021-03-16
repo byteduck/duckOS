@@ -24,6 +24,17 @@ class Process;
 class Blocker {
 public:
 	virtual bool is_ready() = 0;
+
+	virtual bool can_be_interrupted();
+	void interrupt();
+	void reset_interrupted();
+	bool was_interrupted();
+
+protected:
+	virtual void on_interrupted();
+
+private:
+	bool _interrupted = false;
 };
 
 #endif //DUCKOS_BLOCKER_H

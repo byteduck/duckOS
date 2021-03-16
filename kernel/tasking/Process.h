@@ -95,7 +95,7 @@ public:
 	void handle_pagefault(Registers *regs);
 	void* kernel_stack_top();
 
-	bool handle_pending_signal(bool unhandled_only);
+	bool handle_pending_signal();
 	bool has_pending_signals();
 	void call_signal_handler(int signal);
 	bool& in_signal_handler();
@@ -175,6 +175,7 @@ public:
 	int sys_shmallow(int id, pid_t pid, int perms);
 	int sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout);
 	int sys_ptsname(int fd, char* buf, size_t bufsize);
+	int sys_sleep(unsigned int seconds);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;
@@ -191,7 +192,7 @@ private:
 	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
 
-	void setup_stack(uint32_t*& kernel_stack, uint32_t* user_stack, Registers& registers);
+	void setup_stack(uint32_t*& kernel_stack, const uint32_t* user_stack, Registers& registers);
 
 	//Identifying info and state
 	DC::string _name = "";

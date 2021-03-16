@@ -215,8 +215,7 @@ char* getwd(char* buf) {
 }
 
 int sleep(unsigned secs) {
-	//TODO
-	return -1;
+	return syscall2(SYS_SLEEP, (int) secs);
 }
 
 pid_t tcgetpgrp(int fd) {

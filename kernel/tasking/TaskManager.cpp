@@ -34,6 +34,7 @@ Process *kidle_proc;
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
 bool yield_async = false;
+bool preempting = false;
 
 void kidle(){
 	tasking_enabled = true;
@@ -175,6 +176,7 @@ Process *TaskManager::next_process() {
 static uint8_t quantum_counter = 0;
 
 bool TaskManager::yield() {
+	//ASSERT(!preempting);
 	quantum_counter = 0;
 	if(Interrupt::in_interrupt()) {
 		// We can't yield in an interrupt. Instead, we'll yield immediately after we exit the interrupt
@@ -199,26 +201,28 @@ void TaskManager::do_yield_async() {
 	}
 }
 
+
 void TaskManager::preempt(){
 	if(!tasking_enabled) return;
+	preempting = true;
 
 	static bool prev_alive = false; // Whether or not there was an alive process last preemption
 	bool any_alive = false;
 
 	//Handle pending signals, cleanup dead processes, and release zombie processes' resources
-	Process *current = kidle_proc->next;
+	Process* current = kidle_proc->next;
 	do {
 		switch(current->state) {
 			case PROCESS_BLOCKED:
-				current->handle_pending_signal(true);
+				current->handle_pending_signal();
 				if(current->should_unblock()) {
-					current->unblock();
 					any_alive = true;
+					current->unblock();
 				}
 				current = current->next;
 				break;
 			case PROCESS_ALIVE:
-				current->handle_pending_signal(false);
+				current->handle_pending_signal();
 				current = current->next;
 				any_alive = true;
 				break;
@@ -244,7 +248,7 @@ void TaskManager::preempt(){
 	 * A task switch will occur if the current process's quantum is up, if there were previously no running processes
 	 * and one has become ready, and only if there is more than one running process.
 	 */
-	bool force_switch = (!prev_alive && any_alive) || (prev_alive && !any_alive);
+	bool force_switch = !prev_alive && any_alive;
 	prev_alive = any_alive;
 	if(quantum_counter == 0 || force_switch) {
 		//Pick a new process and decrease the quantum counter
@@ -291,12 +295,20 @@ void TaskManager::preempt(){
 
 		//Switch tasks.
 		ASSERT(current_proc->state == PROCESS_ALIVE);
-		if(should_preempt) {
-			tss.esp0 = (size_t) current_proc->kernel_stack_top();
+		if(should_preempt)
 			preempt_asm(old_esp, new_esp, current_proc->page_directory_loc);
-		}
+		preempting = false;
 	} else {
+		preempting = false;
 		ASSERT(current_proc->state == PROCESS_ALIVE);
 		quantum_counter--;
 	}
+}
+
+TaskManager::Disabler::Disabler(): _enabled(enabled()) {
+	enabled() = false;
+}
+
+TaskManager::Disabler::~Disabler() {
+	enabled() = _enabled;
 }

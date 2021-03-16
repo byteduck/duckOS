@@ -55,8 +55,6 @@ preempt_now_asm:
 	pop edx
 	pop ecx
 	pop ebx
-	mov eax, 0x20
-	out 0x20, al
 	pop eax
 	iret
 
@@ -88,6 +86,8 @@ preempt_asm:
     mov cr3, edx
     mov esp, [ecx]
     pop ebp
+	mov eax, 0x20
+	out 0x20, al
     ret
 
 [global proc_first_preempt]

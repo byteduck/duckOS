@@ -87,6 +87,20 @@ public:
 	static void k_unmap_region(const LinkedMemoryRegion& region);
 
 	/**
+	 * Maps a physical memory region somewhere into kernel space.
+	 * @param physregion The physical region to map.
+	 * @param read_write Whether it should be marked read/write.
+	 * @return A linked memory region containing the given physical region and the new virtual region.
+	 */
+	static LinkedMemoryRegion k_map_physical_region(MemoryRegion* physregion, bool read_write);
+
+	/**
+	 * Frees a virtual memory region from kernel space, but not the associated physical region.
+	 * @param region The linked memory region who's virtual region will be unmapped and freed.
+	 */
+	static void k_free_virtual_region(LinkedMemoryRegion region);
+
+	/**
 	 * Allocates a region of memory in kernel space and returns the region allocated.
 	 * @param mem_size The amount of memory to allocate. Will be rounded up to be page-aligned.
 	 * @return The LinkedMemoryRegion allocated.

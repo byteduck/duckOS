@@ -61,19 +61,21 @@ void TTYDevice::emit(uint8_t c) {
 			while (!_buffered_input_buffer.empty()) {
 				_input_buffer.push(_buffered_input_buffer.pop_front());
 			}
+			echo(c);
 			_buffer_blocker.set_ready(true);
 		} else if(c == '\b') {
 			if(!_buffered_input_buffer.empty()){
 				_buffered_input_buffer.pop_back();
+				echo(c);
 			}
 		} else {
 			_buffered_input_buffer.push(c);
+			echo(c);
 		}
 	} else {
 		_input_buffer.push(c);
+		echo(c);
 	}
-
-	echo(c);
 }
 
 bool TTYDevice::can_read(const FileDescriptor& fd) {
