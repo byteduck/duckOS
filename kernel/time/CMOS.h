@@ -21,8 +21,8 @@
 #define DUCKOS_CMOS_H
 
 //Converts binary coded decimal (bcd) to normal numbers
-#include <common/cstddef.h>
-#include "kstddef.h"
+#include <kernel/kstd/cstddef.h>
+#include "kernel/kstd/kstddef.h"
 
 #define bcd(val) ((val / 16) * 10 + (val & 0xf))
 

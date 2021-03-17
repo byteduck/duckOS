@@ -18,9 +18,9 @@
 */
 
 #include <kernel/filesystem/VFS.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include <kernel/terminal/TTYDevice.h>
-#include <kernel/pit.h>
+#include <kernel/time/PIT.h>
 #include "Process.h"
 #include "TaskManager.h"
 #include "ELF.h"
@@ -36,14 +36,14 @@
 
 const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 
-Process* Process::create_kernel(const DC::string& name, void (*func)()){
-	ProcessArgs args = ProcessArgs(DC::shared_ptr<LinkedInode>(nullptr));
+Process* Process::create_kernel(const kstd::string& name, void (*func)()){
+	ProcessArgs args = ProcessArgs(kstd::shared_ptr<LinkedInode>(nullptr));
 	return new Process(name, (size_t)func, true, &args, 1);
 }
 
-ResultRet<Process*> Process::create_user(const DC::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
+ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
 	//Open the executable
-	auto fd_or_error = VFS::inst().open((DC::string&) executable_loc, O_RDONLY, 0, file_open_user, args->working_dir);
+	auto fd_or_error = VFS::inst().open((kstd::string&) executable_loc, O_RDONLY, 0, file_open_user, args->working_dir);
 	if(fd_or_error.is_error())
 		return fd_or_error.code();
 	auto fd = fd_or_error.value();
@@ -57,12 +57,12 @@ ResultRet<Process*> Process::create_user(const DC::string& executable_loc, User&
 	//If there's an interpreter, we need to change the arguments accordingly
 	if(info.interpreter.length()) {
 		//Get the full path of the program we're trying to run
-		auto resolv = VFS::inst().resolve_path((DC::string&) executable_loc, args->working_dir, file_open_user);
+		auto resolv = VFS::inst().resolve_path((kstd::string&) executable_loc, args->working_dir, file_open_user);
 		if(resolv.is_error())
 			return resolv.code();
 
 		//Add the interpreter + the full path of the program to the args
-		auto new_argv = DC::vector<DC::string>();
+		auto new_argv = kstd::vector<kstd::string>();
 		new_argv.push_back(info.interpreter);
 		new_argv.push_back(resolv.value()->get_full_path());
 
@@ -108,15 +108,15 @@ User Process::user() {
 	return _user;
 }
 
-DC::string Process::name(){
+kstd::string Process::name(){
 	return _name;
 }
 
-DC::string Process::exe() {
+kstd::string Process::exe() {
 	return _exe;
 }
 
-DC::shared_ptr<LinkedInode> Process::cwd() {
+kstd::shared_ptr<LinkedInode> Process::cwd() {
 	return _cwd;
 }
 
@@ -128,7 +128,7 @@ int Process::exit_status() {
 	return _exit_status;
 }
 
-Process::Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid): _user(User::root()) {
+Process::Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid): _user(User::root()) {
 	//Disable task switching so we don't screw up paging
 	bool en = TaskManager::enabled();
 	TaskManager::enabled() = false;
@@ -142,7 +142,7 @@ Process::Process(const DC::string& name, size_t entry_point, bool kernel, Proces
 	quantum = 1;
 
 	if(!kernel) {
-		auto ttydesc = DC::make_shared<FileDescriptor>(VirtualTTY::current_tty());
+		auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
 		ttydesc->set_owner(this);
 		ttydesc->set_options(O_RDWR);
 		_file_descriptors.push_back(ttydesc);
@@ -244,7 +244,7 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	_file_descriptors.resize(to_fork->_file_descriptors.size());
 	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++) {
 		if(to_fork->_file_descriptors[i]) {
-			_file_descriptors[i] = DC::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
+			_file_descriptors[i] = kstd::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
 			_file_descriptors[i]->set_owner(this);
 		}
 	}
@@ -554,7 +554,7 @@ pid_t Process::sys_fork(Registers& regs) {
 	return new_proc->pid();
 }
 
-int Process::exec(const DC::string& filename, ProcessArgs* args) {
+int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 	//Create the new process
 	auto R_new_proc = Process::create_user(filename, _user, args, _ppid);
 	if(R_new_proc.is_error())
@@ -568,7 +568,7 @@ int Process::exec(const DC::string& filename, ProcessArgs* args) {
 	new_proc->_sid = _sid;
 	if(kernel) {
 		//Kernel processes have no file descriptors, so we need to initialize them
-		auto ttydesc = DC::make_shared<FileDescriptor>(VirtualTTY::current_tty());
+		auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
 		ttydesc->set_owner(this);
 		ttydesc->set_options(O_RDWR);
 		_file_descriptors.resize(0); //Just in case
@@ -629,7 +629,7 @@ int Process::sys_execvp(char *filename, char **argv) {
 		}
 	}
 	if(indexOf('/', filename) == strlen(filename)) {
-		return exec(DC::string("/bin/") + filename, args);
+		return exec(kstd::string("/bin/") + filename, args);
 	} else {
 		return exec(filename, args);
 	}
@@ -637,7 +637,7 @@ int Process::sys_execvp(char *filename, char **argv) {
 
 int Process::sys_open(char *filename, int options, int mode) {
 	check_ptr(filename);
-	DC::string path = filename;
+	kstd::string path = filename;
 	mode &= 04777; //We just want the permission bits
 	auto fd_or_err = VFS::inst().open(path, options, mode & (~_umask), _user, _cwd);
 	if(fd_or_err.is_error())
@@ -650,13 +650,13 @@ int Process::sys_open(char *filename, int options, int mode) {
 int Process::sys_close(int file) {
 	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
 		return -EBADF;
-	_file_descriptors[file] = DC::shared_ptr<FileDescriptor>(nullptr);
+	_file_descriptors[file] = kstd::shared_ptr<FileDescriptor>(nullptr);
 	return 0;
 }
 
 int Process::sys_chdir(char *path) {
 	check_ptr(path);
-	DC::string strpath = path;
+	kstd::string strpath = path;
 	auto inode_or_error = VFS::inst().resolve_path(strpath, _cwd, _user);
 	if(inode_or_error.is_error())
 		return inode_or_error.code();
@@ -670,7 +670,7 @@ int Process::sys_getcwd(char *buf, size_t length) {
 	check_ptr(buf);
 	if(_cwd->name().length() > length)
 		return -ENAMETOOLONG;
-	DC::string path = _cwd->get_full_path();
+	kstd::string path = _cwd->get_full_path();
 	memcpy(buf, path.c_str(), min(length, path.length()));
 	buf[path.length()] = '\0';
 	return 0;
@@ -693,7 +693,7 @@ int Process::sys_fstat(int file, char *buf) {
 int Process::sys_stat(char *file, char *buf) {
 	check_ptr(file);
 	check_ptr(buf);
-	DC::string path(file);
+	kstd::string path(file);
 	auto inode_or_err = VFS::inst().resolve_path(path, _cwd, _user);
 	if(inode_or_err.is_error())
 		return inode_or_err.code();
@@ -704,7 +704,7 @@ int Process::sys_stat(char *file, char *buf) {
 int Process::sys_lstat(char *file, char *buf) {
 	check_ptr(file);
 	check_ptr(buf);
-	DC::string path(file);
+	kstd::string path(file);
 	auto inode_or_err = VFS::inst().resolve_path(path, _cwd, _user, nullptr, O_INTERNAL_RETLINK);
 	if(inode_or_err.is_error())
 		return inode_or_err.code();
@@ -804,7 +804,7 @@ int Process::sys_kill(pid_t pid, int sig) {
 
 int Process::sys_unlink(char* name) {
 	check_ptr(name);
-	DC::string path(name);
+	kstd::string path(name);
 	auto ret = VFS::inst().unlink(path, _user, _cwd);
 	if(ret.is_error())
 		return ret.code();
@@ -814,14 +814,14 @@ int Process::sys_unlink(char* name) {
 int Process::sys_link(char* oldpath, char* newpath) {
 	check_ptr(oldpath);
 	check_ptr(newpath);
-	DC::string oldpath_str(oldpath);
-	DC::string newpath_str(newpath);
+	kstd::string oldpath_str(oldpath);
+	kstd::string newpath_str(newpath);
 	return VFS::inst().link(oldpath_str, newpath_str, _user, _cwd).code();
 }
 
 int Process::sys_rmdir(char* name) {
 	check_ptr(name);
-	DC::string path(name);
+	kstd::string path(name);
 	auto ret = VFS::inst().rmdir(path, _user, _cwd);
 	if(ret.is_error())
 		return ret.code();
@@ -830,7 +830,7 @@ int Process::sys_rmdir(char* name) {
 
 int Process::sys_mkdir(char *path, mode_t mode) {
 	check_ptr(path);
-	DC::string strpath(path);
+	kstd::string strpath(path);
 	mode &= 04777; //We just want the permission bits
 	auto ret = VFS::inst().mkdir(strpath, mode, _user, _cwd);
 	if(ret.is_error())
@@ -844,7 +844,7 @@ int Process::sys_mkdirat(int file, char *path, mode_t mode) {
 
 int Process::sys_truncate(char* path, off_t length) {
 	check_ptr(path);
-	DC::string strpath(path);
+	kstd::string strpath(path);
 	return VFS::inst().truncate(strpath, length, _user, _cwd).code();
 }
 
@@ -856,12 +856,12 @@ int Process::sys_pipe(int filedes[2]) {
 	check_ptr(filedes);
 
 	//Make the pipe
-	auto pipe = DC::make_shared<Pipe>();
+	auto pipe = kstd::make_shared<Pipe>();
 	pipe->add_reader();
 	pipe->add_writer();
 
 	//Make the read FD
-	auto pipe_read_fd = DC::make_shared<FileDescriptor>(pipe);
+	auto pipe_read_fd = kstd::make_shared<FileDescriptor>(pipe);
 	pipe_read_fd->set_owner(this);
 	pipe_read_fd->set_options(O_RDONLY);
 	pipe_read_fd->set_fifo_reader();
@@ -869,7 +869,7 @@ int Process::sys_pipe(int filedes[2]) {
 	filedes[0] = (int) _file_descriptors.size() - 1;
 
 	//Make the write FD
-	auto pipe_write_fd = DC::make_shared<FileDescriptor>(pipe);
+	auto pipe_write_fd = kstd::make_shared<FileDescriptor>(pipe);
 	pipe_write_fd->set_owner(this);
 	pipe_write_fd->set_options(O_WRONLY);
 	pipe_write_fd->set_fifo_writer();
@@ -906,8 +906,8 @@ int Process::sys_isatty(int file) {
 int Process::sys_symlink(char* file, char* linkname) {
 	check_ptr(file);
 	check_ptr(linkname);
-	DC::string file_str(file);
-	DC::string linkname_str(linkname);
+	kstd::string file_str(file);
+	kstd::string linkname_str(linkname);
 	return VFS::inst().symlink(file_str, linkname_str, _user, _cwd).code();
 }
 
@@ -920,7 +920,7 @@ int Process::sys_readlink(char* file, char* buf, size_t bufsize) {
 		return -EINVAL;
 	check_ptr(file);
 	check_ptr(buf);
-	DC::string file_str(file);
+	kstd::string file_str(file);
 
 	ssize_t ret;
 	auto ret_perhaps = VFS::inst().readlink(file_str, _user, _cwd, ret);
@@ -1093,7 +1093,7 @@ mode_t Process::sys_umask(mode_t new_mask) {
 
 int Process::sys_chmod(char* file, mode_t mode) {
 	check_ptr(file);
-	DC::string filestr(file);
+	kstd::string filestr(file);
 	return VFS::inst().chmod(filestr, mode, _user, _cwd).code();
 }
 
@@ -1103,7 +1103,7 @@ int Process::sys_fchmod(int fd, mode_t mode) {
 
 int Process::sys_chown(char* file, uid_t uid, gid_t gid) {
 	check_ptr(file);
-	DC::string filestr(file);
+	kstd::string filestr(file);
 	return VFS::inst().chown(filestr, uid, gid, _user, _cwd).code();
 }
 
@@ -1113,7 +1113,7 @@ int Process::sys_fchown(int fd, uid_t uid, gid_t gid) {
 
 int Process::sys_lchown(char* file, uid_t uid, gid_t gid) {
 	check_ptr(file);
-	DC::string filestr(file);
+	kstd::string filestr(file);
 	return VFS::inst().chown(filestr, uid, gid, _user, _cwd, O_NOFOLLOW).code();
 }
 
@@ -1197,7 +1197,7 @@ int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {
 	check_ptr(pollfd);
 
 	//Build the list of PollBlocker::PollFDs
-	DC::vector<PollBlocker::PollFD> polls;
+	kstd::vector<PollBlocker::PollFD> polls;
 	polls.reserve(nfd);
 	for(nfds_t i = 0; i < nfd; i++) {
 		auto& poll = pollfd[i];

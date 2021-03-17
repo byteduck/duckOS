@@ -51,7 +51,7 @@ public:
 	} Raw;
 
 	explicit Ext2Inode(Ext2Filesystem& filesystem, ino_t i);
-	explicit Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw& raw, DC::vector<uint32_t>& block_pointers, ino_t parent);
+	explicit Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw& raw, kstd::vector<uint32_t>& block_pointers, ino_t parent);
 	~Ext2Inode() override;
 
 	uint32_t block_group();
@@ -62,16 +62,16 @@ public:
 
 	uint32_t get_block_pointer(uint32_t block_index);
 	bool set_block_pointer(uint32_t block_index, uint32_t block);
-	DC::vector<uint32_t>& get_block_pointers();
+	kstd::vector<uint32_t>& get_block_pointers();
 	void free_all_blocks();
 
 	ssize_t read(size_t start, size_t length, uint8_t* buf, FileDescriptor* fd) override;
 	ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) override;
 	ssize_t write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) override;
-	ino_t find_id(const DC::string& name) override;
-	Result add_entry(const DC::string& name, Inode& inode) override;
-	ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) override;
-	Result remove_entry(const DC::string& name) override;
+	ino_t find_id(const kstd::string& name) override;
+	Result add_entry(const kstd::string& name, Inode& inode) override;
+	ResultRet<kstd::shared_ptr<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) override;
+	Result remove_entry(const kstd::string& name) override;
 	Result truncate(off_t length) override;
 	Result chmod(mode_t mode) override;
 	Result chown(uid_t uid, gid_t gid) override;
@@ -86,15 +86,15 @@ private:
 	Result write_to_disk(uint8_t* block_buf = nullptr);
 	Result write_block_pointers(uint8_t* block_buf = nullptr);
 	Result write_inode_entry(uint8_t* block_buf = nullptr);
-	Result write_directory_entries(DC::vector<DirectoryEntry>& entries);
+	Result write_directory_entries(kstd::vector<DirectoryEntry>& entries);
 	void create_metadata();
 	void reduce_hardlink_count();
 	void increase_hardlink_count();
 	Result try_remove_dir();
 	uint32_t calculate_num_ptr_blocks(uint32_t num_blocks);
 
-	DC::vector<uint32_t> block_pointers;
-	DC::vector<uint32_t> pointer_blocks;
+	kstd::vector<uint32_t> block_pointers;
+	kstd::vector<uint32_t> pointer_blocks;
 
 	Raw raw;
 	bool _dirty = false;

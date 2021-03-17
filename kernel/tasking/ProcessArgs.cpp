@@ -20,7 +20,7 @@
 #include <kernel/filesystem/LinkedInode.h>
 #include "ProcessArgs.h"
 
-ProcessArgs::ProcessArgs(const DC::shared_ptr<LinkedInode>& working_dir): working_dir(working_dir) {}
+ProcessArgs::ProcessArgs(const kstd::shared_ptr<LinkedInode>& working_dir): working_dir(working_dir) {}
 
 const void* ProcessArgs::setup_stack(void *stackptr) {
 	auto*& stack8 = reinterpret_cast<uint8_t *&>(stackptr);

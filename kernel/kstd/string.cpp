@@ -19,7 +19,7 @@
 
 #include "string.h"
 
-namespace DC {
+namespace kstd {
 	string::string(): _size(1), _length(0), _cstring(new char[1]) {
 		_cstring[0] = '\0';
 	}

@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
+#include <kernel/kstd/kstdio.h>
 #include <kernel/tasking/Process.h>
 #include "MemoryMap.h"
 

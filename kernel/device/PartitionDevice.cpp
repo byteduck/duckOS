@@ -17,10 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
+#include <kernel/kstd/kstdio.h>
 #include "PartitionDevice.h"
 
-PartitionDevice::PartitionDevice(unsigned major, unsigned minor, const DC::shared_ptr<BlockDevice> &parent, uint32_t offset_blocks):
+PartitionDevice::PartitionDevice(unsigned major, unsigned minor, const kstd::shared_ptr<BlockDevice> &parent, uint32_t offset_blocks):
 BlockDevice(major, minor), _parent(parent), _offset(offset_blocks * parent->block_size()) {
 
 }
@@ -49,6 +49,6 @@ size_t PartitionDevice::part_offset() {
 	return _offset;
 }
 
-DC::shared_ptr<File> PartitionDevice::parent() {
+kstd::shared_ptr<File> PartitionDevice::parent() {
 	return _parent;
 }

@@ -17,8 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstddef.h>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/kstdio.h>
 #include <kernel/keyboard.h>
 
 char kbd_us_map[256] = {

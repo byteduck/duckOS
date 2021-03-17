@@ -30,7 +30,7 @@ public:
 	//File
 	bool is_pty_mux() override;
 
-	DC::shared_ptr<PTYControllerDevice> create_new();
+	kstd::shared_ptr<PTYControllerDevice> create_new();
 
 private:
 	unsigned int current_pty = 0;

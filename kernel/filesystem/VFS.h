@@ -22,7 +22,7 @@
 
 #include "LinkedInode.h"
 #include "FileDescriptor.h"
-#include <common/string.h>
+#include <kernel/kstd/string.h>
 
 #define O_INTERNAL_RETLINK 0x1000000
 #define VFS_RECURSION_LIMIT 5
@@ -32,44 +32,44 @@ public:
 	class Mount {
 	public:
 		Mount();
-		Mount(Filesystem* fs, const DC::shared_ptr<LinkedInode>& host_inode);
-		DC::shared_ptr<LinkedInode> host_inode();
+		Mount(Filesystem* fs, const kstd::shared_ptr<LinkedInode>& host_inode);
+		kstd::shared_ptr<LinkedInode> host_inode();
 		Filesystem* guest_fs();
 
 	private:
 		Filesystem* _fs;
-		DC::shared_ptr<LinkedInode> _host_inode;
+		kstd::shared_ptr<LinkedInode> _host_inode;
 	};
 
 	VFS();
 	~VFS();
 	static VFS& inst();
 
-	ResultRet<DC::shared_ptr<LinkedInode>> resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage = nullptr, int options = 0, int recursion_level = 0);
-	ResultRet<DC::shared_ptr<FileDescriptor>> open(DC::string& path, int options, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base);
-	ResultRet<DC::shared_ptr<FileDescriptor>> create(DC::string& path, int options, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& parent);
-	Result unlink(DC::string& path, User& user, const DC::shared_ptr<LinkedInode>& base);
-	Result link(DC::string& file, DC::string& link_name, User& user, const DC::shared_ptr<LinkedInode>& base);
-	Result symlink(DC::string& file, DC::string& link_name, User& user, const DC::shared_ptr<LinkedInode>& base);
-	ResultRet<DC::string> readlink(DC::string& path, User& user, const DC::shared_ptr<LinkedInode>& base, ssize_t& size);
-	Result rmdir(DC::string& path, User& user, const DC::shared_ptr<LinkedInode>& base);
-	Result mkdir(DC::string path, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base);
-	Result truncate(DC::string& path, off_t length, User& user, const DC::shared_ptr<LinkedInode>& base);
-	Result chmod(DC::string& path, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base);
-	Result chown(DC::string& path, uid_t uid, gid_t gid, User& user, const DC::shared_ptr<LinkedInode>& base, int options = 0);
-	Result mount(Filesystem* fs, const DC::shared_ptr<LinkedInode>& mountpoint);
+	ResultRet<kstd::shared_ptr<LinkedInode>> resolve_path(kstd::string path, const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage = nullptr, int options = 0, int recursion_level = 0);
+	ResultRet<kstd::shared_ptr<FileDescriptor>> open(kstd::string& path, int options, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode>& base);
+	ResultRet<kstd::shared_ptr<FileDescriptor>> create(kstd::string& path, int options, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode>& parent);
+	Result unlink(kstd::string& path, User& user, const kstd::shared_ptr<LinkedInode>& base);
+	Result link(kstd::string& file, kstd::string& link_name, User& user, const kstd::shared_ptr<LinkedInode>& base);
+	Result symlink(kstd::string& file, kstd::string& link_name, User& user, const kstd::shared_ptr<LinkedInode>& base);
+	ResultRet<kstd::string> readlink(kstd::string& path, User& user, const kstd::shared_ptr<LinkedInode>& base, ssize_t& size);
+	Result rmdir(kstd::string& path, User& user, const kstd::shared_ptr<LinkedInode>& base);
+	Result mkdir(kstd::string path, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode>& base);
+	Result truncate(kstd::string& path, off_t length, User& user, const kstd::shared_ptr<LinkedInode>& base);
+	Result chmod(kstd::string& path, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode>& base);
+	Result chown(kstd::string& path, uid_t uid, gid_t gid, User& user, const kstd::shared_ptr<LinkedInode>& base, int options = 0);
+	Result mount(Filesystem* fs, const kstd::shared_ptr<LinkedInode>& mountpoint);
 
 	bool mount_root(Filesystem* fs);
-	DC::shared_ptr<LinkedInode> root_ref();
-	ResultRet<Mount> get_mount(const DC::shared_ptr<LinkedInode>& inode);
+	kstd::shared_ptr<LinkedInode> root_ref();
+	ResultRet<Mount> get_mount(const kstd::shared_ptr<LinkedInode>& inode);
 
-	static DC::string path_base(const DC::string& path);
-	static DC::string path_minus_base(const DC::string& path);
+	static kstd::string path_base(const kstd::string& path);
+	static kstd::string path_minus_base(const kstd::string& path);
 
 private:
-	DC::shared_ptr<Inode> _root_inode;
-	DC::shared_ptr<LinkedInode> _root_ref;
-	DC::vector<Mount> mounts;
+	kstd::shared_ptr<Inode> _root_inode;
+	kstd::shared_ptr<LinkedInode> _root_ref;
+	kstd::vector<Mount> mounts;
 	static VFS* instance;
 };
 

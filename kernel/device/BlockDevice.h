@@ -20,7 +20,7 @@
 #ifndef DUCKOS_BLOCKDEVICE_H
 #define DUCKOS_BLOCKDEVICE_H
 
-#include <kernel/kstddef.h>
+#include <kernel/kstd/kstddef.h>
 #include "Device.h"
 
 class BlockDevice: public Device {

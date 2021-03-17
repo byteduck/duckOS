@@ -31,19 +31,19 @@ class SocketFS;
 class SocketFSInode: public Inode {
 public:
 	//SocketFSInode
-	SocketFSInode(SocketFS& fs, Process* owner, ino_t id, const DC::string& name, mode_t mode, uid_t uid, gid_t gid);
+	SocketFSInode(SocketFS& fs, Process* owner, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid);
 	~SocketFSInode();
 
 	//Inode
 	InodeMetadata metadata() override;
-	ino_t find_id(const DC::string& name) override;
+	ino_t find_id(const kstd::string& name) override;
 	ssize_t read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) override;
-	ResultRet<DC::shared_ptr<LinkedInode>> resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) override;
+	ResultRet<kstd::shared_ptr<LinkedInode>> resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) override;
 	ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) override;
 	ssize_t write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) override;
-	Result add_entry(const DC::string& name, Inode& inode) override;
-	ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) override;
-	Result remove_entry(const DC::string& name) override;
+	Result add_entry(const kstd::string& name, Inode& inode) override;
+	ResultRet<kstd::shared_ptr<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) override;
+	Result remove_entry(const kstd::string& name) override;
 	Result truncate(off_t length) override;
 	Result chmod(mode_t mode) override;
 	Result chown(uid_t uid, gid_t gid) override;
@@ -54,12 +54,12 @@ public:
 	Process* owner;
 	SocketFS& fs;
 	ino_t id;
-	DC::string name;
+	kstd::string name;
 
 private:
 	static Result write_packet(SocketFSClient& client, pid_t pid, size_t size, const void* buffer, bool nonblock);
 
-	DC::vector<SocketFSClient> clients;
+	kstd::vector<SocketFSClient> clients;
 	SocketFSClient host;
 	SpinLock lock;
 	DirectoryEntry dir_entry;

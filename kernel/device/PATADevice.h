@@ -20,8 +20,8 @@
 #ifndef DUCKOS_PATADEVICE_H
 #define DUCKOS_PATADEVICE_H
 
-#include <common/cstddef.h>
-#include <common/stdlib.h>
+#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/stdlib.h>
 #include <kernel/memory/MemoryRegion.h>
 #include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/pci/pci.h>

@@ -17,15 +17,15 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstddef.h>
-#include <kernel/kstdio.h>
-#include <common/stdlib.h>
+#include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/kstdio.h>
+#include <kernel/kstd/stdlib.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/terminal/VirtualTTY.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 
-DC::shared_ptr<FileDescriptor> tty_desc(nullptr);
-DC::shared_ptr<VirtualTTY> tty(nullptr);
+kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
+kstd::shared_ptr<VirtualTTY> tty(nullptr);
 
 void putch(char c){
 	if(tty) tty_desc->write((uint8_t*) &c, 1);
@@ -134,6 +134,6 @@ void clearScreen(){
 
 void setup_tty() {
 	tty = VirtualTTY::current_tty();
-	tty_desc = DC::make_shared<FileDescriptor>(tty);
+	tty_desc = kstd::make_shared<FileDescriptor>(tty);
 	tty_desc->set_options(O_WRONLY);
 }

@@ -20,8 +20,8 @@
 #ifndef DUCKOS_RESULT_HPP
 #define DUCKOS_RESULT_HPP
 
-#include <common/shared_ptr.hpp>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/kstdio.h>
 
 class Result {
 public:

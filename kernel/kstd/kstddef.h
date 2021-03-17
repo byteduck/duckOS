@@ -20,7 +20,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <common/cstddef.h>
+#include <kernel/kstd/cstddef.h>
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)

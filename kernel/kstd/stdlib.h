@@ -17,31 +17,30 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_CSTRING_H
-#define DUCKOS_CSTRING_H
+#ifndef DUCKOS_STDLIB_H
+#define DUCKOS_STDLIB_H
 
-#include <common/cstddef.h>
+#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/cstring.h>
 
-#ifdef DUCKOS_KERNEL
+#define max(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a > _b ? _a : _b; })
 
-char *strcat(char *dest, const char *src);
+#define min(a,b) \
+   ({ __typeof__ (a) _a = (a); \
+       __typeof__ (b) _b = (b); \
+     _a < _b ? _a : _b; })
 
-bool strcmp(const char *str1, const char *str2);
+int atoi(char *str);
 
-void *memset(void *dest, char val, size_t count);
+int sgn(int x);
 
-void *memcpy(void *dest, const void *src, size_t count);
+int abs(float x);
 
-int strlen(const char *str);
+char nibbleToHexString(uint8_t num);
 
-void substr(int i, char *src, char *dest);
+char *itoa(int i, char *p, int base);
 
-void substri(int i, char *src, char *dest);
-
-void substrr(int s, int e, char *src, char *dest);
-
-void strcpy(char *dest, const char *src);
-
-#endif
-
-#endif //DUCKOS_CSTRING_H
+#endif //DUCKOS_STDLIB_H

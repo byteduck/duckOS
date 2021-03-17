@@ -19,7 +19,7 @@
 
 #include "DirectoryEntry.h"
 
-DirectoryEntry::DirectoryEntry(ino_t id, uint8_t type, const DC::string &ent_name): id(id), type(type), name_length(ent_name.length()) {
+DirectoryEntry::DirectoryEntry(ino_t id, uint8_t type, const kstd::string &ent_name): id(id), type(type), name_length(ent_name.length()) {
 	memcpy(name, ent_name.c_str(), name_length);
 	name[name_length] = '\0';
 }

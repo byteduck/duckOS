@@ -20,7 +20,7 @@
 #ifndef DUCKOS_IRQHANDLER_H
 #define DUCKOS_IRQHANDLER_H
 
-#include <kernel/kstddef.h>
+#include <kernel/kstd/kstddef.h>
 
 class IRQHandler {
 public:

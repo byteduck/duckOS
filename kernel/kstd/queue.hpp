@@ -25,7 +25,7 @@
 #include "cstring.h"
 #include "utility.h"
 
-namespace DC {
+namespace kstd {
 	template<typename T>
 	class queue {
 	public:
@@ -42,7 +42,7 @@ namespace DC {
 		queue(queue<T>&& other) noexcept : _capacity(other._capacity), _size(other._size), _front(other._front), _back(other._back) {
 			_storage = (T*) kcalloc(_size, sizeof(T));
 			for(size_t i = 0; i < _size; i++)
-				new (&_storage[i]) T(DC::move(other._storage[i]));
+				new (&_storage[i]) T(kstd::move(other._storage[i]));
 		}
 
 		~queue() {
@@ -137,7 +137,7 @@ namespace DC {
 				_back = other._back;
 				_storage = (T*) kcalloc(_capacity, sizeof(T));
 				for (size_t i = 0; i < _size; i++)
-					new (&_storage[i]) T(DC::move(other._storage[i]));
+					new (&_storage[i]) T(kstd::move(other._storage[i]));
 			}
 			return *this;
 		}
@@ -152,7 +152,7 @@ namespace DC {
 				_back = other._back;
 				_storage = (T*) kcalloc(_capacity, sizeof(T));
 				for (size_t i = 0; i < _size; i++)
-					new (&_storage[i]) T(DC::move(other._storage[i]));
+					new (&_storage[i]) T(kstd::move(other._storage[i]));
 			}
 			return *this;
 		}

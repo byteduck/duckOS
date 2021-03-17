@@ -20,7 +20,7 @@
 #ifndef TASKING_H
 #define TASKING_H
 
-#include <kernel/kstddef.h>
+#include <kernel/kstd/kstddef.h>
 #include "Process.h"
 #include "TSS.h"
 #include "SpinLock.h"
@@ -34,7 +34,6 @@ namespace TaskManager {
 	void init();
 	bool& enabled();
 	bool is_idle();
-	void print_tasks();
 	void reparent_orphans(Process* proc);
 
 	int add_process(Process *p);

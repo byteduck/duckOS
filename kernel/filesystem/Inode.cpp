@@ -17,8 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
-#include <common/defines.h>
+#include <kernel/kstd/kstdio.h>
+#include <kernel/kstd/defines.h>
 #include "Inode.h"
 #include "Filesystem.h"
 #include "VFS.h"
@@ -30,7 +30,7 @@ Inode::~Inode() {
 
 }
 
-ResultRet<DC::shared_ptr<Inode>> Inode::find(const DC::string& name) {
+ResultRet<kstd::shared_ptr<Inode>> Inode::find(const kstd::string& name) {
 	if(metadata().exists() && !metadata().is_directory()) return -EISDIR;
 	ino_t id  = find_id(name);
 	if(id != 0) {
@@ -40,7 +40,7 @@ ResultRet<DC::shared_ptr<Inode>> Inode::find(const DC::string& name) {
     return -ENOENT;
 }
 
-ResultRet<DC::shared_ptr<LinkedInode>> Inode::resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<kstd::shared_ptr<LinkedInode>> Inode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	ASSERT(metadata().is_symlink());
 
 	auto* buf = new uint8_t[metadata().size + 1];
@@ -53,7 +53,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> Inode::resolve_link(const DC::shared_ptr<
 		return -EIO;
 	}
 
-	DC::string link_str((char*)buf);
+	kstd::string link_str((char*)buf);
 	delete[] buf;
 	return VFS::inst().resolve_path(link_str, base, user, parent_storage, options, recursion_level);
 }

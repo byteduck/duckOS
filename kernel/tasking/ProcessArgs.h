@@ -21,17 +21,17 @@
 #define DUCKOS_PROCESSARGS_H
 
 
-#include <common/vector.hpp>
+#include <kernel/kstd/vector.hpp>
 
 class ProcessArgs {
 public:
-	ProcessArgs(const DC::shared_ptr<LinkedInode>& working_dir);
+	ProcessArgs(const kstd::shared_ptr<LinkedInode>& working_dir);
 
 	const void* setup_stack(void* stackptr);
 
-	DC::vector<DC::string> argv;
-	DC::vector<DC::string> env;
-	DC::shared_ptr<LinkedInode> working_dir;
+	kstd::vector<kstd::string> argv;
+	kstd::vector<kstd::string> env;
+	kstd::shared_ptr<LinkedInode> working_dir;
 };
 
 

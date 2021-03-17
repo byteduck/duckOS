@@ -11,8 +11,8 @@
  * or copy at http://opensource.org/licenses/MIT)
  */
 
-#include <common/cstddef.h>
-#include <common/utility.h>
+#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/utility.h>
 #define SHARED_ASSERT(x) /*ASSERT(x)*/ //TODO: Fix
 
 
@@ -21,7 +21,7 @@
  *
  * shared_ptr_count is a container for the allocated pn reference counter.
  */
-namespace DC{
+namespace kstd{
 	class shared_ptr_count
 	{
 	public:
@@ -36,7 +36,7 @@ namespace DC{
 		/// @brief Swap method for the copy-and-swap idiom (copy constructor and swap method)
 		void swap(shared_ptr_count& lhs) throw() // never throws
 		{
-			DC::swap(pn, lhs.pn);
+			kstd::swap(pn, lhs.pn);
 		}
 		/// @brief getter of the underlying reference counter
 		long use_count(void) const throw() // never throws
@@ -164,7 +164,7 @@ namespace DC{
 		/// @brief Swap method for the copy-and-swap idiom (copy constructor and swap method)
 		void swap(shared_ptr& lhs) throw() // never throws
 		{
-			DC::swap(px, lhs.px);
+			kstd::swap(px, lhs.px);
 			pn.swap(lhs.pn);
 		}
 

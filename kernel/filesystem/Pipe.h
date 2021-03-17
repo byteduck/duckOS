@@ -23,7 +23,7 @@
 #define PIPE_SIZE PAGE_SIZE
 
 #include <kernel/filesystem/File.h>
-#include <common/circular_queue.hpp>
+#include <kernel/kstd/circular_queue.hpp>
 
 class Pipe: public File {
 public:
@@ -43,7 +43,7 @@ public:
 	bool can_read(const FileDescriptor& fd) override;
 
 private:
-	DC::circular_queue<uint8_t> _queue;
+	kstd::circular_queue<uint8_t> _queue;
 	size_t _readers = 0;
 	size_t _writers = 0;
 	BooleanBlocker _blocker;

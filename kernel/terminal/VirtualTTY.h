@@ -21,12 +21,12 @@
 #define DUCKOS_VIRTUALTTY_H
 
 #include "TTYDevice.h"
-#include <common/terminal/Terminal.h>
+#include <libterm/Terminal.h>
 
 class VirtualTTY: public TTYDevice, private KeyboardHandler, private Terminal::Listener {
 public:
 	VirtualTTY(unsigned int major, unsigned int minor);
-	static DC::shared_ptr<VirtualTTY> current_tty();
+	static kstd::shared_ptr<VirtualTTY> current_tty();
 
 	void set_active();
 	bool active();
@@ -38,7 +38,7 @@ protected:
 
 private:
 	static size_t _current_tty;
-	static DC::shared_ptr<VirtualTTY> _ttys[NUM_TTYS];
+	static kstd::shared_ptr<VirtualTTY> _ttys[NUM_TTYS];
 	size_t _id;
 	Terminal* terminal = nullptr;
 

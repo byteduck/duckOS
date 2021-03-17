@@ -17,12 +17,12 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/stdlib.h>
+#include <kernel/kstd/stdlib.h>
 #include "ProcFSEntry.h"
 
 ProcFSEntry::ProcFSEntry(ProcFSInodeType type, pid_t pid): type(type), pid(pid) {
 	uint8_t dirent_type;
-	DC::string name;
+	kstd::string name;
 
 	switch(type) {
 		case Null:

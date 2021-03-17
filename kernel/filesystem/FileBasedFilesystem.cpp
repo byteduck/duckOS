@@ -17,15 +17,15 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/defines.h>
-#include <kernel/pit.h>
+#include <kernel/kstd/defines.h>
+#include <kernel/time/PIT.h>
 #include "FileBasedFilesystem.h"
 
 BlockCacheEntry::BlockCacheEntry(size_t block, uint8_t *data): block(block), data(data) {
 
 }
 
-FileBasedFilesystem::FileBasedFilesystem(const DC::shared_ptr<FileDescriptor>& file): _file(file) {
+FileBasedFilesystem::FileBasedFilesystem(const kstd::shared_ptr<FileDescriptor>& file): _file(file) {
 
 }
 
@@ -219,7 +219,7 @@ void FileBasedFilesystem::free_cache_entry(size_t block) {
 	}
 }
 
-ResultRet<DC::shared_ptr<Inode>> FileBasedFilesystem::get_cached_inode(ino_t id) {
+ResultRet<kstd::shared_ptr<Inode>> FileBasedFilesystem::get_cached_inode(ino_t id) {
 	LOCK(_inode_cache_lock);
 	for(size_t i = 0; i < _inode_cache.size(); i++) {
 		if(_inode_cache[i]->id == id) return _inode_cache[i];
@@ -227,7 +227,7 @@ ResultRet<DC::shared_ptr<Inode>> FileBasedFilesystem::get_cached_inode(ino_t id)
 	return -ENOENT;
 }
 
-void FileBasedFilesystem::add_cached_inode(const DC::shared_ptr<Inode> &inode) {
+void FileBasedFilesystem::add_cached_inode(const kstd::shared_ptr<Inode> &inode) {
 	LOCK(_inode_cache_lock);
 	_inode_cache.push_back(inode);
 }
@@ -253,13 +253,13 @@ Inode* FileBasedFilesystem::get_inode_rawptr(ino_t id) {
 	return nullptr;
 }
 
-ResultRet<DC::shared_ptr<Inode>> FileBasedFilesystem::get_inode(ino_t id) {
+ResultRet<kstd::shared_ptr<Inode>> FileBasedFilesystem::get_inode(ino_t id) {
 	LOCK(_inode_cache_lock);
 	auto inode_perhaps = get_cached_inode(id);
 	if(inode_perhaps.is_error()) {
 		Inode* in = get_inode_rawptr(id);
 		if(in) {
-			auto ins = DC::shared_ptr<Inode>(in);
+			auto ins = kstd::shared_ptr<Inode>(in);
 			add_cached_inode(ins);
 			return ins;
 		} else return -ENOENT;

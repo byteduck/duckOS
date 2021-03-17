@@ -18,7 +18,7 @@
 */
 
 #include <kernel/filesystem/Filesystem.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include <kernel/tasking/TaskManager.h>
 #include "LinkedInode.h"
 
@@ -30,7 +30,7 @@ char* Filesystem::name() {
 	return nullptr;
 }
 
-ResultRet<DC::shared_ptr<Inode>> Filesystem::get_inode(ino_t iid) {
+ResultRet<kstd::shared_ptr<Inode>> Filesystem::get_inode(ino_t iid) {
 	return -ENOENT;
 }
 

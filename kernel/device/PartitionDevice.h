@@ -24,16 +24,16 @@
 
 class PartitionDevice: public BlockDevice {
 public:
-	PartitionDevice(unsigned major, unsigned minor, const DC::shared_ptr<BlockDevice>& parent, size_t offset_blocks);
+	PartitionDevice(unsigned major, unsigned minor, const kstd::shared_ptr<BlockDevice>& parent, size_t offset_blocks);
 	Result read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
 	Result write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override;
 	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
 	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
 	size_t block_size() override;
 	size_t part_offset();
-	DC::shared_ptr<File> parent();
+	kstd::shared_ptr<File> parent();
 private:
-	DC::shared_ptr<BlockDevice> _parent;
+	kstd::shared_ptr<BlockDevice> _parent;
 	uint32_t _offset;
 };
 

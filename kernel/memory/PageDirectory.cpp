@@ -19,8 +19,8 @@
 
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/memory/PageDirectory.h>
-#include <common/defines.h>
-#include <kernel/Atomic.h>
+#include <kernel/kstd/defines.h>
+#include <kernel/kstd/Atomic.h>
 #include "PageTable.h"
 
 PageDirectory::Entry PageDirectory::kernel_entries[256];
@@ -561,7 +561,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, 
 	region.virt->shm_id = region.phys->shm_id;
 	region.phys->shm_refs = 1;
 	region.phys->shm_owner = pid;
-	region.phys->shm_allowed = new DC::vector<MemoryRegion::ShmPermissions>();
+	region.phys->shm_allowed = new kstd::vector<MemoryRegion::ShmPermissions>();
 	region.phys->shm_allowed->push_back({pid, true});
 
 	return region;

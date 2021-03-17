@@ -21,18 +21,18 @@
 #include "InodeFile.h"
 #include "DirectoryEntry.h"
 #include "Pipe.h"
-#include <common/defines.h>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/defines.h>
+#include <kernel/kstd/kstdio.h>
 #include <kernel/terminal/PTYMuxDevice.h>
 #include <kernel/terminal/PTYDevice.h>
 
-FileDescriptor::FileDescriptor(const DC::shared_ptr<File>& file): _file(file) {
+FileDescriptor::FileDescriptor(const kstd::shared_ptr<File>& file): _file(file) {
 	if(file->is_inode())
-		_inode = DC::static_pointer_cast<InodeFile>(file)->inode();
+		_inode = kstd::static_pointer_cast<InodeFile>(file)->inode();
 
 	//If we're opening the pty multiplexer, we should open a new PTY controller instead.
 	if(file->is_pty_mux())
-		_file = ((DC::shared_ptr<PTYMuxDevice>) _file)->create_new();
+		_file = ((kstd::shared_ptr<PTYMuxDevice>) _file)->create_new();
 
 	//Increase pty ref count if applicable
 	if(_file->is_pty())
@@ -146,7 +146,7 @@ InodeMetadata FileDescriptor::metadata() {
 	return {};
 }
 
-DC::shared_ptr<File> FileDescriptor::file() {
+kstd::shared_ptr<File> FileDescriptor::file() {
 	return _file;
 }
 

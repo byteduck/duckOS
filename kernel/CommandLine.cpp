@@ -18,14 +18,14 @@
 */
 
 #include <kernel/memory/PageDirectory.h>
-#include <common/vector.hpp>
-#include <common/string.h>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/vector.hpp>
+#include <kernel/kstd/string.h>
+#include <kernel/kstd/kstdio.h>
 #include "CommandLine.h"
 
 namespace CommandLine {
-	DC::string cmdline;
-	DC::vector<Option> options;
+	kstd::string cmdline;
+	kstd::vector<Option> options;
 
 	void init(const struct multiboot_info& header) {
 		if(header.flags & MULTIBOOT_INFO_CMDLINE) {
@@ -40,8 +40,8 @@ namespace CommandLine {
 
 			printf("[kinit] Command line options: '%s'\n", cmdline.c_str());
 
-			DC::string cmd = cmdline;
-			DC::string part = "";
+			kstd::string cmd = cmdline;
+			kstd::string part = "";
 			while(cmd.length()) {
 				size_t space_index = cmd.find(' ');
 				part = (int) space_index != -1 ? cmd.substr(0, space_index) : cmd;
@@ -62,7 +62,7 @@ namespace CommandLine {
 		}
 	}
 
-	DC::string get_option_value(char* name) {
+	kstd::string get_option_value(char* name) {
 		for(size_t i = 0; i < options.size(); i++) {
 			if(options[i].name == name) return options[i].value;
 		}
@@ -76,7 +76,7 @@ namespace CommandLine {
 		return false;
 	}
 
-	DC::string get_cmdline() {
+	kstd::string get_cmdline() {
 		return cmdline;
 	}
 }

@@ -20,7 +20,7 @@
 #ifndef DUCKOS_PAGEDIRECTORY_H
 #define DUCKOS_PAGEDIRECTORY_H
 
-#include <common/cstddef.h>
+#include <kernel/kstd/cstddef.h>
 #include "Memory.h"
 #include "MemoryMap.h"
 #include "LinkedMemoryRegion.h"

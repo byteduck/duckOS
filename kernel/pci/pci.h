@@ -20,7 +20,7 @@
 #ifndef DUCKOS_PCI_H
 #define DUCKOS_PCI_H
 
-#include <kernel/kstddef.h>
+#include <kernel/kstd/kstddef.h>
 
 //PORTS
 #define PCI_ADDRESS_PORT 0xCF8

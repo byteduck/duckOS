@@ -20,7 +20,7 @@
 #ifndef DUCKOS_RANDOM_H
 #define DUCKOS_RANDOM_H
 
-#include <common/cstddef.h>
+#include <kernel/kstd/cstddef.h>
 
 int rand();
 void srand(unsigned int seed);

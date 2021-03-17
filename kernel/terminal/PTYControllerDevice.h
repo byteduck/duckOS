@@ -21,7 +21,7 @@
 #define DUCKOS_PTYCONTROLLERDEVICE_H
 
 #include <kernel/device/CharacterDevice.h>
-#include <common/circular_queue.hpp>
+#include <kernel/kstd/circular_queue.hpp>
 
 class PTYDevice;
 class PTYControllerDevice: public CharacterDevice {
@@ -39,12 +39,12 @@ public:
 	void notify_pty_closed();
 	void ref_inc();
 	void ref_dec();
-	DC::shared_ptr<PTYDevice> pty();
+	kstd::shared_ptr<PTYDevice> pty();
 
 private:
 	SpinLock _output_lock, _write_lock, _ref_lock;
-	DC::circular_queue<uint8_t> _output_buffer;
-	DC::shared_ptr<PTYDevice> _pty;
+	kstd::circular_queue<uint8_t> _output_buffer;
+	kstd::shared_ptr<PTYDevice> _pty;
 	unsigned int num_refs = 1;
 };
 

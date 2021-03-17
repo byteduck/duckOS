@@ -17,18 +17,18 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
-#include <common/defines.h>
+#include <kernel/kstd/kstdio.h>
+#include <kernel/kstd/defines.h>
 #include "InodeFile.h"
 
-InodeFile::InodeFile(DC::shared_ptr<Inode> inode): _inode(inode) {
+InodeFile::InodeFile(kstd::shared_ptr<Inode> inode): _inode(inode) {
 }
 
 bool InodeFile::is_inode() {
 	return true;
 }
 
-DC::shared_ptr<Inode> InodeFile::inode() {
+kstd::shared_ptr<Inode> InodeFile::inode() {
 	return _inode;
 }
 

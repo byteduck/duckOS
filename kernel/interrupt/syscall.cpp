@@ -17,9 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstddef.h>
+#include <kernel/kstd/kstddef.h>
 #include <kernel/interrupt/syscall.h>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/kstdio.h>
 #include <kernel/tasking/TaskManager.h>
 
 void syscall_handler(Registers& regs){

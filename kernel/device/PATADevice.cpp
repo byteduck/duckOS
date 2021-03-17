@@ -21,7 +21,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/kliballoc.h>
 #include <kernel/tasking/TaskManager.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 
 PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio) {
 	PCI::Address addr = {0,0,0};

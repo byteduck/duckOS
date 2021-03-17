@@ -22,7 +22,7 @@
 
 #include <kernel/interrupt/IRQHandler.h>
 #include <kernel/device/CharacterDevice.h>
-#include <common/circular_queue.hpp>
+#include <kernel/kstd/circular_queue.hpp>
 
 #define I8042_BUFFER 0x60u
 #define I8042_STATUS 0x64u
@@ -80,7 +80,7 @@ private:
 	bool has_scroll_wheel = false;
 	uint8_t packet_data[4];
 	uint8_t packet_state = 0;
-	DC::circular_queue<MouseEvent> event_buffer;
+	kstd::circular_queue<MouseEvent> event_buffer;
 	SpinLock lock;
 };
 

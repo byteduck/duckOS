@@ -37,7 +37,7 @@
 class __attribute__((packed)) DirectoryEntry {
 public:
 	DirectoryEntry() = default;
-	DirectoryEntry(ino_t id, uint8_t type, const DC::string& ent_name);
+	DirectoryEntry(ino_t id, uint8_t type, const kstd::string& ent_name);
 	size_t entry_length();
 
 	ino_t id = 0;

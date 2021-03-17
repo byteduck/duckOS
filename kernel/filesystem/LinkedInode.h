@@ -21,25 +21,25 @@
 #define DUCKOS_LINKEDINODE_H
 
 #include <kernel/filesystem/Inode.h>
-#include <common/unique_ptr.hpp>
-#include <common/string.h>
+#include <kernel/kstd/unique_ptr.hpp>
+#include <kernel/kstd/string.h>
 
 class Inode;
 
 class LinkedInode {
 public:
-    LinkedInode(const DC::shared_ptr<Inode>& inode, const DC::string& name, const DC::shared_ptr<LinkedInode>& parent);
+    LinkedInode(const kstd::shared_ptr<Inode>& inode, const kstd::string& name, const kstd::shared_ptr<LinkedInode>& parent);
     ~LinkedInode();
-	DC::shared_ptr<Inode> inode();
-    DC::string name();
-	DC::shared_ptr<LinkedInode> parent();
-    DC::string get_full_path();
-    ResultRet<DC::shared_ptr<User>> user();
+	kstd::shared_ptr<Inode> inode();
+    kstd::string name();
+	kstd::shared_ptr<LinkedInode> parent();
+    kstd::string get_full_path();
+    ResultRet<kstd::shared_ptr<User>> user();
 
 private:
-	DC::shared_ptr<Inode> _inode;
-	DC::shared_ptr<LinkedInode> _parent;
-    DC::string _name;
+	kstd::shared_ptr<Inode> _inode;
+	kstd::shared_ptr<LinkedInode> _parent;
+    kstd::string _name;
 };
 
 

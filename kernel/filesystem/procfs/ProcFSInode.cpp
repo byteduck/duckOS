@@ -17,10 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/CommandLine.h>
-#include <kernel/pit.h>
+#include <kernel/time/PIT.h>
 #include <kernel/filesystem/VFS.h>
 #include "ProcFSInode.h"
 
@@ -64,7 +64,7 @@ InodeMetadata ProcFSInode::metadata() {
 	return _metadata;
 }
 
-ino_t ProcFSInode::find_id(const DC::string& name) {
+ino_t ProcFSInode::find_id(const kstd::string& name) {
 	for(size_t i = 0; i < procfs.entries.size(); i++) {
 		auto& e = procfs.entries[i];
 		if(e.parent == id && name == e.dir_entry.name) {
@@ -91,7 +91,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 
 		case RootMemInfo: {
 			char numbuf[12];
-			DC::string str;
+			kstd::string str;
 
 			str += "Usable: ";
 			itoa((int) Memory::get_usable_mem(), numbuf, 10);
@@ -127,7 +127,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 		case RootUptime: {
 			char numbuf[12];
 			itoa(PIT::get_seconds(), numbuf, 10);
-			DC::string str = numbuf;
+			kstd::string str = numbuf;
 			str += "\n";
 
 			if(start + length > str.length())
@@ -140,7 +140,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			char numbuf[4];
 			double percent_used = (1.00 - PIT::percent_idle()) * 100.0;
 
-			DC::string str = "Utilization: ";
+			kstd::string str = "Utilization: ";
 
 			itoa((int) percent_used, numbuf, 10);
 			str += numbuf;
@@ -170,7 +170,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			if(!proc) return -EIO;
 
 			char numbuf[12];
-			DC::string str;
+			kstd::string str;
 
 			str += "Name: ";
 			str += proc->name();
@@ -218,11 +218,11 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 	}
 }
 
-ResultRet<DC::shared_ptr<LinkedInode>> ProcFSInode::resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<kstd::shared_ptr<LinkedInode>> ProcFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	auto* proc = TaskManager::process_for_pid(pid);
 	if(!proc) return -EIO;
 
-	DC::string loc;
+	kstd::string loc;
 
 	switch(type) {
 		case ProcExe:
@@ -272,15 +272,15 @@ ssize_t ProcFSInode::write(size_t start, size_t length, const uint8_t* buf, File
 	return -EIO;
 }
 
-Result ProcFSInode::add_entry(const DC::string& name, Inode& inode) {
+Result ProcFSInode::add_entry(const kstd::string& name, Inode& inode) {
 	return -EIO;
 }
 
-ResultRet<DC::shared_ptr<Inode>> ProcFSInode::create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) {
+ResultRet<kstd::shared_ptr<Inode>> ProcFSInode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) {
 	return -EIO;
 }
 
-Result ProcFSInode::remove_entry(const DC::string& name) {
+Result ProcFSInode::remove_entry(const kstd::string& name) {
 	return -EIO;
 }
 

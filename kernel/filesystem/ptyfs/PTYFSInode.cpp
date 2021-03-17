@@ -19,13 +19,13 @@
 
 #include "PTYFSInode.h"
 #include <kernel/terminal/PTYDevice.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include "PTYFS.h"
 #include <kernel/terminal/PTYControllerDevice.h>
 
-PTYFSInode::PTYFSInode(PTYFS& fs, Type type, const DC::shared_ptr<PTYDevice>& pty): Inode(fs, type == PTY ? pty->id() + 2 : 1), type(type), _pty(pty), ptyfs(fs) {
+PTYFSInode::PTYFSInode(PTYFS& fs, Type type, const kstd::shared_ptr<PTYDevice>& pty): Inode(fs, type == PTY ? pty->id() + 2 : 1), type(type), _pty(pty), ptyfs(fs) {
 	// Inode ID 1 = Root, 2+ = (pty ID + 2)
-	DC::string name;
+	kstd::string name;
 	uint8_t dtype;
 	switch(type) {
 		case ROOT:
@@ -52,7 +52,7 @@ PTYFSInode::PTYFSInode(PTYFS& fs, Type type, const DC::shared_ptr<PTYDevice>& pt
 	dir_entry = DirectoryEntry(id, dtype, name);
 }
 
-DC::shared_ptr<PTYDevice> PTYFSInode::pty() {
+kstd::shared_ptr<PTYDevice> PTYFSInode::pty() {
 	return _pty;
 }
 
@@ -68,7 +68,7 @@ InodeMetadata PTYFSInode::metadata() {
 	return ret;
 }
 
-ino_t PTYFSInode::find_id(const DC::string& name) {
+ino_t PTYFSInode::find_id(const kstd::string& name) {
 	LOCK(ptyfs._lock);
 	for(size_t i = 1; i < ptyfs._entries.size(); i++) {
 		if(name == ptyfs._entries[i]->dir_entry.name)
@@ -120,14 +120,14 @@ bool PTYFSInode::can_read(const FileDescriptor& fd) {
 	return _pty->can_read(fd);
 }
 
-Result PTYFSInode::add_entry(const DC::string& name, Inode& inode) { return -EROFS; }
-ResultRet<DC::shared_ptr<Inode>> PTYFSInode::create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) { return -EROFS; }
-Result PTYFSInode::remove_entry(const DC::string& name) { return -EROFS; }
+Result PTYFSInode::add_entry(const kstd::string& name, Inode& inode) { return -EROFS; }
+ResultRet<kstd::shared_ptr<Inode>> PTYFSInode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) { return -EROFS; }
+Result PTYFSInode::remove_entry(const kstd::string& name) { return -EROFS; }
 Result PTYFSInode::truncate(off_t length) { return -EROFS; }
 Result PTYFSInode::chmod(mode_t mode) { return -EROFS; }
 Result PTYFSInode::chown(uid_t uid, gid_t gid) { return -EROFS; }
 void PTYFSInode::open(FileDescriptor& fd, int options) {}
 void PTYFSInode::close(FileDescriptor& fd) {}
-ResultRet<DC::shared_ptr<LinkedInode>> PTYFSInode::resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user,
-																DC::shared_ptr<LinkedInode>* parent_storage,
-																int options, int recursion_level) { return -ENOLINK; }
+ResultRet<kstd::shared_ptr<LinkedInode>> PTYFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user,
+																  kstd::shared_ptr<LinkedInode>* parent_storage,
+																  int options, int recursion_level) { return -ENOLINK; }

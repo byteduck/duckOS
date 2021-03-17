@@ -20,7 +20,7 @@
 #ifndef _LIBALLOC_H
 #define _LIBALLOC_H
 
-#include <kernel/kstddef.h>
+#include <kernel/kstd/kstddef.h>
 #include <kernel/memory/Memory.h>
 
 typedef uint32_t uintptr_t;

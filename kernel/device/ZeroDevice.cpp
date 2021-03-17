@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/stdlib.h>
+#include <kernel/kstd/stdlib.h>
 #include "ZeroDevice.h"
 
 ZeroDevice::ZeroDevice(): CharacterDevice(1, 5) {

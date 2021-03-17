@@ -17,15 +17,15 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstddef.h>
-#include <kernel/pit.h>
+#include <kernel/kstd/kstddef.h>
+#include <kernel/time/PIT.h>
 #include <kernel/tasking/TaskManager.h>
 
 namespace PIT {
 	uint32_t ticks = 0;
 	uint32_t seconds = 0;
 
-	DC::circular_queue<bool>* idle_ticks = nullptr;
+	kstd::circular_queue<bool>* idle_ticks = nullptr;
 
 	void pit_handler(){
 		if(++ticks == 1000) {
@@ -80,7 +80,7 @@ namespace PIT {
 	}
 
 	void init_idle_counter() {
-		idle_ticks = new DC::circular_queue<bool>(100);
+		idle_ticks = new kstd::circular_queue<bool>(100);
 	}
 
 	double percent_idle() {

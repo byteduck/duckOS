@@ -20,7 +20,7 @@
 #include <kernel/terminal/PTYDevice.h>
 #include <kernel/terminal/PTYControllerDevice.h>
 #include "PTYFS.h"
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 
 PTYFS* _inst = nullptr;
 
@@ -30,15 +30,15 @@ PTYFS& PTYFS::inst() {
 
 PTYFS::PTYFS() {
 	_inst = this;
-	_entries.push_back(DC::make_shared<PTYFSInode>(*this, PTYFSInode::ROOT, DC::shared_ptr<PTYDevice>(nullptr)));
+	_entries.push_back(kstd::make_shared<PTYFSInode>(*this, PTYFSInode::ROOT, kstd::shared_ptr<PTYDevice>(nullptr)));
 }
 
-void PTYFS::add_pty(const DC::shared_ptr<PTYDevice>& pty) {
+void PTYFS::add_pty(const kstd::shared_ptr<PTYDevice>& pty) {
 	LOCK(_lock);
-	_entries.push_back(DC::make_shared<PTYFSInode>(*this, PTYFSInode::PTY, pty));
+	_entries.push_back(kstd::make_shared<PTYFSInode>(*this, PTYFSInode::PTY, pty));
 }
 
-void PTYFS::remove_pty(const DC::shared_ptr<PTYDevice>& pty) {
+void PTYFS::remove_pty(const kstd::shared_ptr<PTYDevice>& pty) {
 	LOCK(_lock);
 	for(size_t i = 0; i < _entries.size(); i++) {
 		if(_entries[i]->pty() == pty) {
@@ -53,12 +53,12 @@ char* PTYFS::name() {
 	return "PTYFS";
 }
 
-ResultRet<DC::shared_ptr<Inode>> PTYFS::get_inode(ino_t id) {
+ResultRet<kstd::shared_ptr<Inode>> PTYFS::get_inode(ino_t id) {
 	LOCK(_lock);
 	if(!id)
 		return -ENOENT;
 	for(size_t i = 0; i < _entries.size(); i++)
-		if(_entries[i]->id == id) return static_cast<DC::shared_ptr<Inode>>(_entries[i]);
+		if(_entries[i]->id == id) return static_cast<kstd::shared_ptr<Inode>>(_entries[i]);
 	return -ENOENT;
 }
 

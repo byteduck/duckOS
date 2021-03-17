@@ -18,9 +18,9 @@
 */
 
 #include "PollBlocker.h"
-#include <kernel/pit.h>
+#include <kernel/time/PIT.h>
 
-PollBlocker::PollBlocker(DC::vector<PollFD>& pollfd, int timeout): polls(pollfd), timeout(timeout) {
+PollBlocker::PollBlocker(kstd::vector<PollFD>& pollfd, int timeout): polls(pollfd), timeout(timeout) {
 	start_time = PIT::get_mseconds();
 }
 

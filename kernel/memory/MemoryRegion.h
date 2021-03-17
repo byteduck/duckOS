@@ -20,10 +20,10 @@
 #ifndef DUCKOS_MEMORYREGION_H
 #define DUCKOS_MEMORYREGION_H
 
-#include <common/cstddef.h>
+#include <kernel/kstd/cstddef.h>
 #include <kernel/tasking/SpinLock.h>
 
-namespace DC {
+namespace kstd {
 	template<typename T> class vector;
 };
 
@@ -99,7 +99,7 @@ public:
 	pid_t shm_owner = -1;
 
 	//If applicable, this will be a list of processes with access to the shared region. Otherwise, it will be nullptr.
-	DC::vector<ShmPermissions>* shm_allowed = nullptr;
+	kstd::vector<ShmPermissions>* shm_allowed = nullptr;
 };
 
 

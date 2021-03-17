@@ -19,7 +19,7 @@
 
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/device/VGADevice.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include "TTYDevice.h"
 
 

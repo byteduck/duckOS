@@ -17,28 +17,31 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef STDIO_H
-#define STDIO_H
+#ifndef DUCKOS_CSTRING_H
+#define DUCKOS_CSTRING_H
 
-#include <kernel/kstddef.h>
-#include <common/string.h>
+#include <kernel/kstd/cstddef.h>
 
-#ifdef DEBUG
-#define ASSERT(cond) \
-if(!(cond)) { \
-  PANIC("Assertion failed:", __FILE__ " at line " STR(__LINE__), true); \
-}
-#else
-#define ASSERT(cond)
+#ifdef DUCKOS_KERNEL
+
+char *strcat(char *dest, const char *src);
+
+bool strcmp(const char *str1, const char *str2);
+
+void *memset(void *dest, char val, size_t count);
+
+void *memcpy(void *dest, const void *src, size_t count);
+
+int strlen(const char *str);
+
+void substr(int i, char *src, char *dest);
+
+void substri(int i, char *src, char *dest);
+
+void substrr(int s, int e, char *src, char *dest);
+
+void strcpy(char *dest, const char *src);
+
 #endif
 
-
-void putch(char c);
-void serial_putch(char c);
-void printf(const char *fmt, ...);
-void print(char* str);
-void PANIC(char *error, char *msg, bool hang);
-void clearScreen();
-void setup_tty();
-
-#endif
+#endif //DUCKOS_CSTRING_H

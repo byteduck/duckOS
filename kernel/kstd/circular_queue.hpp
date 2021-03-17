@@ -24,7 +24,7 @@
 #include "utility.h"
 #include "stdlib.h"
 
-namespace DC {
+namespace kstd {
 	template<typename T>
 	class circular_queue {
 	public:
@@ -40,7 +40,7 @@ namespace DC {
 			if((int) _front == -1) _front = 0;
 			_back++;
 			_back = _back % _capacity;
-			_storage[_back] = DC::move(elem);
+			_storage[_back] = kstd::move(elem);
 			_size++;
 			return true;
 		}

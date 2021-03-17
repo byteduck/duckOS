@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include "User.h"
 
 User User::root() {

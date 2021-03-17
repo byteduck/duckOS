@@ -18,7 +18,7 @@
 */
 
 #include <kernel/tasking/TaskManager.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include "ProcFS.h"
 
 ProcFS* ProcFS::_instance;
@@ -37,7 +37,7 @@ ProcFS::ProcFS() {
 	entries.push_back(ProcFSEntry(RootUptime, 0));
 	entries.push_back(ProcFSEntry(RootCpuInfo, 0));
 
-	root_inode = DC::make_shared<ProcFSInode>(*this, entries[0]);
+	root_inode = kstd::make_shared<ProcFSInode>(*this, entries[0]);
 }
 
 ino_t ProcFS::id_for_entry(pid_t pid, ProcFSInodeType type) {
@@ -75,16 +75,16 @@ char* ProcFS::name() {
 	return "procfs";
 }
 
-ResultRet<DC::shared_ptr<Inode>> ProcFS::get_inode(ino_t id) {
+ResultRet<kstd::shared_ptr<Inode>> ProcFS::get_inode(ino_t id) {
 	if(id == root_inode_id())
-		return static_cast<DC::shared_ptr<Inode>>(root_inode);
+		return static_cast<kstd::shared_ptr<Inode>>(root_inode);
 	else if(id == id_for_entry(0, RootCurProcEntry))
-		return static_cast<DC::shared_ptr<Inode>>(DC::make_shared<ProcFSInode>(*this, ProcFSEntry(RootProcEntry, TaskManager::current_process()->pid())));
+		return static_cast<kstd::shared_ptr<Inode>>(kstd::make_shared<ProcFSInode>(*this, ProcFSEntry(RootProcEntry, TaskManager::current_process()->pid())));
 
 	LOCK(lock);
 	for(size_t i = 0; i < entries.size(); i++) {
 		if(entries[i].dir_entry.id == id)
-			return static_cast<DC::shared_ptr<Inode>>(DC::make_shared<ProcFSInode>(*this, entries[i]));
+			return static_cast<kstd::shared_ptr<Inode>>(kstd::make_shared<ProcFSInode>(*this, entries[i]));
 	}
 
 	return -ENOENT;

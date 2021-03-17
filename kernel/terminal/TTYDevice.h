@@ -20,7 +20,7 @@
 #ifndef DUCKOS_TTYDEVICE_H
 #define DUCKOS_TTYDEVICE_H
 
-#include <common/circular_queue.hpp>
+#include <kernel/kstd/circular_queue.hpp>
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/device/KeyboardDevice.h>
 
@@ -46,9 +46,9 @@ public:
 	virtual size_t tty_write(const uint8_t* buffer, size_t count) = 0;
 
 private:
-	DC::string _name;
-	DC::circular_queue<uint8_t> _input_buffer;
-	DC::circular_queue<uint8_t> _buffered_input_buffer;
+	kstd::string _name;
+	kstd::circular_queue<uint8_t> _input_buffer;
+	kstd::circular_queue<uint8_t> _buffered_input_buffer;
 	BooleanBlocker _buffer_blocker;
 	SpinLock _input_lock;
 	bool buffered = true;

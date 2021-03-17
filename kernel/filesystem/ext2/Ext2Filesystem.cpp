@@ -17,17 +17,17 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/defines.h>
-#include <common/cstring.h>
+#include <kernel/kstd/defines.h>
+#include <kernel/kstd/cstring.h>
 #include <kernel/filesystem/Filesystem.h>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/kstdio.h>
 #include <kernel/memory/kliballoc.h>
-#include <kernel/kstddef.h>
-#include <common/stdlib.h>
+#include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/stdlib.h>
 #include "Ext2Filesystem.h"
 #include "Ext2Inode.h"
 
-Ext2Filesystem::Ext2Filesystem(const DC::shared_ptr<FileDescriptor>& file) : FileBasedFilesystem(file) {
+Ext2Filesystem::Ext2Filesystem(const kstd::shared_ptr<FileDescriptor>& file) : FileBasedFilesystem(file) {
 	_fsid = EXT2_FSID;
 }
 
@@ -79,7 +79,7 @@ Inode* Ext2Filesystem::get_inode_rawptr(ino_t id) {
 	return static_cast<Inode *>(new Ext2Inode(*this, id));
 }
 
-ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent) {
+ResultRet<kstd::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent) {
 	ext2lock.acquire();
 
 	//Find a block group to house the inode
@@ -138,7 +138,7 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 
 	//Allocate the needed blocks for storage
 	uint32_t num_blocks = (size + block_size() - 1) / block_size();
-	DC::vector<uint32_t> blocks(0);
+	kstd::vector<uint32_t> blocks(0);
 	if(num_blocks) {
 		auto blocks_or_err = allocate_blocks(num_blocks);
 		if (blocks_or_err.is_error()) return blocks_or_err.code();
@@ -154,7 +154,7 @@ ResultRet<DC::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode,
 	raw.uid = uid;
 	raw.gid = gid;
 	//TODO: times
-	auto inode = DC::make_shared<Ext2Inode>(*this, ino, raw, blocks, parent);
+	auto inode = kstd::make_shared<Ext2Inode>(*this, ino, raw, blocks, parent);
 
 	//Update the superblock
 	superblock.free_inodes--;
@@ -253,9 +253,9 @@ Result Ext2Filesystem::write_block_group_raw(uint32_t block_group, const ext2_bl
 	return write_successful;
 }
 
-ResultRet<DC::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2BlockGroup* group, uint32_t num_blocks, bool zero_out) {
+ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2BlockGroup* group, uint32_t num_blocks, bool zero_out) {
 	if(group->free_blocks < num_blocks) return -ENOSPC;
-	if(num_blocks == 0) return DC::vector<uint32_t>(0);
+	if(num_blocks == 0) return kstd::vector<uint32_t>(0);
 
 	LOCK(ext2lock);
 	auto* block_buf = new uint8_t[block_size()];
@@ -269,7 +269,7 @@ ResultRet<DC::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2Blo
 
 
 	uint32_t num_allocated = 0;
-	DC::vector<uint32_t> ret;
+	kstd::vector<uint32_t> ret;
 	ret.reserve(num_blocks);
 
 	for(size_t bi = 0; bi < superblock.blocks_per_group; bi++) {
@@ -297,10 +297,10 @@ ResultRet<DC::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2Blo
 		return res.code();
 	}
 
-	return DC::move(ret);
+	return kstd::move(ret);
 }
 
-ResultRet<DC::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_blocks, bool zero_out) {
+ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_blocks, bool zero_out) {
 	LOCK(ext2lock);
 	if(num_blocks == 0) {
 		printf("WARNING: Tried to allocate zero ext2 blocks!\n");
@@ -326,10 +326,10 @@ ResultRet<DC::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_blo
 
 	if(target_bg) {
 		//We found a block group that will house all of the blocks we need to allocate
-		return DC::move(allocate_blocks_in_group(target_bg, num_blocks, zero_out));
+		return kstd::move(allocate_blocks_in_group(target_bg, num_blocks, zero_out));
 	} else {
 		//If we couldn't find one bg to fit all the blocks, allocate the blocks in multiple groups
-		DC::vector<uint32_t> ret;
+		kstd::vector<uint32_t> ret;
 		ret.reserve(num_blocks);
 		while(num_blocks) {
 			//Find the most spacious bg
@@ -351,7 +351,7 @@ ResultRet<DC::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_blo
 			num_blocks -= res.value().size();
 			for(size_t i = 0; i < res.value().size(); i++) ret.push_back(res.value()[i]);
 		}
-		return DC::move(ret);
+		return kstd::move(ret);
 	}
 }
 
@@ -390,7 +390,7 @@ void Ext2Filesystem::free_block(uint32_t block) {
 	delete[] block_buf;
 }
 
-void Ext2Filesystem::free_blocks(DC::vector<uint32_t>& blocks) {
+void Ext2Filesystem::free_blocks(kstd::vector<uint32_t>& blocks) {
 	for(size_t i = 0; i < blocks.size(); i++) free_block(blocks[i]);
 }
 

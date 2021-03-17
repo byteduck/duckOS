@@ -21,20 +21,20 @@
 #define DUCKOS_DEVICE_H
 
 #include <kernel/filesystem/File.h>
-#include <common/vector.hpp>
+#include <kernel/kstd/vector.hpp>
 
 class Device: public File {
 public:
 	static void init();
-	static DC::vector<DC::shared_ptr<Device>> devices();
-	static ResultRet<DC::shared_ptr<Device>> get_device(unsigned major, unsigned minor);
+	static kstd::vector<kstd::shared_ptr<Device>> devices();
+	static ResultRet<kstd::shared_ptr<Device>> get_device(unsigned major, unsigned minor);
 	static void remove_device(unsigned major, unsigned minor);
 
 	virtual ~Device() override;
 
 	unsigned major();
 	unsigned minor();
-	DC::shared_ptr<Device> shared_ptr();
+	kstd::shared_ptr<Device> shared_ptr();
 
 	virtual bool is_block_device();
 	virtual bool is_character_device();
@@ -43,7 +43,7 @@ protected:
 	Device(unsigned major, unsigned minor);
 
 private:
-	static DC::vector<DC::shared_ptr<Device>> _devices;
+	static kstd::vector<kstd::shared_ptr<Device>> _devices;
 	static SpinLock _lock;
 
 	unsigned _major = 0;

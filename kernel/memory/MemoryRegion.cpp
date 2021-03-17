@@ -17,10 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
+#include <kernel/kstd/kstdio.h>
 #include "MemoryRegion.h"
 #include "Memory.h"
-#include <common/vector.hpp>
+#include <kernel/kstd/vector.hpp>
 
 MemoryRegion::MemoryRegion(size_t start, size_t size): start(start), size(size), next(nullptr), prev(nullptr), heap_allocated(true) {
 
@@ -40,7 +40,7 @@ MemoryRegion::MemoryRegion(const MemoryRegion& region):
 	shm_owner(region.shm_owner)
 {
 	if(region.shm_allowed) {
-		shm_allowed = new DC::vector<ShmPermissions>(*region.shm_allowed);
+		shm_allowed = new kstd::vector<ShmPermissions>(*region.shm_allowed);
 	}
 }
 

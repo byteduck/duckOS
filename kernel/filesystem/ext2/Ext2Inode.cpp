@@ -17,12 +17,12 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/defines.h>
-#include <common/cstring.h>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/defines.h>
+#include <kernel/kstd/cstring.h>
+#include <kernel/kstd/kstdio.h>
 #include <kernel/memory/kliballoc.h>
-#include <kernel/kstddef.h>
-#include <common/stdlib.h>
+#include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/stdlib.h>
 #include "Ext2Inode.h"
 
 Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id) {
@@ -46,10 +46,10 @@ Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id
 	delete[] block_buf;
 }
 
-Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw &raw, DC::vector<uint32_t>& block_pointers, ino_t parent): Inode(filesystem, i),  block_pointers(block_pointers), raw(raw) {
+Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw &raw, kstd::vector<uint32_t>& block_pointers, ino_t parent): Inode(filesystem, i), block_pointers(block_pointers), raw(raw) {
 	create_metadata();
 	if(IS_DIR(raw.mode)) {
-		DC::vector<DirectoryEntry> entries;
+		kstd::vector<DirectoryEntry> entries;
 		entries.reserve(2);
 		entries.push_back(DirectoryEntry(i, TYPE_DIR, "."));
 		entries.push_back(DirectoryEntry(parent, TYPE_DIR, "..")); //Parent increases their hardlink count in add_entry
@@ -108,7 +108,7 @@ bool Ext2Inode::set_block_pointer(uint32_t block_index, uint32_t block) {
 	} else return false;
 }
 
-DC::vector<uint32_t>& Ext2Inode::get_block_pointers() {
+kstd::vector<uint32_t>& Ext2Inode::get_block_pointers() {
 	return block_pointers;
 }
 
@@ -262,7 +262,7 @@ ssize_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDesc
 	return dir->size;
 }
 
-ino_t Ext2Inode::find_id(const DC::string& find_name) {
+ino_t Ext2Inode::find_id(const kstd::string& find_name) {
 	if(!metadata().is_directory()) return 0;
 	LOCK(lock);
 	ino_t ret = 0;
@@ -288,7 +288,7 @@ ino_t Ext2Inode::find_id(const DC::string& find_name) {
 	return ret;
 }
 
-Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
+Result Ext2Inode::add_entry(const kstd::string &name, Inode &inode) {
 	ASSERT(inode.fs.fsid() == ext2fs().fsid());
 	if(!metadata().is_directory()) return -ENOTDIR;
 	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
@@ -296,7 +296,7 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 	LOCK(lock);
 
 	//Read entries into a vector
-	DC::vector<DirectoryEntry> entries;
+	kstd::vector<DirectoryEntry> entries;
 	size_t offset = 0;
 	ssize_t nread;
 	auto* buf = new DirectoryEntry;
@@ -334,7 +334,7 @@ Result Ext2Inode::add_entry(const DC::string &name, Inode &inode) {
 	return SUCCESS;
 }
 
-ResultRet<DC::shared_ptr<Inode>> Ext2Inode::create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) {
+ResultRet<kstd::shared_ptr<Inode>> Ext2Inode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) {
 	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
 
 	LOCK(lock);
@@ -359,17 +359,17 @@ ResultRet<DC::shared_ptr<Inode>> Ext2Inode::create_entry(const DC::string& name,
 		return entry_result;
 	}
 
-	return static_cast<DC::shared_ptr<Inode>>(inode_or_err.value());
+	return static_cast<kstd::shared_ptr<Inode>>(inode_or_err.value());
 }
 
-Result Ext2Inode::remove_entry(const DC::string &name) {
+Result Ext2Inode::remove_entry(const kstd::string &name) {
 	if(!metadata().is_directory()) return -ENOTDIR;
 	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
 
 	LOCK(lock);
 
 	//Read entries into vector and find the child we need
-	DC::vector<DirectoryEntry> entries;
+	kstd::vector<DirectoryEntry> entries;
 	size_t offset = 0;
 	ssize_t nread;
 	size_t entry_index;
@@ -397,7 +397,7 @@ Result Ext2Inode::remove_entry(const DC::string &name) {
 	}
 
 	//Reduce the child's hardlink count if a file, or try_remove_dir if a directory
-	auto ext2ino = (DC::shared_ptr<Ext2Inode>) child_or_err.value();
+	auto ext2ino = (kstd::shared_ptr<Ext2Inode>) child_or_err.value();
 	if(ext2ino->metadata().is_directory()) {
 		auto result = ext2ino->try_remove_dir();
 		if(result.is_error()) return result.code();
@@ -518,15 +518,15 @@ void Ext2Inode::read_block_pointers(uint8_t* block_buf) {
 	LOCK(lock);
 
 	if(_metadata.is_symlink() && _metadata.size < 60) {
-		pointer_blocks = DC::vector<uint32_t>();
-		block_pointers = DC::vector<uint32_t>();
+		pointer_blocks = kstd::vector<uint32_t>();
+		block_pointers = kstd::vector<uint32_t>();
 		return;
 	}
 
 	ALLOC_BLOCKBUF(block_buf, ext2fs().block_size());
-	block_pointers = DC::vector<uint32_t>();
+	block_pointers = kstd::vector<uint32_t>();
 	block_pointers.reserve(num_blocks());
-	pointer_blocks = DC::vector<uint32_t>();
+	pointer_blocks = kstd::vector<uint32_t>();
 
 	uint32_t block_index = 0;
 	while(block_index < 12 && block_index < num_blocks()) {
@@ -563,7 +563,7 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 	LOCK(lock);
 	if(_metadata.is_symlink() && _metadata.size < 60) return SUCCESS;
 
-	pointer_blocks = DC::vector<uint32_t>(0);
+	pointer_blocks = kstd::vector<uint32_t>(0);
 	pointer_blocks.reserve(calculate_num_ptr_blocks(num_blocks()));
 
 	if(_metadata.is_device()) {
@@ -666,7 +666,7 @@ Result Ext2Inode::write_inode_entry(uint8_t* block_buf) {
 	return SUCCESS;
 }
 
-Result Ext2Inode::write_directory_entries(DC::vector<DirectoryEntry> &entries) {
+Result Ext2Inode::write_directory_entries(kstd::vector<DirectoryEntry> &entries) {
 	LOCK(lock);
 
 	//First, determine the new file size
@@ -779,7 +779,7 @@ Result Ext2Inode::try_remove_dir() {
 	ssize_t nread;
 	size_t offset = 0;
 	size_t num_entries = 0;
-	DC::vector<DirectoryEntry> entries;
+	kstd::vector<DirectoryEntry> entries;
 	while((nread = read_dir_entry(offset, buf, nullptr))) {
 		if(num_entries >= 2) {
 			delete buf;
@@ -796,7 +796,7 @@ Result Ext2Inode::try_remove_dir() {
 		if(ent.id != id) { //..
 			auto parent_ino_or_err = ext2fs().get_inode(ent.id);
 			if(parent_ino_or_err.is_error()) return parent_ino_or_err.code();
-			auto parent_ino = (DC::shared_ptr<Ext2Inode>) parent_ino_or_err.value();
+			auto parent_ino = (kstd::shared_ptr<Ext2Inode>) parent_ino_or_err.value();
 			parent_ino->reduce_hardlink_count();
 		}
 	}

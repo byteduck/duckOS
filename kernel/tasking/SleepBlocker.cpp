@@ -18,7 +18,7 @@
 */
 
 #include "SleepBlocker.h"
-#include <kernel/pit.h>
+#include <kernel/time/PIT.h>
 
 SleepBlocker::SleepBlocker(unsigned int seconds): _end_time(PIT::get_mseconds() + (uint32_t)seconds * 1000) {
 

@@ -14,13 +14,13 @@
  */
 #pragma once
 
-#include <common/cstddef.h>
-#include <common/utility.h>
+#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/utility.h>
 
 // can be replaced by other error mechanism
 #define SHARED_ASSERT(x) /*ASSERT(x)*/ //TODO: Fix
 
-namespace DC {
+namespace kstd {
 
 /**
  * @brief minimal implementation of unique pointer, a subset of the C++11 std::unique_ptr or boost::unique_ptr.
@@ -95,7 +95,7 @@ namespace DC {
 		/// @brief Swap method for the copy-and-swap idiom (copy constructor and swap method)
 		void swap(unique_ptr &lhs) throw() // never throws
 		{
-			DC::swap(px, lhs.px);
+			kstd::swap(px, lhs.px);
 		}
 
 		/// @brief release the ownership of the px pointer without destroying the object!

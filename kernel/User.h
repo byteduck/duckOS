@@ -20,8 +20,8 @@
 #ifndef DUCKOS_USER_H
 #define DUCKOS_USER_H
 
-#include <common/cstddef.h>
-#include <common/vector.hpp>
+#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/vector.hpp>
 #include <kernel/tasking/SpinLock.h>
 #include "Result.hpp"
 
@@ -53,7 +53,7 @@ public:
 	gid_t egid;
 	uid_t uid;
 	uid_t euid;
-	DC::vector<gid_t> groups;
+	kstd::vector<gid_t> groups;
 };
 
 

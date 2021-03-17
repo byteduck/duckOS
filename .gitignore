@@ -93,3 +93,5 @@ toolchain/tools
 toolchain/build
 toolchain/sysroot
 toolchain/edit
+
+user/

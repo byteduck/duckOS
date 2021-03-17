@@ -20,17 +20,17 @@
 #ifndef DUCKOS_PROCESS_H
 #define DUCKOS_PROCESS_H
 
-#include <kernel/kstddef.h>
-#include <common/string.h>
+#include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/string.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/ELF.h>
-#include <common/shared_ptr.hpp>
+#include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/filesystem/LinkedInode.h>
 #include <kernel/tasking/TSS.h>
 #include "ProcessArgs.h"
 #include <kernel/memory/PageDirectory.h>
-#include <common/queue.hpp>
+#include <kernel/kstd/queue.hpp>
 #include "Signal.h"
 #include "Blocker.h"
 #include <kernel/filesystem/Pipe.h>
@@ -74,8 +74,8 @@ class Process {
 public:
 	~Process();
 
-	static Process* create_kernel(const DC::string& name, void (*func)());
-	static ResultRet<Process*> create_user(const DC::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent);
+	static Process* create_kernel(const kstd::string& name, void (*func)());
+	static ResultRet<Process*> create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent);
 
 	pid_t pid();
 	pid_t pgid();
@@ -83,9 +83,9 @@ public:
 	void set_ppid(pid_t ppid);
 	pid_t sid();
 	User user();
-	DC::string name();
-	DC::string exe();
-	DC::shared_ptr<LinkedInode> cwd();
+	kstd::string name();
+	kstd::string exe();
+	kstd::shared_ptr<LinkedInode> cwd();
 	void set_tty(TTYDevice* tty);
 
 	int exit_status();
@@ -114,7 +114,7 @@ public:
 	ssize_t sys_read(int fd, uint8_t* buf, size_t count);
 	ssize_t sys_write(int fd, uint8_t* buf, size_t count);
 	pid_t sys_fork(Registers& regs);
-	int exec(const DC::string& filename, ProcessArgs* args);
+	int exec(const kstd::string& filename, ProcessArgs* args);
 	int sys_execve(char *filename, char **argv, char **envp);
 	int sys_execvp(char *filename, char **argv);
 	int sys_open(char *filename, int options, int mode);
@@ -189,14 +189,14 @@ public:
 	PageDirectory* page_directory;
 
 private:
-	Process(const DC::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
+	Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
 
 	void setup_stack(uint32_t*& kernel_stack, const uint32_t* user_stack, Registers& registers);
 
 	//Identifying info and state
-	DC::string _name = "";
-	DC::string _exe = "";
+	kstd::string _name = "";
+	kstd::string _exe = "";
 	pid_t _pid = 0;
 	pid_t _ppid = 0;
 	pid_t _sid = 0;
@@ -213,8 +213,8 @@ private:
 	size_t _stack_size;
 
 	//Files & Pipes
-	DC::vector<DC::shared_ptr<FileDescriptor>> _file_descriptors;
-	DC::shared_ptr<LinkedInode> _cwd;
+	kstd::vector<kstd::shared_ptr<FileDescriptor>> _file_descriptors;
+	kstd::shared_ptr<LinkedInode> _cwd;
 
 	//Blocking stuff
 	Blocker* _blocker = nullptr;
@@ -222,7 +222,7 @@ private:
 
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
-	DC::queue<int> pending_signals;
+	kstd::queue<int> pending_signals;
 	bool _in_signal = false;
 	bool _ready_to_handle_signal = false;
 	bool _just_finished_signal = false;

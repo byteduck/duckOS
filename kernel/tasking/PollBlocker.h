@@ -20,7 +20,7 @@
 #ifndef DUCKOS_POLLBLOCKER_H
 #define DUCKOS_POLLBLOCKER_H
 
-#include <common/vector.hpp>
+#include <kernel/kstd/vector.hpp>
 #include "Blocker.h"
 #include <kernel/filesystem/FileDescriptor.h>
 
@@ -36,17 +36,17 @@ public:
 	class PollFD {
 	public:
 		int fd_num;
-		DC::shared_ptr<FileDescriptor>& fd;
+		kstd::shared_ptr<FileDescriptor>& fd;
 		short events;
 	};
 
-	PollBlocker(DC::vector<PollFD>& pollfd, int timeout);
+	PollBlocker(kstd::vector<PollFD>& pollfd, int timeout);
 	bool is_ready() override;
 
 	int polled;
 	short polled_revent;
 private:
-	DC::vector<PollFD> polls;
+	kstd::vector<PollFD> polls;
 	uint32_t timeout;
 	uint32_t start_time;
 };

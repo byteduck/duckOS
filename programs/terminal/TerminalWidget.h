@@ -21,7 +21,7 @@
 #define DUCKOS_TERMINALWIDGET_H
 
 #include <libui/libui.h>
-#include <common/terminal/Terminal.h>
+#include <libterm/Terminal.h>
 
 class TerminalWidget: public UI::Widget, public Terminal::Listener {
 public:

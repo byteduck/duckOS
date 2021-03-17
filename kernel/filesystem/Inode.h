@@ -20,9 +20,9 @@
 #ifndef DUCKOS_INODE_H
 #define DUCKOS_INODE_H
 
-#include <kernel/kstddef.h>
-#include <common/shared_ptr.hpp>
-#include <common/string.h>
+#include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/string.h>
 #include "InodeMetadata.h"
 #include "DirectoryEntry.h"
 #include "LinkedInode.h"
@@ -42,16 +42,16 @@ public:
     void mark_deleted();
     virtual ~Inode();
 
-	virtual ResultRet<DC::shared_ptr<Inode>> find(const DC::string& name);
-	virtual ino_t find_id(const DC::string& name) = 0;
+	virtual ResultRet<kstd::shared_ptr<Inode>> find(const kstd::string& name);
+	virtual ino_t find_id(const kstd::string& name) = 0;
 	virtual ssize_t read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) = 0;
 	virtual ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) = 0;
 	virtual ssize_t write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) = 0;
-	virtual Result add_entry(const DC::string& name, Inode& inode) = 0;
-	virtual ResultRet<DC::shared_ptr<Inode>> create_entry(const DC::string& name, mode_t mode, uid_t uid, gid_t gid) = 0;
-	virtual Result remove_entry(const DC::string& name) = 0;
+	virtual Result add_entry(const kstd::string& name, Inode& inode) = 0;
+	virtual ResultRet<kstd::shared_ptr<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) = 0;
+	virtual Result remove_entry(const kstd::string& name) = 0;
 	virtual Result truncate(off_t length) = 0;
-	virtual ResultRet<DC::shared_ptr<LinkedInode>> resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level);
+	virtual ResultRet<kstd::shared_ptr<LinkedInode>> resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level);
 	virtual Result chmod(mode_t mode) = 0;
 	virtual Result chown(uid_t uid, gid_t gid) = 0;
 	virtual void open(FileDescriptor& fd, int options) = 0;

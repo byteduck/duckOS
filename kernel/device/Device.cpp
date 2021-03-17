@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include <kernel/terminal/PTYMuxDevice.h>
 #include "Device.h"
 #include "ZeroDevice.h"
@@ -26,11 +26,11 @@
 #include "KeyboardDevice.h"
 #include "MouseDevice.h"
 
-DC::vector<DC::shared_ptr<Device>> Device::_devices;
+kstd::vector<kstd::shared_ptr<Device>> Device::_devices;
 SpinLock Device::_lock;
 
 void Device::init() {
-	new (&_devices) DC::vector<DC::shared_ptr<Device>>();
+	new (&_devices) kstd::vector<kstd::shared_ptr<Device>>();
 	new (&_lock) SpinLock();
 	new ZeroDevice();
 	new RandomDevice();
@@ -44,7 +44,7 @@ Device::Device(unsigned major, unsigned minor): _major(major), _minor(minor) {
 	LOCK(_lock);
 	auto res = get_device(_major, _minor);
 	if (res.is_error() && res.code() == -ENODEV) {
-		_devices.push_back(DC::shared_ptr<Device>(this));
+		_devices.push_back(kstd::shared_ptr<Device>(this));
 		printf("[Device] Device %d,%d registered\n", _major, _minor);
 	} else {
 		printf("[Device] Tried to register already-registered device %d,%d!\n", _major, _minor);
@@ -62,20 +62,20 @@ unsigned Device::minor() {
 	return _minor;
 }
 
-DC::shared_ptr<Device> Device::shared_ptr() {
+kstd::shared_ptr<Device> Device::shared_ptr() {
 	auto res = get_device(major(), minor());
 	if(res.is_error() || res.value().get() != this)
-		return DC::shared_ptr<Device>(nullptr);
+		return kstd::shared_ptr<Device>(nullptr);
 	else
 		return res.value();
 }
 
 
-DC::vector<DC::shared_ptr<Device>> Device::devices() {
+kstd::vector<kstd::shared_ptr<Device>> Device::devices() {
 	return _devices;
 }
 
-ResultRet<DC::shared_ptr<Device>> Device::get_device(unsigned major, unsigned minor) {
+ResultRet<kstd::shared_ptr<Device>> Device::get_device(unsigned major, unsigned minor) {
 	LOCK(_lock);
 	for(size_t i = 0; i < _devices.size(); i++) {
 		if(_devices[i]){

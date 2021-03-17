@@ -25,7 +25,7 @@
 #include "cstring.h"
 #include "utility.h"
 
-namespace DC {
+namespace kstd {
 	template<typename T>
 	class vector {
 	public:
@@ -47,7 +47,7 @@ namespace DC {
 		vector(vector<T>&& other): _capacity(other._capacity), _size(other._size) {
 			_storage = (T*) kcalloc(_size, sizeof(T));
 			for(size_t i = 0; i < _size; i++)
-				new (&_storage[i]) T(DC::move(other._storage[i]));
+				new (&_storage[i]) T(kstd::move(other._storage[i]));
 		}
 
 		~vector(){
@@ -162,7 +162,7 @@ namespace DC {
 				_capacity = other._capacity;
 				_storage = (T*) kcalloc(_capacity, sizeof(T));
 				for (size_t i = 0; i < _size; i++)
-					new (&_storage[i]) T(DC::move(other._storage[i]));
+					new (&_storage[i]) T(kstd::move(other._storage[i]));
 			}
 			return *this;
 		}

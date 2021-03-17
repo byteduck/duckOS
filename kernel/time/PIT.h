@@ -17,23 +17,27 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_UTILITY_H
-#define DUCKOS_UTILITY_H
+#ifndef PIT_H
+#define PIT_H
 
-#include <common/type_traits.h>
+#define PIT_COUNTER0 0x40
+#define PIT_COUNTER1 0x41
+#define PIT_COUNTER2 0x42
+#define PIT_CMD  0x43
 
-namespace DC {
-	template <typename T>
-	typename remove_reference<T>::type&& move(T&& arg)
-	{
-		return static_cast<typename remove_reference<T>::type&&>(arg);
-	}
+#define PIT_FREQUENCY 1000 //Hz
 
-	template<typename T> void swap(T& t1, T& t2) {
-		T temp = DC::move(t1);
-		t1 = DC::move(t2);
-		t2 = DC::move(temp);
-	}
+#include <kernel/kstd/cstddef.h>
+
+namespace PIT {
+	extern "C" void pit_handler();
+	void init();
+	void init_idle_counter();
+	void gettimeofday(struct timespec *t, void *z);
+	uint32_t get_seconds();
+	uint32_t get_nseconds();
+	uint32_t get_mseconds();
+	double percent_idle();
 }
 
-#endif //DUCKOS_UTILITY_H
+#endif

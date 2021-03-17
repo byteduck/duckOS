@@ -24,13 +24,13 @@
 
 namespace CommandLine {
 	struct Option {
-		DC::string name, value;
+		kstd::string name, value;
 	};
 
 	void init(const struct multiboot_info& header);
-	DC::string get_option_value(char* name);
+	kstd::string get_option_value(char* name);
 	bool has_option(char* name);
-	DC::string get_cmdline();
+	kstd::string get_cmdline();
 }
 
 

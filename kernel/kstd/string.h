@@ -20,10 +20,10 @@
 #ifndef DUCKOS_STRING_H
 #define DUCKOS_STRING_H
 
-#include <common/cstddef.h>
-#include <common/cstring.h>
+#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/cstring.h>
 
-namespace DC {
+namespace kstd {
 	class string {
 	public:
 		string();

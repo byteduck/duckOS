@@ -18,7 +18,7 @@
 */
 
 #include <kernel/tasking/ELF.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include <kernel/filesystem/VFS.h>
 #include <kernel/memory/Memory.h>
 #include "TaskManager.h"
@@ -55,7 +55,7 @@ ResultRet<ELF::elf32_header*> ELF::read_header(FileDescriptor& fd) {
 	return header;
 }
 
-ResultRet<DC::vector<ELF::elf32_segment_header>> ELF::read_program_headers(FileDescriptor& fd, elf32_header* header) {
+ResultRet<kstd::vector<ELF::elf32_segment_header>> ELF::read_program_headers(FileDescriptor& fd, elf32_header* header) {
 	uint32_t pheader_loc = header->program_header_table_position;
 	uint32_t pheader_size = header->program_header_table_entry_size;
 	uint32_t num_pheaders = header->program_header_table_entries;
@@ -65,7 +65,7 @@ ResultRet<DC::vector<ELF::elf32_segment_header>> ELF::read_program_headers(FileD
 	if(res < 0) return res;
 
 	//Create the segment header vector and read the headers into it
-	DC::vector<elf32_segment_header> program_headers(num_pheaders);
+	kstd::vector<elf32_segment_header> program_headers(num_pheaders);
 	res = fd.read((uint8_t*)program_headers.storage(), pheader_size * num_pheaders);
 	if(res <= 0) {
 		if(res < 0) return res;
@@ -75,7 +75,7 @@ ResultRet<DC::vector<ELF::elf32_segment_header>> ELF::read_program_headers(FileD
 	return program_headers;
 }
 
-ResultRet<DC::string> ELF::read_interp(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers) {
+ResultRet<kstd::string> ELF::read_interp(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers) {
 	for(size_t i = 0; i < headers.size(); i++) {
 		elf32_segment_header& header = headers[i];
 		if (header.p_type == ELF_PT_INTERP) {
@@ -92,9 +92,9 @@ ResultRet<DC::string> ELF::read_interp(FileDescriptor& fd, DC::vector<elf32_segm
 			}
 
 			//Return it
-			DC::string ret(interp);
+			kstd::string ret(interp);
 			delete[] interp;
-			return DC::move(ret);
+			return kstd::move(ret);
 		}
 	}
 
@@ -102,7 +102,7 @@ ResultRet<DC::string> ELF::read_interp(FileDescriptor& fd, DC::vector<elf32_segm
 	return -ENOENT;
 }
 
-ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers, PageDirectory* page_directory) {
+ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, PageDirectory* page_directory) {
 	uint32_t current_brk = 0;
 
 	for(uint32_t i = 0; i < headers.size(); i++) {
@@ -145,7 +145,7 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, DC::vector<elf32_segmen
 	return current_brk;
 }
 
-ResultRet<ELF::ElfInfo> ELF::read_info(const DC::shared_ptr<FileDescriptor>& fd, User& user, DC::string interpreter) {
+ResultRet<ELF::ElfInfo> ELF::read_info(const kstd::shared_ptr<FileDescriptor>& fd, User& user, kstd::string interpreter) {
 	//Read the ELF header
 	auto header_or_err = ELF::read_header(*fd);
 	if(header_or_err.is_error()) return header_or_err.code();
@@ -178,5 +178,5 @@ ResultRet<ELF::ElfInfo> ELF::read_info(const DC::shared_ptr<FileDescriptor>& fd,
 		return read_info(interp_fd, user, interp_or_err.value());
 	}
 
-	return ElfInfo { DC::shared_ptr<elf32_header>(header), segment_headers, fd, interpreter };
+	return ElfInfo {kstd::shared_ptr<elf32_header>(header), segment_headers, fd, interpreter };
 }

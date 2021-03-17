@@ -30,18 +30,18 @@ public:
 	static PTYFS& inst();
 	PTYFS();
 
-	void add_pty(const DC::shared_ptr<PTYDevice>& pty);
-	void remove_pty(const DC::shared_ptr<PTYDevice>& pty);
+	void add_pty(const kstd::shared_ptr<PTYDevice>& pty);
+	void remove_pty(const kstd::shared_ptr<PTYDevice>& pty);
 
 	//Filesystem
 	char* name() override;
-	ResultRet<DC::shared_ptr<Inode>> get_inode(ino_t id) override;
+	ResultRet<kstd::shared_ptr<Inode>> get_inode(ino_t id) override;
 	ino_t root_inode_id() override;
 	uint8_t fsid() override;
 
 private:
 	friend class PTYFSInode;
-	DC::vector<DC::shared_ptr<PTYFSInode>> _entries;
+	kstd::vector<kstd::shared_ptr<PTYFSInode>> _entries;
 	SpinLock _lock;
 };
 

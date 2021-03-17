@@ -20,8 +20,8 @@
 #ifndef ELF_H
 #define ELF_H
 
-#include <kernel/kstddef.h>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/kstdio.h>
 #include <kernel/filesystem/FileDescriptor.h>
 
 #define ELF_MAGIC 0x464C457F //0x7F followed by 'ELF'
@@ -52,7 +52,7 @@
 #define ELF_PF_W 2u
 #define ELF_PF_R 4u
 
-#include <common/vector.hpp>
+#include <kernel/kstd/vector.hpp>
 #include <kernel/filesystem/LinkedInode.h>
 
 namespace ELF {
@@ -94,10 +94,10 @@ namespace ELF {
 
 	class ElfInfo {
 	public:
-		DC::shared_ptr<elf32_header> header;
-		DC::vector<elf32_segment_header> segments;
-		DC::shared_ptr<FileDescriptor> fd;
-		DC::string interpreter;
+		kstd::shared_ptr<elf32_header> header;
+		kstd::vector<elf32_segment_header> segments;
+		kstd::shared_ptr<FileDescriptor> fd;
+		kstd::string interpreter;
 	};
 
 	/**
@@ -113,7 +113,7 @@ namespace ELF {
 	 * @param header The elf32_header of the file.
 	 * @return An error or a vector containing the segment headers.
 	 */
-	ResultRet<DC::vector<ELF::elf32_segment_header>> read_program_headers(FileDescriptor& fd, elf32_header* header);
+	ResultRet<kstd::vector<ELF::elf32_segment_header>> read_program_headers(FileDescriptor& fd, elf32_header* header);
 
 	/**
 	 * Reads the INTERP section of an ELF file.
@@ -121,7 +121,7 @@ namespace ELF {
 	 * @param headers The program headers (loaded by ELF::read_program_headers)
 	 * @return An error or the INTERP section. -ENOENT if there is no INTERP section.
 	 */
-	ResultRet<DC::string> read_interp(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers);
+	ResultRet<kstd::string> read_interp(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers);
 
 	/**
 	 * Loads the sections of an ELF file into memory.
@@ -130,7 +130,7 @@ namespace ELF {
 	 * @param page_directory The page directory to load the program into.
 	 * @return An error or the program break.
 	 */
-	ResultRet<size_t> load_sections(FileDescriptor& fd, DC::vector<elf32_segment_header>& headers, PageDirectory* page_directory);
+	ResultRet<size_t> load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, PageDirectory* page_directory);
 
 	/**
 	 * Gets information about an ELF executable.
@@ -139,7 +139,7 @@ namespace ELF {
 	 * @param interpreter If not empty, ENOEXEC will be returned if the executable requests an interpreter.
 	 * @return Information about the ELF executable or an error.
 	 */
-	 ResultRet<ElfInfo> read_info(const DC::shared_ptr<FileDescriptor>& fd, User& user, DC::string interpreter = DC::string());
+	 ResultRet<ElfInfo> read_info(const kstd::shared_ptr<FileDescriptor>& fd, User& user, kstd::string interpreter = kstd::string());
 }
 
 #endif

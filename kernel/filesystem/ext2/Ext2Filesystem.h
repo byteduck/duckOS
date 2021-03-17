@@ -31,7 +31,7 @@ class Ext2BlockGroup;
 class Ext2Inode;
 class Ext2Filesystem: public FileBasedFilesystem {
 public:
-	Ext2Filesystem(const DC::shared_ptr<FileDescriptor>& file);
+	Ext2Filesystem(const kstd::shared_ptr<FileDescriptor>& file);
 	~Ext2Filesystem();
 	void init();
 
@@ -41,18 +41,18 @@ public:
 	Inode * get_inode_rawptr(ino_t id) override;
 
 	//Reading/writing
-	ResultRet<DC::shared_ptr<Ext2Inode>> allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent);
+	ResultRet<kstd::shared_ptr<Ext2Inode>> allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent);
 	Result free_inode(Ext2Inode& inode);
 	void read_superblock(ext2_superblock *sb);
 	void write_superblock();
 
 	//Block stuff
-	ResultRet<DC::vector<uint32_t>> allocate_blocks_in_group(Ext2BlockGroup* group, uint32_t num_blocks, bool zero_out);
-	ResultRet<DC::vector<uint32_t>> allocate_blocks(uint32_t num_blocks, bool zero_out = true);
+	ResultRet<kstd::vector<uint32_t>> allocate_blocks_in_group(Ext2BlockGroup* group, uint32_t num_blocks, bool zero_out);
+	ResultRet<kstd::vector<uint32_t>> allocate_blocks(uint32_t num_blocks, bool zero_out = true);
 	uint32_t allocate_block(bool zero_out = true);
 
 	void free_block(uint32_t block);
-	void free_blocks(DC::vector<uint32_t>& blocks);
+	void free_blocks(kstd::vector<uint32_t>& blocks);
 	Ext2BlockGroup* get_block_group(uint32_t block_group);
 	Result read_block_group_raw(uint32_t block_group, ext2_block_group_descriptor* buffer, uint8_t* block_buf = nullptr);
 	Result write_block_group_raw(uint32_t block_group, const ext2_block_group_descriptor* buffer, uint8_t* block_buf = nullptr);

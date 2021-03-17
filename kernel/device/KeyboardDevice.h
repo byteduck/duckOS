@@ -22,7 +22,7 @@
 
 #include "CharacterDevice.h"
 #include <kernel/keyboard.h>
-#include <common/circular_queue.hpp>
+#include <kernel/kstd/circular_queue.hpp>
 #include <kernel/interrupt/IRQHandler.h>
 
 class KeyEvent {
@@ -61,7 +61,7 @@ private:
 	void set_mod(uint8_t mod, bool state);
 	void set_key_state(uint8_t key, bool pressed);
 
-	DC::circular_queue<KeyEvent> _event_buffer;
+	kstd::circular_queue<KeyEvent> _event_buffer;
 	KeyboardHandler* _handler = nullptr;
 	uint8_t _modifiers = 0;
 	bool _e0_flag = false;

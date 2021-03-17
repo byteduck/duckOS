@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include "WaitBlocker.h"
 
 WaitBlocker::WaitBlocker(Process* proc, pid_t wait_for) {

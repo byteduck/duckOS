@@ -18,9 +18,9 @@
 */
 
 #include "SocketFSInode.h"
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 
-SocketFSInode::SocketFSInode(SocketFS& fs, Process* owner, ino_t id, const DC::string& name, mode_t mode, uid_t uid, gid_t gid):
+SocketFSInode::SocketFSInode(SocketFS& fs, Process* owner, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
 Inode(fs, id), owner(owner), fs(fs), id(id), name(name), host(owner, owner ? owner->pid() : -1)
 {
 	if(!owner) { //We're the root inode
@@ -56,7 +56,7 @@ InodeMetadata SocketFSInode::metadata() {
 	return ret;
 }
 
-ino_t SocketFSInode::find_id(const DC::string& find_name) {
+ino_t SocketFSInode::find_id(const kstd::string& find_name) {
 	for(size_t i = 0; i < fs.sockets.size(); i++) {
 		if(fs.sockets[i]->name == find_name)
 			return fs.sockets[i]->id;
@@ -105,7 +105,7 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 	return length;
 }
 
-ResultRet<DC::shared_ptr<LinkedInode>> SocketFSInode::resolve_link(const DC::shared_ptr<LinkedInode>& base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<kstd::shared_ptr<LinkedInode>> SocketFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	return -ENOLINK;
 }
 
@@ -201,11 +201,11 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 	return res.code();
 }
 
-Result SocketFSInode::add_entry(const DC::string& add_name, Inode& inode) {
+Result SocketFSInode::add_entry(const kstd::string& add_name, Inode& inode) {
 	return -EINVAL;
 }
 
-ResultRet<DC::shared_ptr<Inode>> SocketFSInode::create_entry(const DC::string& create_name, mode_t mode, uid_t uid, gid_t gid) {
+ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::string& create_name, mode_t mode, uid_t uid, gid_t gid) {
 	if(owner) return -ENOTDIR;
 	LOCK(fs.lock);
 
@@ -227,12 +227,12 @@ ResultRet<DC::shared_ptr<Inode>> SocketFSInode::create_entry(const DC::string& c
 	}
 
 	//Create the socket and return it
-	auto new_inode = DC::make_shared<SocketFSInode>(fs, proc, create_id, create_name, mode, uid, gid);
+	auto new_inode = kstd::make_shared<SocketFSInode>(fs, proc, create_id, create_name, mode, uid, gid);
 	fs.sockets.push_back(new_inode);
-	return static_cast<DC::shared_ptr<Inode>>(new_inode);
+	return static_cast<kstd::shared_ptr<Inode>>(new_inode);
 }
 
-Result SocketFSInode::remove_entry(const DC::string& remove_name) {
+Result SocketFSInode::remove_entry(const kstd::string& remove_name) {
 	return -EACCES;
 }
 

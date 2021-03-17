@@ -17,17 +17,17 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstddef.h>
+#include <kernel/kstd/kstddef.h>
 #include <kernel/memory/gdt.h>
 #include <kernel/tasking/TSS.h>
 #include <kernel/tasking/TaskManager.h>
 
-GDTEntry gdt[GDT_ENTRIES];
-GDTPointer gp;
+Memory::GDTEntry gdt[GDT_ENTRIES];
+Memory::GDTPointer gp;
 
 extern "C" void* stack;
 
-void gdt_set_gate(uint32_t num, uint32_t limit, uint32_t base, bool read_write, bool executable, bool type, uint8_t ring, bool present, bool accessed) {
+void Memory::gdt_set_gate(uint32_t num, uint32_t limit, uint32_t base, bool read_write, bool executable, bool type, uint8_t ring, bool present, bool accessed) {
     gdt[num].base_low = (base & 0xFFFFu);
     gdt[num].base_middle = (base >> 16u) & 0xFFu;
     gdt[num].base_high = (base >> 24u) & 0xFFu;
@@ -48,7 +48,7 @@ void gdt_set_gate(uint32_t num, uint32_t limit, uint32_t base, bool read_write, 
 	gdt[num].access.bits.ring = ring;
 }
 
-void setup_tss(){
+void Memory::setup_tss(){
 	uint32_t base = (uint32_t) &TaskManager::tss;
 	uint32_t limit = sizeof(TaskManager::tss) - 1;
 
@@ -81,7 +81,7 @@ void setup_tss(){
 	TaskManager::tss.gs = 0x13;
 }
 
-void load_gdt(){
+void Memory::load_gdt(){
 	gp.limit = (sizeof(GDTEntry) * GDT_ENTRIES) - 1;
 	gp.base = (uint32_t)&gdt;
 

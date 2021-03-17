@@ -17,11 +17,11 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include "SocketFS.h"
 
 SocketFS::SocketFS() {
-	root_entry = DC::make_shared<SocketFSInode>(*this, nullptr, 1, "", 0777u | MODE_DIRECTORY, 0, 0);
+	root_entry = kstd::make_shared<SocketFSInode>(*this, nullptr, 1, "", 0777u | MODE_DIRECTORY, 0, 0);
 }
 
 ino_t SocketFS::get_inode_id(pid_t pid, uint16_t fileno) {
@@ -40,14 +40,14 @@ char* SocketFS::name() {
 	return "socketfs";
 }
 
-ResultRet<DC::shared_ptr<Inode>> SocketFS::get_inode(ino_t id) {
+ResultRet<kstd::shared_ptr<Inode>> SocketFS::get_inode(ino_t id) {
 	if(id == 1)
-		return static_cast<DC::shared_ptr<Inode>>(root_entry);
+		return static_cast<kstd::shared_ptr<Inode>>(root_entry);
 
 	LOCK(lock);
 	for(size_t i = 0; i < sockets.size(); i++) {
 		if(sockets[i]->id == id)
-			return static_cast<DC::shared_ptr<Inode>>(sockets[i]);
+			return static_cast<kstd::shared_ptr<Inode>>(sockets[i]);
 	}
 
 	return -ENOENT;

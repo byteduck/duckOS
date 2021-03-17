@@ -19,7 +19,7 @@
 
 #include <kernel/tasking/Signal.h>
 #include <kernel/tasking/TaskManager.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include "Pipe.h"
 
 Pipe::Pipe(): _queue(PIPE_SIZE) {}

@@ -28,7 +28,7 @@ public:
 
 	Process* process;
 	pid_t pid;
-	DC::shared_ptr<DC::queue<uint8_t>> data_queue;
+	kstd::shared_ptr<kstd::queue<uint8_t>> data_queue;
 	BooleanBlocker _blocker;
 	SpinLock _lock;
 };

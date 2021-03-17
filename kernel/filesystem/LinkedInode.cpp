@@ -17,33 +17,33 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
-#include <common/cstring.h>
+#include <kernel/kstd/kstdio.h>
+#include <kernel/kstd/cstring.h>
 #include <kernel/User.h>
 #include "LinkedInode.h"
 
-LinkedInode::LinkedInode(const DC::shared_ptr<Inode>& inode, const DC::string& name, const DC::shared_ptr<LinkedInode>& parent):
+LinkedInode::LinkedInode(const kstd::shared_ptr<Inode>& inode, const kstd::string& name, const kstd::shared_ptr<LinkedInode>& parent):
 	_inode(inode), _parent(parent), _name(name) {}
 
 LinkedInode::~LinkedInode() = default;
 
-DC::shared_ptr<Inode> LinkedInode::inode() {
+kstd::shared_ptr<Inode> LinkedInode::inode() {
     return _inode;
 }
 
-DC::string LinkedInode::name() {
+kstd::string LinkedInode::name() {
     return _name;
 }
 
-DC::shared_ptr<LinkedInode> LinkedInode::parent() {
+kstd::shared_ptr<LinkedInode> LinkedInode::parent() {
     return _parent;
 }
 
-DC::string LinkedInode::get_full_path() {
+kstd::string LinkedInode::get_full_path() {
 	if(parent().get() == nullptr) {
 		return "/";
 	}
-	DC::string ret = "";
+	kstd::string ret = "";
 	LinkedInode* chain[128];
 	int i = 0;
 	for (auto* ref = this; ref; ref = ref->parent().get()) {

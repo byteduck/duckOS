@@ -20,7 +20,7 @@
 #include "BochsVGADevice.h"
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/pci/pci.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include <kernel/tasking/Process.h>
 
 PCI::ID bochs_qemu_vga = {0x1234, 0x1111};

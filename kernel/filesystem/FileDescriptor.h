@@ -20,7 +20,7 @@
 #ifndef DUCKOS_FILEDESCRIPTOR_H
 #define DUCKOS_FILEDESCRIPTOR_H
 
-#include <common/shared_ptr.hpp>
+#include <kernel/kstd/shared_ptr.hpp>
 #include "File.h"
 #include "Inode.h"
 #include "InodeMetadata.h"
@@ -33,7 +33,7 @@ class DirectoryEntry;
 class Device;
 class FileDescriptor {
 public:
-	explicit FileDescriptor(const DC::shared_ptr<File>& file);
+	explicit FileDescriptor(const kstd::shared_ptr<File>& file);
 	FileDescriptor(FileDescriptor& other);
 	~FileDescriptor();
 
@@ -43,7 +43,7 @@ public:
 	bool append_mode() const;
 	bool nonblock() const;
 	InodeMetadata metadata();
-	DC::shared_ptr<File> file();
+	kstd::shared_ptr<File> file();
 	void open();
 	Process* owner() const;
 	void set_owner(Process* owner);
@@ -61,8 +61,8 @@ public:
 	bool is_fifo_writer() const;
 
 private:
-	DC::shared_ptr<File> _file;
-	DC::shared_ptr<Inode> _inode;
+	kstd::shared_ptr<File> _file;
+	kstd::shared_ptr<Inode> _inode;
 	Process* _owner;
 
 	bool _readable {false};

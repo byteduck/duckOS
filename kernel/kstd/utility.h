@@ -17,30 +17,23 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_STDLIB_H
-#define DUCKOS_STDLIB_H
+#ifndef DUCKOS_UTILITY_H
+#define DUCKOS_UTILITY_H
 
-#include <common/cstddef.h>
-#include <common/cstring.h>
+#include <kernel/kstd/type_traits.h>
 
-#define max(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a > _b ? _a : _b; })
+namespace kstd {
+	template <typename T>
+	typename remove_reference<T>::type&& move(T&& arg)
+	{
+		return static_cast<typename remove_reference<T>::type&&>(arg);
+	}
 
-#define min(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a < _b ? _a : _b; })
+	template<typename T> void swap(T& t1, T& t2) {
+		T temp = kstd::move(t1);
+		t1 = kstd::move(t2);
+		t2 = kstd::move(temp);
+	}
+}
 
-int atoi(char *str);
-
-int sgn(int x);
-
-int abs(float x);
-
-char nibbleToHexString(uint8_t num);
-
-char *itoa(int i, char *p, int base);
-
-#endif //DUCKOS_STDLIB_H
+#endif //DUCKOS_UTILITY_H

@@ -22,7 +22,7 @@
 
 #include "Lock.h"
 #include "BooleanBlocker.h"
-#include <common/shared_ptr.hpp>
+#include <kernel/kstd/shared_ptr.hpp>
 
 class Process;
 class SpinLock: public Lock {

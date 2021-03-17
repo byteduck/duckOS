@@ -20,7 +20,7 @@
 #ifndef DUCKOS_INODEMETADATA_H
 #define DUCKOS_INODEMETADATA_H
 
-#include <common/cstddef.h>
+#include <kernel/kstd/cstddef.h>
 #include <kernel/User.h>
 
 #define MODE_FIFO 0x1000u

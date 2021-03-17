@@ -17,9 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstdio.h>
-#include <common/cstring.h>
-#include <common/defines.h>
+#include <kernel/kstd/kstdio.h>
+#include <kernel/kstd/cstring.h>
+#include <kernel/kstd/defines.h>
 #include "VFS.h"
 #include "ext2/Ext2Filesystem.h"
 #include "InodeFile.h"
@@ -48,19 +48,19 @@ bool VFS::mount_root(Filesystem* fs) {
 		return false;
 	}
 
-	_root_inode = DC::move(root_inode);
-	_root_ref = DC::shared_ptr<LinkedInode>(new LinkedInode(_root_inode, "/", DC::shared_ptr<LinkedInode>(nullptr)));
+	_root_inode = kstd::move(root_inode);
+	_root_ref = kstd::shared_ptr<LinkedInode>(new LinkedInode(_root_inode, "/", kstd::shared_ptr<LinkedInode>(nullptr)));
 	mount(fs, _root_ref);
 
 	return true;
 }
 
-ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const DC::shared_ptr<LinkedInode>& _base, User& user, DC::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<kstd::shared_ptr<LinkedInode>> VFS::resolve_path(kstd::string path, const kstd::shared_ptr<LinkedInode>& _base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	if(recursion_level > VFS_RECURSION_LIMIT) return -ELOOP;
 	if(path == "/") return _root_ref;
 
 	auto current_inode = path[0] == '/' ? _root_ref : _base;
-	DC::string part;
+	kstd::string part;
 	if(path[0] == '/') path = path.substr(1, path.length() - 1);
 
 	while(path[0] != '\0') {
@@ -79,7 +79,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 
 		if(part == "..") {
 			if(current_inode->parent()) {
-				current_inode = DC::shared_ptr<LinkedInode>(current_inode->parent());
+				current_inode = kstd::shared_ptr<LinkedInode>(current_inode->parent());
 			}
 			continue;
 		} else if(part == ".") {
@@ -94,7 +94,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 					if (options & O_NOFOLLOW)
 						return -ELOOP;
 					if (options & O_INTERNAL_RETLINK) {
-						current_inode = DC::shared_ptr<LinkedInode>(new LinkedInode(child_inode_or_err.value(), part, parent));
+						current_inode = kstd::shared_ptr<LinkedInode>(new LinkedInode(child_inode_or_err.value(), part, parent));
 						break;
 					}
 				}
@@ -105,7 +105,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 				return resolve_path(path, link_or_err.value(), user, parent_storage, options, recursion_level + 1);
 			}
 
-			current_inode = DC::shared_ptr<LinkedInode>(new LinkedInode(child_inode_or_err.value(), part, parent));
+			current_inode = kstd::shared_ptr<LinkedInode>(new LinkedInode(child_inode_or_err.value(), part, parent));
 
 			//Check if there's a mount at this inode and follow it if there is
 			auto mount_or_err = get_mount(current_inode);
@@ -113,7 +113,7 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 				auto guest_fs = mount_or_err.value().guest_fs();
 				auto guest_inode_or_err = guest_fs->get_inode(guest_fs->root_inode_id());
 				if(guest_inode_or_err.is_error()) return guest_inode_or_err.code();
-				current_inode = DC::make_shared<LinkedInode>(guest_inode_or_err.value(), part, parent);
+				current_inode = kstd::make_shared<LinkedInode>(guest_inode_or_err.value(), part, parent);
 			}
 		} else {
 			if(parent_storage && path.find('/') == -1) {
@@ -127,14 +127,14 @@ ResultRet<DC::shared_ptr<LinkedInode>> VFS::resolve_path(DC::string path, const 
 	return current_inode;
 }
 
-ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int options, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base) {
+ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::open(kstd::string& path, int options, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	//Check path length & options for validity
 	if(path.length() == 0) return -ENOENT;
 	if((options & O_DIRECTORY) && (options & O_CREAT)) return -EINVAL;
 
 	//Resolve the file
 	int resolve_options = options & O_NOFOLLOW ? O_NOFOLLOW : 0;
-	DC::shared_ptr<LinkedInode> parent(nullptr);
+	kstd::shared_ptr<LinkedInode> parent(nullptr);
 	auto resolv = resolve_path(path, base, user, &parent);
 
 	//If we are using O_CREAT and the file doesn't exist (resolv == -ENOENT), make it
@@ -168,22 +168,22 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::open(DC::string& path, int option
 	if(meta.is_device()) {
 		auto dev_res = Device::get_device(meta.dev_major, meta.dev_minor);
 		if(dev_res.is_error()) return dev_res.code();
-		auto ret = DC::make_shared<FileDescriptor>(dev_res.value());
+		auto ret = kstd::make_shared<FileDescriptor>(dev_res.value());
 		ret->set_options(options);
 		return ret;
 	}
 
 	//Make the InodeFile and FileDescriptor
 	if(options & O_TRUNC) inode->inode()->truncate(0);
-	auto file = DC::make_shared<InodeFile>(inode->inode());
-	auto ret = DC::make_shared<FileDescriptor>(file);
+	auto file = kstd::make_shared<InodeFile>(inode->inode());
+	auto ret = kstd::make_shared<FileDescriptor>(file);
 	ret->set_options(options);
 	ret->open();
 
 	return ret;
 }
 
-ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int options, mode_t mode, User& user, const DC::shared_ptr<LinkedInode> &parent) {
+ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::create(kstd::string& path, int options, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode> &parent) {
 	//If the type bits of the mode are zero (which it will be from sys_open), create a regular file
 	if(!IS_BLKDEV(mode) && !IS_CHRDEV(mode) && !IS_FIFO(mode) && !IS_SOCKET(mode))
 		mode |= MODE_FILE;
@@ -196,17 +196,17 @@ ResultRet<DC::shared_ptr<FileDescriptor>> VFS::create(DC::string& path, int opti
 	if(child_or_err.is_error()) return child_or_err.code();
 
 	//Return a file descriptor to the new file
-	auto file = DC::make_shared<InodeFile>(child_or_err.value());
-	auto ret = DC::make_shared<FileDescriptor>(file);
+	auto file = kstd::make_shared<InodeFile>(child_or_err.value());
+	auto ret = kstd::make_shared<FileDescriptor>(file);
 	ret->set_options(options);
 	ret->open();
 
 	return ret;
 }
 
-Result VFS::unlink(DC::string &path, User& user, const DC::shared_ptr<LinkedInode> &base) {
+Result VFS::unlink(kstd::string &path, User& user, const kstd::shared_ptr<LinkedInode> &base) {
 	//Find the parent dir
-	DC::shared_ptr<LinkedInode> parent(nullptr);
+	kstd::shared_ptr<LinkedInode> parent(nullptr);
 	auto resolv = resolve_path(path, base, user, &parent, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
 
@@ -218,9 +218,9 @@ Result VFS::unlink(DC::string &path, User& user, const DC::shared_ptr<LinkedInod
 	return parent->inode()->remove_entry(path_base(path));
 }
 
-Result VFS::link(DC::string& file, DC::string& link_name, User& user, const DC::shared_ptr<LinkedInode>& base) {
+Result VFS::link(kstd::string& file, kstd::string& link_name, User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	//Make sure the new file doesn't already exist and the parent directory exists
-	DC::shared_ptr<LinkedInode> new_file_parent(nullptr);
+	kstd::shared_ptr<LinkedInode> new_file_parent(nullptr);
 	auto resolv = resolve_path(link_name, base, user, &new_file_parent);
 	if(!resolv.is_error()) return -EEXIST;
 	if(resolv.code() != -ENOENT) return resolv.code();
@@ -242,9 +242,9 @@ Result VFS::link(DC::string& file, DC::string& link_name, User& user, const DC::
 	return new_file_parent->inode()->add_entry(path_base(link_name), *old_file->inode());
 }
 
-Result VFS::symlink(DC::string& file, DC::string& link_name, User& user, const DC::shared_ptr<LinkedInode>& base) {
+Result VFS::symlink(kstd::string& file, kstd::string& link_name, User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	//Make sure the new file doesn't already exist and the parent directory exists
-	DC::shared_ptr<LinkedInode> new_file_parent(nullptr);
+	kstd::shared_ptr<LinkedInode> new_file_parent(nullptr);
 	auto resolv = resolve_path(link_name, base, user, &new_file_parent);
 	if(!resolv.is_error()) return -EEXIST;
 	if(resolv.code() != ENOENT) return resolv.code();
@@ -272,7 +272,7 @@ Result VFS::symlink(DC::string& file, DC::string& link_name, User& user, const D
 	return SUCCESS;
 }
 
-ResultRet<DC::string> VFS::readlink(DC::string& path, User& user, const DC::shared_ptr<LinkedInode>& base, ssize_t& size) {
+ResultRet<kstd::string> VFS::readlink(kstd::string& path, User& user, const kstd::shared_ptr<LinkedInode>& base, ssize_t& size) {
 	//Find the link and make sure it is a link
 	auto resolv = resolve_path(path, base, user, nullptr, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
@@ -289,23 +289,23 @@ ResultRet<DC::string> VFS::readlink(DC::string& path, User& user, const DC::shar
 	}
 
 	//Return the result
-	DC::string ret((char*)buf);
+	kstd::string ret((char*)buf);
 	delete[] buf;
 	return ret;
 }
 
-Result VFS::rmdir(DC::string &path, User& user, const DC::shared_ptr<LinkedInode> &base) {
+Result VFS::rmdir(kstd::string &path, User& user, const kstd::shared_ptr<LinkedInode> &base) {
 	//Remove trailing slash if there is one
 	if(path.length() != 0 && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
 	}
 
-	DC::string pbase = path_base(path);
+	kstd::string pbase = path_base(path);
 	if(pbase == ".") return -EINVAL;
 	if(pbase == "..") return -ENOTEMPTY;
 
 	//Make sure the parent exists, is a directory, and we have write perms on it
-	DC::shared_ptr<LinkedInode> parent(nullptr);
+	kstd::shared_ptr<LinkedInode> parent(nullptr);
 	auto resolv = resolve_path(path, base, user, &parent, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
 	if(!resolv.value()->inode()->metadata().is_directory()) return -ENOTDIR;
@@ -314,7 +314,7 @@ Result VFS::rmdir(DC::string &path, User& user, const DC::shared_ptr<LinkedInode
 	return parent->inode()->remove_entry(path_base(path));
 }
 
-Result VFS::mkdir(DC::string path, mode_t mode, User& user, const DC::shared_ptr<LinkedInode> &base) {
+Result VFS::mkdir(kstd::string path, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode> &base) {
 	//Remove trailing slash if there is one
 	if(path.length() != 0 && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
@@ -337,7 +337,7 @@ Result VFS::mkdir(DC::string path, mode_t mode, User& user, const DC::shared_ptr
 	return SUCCESS;
 }
 
-Result VFS::truncate(DC::string& path, off_t length, User& user, const DC::shared_ptr<LinkedInode>& base) {
+Result VFS::truncate(kstd::string& path, off_t length, User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	if(length < 0) return -EINVAL;
  	auto ino_or_err = resolve_path(path, base, user);
 	if(ino_or_err.is_error()) return ino_or_err.code();
@@ -346,7 +346,7 @@ Result VFS::truncate(DC::string& path, off_t length, User& user, const DC::share
 	return ino_or_err.value()->inode()->truncate(length);
 }
 
-Result VFS::chmod(DC::string& path, mode_t mode, User& user, const DC::shared_ptr<LinkedInode>& base) {
+Result VFS::chmod(kstd::string& path, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	auto res = resolve_path(path, base, user);
 	if(res.is_error()) return res.code();
 
@@ -358,7 +358,7 @@ Result VFS::chmod(DC::string& path, mode_t mode, User& user, const DC::shared_pt
 	return inode->inode()->chmod((meta.mode & ~04777u) | (mode & 04777u));
 }
 
-Result VFS::chown(DC::string& path, uid_t uid, gid_t gid, User& user, const DC::shared_ptr<LinkedInode>& base, int options) {
+Result VFS::chown(kstd::string& path, uid_t uid, gid_t gid, User& user, const kstd::shared_ptr<LinkedInode>& base, int options) {
 	auto res = resolve_path(path, base, user, nullptr, options);
 	if(res.is_error()) return res.code();
 
@@ -380,24 +380,24 @@ Result VFS::chown(DC::string& path, uid_t uid, gid_t gid, User& user, const DC::
 	return inode->inode()->chown(uid == (uid_t) -1 ? user.euid : uid, gid == (gid_t) -1 ? user.egid : gid);
 }
 
-DC::shared_ptr<LinkedInode> VFS::root_ref() {
+kstd::shared_ptr<LinkedInode> VFS::root_ref() {
 	return _root_ref;
 }
 
-DC::string VFS::path_base(const DC::string& path) {
+kstd::string VFS::path_base(const kstd::string& path) {
 	size_t slash_index = path.find_last_of('/');
 	if(slash_index == -1) return path;
 	else if(slash_index == path.length() - 1) return "";
 	else return path.substr(slash_index, path.length() - slash_index);
 }
 
-DC::string VFS::path_minus_base(const DC::string &path) {
+kstd::string VFS::path_minus_base(const kstd::string &path) {
 	size_t slash_index = path.find_last_of('/');
 	if(slash_index == -1) return "";
 	else return path.substr(0, slash_index);
 }
 
-Result VFS::mount(Filesystem* fs, const DC::shared_ptr<LinkedInode>& mountpoint) {
+Result VFS::mount(Filesystem* fs, const kstd::shared_ptr<LinkedInode>& mountpoint) {
 	if(!mountpoint->inode()->metadata().is_directory()) return -ENOTDIR;
 
 	for(size_t i = 0; i < mounts.size(); i++) {
@@ -412,7 +412,7 @@ Result VFS::mount(Filesystem* fs, const DC::shared_ptr<LinkedInode>& mountpoint)
 	return SUCCESS;
 }
 
-ResultRet<VFS::Mount> VFS::get_mount(const DC::shared_ptr<LinkedInode>& inode) {
+ResultRet<VFS::Mount> VFS::get_mount(const kstd::shared_ptr<LinkedInode>& inode) {
 	for(size_t i = 0; i < mounts.size(); i++) {
 		auto m_inode = mounts[i].host_inode()->inode();
 		if(m_inode->fs.fsid() == inode->inode()->fs.fsid() && m_inode->id == inode->inode()->id)
@@ -427,7 +427,7 @@ ResultRet<VFS::Mount> VFS::get_mount(const DC::shared_ptr<LinkedInode>& inode) {
  * Mount Class *
  * * * * * * * */
 
-VFS::Mount::Mount(Filesystem* fs, const DC::shared_ptr<LinkedInode>& host_inode): _fs(fs), _host_inode(host_inode) {
+VFS::Mount::Mount(Filesystem* fs, const kstd::shared_ptr<LinkedInode>& host_inode): _fs(fs), _host_inode(host_inode) {
 
 }
 
@@ -435,7 +435,7 @@ VFS::Mount::Mount(): _fs(nullptr) {
 
 }
 
-DC::shared_ptr<LinkedInode> VFS::Mount::host_inode() {
+kstd::shared_ptr<LinkedInode> VFS::Mount::host_inode() {
 	return _host_inode;
 }
 

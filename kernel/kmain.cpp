@@ -17,22 +17,22 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstddef.h>
+#include <kernel/kstd/kstddef.h>
 #include <kernel/multiboot.h>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/kstdio.h>
 #include <kernel/memory/Memory.h>
 #include <kernel/interrupt/idt.h>
 #include <kernel/interrupt/isr.h>
 #include <kernel/interrupt/irq.h>
 #include <kernel/filesystem/ext2/Ext2Filesystem.h>
-#include <kernel/pit.h>
+#include <kernel/time/PIT.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/device/PartitionDevice.h>
 #include <kernel/kmain.h>
 #include <kernel/filesystem/VFS.h>
 #include <kernel/terminal/VirtualTTY.h>
 #include <kernel/device/KeyboardDevice.h>
-#include <common/defines.h>
+#include <kernel/kstd/defines.h>
 #include <kernel/device/BochsVGADevice.h>
 #include <kernel/device/MultibootVGADevice.h>
 #include <kernel/memory/PageDirectory.h>
@@ -42,6 +42,7 @@
 #include <kernel/filesystem/socketfs/SocketFS.h>
 #include <kernel/filesystem/ptyfs/PTYFS.h>
 #include <kernel/terminal/PTYMuxDevice.h>
+#include <kernel/memory/gdt.h>
 #include "CommandLine.h"
 
 uint8_t boot_disk;
@@ -50,7 +51,7 @@ int kmain(uint32_t mbootptr){
 	clearScreen();
 	printf("[kinit] Starting duckOS...\n");
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
-	load_gdt();
+	Memory::load_gdt();
 	interrupts_init();
 	Memory::setup_paging();
 	Device::init();
@@ -70,8 +71,9 @@ int kmain(uint32_t mbootptr){
 	printf("[kinit] Debug mode is enabled.\n");
 #endif
 	printf("[kinit] First stage complete.\n[kinit] Initializing tasking...\n");
+
 	TaskManager::init();
-	ASSERT(false) //We should never get here
+	ASSERT(false); //We should never get here
 	return 0;
 }
 
@@ -86,7 +88,7 @@ void kmain_late(){
 	printf("[kinit] TTY initialized.\n[kinit] Initializing disk...\n");
 
 	//Setup the disk (Assumes we're using primary master drive
-	auto disk = DC::shared_ptr<PATADevice>(PATADevice::find(
+	auto disk = kstd::shared_ptr<PATADevice>(PATADevice::find(
 					PATADevice::PRIMARY,
 					PATADevice::MASTER,
 					CommandLine::has_option("use_pio") //Use PIO if the command line option is present
@@ -95,6 +97,7 @@ void kmain_late(){
 		printf("[kinit] Couldn't find IDE controller! Hanging...\n");
 		while(1);
 	}
+
 	//Find the LBA of the first partition
 	auto* mbr_buf = new uint8_t[512];
 	disk->read_block(0, mbr_buf);
@@ -102,8 +105,8 @@ void kmain_late(){
 	delete[] mbr_buf;
 
 	//Set up the PartitionDevice with that LBA
-	auto part = DC::make_shared<PartitionDevice>(3, 1, disk, part_offset);
-	auto part_descriptor = DC::make_shared<FileDescriptor>(part);
+	auto part = kstd::make_shared<PartitionDevice>(3, 1, disk, part_offset);
+	auto part_descriptor = kstd::make_shared<FileDescriptor>(part);
 	part_descriptor->set_options(O_RDWR);
 
 	//Check if the filesystem is ext2
@@ -181,7 +184,7 @@ void kmain_late(){
 	//Replace kinit with init
 	auto* init_args = new ProcessArgs(VFS::inst().root_ref());
 	init_args->argv.push_back("/bin/init");
-	TaskManager::current_process()->exec(DC::string("/bin/init"), init_args);
+	TaskManager::current_process()->exec(kstd::string("/bin/init"), init_args);
 
 	//We shouldn't get here
 	PANIC("INIT_FAILED", "Failed to start init.", true);

@@ -20,7 +20,7 @@
 #ifndef TSS_H
 #define TSS_H
 
-#include <common/cstddef.h>
+#include <kernel/kstd/cstddef.h>
 
 typedef struct TSS {
 	uint16_t link;

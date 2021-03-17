@@ -22,19 +22,19 @@
 #include <kernel/font8x8/font8x8_basic.h>
 
 size_t VirtualTTY::_current_tty;
-DC::shared_ptr<VirtualTTY> VirtualTTY::_ttys[];
+kstd::shared_ptr<VirtualTTY> VirtualTTY::_ttys[];
 
 VirtualTTY::VirtualTTY(unsigned int major, unsigned int minor) : TTYDevice(major, minor) {
 	terminal = new Terminal({VGADevice::inst().get_display_width() / 8,VGADevice::inst().get_display_height() / 8}, *this);
 	register_tty(minor, this);
 }
 
-DC::shared_ptr<VirtualTTY> VirtualTTY::current_tty() {
+kstd::shared_ptr<VirtualTTY> VirtualTTY::current_tty() {
 	return _ttys[_current_tty];
 }
 
 void VirtualTTY::set_current_tty(size_t tty) {
-	DC::shared_ptr<VirtualTTY> current = _ttys[_current_tty];
+	kstd::shared_ptr<VirtualTTY> current = _ttys[_current_tty];
 	if(current.get() != nullptr) current->_active = false;
 	_current_tty = tty;
 	_ttys[_current_tty]->_active = true;
@@ -43,7 +43,7 @@ void VirtualTTY::set_current_tty(size_t tty) {
 
 void VirtualTTY::register_tty(size_t id, VirtualTTY *device) {
 	if(_ttys[id]) PANIC("DUPLICATE_TTY", "A TTY tried to register with an ID that was already registered.", true);
-	_ttys[id] = DC::shared_ptr<TTYDevice>(device);
+	_ttys[id] = kstd::shared_ptr<TTYDevice>(device);
 }
 
 void VirtualTTY::set_active() {

@@ -18,11 +18,11 @@
 */
 
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/kstddef.h>
-#include <kernel/kstdio.h>
+#include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/kstdio.h>
 #include <kernel/kmain.h>
 #include <kernel/interrupt/irq.h>
-#include <kernel/pit.h>
+#include <kernel/time/PIT.h>
 #include <kernel/filesystem/procfs/ProcFS.h>
 
 TSS TaskManager::tss;
@@ -47,7 +47,8 @@ void kidle(){
 Process* TaskManager::process_for_pid(pid_t pid){
 	Process *current = kidle_proc;
 	do{
-		if(current->pid() == pid && current->pid() && current->state != PROCESS_DEAD) return current;
+		if(current->pid() == pid && current->pid() && current->state != PROCESS_DEAD)
+			return current;
 		current = current->next;
 	} while(current != kidle_proc);
 	return (Process *) nullptr;
@@ -56,7 +57,8 @@ Process* TaskManager::process_for_pid(pid_t pid){
 Process* TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
 	Process *current = kidle_proc;
 	do{
-		if(current->pgid() == pgid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD) return current;
+		if(current->pgid() == pgid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD)
+			return current;
 		current = current->next;
 	} while(current != kidle_proc);
 	return (Process *) nullptr;
@@ -65,7 +67,8 @@ Process* TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
 Process* TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
 	Process *current = kidle_proc;
 	do{
-		if(current->ppid() == ppid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD) return current;
+		if(current->ppid() == ppid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD)
+			return current;
 		current = current->next;
 	} while(current != kidle_proc);
 	return (Process *) nullptr;
@@ -74,7 +77,8 @@ Process* TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
 Process* TaskManager::process_for_sid(pid_t sid, pid_t excl){
 	Process *current = kidle_proc;
 	do{
-		if(current->sid() == sid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD) return current;
+		if(current->sid() == sid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD)
+			return current;
 		current = current->next;
 	} while(current != kidle_proc);
 	return (Process *) nullptr;
@@ -85,15 +89,6 @@ void TaskManager::kill_pgid(pid_t pgid, int sig) {
 	do {
 		if(current->pgid() == pgid)
 			current->kill(sig);
-		current = current->next;
-	} while(current != kidle_proc);
-}
-
-void TaskManager::print_tasks(){
-	Process *current = kidle_proc;
-	printf("Running processes: ([PID] name state usermem)\n");
-	do {
-		printf("[%d] '%s' %d %dKiB\n", current->pid(), current->name().c_str(), current->state, current->ring == 3 ? current->page_directory->used_pmem() : 0);
 		current = current->next;
 	} while(current != kidle_proc);
 }

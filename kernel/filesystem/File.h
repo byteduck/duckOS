@@ -20,7 +20,7 @@
 #ifndef DUCKOS_FILE_H
 #define DUCKOS_FILE_H
 
-#include <common/shared_ptr.hpp>
+#include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/Result.hpp>
 #include "FileDescriptor.h"
 #include "DirectoryEntry.h"

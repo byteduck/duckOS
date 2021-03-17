@@ -20,10 +20,10 @@ SET(KERNEL_SRCS
         asm/syscall.s
         asm/gdt.s
         kmain.cpp
-        pit.cpp
-        kstdio.cpp
+        time/PIT.cpp
+        kstd/kstdio.cpp
         keyboard.cpp
-        kstddef.cpp
+        kstd/kstddef.cpp
         tasking/ELF.cpp
         tasking/TaskManager.cpp
         pci/pci.cpp
@@ -52,7 +52,7 @@ SET(KERNEL_SRCS
         filesystem/InodeFile.cpp
         filesystem/InodeMetadata.cpp
         filesystem/FileBasedFilesystem.cpp
-        icxxabi.cpp
+        kstd/icxxabi.cpp
         device/CharacterDevice.cpp
         device/ZeroDevice.cpp
         random.cpp
@@ -88,7 +88,7 @@ SET(KERNEL_SRCS
         terminal/PTYDevice.cpp
         terminal/PTYControllerDevice.cpp
         terminal/PTYMuxDevice.cpp
-        ../common/terminal/Terminal.cpp
+        ../libraries/libterm/Terminal.cpp
         User.cpp
         filesystem/procfs/ProcFS.cpp
         filesystem/procfs/ProcFSInode.cpp
@@ -100,9 +100,9 @@ SET(KERNEL_SRCS
         filesystem/ptyfs/PTYFSInode.cpp)
 
 SET(COMMON_SRCS
-        ../common/cstring.cpp
-        ../common/stdlib.cpp
-        ../common/string.cpp)
+        kstd/cstring.cpp
+        kstd/stdlib.cpp
+        kstd/string.cpp)
 
 ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS} ${COMMON_SRCS})
 TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL)
