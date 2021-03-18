@@ -18,28 +18,23 @@
 */
 
 #include "SleepBlocker.h"
-#include <kernel/time/PIT.h>
+#include <kernel/kstd/kstdio.h>
 
-SleepBlocker::SleepBlocker(unsigned int seconds): _end_time(PIT::get_mseconds() + (uint32_t)seconds * 1000) {
-
+SleepBlocker::SleepBlocker(Time time): _end_time(Time::now() + time) {
 }
 
 bool SleepBlocker::is_ready() {
-	return PIT::get_mseconds() >= _end_time;
+	return Time::now() >= _end_time;
 }
 
 bool SleepBlocker::can_be_interrupted() {
 	return true;
 }
 
-int SleepBlocker::end_time() {
-	return (int)(_end_time / 1000);
+Time SleepBlocker::end_time() {
+	return _end_time;
 }
 
-int SleepBlocker::time_left() {
-	auto msecs = PIT::get_mseconds();
-	if(msecs > _end_time)
-		return 0;
-	else
-		return (int)(((long)_end_time - (long)msecs) / 1000);
+Time SleepBlocker::time_left() {
+	return was_interrupted() ? _end_time - Time::now() : Time();
 }

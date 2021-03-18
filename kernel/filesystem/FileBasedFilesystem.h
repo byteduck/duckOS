@@ -21,6 +21,7 @@
 #define DUCKOS_FILEBASEDFILESYSTEM_H
 
 #include "Filesystem.h"
+#include <kernel/time/Time.h>
 
 #define MAX_FILESYSTEM_CACHE_SIZE 0x1000000 //16 MiB
 
@@ -30,7 +31,7 @@ public:
 	BlockCacheEntry(size_t block, uint8_t* data);
 	size_t block = 0;
 	uint8_t* data = nullptr;
-	size_t last_used = 0;
+	Time last_used = Time();
 	bool dirty = false;
 };
 

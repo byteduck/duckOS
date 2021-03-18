@@ -80,17 +80,17 @@ namespace Interrupt {
 	}
 
 	void irq_handler(struct Registers *r){
-		_in_interrupt = true;
-
 		//Call handler if it exists
 		auto handler = handlers[r->num - 0x20];
-		if(handler != nullptr){
+		if(handler)
 			handler->handle_irq(r);
-		}
 
-		//Send EOI(s)
-		if(r->num - 0x20 >= 8) outb(PIC2_COMMAND, 0x20);
-		outb(PIC1_COMMAND, 0x20); //Send EOI to controller
+		_in_interrupt = !handler || handler->mark_in_irq();
+
+		//Send EOI
+		if(r->num - 0x20 >= 8)
+			outb(PIC2_COMMAND, 0x20);
+		outb(PIC1_COMMAND, 0x20);
 
 		_in_interrupt = false;
 
@@ -98,7 +98,7 @@ namespace Interrupt {
 		TaskManager::do_yield_async();
 	}
 
-	bool in_interrupt() {
+	bool in_irq() {
 		return _in_interrupt;
 	}
 }

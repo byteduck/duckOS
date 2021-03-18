@@ -17,25 +17,23 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_TIMEMANAGER_H
-#define DUCKOS_TIME_H
+#ifndef DUCKOS_TIMEKEEPER_H
+#define DUCKOS_TIMEKEEPER_H
 
-#include <time.h>
+#include <kernel/kstd/kstddef.h>
 
-__DECL_BEGIN
+class TimeManager;
+class TimeKeeper {
+public:
+	explicit TimeKeeper(TimeManager* time);
+	virtual int frequency() = 0;
 
-struct timeval {
-	time_t      tv_sec;
-	suseconds_t tv_usec;
+protected:
+	void tick();
+
+private:
+	TimeManager* _manager;
 };
 
-struct timezone {
-	int tz_minuteswest;
-	int tz_dsttime;
-};
-
-int gettimeofday(struct timeval *tv, struct timezone *tz);
-
-__DECL_END
 
 #endif //DUCKOS_TIMEKEEPER_H

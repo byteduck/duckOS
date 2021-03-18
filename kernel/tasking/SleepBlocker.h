@@ -21,21 +21,23 @@
 #define DUCKOS_SLEEPBLOCKER_H
 
 #include "Blocker.h"
+#include <kernel/kstd/kstddef.h>
+#include <kernel/time/Time.h>
 
 class SleepBlocker: public Blocker {
 public:
-	SleepBlocker(unsigned int seconds);
+	explicit SleepBlocker(Time time);
 
 	///Blocker
 	bool is_ready() override;
 	bool can_be_interrupted() override;
 
 	///SleepBlocker
-	int end_time();
-	int time_left();
+	Time end_time();
+	Time time_left();
 
 private:
-	unsigned long _end_time;
+	Time _end_time;
 };
 
 

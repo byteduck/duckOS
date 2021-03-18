@@ -18,24 +18,35 @@
 */
 
 #ifndef DUCKOS_TIMEMANAGER_H
-#define DUCKOS_TIME_H
+#define DUCKOS_TIMEMANAGER_H
 
-#include <time.h>
+#include <kernel/kstd/cstddef.h>
+#include "TimeKeeper.h"
+#include <kernel/kstd/circular_queue.hpp>
 
-__DECL_BEGIN
+class TimeManager {
+public:
+	static void init();
+	static TimeManager& inst();
 
-struct timeval {
-	time_t      tv_sec;
-	suseconds_t tv_usec;
+	static long int uptime();
+	static timespec now();
+	static double percent_idle();
+
+protected:
+	friend class TimeKeeper;
+	void tick();
+
+private:
+	TimeManager();
+
+	static TimeManager* _inst;
+	TimeKeeper* _keeper = nullptr;
+	timespec _epoch = {0, 0};
+	int _ticks = 0;
+	long int _uptime = 0;
+	kstd::circular_queue<bool> idle_ticks = kstd::circular_queue<bool>(100);
 };
 
-struct timezone {
-	int tz_minuteswest;
-	int tz_dsttime;
-};
 
-int gettimeofday(struct timeval *tv, struct timezone *tz);
-
-__DECL_END
-
-#endif //DUCKOS_TIMEKEEPER_H
+#endif //DUCKOS_TIMEMANAGER_H

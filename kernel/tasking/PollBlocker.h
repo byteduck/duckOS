@@ -23,6 +23,7 @@
 #include <kernel/kstd/vector.hpp>
 #include "Blocker.h"
 #include <kernel/filesystem/FileDescriptor.h>
+#include <kernel/time/Time.h>
 
 #define POLLIN 0x01
 #define POLLPRI 0x02
@@ -40,15 +41,16 @@ public:
 		short events;
 	};
 
-	PollBlocker(kstd::vector<PollFD>& pollfd, int timeout);
+	PollBlocker(kstd::vector<PollFD>& pollfd, Time timeout);
 	bool is_ready() override;
 
 	int polled;
 	short polled_revent;
 private:
 	kstd::vector<PollFD> polls;
-	uint32_t timeout;
-	uint32_t start_time;
+	Time end_time;
+	Time start_time;
+	bool has_timeout;
 };
 
 

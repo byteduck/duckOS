@@ -22,6 +22,7 @@
 #include <kernel/CommandLine.h>
 #include <kernel/time/PIT.h>
 #include <kernel/filesystem/VFS.h>
+#include <kernel/time/TimeManager.h>
 #include "ProcFSInode.h"
 
 ProcFSInode::ProcFSInode(ProcFS& fs, ProcFSEntry& entry): Inode(fs, entry.dir_entry.id), procfs(fs), pid(entry.pid), type(entry.type), parent(entry.parent) {
@@ -126,7 +127,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 
 		case RootUptime: {
 			char numbuf[12];
-			itoa(PIT::get_seconds(), numbuf, 10);
+			itoa(TimeManager::uptime(), numbuf, 10);
 			kstd::string str = numbuf;
 			str += "\n";
 
@@ -138,7 +139,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 
 		case RootCpuInfo: {
 			char numbuf[4];
-			double percent_used = (1.00 - PIT::percent_idle()) * 100.0;
+			double percent_used = (1.00 - TimeManager::percent_idle()) * 100.0;
 
 			kstd::string str = "Utilization: ";
 

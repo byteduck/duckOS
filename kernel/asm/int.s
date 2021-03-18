@@ -112,6 +112,7 @@ isr_common:
     add esp, 8
     iret
 
+global irq0
 global irq1
 global irq2
 global irq3
@@ -136,6 +137,7 @@ global irq15
 		jmp irq_common
 %endmacro
 
+irq 0
 irq 1
 irq 2
 irq 3

@@ -24,20 +24,26 @@
 #define PIT_COUNTER1 0x41
 #define PIT_COUNTER2 0x42
 #define PIT_CMD  0x43
-
+#define PIT_IRQ 0
 #define PIT_FREQUENCY 1000 //Hz
 
-#include <kernel/kstd/cstddef.h>
+#include <kernel/interrupt/IRQHandler.h>
+#include "TimeKeeper.h"
 
-namespace PIT {
-	extern "C" void pit_handler();
-	void init();
-	void init_idle_counter();
-	void gettimeofday(struct timespec *t, void *z);
-	uint32_t get_seconds();
-	uint32_t get_nseconds();
-	uint32_t get_mseconds();
-	double percent_idle();
-}
+class PIT: public TimeKeeper, public IRQHandler {
+public:
+	///PIT
+	PIT(TimeManager* manager);
+
+	///IRQHandler
+	void handle_irq(Registers* regs) override;
+	bool mark_in_irq() override;
+
+	///TimeHandler
+	int frequency() override;
+
+private:
+	static void write(uint16_t data, uint8_t counter);
+};
 
 #endif

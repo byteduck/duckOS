@@ -17,25 +17,13 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_TIMEMANAGER_H
-#define DUCKOS_TIME_H
+#include "TimeKeeper.h"
+#include "TimeManager.h"
 
-#include <time.h>
+TimeKeeper::TimeKeeper(TimeManager* time): _manager(time) {
 
-__DECL_BEGIN
+}
 
-struct timeval {
-	time_t      tv_sec;
-	suseconds_t tv_usec;
-};
-
-struct timezone {
-	int tz_minuteswest;
-	int tz_dsttime;
-};
-
-int gettimeofday(struct timeval *tv, struct timezone *tz);
-
-__DECL_END
-
-#endif //DUCKOS_TIMEKEEPER_H
+void TimeKeeper::tick() {
+	_manager->tick();
+}

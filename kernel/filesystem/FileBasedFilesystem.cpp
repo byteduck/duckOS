@@ -19,6 +19,7 @@
 
 #include <kernel/kstd/defines.h>
 #include <kernel/time/PIT.h>
+#include <kernel/time/Time.h>
 #include "FileBasedFilesystem.h"
 
 BlockCacheEntry::BlockCacheEntry(size_t block, uint8_t *data): block(block), data(data) {
@@ -165,7 +166,7 @@ BlockCacheEntry* FileBasedFilesystem::get_chache_entry(size_t block) {
 	for(size_t i = 0; i < cache.size(); i++) {
 		if (cache[i].block == block) {
 			BlockCacheEntry* entry = &cache[i];
-			entry->last_used = PIT::get_seconds();
+			entry->last_used = Time::now();
 			return entry;
 		}
 	}
@@ -178,7 +179,7 @@ BlockCacheEntry* FileBasedFilesystem::make_cache_entry(size_t block) {
 	if(cache.size() >= MAX_FILESYSTEM_CACHE_SIZE / block_size()) {
 		//If the cache is full, find the oldest entry and replace it
 		size_t oldest_entry = 0;
-		size_t oldest_entry_time = 0xFFFFFFFF;
+		Time oldest_entry_time = Time::now();
 		for(size_t i = 0; i < cache.size(); i++) {
 			if(cache[i].last_used < oldest_entry_time) {
 				oldest_entry = i;
@@ -193,7 +194,7 @@ BlockCacheEntry* FileBasedFilesystem::make_cache_entry(size_t block) {
 		cache.push_back(BlockCacheEntry(block, new uint8_t[block_size()]));
 		entry = &cache[cache.size() - 1];
 	}
-	entry->last_used = PIT::get_seconds();
+	entry->last_used = Time::now();
 	return entry;
 }
 

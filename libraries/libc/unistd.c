@@ -215,7 +215,17 @@ char* getwd(char* buf) {
 }
 
 int sleep(unsigned secs) {
-	return syscall2(SYS_SLEEP, (int) secs);
+	struct timespec time = {secs, 0};
+	struct timespec remainder;
+	if(syscall3_noerr(SYS_SLEEP, (int) &time, (int) &remainder) < 0)
+		return remainder.tv_sec;
+	return 0;
+}
+
+int usleep(useconds_t usec) {
+	struct timespec time = {0, usec};
+	struct timespec remainder;
+	return syscall3(SYS_SLEEP, (int) &time, (int) &remainder);
 }
 
 pid_t tcgetpgrp(int fd) {

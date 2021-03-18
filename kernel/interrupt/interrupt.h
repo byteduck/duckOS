@@ -17,25 +17,41 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_TIMEMANAGER_H
-#define DUCKOS_TIME_H
+#ifndef DUCKOS_INTERRUPT_H
+#define DUCKOS_INTERRUPT_H
 
-#include <time.h>
+#include <kernel/kstd/kstdio.h>
+#include "idt.h"
+#include "irq.h"
+#include "isr.h"
 
-__DECL_BEGIN
+#define CMOS_PORT 0x70
+#define NMI_FLAG 0x80
 
-struct timeval {
-	time_t      tv_sec;
-	suseconds_t tv_usec;
-};
+namespace Interrupt {
+	void init();
 
-struct timezone {
-	int tz_minuteswest;
-	int tz_dsttime;
-};
+	class Disabler {
+	public:
+		inline Disabler() {
+			asm volatile("cli");
+		}
 
-int gettimeofday(struct timeval *tv, struct timezone *tz);
+		inline ~Disabler() {
+			asm volatile("sti");
+		}
+	};
 
-__DECL_END
+	class NMIDisabler {
+	public:
+		inline NMIDisabler() {
+			outb(CMOS_PORT, NMI_FLAG | inb(CMOS_PORT));
+		}
 
-#endif //DUCKOS_TIMEKEEPER_H
+		inline ~NMIDisabler() {
+			outb(CMOS_PORT, inb(CMOS_PORT) & (~NMI_FLAG));
+		}
+	};
+}
+
+#endif //DUCKOS_INTERRUPT_H

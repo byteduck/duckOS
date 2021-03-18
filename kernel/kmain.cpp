@@ -21,9 +21,6 @@
 #include <kernel/multiboot.h>
 #include <kernel/kstd/kstdio.h>
 #include <kernel/memory/Memory.h>
-#include <kernel/interrupt/idt.h>
-#include <kernel/interrupt/isr.h>
-#include <kernel/interrupt/irq.h>
 #include <kernel/filesystem/ext2/Ext2Filesystem.h>
 #include <kernel/time/PIT.h>
 #include <kernel/tasking/TaskManager.h>
@@ -31,18 +28,16 @@
 #include <kernel/kmain.h>
 #include <kernel/filesystem/VFS.h>
 #include <kernel/terminal/VirtualTTY.h>
-#include <kernel/device/KeyboardDevice.h>
 #include <kernel/kstd/defines.h>
 #include <kernel/device/BochsVGADevice.h>
 #include <kernel/device/MultibootVGADevice.h>
-#include <kernel/memory/PageDirectory.h>
 #include <kernel/device/PATADevice.h>
 #include <kernel/filesystem/procfs/ProcFS.h>
-#include <kernel/device/MouseDevice.h>
 #include <kernel/filesystem/socketfs/SocketFS.h>
 #include <kernel/filesystem/ptyfs/PTYFS.h>
-#include <kernel/terminal/PTYMuxDevice.h>
 #include <kernel/memory/gdt.h>
+#include <kernel/interrupt/interrupt.h>
+#include <kernel/time/TimeManager.h>
 #include "CommandLine.h"
 
 uint8_t boot_disk;
@@ -52,8 +47,9 @@ int kmain(uint32_t mbootptr){
 	printf("[kinit] Starting duckOS...\n");
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
 	Memory::load_gdt();
-	interrupts_init();
+	Interrupt::init();
 	Memory::setup_paging();
+	TimeManager::init();
 	Device::init();
 	CommandLine::init(mboot_header);
 
@@ -78,7 +74,6 @@ int kmain(uint32_t mbootptr){
 }
 
 void kmain_late(){
-	PIT::init_idle_counter();
 	printf("[kinit] Tasking initialized.\n[kinit] Initializing TTY...\n");
 
 	auto* tty0 = new VirtualTTY(4, 0);
@@ -211,21 +206,4 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 	}
 
 	return *header;
-}
-
-void interrupts_init(){
-	//Register the IDT
-	Interrupt::register_idt();
-	//Setup ISR handlers
-	Interrupt::isr_init();
-	//Setup the syscall handler
-	Interrupt::idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
-	//Setup the immediate preemption handler
-	Interrupt::idt_set_gate(0x81, (unsigned)preempt_now_asm, 0x08, 0x8E);
-	//Setup the PIT used for timing / preemption
-	PIT::init();
-	//Setup IRQ handlers
-	Interrupt::irq_init();
-	//Start interrupts
-	sti();
 }

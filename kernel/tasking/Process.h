@@ -175,7 +175,7 @@ public:
 	int sys_shmallow(int id, pid_t pid, int perms);
 	int sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout);
 	int sys_ptsname(int fd, char* buf, size_t bufsize);
-	int sys_sleep(unsigned int seconds);
+	int sys_sleep(timespec* time, timespec* remainder);
 
 	uint32_t state = 0;
 	Process *next = nullptr, *prev = nullptr;

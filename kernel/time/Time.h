@@ -17,25 +17,33 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_TIMEMANAGER_H
+#ifndef DUCKOS_TIME_H
 #define DUCKOS_TIME_H
 
-#include <time.h>
+#include <kernel/kstd/kstddef.h>
 
-__DECL_BEGIN
+class Time {
+public:
+	Time();
+	Time(long sec, long usec);
+	explicit Time(timespec spec);
+	static Time now();
 
-struct timeval {
-	time_t      tv_sec;
-	suseconds_t tv_usec;
+	timespec to_timespec() const;
+	long sec() const;
+	long usec() const;
+
+	Time operator+ (const Time& other) const;
+	Time operator- (const Time& other) const;
+	bool operator> (const Time& other) const;
+	bool operator>= (const Time& other) const;
+	bool operator< (const Time& other) const;
+	bool operator<= (const Time& other) const;
+	bool operator== (const Time& other) const;
+
+private:
+	int64_t _sec;
+	long _usec;
 };
 
-struct timezone {
-	int tz_minuteswest;
-	int tz_dsttime;
-};
-
-int gettimeofday(struct timeval *tv, struct timezone *tz);
-
-__DECL_END
-
-#endif //DUCKOS_TIMEKEEPER_H
+#endif //DUCKOS_TIME_H

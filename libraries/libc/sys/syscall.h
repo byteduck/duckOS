@@ -23,8 +23,12 @@
 #include <kernel/interrupt/syscall.h>
 
 int syscall(int call);
+int syscall_noerr(int call);
 int syscall2(int call, int b);
+int syscall2_noerr(int call, int b);
 int syscall3(int call, int b, int c);
+int syscall3_noerr(int call, int b, int c);
 int syscall4(int call, int b, int c, int d);
+int syscall4_noerr(int call, int b, int c, int d);
 
 #endif //DUCKOS_LIBC_SYSCALL_H

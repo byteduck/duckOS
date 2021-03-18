@@ -33,6 +33,7 @@
 #include <kernel/terminal/VirtualTTY.h>
 #include <kernel/terminal/PTYControllerDevice.h>
 #include <kernel/terminal/PTYDevice.h>
+#include <kernel/time/TimeManager.h>
 
 const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 
@@ -734,7 +735,7 @@ int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 int Process::sys_gettimeofday(timespec *t, void *z) {
 	check_ptr(t);
 	check_ptr(z);
-	PIT::gettimeofday(t, z);
+	*t = Time::now().to_timespec();
 	return 0;
 }
 
@@ -1211,7 +1212,7 @@ int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {
 	}
 
 	//Block
-	PollBlocker blocker(polls, timeout);
+	PollBlocker blocker(polls, Time(0, timeout * 1000));
 	block(blocker);
 
 	//Set appropriate revent
@@ -1246,8 +1247,11 @@ int Process::sys_ptsname(int fd, char* buf, size_t bufsize) {
 	return SUCCESS;
 }
 
-int Process::sys_sleep(unsigned int seconds) {
-	SleepBlocker blocker(seconds);
+int Process::sys_sleep(timespec* time, timespec* remainder) {
+	check_ptr(time);
+	check_ptr(remainder);
+	auto blocker = SleepBlocker(Time(*time));
 	block(blocker);
-	return blocker.time_left();
+	*remainder = blocker.time_left().to_timespec();
+	return blocker.was_interrupted() ? -EINTR : SUCCESS;
 }

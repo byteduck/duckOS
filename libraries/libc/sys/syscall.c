@@ -30,6 +30,13 @@ int syscall(int call) {
 	return ret;
 }
 
+int syscall_noerr(int call) {
+	int ret = 0;
+	asm volatile("int $0x80" :: "a"(call));
+	asm volatile("mov %%eax, %0" : "=r"(ret));
+	return ret;
+}
+
 int syscall2(int call, int b) {
 	int ret = 0;
 	asm volatile("int $0x80" :: "a"(call), "b"(b));
@@ -38,6 +45,13 @@ int syscall2(int call, int b) {
 		errno = -ret;
 		return -1;
 	}
+	return ret;
+}
+
+int syscall2_noerr(int call, int b) {
+	int ret = 0;
+	asm volatile("int $0x80" :: "a"(call), "b"(b));
+	asm volatile("mov %%eax, %0" : "=r"(ret));
 	return ret;
 }
 
@@ -52,6 +66,13 @@ int syscall3(int call, int b, int c) {
 	return ret;
 }
 
+int syscall3_noerr(int call, int b, int c) {
+	int ret = 0;
+	asm volatile("int $0x80" :: "a"(call), "b"(b), "c"(c));
+	asm volatile("mov %%eax, %0" : "=r"(ret));
+	return ret;
+}
+
 int syscall4(int call, int b, int c, int d) {
 	int ret = 0;
 	asm volatile("int $0x80" :: "a"(call), "b"(b), "c"(c), "d"(d));
@@ -60,5 +81,12 @@ int syscall4(int call, int b, int c, int d) {
 		errno = -ret;
 		return -1;
 	}
+	return ret;
+}
+
+int syscall4_noerr(int call, int b, int c, int d) {
+	int ret = 0;
+	asm volatile("int $0x80" :: "a"(call), "b"(b), "c"(c), "d"(d));
+	asm volatile("mov %%eax, %0" : "=r"(ret));
 	return ret;
 }

@@ -166,7 +166,7 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_PTSNAME:
 			return TaskManager::current_process()->sys_ptsname(arg1, (char*) arg2, (int) arg3);
 		case SYS_SLEEP:
-			return TaskManager::current_process()->sys_sleep((unsigned int) arg1);
+			return TaskManager::current_process()->sys_sleep((timespec*) arg1, (timespec*) arg2);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

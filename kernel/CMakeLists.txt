@@ -20,7 +20,12 @@ SET(KERNEL_SRCS
         asm/syscall.s
         asm/gdt.s
         kmain.cpp
+        time/CMOS.cpp
         time/PIT.cpp
+        time/RTC.cpp
+        time/TimeManager.cpp
+        time/TimeKeeper.cpp
+        time/Time.cpp
         kstd/kstdio.cpp
         keyboard.cpp
         kstd/kstddef.cpp
@@ -30,6 +35,7 @@ SET(KERNEL_SRCS
         memory/gdt.cpp
         memory/liballoc.cpp
         memory/Memory.cpp
+        interrupt/interrupt.cpp
         interrupt/idt.cpp
         interrupt/irq.cpp
         interrupt/isr.cpp

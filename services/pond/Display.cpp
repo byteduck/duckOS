@@ -58,6 +58,8 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 
 	if((_keyboard_fd = open("/dev/input/keyboard", O_RDONLY)) < 0)
 		perror("Failed to open keyboard");
+
+	gettimeofday(&paint_time, NULL);
 }
 
 Rect Display::dimensions() {
@@ -183,21 +185,27 @@ void Display::repaint() {
 				  _mouse_window->absolute_rect().position());
 }
 
-void Display::flip_buffers() {
+void Display::flip_buffers(bool hide) {
 	//If the screen buffer isn't dirty, don't bother
 	if(!display_buffer_dirty)
 		return;
 
 	//If it hasn't been 1/60 of a second since the last buffer flip, don't copy to the display buffer
-	timeval new_time = {0, 0};
-	gettimeofday(&new_time, NULL);
-	if(new_time.tv_sec == paint_time.tv_sec && new_time.tv_usec - paint_time.tv_usec < 16666)
+	if(millis_until_next_flip())
 		return;
-	paint_time = new_time;
+	gettimeofday(&paint_time, NULL);
 
 	//Copy to the libgraphics buffer and mark the display buffer clean
-	memcpy(_framebuffer.data, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
+	if(!hide)
+		memcpy(_framebuffer.data, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
 	display_buffer_dirty = false;
+}
+
+int Display::millis_until_next_flip() const {
+	timeval new_time = {0, 0};
+	gettimeofday(&new_time, NULL);
+	int diff = (int) (((new_time.tv_sec - paint_time.tv_sec) * 1000000) + (new_time.tv_usec - paint_time.tv_usec))/1000;
+	return diff >= 16 ? 0 : 16 - diff;
 }
 
 void Display::move_to_front(Window* window) {

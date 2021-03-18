@@ -20,8 +20,9 @@
 #include "PollBlocker.h"
 #include <kernel/time/PIT.h>
 
-PollBlocker::PollBlocker(kstd::vector<PollFD>& pollfd, int timeout): polls(pollfd), timeout(timeout) {
-	start_time = PIT::get_mseconds();
+PollBlocker::PollBlocker(kstd::vector<PollFD>& pollfd, Time timeout):
+	polls(pollfd), has_timeout(timeout >= Time()), start_time(Time::now()), end_time(Time::now() + timeout)
+{
 }
 
 bool PollBlocker::is_ready() {
@@ -41,7 +42,7 @@ bool PollBlocker::is_ready() {
 		}
 	}
 
-	if(timeout >= 0 && PIT::get_mseconds() - start_time >= timeout)
+	if(has_timeout && Time::now() >= end_time)
 		return true;
 
 	return false;

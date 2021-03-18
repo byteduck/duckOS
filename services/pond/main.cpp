@@ -54,14 +54,12 @@ int main(int argc, char** argv, char** envp) {
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
 	while(true) {
-		//Poll with a timeout of 16ms if the buffer is dirty to ensure it gets updated if another event doesn't occur
-		poll(polls, 3, display->buffer_is_dirty() ? 16 : -1);
+		poll(polls, 3, display->buffer_is_dirty() ? display->millis_until_next_flip() : -1);
 		mouse->update();
 		display->update_keyboard();
 		server->handle_packets();
 		display->repaint();
-		if(!hide)
-			display->flip_buffers();
+		display->flip_buffers(hide);
 	}
 #pragma clang diagnostic pop
 

@@ -17,25 +17,22 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_TIMEMANAGER_H
-#define DUCKOS_TIME_H
+#include "interrupt.h"
 
-#include <time.h>
+extern "C" void asm_syscall_handler();
+extern "C" void preempt_now_asm();
 
-__DECL_BEGIN
-
-struct timeval {
-	time_t      tv_sec;
-	suseconds_t tv_usec;
-};
-
-struct timezone {
-	int tz_minuteswest;
-	int tz_dsttime;
-};
-
-int gettimeofday(struct timeval *tv, struct timezone *tz);
-
-__DECL_END
-
-#endif //DUCKOS_TIMEKEEPER_H
+void Interrupt::init() {
+	//Register the IDT
+	Interrupt::register_idt();
+	//Setup ISR handlers
+	Interrupt::isr_init();
+	//Setup the syscall handler
+	Interrupt::idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
+	//Setup the immediate preemption handler
+	Interrupt::idt_set_gate(0x81, (unsigned)preempt_now_asm, 0x08, 0x8E);
+	//Setup IRQ handlers
+	Interrupt::irq_init();
+	//Start interrupts
+	sti();
+}

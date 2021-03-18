@@ -97,6 +97,7 @@ char* getcwd(char* buf, size_t size);
 char* getwd(char* buf);
 
 int sleep(unsigned secs);
+int usleep(useconds_t usec);
 
 pid_t tcgetpgrp(int fd);
 int tcsetpgrp(int fd, pid_t pgid);

@@ -80,8 +80,15 @@ public:
 
 	/**
 	 * Copies the screen buffer to libgraphics memory if necessary
+	 * @param hide Whether or not pond is hidden.
 	 */
-	void flip_buffers();
+	void flip_buffers(bool hide);
+
+	/**
+	 * Calculates the number of milliseconds until the next buffer flip should occur.
+	 * @return The number of milliseconds until the next buffer flip should occur.
+	 */
+	int millis_until_next_flip() const;
 
 	/**
 	 * Moves a window to the front.

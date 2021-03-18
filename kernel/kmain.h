@@ -19,10 +19,6 @@
 
 #include "multiboot.h"
 
-extern "C" void asm_syscall_handler();
-extern "C" void preempt_now_asm();
-void interrupts_init();
 struct multiboot_info parse_mboot(uint32_t physaddr);
-
 extern "C" int kmain(uint32_t mbootptr);
 void kmain_late();

@@ -1,35 +1,5 @@
-global irq0
-[extern pit_handler]
 [extern preempt]
 [extern tasking_enabled]
-
-irq0
-    push eax
-    push ebx
-    push ecx
-    push edx
-    push ebp
-    push edi
-    push esi
-    push ds
-    push es
-    push fs
-    push gs
-	call pit_handler
-    pop gs
-    pop fs
-    pop es
-    pop ds
-    pop esi
-    pop edi
-    pop ebp
-	pop edx
-	pop ecx
-	pop ebx
-	mov eax, 0x20
-	out 0x20, al
-	pop eax
-	iret
 
 [global preempt_now_asm]
 preempt_now_asm:
@@ -55,6 +25,9 @@ preempt_now_asm:
 	pop edx
 	pop ecx
 	pop ebx
+	mov eax, 0x20
+	out 0x20, al
+	out 0xA0, al
 	pop eax
 	iret
 
@@ -88,6 +61,7 @@ preempt_asm:
     pop ebp
 	mov eax, 0x20
 	out 0x20, al
+	out 0xA0, al
     ret
 
 [global proc_first_preempt]
@@ -104,5 +78,6 @@ proc_first_preempt:
     pop ebx
 	mov eax, 0x20
 	out 0x20, al
+	out 0xA0, al
 	pop eax
     iret

@@ -41,3 +41,7 @@ void IRQHandler::reinstall_irq() {
 	if(!_irq) return;
 	Interrupt::irq_set_handler(_irq, this);
 }
+
+bool IRQHandler::mark_in_irq() {
+	return true;
+}

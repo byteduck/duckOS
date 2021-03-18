@@ -52,7 +52,7 @@ namespace Interrupt {
 	void irq_remove_handler(int irq);
 	void irq_remap();
 	void irq_init();
-	bool in_interrupt();
+	bool in_irq();
 	int current_interrupt();
 }
 
