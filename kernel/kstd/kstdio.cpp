@@ -29,9 +29,11 @@
 
 kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
 kstd::shared_ptr<VirtualTTY> tty(nullptr);
+bool use_tty = false;
 
 void putch(char c){
-	if(tty) tty_desc->write((uint8_t*) &c, 1);
+	if(tty && use_tty)
+		tty_desc->write((uint8_t*) &c, 1);
 	serial_putch(c);
 }
 
@@ -58,8 +60,10 @@ void serial_putch(char c) {
 }
 
 void print(char* str){
-	if(tty) tty_desc->write((uint8_t*) str, strlen(str));
-	while(*str) serial_putch(*(str++));
+	if(tty && use_tty)
+		tty_desc->write((uint8_t*) str, strlen(str));
+	while(*str)
+		serial_putch(*(str++));
 }
 
 void printf(const char* fmt, ...){
@@ -122,6 +126,7 @@ void printf(const char* fmt, ...){
 
 void PANIC(char *error, char *msg, bool hang){
 	TaskManager::enabled() = false;
+	use_tty = true;
 	printf("\033[41;97m\033[2J"); //Red BG, bright white FG, clear screen
 	print("Good job, you crashed it.\nHere are the details, since you probably need them.\nTry not to mess it up again.\n\n");
 	printf("%s\n", error);

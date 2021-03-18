@@ -167,6 +167,8 @@ typedef long blkcnt_t;
 #define TIOCSWINSZ	9
 #define TIOCGWINSZ	10
 #define TIOCNOTTY	11
+#define TIOSGFX		12
+#define TIOSNOGFX	13
 
 /// termios
 #define NCCS 32

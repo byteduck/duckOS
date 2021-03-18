@@ -42,6 +42,9 @@ private:
 	size_t _id;
 	Terminal* terminal = nullptr;
 
+	//File
+	int ioctl(unsigned request, void* argp) override;
+
 	//KeyboardHandler
 	void handle_key(KeyEvent) override;
 
@@ -60,6 +63,7 @@ private:
 	void emit(const uint8_t* data, size_t size);
 
 	bool _active = false;
+	bool _graphical = false;
 };
 
 

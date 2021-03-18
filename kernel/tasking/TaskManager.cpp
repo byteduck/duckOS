@@ -34,6 +34,8 @@ Process *kidle_proc;
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
 bool yield_async = false;
+bool preempting = false;
+static uint8_t quantum_counter = 0;
 
 void kidle(){
 	tasking_enabled = true;
@@ -166,11 +168,8 @@ Process *TaskManager::next_process() {
 	return next_proc;
 }
 
-
-static uint8_t quantum_counter = 0;
-
 bool TaskManager::yield() {
-	//ASSERT(!preempting);
+	ASSERT(!preempting);
 	quantum_counter = 0;
 	if(Interrupt::in_irq()) {
 		// We can't yield in an interrupt. Instead, we'll yield immediately after we exit the interrupt
@@ -180,6 +179,12 @@ bool TaskManager::yield() {
 		asm volatile("int $0x81");
 		return true;
 	}
+}
+
+bool TaskManager::yield_if_not_preempting() {
+	if(!preempting)
+		return yield();
+	return true;
 }
 
 bool TaskManager::yield_if_idle() {
@@ -198,6 +203,7 @@ void TaskManager::do_yield_async() {
 
 void TaskManager::preempt(){
 	if(!tasking_enabled) return;
+	preempting = true;
 
 	static bool prev_alive = false; // Whether or not there was an alive process last preemption
 	bool any_alive = false;
@@ -220,12 +226,15 @@ void TaskManager::preempt(){
 				any_alive = true;
 				break;
 			case PROCESS_DEAD: {
-				current->prev->next = current->next;
-				current->next->prev = current->prev;
-				Process* to_delete = current;
-				current = current->next;
-				ProcFS::inst().proc_remove(to_delete);
-				delete to_delete;
+				if(current != current_proc) {
+					current->prev->next = current->next;
+					current->next->prev = current->prev;
+					Process* to_delete = current;
+					current = current->next;
+					ProcFS::inst().proc_remove(to_delete);
+					delete to_delete;
+				} else
+					current = current->next;
 				break;
 			}
 			case PROCESS_ZOMBIE:
@@ -287,12 +296,14 @@ void TaskManager::preempt(){
 		}
 
 		//Switch tasks.
+		preempting = false;
 		ASSERT(current_proc->state == PROCESS_ALIVE);
 		if(should_preempt)
 			preempt_asm(old_esp, new_esp, current_proc->page_directory_loc);
 	} else {
 		ASSERT(current_proc->state == PROCESS_ALIVE);
 		quantum_counter--;
+		preempting = false;
 	}
 }
 

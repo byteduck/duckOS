@@ -32,6 +32,9 @@
 #define TCFLSH		8
 #define TIOCSWINSZ	9
 #define TIOCGWINSZ	10
+#define TIOCNOTTY	11
+#define TIOSGFX		12
+#define TIOSNOGFX	13
 
 __DECL_BEGIN
 

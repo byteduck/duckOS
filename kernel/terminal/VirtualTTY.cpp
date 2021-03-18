@@ -35,7 +35,8 @@ kstd::shared_ptr<VirtualTTY> VirtualTTY::current_tty() {
 
 void VirtualTTY::set_current_tty(size_t tty) {
 	kstd::shared_ptr<VirtualTTY> current = _ttys[_current_tty];
-	if(current.get() != nullptr) current->_active = false;
+	if(current.get() != nullptr)
+		current->_active = false;
 	_current_tty = tty;
 	_ttys[_current_tty]->_active = true;
 	KeyboardDevice::inst()->set_handler(_ttys[_current_tty].get());
@@ -58,8 +59,22 @@ void VirtualTTY::clear() {
 	terminal->clear();
 }
 
+int VirtualTTY::ioctl(unsigned int request, void* argp) {
+	switch(request) {
+		case TIOSGFX:
+			_graphical = true;
+			return SUCCESS;
+		case TIOSNOGFX:
+			_graphical = false;
+			return SUCCESS;
+		default:
+			return TTYDevice::ioctl(request, argp);
+	}
+}
+
 void VirtualTTY::handle_key(KeyEvent event) {
-	if(!event.pressed()) return;
+	if(!event.pressed())
+		return;
 	terminal->handle_keypress(event.scancode, event.character, event.modifiers);
 }
 
@@ -92,7 +107,8 @@ uint32_t vga_color_palette[] = {
 };
 
 void VirtualTTY::on_character_change(const Terminal::Position& position, const Terminal::Character& character) {
-	if(!_active) return;
+	if(!_active || _graphical)
+		return;
 	uint16_t pixel_xpos = position.x * 8;
 	uint16_t pixel_ypos = position.y * 8;
 	auto& vga = VGADevice::inst();
@@ -107,7 +123,7 @@ void VirtualTTY::on_character_change(const Terminal::Position& position, const T
 }
 
 void VirtualTTY::on_cursor_change(const Terminal::Position& position) {
-	if(!_active) return;
+	if(!_active || _graphical) return;
 }
 
 void VirtualTTY::on_backspace(const Terminal::Position& position) {
@@ -115,6 +131,8 @@ void VirtualTTY::on_backspace(const Terminal::Position& position) {
 }
 
 void VirtualTTY::on_clear() {
+	if(!_active || _graphical)
+		return;
 	if(!terminal) {
 		//On the first clear we don't have the terminal set yet
 		VGADevice::inst().clear(0);
@@ -125,6 +143,8 @@ void VirtualTTY::on_clear() {
 }
 
 void VirtualTTY::on_clear_line(size_t line) {
+	if(!_active || _graphical)
+		return;
 	auto dims = terminal->get_dimensions();
 	uint32_t color = vga_color_palette[terminal->get_current_attribute().background];
 	for(size_t y = line * 8; y < (line + 1) * 8; y++) {
@@ -133,6 +153,8 @@ void VirtualTTY::on_clear_line(size_t line) {
 }
 
 void VirtualTTY::on_scroll(size_t lines) {
+	if(!_active || _graphical)
+		return;
 	VGADevice::inst().scroll(lines * 8);
 }
 

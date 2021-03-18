@@ -53,6 +53,9 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 		return;
 	}
 
+	//If we're running in a tty, set it to graphical mode
+	ioctl(STDOUT_FILENO, TIOSGFX, nullptr);
+
 	_framebuffer = {buffer, _dimensions.width, _dimensions.height};
 	printf("Image opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
 

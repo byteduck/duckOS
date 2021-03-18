@@ -336,7 +336,7 @@ void Process::reap() {
 void Process::kill(int signal) {
 	pending_signals.push(signal);
 	if(TaskManager::current_process() == this)
-		ASSERT(TaskManager::yield());
+		ASSERT(TaskManager::yield_if_not_preempting());
 }
 
 bool Process::handle_pending_signal() {
