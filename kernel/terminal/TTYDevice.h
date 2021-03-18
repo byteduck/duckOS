@@ -23,11 +23,9 @@
 #include <kernel/kstd/circular_queue.hpp>
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/device/KeyboardDevice.h>
+#include <kernel/kstd/unix_types.h>
 
 #define NUM_TTYS 8
-#define TIOCSCTTY 1
-#define TIOCGPGRP 2
-#define TIOCSPGRP 3
 
 class TTYDevice: public CharacterDevice {
 public:
@@ -46,15 +44,16 @@ public:
 	virtual size_t tty_write(const uint8_t* buffer, size_t count) = 0;
 
 private:
-	kstd::string _name;
 	kstd::circular_queue<uint8_t> _input_buffer;
-	kstd::circular_queue<uint8_t> _buffered_input_buffer;
 	BooleanBlocker _buffer_blocker;
 	SpinLock _input_lock;
-	bool buffered = true;
 	pid_t _pgid = 0;
+	termios _termios;
+	int _lines = 0;
 
 	void generate_signal(int sig);
+	bool backspace();
+	bool erase();
 };
 
 #endif //DUCKOS_TTYDEVICE_H

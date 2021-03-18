@@ -30,6 +30,8 @@
 #define TCSETSW		6
 #define TCSETSF		7
 #define TCFLSH		8
+#define TIOCSWINSZ	9
+#define TIOCGWINSZ	10
 
 __DECL_BEGIN
 
