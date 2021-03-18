@@ -22,8 +22,6 @@
 #include "PIT.h"
 #include "RTC.h"
 
-long int epoch;
-
 TimeManager* TimeManager::_inst = nullptr;
 
 void TimeManager::init() {
