@@ -40,7 +40,7 @@ public:
 	InodeMetadata metadata() override;
 	ino_t find_id(const kstd::string& name) override;
 	ssize_t read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) override;
-	ResultRet<kstd::shared_ptr<LinkedInode>> resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) override;
+	ResultRet<kstd::shared_ptr<LinkedInode>> resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) override;
 	ssize_t read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) override;
 	ssize_t write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) override;
 	Result add_entry(const kstd::string& name, Inode& inode) override;

@@ -179,10 +179,8 @@ int TTYDevice::ioctl(unsigned int request, void* argp) {
 }
 
 void TTYDevice::generate_signal(int sig) {
-	printf("GENERATE_SIGA\n");
 	if(_pgid == 0)
 		return;
-	printf("GENERATE_SIGB\n");
 	TaskManager::kill_pgid(_pgid, sig);
 }
 

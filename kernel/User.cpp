@@ -44,7 +44,7 @@ User::User(User&& other) noexcept {
 
 User::~User() = default;
 
-bool User::in_group(gid_t grp) {
+bool User::in_group(gid_t grp) const {
 	if(grp == egid) return true;
 	for(size_t i = 0; i < groups.size(); i++)
 		if(groups[i] == grp) return true;

@@ -85,9 +85,9 @@ public:
 	bool is_simple_file() const;
 	bool is_symlink() const;
 	bool exists() const;
-	bool can_write(User& user) const;
-	bool can_execute(User& user) const;
-	bool can_read(User& user) const;
+	bool can_write(const User& user) const;
+	bool can_execute(const User& user) const;
+	bool can_read(const User& user) const;
 	void stat(struct stat *stat);
 };
 

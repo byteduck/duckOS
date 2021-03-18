@@ -55,13 +55,14 @@ bool VFS::mount_root(Filesystem* fs) {
 	return true;
 }
 
-ResultRet<kstd::shared_ptr<LinkedInode>> VFS::resolve_path(kstd::string path, const kstd::shared_ptr<LinkedInode>& _base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<kstd::shared_ptr<LinkedInode>> VFS::resolve_path(kstd::string path, const kstd::shared_ptr<LinkedInode>& _base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	if(recursion_level > VFS_RECURSION_LIMIT) return -ELOOP;
 	if(path == "/") return _root_ref;
 
 	auto current_inode = path[0] == '/' ? _root_ref : _base;
 	kstd::string part;
-	if(path[0] == '/') path = path.substr(1, path.length() - 1);
+	if(path[0] == '/')
+		path = path.substr(1, path.length() - 1);
 
 	while(path[0] != '\0') {
 		auto parent = current_inode;
@@ -127,7 +128,7 @@ ResultRet<kstd::shared_ptr<LinkedInode>> VFS::resolve_path(kstd::string path, co
 	return current_inode;
 }
 
-ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::open(kstd::string& path, int options, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode>& base) {
+ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::open(const kstd::string& path, int options, mode_t mode, const User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	//Check path length & options for validity
 	if(path.length() == 0) return -ENOENT;
 	if((options & O_DIRECTORY) && (options & O_CREAT)) return -EINVAL;
@@ -183,7 +184,7 @@ ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::open(kstd::string& path, int op
 	return ret;
 }
 
-ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::create(kstd::string& path, int options, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode> &parent) {
+ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::create(const kstd::string& path, int options, mode_t mode, const User& user, const kstd::shared_ptr<LinkedInode> &parent) {
 	//If the type bits of the mode are zero (which it will be from sys_open), create a regular file
 	if(!IS_BLKDEV(mode) && !IS_CHRDEV(mode) && !IS_FIFO(mode) && !IS_SOCKET(mode))
 		mode |= MODE_FILE;
@@ -204,7 +205,7 @@ ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::create(kstd::string& path, int 
 	return ret;
 }
 
-Result VFS::unlink(kstd::string &path, User& user, const kstd::shared_ptr<LinkedInode> &base) {
+Result VFS::unlink(const kstd::string &path, const User& user, const kstd::shared_ptr<LinkedInode> &base) {
 	//Find the parent dir
 	kstd::shared_ptr<LinkedInode> parent(nullptr);
 	auto resolv = resolve_path(path, base, user, &parent, O_INTERNAL_RETLINK);
@@ -218,7 +219,7 @@ Result VFS::unlink(kstd::string &path, User& user, const kstd::shared_ptr<Linked
 	return parent->inode()->remove_entry(path_base(path));
 }
 
-Result VFS::link(kstd::string& file, kstd::string& link_name, User& user, const kstd::shared_ptr<LinkedInode>& base) {
+Result VFS::link(const kstd::string& file, const kstd::string& link_name, const User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	//Make sure the new file doesn't already exist and the parent directory exists
 	kstd::shared_ptr<LinkedInode> new_file_parent(nullptr);
 	auto resolv = resolve_path(link_name, base, user, &new_file_parent);
@@ -242,7 +243,7 @@ Result VFS::link(kstd::string& file, kstd::string& link_name, User& user, const 
 	return new_file_parent->inode()->add_entry(path_base(link_name), *old_file->inode());
 }
 
-Result VFS::symlink(kstd::string& file, kstd::string& link_name, User& user, const kstd::shared_ptr<LinkedInode>& base) {
+Result VFS::symlink(const kstd::string& file, const kstd::string& link_name, const User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	//Make sure the new file doesn't already exist and the parent directory exists
 	kstd::shared_ptr<LinkedInode> new_file_parent(nullptr);
 	auto resolv = resolve_path(link_name, base, user, &new_file_parent);
@@ -272,7 +273,7 @@ Result VFS::symlink(kstd::string& file, kstd::string& link_name, User& user, con
 	return SUCCESS;
 }
 
-ResultRet<kstd::string> VFS::readlink(kstd::string& path, User& user, const kstd::shared_ptr<LinkedInode>& base, ssize_t& size) {
+ResultRet<kstd::string> VFS::readlink(const kstd::string& path, const User& user, const kstd::shared_ptr<LinkedInode>& base, ssize_t& size) {
 	//Find the link and make sure it is a link
 	auto resolv = resolve_path(path, base, user, nullptr, O_INTERNAL_RETLINK);
 	if(resolv.is_error()) return resolv.code();
@@ -294,7 +295,7 @@ ResultRet<kstd::string> VFS::readlink(kstd::string& path, User& user, const kstd
 	return ret;
 }
 
-Result VFS::rmdir(kstd::string &path, User& user, const kstd::shared_ptr<LinkedInode> &base) {
+Result VFS::rmdir(kstd::string path, const User& user, const kstd::shared_ptr<LinkedInode> &base) {
 	//Remove trailing slash if there is one
 	if(path.length() != 0 && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
@@ -314,7 +315,7 @@ Result VFS::rmdir(kstd::string &path, User& user, const kstd::shared_ptr<LinkedI
 	return parent->inode()->remove_entry(path_base(path));
 }
 
-Result VFS::mkdir(kstd::string path, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode> &base) {
+Result VFS::mkdir(kstd::string path, mode_t mode, const User& user, const kstd::shared_ptr<LinkedInode> &base) {
 	//Remove trailing slash if there is one
 	if(path.length() != 0 && path[path.length() - 1] == '/') {
 		path = path.substr(0, path.length() - 1);
@@ -337,7 +338,7 @@ Result VFS::mkdir(kstd::string path, mode_t mode, User& user, const kstd::shared
 	return SUCCESS;
 }
 
-Result VFS::truncate(kstd::string& path, off_t length, User& user, const kstd::shared_ptr<LinkedInode>& base) {
+Result VFS::truncate(const kstd::string& path, off_t length, const User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	if(length < 0) return -EINVAL;
  	auto ino_or_err = resolve_path(path, base, user);
 	if(ino_or_err.is_error()) return ino_or_err.code();
@@ -346,7 +347,7 @@ Result VFS::truncate(kstd::string& path, off_t length, User& user, const kstd::s
 	return ino_or_err.value()->inode()->truncate(length);
 }
 
-Result VFS::chmod(kstd::string& path, mode_t mode, User& user, const kstd::shared_ptr<LinkedInode>& base) {
+Result VFS::chmod(const kstd::string& path, mode_t mode, const User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	auto res = resolve_path(path, base, user);
 	if(res.is_error()) return res.code();
 
@@ -358,7 +359,7 @@ Result VFS::chmod(kstd::string& path, mode_t mode, User& user, const kstd::share
 	return inode->inode()->chmod((meta.mode & ~04777u) | (mode & 04777u));
 }
 
-Result VFS::chown(kstd::string& path, uid_t uid, gid_t gid, User& user, const kstd::shared_ptr<LinkedInode>& base, int options) {
+Result VFS::chown(const kstd::string& path, uid_t uid, gid_t gid, const User& user, const kstd::shared_ptr<LinkedInode>& base, int options) {
 	auto res = resolve_path(path, base, user, nullptr, options);
 	if(res.is_error()) return res.code();
 

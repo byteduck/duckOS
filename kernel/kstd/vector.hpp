@@ -133,11 +133,11 @@ namespace kstd {
 			return size() == 0;
 		}
 
-		T& at(size_t index) {
+		T& at(size_t index) const {
 			return _storage[index];
 		}
 
-		T& operator[](size_t index) {
+		T& operator[](size_t index) const {
 			return _storage[index];
 		}
 

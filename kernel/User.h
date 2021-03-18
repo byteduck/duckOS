@@ -37,7 +37,7 @@ public:
 	~User();
 
 	//Groups
-	bool in_group(gid_t gid);
+	bool in_group(gid_t gid) const;
 
 	//Capabilities
 	bool can_override_permissions() const;

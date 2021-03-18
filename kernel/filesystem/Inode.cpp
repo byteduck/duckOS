@@ -40,7 +40,7 @@ ResultRet<kstd::shared_ptr<Inode>> Inode::find(const kstd::string& name) {
     return -ENOENT;
 }
 
-ResultRet<kstd::shared_ptr<LinkedInode>> Inode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<kstd::shared_ptr<LinkedInode>> Inode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	ASSERT(metadata().is_symlink());
 
 	auto* buf = new uint8_t[metadata().size + 1];

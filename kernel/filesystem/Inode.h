@@ -51,7 +51,7 @@ public:
 	virtual ResultRet<kstd::shared_ptr<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) = 0;
 	virtual Result remove_entry(const kstd::string& name) = 0;
 	virtual Result truncate(off_t length) = 0;
-	virtual ResultRet<kstd::shared_ptr<LinkedInode>> resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level);
+	virtual ResultRet<kstd::shared_ptr<LinkedInode>> resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level);
 	virtual Result chmod(mode_t mode) = 0;
 	virtual Result chown(uid_t uid, gid_t gid) = 0;
 	virtual void open(FileDescriptor& fd, int options) = 0;

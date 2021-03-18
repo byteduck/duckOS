@@ -219,7 +219,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 	}
 }
 
-ResultRet<kstd::shared_ptr<LinkedInode>> ProcFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<kstd::shared_ptr<LinkedInode>> ProcFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	auto* proc = TaskManager::process_for_pid(pid);
 	if(!proc) return -EIO;
 

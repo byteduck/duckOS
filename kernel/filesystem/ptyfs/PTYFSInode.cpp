@@ -128,6 +128,4 @@ Result PTYFSInode::chmod(mode_t mode) { return -EROFS; }
 Result PTYFSInode::chown(uid_t uid, gid_t gid) { return -EROFS; }
 void PTYFSInode::open(FileDescriptor& fd, int options) {}
 void PTYFSInode::close(FileDescriptor& fd) {}
-ResultRet<kstd::shared_ptr<LinkedInode>> PTYFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, User& user,
-																  kstd::shared_ptr<LinkedInode>* parent_storage,
-																  int options, int recursion_level) { return -ENOLINK; }
+ResultRet<kstd::shared_ptr<LinkedInode>> PTYFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) { return -ENOLINK; }
