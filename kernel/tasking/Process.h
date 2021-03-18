@@ -86,7 +86,7 @@ public:
 	kstd::string name();
 	kstd::string exe();
 	kstd::shared_ptr<LinkedInode> cwd();
-	void set_tty(TTYDevice* tty);
+	void set_tty(kstd::shared_ptr<TTYDevice> tty);
 
 	int exit_status();
 	void kill(int signal);
@@ -201,7 +201,7 @@ private:
 	pid_t _ppid = 0;
 	pid_t _sid = 0;
 	pid_t _pgid = 0;
-	TTYDevice* _tty = nullptr;
+	kstd::shared_ptr<TTYDevice> _tty;
 	User _user;
 	mode_t _umask = 022;
 	int _exit_status = 0;

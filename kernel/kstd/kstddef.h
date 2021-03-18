@@ -20,7 +20,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/types.h>
 
 #define STR_HELPER(x) #x
 #define STR(x) STR_HELPER(x)
@@ -32,20 +32,6 @@ struct Registers {
     unsigned int eip, cs, eflags, useresp, ss;
 };
 
-void io_wait();
-void outb(uint16_t port, uint8_t value);
-void outw(uint16_t port, uint16_t value);
-void outl(uint16_t port, uint32_t value);
-uint8_t inb(uint16_t port);
-uint16_t inw(uint16_t port);
-uint32_t inl(uint16_t port);
-int indexOf(char c, char *str);
-int indexOfn(char c, int n, char *str);
-int countOf(char c, char *str);
-bool contains(char *str, char *cont);
-void cli();
-void sti();
-void toUpper(char *str);
 void *operator new(size_t size);
 void *operator new(size_t size, void* ptr);
 void *operator new[](size_t size);

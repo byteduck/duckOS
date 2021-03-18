@@ -20,7 +20,7 @@
 #ifndef DUCKOS_PAGETABLE_H
 #define DUCKOS_PAGETABLE_H
 
-#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/types.h>
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/memory/PageDirectory.h>
 #include "Memory.h"

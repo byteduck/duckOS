@@ -22,6 +22,15 @@
 
 #include <sys/cdefs.h>
 
+#define TIOCSCTTY 	1
+#define TIOCGPGRP	2
+#define TIOCSPGRP	3
+#define TCGETS		4
+#define TCSETS		5
+#define TCSETSW		6
+#define TCSETSF		7
+#define TCFLSH		8
+
 __DECL_BEGIN
 
 int ioctl(int fd, unsigned request, ...);

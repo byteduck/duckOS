@@ -34,5 +34,5 @@ void Interrupt::init() {
 	//Setup IRQ handlers
 	Interrupt::irq_init();
 	//Start interrupts
-	sti();
+	asm volatile("sti");
 }

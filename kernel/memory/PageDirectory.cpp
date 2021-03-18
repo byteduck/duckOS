@@ -20,7 +20,7 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/defines.h>
-#include <kernel/kstd/Atomic.h>
+#include <kernel/Atomic.h>
 #include "PageTable.h"
 
 PageDirectory::Entry PageDirectory::kernel_entries[256];

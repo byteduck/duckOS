@@ -21,7 +21,7 @@
 #define DUCKOS_RTC_H
 
 //Converts binary coded decimal (bcd) to normal numbers
-#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/unix_types.h>
 #include <kernel/interrupt/IRQHandler.h>
 #include "kernel/kstd/kstddef.h"
 #include "TimeKeeper.h"

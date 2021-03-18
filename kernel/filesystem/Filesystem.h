@@ -24,6 +24,7 @@
 #include <kernel/filesystem/Inode.h>
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/filesystem/FileDescriptor.h>
+#include <kernel/kstd/unix_types.h>
 
 class Inode;
 

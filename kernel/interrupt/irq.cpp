@@ -22,6 +22,7 @@
 #include <kernel/interrupt/irq.h>
 #include <kernel/tasking/TaskManager.h>
 #include "IRQHandler.h"
+#include "interrupt.h"
 
 namespace Interrupt {
 	IRQHandler* handlers[16] = {nullptr};
@@ -37,26 +38,26 @@ namespace Interrupt {
 	}
 
 	void irq_remap(){
-		outb(PIC1_COMMAND, 0x11); //Init
-		io_wait();
-		outb(PIC2_COMMAND, 0x11); //Init
-		io_wait();
-		outb(PIC1_DATA, 0x20); //Offset
-		io_wait();
-		outb(PIC2_DATA, 0x28); //Offset
-		io_wait();
-		outb(PIC1_DATA, 0x04); //Tell master PIC slave PIC is at irq2
-		io_wait();
-		outb(PIC2_DATA, 0x02); //Slave PIC cascade identity
-		io_wait();
-		outb(PIC1_DATA, 0x01); //8086 mode
-		io_wait();
-		outb(PIC2_DATA, 0x01); //8086 mode
-		io_wait();
+		IO::outb(PIC1_COMMAND, 0x11); //Init
+		IO::wait();
+		IO::outb(PIC2_COMMAND, 0x11); //Init
+		IO::wait();
+		IO::outb(PIC1_DATA, 0x20); //Offset
+		IO::wait();
+		IO::outb(PIC2_DATA, 0x28); //Offset
+		IO::wait();
+		IO::outb(PIC1_DATA, 0x04); //Tell master PIC slave PIC is at irq2
+		IO::wait();
+		IO::outb(PIC2_DATA, 0x02); //Slave PIC cascade identity
+		IO::wait();
+		IO::outb(PIC1_DATA, 0x01); //8086 mode
+		IO::wait();
+		IO::outb(PIC2_DATA, 0x01); //8086 mode
+		IO::wait();
 
 		//No mask
-		outb(PIC1_DATA, 0);
-		outb(PIC2_DATA, 0);
+		IO::outb(PIC1_DATA, 0);
+		IO::outb(PIC2_DATA, 0);
 	}
 
 	void irq_init(){
@@ -89,8 +90,8 @@ namespace Interrupt {
 
 		//Send EOI
 		if(r->num - 0x20 >= 8)
-			outb(PIC2_COMMAND, 0x20);
-		outb(PIC1_COMMAND, 0x20);
+			IO::outb(PIC2_COMMAND, 0x20);
+		IO::outb(PIC1_COMMAND, 0x20);
 
 		_in_interrupt = false;
 

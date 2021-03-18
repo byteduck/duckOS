@@ -20,7 +20,7 @@
 #ifndef EXT2_H
 #define EXT2_H
 
-#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/types.h>
 
 #define EXT2_FSID 2
 

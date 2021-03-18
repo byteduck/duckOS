@@ -21,6 +21,7 @@ SET(SOURCES
         sys/stat.c
         sys/syscall.c
         sys/wait.c
+        termios.c
         time.c
         unistd.c)
 

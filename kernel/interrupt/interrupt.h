@@ -21,6 +21,7 @@
 #define DUCKOS_INTERRUPT_H
 
 #include <kernel/kstd/kstdio.h>
+#include <kernel/IO.h>
 #include "idt.h"
 #include "irq.h"
 #include "isr.h"
@@ -45,11 +46,11 @@ namespace Interrupt {
 	class NMIDisabler {
 	public:
 		inline NMIDisabler() {
-			outb(CMOS_PORT, NMI_FLAG | inb(CMOS_PORT));
+			IO::outb(CMOS_PORT, NMI_FLAG | IO::inb(CMOS_PORT));
 		}
 
 		inline ~NMIDisabler() {
-			outb(CMOS_PORT, inb(CMOS_PORT) & (~NMI_FLAG));
+			IO::outb(CMOS_PORT, IO::inb(CMOS_PORT) & (~NMI_FLAG));
 		}
 	};
 }

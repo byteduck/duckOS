@@ -19,6 +19,7 @@
 
 #include <kernel/random.h>
 #include <kernel/tasking/TaskManager.h>
+#include <kernel/IO.h>
 #include "MouseDevice.h"
 
 MouseDevice* MouseDevice::instance;
@@ -32,13 +33,13 @@ MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128)  {
 	printf("[device] Initializing mouse...\n");
 
 	//Wait for mouse to be ready
-	while((inb(I8042_STATUS) & 1u)) {
-		inb(I8042_BUFFER);
+	while((IO::inb(I8042_STATUS) & 1u)) {
+		IO::inb(I8042_BUFFER);
 	}
 
 	//Enable auxiliary device port
 	wait_write();
-	outb(I8042_STATUS, 0xA8);
+	IO::outb(I8042_STATUS, 0xA8);
 
 	//Check for presence of mouse
 	write(MOUSE_REQUEST_SINGLE_PACKET);
@@ -53,17 +54,17 @@ MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128)  {
 		return;
 	}
 
-	io_wait();
+	IO::wait();
 
 	//Enable IRQs
 	wait_write();
-	outb(I8042_STATUS, 0x20);
+	IO::outb(I8042_STATUS, 0x20);
 	wait_write();
-	uint8_t status = inb(I8042_BUFFER) | 2u;
+	uint8_t status = IO::inb(I8042_BUFFER) | 2u;
 	wait_write();
-	outb(I8042_STATUS, 0x60);
+	IO::outb(I8042_STATUS, 0x60);
 	wait_write();
-	outb(I8042_BUFFER, status);
+	IO::outb(I8042_BUFFER, status);
 
 	//Set defaults and enable
 	write(MOUSE_SET_DEFAULTS);
@@ -127,11 +128,11 @@ ssize_t MouseDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buf
 
 void MouseDevice::handle_irq(Registers *regs) {
 	while(true) {
-		uint8_t status = inb(I8042_STATUS);
+		uint8_t status = IO::inb(I8042_STATUS);
 		if (!(((status & I8042_WHICH_BUFFER) == I8042_MOUSE_BUFFER) && (status & I8042_BUFFER_FULL)))
 			break;
 
-		uint8_t data = inb(I8042_BUFFER);
+		uint8_t data = IO::inb(I8042_BUFFER);
 		packet_data[packet_state] = data;
 		switch(packet_state) {
 			case 0:
@@ -159,7 +160,7 @@ void MouseDevice::handle_irq(Registers *regs) {
 void MouseDevice::wait_read() {
 	uint32_t timeout = 100000;
 	while(--timeout) {
-		if(inb(I8042_STATUS) & 0x1u)
+		if(IO::inb(I8042_STATUS) & 0x1u)
 			return;
 	}
 
@@ -169,7 +170,7 @@ void MouseDevice::wait_read() {
 void MouseDevice::wait_write() {
 	uint32_t timeout = 100000;
 	while(--timeout) {
-		if(!(inb(I8042_STATUS) & 0x2u))
+		if(!(IO::inb(I8042_STATUS) & 0x2u))
 			return;
 	}
 	printf("Mouse timed out (write)\n");
@@ -177,14 +178,14 @@ void MouseDevice::wait_write() {
 
 uint8_t MouseDevice::read() {
 	wait_read();
-	return inb(I8042_BUFFER);
+	return IO::inb(I8042_BUFFER);
 }
 
 void MouseDevice::write(uint8_t value) {
 	wait_write();
-	outb(I8042_STATUS, 0xD4);
+	IO::outb(I8042_STATUS, 0xD4);
 	wait_write();
-	outb(I8042_BUFFER, value);
+	IO::outb(I8042_BUFFER, value);
 }
 
 bool MouseDevice::can_read(const FileDescriptor& fd) {

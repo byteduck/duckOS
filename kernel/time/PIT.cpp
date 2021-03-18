@@ -19,6 +19,7 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/time/PIT.h>
+#include <kernel/IO.h>
 #include "TimeManager.h"
 
 PIT::PIT(TimeManager* manager): TimeKeeper(manager), IRQHandler(PIT_IRQ) {
@@ -28,7 +29,7 @@ PIT::PIT(TimeManager* manager): TimeKeeper(manager), IRQHandler(PIT_IRQ) {
 	ocw = (ocw & ~0xEu) | 0x6u;
 	ocw = (ocw & ~0x30u) | 0x30u;
 	ocw = (ocw & ~0xC0u) | 0u;
-	outb(PIT_CMD, ocw);
+	IO::outb(PIT_CMD, ocw);
 
 	// set frequency rate
 	write(divisor & 0xffu, 0);
@@ -49,5 +50,5 @@ int PIT::frequency() {
 
 void PIT::write(uint16_t data, uint8_t counter){
 	uint8_t port = (counter==0) ? PIT_COUNTER0 : ((counter==1) ? PIT_COUNTER1 : PIT_COUNTER2);
-	outb(port, (uint8_t)data);
+	IO::outb(port, (uint8_t)data);
 }

@@ -20,7 +20,7 @@
 #ifndef DUCKOS_TIMEMANAGER_H
 #define DUCKOS_TIMEMANAGER_H
 
-#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/unix_types.h>
 #include "TimeKeeper.h"
 #include <kernel/kstd/circular_queue.hpp>
 

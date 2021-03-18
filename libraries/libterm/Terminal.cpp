@@ -21,7 +21,7 @@
 
 #ifdef DUCKOS_KERNEL
 #include <kernel/kstd/cstring.h>
-#include <kernel/kstd/stdlib.h>
+#include <kernel/kstd/kstdlib.h>
 #else
 #include <cstring>
 #include <stdlib.h>

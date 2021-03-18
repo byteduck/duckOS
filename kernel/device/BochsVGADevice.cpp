@@ -19,9 +19,10 @@
 
 #include "BochsVGADevice.h"
 #include <kernel/memory/PageDirectory.h>
-#include <kernel/pci/pci.h>
+#include <kernel/pci/PCI.h>
 #include <kernel/kstd/defines.h>
 #include <kernel/tasking/Process.h>
+#include <kernel/IO.h>
 
 PCI::ID bochs_qemu_vga = {0x1234, 0x1111};
 PCI::ID vbox_vga = {0x80ee, 0xbeef};
@@ -58,13 +59,13 @@ bool BochsVGADevice::detect() {
 }
 
 void BochsVGADevice::write_register(uint16_t index, uint16_t value) {
-	outw(VBE_DISPI_IOPORT_INDEX, index);
-	outw(VBE_DISPI_IOPORT_DATA, value);
+	IO::outw(VBE_DISPI_IOPORT_INDEX, index);
+	IO::outw(VBE_DISPI_IOPORT_DATA, value);
 }
 
 uint16_t BochsVGADevice::read_register(uint16_t index) {
-	outw(VBE_DISPI_IOPORT_INDEX, index);
-	return inw(VBE_DISPI_IOPORT_DATA);
+	IO::outw(VBE_DISPI_IOPORT_INDEX, index);
+	return IO::inw(VBE_DISPI_IOPORT_DATA);
 }
 
 bool BochsVGADevice::set_resolution(uint16_t width, uint16_t height) {

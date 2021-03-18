@@ -19,7 +19,7 @@
 
 #include "SpinLock.h"
 #include "TaskManager.h"
-#include <kernel/kstd/Atomic.h>
+#include <kernel/Atomic.h>
 
 SpinLock::SpinLock() = default;
 

@@ -38,6 +38,7 @@
 #include <kernel/memory/gdt.h>
 #include <kernel/interrupt/interrupt.h>
 #include <kernel/time/TimeManager.h>
+#include <kernel/kstd/unix_types.h>
 #include "CommandLine.h"
 
 uint8_t boot_disk;

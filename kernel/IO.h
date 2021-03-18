@@ -1,37 +1,36 @@
 /*
     This file is part of duckOS.
-    
+
     duckOS is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-    
+
     duckOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-    
+
     You should have received a copy of the GNU General Public License
     along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
-    
+
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_KMALLOC_H
-#define DUCKOS_KMALLOC_H
+#ifndef DUCKOS_IO_H
+#define DUCKOS_IO_H
 
-#ifdef DUCKOS_KERNEL
+#include <kernel/kstd/unix_types.h>
 
-#include <kernel/memory/kliballoc.h>
+namespace IO {
+	void wait();
+	void outb(uint16_t port, uint8_t value);
+	void outw(uint16_t port, uint16_t value);
+	void outl(uint16_t port, uint32_t value);
+	uint8_t inb(uint16_t port);
+	uint16_t inw(uint16_t port);
+	uint32_t inl(uint16_t port);
+};
 
-#else
 
-#include <stdlib.h>
-#define kmalloc malloc
-#define kcalloc calloc
-#define kfree free
-#define krealloc realloc
-
-#endif
-
-#endif //DUCKOS_KMALLOC_H
+#endif //DUCKOS_IO_H

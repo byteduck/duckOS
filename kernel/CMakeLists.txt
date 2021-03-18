@@ -31,7 +31,7 @@ SET(KERNEL_SRCS
         kstd/kstddef.cpp
         tasking/ELF.cpp
         tasking/TaskManager.cpp
-        pci/pci.cpp
+        pci/PCI.cpp
         memory/gdt.cpp
         memory/liballoc.cpp
         memory/Memory.cpp
@@ -40,7 +40,7 @@ SET(KERNEL_SRCS
         interrupt/irq.cpp
         interrupt/isr.cpp
         interrupt/syscall.cpp
-        pci/pci.cpp
+        pci/PCI.cpp
         device/Device.cpp
         device/BlockDevice.cpp
         filesystem/Inode.cpp
@@ -103,11 +103,12 @@ SET(KERNEL_SRCS
         filesystem/socketfs/SocketFSInode.cpp
         filesystem/socketfs/SocketFSClient.cpp
         filesystem/ptyfs/PTYFS.cpp
-        filesystem/ptyfs/PTYFSInode.cpp)
+        filesystem/ptyfs/PTYFSInode.cpp
+        IO.cpp)
 
 SET(COMMON_SRCS
         kstd/cstring.cpp
-        kstd/stdlib.cpp
+        kstd/kstdlib.cpp
         kstd/string.cpp)
 
 ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS} ${COMMON_SRCS})
@@ -118,5 +119,12 @@ SET_TARGET_PROPERTIES(duckk32 PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
 SET(CMAKE_CXX_LINK_EXECUTABLE "ld <OBJECTS> -T ${LINKER_SCRIPT} -melf_i386 -Map kernel.map -o <TARGET> <LINK_LIBRARIES>")
 
 TARGET_INCLUDE_DIRECTORIES(duckk32 PRIVATE ${CMAKE_SOURCE_DIR})
+
+# Install headers
+FILE(GLOB_RECURSE KHEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
+foreach(HEADER ${KHEADERS})
+    GET_FILENAME_COMPONENT(SUBDIRECTORY ${HEADER} DIRECTORY)
+    INSTALL(FILES ${HEADER} DESTINATION usr/include/kernel/${SUBDIRECTORY})
+endforeach()
 
 INSTALL(TARGETS duckk32 RUNTIME DESTINATION boot)

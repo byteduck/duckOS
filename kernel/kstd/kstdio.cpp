@@ -19,10 +19,12 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/kstdio.h>
-#include <kernel/kstd/stdlib.h>
+#include <kernel/kstd/kstdlib.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/terminal/VirtualTTY.h>
 #include <kernel/kstd/defines.h>
+#include <kernel/IO.h>
+#include "cstring.h"
 
 kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
 kstd::shared_ptr<VirtualTTY> tty(nullptr);
@@ -35,23 +37,23 @@ void putch(char c){
 void serial_putch(char c) {
 	static bool serial_inited = false;
 	if(!serial_inited) {
-		outb(0x3F9, 0x00);
-		outb(0x3FB, 0x80);
-		outb(0x3F8, 0x02);
-		outb(0x3F9, 0x00);
-		outb(0x3FB, 0x03);
-		outb(0x3FA, 0xC7);
-		outb(0x3FC, 0x0B);
+		IO::outb(0x3F9, 0x00);
+		IO::outb(0x3FB, 0x80);
+		IO::outb(0x3F8, 0x02);
+		IO::outb(0x3F9, 0x00);
+		IO::outb(0x3FB, 0x03);
+		IO::outb(0x3FA, 0xC7);
+		IO::outb(0x3FC, 0x0B);
 		serial_inited = true;
 	}
 
-	while (!(inb(0x3FD) & 0x20u));
+	while (!(IO::inb(0x3FD) & 0x20u));
 
 	if(c == '\n') {
-		outb(0x3F8, '\r');
-		while (!(inb(0x3FD) & 0x20u));
+		IO::outb(0x3F8, '\r');
+		while (!(IO::inb(0x3FD) & 0x20u));
 	}
-	outb(0x3F8, c);
+	IO::outb(0x3F8, c);
 }
 
 void print(char* str){
@@ -99,7 +101,7 @@ void printf(const char* fmt, ...){
 			case 'X':
 				i = va_arg(argp, int);
 				s = itoa(i, fmtbuf, 16);
-				toUpper(s);
+				to_upper(s);
 				print(s);
 				break;
 

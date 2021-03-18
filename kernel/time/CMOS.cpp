@@ -18,13 +18,14 @@
 */
 
 #include "CMOS.h"
+#include <kernel/IO.h>
 
 void CMOS::write(uint8_t reg, uint8_t val) {
-	outb(CMOS_ADDRESS, reg);
-	outb(CMOS_DATA, val);
+	IO::outb(CMOS_ADDRESS, reg);
+	IO::outb(CMOS_DATA, val);
 }
 
 uint8_t CMOS::read(uint8_t reg) {
-	outb(CMOS_ADDRESS, reg);
-	return inb(CMOS_DATA);
+	IO::outb(CMOS_ADDRESS, reg);
+	return IO::inb(CMOS_DATA);
 }

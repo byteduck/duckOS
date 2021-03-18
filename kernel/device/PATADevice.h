@@ -20,11 +20,11 @@
 #ifndef DUCKOS_PATADEVICE_H
 #define DUCKOS_PATADEVICE_H
 
-#include <kernel/kstd/cstddef.h>
-#include <kernel/kstd/stdlib.h>
+#include <kernel/kstd/types.h>
+#include <kernel/kstd/kstdlib.h>
 #include <kernel/memory/MemoryRegion.h>
 #include <kernel/memory/LinkedMemoryRegion.h>
-#include <kernel/pci/pci.h>
+#include <kernel/pci/PCI.h>
 #include <kernel/interrupt/IRQHandler.h>
 #include "BlockDevice.h"
 

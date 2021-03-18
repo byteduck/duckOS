@@ -22,7 +22,7 @@
 #include <kernel/kstd/kstdio.h>
 #include <kernel/memory/kliballoc.h>
 #include <kernel/kstd/kstddef.h>
-#include <kernel/kstd/stdlib.h>
+#include <kernel/kstd/kstdlib.h>
 #include "Ext2Inode.h"
 
 Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id) {

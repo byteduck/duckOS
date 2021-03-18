@@ -17,7 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "stdlib.h"
+#include "kstdlib.h"
 
 int atoi(char *str){
 	int len = strlen(str);
@@ -38,7 +38,7 @@ int abs(float x){
 	return (int)x;
 }
 
-char nibbleToHexString(uint8_t num){
+char nibble_to_hex(uint8_t num){
 	uint8_t tmp = num & 0xF;
 	if(tmp < 0xA){
 		return tmp+0x30;
@@ -89,12 +89,19 @@ char *itoa(int i, char *p, int base){
 				ind = nbcount;
 				while(ind--) {
 					p[-ind + nbcount - 1] =
-							base == 16 ? (nibbleToHexString((i >> (ind * 4)) & 0xF)) : (((i >> ind) & 0x1) ? '1' : '0');
+							base == 16 ? (nibble_to_hex((i >> (ind * 4)) & 0xF)) : (((i >> ind) & 0x1) ? '1' : '0');
 				}
 				p[nbcount] = '\0';
 			}
 			break;
 	}
 	return p;
+}
+
+void to_upper(char *str){
+	while(*str != '\0'){
+		if(*str >= 'a' && *str <= 'z') *str = *str - ('a' - 'A');
+		str++;
+	}
 }
 

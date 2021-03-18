@@ -17,8 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_CSTDDEF_H
-#define DUCKOS_CSTDDEF_H
+#ifndef DUCKOS_TYPES_H
+#define DUCKOS_TYPES_H
 
 #define NULL 0
 
@@ -28,8 +28,6 @@
 
 #define va_start(ap, pN)	\
 	((ap) = ((va_list) __builtin_next_arg(pN)))
-
-
 
 #define va_end(ap)	((void)0)
 
@@ -48,30 +46,5 @@ typedef unsigned long long int uint64_t;
 typedef  signed  long long int int64_t;
 typedef uint32_t size_t;
 typedef int32_t ssize_t;
-typedef int pid_t;
 
-typedef unsigned long ino_t;
-typedef short dev_t;
-typedef uint32_t mode_t;
-typedef unsigned short nlink_t;
-typedef unsigned short uid_t;
-typedef unsigned short gid_t;
-typedef long off_t;
-typedef int64_t time_t;
-typedef long blksize_t;
-typedef long blkcnt_t;
-
-struct timespec {
-	time_t tv_sec;
-	long tv_usec;
-};
-
-typedef void (*sighandler_t)(int);
-typedef unsigned long sigset_t;
-typedef struct sigaction {
-	sighandler_t sa_sigaction;
-	sigset_t sa_mask;
-	int sa_flags;
-} sigaction_t;
-
-#endif //DUCKOS_CSTDDEF_H
+#endif //DUCKOS_TYPES_H

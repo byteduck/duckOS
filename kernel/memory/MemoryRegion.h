@@ -20,7 +20,7 @@
 #ifndef DUCKOS_MEMORYREGION_H
 #define DUCKOS_MEMORYREGION_H
 
-#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/unix_types.h>
 #include <kernel/tasking/SpinLock.h>
 
 namespace kstd {

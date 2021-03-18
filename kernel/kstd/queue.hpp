@@ -20,8 +20,8 @@
 #ifndef DUCKOS_QUEUE_HPP
 #define DUCKOS_QUEUE_HPP
 
-#include "kmalloc.h"
-#include "cstddef.h"
+#include "kstdlib.h"
+#include "types.h"
 #include "cstring.h"
 #include "utility.h"
 

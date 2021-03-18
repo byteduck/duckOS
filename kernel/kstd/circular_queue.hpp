@@ -20,9 +20,9 @@
 #ifndef DUCKOS_CIRCULAR_QUEUE_HPP
 #define DUCKOS_CIRCULAR_QUEUE_HPP
 
-#include "cstddef.h"
+#include "types.h"
 #include "utility.h"
-#include "stdlib.h"
+#include "kstdlib.h"
 
 namespace kstd {
 	template<typename T>

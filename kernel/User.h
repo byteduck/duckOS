@@ -20,7 +20,7 @@
 #ifndef DUCKOS_USER_H
 #define DUCKOS_USER_H
 
-#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/types.h>
 #include <kernel/kstd/vector.hpp>
 #include <kernel/tasking/SpinLock.h>
 #include "Result.hpp"

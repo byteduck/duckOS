@@ -90,7 +90,7 @@ int TTYDevice::ioctl(unsigned int request, void* argp) {
 	auto* cur_proc = TaskManager::current_process();
 	switch(request) {
 		case TIOCSCTTY:
-			cur_proc->set_tty(this);
+			cur_proc->set_tty(shared_ptr());
 			return SUCCESS;
 		case TIOCGPGRP:
 			return _pgid;

@@ -23,6 +23,7 @@
 #include <kernel/interrupt/idt.h>
 #include <kernel/interrupt/isr.h>
 #include <kernel/tasking/TaskManager.h>
+#include "interrupt.h"
 
 namespace Interrupt {
 	void isr_init(){
@@ -62,7 +63,7 @@ namespace Interrupt {
 
 	bool fpanic(char *a, char *b, uint32_t sig){
 		if(!TaskManager::enabled() || TaskManager::current_process()->kernel){
-			cli();
+			Interrupt::Disabler disabler;
 			PANIC(a,b,false);
 			return true;
 		}else{

@@ -21,7 +21,7 @@
 #define DUCKOS_BOCHSVGADEVICE_H
 
 #include "VGADevice.h"
-#include <kernel/pci/pci.h>
+#include <kernel/pci/PCI.h>
 
 #define VBE_DISPI_INDEX_ID 0
 #define VBE_DISPI_INDEX_XRES 1

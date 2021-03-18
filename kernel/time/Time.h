@@ -21,6 +21,7 @@
 #define DUCKOS_TIME_H
 
 #include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/unix_types.h>
 
 class Time {
 public:

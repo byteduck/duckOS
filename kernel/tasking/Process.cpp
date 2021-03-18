@@ -34,6 +34,7 @@
 #include <kernel/terminal/PTYControllerDevice.h>
 #include <kernel/terminal/PTYDevice.h>
 #include <kernel/time/TimeManager.h>
+#include <kernel/interrupt/interrupt.h>
 
 const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 
@@ -121,7 +122,7 @@ kstd::shared_ptr<LinkedInode> Process::cwd() {
 	return _cwd;
 }
 
-void Process::set_tty(TTYDevice* tty) {
+void Process::set_tty(kstd::shared_ptr<TTYDevice> tty) {
 	_tty = tty;
 }
 
@@ -237,6 +238,7 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	_pgid = to_fork->_pgid;
 	_umask = to_fork->_umask;
 	quantum = to_fork->quantum;
+	_tty = to_fork->_tty;
 
 	//Copy signal handlers and file descriptors
 	for(int i = 0; i < 32; i++)
@@ -629,11 +631,13 @@ int Process::sys_execvp(char *filename, char **argv) {
 			i++;
 		}
 	}
-	if(indexOf('/', filename) == strlen(filename)) {
-		return exec(kstd::string("/bin/") + filename, args);
-	} else {
-		return exec(filename, args);
+
+	kstd::string filename_str(filename);
+
+	if(filename_str.find('/') == -1) {
+		filename_str = kstd::string("/bin/") + filename_str;
 	}
+	return exec(filename_str, args);
 }
 
 int Process::sys_open(char *filename, int options, int mode) {
@@ -745,14 +749,16 @@ int Process::sys_sigaction(int sig, sigaction_t *new_action, sigaction_t *old_ac
 	check_ptr((void*) new_action->sa_sigaction);
 	if(sig == SIGSTOP || sig == SIGKILL || sig < 1 || sig >= 32)
 		return -EINVAL;
-	cli(); //We don't want this interrupted or else we'd have a problem if it's needed before it's done
-	if(old_action) {
-		memcpy(&old_action->sa_sigaction, &signal_actions[sig].action, sizeof(Signal::SigAction::action));
-		memcpy(&old_action->sa_flags, &signal_actions[sig].flags, sizeof(Signal::SigAction::flags));
+	{
+		//We don't want this interrupted or else we'd have a problem if it's needed before it's done
+		Interrupt::Disabler disabler;
+		if(old_action) {
+			memcpy(&old_action->sa_sigaction, &signal_actions[sig].action, sizeof(Signal::SigAction::action));
+			memcpy(&old_action->sa_flags, &signal_actions[sig].flags, sizeof(Signal::SigAction::flags));
+		}
+		signal_actions[sig].action = new_action->sa_sigaction;
+		signal_actions[sig].flags = new_action->sa_flags;
 	}
-	signal_actions[sig].action = new_action->sa_sigaction;
-	signal_actions[sig].flags = new_action->sa_flags;
-	sti();
 	return 0;
 }
 
@@ -962,6 +968,7 @@ int Process::sys_setsid() {
 
 	_sid = _pid;
 	_pgid = _pid;
+	_tty.reset();
 	return _sid;
 }
 

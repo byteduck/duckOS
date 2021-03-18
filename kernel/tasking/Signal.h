@@ -57,8 +57,6 @@
 
 #ifdef DUCKOS_KERNEL
 
-	#include <kernel/kstd/cstddef.h>
-
 	namespace Signal {
 		class SigAction {
 		public:

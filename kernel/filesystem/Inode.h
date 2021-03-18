@@ -20,7 +20,7 @@
 #ifndef DUCKOS_INODE_H
 #define DUCKOS_INODE_H
 
-#include <kernel/kstd/kstddef.h>
+#include <kernel/kstd/unix_types.h>
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/kstd/string.h>
 #include "InodeMetadata.h"

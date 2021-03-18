@@ -21,7 +21,7 @@
 #define DUCKOS_MEMORYMAP_H
 
 
-#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/types.h>
 #include <kernel/tasking/SpinLock.h>
 #include "MemoryRegion.h"
 

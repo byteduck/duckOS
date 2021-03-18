@@ -21,7 +21,7 @@
 #define DUCKOS_COMMON_TERMINAL_H
 
 #ifdef DUCKOS_KERNEL
-#include <kernel/kstd/cstddef.h>
+#include <kernel/kstd/types.h>
 #else
 #include <stddef.h>
 #endif

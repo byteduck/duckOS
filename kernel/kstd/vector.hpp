@@ -20,8 +20,8 @@
 #ifndef DUCKOS_VECTOR_HPP
 #define DUCKOS_VECTOR_HPP
 
-#include "kmalloc.h"
-#include "cstddef.h"
+#include "kstdlib.h"
+#include "types.h"
 #include "cstring.h"
 #include "utility.h"
 
