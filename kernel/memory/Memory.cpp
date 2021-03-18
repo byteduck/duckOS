@@ -44,14 +44,10 @@ namespace Memory {
 	size_t reserved_bytes_ram = 0;
 	size_t bad_bytes_ram = 0;
 
-	SpinLock malloc_lock;
-
 	//TODO: Assumes computer has at least 4GiB of memory. Should detect memory in future.
 	void setup_paging() {
 		//Assert that the kernel doesn't exceed 7MiB
 		ASSERT(KERNEL_DATA_END - KERNEL_TEXT <= 0x700000);
-
-		malloc_lock = SpinLock();
 
 		kernel_page_directory.set_entries(kernel_page_directory_entries);
 		PageDirectory::init_kmem();
@@ -230,15 +226,13 @@ namespace Memory {
 
 }
 
-using namespace Memory;
-
 int liballoc_lock() {
-	malloc_lock.acquire();
+	asm volatile("cli");
 	return 0;
 }
 
 int liballoc_unlock() {
-	malloc_lock.release();
+	asm volatile("sti");
 	return 0;
 }
 

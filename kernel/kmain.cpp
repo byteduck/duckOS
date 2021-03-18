@@ -40,6 +40,7 @@
 #include <kernel/time/TimeManager.h>
 #include <kernel/kstd/unix_types.h>
 #include "CommandLine.h"
+#include "KernelMapper.h"
 
 uint8_t boot_disk;
 
@@ -174,6 +175,9 @@ void kmain_late(){
 		printf("[kinit] Failed to mount pts: %d\n", res.code());
 		while(true);
 	}
+
+	//Load the kernel symbols
+	KernelMapper::load_map();
 
 	printf("[kinit] Done!\n");
 

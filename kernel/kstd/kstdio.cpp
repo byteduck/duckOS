@@ -24,6 +24,7 @@
 #include <kernel/terminal/VirtualTTY.h>
 #include <kernel/kstd/defines.h>
 #include <kernel/IO.h>
+#include <kernel/KernelMapper.h>
 #include "cstring.h"
 
 kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
@@ -126,12 +127,8 @@ void PANIC(char *error, char *msg, bool hang){
 	printf("%s\n", error);
 	printf("%s\n", msg);
 
-	auto *stk = (uint32_t*) __builtin_frame_address(0);
 	printf("Stack trace:\n");
-	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
-		printf("0x%x\n", stk[1]);
-		stk = (uint32_t*) stk[0];
-	}
+	KernelMapper::print_stacktrace();
 
 	while(hang);
 	TaskManager::enabled() = true;

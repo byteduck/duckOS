@@ -6,7 +6,6 @@
 global flagss
 
 KERNEL_VIRTUAL_BASE equ 0xC0000000                  ; 3GiB
-KERNEL_START_PAGE_NUMBER equ (KERNEL_VIRTUAL_BASE >> 22)
 
 section .pagetables
 align 0x1000
@@ -22,9 +21,9 @@ KernelPageTable2:
 
 ;Page directory
 BootPageDirectory:
-    times (KERNEL_START_PAGE_NUMBER) dd 0
+    times (KERNEL_VIRTUAL_BASE >> 22) dd 0
 HigherHalfPDStart:
-    times (1024 - KERNEL_START_PAGE_NUMBER) dd 0
+    times (1024 - (KERNEL_VIRTUAL_BASE >> 22)) dd 0
 
 section .data
 align 0x1000

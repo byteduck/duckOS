@@ -47,6 +47,17 @@ char nibble_to_hex(uint8_t num){
 	}
 }
 
+uint8_t parse_hex_char(char c) {
+	if(c >= '0' && c <= '9') {
+		return c - '0';
+	} else if(c >= 'a' && c <= 'f') {
+		return 10 + c - 'a';
+	} else if(c >= 'A' && c <= 'f') {
+		return 10 + c - 'A';
+	}
+	return 0;
+}
+
 char *itoa(int i, char *p, int base){
 	char const digit[] = "0123456789";
 	int nbcount = 0;

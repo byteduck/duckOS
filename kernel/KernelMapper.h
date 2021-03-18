@@ -17,29 +17,21 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_KSTDLIB_H
-#define DUCKOS_KSTDLIB_H
+#ifndef DUCKOS_KERNELMAPPER_H
+#define DUCKOS_KERNELMAPPER_H
 
 #include <kernel/kstd/types.h>
-#include <kernel/kstd/cstring.h>
-#include <kernel/memory/kliballoc.h>
 
-#define max(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a > _b ? _a : _b; })
+class KernelMapper {
+public:
+	struct Symbol {
+		char* name;
+		size_t location;
+	};
 
-#define min(a,b) \
-   ({ __typeof__ (a) _a = (a); \
-       __typeof__ (b) _b = (b); \
-     _a < _b ? _a : _b; })
+	static void load_map();
+	static Symbol* get_symbol(size_t location);
+	static void print_stacktrace();
+};
 
-int atoi(char *str);
-int sgn(int x);
-int abs(float x);
-char nibble_to_hex(uint8_t num);
-uint8_t parse_hex_char(char c);
-char *itoa(int i, char *p, int base);
-void to_upper(char *str);
-
-#endif //DUCKOS_KSTDLIB_H
+#endif //DUCKOS_KERNELMAPPER_H

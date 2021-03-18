@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 11)
 ENABLE_LANGUAGE(ASM_NASM)
 SET_SOURCE_FILES_PROPERTIES(asm/startup.s asm/tasking.s asm/int.s asm/syscall.s asm/gdt.s PROPERTIES LANGUAGE ASM_NASM)
 
-SET(CMAKE_CXX_FLAGS "-ffreestanding -O2 -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
+SET(CMAKE_CXX_FLAGS "-ffreestanding -Os -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
 
 SET(CMAKE_ASM_NASM_COMPILER nasm)
 SET(CMAKE_ASM_NASM_FLAGS "-I ${CMAKE_CURRENT_SOURCE_DIR}/ -f elf")
@@ -104,7 +104,8 @@ SET(KERNEL_SRCS
         filesystem/socketfs/SocketFSClient.cpp
         filesystem/ptyfs/PTYFS.cpp
         filesystem/ptyfs/PTYFSInode.cpp
-        IO.cpp)
+        IO.cpp
+        KernelMapper.cpp)
 
 SET(COMMON_SRCS
         kstd/cstring.cpp
@@ -116,7 +117,7 @@ TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERN
 
 SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/kernel.ld)
 SET_TARGET_PROPERTIES(duckk32 PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
-SET(CMAKE_CXX_LINK_EXECUTABLE "ld <OBJECTS> -T ${LINKER_SCRIPT} -melf_i386 -Map kernel.map -o <TARGET> <LINK_LIBRARIES>")
+SET(CMAKE_CXX_LINK_EXECUTABLE "ld <OBJECTS> -T ${LINKER_SCRIPT} -melf_i386 -o <TARGET> <LINK_LIBRARIES>")
 
 TARGET_INCLUDE_DIRECTORIES(duckk32 PRIVATE ${CMAKE_SOURCE_DIR})
 
@@ -127,4 +128,9 @@ foreach(HEADER ${KHEADERS})
     INSTALL(FILES ${HEADER} DESTINATION usr/include/kernel/${SUBDIRECTORY})
 endforeach()
 
+# Install kernel
 INSTALL(TARGETS duckk32 RUNTIME DESTINATION boot)
+
+# Make kernel map
+ADD_CUSTOM_COMMAND(TARGET duckk32 COMMAND ${CMAKE_SOURCE_DIR}/scripts/kernel-map.sh)
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/kernel.map DESTINATION boot)

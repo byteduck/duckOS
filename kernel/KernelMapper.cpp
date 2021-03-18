@@ -1,0 +1,106 @@
+/*
+    This file is part of duckOS.
+
+    duckOS is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    duckOS is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
+
+    Copyright (c) Byteduck 2016-2020. All rights reserved.
+*/
+
+#include <kernel/filesystem/VFS.h>
+#include <kernel/tasking/TaskManager.h>
+#include "KernelMapper.h"
+
+kstd::vector<KernelMapper::Symbol>* symbols = nullptr;
+size_t lowest_addr = 0xFFFFFFFF;
+size_t highest_addr = 0x0;
+
+void KernelMapper::load_map() {
+	printf("[KernelMapper] Loading map...\n");
+
+	//Open the map
+	auto res = VFS::inst().open("/boot/kernel.map", O_RDONLY, 0, User::root(), VFS::inst().root_ref());
+	if(res.is_error()) {
+		printf("[KernelMapper] Failed to load symbols from /boot/kernel.map\n");
+		return;
+	}
+
+	//Read the map
+	auto& fd = res.value();
+	ASSERT(fd->file()->is_inode());
+	size_t file_size = fd->metadata().size;
+	auto* filebuf = new uint8_t[file_size];
+	fd->read(filebuf, file_size);
+
+	symbols = new kstd::vector<Symbol>();
+
+	//Interpret the map
+	size_t current_byte = 0;
+	while(current_byte < file_size) {
+		Symbol symbol = {nullptr, 0};
+
+		//Parse the address of the symbol
+		for(int i = 0; i < 8; i++)
+			symbol.location |= parse_hex_char(filebuf[current_byte++]) << ((7 - i) * 4);
+
+		//Skip the three characters in the middle
+		current_byte += 3;
+
+		//Figure out how long the name is and copy it to the symbol
+		size_t name_len = 0;
+		while(filebuf[current_byte + name_len] != '\n')
+			name_len++;
+		symbol.name = new char[name_len + 1];
+		memcpy(symbol.name, &filebuf[current_byte], name_len);
+		symbol.name[name_len] = '\0';
+		current_byte += name_len + 1;
+
+		//Finally, add the symbol to the vector
+		symbols->push_back(symbol);
+		if(symbol.location > highest_addr)
+			highest_addr = symbol.location;
+		if(symbol.location < lowest_addr)
+			lowest_addr = symbol.location;
+	}
+
+	//Optimize the size of the symbol list and free the buffer
+	delete[] filebuf;
+	symbols->shrink_to_fit();
+
+	printf("[KernelMapper] Map loaded with %d symbols between 0x%x and 0x%x\n", symbols->size(), lowest_addr, highest_addr);
+}
+
+KernelMapper::Symbol* KernelMapper::get_symbol(size_t location) {
+	if(!symbols || location > highest_addr || location < lowest_addr)
+		return nullptr;
+	for(int i = 0; i < symbols->size() - 1; i++) {
+		if(location < symbols->at(i+1).location)
+			return &symbols->at(i);
+	}
+	return nullptr;
+}
+
+void KernelMapper::print_stacktrace() {
+	auto* stk = (uint32_t*) __builtin_frame_address(0);
+	auto* pd = TaskManager::current_process()->page_directory;
+	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
+		if(!pd->is_mapped((size_t) stk) || !stk[1])
+			break;
+		auto* sym = KernelMapper::get_symbol(stk[1]);
+		if(sym)
+			printf("0x%x %s\n", stk[1], sym->name);
+		else
+			printf("0x%x\n", stk[1]);
+		stk = (uint32_t*) stk[0];
+	}
+}

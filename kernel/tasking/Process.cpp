@@ -33,8 +33,8 @@
 #include <kernel/terminal/VirtualTTY.h>
 #include <kernel/terminal/PTYControllerDevice.h>
 #include <kernel/terminal/PTYDevice.h>
-#include <kernel/time/TimeManager.h>
 #include <kernel/interrupt/interrupt.h>
+#include <kernel/KernelMapper.h>
 
 const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 
@@ -350,8 +350,13 @@ bool Process::handle_pending_signal() {
 		Signal::SignalSeverity severity = Signal::signal_severities[signal];
 
 		//Print signal if unhandled and fatal
-		if(severity == Signal::FATAL && !signal_actions[signal].action)
+		if(severity == Signal::FATAL && !signal_actions[signal].action) {
 			printf("PID %d exiting with signal %s\n", _pid, Signal::signal_names[signal]);
+#ifdef DEBUG
+			printf("Stack trace:\n");
+			KernelMapper::print_stacktrace();
+#endif
+		}
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
