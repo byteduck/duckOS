@@ -18,7 +18,6 @@
 */
 
 #include <kernel/filesystem/VFS.h>
-#include <kernel/kstd/defines.h>
 #include <kernel/terminal/TTYDevice.h>
 #include <kernel/time/PIT.h>
 #include "Process.h"
@@ -360,7 +359,6 @@ bool Process::handle_pending_signal() {
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
-			free_resources();
 			Process* parent = TaskManager::process_for_pid(_ppid);
 			if(parent && parent != this)
 				parent->kill(SIGCHLD);

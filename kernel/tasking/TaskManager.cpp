@@ -22,7 +22,6 @@
 #include <kernel/kstd/kstdio.h>
 #include <kernel/kmain.h>
 #include <kernel/interrupt/irq.h>
-#include <kernel/time/PIT.h>
 #include <kernel/filesystem/procfs/ProcFS.h>
 
 TSS TaskManager::tss;
