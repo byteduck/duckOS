@@ -21,7 +21,7 @@
 #include "libui/Theme.h"
 
 UI::StackView::StackView(Direction direction, int spacing): direction(direction), spacing(spacing) {
-
+	set_uses_alpha(true);
 }
 
 Dimensions UI::StackView::preferred_size() {
@@ -57,5 +57,5 @@ void UI::StackView::on_child_added(UI::Widget* child) {
 }
 
 void UI::StackView::do_repaint(const DrawContext& ctx) {
-	ctx.fill({0, 0, ctx.width(), ctx.height()}, Theme::bg());
+	ctx.fill({0, 0, ctx.width(), ctx.height()}, RGBA(0, 0, 0, 0));
 }

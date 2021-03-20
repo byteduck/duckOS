@@ -33,10 +33,14 @@ Window* Window::create() {
 }
 
 void Window::resize(Dimensions dims) {
-	_window->resize({
-		UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2 + dims.width,
-		UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3 + dims.height
-	});
+	if(_decorated) {
+		_window->resize({
+			UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2 + dims.width,
+			UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3 + dims.height
+		});
+	} else {
+		_window->resize({dims.width, dims.height});
+	}
 	repaint();
 }
 
@@ -80,32 +84,37 @@ void Window::bring_to_front() {
 void Window::repaint() {
 	auto framebuffer = _window->framebuffer();
 	auto ctx = DrawContext(framebuffer);
-	Color color = Theme::window();
+	if(_decorated) {
+		Color color = Theme::window();
 
-	//Window background/border
-	ctx.draw_outset_rect({0, 0, ctx.width(), ctx.height()}, color);
+		//Window background/border
+		ctx.draw_outset_rect({0, 0, ctx.width(), ctx.height()}, color);
 
-	//Title bar
-	Rect titlebar_rect = {
-			UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
-			UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
-			ctx.width() - UI_WINDOW_BORDER_SIZE * 2 - UI_WINDOW_PADDING * 2,
-			UI_TITLEBAR_HEIGHT
-	};
-	ctx.fill_gradient_h(titlebar_rect, Theme::window_titlebar_a(), Theme::window_titlebar_b());
-	int font_height = Theme::font()->bounding_box().height;
-	Point title_pos = titlebar_rect.position() + Point {4, titlebar_rect.height/2 - font_height/2};
-	ctx.draw_text(_title.c_str(), title_pos, Theme::window_title());
+		//Title bar
+		Rect titlebar_rect = {
+				UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
+				UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
+				ctx.width() - UI_WINDOW_BORDER_SIZE * 2 - UI_WINDOW_PADDING * 2,
+				UI_TITLEBAR_HEIGHT
+		};
 
-	//Buttons
-	int button_size = titlebar_rect.height - 4;
-	_close_button.area = {
-			titlebar_rect.x + titlebar_rect.width - UI_WINDOW_PADDING - button_size,
-			titlebar_rect.y + 2,
-			button_size,
-			button_size
-	};
-	ctx.draw_button(_close_button.area, Theme::image(_close_button.image), _close_button.pressed);
+		ctx.fill_gradient_h(titlebar_rect, Theme::window_titlebar_a(), Theme::window_titlebar_b());
+		int font_height = Theme::font()->bounding_box().height;
+		Point title_pos = titlebar_rect.position() + Point{4, titlebar_rect.height / 2 - font_height / 2};
+		ctx.draw_text(_title.c_str(), title_pos, Theme::window_title());
+
+		//Buttons
+		int button_size = titlebar_rect.height - 4;
+		_close_button.area = {
+				titlebar_rect.x + titlebar_rect.width - UI_WINDOW_PADDING - button_size,
+				titlebar_rect.y + 2,
+				button_size,
+				button_size
+		};
+		ctx.draw_button(_close_button.area, Theme::image(_close_button.image), _close_button.pressed);
+	} else {
+		ctx.fill({0, 0, ctx.width(), ctx.height()}, RGBA(0, 0, 0, 0));
+	}
 
 	_window->invalidate();
 }
@@ -120,6 +129,18 @@ void Window::show() {
 
 void Window::hide() {
 	_window->set_hidden(true);
+}
+
+void Window::set_uses_alpha(bool uses_alpha) {
+	_uses_alpha = uses_alpha;
+	if(_decorated)
+		_window->set_uses_alpha(uses_alpha);
+}
+
+void Window::set_decorated(bool decorated) {
+	_decorated = decorated;
+	update_contents_position();
+	_window->set_uses_alpha(_decorated ? _uses_alpha : true);
 }
 
 Pond::Window* Window::pond_window() {
@@ -155,4 +176,12 @@ void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
 }
 
 void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {
+}
+
+void Window::update_contents_position() {
+	if(_decorated)
+		_contents->_window->set_position(UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING, UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2);
+	else
+		_contents->_window->set_position(0, 0);
+	resize(_contents->current_size());
 }

@@ -176,8 +176,11 @@ void Display::repaint() {
 				//If it does, redraw the intersection of the window in question and the invalid area
 				Rect window_abs = window->absolute_rect();
 				Rect overlap_abs = area.overlapping_area(window_vabs);
-				fb.copy_blitting(window->framebuffer(),
-					 overlap_abs.transform({-window_abs.x, -window_abs.y}), overlap_abs.position());
+				auto transformed_overlap = overlap_abs.transform({-window_abs.x, -window_abs.y});
+				if(window->uses_alpha())
+					fb.copy_blitting(window->framebuffer(), transformed_overlap, overlap_abs.position());
+				else
+					fb.copy(window->framebuffer(), transformed_overlap, overlap_abs.position());
 			}
 		}
 	}

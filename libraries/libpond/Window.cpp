@@ -112,6 +112,11 @@ void Window::set_hidden(bool hidden) {
 	_hidden = hidden;
 }
 
+void Window::set_uses_alpha(bool alpha_blending) {
+	if(!_context->send_packet(PWindowHintPkt(_id, PWINDOW_HINT_USEALPHA, alpha_blending)))
+		perror("Pond: failed to write window hint packet");
+}
+
 int Window::id() const {
 	return _id;
 }

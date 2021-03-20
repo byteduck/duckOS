@@ -28,6 +28,7 @@ __DECL_BEGIN
 int strcasecmp(const char* s1, const char* s2);
 int strncasecmp(const char* s1, const char* s2, size_t n);
 
+
 __DECL_END
 
 #endif //DUCKOS_LIBC_STRINGS_H

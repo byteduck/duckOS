@@ -86,11 +86,13 @@ Point Widget::position() {
 }
 
 void Widget::hide() {
+	_hidden = true;
 	if(_window)
 		_window->set_hidden(true);
 }
 
 void Widget::show() {
+	_hidden = false;
 	if(_window)
 		_window->set_hidden(false);
 }
@@ -100,12 +102,7 @@ void Widget::set_window(UI::Window* window) {
 		return;
 
 	_parent_window = window;
-	_rect.set_dimensions(preferred_size());
-	_window = pond_context->create_window(window->_window, _rect, false);
-	__register_widget(this, _window->id());
-	repaint();
-	for(auto& child : children)
-		child->parent_window_created();
+	create_window(window->_window);
 }
 
 void Widget::set_parent(UI::Widget* widget) {
@@ -114,14 +111,8 @@ void Widget::set_parent(UI::Widget* widget) {
 
 	_parent = widget;
 
-	if(widget->_window) {
-		_rect.set_dimensions(preferred_size());
-		_window = pond_context->create_window(widget->_window, _rect, false);
-		__register_widget(this, _window->id());
-		repaint();
-		for(auto& child : children)
-			child->parent_window_created();
-	}
+	if(widget->_window)
+		create_window(widget->_window);
 }
 
 void Widget::update_size() {
@@ -143,15 +134,26 @@ void Widget::do_repaint(const DrawContext& framebuffer) {
 
 }
 
+void Widget::on_child_added(UI::Widget* child) {
+
+}
+
+void Widget::set_uses_alpha(bool uses_alpha) {
+	_uses_alpha = uses_alpha;
+	if(_window)
+		_window->set_uses_alpha(uses_alpha);
+}
+
 void Widget::parent_window_created() {
+	create_window(_parent ? _parent->_window : _parent_window->_window);
+}
+
+void Widget::create_window(Pond::Window* parent) {
 	_rect.set_dimensions(preferred_size());
-	_window = pond_context->create_window(_parent ? _parent->_window : _parent_window->_window, _rect, false);
+	_window = pond_context->create_window(parent, _rect, _hidden);
+	_window->set_uses_alpha(_uses_alpha);
 	__register_widget(this, _window->id());
 	repaint();
 	for(auto& child : children)
 		child->parent_window_created();
-}
-
-void Widget::on_child_added(UI::Widget* child) {
-
 }

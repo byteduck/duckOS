@@ -24,6 +24,7 @@ using namespace UI;
 
 Label::Label(const std::string& label): _label(label) {
 	_color = Theme::fg();
+	set_uses_alpha(true);
 }
 
 std::string Label::label() {

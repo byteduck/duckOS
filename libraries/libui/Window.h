@@ -52,6 +52,8 @@ namespace UI {
 		void close();
 		void show();
 		void hide();
+		void set_uses_alpha(bool uses_alpha);
+		void set_decorated(bool decorated);
 
 		///Pond
 		Pond::Window* pond_window();
@@ -66,11 +68,15 @@ namespace UI {
 		Window();
 
 	private:
+		void update_contents_position();
+
 		friend class Widget;
 		Pond::Window* _window;
 		Widget* _contents;
 		std::string _title;
 		Point _mouse;
+		bool _decorated = true;
+		bool _uses_alpha = false;
 
 		struct TitleButton {
 			std::string image;

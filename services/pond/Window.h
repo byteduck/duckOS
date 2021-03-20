@@ -153,6 +153,12 @@ public:
 	bool hidden();
 
 	/**
+	 * Whether or not the window should use alpha blending.
+	 * @return If the window uses alpha blending.
+	 */
+	bool uses_alpha();
+
+	/**
 	 * Handles a number of keyboard events for this window.
 	 * @param event The event to handle.
 	 */
@@ -198,6 +204,7 @@ private:
 	bool _draggable = false;
 	char* _title = nullptr;
 	bool _hidden = true;
+	bool _uses_alpha = false;
 
 	static int current_id;
 };

@@ -28,6 +28,7 @@
 #define PWINDOW_HINT_GLOBALMOUSE 0x1
 #define PWINDOW_HINT_DRAGGABLE 0x2
 #define PWINDOW_HINT_HIDDEN 0x3
+#define PWINDOW_HINT_USEALPHA 0x4
 
 /**
  * A window Object representing a window in the Pond window system.
@@ -133,6 +134,12 @@ namespace Pond {
 		 * @param hidden Whether or not the window should be hidden.
 		 */
 		void set_hidden(bool hidden);
+
+		/**
+		 * Sets whether the window uses alpha blending.
+		 * @param alpha_blending Whether or not the window should use alpha blending.
+		 */
+		void set_uses_alpha(bool alpha_blending);
 
 		/**
 		 * Gets the ID of the window.

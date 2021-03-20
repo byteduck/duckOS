@@ -150,15 +150,25 @@ namespace UI {
 		 */
 		virtual void on_child_added(UI::Widget* child);
 
+		/**
+		 * Sets whether the widget should use alpha blending or not.
+		 * @param uses_alpha Whether the widget should use alpha blending.
+		 */
+		void set_uses_alpha(bool uses_alpha);
+
 		std::vector<Widget*> children;
+
 	private:
 		UI::Widget* _parent = nullptr;
 		UI::Window* _parent_window = nullptr;
 		Pond::Window* _window = nullptr;
 		Rect _rect = {0, 0, -1, -1};
 		bool _initialized_size = false;
+		bool _uses_alpha = false;
+		bool _hidden = false;
 
 		void parent_window_created();
+		void create_window(Pond::Window* parent);
 	};
 }
 

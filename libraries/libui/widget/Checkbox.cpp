@@ -23,11 +23,11 @@
 #include <utility>
 
 UI::Checkbox::Checkbox(): _checked(false) {
-
+	set_uses_alpha(true);
 }
 
 UI::Checkbox::Checkbox(std::string label): _checked(false), _label(std::move(label)) {
-
+	set_uses_alpha(true);
 }
 
 bool UI::Checkbox::checked() {

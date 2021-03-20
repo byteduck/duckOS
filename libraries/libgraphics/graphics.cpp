@@ -17,6 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <string.h>
 #include "graphics.h"
 #include "font.h"
 
@@ -40,10 +41,8 @@ void Image::copy(const Image& other, Rect other_area, const Point& pos) const {
 	other_area.width = self_area.width;
 	other_area.height = self_area.height;
 
-	for(int x = 0; x < self_area.width; x++) {
-		for(int y = 0; y < self_area.height; y++) {
-			data[(self_area.x + x) + (self_area.y + y) * width] = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
-		}
+	for(int y = 0; y < self_area.height; y++) {
+		memcpy(&data[self_area.x + (self_area.y + y) * width], &other.data[other_area.x + (other_area.y + y) * other.width], self_area.width * sizeof(uint32_t));
 	}
 }
 
@@ -60,8 +59,8 @@ void Image::copy_noalpha(const Image& other, Rect other_area, const Point& pos) 
 	other_area.width = self_area.width;
 	other_area.height = self_area.height;
 
-	for(int x = 0; x < self_area.width; x++) {
-		for(int y = 0; y < self_area.height; y++) {
+	for(int y = 0; y < self_area.height; y++) {
+		for(int x = 0; x < self_area.width; x++) {
 			data[(self_area.x + x) + (self_area.y + y) * width] = RGBA(0, 0, 0, 255) | other.data[(other_area.x + x) + (other_area.y + y) * other.width];
 		}
 	}
@@ -80,8 +79,8 @@ void Image::copy_blitting(const Image& other, Rect other_area, const Point& pos)
 	other_area.width = self_area.width;
 	other_area.height = self_area.height;
 
-	for(int x = 0; x < self_area.width; x++) {
-		for(int y = 0; y < self_area.height; y++) {
+	for(int y = 0; y < self_area.height; y++) {
+		for(int x = 0; x < self_area.width; x++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
 			unsigned int alpha = COLOR_A(other_val) + 1;
@@ -108,8 +107,8 @@ void Image::copy_tiled(const Image& other, Rect other_area, const Point& pos) co
 	other_area.width = self_area.width;
 	other_area.height = self_area.height;
 
-	for(int x = 0; x < self_area.width; x++) {
-		for(int y = 0; y < self_area.height; y++) {
+	for(int y = 0; y < self_area.height; y++) {
+		for(int x = 0; x < self_area.width; x++) {
 			data[(self_area.x + x) + (self_area.y + y) * width] = other.data[(((other_area.x + x) % other.width) + ((other_area.y + y) % other.height) * other.width) % (other.width * other.height)];
 		}
 	}
@@ -128,8 +127,8 @@ void Image::draw_image(const Image& other, Rect other_area, const Point& pos) co
 	other_area.width = self_area.width;
 	other_area.height = self_area.height;
 
-	for(int x = 0; x < self_area.width; x++) {
-		for(int y = 0; y < self_area.height; y++) {
+	for(int y = 0; y < self_area.height; y++) {
+		for(int x = 0; x < self_area.width; x++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
 			unsigned int alpha = COLOR_A(other_val) + 1;
@@ -152,9 +151,9 @@ void Image::fill(Rect area, uint32_t color) const {
 	if(area.empty())
 		return;
 
-	for(int x = 0; x < area.width; x++) {
-		for(int y = 0; y < area.height; y++) {
-			data[(area.x + x) + (area.y + y) * width] = color;
+	for(int y = 0; y < area.height; y++) {
+		for(int x = 0; x < area.width; x++) {
+			data[x + area.x + (area.y + y) * width] = color;
 		}
 	}
 }
@@ -192,8 +191,8 @@ Point Image::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph_pos, 
 	glyph_area.width = self_area.width;
 	glyph_area.height = self_area.height;
 
-	for(int x = 0; x < self_area.width; x++) {
-		for(int y = 0; y < self_area.height; y++) {
+	for(int y = 0; y < self_area.height; y++) {
+		for(int x = 0; x < self_area.width; x++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = glyph->bitmap[(glyph_area.x + x) + (glyph_area.y + y) * glyph->width];
 			double alpha = (COLOR_A(other_val) / 255.00) * alpha_mult;

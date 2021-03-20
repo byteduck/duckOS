@@ -209,6 +209,10 @@ bool Window::hidden() {
 		return false;
 }
 
+bool Window::uses_alpha() {
+	return _uses_alpha;
+}
+
 void Window::handle_keyboard_event(const KeyboardEvent& event) {
 	if(_client)
 		_client->keyboard_event(this, event);
@@ -275,6 +279,12 @@ void Window::set_hint(int hint, int value) {
 			break;
 		case PWINDOW_HINT_HIDDEN:
 			set_hidden(value);
+			break;
+		case PWINDOW_HINT_USEALPHA:
+			if(_uses_alpha != (bool) value) {
+				_uses_alpha = value;
+				invalidate();
+			}
 			break;
 		default:
 			fprintf(stderr, "pond: Unknown window hint %d!\n", hint);
