@@ -18,6 +18,7 @@
 */
 
 #include "Display.h"
+#include "FontManager.h"
 #include <unistd.h>
 #include <cstdio>
 #include <sys/ioctl.h>
@@ -55,6 +56,12 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 
 	//If we're running in a tty, set it to graphical mode
 	ioctl(STDOUT_FILENO, TIOSGFX, nullptr);
+
+	//If we can set the offset into video memory, that means we can flip the display buffer and write directly to it
+	if(!ioctl(framebuffer_fd, IO_VIDEO_OFFSET, 0))
+		_can_flip_buffer = true;
+	else
+		_can_flip_buffer = false;
 
 	_framebuffer = {buffer, _dimensions.width, _dimensions.height};
 	printf("Image opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
@@ -134,7 +141,13 @@ void Display::invalidate(const Rect& rect) {
 		invalid_areas.push_back(rect);
 }
 
+//#define DEBUG_REPAINT_PERF
 void Display::repaint() {
+#ifdef DEBUG_REPAINT_PERF
+	timeval t0, t1;
+	gettimeofday(&t0, nullptr);
+#endif
+
 	auto fb = _root_window->framebuffer();
 
 	if(!invalid_areas.empty())
@@ -189,8 +202,23 @@ void Display::repaint() {
 	//Draw the mouse.
 	fb.draw_image(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height},
 				  _mouse_window->absolute_rect().position());
+
+#ifdef DEBUG_REPAINT_PERF
+	gettimeofday(&t1, nullptr);
+	char buf[10];
+	t1.tv_sec -= t0.tv_sec;
+	t1.tv_usec -= t0.tv_usec;
+	if(t1.tv_usec < 0) {
+		t1.tv_sec -= 1 + t1.tv_usec / -1000000;
+		t1.tv_usec = (1000000 - (-t1.tv_usec % 1000000)) % 1000000;
+	}
+	snprintf(buf, 10, "%dms", (int)(t1.tv_usec / 1000 + t1.tv_sec * 1000));
+	fb.fill({0, 0, 50, 14}, RGB(0, 0, 0));
+	fb.draw_text(buf, {0, 0}, FontManager::inst().get_font("gohu-14"), RGB(255, 255, 255));
+#endif
 }
 
+bool flipped = false;
 void Display::flip_buffers(bool hide) {
 	//If the screen buffer isn't dirty, don't bother
 	if(!display_buffer_dirty)
@@ -201,9 +229,16 @@ void Display::flip_buffers(bool hide) {
 		return;
 	gettimeofday(&paint_time, NULL);
 
-	//Copy to the libgraphics buffer and mark the display buffer clean
-	if(!hide)
+	if(_can_flip_buffer) {
+		ioctl(framebuffer_fd, IO_VIDEO_OFFSET, flipped ? _framebuffer.height : 0);
+		flipped = !flipped;
+		display_buffer_dirty = false;
+		auto* video_buf = &_framebuffer.data[flipped ? _framebuffer.height * _framebuffer.width : 0];
+		memcpy(video_buf, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
+	} else {
 		memcpy(_framebuffer.data, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
+	}
+
 	display_buffer_dirty = false;
 }
 

@@ -52,7 +52,7 @@ bool BochsVGADevice::detect() {
 
 	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
 	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
-	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
+	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size() * 2, true);
 	printf("[VGA] Found a bochs-compatible VGA device at %x:%x.%x\n", address.bus, address.slot, address.function);
 	printf("[VGA] virtual framebuffer mapped from 0x%x to 0x%x\n", framebuffer_paddr, framebuffer);
 	return true;
@@ -133,8 +133,20 @@ void BochsVGADevice::clear(uint32_t color) {
 }
 
 void* BochsVGADevice::map_framebuffer(Process* proc) {
-	void* ret = proc->page_directory->mmap(framebuffer_paddr, framebuffer_size(), true);
+	void* ret = proc->page_directory->mmap(framebuffer_paddr, framebuffer_size() * 2, true);
 	if(!ret)
 		return (void*) -ENOMEM;
 	return ret;
+}
+
+int BochsVGADevice::ioctl(unsigned int request, void* argp) {
+	switch(request) {
+		case IO_VIDEO_OFFSET:
+			if((int)argp < 0 || (int)argp > display_height)
+				return -EINVAL;
+			write_register(VBE_DISPI_INDEX_Y_OFFSET, (int)argp);
+			return SUCCESS;
+		default:
+			return VGADevice::ioctl(request, argp);
+	}
 }

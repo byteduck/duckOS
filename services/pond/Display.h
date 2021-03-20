@@ -145,6 +145,7 @@ private:
 	bool display_buffer_dirty = true;
 	int _keyboard_fd;
 	Window* _focused_window = nullptr;
+	bool _can_flip_buffer = false;
 
 	static Display* _inst;
 };

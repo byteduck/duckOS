@@ -74,6 +74,8 @@ private:
 	size_t framebuffer_size();
 	bool set_resolution(uint16_t width, uint16_t height);
 
+	virtual int ioctl(unsigned request, void* argp) override;
+
 	PCI::Address address = {0,0,0};
 	uint32_t framebuffer_paddr = 0;
 	uint32_t* framebuffer = nullptr;

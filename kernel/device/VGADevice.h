@@ -24,6 +24,7 @@
 #define IO_VIDEO_WIDTH	0x8002
 #define IO_VIDEO_HEIGHT	0x8003
 #define IO_VIDEO_PITCH	0x8004
+#define IO_VIDEO_OFFSET	0x8005
 
 #ifdef DUCKOS_KERNEL
 
@@ -41,7 +42,7 @@ public:
 	virtual void* map_framebuffer(Process* proc) = 0;
 
 	//File
-	int ioctl(unsigned request, void* argp) override;
+	virtual int ioctl(unsigned request, void* argp) override;
 private:
 	static VGADevice* _inst;
 };
