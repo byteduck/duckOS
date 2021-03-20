@@ -39,7 +39,6 @@ static uint8_t quantum_counter = 0;
 void kidle(){
 	tasking_enabled = true;
 	while(1) {
-		asm volatile("sti");
 		asm volatile("hlt");
 	}
 }
@@ -297,8 +296,11 @@ void TaskManager::preempt(){
 		//Switch tasks.
 		preempting = false;
 		ASSERT(current_proc->state == PROCESS_ALIVE);
-		if(should_preempt)
+		if(should_preempt) {
+			asm volatile("fxsave %0" : "=m"(old_proc->fpu_state));
 			preempt_asm(old_esp, new_esp, current_proc->page_directory_loc);
+			asm volatile("fxrstor %0" ::"m"(current_proc->fpu_state));
+		}
 	} else {
 		ASSERT(current_proc->state == PROCESS_ALIVE);
 		quantum_counter--;

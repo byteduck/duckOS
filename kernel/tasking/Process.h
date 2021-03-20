@@ -187,6 +187,7 @@ public:
 	uint8_t ring;
 	uint8_t quantum;
 	PageDirectory* page_directory;
+	uint8_t fpu_state[512] __attribute__((aligned(16)));
 
 private:
 	Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
