@@ -231,10 +231,10 @@ void Display::flip_buffers(bool hide) {
 
 	if(_can_flip_buffer) {
 		ioctl(framebuffer_fd, IO_VIDEO_OFFSET, flipped ? _framebuffer.height : 0);
-		flipped = !flipped;
 		display_buffer_dirty = false;
 		auto* video_buf = &_framebuffer.data[flipped ? _framebuffer.height * _framebuffer.width : 0];
 		memcpy(video_buf, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
+		flipped = !flipped;
 	} else {
 		memcpy(_framebuffer.data, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
 	}
