@@ -37,6 +37,7 @@ public:
 	GameWidget();
 
 	void reset(bool vs_cpu);
+	void show_hint();
 
 	//Widget
 	Dimensions preferred_size() override;
@@ -48,6 +49,7 @@ private:
 	Board board;
 	int current_player = 1;
 	Point hovered_cell = {-1, -1};
+	Point hint_cell = {-1, -1};
 	bool player2_computer = false;
 	std::string status = "Player 1 choose";
 	bool was_win = false;

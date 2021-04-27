@@ -35,6 +35,19 @@ void GameWidget::reset(bool vs_cpu) {
 	repaint();
 }
 
+void GameWidget::show_hint() {
+	int col = computer_pick_move(board, current_player);
+	int row = ROWS;
+	for(int i = ROWS - 1; i >= 0; i--) {
+		if(board[i][col] == 0) {
+			row = i;
+			break;
+		}
+	}
+	hint_cell = {col, row};
+	repaint();
+}
+
 Dimensions GameWidget::preferred_size() {
 	return {COLUMNS * CELL_SIZE + 4, ROWS * CELL_SIZE + 17};
 }
@@ -45,7 +58,7 @@ void GameWidget::do_repaint(const UI::DrawContext& ctx) {
 	for(int row = 0; row < ROWS; row++) {
 		for(int col = 0; col < COLUMNS; col++) {
 			uint32_t color;
-			if(!was_win && hovered_cell == Point {col, row}) {
+			if(!was_win && (hovered_cell == Point {col, row} || hint_cell == Point {col, row})) {
 				color = current_player == 1 ? HOVER1_COLOR : HOVER2_COLOR;
 			} else {
 				switch(board[row][col]) {
@@ -89,6 +102,7 @@ bool GameWidget::on_mouse_button(Pond::MouseButtonEvent evt) {
 		if(!was_win && is_valid_move(board, hovered_cell.x)) {
 			add_piece(board, hovered_cell.x, current_player);
 			hovered_cell = {-1, -1};
+			hint_cell = {-1, -1};
 
 			std::string player_text = current_player == 1 ? "1" : "2";
 

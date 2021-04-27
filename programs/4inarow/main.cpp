@@ -38,16 +38,21 @@ int main(int argc, char** argv, char** envp) {
 
 	auto* pvp_button = new UI::Button("New Game");
 	auto* cpu_checkbox = new UI::Checkbox("CPU");
+	auto* hint_button = new UI::Button("Hint");
 	toolbar->add_child(pvp_button);
+    toolbar->add_child(hint_button);
 	toolbar->add_child(cpu_checkbox);
 
 	//Create connect 4 widget
 	auto* gamewidget = new GameWidget();
 	pvp_button->on_pressed = [&]{
-			gamewidget->reset(cpu_checkbox->checked());
+        gamewidget->reset(cpu_checkbox->checked());
 	};
 	cpu_checkbox->on_change = [&](bool cpu){
 		gamewidget->reset(cpu);
+	};
+	hint_button->on_pressed = [&]{
+	    gamewidget->show_hint();
 	};
 
 	mainview->add_child(gamewidget);
