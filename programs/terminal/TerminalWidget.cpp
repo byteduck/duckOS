@@ -75,6 +75,18 @@ Dimensions TerminalWidget::preferred_size() {
 void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 	if(!term)
 		return;
+	if(needs_full_repaint) {
+	    auto dims = term->get_dimensions();
+	    for(size_t x = 0; x < dims.width; x++) {
+	        for(size_t y = 0; y < dims.height; y++) {
+                auto character = term->get_character({x, y});
+                Point pos = {(int) x * font->bounding_box().width + 2, (int) y * font->size() + 2};
+                ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[character.attributes.background]);
+                ctx.draw_glyph(font, character.codepoint, pos, color_palette[character.attributes.foreground]);
+                break;
+	        }
+	    }
+	}
 	for(auto evt : events) {
 		switch(evt.type) {
 			case TerminalEvent::CHARACTER: {
@@ -112,6 +124,15 @@ bool TerminalWidget::on_keyboard(Pond::KeyEvent event) {
 		term->handle_keypress(event.scancode, event.character, event.modifiers);
 	handle_term_events();
 	return true;
+}
+
+void TerminalWidget::on_resize(const Rect& old_rect) {
+    Dimensions dims = current_size();
+    term->set_dimensions({
+        dims.width / (size_t) font->bounding_box().width,
+        dims.height / (size_t) font->size()
+    });
+    needs_full_repaint = true;
 }
 
 void TerminalWidget::handle_term_events() {
@@ -195,7 +216,7 @@ void TerminalWidget::on_scroll(size_t lines) {
 }
 
 void TerminalWidget::on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) {
-	//TODO
+
 }
 
 void TerminalWidget::emit(const uint8_t* data, size_t size) {

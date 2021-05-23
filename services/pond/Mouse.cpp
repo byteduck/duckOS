@@ -31,23 +31,12 @@ Mouse::Mouse(Window* parent): Window(parent, {0, 0, 1, 1}, false) {
 		return;
 	}
 
-	FILE* cursor = fopen("/usr/share/cursors/cursor.png", "r");
-	if(!cursor) {
-		perror("Failed to open cursor icon");
-		return;
-	}
-
-	Image* cursor_image = load_png(cursor);
-	fclose(cursor);
-	if(!cursor_image) {
-		perror("Failed to load cursor icon");
-		return;
-	}
-
-	set_dimensions({cursor_image->width, cursor_image->height});
-	_framebuffer.copy({cursor_image->data, cursor_image->width, cursor_image->height}, {0,0, cursor_image->width, cursor_image->height} ,{0,0});
-	cursor_image->free();
-	delete cursor_image;
+	load_cursor(cursor_normal, "cursor.png");
+	load_cursor(cursor_resize_v, "resize_v.png");
+    load_cursor(cursor_resize_h, "resize_h.png");
+    load_cursor(cursor_resize_dr, "resize_dr.png");
+    load_cursor(cursor_resize_dl, "resize_dl.png");
+	set_cursor(Pond::NORMAL);
 }
 
 int Mouse::fd() {
@@ -73,4 +62,50 @@ bool Mouse::update() {
 	Display::inst().create_mouse_events(delta_pos.x, delta_pos.y, _mouse_buttons);
 
 	return true;
+}
+
+void Mouse::set_cursor(Pond::CursorType cursor) {
+    current_type = cursor;
+    Image* cursor_image;
+    switch(cursor) {
+        case Pond::NORMAL:
+            cursor_image = cursor_normal;
+            break;
+        case Pond::RESIZE_H:
+            cursor_image = cursor_resize_h;
+            break;
+        case Pond::RESIZE_V:
+            cursor_image = cursor_resize_v;
+            break;
+        case Pond::RESIZE_DR:
+            cursor_image = cursor_resize_dr;
+            break;
+        case Pond::RESIZE_DL:
+            cursor_image = cursor_resize_dl;
+            break;
+        default:
+            cursor_image = cursor_normal;
+    }
+    if(!cursor_image)
+        return;
+
+    set_dimensions({cursor_image->width, cursor_image->height});
+    _framebuffer.copy({cursor_image->data, cursor_image->width, cursor_image->height}, {0,0, cursor_image->width, cursor_image->height} ,{0,0});
+}
+
+void Mouse::load_cursor(Image*& storage, const std::string& filename) {
+    FILE* cursor = fopen((std::string("/usr/share/cursors/") + filename).c_str(), "r");
+    if(!cursor) {
+        perror("Failed to open cursor icon");
+        return;
+    }
+
+    Image* cursor_image = load_png(cursor);
+    fclose(cursor);
+    if(!cursor_image) {
+        perror("Failed to load cursor icon");
+        return;
+    }
+
+    storage = cursor_image;
 }

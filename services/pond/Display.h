@@ -27,6 +27,8 @@
 #include "Mouse.h"
 #include <sys/time.h>
 
+#define WINDOW_RESIZE_BORDER 4
+
 class Window;
 class Mouse;
 class Display {
@@ -131,6 +133,16 @@ public:
 
 
 private:
+	/**
+	 * Figures out which direction the window should be resized based on mouse position.
+	 */
+	ResizeMode get_resize_mode(Rect window, Point mouse);
+
+	/**
+	 * Calculates the new rect of the window being resized.
+	 */
+	Rect calculate_resize_rect();
+
 	int framebuffer_fd = 0;
 	Image _framebuffer;
 	Image* _wallpaper = nullptr;
@@ -140,6 +152,10 @@ private:
 	Mouse* _mouse_window = nullptr;
 	Window* _prev_mouse_window = nullptr;
 	Window* _drag_window = nullptr;
+	Window* _resize_window = nullptr;
+	Point _resize_begin_point;
+	Rect _resize_rect;
+	ResizeMode _resize_mode = NONE;
 	Window* _root_window = nullptr;
 	timeval paint_time = {0, 0};
 	bool display_buffer_dirty = true;

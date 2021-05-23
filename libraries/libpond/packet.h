@@ -95,10 +95,10 @@ struct PResizeWindowPkt {
 };
 
 struct PWindowResizedPkt {
-	explicit PWindowResizedPkt(int window_id, Dimensions dims, int shm_id): window_id(window_id), dims(dims), shm_id(shm_id) {}
+	explicit PWindowResizedPkt(int window_id, Rect rect, int shm_id): window_id(window_id), rect(rect), shm_id(shm_id) {}
 	short _PACKET_ID = PPKT_WINDOW_RESIZED;
 	int window_id;
-	Dimensions dims;
+	Rect rect;
 	int shm_id;
 };
 

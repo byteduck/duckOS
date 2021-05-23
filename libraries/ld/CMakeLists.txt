@@ -1,4 +1,4 @@
-SET(SOURCES ld.cpp)
+SET(SOURCES ld.cpp ../libpond/Cursor.cpp ../libpond/Cursor.h)
 set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-Wall")
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-Wall")
 set(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "-static")

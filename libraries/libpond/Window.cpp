@@ -47,7 +47,7 @@ void Window::invalidate_area(Rect area) {
 
 void Window::resize(Dimensions dims) {
 	if(!_context->send_packet(PResizeWindowPkt(_id, dims)))
-		return perror("Pond: failed to write resize window packet");
+		return perror("Pond: failed to write set_rect window packet");
 	_context->next_event(PEVENT_WINDOW_RESIZE);
 	_rect.width = dims.width;
 	_rect.height = dims.height;
@@ -59,7 +59,7 @@ void Window::resize(int width, int height) {
 
 void Window::set_position(Point pos) {
 	if(!_context->send_packet(PMoveWindowPkt(_id, pos)))
-		return perror("Pond: failed to write resize window packet");
+		return perror("Pond: failed to write set_rect window packet");
 	_context->next_event(PEVENT_WINDOW_MOVE);
 	_rect.x = pos.x;
 	_rect.y = pos.y;
@@ -99,6 +99,11 @@ void Window::set_global_mouse(bool global) {
 void Window::set_draggable(bool draggable) {
 	if(!_context->send_packet(PWindowHintPkt(_id, PWINDOW_HINT_DRAGGABLE, draggable)))
 		perror("Pond: failed to write set hint packet");
+}
+
+void Window::set_resizable(bool resizable) {
+    if(!_context->send_packet(PWindowHintPkt(_id, PWINDOW_HINT_RESIZABLE, resizable)))
+        perror("Pond: failed to write set hint packet");
 }
 
 void Window::bring_to_front() {

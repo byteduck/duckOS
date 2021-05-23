@@ -28,6 +28,7 @@ public:
 	int y;
 
 	bool in(const Rect& rect) const;
+    bool near_border(const Rect& rect, int border_size) const;
 	Point constrain(const Rect& rect) const;
 
 	Point operator+(const Point& other) const;

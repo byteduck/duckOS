@@ -29,6 +29,7 @@
 #define PWINDOW_HINT_DRAGGABLE 0x2
 #define PWINDOW_HINT_HIDDEN 0x3
 #define PWINDOW_HINT_USEALPHA 0x4
+#define PWINDOW_HINT_RESIZABLE 0x5
 
 /**
  * A window Object representing a window in the Pond window system.
@@ -123,6 +124,12 @@ namespace Pond {
 		 * @param draggable Whether or not the window is draggable.
 		 */
 		void set_draggable(bool draggable);
+
+		/**
+		 * Sets whether or not the window should be resizable.
+		 * @param resizable Whether or not the window is resizable.
+		 */
+		void set_resizable(bool resizable);
 
 		/**
 		 * Brings the window to the front.

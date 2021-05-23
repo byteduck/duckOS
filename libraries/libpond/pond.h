@@ -23,5 +23,6 @@
 #include "Context.h"
 #include "Event.h"
 #include "Window.h"
+#include "Cursor.h"
 
 #endif //DUCKOS_LIBPOND_POND_H

@@ -113,19 +113,35 @@ Rect Window::visible_absolute_rect() const {
 	return _visible_absolute_rect;
 }
 
-void Window::set_dimensions(const Dimensions& dims) {
+void Window::set_dimensions(const Dimensions& dims, bool notify_client) {
+    if(dims.width == _rect.dimensions().width && dims.height == _rect.dimensions().height)
+        return;
 	invalidate();
 	_rect = {_rect.x, _rect.y, dims.width, dims.height};
 	alloc_framebuffer();
 	recalculate_rects();
 	invalidate();
+	if(notify_client && _client)
+	    _client->window_resized(this);
 }
 
-void Window::set_position(const Point& position) {
+void Window::set_position(const Point& position, bool notify_client) {
 	invalidate();
 	_rect = {position.x, position.y, _rect.width, _rect.height};
 	recalculate_rects();
 	invalidate();
+    if(notify_client && _client)
+        _client->window_moved(this);
+}
+
+void Window::set_rect(const Rect& rect, bool notify_client) {
+    invalidate();
+    _rect = rect;
+	alloc_framebuffer();
+	recalculate_rects();
+	invalidate();
+    if(notify_client && _client)
+        _client->window_resized(this);
 }
 
 void Window::invalidate() {
@@ -192,6 +208,14 @@ bool Window::draggable() {
 	return _draggable;
 }
 
+void Window::set_resizable(bool resizable) {
+    _resizable = resizable;
+}
+
+bool Window::resizable() {
+    return _resizable;
+}
+
 void Window::set_hidden(bool hidden) {
 	if(hidden == _hidden)
 		return;
@@ -220,6 +244,13 @@ void Window::handle_keyboard_event(const KeyboardEvent& event) {
 		_parent->handle_keyboard_event(event);
 }
 
+Rect Window::calculate_absolute_rect(const Rect& rect) {
+    if(_parent)
+        return _parent->calculate_absolute_rect(rect.transform(_parent->_rect.position()));
+    else
+        return rect;
+}
+
 void Window::alloc_framebuffer() {
 	if(_framebuffer.data) {
 		//Deallocate the old framebuffer since there is one
@@ -234,16 +265,7 @@ void Window::alloc_framebuffer() {
 		return;
 	}
 
-
-
 	_framebuffer = {(uint32_t*) _framebuffer_shm.ptr, _rect.width, _rect.height};
-}
-
-Rect Window::calculate_absolute_rect(const Rect& rect) {
-	if(_parent)
-		return _parent->calculate_absolute_rect(rect.transform(_parent->_rect.position()));
-	else
-		return rect;
 }
 
 void Window::recalculate_rects() {
@@ -286,6 +308,8 @@ void Window::set_hint(int hint, int value) {
 				invalidate();
 			}
 			break;
+	    case PWINDOW_HINT_RESIZABLE:
+	        set_resizable(value);
 		default:
 			fprintf(stderr, "pond: Unknown window hint %d!\n", hint);
 	}

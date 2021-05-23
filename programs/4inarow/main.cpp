@@ -60,6 +60,7 @@ int main(int argc, char** argv, char** envp) {
 
 	//Show the main window
 	window->show();
+	window->set_resizable(true);
 
 	//Run event loop
 	UI::run();

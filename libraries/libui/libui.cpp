@@ -151,6 +151,22 @@ void handle_pond_events() {
 				if(windows[event.window_destroy.id])
 					__deregister_window(event.window_destroy.id);
 			}
+
+			case PEVENT_WINDOW_RESIZE: {
+                auto& evt = event.window_resize;
+                auto* window = windows[evt.window->id()];
+                if(window) {
+                    window->on_resize(evt.old_rect);
+                    window->repaint();
+                } else {
+                    auto* widget = widgets[evt.window->id()];
+                    if(!widget)
+                        break;
+                    widget->on_resize(evt.old_rect);
+                    widget->repaint();
+                }
+                break;
+			}
 		}
 	}
 }

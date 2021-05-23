@@ -158,6 +158,13 @@ void Image::fill(Rect area, uint32_t color) const {
 	}
 }
 
+void Image::outline(Rect area, uint32_t color) const {
+    fill({area.x, area.y, area.width, 1}, color);
+    fill({area.x, area.y + area.height - 1, area.width, 1}, color);
+    fill({area.x, area.y, 1, area.height}, color);
+    fill({area.x + area.width - 1, area.y, 1, area.height}, color);
+}
+
 void Image::draw_text(const char* str, const Point& pos, Font* font, uint32_t color) const {
 	Point current_pos = pos;
 	while(*str) {

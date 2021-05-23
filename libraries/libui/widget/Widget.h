@@ -73,6 +73,12 @@ namespace UI {
 		virtual void on_mouse_leave(Pond::MouseLeaveEvent evt);
 
 		/**
+		 * This function is called whenever the widget is resized.
+		 * @param old_rect The old rect of the widget.
+		 */
+		virtual void on_resize(const Rect& old_rect);
+
+		/**
 		 * The parent of this widget.
 		 * @return A pointer to the parent widget, or nullptr if there isn't one.
 		 */
@@ -137,6 +143,11 @@ namespace UI {
 		 * Updates the current size of the widget to its preferred size.
 		 */
 		void update_size();
+
+		/**
+		 * Resizes the widget to fit the parent window if it has one.
+		 */
+		void fit_to_parent_window();
 
 		/**
 		 * Called when the widget needs to be repainted.

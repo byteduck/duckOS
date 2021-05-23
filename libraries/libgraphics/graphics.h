@@ -108,6 +108,13 @@ public:
 	void fill(Rect area, uint32_t color) const;
 
 	/**
+	 * Draws the outline of an area on the Image.
+	 * @param area The rect of the area to outline.
+	 * @param color The color to draw the outline in.
+	 */
+	void outline(Rect area, uint32_t color) const;
+
+	/**
 	 * Draws text on the Image with a certain color.
 	 * @param str The string to draw.
 	 * @param pos The top-left position of where to draw.

@@ -38,6 +38,8 @@ int main(int argc, char** argv, char** envp) {
 
 	//Show the window
 	window->show();
+	window->set_resizable(false);
+	//TODO: Make resizing work properly
 
 	//Run event loop
 	UI::run();

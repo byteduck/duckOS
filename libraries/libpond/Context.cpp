@@ -234,8 +234,8 @@ void Context::handle_resize_window(socketfs_packet* packet, Event* event) {
 	Window* window = windows[resp->window_id];
 	if(window) {
 		event->window_resize.window = window;
-		event->window_resize.old_dims = window->dimensions();
-		window->_rect.set_dimensions(resp->dims);
+		event->window_resize.old_rect = window->_rect;
+		window->_rect = resp->rect;
 		//Open the new shared memory for the framebuffer if necessary
 		if(resp->shm_id != window->_shm_id) {
 			shmdetach(window->_shm_id);

@@ -121,6 +121,19 @@ void Client::window_destroyed(Window* window) {
 		perror("Failed to write window destroyed packet to client");
 }
 
+void Client::window_moved(Window *window) {
+    PWindowMovedPkt pkt {window->id(), window->rect().position()};
+    if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &pkt) < 0)
+        perror("Failed to write window movement packet to client");
+}
+
+void Client::window_resized(Window *window) {
+    shmallow(window->framebuffer_shm().id, pid, SHM_WRITE | SHM_READ);
+    PWindowResizedPkt pkt {window->id(), window->rect(), window->framebuffer_shm().id};
+    if(write_packet(socketfs_fd, pid, sizeof(PWindowResizedPkt), &pkt) < 0)
+        perror("Failed to write window resized packet to client");
+}
+
 void Client::open_window(socketfs_packet* packet) {
 	if(packet->length != sizeof(POpenWindowPkt))
 		return;
@@ -179,7 +192,7 @@ void Client::move_window(socketfs_packet* packet) {
 	if(window_pair != windows.end()) {
 		auto* window = window_pair->second;
 
-		window->set_position(params->pos);
+		window->set_position(params->pos, false);
 
 		PWindowMovedPkt resp {window->id(), params->pos};
 		if(write_packet(socketfs_fd, pid, sizeof(PWindowMovedPkt), &resp) < 0)
@@ -196,10 +209,10 @@ void Client::resize_window(socketfs_packet* packet) {
 	if(window_pair != windows.end()) {
 		auto* window = window_pair->second;
 
-		window->set_dimensions(params->dims);
+		window->set_dimensions(params->dims, false);
 		shmallow(window->framebuffer_shm().id, pid, SHM_WRITE | SHM_READ);
 
-		PWindowResizedPkt resp {window->id(), params->dims, window->framebuffer_shm().id};
+		PWindowResizedPkt resp {window->id(), window->rect(), window->framebuffer_shm().id};
 		if(write_packet(socketfs_fd, pid, sizeof(PWindowResizedPkt), &resp) < 0)
 			perror("Failed to write window resized packet to client");
 	}

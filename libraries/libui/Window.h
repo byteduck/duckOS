@@ -39,12 +39,15 @@ namespace UI {
 		///Getters and setters
 		void resize(Dimensions dims);
 		Dimensions dimensions();
+		Dimensions contents_dimensions();
 		void set_position(Point pos);
 		Point position();
 		void set_contents(Widget* contents);
 		Widget* contents();
 		void set_title(const std::string& title);
 		std::string title();
+		void set_resizable(bool resizable);
+		bool resizable();
 
 		///Window management
 		void bring_to_front();
@@ -63,12 +66,14 @@ namespace UI {
 		void on_mouse_move(Pond::MouseMoveEvent evt);
 		void on_mouse_button(Pond::MouseButtonEvent evt);
 		void on_mouse_leave(Pond::MouseLeaveEvent evt);
+		void on_resize(const Rect& old_rect);
 
 	protected:
 		Window();
 
 	private:
 		void update_contents_position();
+		void update_contents_size();
 
 		friend class Widget;
 		Pond::Window* _window;
@@ -77,6 +82,7 @@ namespace UI {
 		Point _mouse;
 		bool _decorated = true;
 		bool _uses_alpha = false;
+		bool _resizable = false;
 
 		struct TitleButton {
 			std::string image;

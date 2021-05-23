@@ -25,6 +25,24 @@ bool Point::in(const Rect& rect) const {
 		   y >= rect.y && y <= rect.y + rect.height;
 }
 
+bool Point::near_border(const Rect &rect, int border_size) const {
+    Rect border_rect = {
+            rect.x - border_size,
+            rect.y - border_size,
+            rect.width + border_size * 2,
+            rect.height + border_size * 2
+    };
+
+    Rect inner_rect = {
+            rect.x + border_size,
+            rect.y + border_size,
+            rect.width - border_size * 2,
+            rect.height - border_size * 2
+    };
+
+    return in(border_rect) && !in(inner_rect);
+}
+
 Point Point::constrain(const Rect& rect) const {
 	Point ret = {x, y};
 	if(ret.x < rect.x)

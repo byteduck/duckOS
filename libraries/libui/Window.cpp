@@ -48,6 +48,17 @@ Dimensions Window::dimensions() {
 	return _window->dimensions();
 }
 
+Dimensions Window::contents_dimensions() {
+    if(_decorated) {
+        Dimensions ret = _window->dimensions();
+        ret.width -= UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2;
+        ret.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3;
+        return ret;
+    } else {
+        return _window->dimensions();
+    }
+}
+
 void Window::set_position(Point pos) {
 	_window->set_position(pos);
 }
@@ -75,6 +86,15 @@ void Window::set_title(const std::string& title) {
 
 std::string Window::title() {
 	return _title;
+}
+
+void Window::set_resizable(bool resizable) {
+    _resizable = resizable;
+    _window->set_resizable(resizable);
+}
+
+bool Window::resizable() {
+    return _resizable;
 }
 
 void Window::bring_to_front() {
@@ -176,6 +196,11 @@ void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
 }
 
 void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {
+
+}
+
+void Window::on_resize(const Rect& old_rect) {
+    _contents->fit_to_parent_window();
 }
 
 void Window::update_contents_position() {

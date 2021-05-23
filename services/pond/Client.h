@@ -38,6 +38,8 @@ public:
 	void mouse_left(Window* window);
 	void keyboard_event(Window* window, const KeyboardEvent& event);
 	void window_destroyed(Window* window);
+	void window_moved(Window* window);
+	void window_resized(Window* window);
 
 private:
 	template<typename T>

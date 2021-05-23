@@ -27,6 +27,18 @@
 #include <sys/mem.h>
 #include <sys/input.h>
 
+enum ResizeMode {
+	NONE = 0,
+	NORTH,
+	NORTHEAST,
+	EAST,
+	SOUTHEAST,
+	SOUTH,
+	SOUTHWEST,
+	WEST,
+	NORTHWEST
+};
+
 class Display;
 class Client;
 class Window {
@@ -62,12 +74,17 @@ public:
 	 * Sets the rect of the window to the rect given, constrained to fit inside the parent.
 	 * The framebuffer will most likely change!
 	 */
-	void set_dimensions(const Dimensions& dimensions);
+	void set_dimensions(const Dimensions& dimensions, bool notify_client = true);
 
 	/**
 	 * Sets the position of the window relative to its parent constrained to stay inside the parent.
 	 */
-	void set_position(const Point& position);
+	void set_position(const Point& position, bool notify_client = true);
+
+	/**
+	 * Resizes the window with the given mouse movement and resize mode.
+	 */
+	void set_rect(const Rect& rect, bool notify_client = true);
 
 	/**
 	 * Marks the entire window to be redrawn.
@@ -142,6 +159,16 @@ public:
 	 */
 	bool draggable();
 
+    /**
+    * Sets whether or not the window is resizable.
+    */
+    void set_resizable(bool resizable);
+
+    /**
+     * Whether or not the window is resizable.
+     */
+    bool resizable();
+
 	/**
 	 * Sets whether or not the window is hidden.
 	 */
@@ -182,10 +209,16 @@ public:
 	 */
 	 void set_hint(int hint, int value);
 
+	 /**
+	  * Calculates the absolute position of the given rect relative to this window's parent position.
+	  * @param rect The rect to calculate the absolute screen rect of.
+	  * @return The absolute screen-position rect.
+	  */
+	 Rect calculate_absolute_rect(const Rect& rect);
+
 private:
 	friend class Mouse;
 	void alloc_framebuffer();
-	Rect calculate_absolute_rect(const Rect& rect);
 	void recalculate_rects();
 
 	Image _framebuffer = {nullptr, 0, 0};
@@ -202,6 +235,7 @@ private:
 	Point _mouse_position;
 	bool _global_mouse = false;
 	bool _draggable = false;
+	bool _resizable = false;
 	char* _title = nullptr;
 	bool _hidden = true;
 	bool _uses_alpha = false;

@@ -27,8 +27,10 @@ Dimensions Widget::preferred_size() {
 }
 
 Dimensions Widget::current_size() {
-	if(!_initialized_size)
-		_rect.set_dimensions(preferred_size());
+	if(!_initialized_size) {
+        _rect.set_dimensions(preferred_size());
+        _initialized_size = true;
+    }
 	return _rect.dimensions();
 }
 
@@ -52,6 +54,10 @@ bool Widget::on_mouse_button(Pond::MouseButtonEvent evt) {
 }
 
 void Widget::on_mouse_leave(Pond::MouseLeaveEvent evt) {
+
+}
+
+void Widget::on_resize(const Rect& old_rect) {
 
 }
 
@@ -116,18 +122,31 @@ void Widget::set_parent(UI::Widget* widget) {
 }
 
 void Widget::update_size() {
-	_rect.set_dimensions(preferred_size());
-
+    Rect old_rect = _rect;
+    _rect.set_dimensions(preferred_size());
 	if(_window) {
 		_window->resize(_rect.dimensions());
 		repaint();
 	}
-
 	if(_parent)
 		_parent->update_size();
+    if(_parent_window)
+        _parent_window->resize(_rect.dimensions());
+	on_resize(old_rect);
+	repaint();
+}
 
-	if(_parent_window)
-		_parent_window->resize(_rect.dimensions());
+void Widget::fit_to_parent_window() {
+    if(!_parent_window)
+        return;
+    Rect old_rect = _rect;
+    _rect.set_dimensions(_parent_window->contents_dimensions());
+    if(_window) {
+        _window->resize(_rect.dimensions());
+        repaint();
+    }
+    on_resize(old_rect);
+    repaint();
 }
 
 void Widget::do_repaint(const DrawContext& framebuffer) {
@@ -149,11 +168,11 @@ void Widget::parent_window_created() {
 }
 
 void Widget::create_window(Pond::Window* parent) {
-	_rect.set_dimensions(preferred_size());
-	_window = pond_context->create_window(parent, _rect, _hidden);
-	_window->set_uses_alpha(_uses_alpha);
-	__register_widget(this, _window->id());
-	repaint();
-	for(auto& child : children)
-		child->parent_window_created();
+    _rect.set_dimensions(preferred_size());
+    _window = pond_context->create_window(parent, _rect, _hidden);
+    _window->set_uses_alpha(_uses_alpha);
+    __register_widget(this, _window->id());
+    repaint();
+    for(auto &child : children)
+        child->parent_window_created();
 }

@@ -32,6 +32,7 @@ public:
 	Dimensions preferred_size() override;
 	void do_repaint(const UI::DrawContext& ctx) override;
 	bool on_keyboard(Pond::KeyEvent evt) override;
+	void on_resize(const Rect& old_rect) override;
 
 	void handle_term_events();
 	void run(const char* command);
@@ -51,6 +52,7 @@ private:
 	Terminal* term = nullptr;
 	int pty_fd = -1;
 	pid_t proc_pid = -1;
+	bool needs_full_repaint = false;
 
 	struct TerminalEvent {
 		enum type {CHARACTER, CLEAR, CLEAR_LINE, SCROLL} type;

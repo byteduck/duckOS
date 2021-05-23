@@ -62,7 +62,7 @@ namespace Pond {
 
 	struct WindowResizeEvent {
 		int type; ///< Equal to PEVENT_WINDOW_RESIZE
-		Dimensions old_dims; ///< The previous dimensions of the window
+		Rect old_rect; ///< The previous rect of the window
 		Window* window; ///< The window that was resized
 	};
 

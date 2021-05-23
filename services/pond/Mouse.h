@@ -26,6 +26,7 @@
 #include "libgraphics/geometry.h"
 #include "Window.h"
 #include <sys/input.h>
+#include <libpond/Cursor.h>
 
 #define MOUSE_1 1u
 #define MOUSE_2 2u
@@ -36,9 +37,18 @@ public:
 	Mouse(Window* parent);
 	int fd();
 	bool update();
+	void set_cursor(Pond::CursorType cursor);
 
 private:
 	int mouse_fd;
+	Image* cursor_normal = nullptr;
+	Image* cursor_resize_v = nullptr;
+	Image* cursor_resize_h = nullptr;
+	Image* cursor_resize_dr = nullptr;
+	Image* cursor_resize_dl = nullptr;
+	Pond::CursorType current_type;
+
+    void load_cursor(Image*& storage, const std::string& filename);
 };
 
 

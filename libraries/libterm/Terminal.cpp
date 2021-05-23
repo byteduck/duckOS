@@ -44,12 +44,25 @@ Terminal::~Terminal() {
 void Terminal::set_dimensions(const Terminal::Size& new_size) {
 	auto* new_screen = new Character[new_size.width * new_size.height];
 
-	for(size_t x = 0; x < new_size.width; x++) {
-		for(size_t y = 0; y < new_size.height; y++) {
-			if(screen && x < dimensions.width && y < dimensions.height)
-				new_screen[x + y * new_size.width] = screen[x + y * dimensions.width];
-			else
-				new_screen[x + y * new_size.width] = {0, current_attribute};
+
+	if(new_size.height >= dimensions.height) {
+		for (int y = 0; y < dimensions.height; y++) {
+			for (int x = 0; x < dimensions.width; x++) {
+				if (screen && x < new_size.width && y < new_size.height)
+					new_screen[x + y * new_size.width] = screen[x + y * dimensions.width];
+				else
+					new_screen[x + y * new_size.width] = {0, current_attribute};
+			}
+		}
+	} else {
+		int size_diff = dimensions.height - new_size.height;
+		for (int y = 0; y <= new_size.height; y++) {
+			for (int x = 0; x < dimensions.width; x++) {
+				if (screen && x < new_size.width)
+					new_screen[x + (y + size_diff) * new_size.width] = screen[x + y * dimensions.width];
+				else
+					new_screen[x + y * new_size.width] = {0, current_attribute};
+			}
 		}
 	}
 
