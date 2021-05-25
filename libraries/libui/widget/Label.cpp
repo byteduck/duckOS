@@ -24,6 +24,7 @@ using namespace UI;
 
 Label::Label(const std::string& label): _label(label) {
 	_color = Theme::fg();
+	_font = Theme::font();
 	set_uses_alpha(true);
 }
 
@@ -33,7 +34,7 @@ std::string Label::label() {
 
 void Label::set_label(const std::string& new_label) {
 	_label = new_label;
-	update_size();
+    update_layout();
 }
 
 Color Label::color() {
@@ -42,12 +43,55 @@ Color Label::color() {
 
 void Label::set_color(Color new_color) {
 	_color = new_color;
+	repaint();
+}
+
+TextAlignment Label::vertical_alignment() {
+    return _v_alignment;
+}
+
+TextAlignment Label::horizontal_alignment() {
+    return _h_alignment;
+}
+
+void Label::set_alignment(TextAlignment vertical, TextAlignment horizontal) {
+    _v_alignment = vertical;
+    _h_alignment = horizontal;
+    repaint();
+}
+
+Font* Label::font() {
+    return _font;
+}
+
+void Label::set_font(Font *font) {
+    _font = font;
+    update_layout();
+}
+
+Dimensions Label::padding() {
+    return _padding;
+}
+
+void Label::set_padding(const Dimensions& padding) {
+    _padding = padding;
+    update_layout();
 }
 
 Dimensions Label::preferred_size() {
-	return Theme::font()->size_of(_label.c_str());
+	Dimensions ret = Theme::font()->size_of(_label.c_str());
+	ret.width += _padding.width * 2;
+	ret.height += _padding.height * 2;
+	return ret;
 }
 
 void Label::do_repaint(const DrawContext& ctx) {
-	ctx.draw_text(_label.c_str(), {0, 0}, _color);
+    Dimensions size = current_size();
+    Rect text_rect = {
+            _padding.width,
+            _padding.height,
+            size.width - _padding.width * 2,
+            size.height - _padding.height * 2
+    };
+	ctx.draw_text(_label.c_str(), text_rect, _h_alignment, _v_alignment, _font, _color);
 }

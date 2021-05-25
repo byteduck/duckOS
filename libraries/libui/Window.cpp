@@ -41,6 +41,7 @@ void Window::resize(Dimensions dims) {
 	} else {
 		_window->resize({dims.width, dims.height});
 	}
+	_contents->update_layout();
 	repaint();
 }
 
@@ -48,14 +49,17 @@ Dimensions Window::dimensions() {
 	return _window->dimensions();
 }
 
-Dimensions Window::contents_dimensions() {
+Rect Window::contents_rect() {
     if(_decorated) {
-        Dimensions ret = _window->dimensions();
+        Rect ret = _window->rect();
         ret.width -= UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2;
         ret.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3;
+        ret.x = UI_WINDOW_PADDING + UI_WINDOW_BORDER_SIZE;
+        ret.y = UI_WINDOW_PADDING * 2 + UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT;
         return ret;
     } else {
-        return _window->dimensions();
+        Dimensions dims = _window->dimensions();
+        return {0, 0, dims.width, dims.height};
     }
 }
 
@@ -70,8 +74,8 @@ Point Window::position() {
 void Window::set_contents(Widget* contents) {
 	_contents = contents;
 	_contents->set_window(this);
-	_contents->_window->set_position(UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING, UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2);
-	resize(_contents->current_size());
+    resize(_contents->current_size());
+    _contents->update_layout();
 }
 
 Widget* Window::contents() {
@@ -151,6 +155,11 @@ void Window::hide() {
 	_window->set_hidden(true);
 }
 
+void Window::resize_to_contents() {
+    Dimensions contents_size = _contents->preferred_size();
+    resize(contents_size);
+}
+
 void Window::set_uses_alpha(bool uses_alpha) {
 	_uses_alpha = uses_alpha;
 	if(_decorated)
@@ -158,9 +167,30 @@ void Window::set_uses_alpha(bool uses_alpha) {
 }
 
 void Window::set_decorated(bool decorated) {
-	_decorated = decorated;
-	update_contents_position();
-	_window->set_uses_alpha(_decorated ? _uses_alpha : true);
+    if(decorated == _decorated)
+        return;
+    _decorated = decorated;
+    _window->set_uses_alpha(_decorated ? _uses_alpha : true);
+
+    //Adjust the rect of the window to keep the contents in the same position
+    Rect new_rect = _window->rect();
+    if(decorated) {
+        new_rect.x -= UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING;
+        new_rect.y -= UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2;
+        new_rect.width += UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2;
+        new_rect.height += UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3;
+    } else {
+        new_rect.x += UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING;
+        new_rect.y += UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2;
+        new_rect.width -= UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2;
+        new_rect.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3;
+    }
+    _window->set_position(new_rect.position());
+    _window->resize(new_rect.dimensions());
+    repaint();
+
+    //Update contents positioning
+    _contents->update_layout();
 }
 
 Pond::Window* Window::pond_window() {
@@ -200,13 +230,5 @@ void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 }
 
 void Window::on_resize(const Rect& old_rect) {
-    _contents->fit_to_parent_window();
-}
-
-void Window::update_contents_position() {
-	if(_decorated)
-		_contents->_window->set_position(UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING, UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2);
-	else
-		_contents->_window->set_position(0, 0);
-	resize(_contents->current_size());
+    _contents->update_layout();
 }

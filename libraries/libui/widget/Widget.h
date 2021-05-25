@@ -25,6 +25,14 @@
 #include "../DrawContext.h"
 
 namespace UI {
+    enum SizingMode {
+        PREFERRED, FILL
+    };
+
+    enum PositioningMode {
+        AUTO, ABSOLUTE
+    };
+
 	class Window;
 	class Widget {
 	public:
@@ -39,6 +47,36 @@ namespace UI {
 		 * @return The current size of the widget.
 		 */
 		Dimensions current_size();
+
+		/**
+		 * Returns the rect that the given child of this widget should position itself within.
+		 * @return The bounds that the child should position itself within.
+		 */
+		virtual Rect bounds_for_child(Widget* child);
+
+		/**
+		 * Returns the positioning mode of the widget.
+		 * @return The positioning mode of the widget.
+		 */
+		PositioningMode positioning_mode();
+
+		/**
+		 * Sets the positioning mode of the widget.
+		 * @param mode The positioning mode of the widget.
+		 */
+		void set_positioning_mode(PositioningMode mode);
+
+		/**
+		 * Returns the sizing mode of the widget.
+		 * @return The sizing mode of the widget.
+		 */
+		SizingMode sizing_mode();
+
+		/**
+		 * Sets the sizing mode of the widget.
+		 * @param mode The sizing mode of the widget.
+		 */
+		void set_sizing_mode(SizingMode mode);
 
 		/**
 		 * This function is called to repaint the contents of the widget.
@@ -73,12 +111,6 @@ namespace UI {
 		virtual void on_mouse_leave(Pond::MouseLeaveEvent evt);
 
 		/**
-		 * This function is called whenever the widget is resized.
-		 * @param old_rect The old rect of the widget.
-		 */
-		virtual void on_resize(const Rect& old_rect);
-
-		/**
 		 * The parent of this widget.
 		 * @return A pointer to the parent widget, or nullptr if there isn't one.
 		 */
@@ -104,6 +136,7 @@ namespace UI {
 
 		/**
 		 * Sets the position of the widget.
+		 * The behavior of this depends on the positioning mode of the widget and the parent's layout specifications.
 		 * @param position The new position of the widget.
 		 */
 		void set_position(const Point& position);
@@ -140,14 +173,9 @@ namespace UI {
 		void set_parent(UI::Widget* widget);
 
 		/**
-		 * Updates the current size of the widget to its preferred size.
+		 * Moves and resizes the widget according to the sizing mode, positioning mode, and parent's specifications.
 		 */
-		void update_size();
-
-		/**
-		 * Resizes the widget to fit the parent window if it has one.
-		 */
-		void fit_to_parent_window();
+		void update_layout();
 
 		/**
 		 * Called when the widget needs to be repainted.
@@ -160,6 +188,12 @@ namespace UI {
 		 * @param child The child added.
 		 */
 		virtual void on_child_added(UI::Widget* child);
+
+        /**
+         * This function is called whenever the widget is resized.
+         * @param old_rect The old rect of the widget.
+         */
+        virtual void on_resize(const Rect& old_rect);
 
 		/**
 		 * Sets whether the widget should use alpha blending or not.
@@ -174,9 +208,12 @@ namespace UI {
 		UI::Window* _parent_window = nullptr;
 		Pond::Window* _window = nullptr;
 		Rect _rect = {0, 0, -1, -1};
+		Point _absolute_position = {0, 0};
 		bool _initialized_size = false;
 		bool _uses_alpha = false;
 		bool _hidden = false;
+		PositioningMode _positioning_mode = AUTO;
+		SizingMode _sizing_mode = FILL;
 
 		void parent_window_created();
 		void create_window(Pond::Window* parent);

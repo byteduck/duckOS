@@ -17,26 +17,24 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "StackView.h"
+#include "BoxLayout.h"
 #include "libui/Theme.h"
 
-UI::StackView::StackView(Direction direction, int spacing): direction(direction), spacing(spacing) {
+UI::BoxLayout::BoxLayout(Direction direction, int spacing): direction(direction), spacing(spacing) {
 	set_uses_alpha(true);
+	set_sizing_mode(UI::FILL);
 }
 
-Dimensions UI::StackView::preferred_size() {
-	max_dim = 0;
-	current_pos = 0;
+Dimensions UI::BoxLayout::preferred_size() {
+	int max_dim = 0;
+	int current_pos = 0;
 	for(auto& child : children) {
+        auto sz = child->preferred_size();
 		if(direction == HORIZONTAL) {
-			child->set_position(Point{current_pos, 0});
-			auto sz = child->current_size();
 			current_pos += sz.width + spacing;
 			if(sz.height > max_dim)
 				max_dim = sz.height;
 		} else if(direction == VERTICAL) {
-			child->set_position(Point{0, current_pos});
-			auto sz = child->current_size();
 			current_pos += sz.height + spacing;
 			if(sz.width > max_dim)
 				max_dim = sz.width;
@@ -47,15 +45,34 @@ Dimensions UI::StackView::preferred_size() {
 	return direction == HORIZONTAL ? Dimensions {current_pos, max_dim} : Dimensions {max_dim, current_pos};
 }
 
-void UI::StackView::set_spacing(int new_spacing) {
+void UI::BoxLayout::set_spacing(int new_spacing) {
 	spacing = new_spacing;
-	update_size();
+    update_layout();
 }
 
-void UI::StackView::on_child_added(UI::Widget* child) {
-	update_size();
-}
-
-void UI::StackView::do_repaint(const DrawContext& ctx) {
+void UI::BoxLayout::do_repaint(const DrawContext& ctx) {
 	ctx.fill({0, 0, ctx.width(), ctx.height()}, RGBA(0, 0, 0, 0));
+}
+
+Rect UI::BoxLayout::bounds_for_child(UI::Widget *child) {
+    int pos = 0;
+    Dimensions size = current_size();
+    for(auto it_child : children) {
+        if(it_child == child) {
+            //If we've gotten to the child in question, return its calculated bounds
+            if(direction == VERTICAL)
+                return {0, pos, size.width, child->preferred_size().height};
+            else
+                return {pos, 0, child->preferred_size().width, size.height};
+        } else {
+            //Otherwise, keep calculating
+            Dimensions child_dims = it_child->preferred_size();
+            if(direction == VERTICAL)
+                pos += child_dims.height;
+            else
+                pos += child_dims.width;
+            pos += spacing;
+        }
+    }
+    return {0, 0, 0, 0};
 }

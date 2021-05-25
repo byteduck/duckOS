@@ -17,35 +17,34 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_STACKVIEW_H
-#define DUCKOS_STACKVIEW_H
+#ifndef DUCKOS_LIBUI_BOXLAYOUT_H
+#define DUCKOS_LIBUI_BOXLAYOUT_H
 
-#include "Widget.h"
+#include "libui/widget/Widget.h"
 
 namespace UI {
-	class StackView: public Widget {
+	class BoxLayout: public Widget {
 	public:
 		enum Direction {
 			HORIZONTAL,
 			VERTICAL
 		};
 
-		StackView(Direction direction, int spacing = 0);
+		explicit BoxLayout(Direction direction, int spacing = 0);
 
 		void set_spacing(int new_spacing);
 
 		//Widget
 		virtual Dimensions preferred_size() override;
+		virtual Rect bounds_for_child(Widget* child) override;
+
 	protected:
 		//Widget
-		virtual void on_child_added(UI::Widget* child) override;
 		virtual void do_repaint(const DrawContext& ctx) override;
 
-		int current_pos = 0;
-		int max_dim = 0;
 		int spacing = 0;
 		Direction direction;
 	};
 }
 
-#endif //DUCKOS_STACKVIEW_H
+#endif //DUCKOS_LIBUI_BOXLAYOUT_H

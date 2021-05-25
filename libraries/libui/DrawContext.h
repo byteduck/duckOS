@@ -24,6 +24,10 @@
 #include <libgraphics/graphics.h>
 
 namespace UI {
+    enum TextAlignment {
+        BEGINNING, CENTER, END
+    };
+
 	class DrawContext {
 	public:
 		DrawContext(const Image& framebuffer);
@@ -37,6 +41,7 @@ namespace UI {
 		void fill(Rect rect, Color color) const;
 		void fill_gradient_h(Rect rect, Color color_a, Color color_b) const;
 
+		void draw_text(const char* str, Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color) const;
 		void draw_text(const char* str, Point pos, Font* font, Color color) const;
 		void draw_text(const char* str, Point pos, Color color) const;
 		void draw_glyph(Font* font, uint32_t codepoint, Point pos, Color color) const;

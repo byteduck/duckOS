@@ -39,7 +39,7 @@ namespace UI {
 		///Getters and setters
 		void resize(Dimensions dims);
 		Dimensions dimensions();
-		Dimensions contents_dimensions();
+		Rect contents_rect();
 		void set_position(Point pos);
 		Point position();
 		void set_contents(Widget* contents);
@@ -55,6 +55,7 @@ namespace UI {
 		void close();
 		void show();
 		void hide();
+		void resize_to_contents();
 		void set_uses_alpha(bool uses_alpha);
 		void set_decorated(bool decorated);
 
@@ -72,9 +73,6 @@ namespace UI {
 		Window();
 
 	private:
-		void update_contents_position();
-		void update_contents_size();
-
 		friend class Widget;
 		Pond::Window* _window;
 		Widget* _contents;

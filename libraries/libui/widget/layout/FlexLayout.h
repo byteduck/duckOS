@@ -17,32 +17,32 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <libgraphics/font.h>
-#include <libui/libui.h>
-#include "TerminalWidget.h"
+#ifndef DUCKOS_LIBUI_FLEXLAYOUT_H
+#define DUCKOS_LIBUI_FLEXLAYOUT_H
 
-int main(int argc, char** argv, char** envp) {
-	//Init LibUI
-	UI::init(argv, envp);
+#include "libui/widget/Widget.h"
 
-	//Make window
-	auto* window = UI::Window::create();
-	window->set_title("Terminal");
+namespace UI {
+    class FlexLayout: public Widget {
+    public:
+        enum Direction {
+            HORIZONTAL,
+            VERTICAL
+        };
 
-	//Create terminal widget
-	auto* termwidget = new TerminalWidget();
-	termwidget->run("/bin/dsh");
-	window->set_contents(termwidget);
+        explicit FlexLayout(Direction direction);
 
-	//Show the window
-	window->show();
-	window->set_resizable(false);
-	//TODO: Make resizing work properly
+        //Widget
+        virtual Dimensions preferred_size() override;
+        virtual Rect bounds_for_child(Widget* child) override;
 
-	//Run event loop
-	UI::run();
+    protected:
+        //Widget
+        virtual void do_repaint(const DrawContext& ctx) override;
 
-	delete termwidget;
-
-	return 0;
+        Direction direction;
+    };
 }
+
+
+#endif //DUCKOS_LIBUI_FLEXLAYOUT_H

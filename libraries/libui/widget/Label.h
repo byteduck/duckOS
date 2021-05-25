@@ -30,9 +30,15 @@ namespace UI {
 		//Label
 		std::string label();
 		void set_label(const std::string& new_label);
-
 		Color color();
 		void set_color(Color new_color);
+		TextAlignment vertical_alignment();
+        TextAlignment horizontal_alignment();
+		void set_alignment(TextAlignment vertical, TextAlignment horizontal);
+		Font* font();
+		void set_font(Font* font);
+		Dimensions padding();
+		void set_padding(const Dimensions& padding);
 
 		//Widget
 		virtual Dimensions preferred_size() override;
@@ -43,6 +49,10 @@ namespace UI {
 
 		std::string _label;
 		Color _color;
+		TextAlignment _v_alignment = CENTER;
+		TextAlignment _h_alignment = CENTER;
+		Font* _font;
+		Dimensions _padding;
 	};
 }
 

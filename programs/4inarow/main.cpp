@@ -19,7 +19,7 @@
 
 #include "GameWidget.h"
 #include <libui/libui.h>
-#include <libui/widget/StackView.h>
+#include <libui/widget/layout/BoxLayout.h>
 #include <libui/widget/Button.h>
 #include <libui/widget/Checkbox.h>
 
@@ -31,10 +31,9 @@ int main(int argc, char** argv, char** envp) {
 	auto* window = UI::Window::create();
 	window->set_title("4 in a row");
 
-	auto* mainview = new UI::StackView(UI::StackView::HORIZONTAL, 2);
-	window->set_contents(mainview);
+	auto* mainview = new UI::BoxLayout(UI::BoxLayout::HORIZONTAL, 2);
 
-	auto* toolbar = new UI::StackView(UI::StackView::VERTICAL, 2);
+	auto* toolbar = new UI::BoxLayout(UI::BoxLayout::VERTICAL, 2);
 
 	auto* pvp_button = new UI::Button("New Game");
 	auto* cpu_checkbox = new UI::Checkbox("CPU");
@@ -59,8 +58,9 @@ int main(int argc, char** argv, char** envp) {
 	mainview->add_child(toolbar);
 
 	//Show the main window
+    window->set_contents(mainview);
 	window->show();
-	window->set_resizable(true);
+	window->set_resizable(false);
 
 	//Run event loop
 	UI::run();

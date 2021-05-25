@@ -34,6 +34,28 @@ Dimensions Widget::current_size() {
 	return _rect.dimensions();
 }
 
+Rect Widget::bounds_for_child(Widget *child) {
+    return {0, 0, _rect.width, _rect.height};
+}
+
+PositioningMode Widget::positioning_mode() {
+    return _positioning_mode;
+}
+
+void Widget::set_positioning_mode(PositioningMode mode) {
+    _positioning_mode = mode;
+    update_layout();
+}
+
+SizingMode Widget::sizing_mode() {
+    return _sizing_mode;
+}
+
+void Widget::set_sizing_mode(SizingMode mode) {
+    _sizing_mode = mode;
+    update_layout();
+}
+
 void Widget::repaint() {
 	if(_window) {
 		do_repaint(_window->framebuffer());
@@ -57,10 +79,6 @@ void Widget::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 
 }
 
-void Widget::on_resize(const Rect& old_rect) {
-
-}
-
 Widget* Widget::parent() {
 	return _parent;
 }
@@ -79,16 +97,16 @@ void Widget::add_child(Widget* child) {
 	children.push_back(child);
 	child->set_parent(this);
 	on_child_added(child);
+	update_layout();
 }
 
 void Widget::set_position(const Point& position) {
-	if(_window)
-		_window->set_position(position.x, position.y);
-	_rect.set_position(position);
+    _absolute_position = position;
+    update_layout();
 }
 
 Point Widget::position() {
-	return _rect.position();
+	return _absolute_position;
 }
 
 void Widget::hide() {
@@ -121,32 +139,48 @@ void Widget::set_parent(UI::Widget* widget) {
 		create_window(widget->_window);
 }
 
-void Widget::update_size() {
-    Rect old_rect = _rect;
-    _rect.set_dimensions(preferred_size());
-	if(_window) {
-		_window->resize(_rect.dimensions());
-		repaint();
-	}
-	if(_parent)
-		_parent->update_size();
-    if(_parent_window)
-        _parent_window->resize(_rect.dimensions());
-	on_resize(old_rect);
-	repaint();
-}
-
-void Widget::fit_to_parent_window() {
-    if(!_parent_window)
+void Widget::update_layout() {
+    if(!_parent_window && !_parent)
         return;
+
     Rect old_rect = _rect;
-    _rect.set_dimensions(_parent_window->contents_dimensions());
+    Rect parent_rect = _parent_window ? _parent_window->contents_rect() : _parent->bounds_for_child(this);
+
+    switch(_sizing_mode) {
+        case FILL:
+            _rect.set_dimensions(parent_rect.dimensions());
+            break;
+        case PREFERRED:
+            _rect.set_dimensions(preferred_size());
+            break;
+    }
+
+    switch(_positioning_mode) {
+        case AUTO: {
+            auto dims = _rect.dimensions();
+            _rect.set_position({
+                parent_rect.position().x + parent_rect.width / 2 - dims.width / 2,
+                parent_rect.position().y + parent_rect.height / 2 - dims.height / 2
+            });
+            break;
+        }
+        case ABSOLUTE: {
+            _rect.set_position(parent_rect.position() + _absolute_position);
+            break;
+        }
+    }
+
     if(_window) {
+        _window->set_position(_rect.position());
         _window->resize(_rect.dimensions());
         repaint();
     }
+
     on_resize(old_rect);
-    repaint();
+
+    for(auto child : children) {
+        child->update_layout();
+    }
 }
 
 void Widget::do_repaint(const DrawContext& framebuffer) {
@@ -154,6 +188,10 @@ void Widget::do_repaint(const DrawContext& framebuffer) {
 }
 
 void Widget::on_child_added(UI::Widget* child) {
+
+}
+
+void Widget::on_resize(const Rect& old_rect) {
 
 }
 

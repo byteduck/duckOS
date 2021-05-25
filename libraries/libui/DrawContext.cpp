@@ -18,6 +18,7 @@
 */
 
 #include "DrawContext.h"
+#include <libgraphics/font.h>
 
 UI::DrawContext::DrawContext(const Image& framebuffer): fb(&framebuffer) {
 
@@ -50,6 +51,32 @@ void UI::DrawContext::fill_gradient_h(Rect rect, Color color_a, Color color_b) c
 				(uint8_t)(COLOR_A(color_a) * oneminus + COLOR_A(color_b) * pct)
 		));
 	}
+}
+
+void UI::DrawContext::draw_text(const char* str, Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color) const {
+    Point text_pos = rect.position();
+    auto dims =  Dimensions { Theme::font()->size_of(str).width, Theme::font()->bounding_box().height };
+    switch(h_align) {
+        case BEGINNING:
+            break;
+        case CENTER:
+            text_pos.x = rect.x + rect.width / 2 - dims.width / 2;
+            break;
+        case END:
+            text_pos.x = rect.x + rect.width - dims.width;
+            break;
+    }
+    switch(v_align) {
+        case BEGINNING:
+            break;
+        case CENTER:
+            text_pos.y = rect.y + rect.height / 2 - dims.height / 2;
+            break;
+        case END:
+            text_pos.y = rect.y + rect.height - dims.height;
+            break;
+    }
+    fb->draw_text(str, text_pos, Theme::font(), Theme::button_text());
 }
 
 void UI::DrawContext::draw_text(const char* str, Point point, Font* font, Color color) const {
@@ -136,8 +163,10 @@ void UI::DrawContext::draw_button_base(Rect button, bool pressed) const {
 
 void UI::DrawContext::draw_button(Rect rect, const std::string& text, bool pressed) const {
 	draw_button_base(rect, pressed);
-	int padding = Theme::button_padding() + (pressed ? 1 : 0);
-	fb->draw_text(text.c_str(), {padding, padding}, Theme::font(), Theme::button_text());
+	int padding = Theme::button_padding() / 2 - (Theme::button_padding() % 2 == 1 ? 2 : 1 ) + (pressed ? 1 : 0);
+    auto dims =  Dimensions { Theme::font()->size_of(text.c_str()).width, Theme::font()->bounding_box().height };
+    Point text_pos = {rect.width / 2 - dims.width / 2 + padding, rect.height / 2 - dims.height / 2 + padding};
+	fb->draw_text(text.c_str(), text_pos, Theme::font(), Theme::button_text());
 }
 
 void UI::DrawContext::draw_button(Rect rect, const Image& img, bool pressed) const {

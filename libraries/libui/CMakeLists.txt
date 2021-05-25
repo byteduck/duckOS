@@ -8,7 +8,9 @@ SET(SOURCES
         widget/Button.cpp
         widget/Checkbox.cpp
         widget/Label.cpp
-        widget/StackView.cpp
+
+        widget/layout/BoxLayout.cpp
+        widget/layout/FlexLayout.cpp
 )
 MAKE_LIBRARY(libui)
 TARGET_LINK_LIBRARIES(libui libpond)
