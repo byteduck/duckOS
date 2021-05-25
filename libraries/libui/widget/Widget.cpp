@@ -170,13 +170,13 @@ void Widget::update_layout() {
         }
     }
 
+	on_layout_change(old_rect);
+
     if(_window) {
         _window->set_position(_rect.position());
         _window->resize(_rect.dimensions());
         repaint();
     }
-
-    on_resize(old_rect);
 
     for(auto child : children) {
         child->update_layout();
@@ -184,14 +184,14 @@ void Widget::update_layout() {
 }
 
 void Widget::do_repaint(const DrawContext& framebuffer) {
-
+	framebuffer.fill({0, 0, framebuffer.width(), framebuffer.height()}, RGBA(0, 0, 0, 0));
 }
 
 void Widget::on_child_added(UI::Widget* child) {
 
 }
 
-void Widget::on_resize(const Rect& old_rect) {
+void Widget::on_layout_change(const Rect& old_rect) {
 
 }
 
@@ -199,6 +199,20 @@ void Widget::set_uses_alpha(bool uses_alpha) {
 	_uses_alpha = uses_alpha;
 	if(_window)
 		_window->set_uses_alpha(uses_alpha);
+}
+
+void Widget::set_global_mouse(bool global_mouse) {
+	_global_mouse = global_mouse;
+	if(_window)
+		_window->set_global_mouse(_global_mouse);
+}
+
+Point Widget::mouse_position() {
+	return _window ? _window->mouse_pos() : Point {0, 0};
+}
+
+unsigned int Widget::mouse_buttons() {
+	return _window ? _window->mouse_buttons() : 0;
 }
 
 void Widget::parent_window_created() {
@@ -209,6 +223,7 @@ void Widget::create_window(Pond::Window* parent) {
     _rect.set_dimensions(preferred_size());
     _window = pond_context->create_window(parent, _rect, _hidden);
     _window->set_uses_alpha(_uses_alpha);
+    _window->set_global_mouse(_global_mouse);
     __register_widget(this, _window->id());
     repaint();
     for(auto &child : children)

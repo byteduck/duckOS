@@ -19,6 +19,7 @@
 
 #include "libui.h"
 #include "Theme.h"
+#include "UIException.h"
 #include <poll.h>
 #include <map>
 
@@ -97,7 +98,7 @@ void handle_pond_events() {
 							break;
 						widget = widget->parent();
 					}
-					if(continue_propagating && !widget->on_mouse_move(evt) && widget->parent_window())
+					if(continue_propagating && widget->parent_window())
 						widget->parent_window()->on_mouse_move(evt);
 				}
 				break;
@@ -166,7 +167,7 @@ void handle_pond_events() {
                     /*auto* widget = widgets[evt.window->id()];
                     if(!widget)
                         break;
-                    //widget->on_resize(evt.old_rect);
+                    //widget->on_layout_change(evt.old_rect);
                     widget->repaint();*/
                 }
                 break;
@@ -176,8 +177,12 @@ void handle_pond_events() {
 }
 
 void UI::run() {
-	while(!should_exit) {
-		update(-1);
+	try {
+		while (!should_exit) {
+			update(-1);
+		}
+	} catch(const UI::UIException& e) {
+		fprintf(stderr, "UIException in UI loop: %s\n", e.what());
 	}
 }
 

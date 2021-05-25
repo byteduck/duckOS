@@ -37,9 +37,6 @@ namespace UI {
         virtual Rect bounds_for_child(Widget* child) override;
 
     protected:
-        //Widget
-        virtual void do_repaint(const DrawContext& ctx) override;
-
         Direction direction;
     };
 }

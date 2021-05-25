@@ -50,10 +50,6 @@ void UI::BoxLayout::set_spacing(int new_spacing) {
     update_layout();
 }
 
-void UI::BoxLayout::do_repaint(const DrawContext& ctx) {
-	ctx.fill({0, 0, ctx.width(), ctx.height()}, RGBA(0, 0, 0, 0));
-}
-
 Rect UI::BoxLayout::bounds_for_child(UI::Widget *child) {
     int pos = 0;
     Dimensions size = current_size();

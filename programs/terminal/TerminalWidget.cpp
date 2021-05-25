@@ -126,7 +126,7 @@ bool TerminalWidget::on_keyboard(Pond::KeyEvent event) {
 	return true;
 }
 
-void TerminalWidget::on_resize(const Rect& old_rect) {
+void TerminalWidget::on_layout_change(const Rect& old_rect) {
     Dimensions dims = current_size();
     term->set_dimensions({
         dims.width / (size_t) font->bounding_box().width,

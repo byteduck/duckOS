@@ -62,6 +62,8 @@ namespace UI {
 		void draw_button(Rect button, const std::string& text, bool pressed) const;
 		void draw_button(Rect button, const Image& img, bool pressed) const;
 
+		void draw_vertical_scrollbar(Rect area, Rect handle_area, bool enabled) const;
+
 	private:
 		const Image* fb;
 	};

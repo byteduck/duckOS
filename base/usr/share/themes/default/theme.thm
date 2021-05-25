@@ -10,6 +10,9 @@ Color shadow-2 = #141414
 Color highlight = #494949
 Color button = #323232
 Color button-text = #ffffff
+Color scrollbar-bg = #525252
+Color scrollbar-handle = #323232
+Color scrollbar-handle-disabled = #2a2a2a
 
 # Values
 Value button-padding = 5

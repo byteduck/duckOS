@@ -190,10 +190,10 @@ namespace UI {
 		virtual void on_child_added(UI::Widget* child);
 
         /**
-         * This function is called whenever the widget is resized.
+         * This function is called whenever the widget's position or size are changed.
          * @param old_rect The old rect of the widget.
          */
-        virtual void on_resize(const Rect& old_rect);
+        virtual void on_layout_change(const Rect& old_rect);
 
 		/**
 		 * Sets whether the widget should use alpha blending or not.
@@ -201,9 +201,29 @@ namespace UI {
 		 */
 		void set_uses_alpha(bool uses_alpha);
 
+		/**
+		 * Sets whether the widget should recieve global mouse events or not.
+		 * @param global_mouse Whether the widget should recieve global mouse events.
+		 */
+		void set_global_mouse(bool global_mouse);
+
+		/**
+		 * Gets the last-reported position of the mouse in the widget.
+		 * @return The position of the mouse in the widget.
+		 */
+		Point mouse_position();
+
+		/**
+		 * Gets the last-reported pressed mouse buttons within the widget.
+		 * @return The mouse buttons pressed within the widget.
+		 */
+		unsigned int mouse_buttons();
+
 		std::vector<Widget*> children;
 
 	private:
+		friend class ScrollView; //TODO: Better way for ScrollView to access this stuff
+
 		UI::Widget* _parent = nullptr;
 		UI::Window* _parent_window = nullptr;
 		Pond::Window* _window = nullptr;
@@ -211,6 +231,7 @@ namespace UI {
 		Point _absolute_position = {0, 0};
 		bool _initialized_size = false;
 		bool _uses_alpha = false;
+		bool _global_mouse = false;
 		bool _hidden = false;
 		PositioningMode _positioning_mode = AUTO;
 		SizingMode _sizing_mode = FILL;

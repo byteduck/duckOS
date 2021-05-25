@@ -17,31 +17,18 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_BOXLAYOUT_H
-#define DUCKOS_LIBUI_BOXLAYOUT_H
+#ifndef DUCKOS_LIBUI_UIEXCEPTION_H
+#define DUCKOS_LIBUI_UIEXCEPTION_H
 
-#include "libui/widget/Widget.h"
+#include <string>
+#include <stdexcept>
 
 namespace UI {
-	class BoxLayout: public Widget {
-	public:
-		enum Direction {
-			HORIZONTAL,
-			VERTICAL
-		};
-
-		explicit BoxLayout(Direction direction, int spacing = 0);
-
-		void set_spacing(int new_spacing);
-
-		//Widget
-		virtual Dimensions preferred_size() override;
-		virtual Rect bounds_for_child(Widget* child) override;
-
-	protected:
-		int spacing = 0;
-		Direction direction;
-	};
+    class UIException: public std::runtime_error {
+    public:
+        UIException(const std::string& description);
+    };
 }
 
-#endif //DUCKOS_LIBUI_BOXLAYOUT_H
+
+#endif //DUCKOS_LIBUI_UIEXCEPTION_H

@@ -174,3 +174,8 @@ void UI::DrawContext::draw_button(Rect rect, const Image& img, bool pressed) con
 	int padding = pressed ? 3 : 2;
 	fb->draw_image(img, rect.position() + Point{padding, padding});
 }
+
+void UI::DrawContext::draw_vertical_scrollbar(Rect area, Rect handle_area, bool enabled) const {
+	fb->fill(area, UI::Theme::color("scrollbar-bg"));
+	draw_outset_rect(handle_area, enabled ? UI::Theme::color("scrollbar-handle") : UI::Theme::color("scrollbar-handle-disabled"));
+}

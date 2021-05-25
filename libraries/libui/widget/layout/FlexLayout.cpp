@@ -68,7 +68,3 @@ Rect UI::FlexLayout::bounds_for_child(UI::Widget *child) {
 
     return {0, 0, 0, 0};
 }
-
-void UI::FlexLayout::do_repaint(const UI::DrawContext &ctx) {
-    Widget::do_repaint(ctx);
-}
