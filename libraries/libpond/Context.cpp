@@ -80,12 +80,8 @@ Window* Context::create_window(Window* parent, Rect rect, bool hidden) {
 	if(!send_packet(POpenWindowPkt(parent ? parent->id() : 0, rect, hidden)))
 		perror("Pond: Failed to write packet");
 
-	//Wait for the response
-	Event event = next_event();
-	if(event.type != PEVENT_WINDOW_CREATE)
-		return NULL;
-
-	//Return the event's window
+	//Wait for the response and return the new window
+	Event event = next_event(PEVENT_WINDOW_CREATE);
 	return event.window_create.window;
 }
 
@@ -98,12 +94,8 @@ Font* Context::get_font(const char* font) {
 	if(!send_packet(PGetFontPkt(font)))
 		perror("Pond: Failed to write packet");
 
-	//Wait for the response
-	Event event = next_event();
-	if(event.type != PEVENT_FONT_RESPONSE)
-		return NULL;
-
-	//Add the font to the map
+	//Wait for the response and add the font to the map
+	Event event = next_event(PEVENT_FONT_RESPONSE);
 	if(event.font_response.font)
 		fonts[font] = event.font_response.font;
 
