@@ -6,8 +6,8 @@ if [ "$(id -u)" != 0 ]; then
 	exit 1
 fi
 
-echo "Creating a 50MB image..."
-dd if=/dev/zero of=duckOS.img count=102400 bs=512 status=none
+echo "Creating a 100MB image..."
+dd if=/dev/zero of=duckOS.img count=204800 bs=512 status=none
 echo "Made blank image."
 
 echo "Making loopback device..."
