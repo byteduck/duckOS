@@ -130,6 +130,8 @@ void Display::remove_window(Window* window) {
 		_drag_window = nullptr;
 	if(window == _resize_window)
 	    _resize_window = nullptr;
+	if(window == _mousedown_window)
+		_mousedown_window = nullptr;
 	for(size_t i = 0; i < _windows.size(); i++) {
 		if(_windows[i] == window) {
 			_windows.erase(_windows.begin() + i);
@@ -312,6 +314,18 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	if(_resize_window || _drag_window)
 	    return;
 
+	//If we have a mousedown window and released the mouse button, stop sending events to it
+	if(_mousedown_window && !(buttons & 1))
+		_mousedown_window = nullptr;
+
+	//If we have a mousedown window, send movement events to it instead of other windows
+	if(_mousedown_window && !_mousedown_window->gets_global_mouse()) {
+		_mousedown_window->mouse_moved(delta, mouse - _mousedown_window->absolute_rect().position(), mouse);
+		if(prev_mouse_buttons != buttons)
+			_mousedown_window->set_mouse_buttons(_mouse_window->mouse_buttons());
+		return;
+	}
+
 	Window* event_window = nullptr;
 	for (auto it = _windows.rbegin(); it != _windows.rend(); it++) {
 		auto* window = *it;
@@ -361,12 +375,14 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 			event_window = window;
 			if(!window->gets_global_mouse()) {
 				window->mouse_moved(delta, mouse - window->absolute_rect().position(), mouse);
-				window->set_mouse_buttons(_mouse_window->mouse_buttons());
+				if(prev_mouse_buttons != buttons)
+					window->set_mouse_buttons(_mouse_window->mouse_buttons());
 			}
 
-			//If we mouse down on a window, focus it
+			//If we mouse down on a window, focus it and set it to the mousedown window
 			if(!(prev_mouse_buttons & 1) && (buttons & 1)) {
 				window->focus();
+				_mousedown_window = window;
 
 				//If the window is draggable, drag it
 				if(window->draggable()) {
@@ -422,6 +438,8 @@ void Display::window_hidden(Window* window) {
 		_drag_window = nullptr;
 	if(_resize_window && _resize_window->hidden())
 	    _resize_window = nullptr;
+	if(_mousedown_window && _mousedown_window->hidden())
+		_mousedown_window = nullptr;
 }
 
 Display& Display::inst() {

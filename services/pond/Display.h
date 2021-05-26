@@ -152,6 +152,7 @@ private:
 	Mouse* _mouse_window = nullptr;
 	Window* _prev_mouse_window = nullptr;
 	Window* _drag_window = nullptr;
+	Window* _mousedown_window = nullptr;
 	Window* _resize_window = nullptr;
 	Point _resize_begin_point;
 	Rect _resize_rect;
