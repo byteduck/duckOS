@@ -79,9 +79,14 @@ namespace UI {
 		void set_sizing_mode(SizingMode mode);
 
 		/**
-		 * This function is called to repaint the contents of the widget.
+		 * This function is called to scheduel a repaint of the widget.
 		 */
 		void repaint();
+
+		/**
+		 * This function immediately repaints the contents of the widget if needed.
+		 */
+		void repaint_now();
 
 		/**
 		 * This function is called whenever a keyboard event happens on the widget.
@@ -222,6 +227,8 @@ namespace UI {
 		std::vector<Widget*> children;
 
 	private:
+		void calculate_layout();
+
 		friend class ScrollView; //TODO: Better way for ScrollView to access this stuff
 
 		UI::Widget* _parent = nullptr;
@@ -233,6 +240,8 @@ namespace UI {
 		bool _uses_alpha = false;
 		bool _global_mouse = false;
 		bool _hidden = false;
+		bool _dirty = false;
+		bool _first_layout_done = false;
 		PositioningMode _positioning_mode = AUTO;
 		SizingMode _sizing_mode = FILL;
 

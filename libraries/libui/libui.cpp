@@ -187,6 +187,12 @@ void UI::run() {
 }
 
 void UI::update(int timeout) {
+	//Perform needed repaints
+	for(auto widget : widgets) {
+		widget.second->repaint_now();
+	}
+
+	//Read and process events
 	poll(pollfds.data(), pollfds.size(), timeout);
 	for(auto& pollfd : pollfds) {
 		if(pollfd.revents) {

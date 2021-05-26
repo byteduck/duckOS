@@ -57,7 +57,12 @@ void Widget::set_sizing_mode(SizingMode mode) {
 }
 
 void Widget::repaint() {
-	if(_window) {
+	_dirty = true;
+}
+
+void Widget::repaint_now() {
+	if(_dirty && _window) {
+		_dirty = false;
 		do_repaint(_window->framebuffer());
 		_window->invalidate();
 	}
@@ -140,47 +145,10 @@ void Widget::set_parent(UI::Widget* widget) {
 }
 
 void Widget::update_layout() {
-    if(!_parent_window && !_parent)
-        return;
-
-    Rect old_rect = _rect;
-    Rect parent_rect = _parent_window ? _parent_window->contents_rect() : _parent->bounds_for_child(this);
-
-    switch(_sizing_mode) {
-        case FILL:
-            _rect.set_dimensions(parent_rect.dimensions());
-            break;
-        case PREFERRED:
-            _rect.set_dimensions(preferred_size());
-            break;
-    }
-
-    switch(_positioning_mode) {
-        case AUTO: {
-            auto dims = _rect.dimensions();
-            _rect.set_position({
-                parent_rect.position().x + parent_rect.width / 2 - dims.width / 2,
-                parent_rect.position().y + parent_rect.height / 2 - dims.height / 2
-            });
-            break;
-        }
-        case ABSOLUTE: {
-            _rect.set_position(parent_rect.position() + _absolute_position);
-            break;
-        }
-    }
-
-	on_layout_change(old_rect);
-
-    if(_window) {
-        _window->set_position(_rect.position());
-        _window->resize(_rect.dimensions());
-        repaint();
-    }
-
-    for(auto child : children) {
-        child->update_layout();
-    }
+	if(_parent_window)
+		calculate_layout();
+    if(_parent)
+    	_parent->update_layout();
 }
 
 void Widget::do_repaint(const DrawContext& framebuffer) {
@@ -221,11 +189,59 @@ void Widget::parent_window_created() {
 
 void Widget::create_window(Pond::Window* parent) {
     _rect.set_dimensions(preferred_size());
-    _window = pond_context->create_window(parent, _rect, _hidden);
+    _window = pond_context->create_window(parent, _rect, true);
     _window->set_uses_alpha(_uses_alpha);
     _window->set_global_mouse(_global_mouse);
     __register_widget(this, _window->id());
-    repaint();
     for(auto &child : children)
         child->parent_window_created();
+}
+
+void Widget::calculate_layout() {
+	if(!_parent_window && !_parent)
+		return;
+
+	Rect old_rect = _rect;
+	Rect parent_rect = _parent_window ? _parent_window->contents_rect() : _parent->bounds_for_child(this);
+
+	switch(_sizing_mode) {
+		case FILL:
+			_rect.set_dimensions(parent_rect.dimensions());
+			break;
+		case PREFERRED:
+			_rect.set_dimensions(preferred_size());
+			break;
+	}
+
+	switch(_positioning_mode) {
+		case AUTO: {
+			auto dims = _rect.dimensions();
+			_rect.set_position({
+									   parent_rect.position().x + parent_rect.width / 2 - dims.width / 2,
+									   parent_rect.position().y + parent_rect.height / 2 - dims.height / 2
+							   });
+			break;
+		}
+		case ABSOLUTE: {
+			_rect.set_position(parent_rect.position() + _absolute_position);
+			break;
+		}
+	}
+
+	on_layout_change(old_rect);
+
+	if(_window) {
+		_window->set_position(_rect.position());
+		_window->resize(_rect.dimensions());
+		repaint();
+		if(!_first_layout_done) {
+			_first_layout_done = true;
+			repaint_now();
+			_window->set_hidden(_hidden);
+		}
+	}
+
+	for(auto child : children) {
+		child->calculate_layout();
+	}
 }
