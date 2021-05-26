@@ -273,7 +273,7 @@ void Display::focus(Window* window) {
 }
 
 
-void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
+void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t buttons) {
 	static uint8_t prev_mouse_buttons = 0;
 
 	Point mouse = _mouse_window->absolute_rect().position();
@@ -306,7 +306,10 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	for(auto& window : _windows) {
 		if(window->gets_global_mouse()) {
 			window->mouse_moved(delta, mouse - window->absolute_rect().position(), mouse);
-			window->set_mouse_buttons(_mouse_window->mouse_buttons());
+			if(buttons != prev_mouse_buttons)
+				window->set_mouse_buttons(buttons);
+			if(scroll)
+				window->mouse_scrolled(scroll);
 		}
 	}
 
@@ -322,7 +325,9 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	if(_mousedown_window && !_mousedown_window->gets_global_mouse()) {
 		_mousedown_window->mouse_moved(delta, mouse - _mousedown_window->absolute_rect().position(), mouse);
 		if(prev_mouse_buttons != buttons)
-			_mousedown_window->set_mouse_buttons(_mouse_window->mouse_buttons());
+			_mousedown_window->set_mouse_buttons(buttons);
+		if(scroll)
+			_mousedown_window->mouse_scrolled(scroll);
 		return;
 	}
 
@@ -376,7 +381,9 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 			if(!window->gets_global_mouse()) {
 				window->mouse_moved(delta, mouse - window->absolute_rect().position(), mouse);
 				if(prev_mouse_buttons != buttons)
-					window->set_mouse_buttons(_mouse_window->mouse_buttons());
+					window->set_mouse_buttons(buttons);
+				if(scroll)
+					window->mouse_scrolled(scroll);
 			}
 
 			//If we mouse down on a window, focus it and set it to the mousedown window

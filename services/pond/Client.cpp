@@ -96,6 +96,12 @@ void Client::mouse_buttons_changed(Window* window, uint8_t new_buttons) {
 		perror("Failed to write mouse button packet to client");
 }
 
+void Client::mouse_scrolled(Window* window, int scroll) {
+	PMouseScrollPkt pkt {window->id(), scroll};
+	if(write_packet(socketfs_fd, pid, sizeof(PMouseScrollPkt), &pkt) < 0)
+		perror("Failed to write mouse scroll packet to client");
+}
+
 void Client::mouse_left(Window* window) {
 	PMouseLeavePkt pkt {window->id()};
 	if(write_packet(socketfs_fd, pid, sizeof(PMouseLeavePkt), &pkt) < 0)

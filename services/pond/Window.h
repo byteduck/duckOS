@@ -130,6 +130,12 @@ public:
 	virtual void set_mouse_buttons(uint8_t buttons);
 
 	/**
+	 * Called to tell the window that the mouse scrolled.
+	 * @param scroll The scroll amount reported by the mouse.
+	 */
+	virtual void mouse_scrolled(int scroll);
+
+	/**
 	 * Called to tell the window that the mouse left its bounding box.
 	 */
 	virtual void mouse_left();

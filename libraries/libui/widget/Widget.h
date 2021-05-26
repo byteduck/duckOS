@@ -110,6 +110,13 @@ namespace UI {
 		virtual bool on_mouse_button(Pond::MouseButtonEvent evt);
 
 		/**
+		 * This function is called whenever a mouse scroll event happens on the widget.
+		 * @param evt The event in question.
+		 * @return Whether or not the event was handled and should stop propagating to the parent.
+		 */
+		virtual bool on_mouse_scroll(Pond::MouseScrollEvent evt);
+
+		/**
 		 * This function is called whenever the mouse leaves the widget (or enters a child widget).
 		 * @param evt The event in question.
 		 */

@@ -66,6 +66,7 @@ namespace UI {
 		void on_keyboard(Pond::KeyEvent evt);
 		void on_mouse_move(Pond::MouseMoveEvent evt);
 		void on_mouse_button(Pond::MouseButtonEvent evt);
+		void on_mouse_scroll(Pond::MouseScrollEvent evt);
 		void on_mouse_leave(Pond::MouseLeaveEvent evt);
 		void on_resize(const Rect& old_rect);
 

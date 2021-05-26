@@ -128,8 +128,35 @@ void handle_pond_events() {
 							break;
 						widget = widget->parent();
 					}
-					if(continue_propagating && !widget->on_mouse_button(evt) && widget->parent_window())
+					if(continue_propagating && widget->parent_window())
 						widget->parent_window()->on_mouse_button(evt);
+				}
+				break;
+			}
+
+			case PEVENT_MOUSE_SCROLL: {
+				auto& evt = event.mouse_scroll;
+				auto* window = windows[evt.window->id()];
+				if(window) {
+					window->on_mouse_scroll(evt);
+				} else {
+					auto* widget = widgets[evt.window->id()];
+					if(!widget)
+						break;
+
+					//Propagate the event through parent widgets / window as appropriate
+					bool continue_propagating = true;
+					while(true) {
+						if(widget->on_mouse_scroll(evt)) {
+							continue_propagating = false;
+							break;
+						}
+						if(!widget->parent())
+							break;
+						widget = widget->parent();
+					}
+					if(continue_propagating && widget->parent_window())
+						widget->parent_window()->on_mouse_scroll(evt);
 				}
 				break;
 			}

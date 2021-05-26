@@ -225,6 +225,10 @@ void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
 	}
 }
 
+void Window::on_mouse_scroll(Pond::MouseScrollEvent evt) {
+
+}
+
 void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 
 }

@@ -20,7 +20,7 @@
 #ifndef DUCKOS_LIBUI_FLEXLAYOUT_H
 #define DUCKOS_LIBUI_FLEXLAYOUT_H
 
-#include "libui/widget/Widget.h"
+#include "../Widget.h"
 
 namespace UI {
     class FlexLayout: public Widget {

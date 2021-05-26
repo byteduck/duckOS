@@ -35,6 +35,7 @@ public:
 	void handle_packet(socketfs_packet* packet);
 	void mouse_moved(Window* window, Point delta, Point relative_pos, Point absolute_pos);
 	void mouse_buttons_changed(Window* window, uint8_t new_buttons);
+	void mouse_scrolled(Window* window, int scroll);
 	void mouse_left(Window* window);
 	void keyboard_event(Window* window, const KeyboardEvent& event);
 	void window_destroyed(Window* window);

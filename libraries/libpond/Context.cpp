@@ -145,6 +145,10 @@ void Context::read_events(bool block) {
 				evt.type = PEVENT_MOUSE_BUTTON;
 				handle_mouse_button(packet, &evt);
 				break;
+			case PPKT_MOUSE_SCROLL:
+				evt.type = PEVENT_MOUSE_SCROLL;
+				handle_mouse_scroll(packet, &evt);
+				break;
 			case PPKT_MOUSE_LEAVE:
 				evt.type = PEVENT_MOUSE_LEAVE;
 				handle_mouse_leave(packet, &evt);
@@ -278,6 +282,21 @@ void Context::handle_mouse_button(socketfs_packet* packet, Event* event) {
 	} else {
 		event->type = PEVENT_UNKNOWN;
 		fprintf(stderr, "libpond: Could not find window for window mouse button event!\n");
+	}
+}
+
+void Context::handle_mouse_scroll(socketfs_packet* packet, Event* event) {
+	//Read the response
+	auto* resp = (struct PMouseScrollPkt*) packet->data;
+
+	//Find the window and update the event & window
+	Window* window = windows[resp->window_id];
+	if(window) {
+		event->mouse_scroll.window = window;
+		event->mouse_scroll.scroll = resp->scroll;
+	} else {
+		event->type = PEVENT_UNKNOWN;
+		fprintf(stderr, "libpond: Could not find window for mouse scroll event!\n");
 	}
 }
 

@@ -34,6 +34,7 @@
 #define PEVENT_FONT_RESPONSE 7
 #define PEVENT_MOUSE_BUTTON 8
 #define PEVENT_MOUSE_LEAVE 9
+#define PEVENT_MOUSE_SCROLL 10
 
 #define POND_MOUSE1 1
 #define POND_MOUSE2 2
@@ -81,6 +82,12 @@ namespace Pond {
 		Window* window;
 	};
 
+	struct MouseScrollEvent {
+		int type; ///< Equal to PEVENT_MOUSE_SCROLL
+		int scroll; ///< The amount scrolled;
+		Window* window;
+	};
+
 	struct MouseLeaveEvent {
 		int type; ///< Equal to PEVENT_MOUSE_LEAVE
 		Point last_pos; ///< The last relative position of the mouse in the window.
@@ -109,6 +116,7 @@ namespace Pond {
 		WindowResizeEvent window_resize;
 		MouseMoveEvent mouse_move;
 		MouseButtonEvent mouse_button;
+		MouseScrollEvent mouse_scroll;
 		MouseLeaveEvent mouse_leave;
 		KeyEvent key;
 		FontResponseEvent font_response;

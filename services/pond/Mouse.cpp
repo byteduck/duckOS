@@ -57,7 +57,7 @@ bool Mouse::update() {
 		Point delta_pos = new_pos - rect().position();
 		set_position(new_pos);
 		_mouse_buttons = events[i].buttons;
-		Display::inst().create_mouse_events(delta_pos.x, delta_pos.y, _mouse_buttons);
+		Display::inst().create_mouse_events(delta_pos.x, delta_pos.y, events[i].z, _mouse_buttons);
 	}
 
 	return true;

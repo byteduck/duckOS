@@ -103,6 +103,7 @@ namespace Pond {
 		void handle_resize_window(socketfs_packet* packet, Event* event);
 		void handle_mouse_move(socketfs_packet* packet, Event* event);
 		void handle_mouse_button(socketfs_packet* packet, Event* event);
+		void handle_mouse_scroll(socketfs_packet* packet, Event* event);
 		void handle_mouse_leave(socketfs_packet* packet, Event* event);
 		void handle_key(socketfs_packet* packet, Event* event);
 		void handle_font_response(socketfs_packet* packet, Event* event);

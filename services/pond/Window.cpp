@@ -183,6 +183,10 @@ void Window::set_mouse_buttons(uint8_t buttons) {
 	}
 }
 
+void Window::mouse_scrolled(int scroll) {
+	_client->mouse_scrolled(this, scroll);
+}
+
 void Window::mouse_left() {
 	if(_client)
 		_client->mouse_left(this);

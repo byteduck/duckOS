@@ -73,11 +73,15 @@ bool Widget::on_keyboard(Pond::KeyEvent evt) {
 }
 
 bool Widget::on_mouse_move(Pond::MouseMoveEvent evt) {
-	return true;
+	return false;
 }
 
 bool Widget::on_mouse_button(Pond::MouseButtonEvent evt) {
-	return true;
+	return false;
+}
+
+bool Widget::on_mouse_scroll(Pond::MouseScrollEvent evt) {
+	return false;
 }
 
 void Widget::on_mouse_leave(Pond::MouseLeaveEvent evt) {

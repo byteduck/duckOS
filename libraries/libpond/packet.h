@@ -40,6 +40,7 @@
 #define PPKT_MOUSE_LEAVE 17
 #define PPKT_WINDOW_HINT 18
 #define PPKT_WINDOW_TO_FRONT 19
+#define PPKT_MOUSE_SCROLL 20
 
 #include <cstdint>
 #include <libgraphics/geometry.h>
@@ -123,6 +124,13 @@ struct PMouseButtonPkt {
 	short _PACKET_ID = PPKT_MOUSE_BUTTON;
 	int window_id;
 	uint8_t buttons;
+};
+
+struct PMouseScrollPkt {
+	explicit PMouseScrollPkt(int window_id, int scroll): window_id(window_id), scroll(scroll) {}
+	short _PACKET_ID = PPKT_MOUSE_SCROLL;
+	int window_id;
+	int scroll;
 };
 
 struct PMouseLeavePkt {

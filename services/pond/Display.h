@@ -105,7 +105,7 @@ public:
 	/**
 	 * Sends mouse events to the appropriate window(s). To be called after the mouse moves.
 	 */
-	void create_mouse_events(int delta_x, int delta_y, uint8_t buttons);
+	void create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t buttons);
 
 	/**
 	 * Whether or not the display buffer is dirty.

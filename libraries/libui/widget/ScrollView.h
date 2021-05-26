@@ -29,6 +29,7 @@ namespace UI {
         ScrollView();
 
         void set_contents(Widget* contents);
+        void scroll(int pixels);
 
         //Widget
         void on_child_added(Widget* child) override;
@@ -36,6 +37,7 @@ namespace UI {
         void do_repaint(const UI::DrawContext& ctx) override;
 		Rect bounds_for_child(Widget* child) override;
 		bool on_mouse_move(Pond::MouseMoveEvent evt) override;
+		bool on_mouse_scroll(Pond::MouseScrollEvent evt) override;
 		bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 		void on_layout_change(const Rect& old_rect) override;
 

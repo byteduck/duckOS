@@ -20,7 +20,7 @@
 #ifndef DUCKOS_LIBUI_BOXLAYOUT_H
 #define DUCKOS_LIBUI_BOXLAYOUT_H
 
-#include "libui/widget/Widget.h"
+#include "../Widget.h"
 
 namespace UI {
 	class BoxLayout: public Widget {

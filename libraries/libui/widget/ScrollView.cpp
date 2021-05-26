@@ -33,6 +33,23 @@ void UI::ScrollView::set_contents(UI::Widget* widget) {
     container->add_child(widget);
 }
 
+void UI::ScrollView::scroll(int pixels) {
+	Dimensions size = current_size();
+	scroll_position.y += pixels;
+	double scroll_percent = (double)scroll_position.y / (double)(contents->current_size().height - size.height);
+	if(scroll_percent < 0) {
+		scroll_position.y = 0;
+		scroll_percent = 0;
+	} else if(scroll_percent > 1) {
+		scroll_position.y = contents->current_size().height - size.height;
+		scroll_percent = 1;
+	}
+	handle_area.y = (int)(scroll_percent * (scrollbar_area.height - handle_area.height));
+	contents->_rect.set_position(scroll_position * -1);
+	contents->_window->set_position(scroll_position * -1);
+	repaint();
+}
+
 void UI::ScrollView::on_child_added(Widget *child) {
     if(children.size() > 1)
         throw UIException("Added child to ScrollView");
@@ -72,6 +89,11 @@ bool UI::ScrollView::on_mouse_move(Pond::MouseMoveEvent evt) {
 
 	repaint();
 
+	return true;
+}
+
+bool UI::ScrollView::on_mouse_scroll(Pond::MouseScrollEvent evt) {
+	scroll(evt.scroll * 20);
 	return true;
 }
 
