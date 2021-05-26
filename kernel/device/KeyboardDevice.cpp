@@ -41,7 +41,7 @@ ssize_t KeyboardDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer,
 	while(ret < count) {
 		if(_event_buffer.empty()) break;
 		if((count - ret) < sizeof(KeyEvent)) break;
-		auto evt = _event_buffer.pop_front();
+		auto evt = _event_buffer.pop_back();
 		memcpy(buffer, &evt, sizeof(KeyEvent));
 		ret += sizeof(KeyEvent);
 		buffer += sizeof(KeyEvent);
@@ -116,6 +116,7 @@ void KeyboardDevice::set_key_state(uint8_t scancode, bool pressed) {
 	char character = (_modifiers & KBD_MOD_SHIFT) ? kbd_us_shift_map[key] : kbd_us_map[key];
 	KeyEvent event = {(uint16_t) (_e0_flag ? 0xe000u + scancode : scancode), key, (uint8_t) character, _modifiers};
 	if (_handler != nullptr) _handler->handle_key(event);
-	_event_buffer.push(event);
 	_e0_flag = false;
+	LOCK(_lock);
+	_event_buffer.push(event);
 }
