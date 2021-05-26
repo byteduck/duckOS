@@ -114,7 +114,7 @@ ssize_t MouseDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, si
 	while(ret < count) {
 		if(event_buffer.empty()) break;
 		if((count - ret) < sizeof(MouseEvent)) break;
-		auto evt = event_buffer.pop_front();
+		auto evt = event_buffer.pop_back();
 		memcpy(buffer, &evt, sizeof(MouseEvent));
 		ret += sizeof(MouseEvent);
 		buffer += sizeof(MouseEvent);
@@ -127,31 +127,30 @@ ssize_t MouseDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buf
 }
 
 void MouseDevice::handle_irq(Registers *regs) {
-	while(true) {
-		uint8_t status = IO::inb(I8042_STATUS);
-		if (!(((status & I8042_WHICH_BUFFER) == I8042_MOUSE_BUFFER) && (status & I8042_BUFFER_FULL)))
-			break;
+	uint8_t status = IO::inb(I8042_STATUS);
+	if (!(((status & I8042_WHICH_BUFFER) == I8042_MOUSE_BUFFER) && (status & I8042_BUFFER_FULL)))
+		return;
 
-		uint8_t data = IO::inb(I8042_BUFFER);
-		packet_data[packet_state] = data;
-		switch(packet_state) {
-			case 0:
-				if(!(data & 0x8u)) break;
+	uint8_t data = IO::inb(I8042_BUFFER);
+	packet_data[packet_state] = data;
+	switch(packet_state) {
+		case 0:
+			if(!(data & 0x8u)) break;
+			packet_state++;
+			break;
+		case 1:
+			packet_state++;
+			break;
+		case 2:
+			if(has_scroll_wheel) {
 				packet_state++;
 				break;
-			case 1:
-				packet_state++;
-				break;
-			case 2:
-				if(has_scroll_wheel) {
-					packet_state++;
-					break;
-				}
-				handle_packet();
-			case 3:
-				handle_packet();
-				break;
-		}
+			}
+			handle_packet();
+			break;
+		case 3:
+			handle_packet();
+			break;
 	}
 
 	TaskManager::yield_if_idle();
@@ -219,5 +218,6 @@ void MouseDevice::handle_packet() {
 		y = 0;
 	}
 
+	LOCK(lock);
 	event_buffer.push({x, y, z, (uint8_t) (packet_data[0] & 0x7u)});
 }
