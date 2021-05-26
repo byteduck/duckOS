@@ -518,9 +518,9 @@ Rect Display::calculate_resize_rect() {
         case NONE:
             break;
     }
-    if(new_dims.height < 0)
-        new_dims.height = 0;
-    if(new_dims.width < 0)
-        new_dims.width = 0;
+    if(new_dims.height < 1)
+        new_dims.height = 1;
+    if(new_dims.width < 1)
+        new_dims.width = 1;
     return {new_pos.x, new_pos.y, new_dims.width, new_dims.height};
 }

@@ -26,6 +26,10 @@
 int Window::current_id = 0;
 
 Window::Window(Window* parent, const Rect& rect, bool hidden): _parent(parent), _rect(rect), _display(parent->_display), _id(++current_id), _hidden(hidden) {
+	if(_rect.width < 1)
+		_rect.width = 1;
+	if(_rect.height < 1)
+		_rect.height = 1;
 	alloc_framebuffer();
 	_parent->_children.push_back(this);
 	_display->add_window(this);
@@ -113,9 +117,14 @@ Rect Window::visible_absolute_rect() const {
 	return _visible_absolute_rect;
 }
 
-void Window::set_dimensions(const Dimensions& dims, bool notify_client) {
-    if(dims.width == _rect.dimensions().width && dims.height == _rect.dimensions().height)
+void Window::set_dimensions(const Dimensions& new_dims, bool notify_client) {
+    if(new_dims.width == _rect.dimensions().width && new_dims.height == _rect.dimensions().height)
         return;
+    Dimensions dims = new_dims;
+    if(dims.width < 1)
+    	dims.width = 1;
+    if(dims.height < 1)
+    	dims.height = 1;
 	invalidate();
 	_rect = {_rect.x, _rect.y, dims.width, dims.height};
 	alloc_framebuffer();
@@ -137,6 +146,10 @@ void Window::set_position(const Point& position, bool notify_client) {
 void Window::set_rect(const Rect& rect, bool notify_client) {
     invalidate();
     _rect = rect;
+    if(_rect.width < 1)
+    	_rect.width = 1;
+    if(_rect.height < 1)
+    	_rect.height = 1;
 	alloc_framebuffer();
 	recalculate_rects();
 	invalidate();
