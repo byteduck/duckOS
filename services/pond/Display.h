@@ -143,28 +143,28 @@ private:
 	 */
 	Rect calculate_resize_rect();
 
-	int framebuffer_fd = 0;
-	Image _framebuffer;
-	Image* _wallpaper = nullptr;
-	Rect _dimensions;
-	std::vector<Rect> invalid_areas;
-	std::vector<Window*> _windows;
-	Mouse* _mouse_window = nullptr;
-	Window* _prev_mouse_window = nullptr;
-	Window* _drag_window = nullptr;
-	Window* _mousedown_window = nullptr;
-	Window* _resize_window = nullptr;
-	Point _resize_begin_point;
-	Rect _resize_rect;
-	ResizeMode _resize_mode = NONE;
-	Window* _root_window = nullptr;
-	timeval paint_time = {0, 0};
-	bool display_buffer_dirty = true;
-	int _keyboard_fd;
-	Window* _focused_window = nullptr;
-	bool _can_flip_buffer = false;
+	int framebuffer_fd = 0; ///The file descriptor of the framebuffer.
+	Image _framebuffer; ///The framebuffer image.
+	Image* _wallpaper = nullptr; ///The image representing the wallpaper.
+	Rect _dimensions; ///The dimensions of the display.
+	std::vector<Rect> invalid_areas; ///The invalidated areas that need to be redrawn.
+	std::vector<Window*> _windows; ///The windows on the display.
+	Mouse* _mouse_window = nullptr; ///The window representing the mouse cursor.
+	Window* _prev_mouse_window = nullptr; ///The previous window that the mouse cursor was in.
+	Window* _drag_window = nullptr; ///The current window being dragged.
+	Window* _mousedown_window = nullptr; ///The window receiving mouse events because it was clicked.
+	Window* _resize_window = nullptr; ///The window being resized.
+	Point _resize_begin_point; ///The point the mouse was at when the window began resizing.
+	Rect _resize_rect; ///The rect representing the new size of the resized window.
+	ResizeMode _resize_mode = NONE; ///The current resize mode.
+	Window* _root_window = nullptr; ///The root window of the display.
+	timeval paint_time = {0, 0}; ///The last time that the display was painted.
+	bool display_buffer_dirty = true; ///Whether or not the buffer is dirty and needs to be flipped.
+	int _keyboard_fd; ///The file descriptor of the keyboard.
+	Window* _focused_window = nullptr; ///The currently focused window.
+	bool _can_flip_buffer = false; ///Whether or not the display buffer can be flipped.
 
-	static Display* _inst;
+	static Display* _inst; ///The main instance of the display.
 };
 
 

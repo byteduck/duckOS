@@ -318,7 +318,7 @@ void Display::create_mouse_events(int delta_x, int delta_y, uint8_t buttons) {
 	if(_mousedown_window && !(buttons & 1))
 		_mousedown_window = nullptr;
 
-	//If we have a mousedown window, send movement events to it instead of other windows
+	//If we are holding the mouse down, keep sending mouse events to the window we initially clicked
 	if(_mousedown_window && !_mousedown_window->gets_global_mouse()) {
 		_mousedown_window->mouse_moved(delta, mouse - _mousedown_window->absolute_rect().position(), mouse);
 		if(prev_mouse_buttons != buttons)
