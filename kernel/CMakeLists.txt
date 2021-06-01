@@ -105,7 +105,8 @@ SET(KERNEL_SRCS
         filesystem/ptyfs/PTYFS.cpp
         filesystem/ptyfs/PTYFSInode.cpp
         IO.cpp
-        KernelMapper.cpp)
+        KernelMapper.cpp
+        device/KernelLogDevice.cpp)
 
 SET(COMMON_SRCS
         kstd/cstring.cpp

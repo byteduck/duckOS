@@ -54,6 +54,7 @@ mknod mnt/dev/hda b 3 0
 mknod mnt/dev/random c 1 8
 mknod mnt/dev/null c 1 3
 mknod mnt/dev/zero c 1 5
+mknod mnt/dev/klog c 1 16
 mknod mnt/dev/fb0 b 29 0
 mkdir -p mnt/dev/input
 mknod mnt/dev/input/keyboard c 13 0

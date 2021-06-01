@@ -25,6 +25,7 @@
 #include "NullDevice.h"
 #include "KeyboardDevice.h"
 #include "MouseDevice.h"
+#include "KernelLogDevice.h"
 
 kstd::vector<kstd::shared_ptr<Device>> Device::_devices;
 SpinLock Device::_lock;
@@ -38,6 +39,7 @@ void Device::init() {
 	new KeyboardDevice();
 	new MouseDevice();
 	new PTYMuxDevice();
+	new KernelLogDevice();
 }
 
 Device::Device(unsigned major, unsigned minor): _major(major), _minor(minor) {
