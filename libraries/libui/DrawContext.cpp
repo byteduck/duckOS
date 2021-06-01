@@ -179,3 +179,13 @@ void UI::DrawContext::draw_vertical_scrollbar(Rect area, Rect handle_area, bool 
 	fb->fill(area, UI::Theme::color("scrollbar-bg"));
 	draw_outset_rect(handle_area, enabled ? UI::Theme::color("scrollbar-handle") : UI::Theme::color("scrollbar-handle-disabled"));
 }
+
+void UI::DrawContext::draw_progressbar(Rect area, double progress) const {
+	draw_inset_rect(area);
+	fb->fill({
+		area.x + 2,
+		area.y + 2,
+		(int)((area.width - 4) * progress),
+		area.height - 3
+	}, UI::Theme::accent());
+}

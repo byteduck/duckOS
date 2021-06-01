@@ -9,6 +9,7 @@ SET(SOURCES
         widget/Button.cpp
         widget/Checkbox.cpp
         widget/Label.cpp
+        widget/ProgressBar.cpp
         widget/ScrollView.cpp
 
         widget/layout/BoxLayout.cpp

@@ -64,6 +64,8 @@ namespace UI {
 
 		void draw_vertical_scrollbar(Rect area, Rect handle_area, bool enabled) const;
 
+		void draw_progressbar(Rect area, double progress) const;
+
 	private:
 		const Image* fb;
 	};

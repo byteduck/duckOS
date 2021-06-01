@@ -174,6 +174,10 @@ Color Theme::fg() {
 	return current()->colors["fg"];
 }
 
+Color Theme::accent() {
+	return current()->colors["accent"];
+}
+
 Color Theme::window() {
 	return current()->colors["window"];
 }
@@ -212,4 +216,8 @@ Color Theme::button_text() {
 
 int Theme::button_padding() {
 	return current()->values["button-padding"];
+}
+
+int Theme::progress_bar_height() {
+	return current()->values["progress-bar-height"];
 }

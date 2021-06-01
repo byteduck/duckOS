@@ -56,6 +56,7 @@ namespace UI {
 		//Standard colors
 		static Color bg();
 		static Color fg();
+		static Color accent();
 		static Color window();
 		static Color window_title();
 		static Color window_titlebar_a();
@@ -68,6 +69,7 @@ namespace UI {
 
 		//Standard values
 		static int button_padding();
+		static int progress_bar_height();
 
 	private:
 		//STATIC

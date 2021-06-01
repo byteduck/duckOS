@@ -1,6 +1,7 @@
 # Colors
 Color bg = #323232
 Color fg = #ffffff
+Color accent = #1e5f74
 Color window = #323232
 Color window-title = #ffffff
 Color window-titlebar-a = #1a1a1a
@@ -16,6 +17,7 @@ Color scrollbar-handle-disabled = #2a2a2a
 
 # Values
 Value button-padding = 5
+Value progress-bar-height = 21
 
 # Strings
 String font = gohu-11
