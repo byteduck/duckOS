@@ -19,6 +19,7 @@
 
 #include "Display.h"
 #include "FontManager.h"
+#include "Log.h"
 #include <unistd.h>
 #include <cstdio>
 #include <sys/ioctl.h>
@@ -64,7 +65,7 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 		_can_flip_buffer = false;
 
 	_framebuffer = {buffer, _dimensions.width, _dimensions.height};
-	printf("Image opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
+	Log::logf("Display opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
 
 	if((_keyboard_fd = open("/dev/input/keyboard", O_RDONLY)) < 0)
 		perror("Failed to open keyboard");
@@ -98,7 +99,7 @@ void Display::set_root_window(Window* window) {
 
 	_wallpaper = load_png(wallpaper);
 	if(!_wallpaper) {
-		fprintf(stderr, "Failed to load wallpaper.\n");
+		Log::logf("Failed to load wallpaper.\n");
 		return;
 	}
 
@@ -220,7 +221,7 @@ void Display::repaint() {
 		t1.tv_sec -= 1 + t1.tv_usec / -1000000;
 		t1.tv_usec = (1000000 - (-t1.tv_usec % 1000000)) % 1000000;
 	}
-	snprintf(buf, 10, "%dms", (int)(t1.tv_usec / 1000 + t1.tv_sec * 1000));
+	snLog::logf(buf, 10, "%dms", (int)(t1.tv_usec / 1000 + t1.tv_sec * 1000));
 	fb.fill({0, 0, 50, 14}, RGB(0, 0, 0));
 	fb.draw_text(buf, {0, 0}, FontManager::inst().get_font("gohu-14"), RGB(255, 255, 255));
 #endif

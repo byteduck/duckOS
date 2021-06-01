@@ -18,6 +18,7 @@
 */
 
 #include "Server.h"
+#include "Log.h"
 #include <fcntl.h>
 #include <cstdio>
 #include <cstdlib>
@@ -41,17 +42,17 @@ void Server::handle_packets() {
 	while((packet = read_packet(socket_fd))) {
 		switch(packet->pid) {
 			case SOCKETFS_MSG_CONNECT:
-				printf("New client connected to socket: %d\n", *((pid_t*) packet->data));
+				Log::logf("New client connected to socket: %d\n", *((pid_t*) packet->data));
 				clients.insert(std::make_pair(*((pid_t*) packet->data), new Client(socket_fd, *((pid_t*) packet->data))));
 				break;
 			case SOCKETFS_MSG_DISCONNECT: {
-				printf("Client disconnected from socket: %d\n", *((pid_t*) packet->data));
+				Log::logf("Client disconnected from socket: %d\n", *((pid_t*) packet->data));
 				auto client = clients.find(*((pid_t*) packet->data));
 				if(client != clients.end()) {
 					delete client->second;
 					clients.erase(client);
 				} else
-					fprintf(stderr, "Unknown pid %d disconnected\n", *((pid_t*) packet->data));
+					Log::logf("Unknown pid %d disconnected\n", *((pid_t*) packet->data));
 				break;
 			}
 			default: {
@@ -59,7 +60,7 @@ void Server::handle_packets() {
 				if(client)
 					client->handle_packet(packet);
 				else
-					fprintf(stderr, "Packet received from non-registered pid %d\n", packet->pid);
+					Log::logf("Packet received from non-registered pid %d\n", packet->pid);
 				break;
 			}
 		}

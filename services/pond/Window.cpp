@@ -20,6 +20,7 @@
 #include "Window.h"
 #include <cstdio>
 #include "Display.h"
+#include "Log.h"
 #include <memory.h>
 #include <libpond/Window.h>
 
@@ -327,8 +328,9 @@ void Window::set_hint(int hint, int value) {
 			break;
 	    case PWINDOW_HINT_RESIZABLE:
 	        set_resizable(value);
+	        break;
 		default:
-			fprintf(stderr, "pond: Unknown window hint %d!\n", hint);
+			Log::logf("Unknown window hint %d!\n", hint);
 	}
 }
 

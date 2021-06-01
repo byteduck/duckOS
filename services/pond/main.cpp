@@ -22,11 +22,13 @@
 #include "Server.h"
 #include "Window.h"
 #include "FontManager.h"
+#include "Log.h"
 #include <string.h>
 #include <poll.h>
 #include <unistd.h>
 
 int main(int argc, char** argv, char** envp) {
+	Log::init();
 	auto* display = new Display;
 	auto* server = new Server;
 	auto* main_window = new Window(display);

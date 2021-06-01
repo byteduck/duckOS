@@ -20,6 +20,7 @@
 #include "Client.h"
 #include "Display.h"
 #include "FontManager.h"
+#include "Log.h"
 #include <libpond/packet.h>
 
 Client::Client(int socketfs_fd, pid_t pid): socketfs_fd(socketfs_fd), pid(pid) {
@@ -79,7 +80,7 @@ void Client::handle_packet(socketfs_packet* packet) {
 			bring_to_front(packet);
 			break;
 		default:
-			fprintf(stderr, "Invalid packet sent by client %d\n", pid);
+			Log::logf("Invalid packet sent by client %d\n", pid);
 			return;
 	}
 }
