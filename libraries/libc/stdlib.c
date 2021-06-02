@@ -60,6 +60,10 @@ float strtof(const char* nptr, char** endptr) {
 }
 
 long double strtold(const char* nptr, char** endptr) {
+	//Remove whitespace
+	while(*nptr && isspace(*nptr))
+		nptr++;
+
 	//Figure out sign
 	int sign = 1;
 	if(*nptr == '-') {
