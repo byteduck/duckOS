@@ -87,6 +87,7 @@ Dimensions Label::preferred_size() {
 
 void Label::do_repaint(const DrawContext& ctx) {
     Dimensions size = current_size();
+    ctx.fill({0, 0, ctx.width(), ctx.height()}, RGBA(0,0,0,0));
     Rect text_rect = {
             _padding.width,
             _padding.height,

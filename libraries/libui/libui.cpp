@@ -232,6 +232,10 @@ void UI::update(int timeout) {
 	}
 }
 
+bool UI::ready_to_exit() {
+	return should_exit;
+}
+
 void UI::add_poll(const Poll& poll) {
 	if(!poll.on_ready_to_read && !poll.on_ready_to_write)
 		return;
