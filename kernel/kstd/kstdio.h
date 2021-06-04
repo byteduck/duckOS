@@ -29,7 +29,10 @@ if(!(cond)) { \
   PANIC("Assertion failed:", __FILE__ " at line " STR(__LINE__), true); \
 }
 #else
-#define ASSERT(cond)
+#define ASSERT(cond) \
+if(!(cond)) { \
+  printf("[kernel] CRITICAL: Assertion failed: %s\n", __FILE__ " at line " STR(__LINE__)); \
+}
 #endif
 
 
