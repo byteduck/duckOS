@@ -36,7 +36,11 @@ mount "${dev}p1" mnt/ || (echo "Couldn't mount." && exit 1)
 echo "Mounted."
 
 echo "Copying base and kernel to filesystem..."
-cp -R "${SOURCE_DIR}/user/"* mnt/ || (echo "No user folder.")
+if [ -f "${SOURCE_DIR}/user/"* ]; then
+  cp -R "${SOURCE_DIR}/user/"* mnt/ || (echo "Couldn't copy user folder." && exit 1)
+else
+  echo "No user folder, or empty user folder."
+fi
 cp -R "${SOURCE_DIR}/base/"* mnt/ || (echo "Couldn't copy base." && exit 1)
 cp -R "root/"* mnt/ || (echo "Couldn't copy root." && exit 1)
 echo "Copied."
