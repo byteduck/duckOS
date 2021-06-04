@@ -20,7 +20,7 @@
 #include <string>
 #include <utility>
 #include <unistd.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include "Command.h"
 
 Command::Command(std::string command): cmd(std::move(command)) {
