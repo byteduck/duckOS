@@ -1,2 +1,2 @@
-SET(SOURCES main.c)
+SET(SOURCES main.cpp Command.cpp Shell.cpp util.cpp)
 MAKE_PROGRAM(dsh)
