@@ -33,7 +33,7 @@ using namespace Pond;
 Context::Context(int _fd): fd(_fd) {}
 
 Context* Context::init() {
-	int fd = open("/sock/pond", O_RDWR);
+	int fd = open("/sock/pond", O_RDWR | O_CLOEXEC);
 	if(fd < 0) {
 		perror("libpond: Failed to open socket");
 		return nullptr;

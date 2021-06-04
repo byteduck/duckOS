@@ -86,7 +86,7 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_FTRUNCATE:
 			return TaskManager::current_process()->sys_ftruncate((int)arg1, (off_t)arg2);
 		case SYS_PIPE:
-			return TaskManager::current_process()->sys_pipe((int*)arg1);
+			return TaskManager::current_process()->sys_pipe((int*)arg1, (int)arg2);
 		case SYS_DUP:
 			return TaskManager::current_process()->sys_dup((int)arg1);
 		case SYS_DUP2:

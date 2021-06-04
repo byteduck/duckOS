@@ -191,11 +191,11 @@ int dup2(int old_fd, int new_fd) {
 }
 
 int pipe(int pipefd[2]) {
-	return syscall2(SYS_PIPE, (int) pipefd);
+	return syscall3(SYS_PIPE, (int) pipefd, 0);
 }
 
 int pipe2(int pipefd[2], int flags) {
-	return -1;
+	return syscall3(SYS_PIPE, (int) pipefd, flags);
 }
 
 int chdir(const char* pathname) {

@@ -38,10 +38,12 @@ public:
 	~FileDescriptor();
 
 	void set_options(int options);
+	void unset_options(int options);
 	bool readable() const;
 	bool writable() const;
 	bool append_mode() const;
 	bool nonblock() const;
+	bool cloexec() const;
 	InodeMetadata metadata();
 	kstd::shared_ptr<File> file();
 	void open();

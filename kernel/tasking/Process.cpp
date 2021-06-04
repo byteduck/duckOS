@@ -584,11 +584,19 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 		_cwd = args->working_dir;
 	}
 
-	//Give new process first three file descriptors and close the rest
-	for(size_t i = 0; i < 3; i++) {
-		new_proc->_file_descriptors[i] = _file_descriptors[i];
-		new_proc->_file_descriptors[i]->set_owner(new_proc);
+	//Give new process all of the file descriptors
+	new_proc->_file_descriptors.resize(_file_descriptors.size());
+	int last_fd = 0;
+	for(size_t i = 0; i < _file_descriptors.size(); i++) {
+		if(_file_descriptors[i] && !_file_descriptors[i]->cloexec()) {
+			last_fd = i;
+			new_proc->_file_descriptors[i] = _file_descriptors[i];
+			new_proc->_file_descriptors[i]->set_owner(new_proc);
+		}
 	}
+	//Trim off null file descriptors
+	new_proc->_file_descriptors.resize(last_fd + 1);
+
 	_file_descriptors.resize(0);
 
 	//Manually delete because we won't return from here and we need to clean up resources
@@ -862,8 +870,9 @@ int Process::sys_ftruncate(int file, off_t length) {
 	return -1;
 }
 
-int Process::sys_pipe(int filedes[2]) {
+int Process::sys_pipe(int filedes[2], int options) {
 	check_ptr(filedes);
+	options &= (O_CLOEXEC | O_NONBLOCK);
 
 	//Make the pipe
 	auto pipe = kstd::make_shared<Pipe>();
@@ -873,7 +882,7 @@ int Process::sys_pipe(int filedes[2]) {
 	//Make the read FD
 	auto pipe_read_fd = kstd::make_shared<FileDescriptor>(pipe);
 	pipe_read_fd->set_owner(this);
-	pipe_read_fd->set_options(O_RDONLY);
+	pipe_read_fd->set_options(O_RDONLY | options);
 	pipe_read_fd->set_fifo_reader();
 	_file_descriptors.push_back(pipe_read_fd);
 	filedes[0] = (int) _file_descriptors.size() - 1;
@@ -881,7 +890,7 @@ int Process::sys_pipe(int filedes[2]) {
 	//Make the write FD
 	auto pipe_write_fd = kstd::make_shared<FileDescriptor>(pipe);
 	pipe_write_fd->set_owner(this);
-	pipe_write_fd->set_options(O_WRONLY);
+	pipe_write_fd->set_options(O_WRONLY | options);
 	pipe_write_fd->set_fifo_writer();
 	_file_descriptors.push_back(pipe_write_fd);
 	filedes[1] = (int) _file_descriptors.size() - 1;
@@ -892,7 +901,9 @@ int Process::sys_pipe(int filedes[2]) {
 int Process::sys_dup(int oldfd) {
 	if(oldfd < 0 || oldfd >= (int) _file_descriptors.size() || !_file_descriptors[oldfd])
 		return -EBADF;
-	_file_descriptors.push_back(_file_descriptors[oldfd]);
+	auto new_fd = kstd::make_shared<FileDescriptor>(*_file_descriptors[oldfd]);
+	_file_descriptors.push_back(new_fd);
+	new_fd->unset_options(O_CLOEXEC);
 	return (int) _file_descriptors.size() - 1;
 }
 
@@ -903,7 +914,9 @@ int Process::sys_dup2(int oldfd, int newfd) {
 		return oldfd;
 	if(newfd >= _file_descriptors.size())
 		_file_descriptors.resize(newfd + 1);
-	_file_descriptors[newfd] = _file_descriptors[oldfd];
+	auto new_fd = kstd::make_shared<FileDescriptor>(*_file_descriptors[oldfd]);
+	_file_descriptors[newfd] = new_fd;
+	new_fd->unset_options(O_CLOEXEC);
 	return newfd;
 }
 
@@ -991,8 +1004,6 @@ int Process::sys_getpgrp() {
 int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
 	if(pid < 0)
 		return -EINVAL;
-	if(!new_pgid)
-		new_pgid = _pid;
 
 	//Validate specified pid
 	Process* proc = pid ? TaskManager::process_for_pid(pid) : this;
@@ -1002,6 +1013,10 @@ int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
 		return -EPERM; //Process is a child but not in the same session
 	if(proc->_pid == proc->_sid)
 		return -EPERM; //Process is session leader
+
+	//If new_pgid is 0, use the pid of the target process
+	if(!new_pgid)
+		new_pgid = proc->_pid;
 
 	//Make sure we're not switching to another session
 	Process* c_proc = this->next;

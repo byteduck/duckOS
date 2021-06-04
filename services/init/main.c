@@ -60,6 +60,7 @@ int main(int argc, char** argv, char** envp) {
 			strcpy(exec, value);
 	}
 	free(line);
+	fclose(config);
 
 	//Execute the program given by the exec key in the config
 	pid_t pid = fork();

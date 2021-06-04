@@ -100,6 +100,10 @@ void FileDescriptor::set_options(int options) {
 	_options = options;
 }
 
+void FileDescriptor::unset_options(int options) {
+	set_options(_options & (~options));
+}
+
 bool FileDescriptor::readable() const {
 	return _readable;
 }
@@ -114,6 +118,10 @@ bool FileDescriptor::append_mode() const {
 
 bool FileDescriptor::nonblock() const {
 	return _options & O_NONBLOCK;
+}
+
+bool FileDescriptor::cloexec() const {
+	return _options & O_CLOEXEC;
 }
 
 int FileDescriptor::seek(off_t offset, int whence) {

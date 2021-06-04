@@ -32,7 +32,7 @@ Display* Display::_inst = nullptr;
 
 Display::Display(): _dimensions({0, 0, 0, 0}) {
 	_inst = this;
-	framebuffer_fd = open("/dev/fb0", O_RDWR);
+	framebuffer_fd = open("/dev/fb0", O_RDWR | O_CLOEXEC);
 	if(framebuffer_fd < -1) {
 		perror("Failed to open framebuffer");
 		return;
@@ -67,7 +67,7 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 	_framebuffer = {buffer, _dimensions.width, _dimensions.height};
 	Log::logf("Display opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
 
-	if((_keyboard_fd = open("/dev/input/keyboard", O_RDONLY)) < 0)
+	if((_keyboard_fd = open("/dev/input/keyboard", O_RDONLY | O_CLOEXEC)) < 0)
 		perror("Failed to open keyboard");
 
 	gettimeofday(&paint_time, NULL);
@@ -91,7 +91,7 @@ void Display::clear(uint32_t color) {
 void Display::set_root_window(Window* window) {
 	_root_window = window;
 
-	FILE* wallpaper = fopen("/usr/share/wallpapers/duck.png", "r");
+	FILE* wallpaper = fopen("/usr/share/wallpapers/duck.png", "re");
 	if(!wallpaper) {
 		perror("Failed to open wallpaper");
 		return;
@@ -102,6 +102,7 @@ void Display::set_root_window(Window* window) {
 		Log::logf("Failed to load wallpaper.\n");
 		return;
 	}
+	fclose(wallpaper);
 
 	_root_window->invalidate();
 }

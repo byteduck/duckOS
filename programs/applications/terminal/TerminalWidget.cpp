@@ -46,7 +46,7 @@ TerminalWidget::TerminalWidget() {
 	term = new Terminal({400 / (size_t) font->bounding_box().width, 300 / (size_t) font->size()}, *this);
 
 	//Setup PTY
-	pty_fd = posix_openpt(O_RDWR);
+	pty_fd = posix_openpt(O_RDWR | O_CLOEXEC);
 	if(pty_fd < 0)
 		exit(-1);
 
@@ -150,7 +150,7 @@ void TerminalWidget::run(const char* command) {
 			exit(-1);
 		}
 
-		int pts = open(pts_name, O_RDWR);
+		int pts = open(pts_name, O_RDWR | O_CLOEXEC);
 		if(pts < 0) {
 			perror("open");
 			exit(-1);
@@ -176,7 +176,6 @@ void TerminalWidget::run(const char* command) {
 		}
 
 		//Close the pts and exec
-		close(pts);
 		char* args[] = {NULL};
 		char* env[] = {NULL};
 		execve(command, args, env);

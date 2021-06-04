@@ -137,7 +137,7 @@ public:
 	int sys_mkdirat(int fd, char *path, mode_t mode);
 	int sys_truncate(char* path, off_t length);
 	int sys_ftruncate(int fd, off_t length);
-	int sys_pipe(int filedes[2]);
+	int sys_pipe(int filedes[2], int options);
 	int sys_dup(int oldfd);
 	int sys_dup2(int oldfd, int newfd);
 	int sys_isatty(int fd);

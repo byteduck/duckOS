@@ -178,6 +178,17 @@ int fflush(FILE* stream) {
 	return 0;
 }
 
+int extended_char_option(char opt) {
+	switch(opt) {
+		case 'e':
+			return O_CLOEXEC;
+		case 'x':
+			return O_EXCL;
+		default:
+			return 0;
+	}
+}
+
 int parse_str_options(const char* mode) {
 	int options;
 	switch(mode[0]) {
@@ -207,6 +218,9 @@ int parse_str_options(const char* mode) {
 			default: //Should never happen
 				return -1;
 		}
+		options |= extended_char_option(mode[2]);
+	} else {
+		options |= extended_char_option(mode[1]);
 	}
 	return options;
 }

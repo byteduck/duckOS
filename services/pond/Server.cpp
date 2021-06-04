@@ -26,7 +26,7 @@
 #include <sys/socketfs.h>
 
 Server::Server() {
-	socket_fd = open("/sock/pond", O_RDWR | O_CREAT | O_NONBLOCK);
+	socket_fd = open("/sock/pond", O_RDWR | O_CREAT | O_NONBLOCK | O_CLOEXEC);
 	if(socket_fd < 0) {
 		perror("Couldn't open window server socket");
 		exit(errno);

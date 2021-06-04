@@ -25,7 +25,7 @@
 Mouse::Mouse(Window* parent): Window(parent, {0, 0, 1, 1}, false) {
 	display()->set_mouse_window(this);
 
-	mouse_fd = open("/dev/input/mouse", O_RDONLY);
+	mouse_fd = open("/dev/input/mouse", O_RDONLY | O_CLOEXEC);
 	if(mouse_fd < 0) {
 		perror("Failed to open mouse");
 		return;
@@ -93,7 +93,7 @@ void Mouse::set_cursor(Pond::CursorType cursor) {
 }
 
 void Mouse::load_cursor(Image*& storage, const std::string& filename) {
-    FILE* cursor = fopen((std::string("/usr/share/cursors/") + filename).c_str(), "r");
+    FILE* cursor = fopen((std::string("/usr/share/cursors/") + filename).c_str(), "re");
     if(!cursor) {
         perror("Failed to open cursor icon");
         return;

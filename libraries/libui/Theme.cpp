@@ -141,6 +141,7 @@ bool Theme::load() {
 			if(!imagefile)
 				continue;
 			images[key] = load_png(imagefile);
+			fclose(imagefile);
 		} else if(type == "Color") {
 			if(value[0] == '#')
 				value = value.substr(1);

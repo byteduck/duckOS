@@ -23,7 +23,7 @@
 FILE* klog = nullptr;
 
 void Log::init() {
-	klog = fopen("/dev/klog", "w");
+	klog = fopen("/dev/klog", "we");
 	setvbuf(klog, nullptr, _IOLBF, 2048);
 	if(!klog)
 		fprintf(stderr, "Couldn't open kernel log!");
