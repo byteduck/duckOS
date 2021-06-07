@@ -141,5 +141,5 @@ if [ ! "$BUILT_SOMETHING" ]; then
   exit 1
 else
   printf "Done! The toolchain (%s) is installed at %s and the sysroot is at %s.\n" "$TARGET" "$PREFIX" "$SYSROOT"
-  printf "You can safely delete %s if you don't want the cached toolchain sources anymore.\n" "$BUILD"
+  printf "You can safely delete the four binutils and gcc related folders in %s if you don't want the cached toolchain sources anymore.\n" "$BUILD"
 fi
