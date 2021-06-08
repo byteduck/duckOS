@@ -23,7 +23,7 @@
 #include <libui/libui.h>
 #include <libterm/Terminal.h>
 
-class TerminalWidget: public UI::Widget, public Terminal::Listener {
+class TerminalWidget: public UI::Widget, public Term::Listener {
 public:
 	TerminalWidget();
 	~TerminalWidget();
@@ -38,18 +38,18 @@ public:
 	void run(const char* command);
 
 	//Terminal::Listener
-	void on_character_change(const Terminal::Position& position, const Terminal::Character& character) override;
-	void on_cursor_change(const Terminal::Position& position) override;
-	void on_backspace(const Terminal::Position& position) override;
+	void on_character_change(const Term::Position& position, const Term::Character& character) override;
+	void on_cursor_change(const Term::Position& position) override;
+	void on_backspace(const Term::Position& position) override;
 	void on_clear() override;
-	void on_clear_line(size_t line) override;
-	void on_scroll(size_t lines) override;
-	void on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) override;
+	void on_clear_line(int line) override;
+	void on_scroll(int lines) override;
+	void on_resize(const Term::Size& old_size, const Term::Size& new_size) override;
 	void emit(const uint8_t* data, size_t size);
 
 private:
 	Font* font = nullptr;
-	Terminal* term = nullptr;
+	Term::Terminal* term = nullptr;
 	int pty_fd = -1;
 	pid_t proc_pid = -1;
 	bool needs_full_repaint = false;
@@ -58,19 +58,19 @@ private:
 		enum type {CHARACTER, CLEAR, CLEAR_LINE, SCROLL} type;
 		union event {
 			struct {
-				Terminal::Position pos;
-				Terminal::Character character;
+				Term::Position pos;
+				Term::Character character;
 			} character;
 			struct {
-				Terminal::Attribute attribute;
+				Term::Attribute attribute;
 			} clear;
 			struct {
-				Terminal::Attribute attribute;
-				size_t line;
+				Term::Attribute attribute;
+				int line;
 			} clear_line;
 			struct {
-				Terminal::Attribute attribute;
-				size_t lines;
+				Term::Attribute attribute;
+				int lines;
 			} scroll;
 		} data;
 	};

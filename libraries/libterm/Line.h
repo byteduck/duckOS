@@ -14,34 +14,31 @@
     You should have received a copy of the GNU General Public License
     along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
 
-    Copyright (c) Byteduck 2016-2020. All rights reserved.
+    Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <libgraphics/font.h>
-#include <libui/libui.h>
-#include "TerminalWidget.h"
+#ifndef DUCKOS_LINE_H
+#define DUCKOS_LINE_H
 
-int main(int argc, char** argv, char** envp) {
-	//Init LibUI
-	UI::init(argv, envp);
+#include "types.h"
 
-	//Make window
-	auto* window = UI::Window::create();
-	window->set_title("Terminal");
+namespace Term {
+	class Line {
+	public:
+		explicit Line(int size);
+		Line();
 
-	//Create terminal widget
-	auto* termwidget = new TerminalWidget();
-	termwidget->run("/bin/dsh");
-	window->set_contents(termwidget);
+		Character& at(int index);
+		Character& operator[](int index);
+		int length();
+		void resize(int new_size);
+		void fill(Character fill_char);
+		void clear(Attribute attr);
 
-	//Show the window
-	window->show();
-	window->set_resizable(true);
-
-	//Run event loop
-	UI::run();
-
-	delete termwidget;
-
-	return 0;
+	private:
+		Vector<Character> chars;
+	};
 }
+
+
+#endif //DUCKOS_LINE_H

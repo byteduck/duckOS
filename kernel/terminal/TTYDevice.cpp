@@ -30,6 +30,9 @@ TTYDevice::TTYDevice(unsigned int major, unsigned int minor): CharacterDevice(ma
 	memcpy(_termios.c_cc, c_cc, sizeof(c_cc));
 	_termios.c_ispeed = 0;
 	_termios.c_ospeed = 0;
+
+	_winsize.ws_row = 25;
+	_winsize.ws_col = 80;
 }
 
 ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
@@ -144,6 +147,7 @@ bool TTYDevice::can_write(const FileDescriptor& fd) {
 int TTYDevice::ioctl(unsigned int request, void* argp) {
 	auto* cur_proc = TaskManager::current_process();
 	auto* termios_arg = (termios*)argp;
+	auto* winsize_arg = (winsize*)argp;
 	switch(request) {
 		case TIOCSCTTY:
 			cur_proc->set_tty(shared_ptr());
@@ -172,6 +176,14 @@ int TTYDevice::ioctl(unsigned int request, void* argp) {
 		case TCSETSF:
 		case TCSETSW:
 			_termios = *termios_arg;
+			return SUCCESS;
+		case TIOCGWINSZ:
+			*winsize_arg = _winsize;
+			return SUCCESS;
+		case TIOCSWINSZ:
+			_winsize = *winsize_arg;
+			if(_pgid != -1 && _pgid)
+				TaskManager::kill_pgid(_pgid, SIGWINCH);
 			return SUCCESS;
 		default:
 			return -EINVAL;

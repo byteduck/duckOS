@@ -34,6 +34,7 @@ public:
 	bool is_pty_controller() override;
 	bool can_read(const FileDescriptor& fd) override;
 	bool can_write(const FileDescriptor& fd) override;
+	virtual int ioctl(unsigned request, void* argp) override;
 
 	size_t putchars(const uint8_t* buffer, size_t count);
 	void notify_pty_closed();

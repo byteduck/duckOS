@@ -25,7 +25,10 @@ size_t VirtualTTY::_current_tty;
 kstd::shared_ptr<VirtualTTY> VirtualTTY::_ttys[];
 
 VirtualTTY::VirtualTTY(unsigned int major, unsigned int minor) : TTYDevice(major, minor) {
-	terminal = new Terminal({VGADevice::inst().get_display_width() / 8,VGADevice::inst().get_display_height() / 8}, *this);
+	terminal = new Term::Terminal({
+		(int) VGADevice::inst().get_display_width() / 8,
+		(int) VGADevice::inst().get_display_height() / 8
+	}, *this);
 	register_tty(minor, this);
 }
 
@@ -106,27 +109,27 @@ uint32_t vga_color_palette[] = {
 		0xFFFFFF
 };
 
-void VirtualTTY::on_character_change(const Terminal::Position& position, const Terminal::Character& character) {
+void VirtualTTY::on_character_change(const Term::Position& position, const Term::Character& character) {
 	if(!_active || _graphical)
 		return;
-	uint16_t pixel_xpos = position.x * 8;
-	uint16_t pixel_ypos = position.y * 8;
+	uint16_t pixel_xpos = position.col * 8;
+	uint16_t pixel_ypos = position.line * 8;
 	auto& vga = VGADevice::inst();
 	for(uint16_t x = 0; x < 8; x++) {
 		for(uint16_t y = 0; y < 8; y++) {
 			if((unsigned)(font8x8_basic[(char)character.codepoint][y] >> x) & 0x1u)
-				vga.set_pixel(pixel_xpos + x, pixel_ypos + y, vga_color_palette[character.attributes.foreground]);
+				vga.set_pixel(pixel_xpos + x, pixel_ypos + y, vga_color_palette[character.attr.fg]);
 			else
-				vga.set_pixel(pixel_xpos + x, pixel_ypos + y, vga_color_palette[character.attributes.background]);
+				vga.set_pixel(pixel_xpos + x, pixel_ypos + y, vga_color_palette[character.attr.bg]);
 		}
 	}
 }
 
-void VirtualTTY::on_cursor_change(const Terminal::Position& position) {
+void VirtualTTY::on_cursor_change(const Term::Position& position) {
 	if(!_active || _graphical) return;
 }
 
-void VirtualTTY::on_backspace(const Terminal::Position& position) {
+void VirtualTTY::on_backspace(const Term::Position& position) {
 	terminal->set_character(terminal->get_cursor(), {0, terminal->get_current_attribute()});
 }
 
@@ -139,26 +142,26 @@ void VirtualTTY::on_clear() {
 		return;
 	}
 
-	VGADevice::inst().clear(vga_color_palette[terminal->get_current_attribute().background]);
+	VGADevice::inst().clear(vga_color_palette[terminal->get_current_attribute().bg]);
 }
 
-void VirtualTTY::on_clear_line(size_t line) {
+void VirtualTTY::on_clear_line(int line) {
 	if(!_active || _graphical)
 		return;
 	auto dims = terminal->get_dimensions();
-	uint32_t color = vga_color_palette[terminal->get_current_attribute().background];
-	for(size_t y = line * 8; y < (line + 1) * 8; y++) {
-		for(size_t x = 0; x < dims.width * 8; x++) VGADevice::inst().set_pixel(x, y, color);
+	uint32_t color = vga_color_palette[terminal->get_current_attribute().bg];
+	for(int y = line * 8; y < (line + 1) * 8; y++) {
+		for(int x = 0; x < dims.cols * 8; x++) VGADevice::inst().set_pixel(x, y, color);
 	}
 }
 
-void VirtualTTY::on_scroll(size_t lines) {
+void VirtualTTY::on_scroll(int lines) {
 	if(!_active || _graphical)
 		return;
 	VGADevice::inst().scroll(lines * 8);
 }
 
-void VirtualTTY::on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) {
+void VirtualTTY::on_resize(const Term::Size& old_size, const Term::Size& new_size) {
 	//TODO
 }
 

@@ -80,6 +80,10 @@ void Command::evaluate(pid_t pgid) {
 			if (tcsetpgrp(STDIN_FILENO, _pid) < 0)
 				perror("tcsetpgrp(stdin)");
 		}
+		if(isatty(STDERR_FILENO)) {
+			if (tcsetpgrp(STDERR_FILENO, _pid) < 0)
+				perror("tcsetpgrp(stderr)");
+		}
 	}
 }
 

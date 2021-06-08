@@ -23,7 +23,7 @@
 #include "TTYDevice.h"
 #include <libterm/Terminal.h>
 
-class VirtualTTY: public TTYDevice, private KeyboardHandler, private Terminal::Listener {
+class VirtualTTY: public TTYDevice, private KeyboardHandler, private Term::Listener {
 public:
 	VirtualTTY(unsigned int major, unsigned int minor);
 	static kstd::shared_ptr<VirtualTTY> current_tty();
@@ -40,7 +40,7 @@ private:
 	static size_t _current_tty;
 	static kstd::shared_ptr<VirtualTTY> _ttys[NUM_TTYS];
 	size_t _id;
-	Terminal* terminal = nullptr;
+	Term::Terminal* terminal = nullptr;
 
 	//File
 	int ioctl(unsigned request, void* argp) override;
@@ -53,13 +53,13 @@ private:
 	void echo(uint8_t c) override;
 
 	//Terminal::Listener
-	void on_character_change(const Terminal::Position& position, const Terminal::Character& character) override;
-	void on_cursor_change(const Terminal::Position& position) override;
-	void on_backspace(const Terminal::Position& position) override;
+	void on_character_change(const Term::Position& position, const Term::Character& character) override;
+	void on_cursor_change(const Term::Position& position) override;
+	void on_backspace(const Term::Position& position) override;
 	void on_clear() override;
-	void on_clear_line(size_t line) override;
-	void on_scroll(size_t lines) override;
-	void on_resize(const Terminal::Size& old_size, const Terminal::Size& new_size) override;
+	void on_clear_line(int line) override;
+	void on_scroll(int lines) override;
+	void on_resize(const Term::Size& old_size, const Term::Size& new_size) override;
 	void emit(const uint8_t* data, size_t size);
 
 	bool _active = false;

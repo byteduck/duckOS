@@ -41,6 +41,13 @@ struct termios {
 	tcflag_t c_ospeed;
 };
 
+struct winsize {
+	unsigned short ws_row;
+	unsigned short ws_col;
+	unsigned short ws_xpixel;
+	unsigned short ws_ypixel;
+};
+
 int tcgetattr(int fd, struct termios* termios_p);
 int tcsetattr(int fd, int optional_actions, const struct termios* termios_p);
 int tcflush(int fd, int queue_selector);

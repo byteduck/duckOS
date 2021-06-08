@@ -187,6 +187,13 @@ struct termios {
 	tcflag_t c_ospeed;
 };
 
+struct winsize {
+	unsigned short ws_row;
+	unsigned short ws_col;
+	unsigned short ws_xpixel;
+	unsigned short ws_ypixel;
+};
+
 //c_iflag
 #define IGNBRK	0x1
 #define BRKINT	0x2

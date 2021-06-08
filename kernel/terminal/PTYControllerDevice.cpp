@@ -55,6 +55,20 @@ bool PTYControllerDevice::can_write(const FileDescriptor& fd) {
 	return _pty.get() != nullptr;
 }
 
+int PTYControllerDevice::ioctl(unsigned int request, void* argp) {
+	if(!_pty)
+		return -EIO;
+
+	switch(request) {
+		case TIOCSWINSZ:
+		case TIOCGPGRP:
+			return _pty->ioctl(request, argp);
+
+		default:
+			return -EINVAL;
+	}
+}
+
 size_t PTYControllerDevice::putchars(const uint8_t* buffer, size_t count) {
 	LOCK(_output_lock);
 	count = min(count, _output_buffer.capacity());

@@ -47,8 +47,9 @@ private:
 	kstd::circular_queue<uint8_t> _input_buffer;
 	BooleanBlocker _buffer_blocker;
 	SpinLock _input_lock;
-	pid_t _pgid = 0;
+	pid_t _pgid = -1;
 	termios _termios;
+	winsize _winsize;
 	int _lines = 0;
 
 	void generate_signal(int sig);

@@ -145,6 +145,21 @@ int Shell::evaluate(const std::string& input) {
 
 	cleanup();
 
+	//Return control of the terminal back to the shell
+	int pgid = getpgid(0);
+	if(isatty(STDOUT_FILENO)) {
+		if (tcsetpgrp(STDOUT_FILENO, pgid) < 0)
+			perror("tcsetpgrp(stdout)");
+	}
+	if(isatty(STDIN_FILENO)) {
+		if (tcsetpgrp(STDIN_FILENO, pgid) < 0)
+			perror("tcsetpgrp(stdin)");
+	}
+	if(isatty(STDERR_FILENO)) {
+		if (tcsetpgrp(STDERR_FILENO, pgid) < 0)
+			perror("tcsetpgrp(stderr)");
+	}
+
 	return commands.back().status();
 }
 

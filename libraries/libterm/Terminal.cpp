@@ -27,70 +27,64 @@
 #include <stdlib.h>
 #endif
 
+using namespace Term;
+
 Terminal::Terminal(const Size& dimensions, Listener& listener):
 dimensions(dimensions),
 cursor_position({0,0}),
 current_attribute({TERM_DEFAULT_FOREGROUND, TERM_DEFAULT_BACKGROUND}),
 listener(listener)
 {
-	screen = new Character[dimensions.width * dimensions.height];
-	clear();
+	screen.resize(dimensions.lines);
+	for(int y = 0; y < dimensions.lines; y++)
+		screen[y].resize(dimensions.lines);
+	set_cursor({0, 0});
 }
 
-Terminal::~Terminal() {
-	delete[] screen;
-}
+void Terminal::set_dimensions(const Term::Size& new_size) {
+	if(new_size.lines <= 0 || new_size.cols <= 0)
+		return;
 
-void Terminal::set_dimensions(const Terminal::Size& new_size) {
-	auto* new_screen = new Character[new_size.width * new_size.height];
-
-
-	if(new_size.height >= dimensions.height) {
-		for (int y = 0; y < dimensions.height; y++) {
-			for (int x = 0; x < dimensions.width; x++) {
-				if (screen && x < new_size.width && y < new_size.height)
-					new_screen[x + y * new_size.width] = screen[x + y * dimensions.width];
-				else
-					new_screen[x + y * new_size.width] = {0, current_attribute};
-			}
-		}
-	} else {
-		int size_diff = dimensions.height - new_size.height;
-		for (int y = 0; y <= new_size.height; y++) {
-			for (int x = 0; x < dimensions.width; x++) {
-				if (screen && x < new_size.width)
-					new_screen[x + (y + size_diff) * new_size.width] = screen[x + y * dimensions.width];
-				else
-					new_screen[x + y * new_size.width] = {0, current_attribute};
-			}
+	if(new_size.lines < dimensions.lines) {
+		for(int y = 0; y < new_size.lines; y++) {
+			screen[y] = screen[y + (dimensions.lines - new_size.lines)];
 		}
 	}
 
-	delete[] screen;
-	screen = new_screen;
-	listener.on_resize(dimensions, new_size);
+	screen.resize(new_size.lines);
+	for(int y = 0; y < new_size.lines; y++)
+		screen[y].resize(new_size.cols);
+
+	if(cursor_position.col >= new_size.cols)
+		cursor_position.col = new_size.cols - 1;
+	if(cursor_position.line >= new_size.lines)
+		cursor_position.line = new_size.lines - 1;
+
+	Size old_size = dimensions;
 	dimensions = new_size;
+	listener.on_resize(old_size, new_size);
 }
 
-Terminal::Size Terminal::get_dimensions() {
+Term::Size Terminal::get_dimensions() {
 	return dimensions;
 }
 
-void Terminal::set_cursor(const Terminal::Position& position) {
+void Terminal::set_cursor(const Term::Position& position) {
 	cursor_position = position;
 	listener.on_cursor_change(position);
 }
 
-Terminal::Position Terminal::get_cursor() {
+Term::Position Terminal::get_cursor() {
 	return cursor_position;
 }
 
 void Terminal::backspace() {
-	if(cursor_position.x == 0) {
-		cursor_position.x = dimensions.width;
-		if(cursor_position.y) cursor_position.y--;
+	if(cursor_position.col == 0) {
+		cursor_position.col = dimensions.cols;
+		if(cursor_position.line)
+			cursor_position.line--;
 	}
-	cursor_position.x--;
+	cursor_position.col--;
 	listener.on_backspace(cursor_position);
 }
 
@@ -128,9 +122,9 @@ void Terminal::write_codepoint(uint32_t codepoint) {
 
 	switch(codepoint) {
 		case '\n':
-			cursor_position.y++;
+			cursor_position.line++;
 		case '\r':
-			cursor_position.x = 0;
+			cursor_position.col = 0;
 			break;
 		case '\b':
 			backspace();
@@ -141,54 +135,59 @@ void Terminal::write_codepoint(uint32_t codepoint) {
 			return;
 		default:
 			set_character(cursor_position, {codepoint, current_attribute});
-			cursor_position.x++;
+			cursor_position.col++;
 			break;
 	}
 
-	if(cursor_position.x == dimensions.width) {
-		cursor_position.y++;
-		cursor_position.x = 0;
+	if(cursor_position.col == dimensions.cols) {
+		cursor_position.line++;
+		cursor_position.col = 0;
 	}
 
-	if(cursor_position.y >= dimensions.height) {
-		scroll(cursor_position.y + 1 - dimensions.height);
-		cursor_position.y = dimensions.height - 1;
+	if(cursor_position.line >= dimensions.lines) {
+		scroll(cursor_position.line + 1 - dimensions.lines);
+		cursor_position.line = dimensions.lines - 1;
 	}
 
 	listener.on_cursor_change(cursor_position);
 }
 
 void Terminal::write_chars(const char* buffer, size_t length) {
-	for(size_t i = 0; i < length; i++) write_codepoint((uint32_t) buffer[i]);
+	for(size_t i = 0; i < length; i++)
+		write_codepoint((uint32_t) buffer[i]);
 }
 
 void Terminal::write_codepoints(const uint32_t* buffer, size_t length) {
-	for(size_t i = 0; i < length; i++) write_codepoint(buffer[i]);
+	for(size_t i = 0; i < length; i++)
+		write_codepoint(buffer[i]);
 }
 
-Terminal::Character Terminal::get_character(const Terminal::Position& pos) {
-	return screen[pos.x + pos.y * dimensions.width];
+Term::Character Terminal::get_character(const Term::Position& pos) {
+	if(pos.col >= dimensions.cols || pos.col < 0 || pos.line >= dimensions.lines || pos.line < 0)
+		return {};
+	return screen[pos.line][pos.col];
 }
 
-void Terminal::set_character(const Position& position, const Character& character) {
-	if(position.x >= dimensions.width || position.y >= dimensions.height) return;
-	screen[position.x + position.y * dimensions.width] = character;
-	listener.on_character_change(position, character);
+void Terminal::set_character(const Position& pos, const Character& character) {
+	if(pos.col >= dimensions.cols || pos.col < 0 || pos.line >= dimensions.lines || pos.line < 0)
+		return;
+	screen[pos.line][pos.col] = character;
+	listener.on_character_change(pos, character);
 }
 
-void Terminal::scroll(size_t lines) {
-	if(lines >= dimensions.height) {
+void Terminal::scroll(int lines) {
+	if(lines >= dimensions.lines) {
 		clear();
 		return;
 	}
 
-	size_t clear_start_line = dimensions.height - lines;
-	for(size_t y = 0; y < dimensions.height; y++) {
-		for(size_t x = 0; x < dimensions.width; x++) {
+	int clear_start_line = dimensions.lines - lines;
+	for(int y = 0; y < dimensions.lines; y++) {
+		for(int x = 0; x < dimensions.cols; x++) {
 			if(y >= clear_start_line) {
-				screen[x + y * dimensions.width] = {0, current_attribute};
+				screen[y][x] = {0, current_attribute};
 			} else {
-				screen[x + y * dimensions.width] = screen[x + (y + lines) * dimensions.width];
+				screen[y][x] = screen[y + lines][x];
 			}
 		}
 	}
@@ -198,36 +197,30 @@ void Terminal::scroll(size_t lines) {
 
 void Terminal::clear() {
 	set_cursor({0,0});
-	for(size_t x = 0; x < dimensions.width; x++) {
-		for(size_t y = 0; y < dimensions.height; y++) {
-			screen[x + y * dimensions.width] = {0, current_attribute};
+	for(int y = 0; y < dimensions.lines; y++) {
+		auto& line = screen[y];
+		for(int x = 0; x < dimensions.cols; x++) {
+			line[x] = {0, current_attribute};
 		}
 	}
 	listener.on_clear();
 }
 
-void Terminal::clear_line(size_t line) {
-	for(size_t x = 0; x < dimensions.width; x++)
-		screen[x + line * dimensions.width] = {0, current_attribute};
+void Terminal::clear_line(int line) {
+	if(line < 0 || line >= dimensions.lines)
+		return;
+	auto& line_vec = screen[line];
+	for(int x = 0; x < dimensions.cols; x++)
+		line_vec[x] = {0, current_attribute};
 	listener.on_clear_line(line);
 }
 
-void Terminal::set_current_attribute(const Terminal::Attribute& attribute) {
+void Terminal::set_current_attribute(const Attribute& attribute) {
 	current_attribute = attribute;
 }
 
-Terminal::Attribute Terminal::get_current_attribute() {
+Term::Attribute Terminal::get_current_attribute() {
 	return current_attribute;
-}
-
-void Terminal::set_attribute(const Terminal::Position& position, const Terminal::Attribute& attribute) {
-	Character& ch = screen[position.x + position.y * dimensions.width];
-	ch.attributes = attribute;
-	listener.on_character_change(position, ch);
-}
-
-Terminal::Attribute Terminal::get_attribute(const Terminal::Position& position) {
-	return screen[position.x + position.y * dimensions.width].attributes;
 }
 
 void Terminal::evaluate_escape_codepoint(uint32_t codepoint) {
@@ -278,22 +271,22 @@ void Terminal::evaluate_escape_codepoint(uint32_t codepoint) {
 }
 
 void Terminal::evaluate_graphics_mode_escape() {
-	for(size_t i = 0; i <= escape_parameter_index; i++) {
+	for(int i = 0; i <= escape_parameter_index; i++) {
 		int val = atoi(escape_parameters[i]);
 		if(val >= 30 && val < 38)
-			current_attribute.foreground = val - 30;
+			current_attribute.fg = val - 30;
 		else if(val >= 40 && val < 48)
-			current_attribute.background = val - 40;
+			current_attribute.bg = val - 40;
 		else if(val >= 90 && val < 98)
-			current_attribute.foreground = val - 82;
+			current_attribute.fg = val - 82;
 		else if(val >= 100 && val < 108)
-			current_attribute.background = val - 92;
+			current_attribute.bg = val - 92;
 		else {
 			switch(val) {
 				case 39:
-					current_attribute.foreground = TERM_DEFAULT_FOREGROUND;
+					current_attribute.fg = TERM_DEFAULT_FOREGROUND;
 				case 40:
-					current_attribute.background = TERM_DEFAULT_BACKGROUND;
+					current_attribute.bg = TERM_DEFAULT_BACKGROUND;
 			}
 		}
 	}
@@ -303,11 +296,11 @@ void Terminal::evaluate_clear_escape() {
 	int val = !escape_parameters[0] ? 0 : atoi(escape_parameters[0]);
 	switch(val) {
 		case 0:
-			for(size_t line = cursor_position.y; line < dimensions.height; line++)
+			for(int line = cursor_position.line; line < dimensions.lines; line++)
 				clear_line(line);
 			break;
 		case 1:
-			for(size_t line = 0; line <= cursor_position.y; line++)
+			for(int line = 0; line <= cursor_position.line; line++)
 				clear_line(line);
 			break;
 		case 2:
@@ -322,15 +315,15 @@ void Terminal::evaluate_clear_line_escape() {
 	int val = !escape_parameters[0] ? 0 : atoi(escape_parameters[0]);
 	switch(val) {
 		case 0:
-			for(size_t x = cursor_position.x; x < dimensions.width; x++)
-				set_character({x, cursor_position.y}, {0, current_attribute});
+			for(int x = cursor_position.col; x < dimensions.cols; x++)
+				set_character({x, cursor_position.line}, {0, current_attribute});
 			break;
 		case 1:
-			for(size_t x = 0; x <= cursor_position.x; x++)
-				set_character({x, cursor_position.y}, {0, current_attribute});
+			for(int x = 0; x <= cursor_position.col; x++)
+				set_character({x, cursor_position.line}, {0, current_attribute});
 			break;
 		case 2:
-			clear_line(cursor_position.y);
+			clear_line(cursor_position.line);
 			break;
 		default:
 			return;
