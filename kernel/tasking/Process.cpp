@@ -394,6 +394,8 @@ void Process::call_signal_handler(int signal) {
 	if(!signal_loc || signal_loc >= HIGHER_HALF)
 		return;
 
+	//TODO The allocations here try to use locks, but we're in the middle of preempting. Maybe allocate ahead of time?
+
 	//Allocate a userspace stack
 	_sighandler_ustack_region = page_directory->allocate_region(HIGHER_HALF - PROCESS_STACK_SIZE * 2, PROCESS_STACK_SIZE, true);
 	if(!_sighandler_ustack_region.virt) {
