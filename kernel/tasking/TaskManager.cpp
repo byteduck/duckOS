@@ -200,6 +200,7 @@ void TaskManager::do_yield_async() {
 
 
 void TaskManager::preempt(){
+	ASSERT(!preempting);
 	if(!tasking_enabled) return;
 	preempting = true;
 

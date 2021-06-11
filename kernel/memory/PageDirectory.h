@@ -339,6 +339,12 @@ public:
 	size_t used_vmem();
 
 	/**
+	 * Gets whether or not this PageDirectory is currently mapped.
+	 * @return Whether or not the PageDirectory is currently mapped.
+	 */
+	bool is_mapped();
+
+	/**
 	 * Dump information about the memory maps
 	 */
 	void dump();

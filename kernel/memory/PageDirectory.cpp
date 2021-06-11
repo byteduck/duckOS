@@ -428,7 +428,14 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t mem_size, bool read_wri
 	LinkedMemoryRegion region(pmem_region, vmem_region);
 	map_region(region, read_write);
 
-	memset((void*)vmem_region->start, 0, vmem_region->size);
+	if(is_mapped()) {
+		memset((void*)vmem_region->start, 0, vmem_region->size);
+	} else {
+		//If the region isn't mapped, we have to map it to the kernel temporarily to zero it out
+		auto kernel_region = k_map_physical_region(pmem_region, true);
+		memset((void*)kernel_region.virt->start, 0, vmem_region->size);
+		k_free_virtual_region(kernel_region);
+	}
 
 	return region;
 }
@@ -452,7 +459,14 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size,
 	LinkedMemoryRegion region(pmem_region, vmem_region);
 	map_region(region, read_write);
 
-	memset((void*)vmem_region->start, 0, vmem_region->size);
+	if(is_mapped()) {
+		memset((void*)vmem_region->start, 0, vmem_region->size);
+	} else {
+		//If the region isn't mapped, we have to map it to the kernel temporarily to zero it out
+		auto kernel_region = k_map_physical_region(pmem_region, true);
+		memset((void*)kernel_region.virt->start, 0, vmem_region->size);
+		k_free_virtual_region(kernel_region);
+	}
 
 	return region;
 }
@@ -827,6 +841,13 @@ size_t PageDirectory::used_pmem() {
 
 size_t PageDirectory::used_vmem() {
 	return _vmem_map.used_memory();
+}
+
+bool PageDirectory::is_mapped() {
+	size_t current_page_directory;
+	asm volatile("mov %%cr3, %0" : "=r"(current_page_directory));
+	return current_page_directory == entries_physaddr();
+
 }
 
 void PageDirectory::dump() {
