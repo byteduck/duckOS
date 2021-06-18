@@ -41,6 +41,8 @@ public:
 
 	///TimeHandler
 	int frequency() override;
+	void enable() override;
+	void disable() override;
 
 private:
 	static void write(uint16_t data, uint8_t counter);

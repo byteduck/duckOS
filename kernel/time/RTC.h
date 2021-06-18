@@ -61,6 +61,8 @@ public:
 
 	///TimeHandler
 	int frequency() override;
+	void enable() override;
+	void disable() override;
 
 private:
 	bool set_frequency(int frequency);

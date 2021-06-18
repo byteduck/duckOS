@@ -28,6 +28,7 @@ void TimeManager::init() {
 	if(_inst)
 		return;
 	_inst = new TimeManager();
+	_inst->_keeper->enable();
 }
 
 TimeManager::TimeManager(): _keeper(new RTC(this)) {

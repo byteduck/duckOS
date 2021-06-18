@@ -27,6 +27,8 @@ class TimeKeeper {
 public:
 	explicit TimeKeeper(TimeManager* time);
 	virtual int frequency() = 0;
+    virtual void enable() = 0;
+    virtual void disable() = 0;
 
 protected:
 	void tick();

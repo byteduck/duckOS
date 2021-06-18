@@ -33,11 +33,6 @@ const int days_per_month[12] = {
 };
 
 RTC::RTC(TimeManager* time): IRQHandler(RTC_IRQ), TimeKeeper(time) {
-	//Disable interrupts and non-maskable interrupts and enable the RTC update ended interrupt
-	Interrupt::Disabler idis;
-	Interrupt::NMIDisabler nmidis;
-	CMOS::write(0x8B, CMOS_SQUARE_WAVE_INTERRUPT_FLAG | CMOS::read(CMOS_STATUS_B));
-	set_frequency(RTC_FREQUENCY);
 }
 
 time_t RTC::timestamp() {
@@ -110,6 +105,21 @@ bool RTC::set_frequency(int frequency) {
 
 int RTC::frequency() {
 	return _frequency;
+}
+
+void RTC::enable() {
+    //Disable interrupts and non-maskable interrupts and enable the RTC update ended interrupt
+    Interrupt::Disabler idis;
+    Interrupt::NMIDisabler nmidis;
+    CMOS::write(0x8B, CMOS_SQUARE_WAVE_INTERRUPT_FLAG | CMOS::read(CMOS_STATUS_B));
+    set_frequency(RTC_FREQUENCY);
+}
+
+void RTC::disable() {
+    //Disable interrupts and non-maskable interrupts and enable the RTC update ended interrupt
+    Interrupt::Disabler idis;
+    Interrupt::NMIDisabler nmidis;
+    CMOS::write(0x8B, CMOS::read(CMOS_STATUS_B) & (~CMOS_SQUARE_WAVE_INTERRUPT_FLAG));
 }
 
 bool RTC::mark_in_irq() {
