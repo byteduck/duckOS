@@ -277,6 +277,17 @@ bool PageDirectory::k_munmap(void* virtaddr) {
 	return true;
 }
 
+bool PageDirectory::k_is_mapped(size_t addr) {
+    if(addr < HIGHER_HALF) { //Program space
+       return false;
+    } else { //Kernel space
+        size_t page = (addr - HIGHER_HALF) / PAGE_SIZE;
+        size_t directory_index = (page / 1024) % 1024;
+        if (!kernel_entries[directory_index].data.present) return false;
+    }
+    return true;
+}
+
 /**
  * PageDirectory Entry stuff
  */

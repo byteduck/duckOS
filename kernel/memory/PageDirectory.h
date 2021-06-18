@@ -149,6 +149,8 @@ public:
 	 */
 	static bool k_munmap(void* virtaddr);
 
+	static bool k_is_mapped(size_t addr);
+
 
 	/************************************
 	 * Per-process page directory stuff *
