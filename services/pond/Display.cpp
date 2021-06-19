@@ -178,6 +178,15 @@ void Display::repaint() {
 			it++;
 	}
 
+	//If the buffer can't be flipped, combine the invalid areas together to calculate the portion of the framebuffer to be redrawn
+	if(!_can_flip_buffer) {
+	    //If the invalid buffer area is empty (has an x of -1), initialize it to the first invalid area
+	    if(_invalid_buffer_area.x == -1)
+	        _invalid_buffer_area = invalid_areas[0];
+	    for(auto& area : invalid_areas)
+	        _invalid_buffer_area = _invalid_buffer_area.combine(area);
+	}
+
 	for(auto& area : invalid_areas) {
 		// Fill the invalid area with the background.
 		if(_wallpaper)
@@ -247,7 +256,8 @@ void Display::flip_buffers(bool hide) {
 		memcpy(video_buf, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
 		flipped = !flipped;
 	} else {
-		memcpy(_framebuffer.data, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
+	    _framebuffer.copy(_root_window->framebuffer(), _invalid_buffer_area, _invalid_buffer_area.position());
+	    _invalid_buffer_area.x = -1;
 	}
 
 	display_buffer_dirty = false;
