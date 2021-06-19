@@ -101,8 +101,8 @@ void KernelMapper::print_stacktrace() {
 
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
 	    //Check if the stack pointer is mapped
-	    if((page_directory && !page_directory->is_mapped((size_t) stk)) || !PageDirectory::k_is_mapped((size_t) stk)) {
-	        printf("STACK UNMAPPED AT 0x%x\n", stk[1]);
+	    if((page_directory && !page_directory->is_mapped((size_t) stk)) || (!page_directory && !PageDirectory::k_is_mapped((size_t) stk))) {
+	        printf("0x%x (Unmapped)\n", stk[1]);
             break;
         }
 
