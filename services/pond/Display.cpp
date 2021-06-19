@@ -161,12 +161,13 @@ void Display::repaint() {
 	else
 		return;
 
-	//Remove areas that completely overlap
+	//Combine areas that overlap
 	auto it = invalid_areas.begin();
 	while(it != invalid_areas.end()) {
 		bool remove_area = false;
 		for(auto & other_area : invalid_areas) {
-			if(&*it != &other_area && it->inside(other_area)) {
+			if(&*it != &other_area && it->collides(other_area)) {
+			    other_area = it->combine(other_area);
 				remove_area = true;
 				break;
 			}
@@ -222,7 +223,7 @@ void Display::repaint() {
 		t1.tv_sec -= 1 + t1.tv_usec / -1000000;
 		t1.tv_usec = (1000000 - (-t1.tv_usec % 1000000)) % 1000000;
 	}
-	snLog::logf(buf, 10, "%dms", (int)(t1.tv_usec / 1000 + t1.tv_sec * 1000));
+	snprintf(buf, 10, "%dms", (int)(t1.tv_usec / 1000 + t1.tv_sec * 1000));
 	fb.fill({0, 0, 50, 14}, RGB(0, 0, 0));
 	fb.draw_text(buf, {0, 0}, FontManager::inst().get_font("gohu-14"), RGB(255, 255, 255));
 #endif

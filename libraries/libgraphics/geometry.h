@@ -79,12 +79,19 @@ public:
 	 */
 	Rect constrain(const Rect& parent) const;
 
-	/**
-	 * Returns a rect consisting of the overlapping area of two rectangles.
-	 * @param other
-	 * @return
-	 */
-	Rect overlapping_area(const Rect& other) const;
+    /**
+     * Returns a rect consisting of the overlapping area of two rectangles.
+     * @param other The rect to use.
+     * @return The overlapping area of the two rectangles.
+     */
+    Rect overlapping_area(const Rect& other) const;
+
+    /**
+     * Returns a rect that would contain both rectangles.
+     * @param other The other rectangle to combine with.
+     * @return The combined rect.
+     */
+    Rect combine(const Rect& other) const;
 
 	/**
 	 * Returns true if the rect has an area of zero.

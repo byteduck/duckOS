@@ -172,6 +172,18 @@ Rect Rect::overlapping_area(const Rect& other) const {
 	return ret;
 }
 
+Rect Rect::combine(const Rect &other) const {
+    Point topleft_pos =  {std::min(x, other.x), std::min(y, other.y)};
+    Point bottomright_pos = {std::max(x + width, other.x + other.width), std::max(y + height, other.y + other.height)};
+    return Rect {
+        topleft_pos.x,
+        topleft_pos.y,
+        bottomright_pos.x - topleft_pos.x,
+        bottomright_pos.y - topleft_pos.y
+    };
+}
+
+
 bool Rect::empty() const {
 	return !width && !height;
 }
