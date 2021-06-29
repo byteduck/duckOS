@@ -69,19 +69,25 @@ void KeyboardDevice::handle_irq(Registers *regs) {
 	while(true) {
 		auto status = IO::inb(KBD_PORT_STATUS);
 		//If there's nothing in the buffer or we're not reading the ps/2 keyboard buffer, return
-		if(!(!(status & KBD_STATUS_WHICHBUF) && (status & KBD_STATUS_OUTBUF_FULL))) break;
+		if(!(!(status & KBD_STATUS_WHICHBUF) && (status & KBD_STATUS_OUTBUF_FULL)))
+			break;
 
 		auto scancode = IO::inb(0x60);
 		auto key = scancode & 0x7fu;
 		bool key_pressed = !(scancode & KBD_IS_PRESSED);
 
-		if(scancode == 0xE0) _e0_flag = true;
+		if(scancode == 0xE0) {
+			_e0_flag = true;
+			continue;
+		}
 
 		//Check for modifier keys
 		switch(key) {
 			case KBD_SCANCODE_ALT:
-				if(_e0_flag) set_mod(KBD_MOD_ALTGR, key_pressed);
-				else set_mod(KBD_MOD_ALT, key_pressed);
+				if(_e0_flag)
+					set_mod(KBD_MOD_ALTGR, key_pressed);
+				else
+					set_mod(KBD_MOD_ALT, key_pressed);
 				break;
 			case KBD_SCANCODE_LSHIFT:
 			case KBD_SCANCODE_RSHIFT:
@@ -106,16 +112,24 @@ void KeyboardDevice::handle_irq(Registers *regs) {
 }
 
 void KeyboardDevice::set_mod(uint8_t mod, bool state) {
-	if(state) _modifiers |= mod;
-	if(!state) _modifiers &= ~mod;
+	if(state)
+		_modifiers |= mod;
+	if(!state)
+		_modifiers &= ~mod;
 }
 
 //TODO: Numpad, e0 prefixed characters, caps lock
 void KeyboardDevice::set_key_state(uint8_t scancode, bool pressed) {
 	uint8_t key = scancode & 0x7fu;
 	char character = (_modifiers & KBD_MOD_SHIFT) ? kbd_us_shift_map[key] : kbd_us_map[key];
-	KeyEvent event = {(uint16_t) (_e0_flag ? 0xe000u + scancode : scancode), key, (uint8_t) character, _modifiers};
-	if (_handler != nullptr) _handler->handle_key(event);
+	KeyEvent event = {
+			.scancode = (uint16_t) (_e0_flag ? 0xe000u + scancode : scancode),
+			.key = key,
+			.character = (uint8_t) character,
+			.modifiers = _modifiers
+	};
+	if (_handler != nullptr)
+		_handler->handle_key(event);
 	_e0_flag = false;
 	LOCK(_lock);
 	_event_buffer.push(event);
