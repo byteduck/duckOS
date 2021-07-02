@@ -44,32 +44,16 @@ bool strcmp(const char* str1, const char* str2){
 	return flag == 0 && str1[i] == '\0' && str2[i] == '\0';
 }
 
-void *memset(void *dest, char val, size_t count){
-	char *temp = (char *)dest;
-	for( ; count != 0; count--) *temp++ = val;
-	return dest;
+void* memset(void* dest, int c, size_t n) {
+	void* odest = dest;
+	asm volatile( "rep stosb" : "=D"(dest), "=c"(n) : "0"(dest), "1"(n), "a"(c) : "memory");
+	return odest;
 }
 
 void *memcpy(void *dest, const void *src, size_t count){
-	uint8_t *pdest = (uint8_t*) dest;
-	uint8_t *psrc = (uint8_t*) src;
-
-	int loops = (count / sizeof(uint32_t));
-	for(int index = 0; index < loops; ++index)
-	{
-		*((uint32_t*)pdest) = *((uint32_t*)psrc);
-		pdest += sizeof(uint32_t);
-		psrc += sizeof(uint32_t);
-	}
-
-	loops = (count % sizeof(uint32_t));
-	for (int index = 0; index < loops; ++index)
-	{
-		*pdest = *psrc;
-		++pdest;
-		++psrc;
-	}
-	return dest;
+	void* odest = dest;
+	asm volatile( "rep movsb" : "+D"(dest), "+S"(src), "+c"(count)::"memory");
+	return odest;
 }
 
 int strlen(const char *str){
