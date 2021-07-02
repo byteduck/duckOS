@@ -66,14 +66,12 @@ namespace PCI {
 	void enable_bus_mastering(Address address) {
 		Command comm = {.value = read_word(address, PCI_COMMAND)};
 		comm.attrs.bus_master = true;
-		comm.attrs.mem_space = true;
 		write_word(address, PCI_COMMAND, comm.value);
 	}
 
 	void disable_bus_mastering(Address address) {
 		Command comm = {.value = read_word(address, PCI_COMMAND)};
 		comm.attrs.bus_master = false;
-		comm.attrs.mem_space = false;
 		write_word(address, PCI_COMMAND, comm.value);
 	}
 
