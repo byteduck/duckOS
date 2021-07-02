@@ -20,6 +20,7 @@
 #include <string.h>
 #include "graphics.h"
 #include "font.h"
+#include "memory.h"
 
 Image::Image(): data(nullptr), width(0), height(0) {}
 Image::Image(uint32_t* buffer, int width, int height): data(buffer), width(width), height(height) {}
@@ -42,7 +43,7 @@ void Image::copy(const Image& other, Rect other_area, const Point& pos) const {
 	other_area.height = self_area.height;
 
 	for(int y = 0; y < self_area.height; y++) {
-		memcpy(&data[self_area.x + (self_area.y + y) * width], &other.data[other_area.x + (other_area.y + y) * other.width], self_area.width * sizeof(uint32_t));
+		memcpy_uint32(&data[self_area.x + (self_area.y + y) * width], &other.data[other_area.x + (other_area.y + y) * other.width], self_area.width);
 	}
 }
 

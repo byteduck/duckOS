@@ -51,7 +51,6 @@ int main(int argc, char** argv, char** envp) {
 	}
 
 	auto* font_manager = new FontManager();
-	bool hide = argc > 1 && !strcmp(argv[1], "-h");
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"
@@ -61,7 +60,6 @@ int main(int argc, char** argv, char** envp) {
 		display->update_keyboard();
 		server->handle_packets();
 		display->repaint();
-		display->flip_buffers(hide);
 	}
 #pragma clang diagnostic pop
 

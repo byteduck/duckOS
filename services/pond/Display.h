@@ -82,9 +82,8 @@ public:
 
 	/**
 	 * Copies the screen buffer to libgraphics memory if necessary
-	 * @param hide Whether or not pond is hidden.
 	 */
-	void flip_buffers(bool hide);
+	void flip_buffers();
 
 	/**
 	 * Calculates the number of milliseconds until the next buffer flip should occur.

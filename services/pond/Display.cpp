@@ -27,6 +27,7 @@
 #include <cstring>
 #include <sys/input.h>
 #include <libgraphics/png.h>
+#include <libgraphics/memory.h>
 
 Display* Display::_inst = nullptr;
 
@@ -154,6 +155,11 @@ void Display::repaint() {
 	gettimeofday(&t0, nullptr);
 #endif
 
+    //If it hasn't been 1/60 of a second since the last repaint, don't bother
+    if(millis_until_next_flip())
+        return;
+    gettimeofday(&paint_time, NULL);
+
 	auto fb = _root_window->framebuffer();
 
 	if(!invalid_areas.empty())
@@ -236,24 +242,22 @@ void Display::repaint() {
 	fb.fill({0, 0, 50, 14}, RGB(0, 0, 0));
 	fb.draw_text(buf, {0, 0}, FontManager::inst().get_font("gohu-14"), RGB(255, 255, 255));
 #endif
+
+	//Flip the display buffers.
+    flip_buffers();
 }
 
 bool flipped = false;
-void Display::flip_buffers(bool hide) {
+void Display::flip_buffers() {
 	//If the screen buffer isn't dirty, don't bother
 	if(!display_buffer_dirty)
 		return;
-
-	//If it hasn't been 1/60 of a second since the last buffer flip, don't copy to the display buffer
-	if(millis_until_next_flip())
-		return;
-	gettimeofday(&paint_time, NULL);
 
 	if(_can_flip_buffer) {
 		ioctl(framebuffer_fd, IO_VIDEO_OFFSET, flipped ? _framebuffer.height : 0);
 		display_buffer_dirty = false;
 		auto* video_buf = &_framebuffer.data[flipped ? _framebuffer.height * _framebuffer.width : 0];
-		memcpy(video_buf, _root_window->framebuffer().data, IMGSIZE(_framebuffer.width, _framebuffer.height));
+		memcpy_uint32(video_buf, _root_window->framebuffer().data,_framebuffer.width * _framebuffer.height);
 		flipped = !flipped;
 	} else {
 	    _framebuffer.copy(_root_window->framebuffer(), _invalid_buffer_area, _invalid_buffer_area.position());
