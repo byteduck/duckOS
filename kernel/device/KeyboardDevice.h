@@ -55,6 +55,9 @@ public:
 	void set_handler(KeyboardHandler* handler);
 	void handle_irq(Registers* regs) override;
 
+	//I8042
+	void handle_byte(uint8_t byte);
+
 private:
 	static KeyboardDevice* _instance;
 

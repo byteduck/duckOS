@@ -21,6 +21,7 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/IO.h>
 #include "MouseDevice.h"
+#include "I8042.h"
 
 MouseDevice* MouseDevice::instance;
 
@@ -28,84 +29,47 @@ MouseDevice *MouseDevice::inst() {
 	return instance;
 }
 
-MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128)  {
+MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128), IRQHandler(12)  {
 	instance = this;
-	printf("[device] Initializing mouse...\n");
-
-	//Wait for mouse to be ready
-	while((IO::inb(I8042_STATUS) & 1u)) {
-		IO::inb(I8042_BUFFER);
-	}
-
-	//Enable auxiliary device port
-	wait_write();
-	IO::outb(I8042_STATUS, 0xA8);
-
-	//Check for presence of mouse
-	write(MOUSE_REQUEST_SINGLE_PACKET);
-	if(read() == I8042_ACK) {
-		present = true;
-		read();
-		read();
-		read(); //Flush buffer
-	} else {
-		present = false;
-		printf("[device] Mouse not present!\n");
-		return;
-	}
-
-	IO::wait();
-
-	//Enable IRQs
-	wait_write();
-	IO::outb(I8042_STATUS, 0x20);
-	wait_write();
-	uint8_t status = IO::inb(I8042_BUFFER) | 2u;
-	wait_write();
-	IO::outb(I8042_STATUS, 0x60);
-	wait_write();
-	IO::outb(I8042_BUFFER, status);
-
-	//Set defaults and enable
-	write(MOUSE_SET_DEFAULTS);
-	read();
-	write(MOUSE_ENABLE_PACKET_STREAMING);
-	read();
+	printf("[I8042/Mouse] Initializing mouse...\n");
 
 	//Get the device ID
-	write(MOUSE_GET_DEVICE_ID);
-	read(); //ACK
-	uint8_t id = read();
+	I8042::write(I8042::MOUSE, MOUSE_GET_DEVICE_ID);
+	I8042::read(I8042::MOUSE); //ACK
+	uint8_t id = I8042::read(I8042::MOUSE);
+
+	//Set defaults and enable
+	I8042::write(I8042::MOUSE, MOUSE_SET_DEFAULTS);
+	I8042::read(I8042::MOUSE);
+	I8042::write(I8042::MOUSE, MOUSE_ENABLE_PACKET_STREAMING);
+	I8042::read(I8042::MOUSE);
 
 	if(id != MOUSE_INTELLIMOUSE_ID) {
 		//Initialize the scroll wheel
-		write(MOUSE_SET_SAMPLE_RATE);
-		read(); //ACK
-		write(200);
-		read(); //ACK
-		write(MOUSE_SET_SAMPLE_RATE);
-		read(); //ACK
-		write(100);
-		read(); //ACK
-		write(MOUSE_SET_SAMPLE_RATE);
-		read(); //ACK
-		write(80);
-		read(); //ACK
+		I8042::write(I8042::MOUSE, MOUSE_SET_SAMPLE_RATE);
+		I8042::read(I8042::MOUSE); //ACK
+		I8042::write(I8042::MOUSE, 200);
+		I8042::read(I8042::MOUSE); //ACK
+		I8042::write(I8042::MOUSE, MOUSE_SET_SAMPLE_RATE);
+		I8042::read(I8042::MOUSE); //ACK
+		I8042::write(I8042::MOUSE, 100);
+		I8042::read(I8042::MOUSE); //ACK
+		I8042::write(I8042::MOUSE, MOUSE_SET_SAMPLE_RATE);
+		I8042::read(I8042::MOUSE); //ACK
+		I8042::write(I8042::MOUSE, 80);
+		I8042::read(I8042::MOUSE); //ACK
 
-		write(MOUSE_GET_DEVICE_ID);
-		read(); //ACK
-		id = read();
+		I8042::write(I8042::MOUSE, MOUSE_GET_DEVICE_ID);
+		I8042::read(I8042::MOUSE); //ACK
+		id = I8042::read(I8042::MOUSE);
 	}
 
 	if(id == MOUSE_INTELLIMOUSE_ID) {
 		has_scroll_wheel = true;
-		printf("[device] Mouse has wheel.\n");
+		printf("[I8042/Mouse] Mouse has wheel.\n");
 	}
 
-	set_irq(12);
-	reinstall_irq();
-
-	printf("[device] Mouse initialized!\n");
+	printf("[I8042/Mouse] Mouse initialized!\n");
 }
 
 ssize_t MouseDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
@@ -114,7 +78,7 @@ ssize_t MouseDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, si
 	while(ret < count) {
 		if(event_buffer.empty()) break;
 		if((count - ret) < sizeof(MouseEvent)) break;
-		auto evt = event_buffer.pop_back();
+		auto evt = event_buffer.pop_front();
 		memcpy(buffer, &evt, sizeof(MouseEvent));
 		ret += sizeof(MouseEvent);
 		buffer += sizeof(MouseEvent);
@@ -127,15 +91,14 @@ ssize_t MouseDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buf
 }
 
 void MouseDevice::handle_irq(Registers *regs) {
-	uint8_t status = IO::inb(I8042_STATUS);
-	if (!(((status & I8042_WHICH_BUFFER) == I8042_MOUSE_BUFFER) && (status & I8042_BUFFER_FULL)))
-		return;
+	I8042::inst().handle_irq();
+}
 
-	uint8_t data = IO::inb(I8042_BUFFER);
-	packet_data[packet_state] = data;
+void MouseDevice::handle_byte(uint8_t byte) {
+	packet_data[packet_state] = byte;
 	switch(packet_state) {
 		case 0:
-			if(!(data & 0x8u)) break;
+			if(!(byte & 0x8u)) break;
 			packet_state++;
 			break;
 		case 1:
@@ -154,37 +117,6 @@ void MouseDevice::handle_irq(Registers *regs) {
 	}
 
 	TaskManager::yield_if_idle();
-}
-
-void MouseDevice::wait_read() {
-	uint32_t timeout = 100000;
-	while(--timeout) {
-		if(IO::inb(I8042_STATUS) & 0x1u)
-			return;
-	}
-
-	printf("Mouse timed out (read)\n");
-}
-
-void MouseDevice::wait_write() {
-	uint32_t timeout = 100000;
-	while(--timeout) {
-		if(!(IO::inb(I8042_STATUS) & 0x2u))
-			return;
-	}
-	printf("Mouse timed out (write)\n");
-}
-
-uint8_t MouseDevice::read() {
-	wait_read();
-	return IO::inb(I8042_BUFFER);
-}
-
-void MouseDevice::write(uint8_t value) {
-	wait_write();
-	IO::outb(I8042_STATUS, 0xD4);
-	wait_write();
-	IO::outb(I8042_BUFFER, value);
 }
 
 bool MouseDevice::can_read(const FileDescriptor& fd) {
@@ -219,5 +151,6 @@ void MouseDevice::handle_packet() {
 	}
 
 	LOCK(lock);
-	event_buffer.push({x, y, z, (uint8_t) (packet_data[0] & 0x7u)});
+	if(!event_buffer.push({x, y, z, (uint8_t) (packet_data[0] & 0x7u)}))
+		printf("[I8042/Mouse] Event buffer full!\n");
 }

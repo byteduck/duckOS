@@ -26,6 +26,7 @@
 #include "KeyboardDevice.h"
 #include "MouseDevice.h"
 #include "KernelLogDevice.h"
+#include "I8042.h"
 
 kstd::vector<kstd::shared_ptr<Device>> Device::_devices;
 SpinLock Device::_lock;
@@ -36,8 +37,7 @@ void Device::init() {
 	new ZeroDevice();
 	new RandomDevice();
 	new NullDevice();
-	new KeyboardDevice();
-	new MouseDevice();
+	I8042::init();
 	new PTYMuxDevice();
 	new KernelLogDevice();
 }

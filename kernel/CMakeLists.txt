@@ -64,6 +64,7 @@ SET(KERNEL_SRCS
         random.cpp
         device/RandomDevice.cpp
         device/NullDevice.cpp
+        device/I8042.cpp
         device/KeyboardDevice.cpp
         device/MouseDevice.cpp
         interrupt/IRQHandler.cpp

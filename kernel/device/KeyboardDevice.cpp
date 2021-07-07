@@ -20,6 +20,7 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/IO.h>
 #include "KeyboardDevice.h"
+#include "I8042.h"
 
 //KeyEvent
 
@@ -41,7 +42,7 @@ ssize_t KeyboardDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer,
 	while(ret < count) {
 		if(_event_buffer.empty()) break;
 		if((count - ret) < sizeof(KeyEvent)) break;
-		auto evt = _event_buffer.pop_back();
+		auto evt = _event_buffer.pop_front();
 		memcpy(buffer, &evt, sizeof(KeyEvent));
 		ret += sizeof(KeyEvent);
 		buffer += sizeof(KeyEvent);
@@ -66,48 +67,41 @@ void KeyboardDevice::set_handler(KeyboardHandler *handler) {
 }
 
 void KeyboardDevice::handle_irq(Registers *regs) {
-	while(true) {
-		auto status = IO::inb(KBD_PORT_STATUS);
-		//If there's nothing in the buffer or we're not reading the ps/2 keyboard buffer, return
-		if(!(!(status & KBD_STATUS_WHICHBUF) && (status & KBD_STATUS_OUTBUF_FULL)))
+	I8042::inst().handle_irq();
+}
+
+void KeyboardDevice::handle_byte(uint8_t byte) {
+	auto scancode = byte;
+	auto key = scancode & 0x7fu;
+	bool key_pressed = !(scancode & KBD_IS_PRESSED);
+
+	if(scancode == 0xE0)
+		_e0_flag = true;
+
+	//Check for modifier keys
+	switch(key) {
+		case KBD_SCANCODE_ALT:
+			if(_e0_flag)
+				set_mod(KBD_MOD_ALTGR, key_pressed);
+			else
+				set_mod(KBD_MOD_ALT, key_pressed);
 			break;
-
-		auto scancode = IO::inb(0x60);
-		auto key = scancode & 0x7fu;
-		bool key_pressed = !(scancode & KBD_IS_PRESSED);
-
-		if(scancode == 0xE0) {
-			_e0_flag = true;
-			continue;
-		}
-
-		//Check for modifier keys
-		switch(key) {
-			case KBD_SCANCODE_ALT:
-				if(_e0_flag)
-					set_mod(KBD_MOD_ALTGR, key_pressed);
-				else
-					set_mod(KBD_MOD_ALT, key_pressed);
-				break;
-			case KBD_SCANCODE_LSHIFT:
-			case KBD_SCANCODE_RSHIFT:
-				set_mod(KBD_MOD_SHIFT, key_pressed);
-				break;
-			case KBD_SCANCODE_CTRL:
-				set_mod(KBD_MOD_CTRL, key_pressed);
-				break;
-			case KBD_SCANCODE_SUPER:
-				set_mod(KBD_MOD_SUPER, key_pressed);
-				break;
-			case KBD_ACK:
-			default: break;
-		}
-
-		//TODO: Switch TTY with ALT+NUM
-
-		set_key_state(scancode, key_pressed);
+		case KBD_SCANCODE_LSHIFT:
+		case KBD_SCANCODE_RSHIFT:
+			set_mod(KBD_MOD_SHIFT, key_pressed);
+			break;
+		case KBD_SCANCODE_CTRL:
+			set_mod(KBD_MOD_CTRL, key_pressed);
+			break;
+		case KBD_SCANCODE_SUPER:
+			set_mod(KBD_MOD_SUPER, key_pressed);
+			break;
+		case KBD_ACK:
+		default:
+			break;
 	}
 
+	set_key_state(scancode, key_pressed);
 	TaskManager::yield_if_idle();
 }
 
@@ -132,5 +126,6 @@ void KeyboardDevice::set_key_state(uint8_t scancode, bool pressed) {
 		_handler->handle_key(event);
 	_e0_flag = false;
 	LOCK(_lock);
-	_event_buffer.push(event);
+	if(!_event_buffer.push(event))
+		printf("[I8042/Keyboard] Event buffer full!\n");
 }

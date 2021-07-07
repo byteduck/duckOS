@@ -68,11 +68,10 @@ public:
 	//IRQHandler
 	void handle_irq(Registers* regs) override;
 
+	//I8042
+	void handle_byte(uint8_t byte);
+
 private:
-	static void wait_read();
-	static void wait_write();
-	static uint8_t read();
-	static void write(uint8_t value);
 	void handle_packet();
 
 	static MouseDevice* instance;
