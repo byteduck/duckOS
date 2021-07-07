@@ -1,6 +1,3 @@
-[submodule "programs/doom"]
-	path = programs/doom
-	url = https://github.com/byteduck/duckos-DOOM
 [submodule "ports/doom"]
 	path = ports/doom
 	url = https://github.com/byteduck/duckos-doom
