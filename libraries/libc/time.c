@@ -63,6 +63,6 @@ size_t strftime(char* s, size_t maxsize, const char* format, const struct tm* ti
 	return -1;
 }
 
-int gettimeofday(struct timeval *tv, struct timezone *tz) {
+int gettimeofday(struct timeval *tv, void *tz) {
 	return syscall3(SYS_GETTIMEOFDAY, (int) tv, (int) tz);
 }
