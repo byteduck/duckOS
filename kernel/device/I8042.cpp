@@ -42,8 +42,6 @@ bool I8042::init() {
 
 	printf("[I8042] Attempting to initialize...\n");
 
-	printf("STATUS: 0x%x\n", IO::inb(I8042_STATUS));
-
 	//Disable both ports (Port 2 ignored if not present)
 	controller_command(I8042_CMD_DISABLE_PORT1);
 	controller_command(I8042_CMD_DISABLE_PORT2);
