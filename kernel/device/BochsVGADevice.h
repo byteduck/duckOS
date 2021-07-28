@@ -22,6 +22,7 @@
 
 #include "VGADevice.h"
 #include <kernel/pci/PCI.h>
+#include <kernel/tasking/SpinLock.h>
 
 #define VBE_DISPI_INDEX_ID 0
 #define VBE_DISPI_INDEX_XRES 1
@@ -51,6 +52,7 @@
 #define VBE_DEFAULT_WIDTH 640
 #define VBE_DEFAULT_HEIGHT 480
 
+class Process;
 class BochsVGADevice: public VGADevice {
 public:
 	static BochsVGADevice* create();

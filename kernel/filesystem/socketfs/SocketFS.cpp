@@ -17,8 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/defines.h>
 #include "SocketFS.h"
+#include <kernel/filesystem/InodeMetadata.h>
+#include "SocketFSInode.h"
+#include <kernel/tasking/Process.h>
 
 SocketFS::SocketFS() {
 	root_entry = kstd::make_shared<SocketFSInode>(*this, kstd::shared_ptr<Process>(nullptr), 1, "", 0777u | MODE_DIRECTORY, 0, 0);

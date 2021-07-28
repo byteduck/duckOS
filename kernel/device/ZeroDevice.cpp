@@ -19,6 +19,7 @@
 
 #include <kernel/kstd/kstdlib.h>
 #include "ZeroDevice.h"
+#include <kernel/kstd/cstring.h>
 
 ZeroDevice::ZeroDevice(): CharacterDevice(1, 5) {
 

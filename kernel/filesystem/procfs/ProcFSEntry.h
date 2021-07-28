@@ -20,8 +20,9 @@
 #ifndef DUCKOS_PROCFSENTRY_H
 #define DUCKOS_PROCFSENTRY_H
 
-#include "ProcFS.h"
 #include "ProcFSInodeType.h"
+#include <kernel/kstd/unix_types.h>
+#include <kernel/filesystem/DirectoryEntry.h>
 
 class ProcFS;
 class ProcFSEntry {

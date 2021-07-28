@@ -22,10 +22,9 @@
 
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/Result.hpp>
-#include "FileDescriptor.h"
-#include "DirectoryEntry.h"
 
 class FileDescriptor;
+class DirectoryEntry;
 class File {
 public:
 	virtual ~File();

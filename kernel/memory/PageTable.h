@@ -21,8 +21,6 @@
 #define DUCKOS_PAGETABLE_H
 
 #include <kernel/kstd/types.h>
-#include <kernel/memory/PageDirectory.h>
-#include "Memory.h"
 
 class PageDirectory;
 class PageTable {

@@ -18,6 +18,7 @@
 */
 
 #include "kstdlib.h"
+#include "cstring.h"
 
 int atoi(char *str){
 	int len = strlen(str);

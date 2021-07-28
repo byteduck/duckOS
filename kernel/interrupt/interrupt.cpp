@@ -18,6 +18,9 @@
 */
 
 #include "interrupt.h"
+#include "idt.h"
+#include "isr.h"
+#include "irq.h"
 
 extern "C" void asm_syscall_handler();
 extern "C" void preempt_now_asm();

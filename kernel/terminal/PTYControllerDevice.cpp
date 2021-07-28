@@ -17,8 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "PTYControllerDevice.h"
 #include "PTYDevice.h"
+#include "PTYControllerDevice.h"
 
 PTYControllerDevice::PTYControllerDevice(unsigned int id): CharacterDevice(300, id), _output_buffer(1024) {
 	_pty = (new PTYDevice(id, shared_ptr()))->shared_ptr();

@@ -17,8 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include "kstdio.h"
 #include <kernel/kstd/kstddef.h>
-#include <kernel/kstd/kstdio.h>
 #include <kernel/kstd/kstdlib.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/terminal/VirtualTTY.h>
@@ -27,6 +27,7 @@
 #include <kernel/KernelMapper.h>
 #include <kernel/interrupt/interrupt.h>
 #include "cstring.h"
+#include <kernel/filesystem/FileDescriptor.h>
 
 kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
 kstd::shared_ptr<VirtualTTY> tty(nullptr);

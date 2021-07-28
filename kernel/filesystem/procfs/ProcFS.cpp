@@ -17,9 +17,12 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include "ProcFS.h"
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/kstd/defines.h>
-#include "ProcFS.h"
+#include "ProcFSInode.h"
+#include "ProcFSEntry.h"
+#include <kernel/tasking/Process.h>
 
 ProcFS* ProcFS::_instance;
 

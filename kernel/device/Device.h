@@ -22,6 +22,7 @@
 
 #include <kernel/filesystem/File.h>
 #include <kernel/kstd/vector.hpp>
+#include <kernel/tasking/SpinLock.h>
 
 class Device: public File {
 public:

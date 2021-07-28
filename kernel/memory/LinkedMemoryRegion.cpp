@@ -17,8 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/kstdio.h>
+#include "MemoryRegion.h"
 #include "LinkedMemoryRegion.h"
+#include <kernel/kstd/kstdio.h>
 
 LinkedMemoryRegion::LinkedMemoryRegion(MemoryRegion* phys, MemoryRegion* virt): phys(phys), virt(virt) {
 	if(phys && virt)

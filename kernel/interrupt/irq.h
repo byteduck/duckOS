@@ -27,7 +27,7 @@
 #define PIC2_COMMAND PIC2
 #define PIC2_DATA (PIC2+1)
 
-#include "IRQHandler.h"
+class IRQHandler;
 
 namespace Interrupt {
 	extern "C" void irq0();
@@ -48,7 +48,7 @@ namespace Interrupt {
 	extern "C" void irq15();
 	extern "C" void irq_handler(struct Registers *r);
 
-	void irq_set_handler(int irq, IRQHandler *handler);
+	void irq_set_handler(int irq, IRQHandler* handler);
 	void irq_remove_handler(int irq);
 	void irq_remap();
 	void irq_init();

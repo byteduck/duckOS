@@ -20,10 +20,12 @@
 #ifndef DUCKOS_PIPE_H
 #define DUCKOS_PIPE_H
 
-#define PIPE_SIZE PAGE_SIZE
-
+#include <kernel/memory/Memory.h>
 #include <kernel/filesystem/File.h>
 #include <kernel/kstd/circular_queue.hpp>
+#include <kernel/tasking/SpinLock.h>
+
+#define PIPE_SIZE PAGE_SIZE
 
 class Pipe: public File {
 public:

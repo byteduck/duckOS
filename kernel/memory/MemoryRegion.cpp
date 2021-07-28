@@ -17,9 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/kstdio.h>
 #include "MemoryRegion.h"
 #include "Memory.h"
+#include "MemoryMap.h"
 #include <kernel/kstd/vector.hpp>
 
 MemoryRegion::MemoryRegion(size_t start, size_t size): start(start), size(size), next(nullptr), prev(nullptr), heap_allocated(true) {

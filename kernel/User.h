@@ -24,6 +24,7 @@
 #include <kernel/kstd/vector.hpp>
 #include <kernel/tasking/SpinLock.h>
 #include "Result.hpp"
+#include <kernel/kstd/unix_types.h>
 
 class User {
 public:

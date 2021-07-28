@@ -17,13 +17,16 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include "isr.h"
+#include "interrupt.h"
 #include <kernel/kstd/kstddef.h>
 #include <kernel/memory/Memory.h>
 #include <kernel/kstd/kstdio.h>
 #include <kernel/interrupt/idt.h>
-#include <kernel/interrupt/isr.h>
 #include <kernel/tasking/TaskManager.h>
-#include "interrupt.h"
+#include <kernel/tasking/Signal.h>
+#include <kernel/tasking/Thread.h>
+#include <kernel/tasking/Process.h>
 
 namespace Interrupt {
 	void isr_init(){

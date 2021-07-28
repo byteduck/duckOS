@@ -23,6 +23,9 @@
 #include <kernel/kmain.h>
 #include <kernel/interrupt/irq.h>
 #include <kernel/filesystem/procfs/ProcFS.h>
+#include "TSS.h"
+#include "Process.h"
+#include "Thread.h"
 
 TSS TaskManager::tss;
 SpinLock TaskManager::lock;

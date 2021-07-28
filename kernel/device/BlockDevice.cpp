@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/kstdio.h>
-#include <kernel/kstd/defines.h>
+#include <kernel/kstd/unix_types.h>
 #include "BlockDevice.h"
 
 BlockDevice::BlockDevice(unsigned major, unsigned minor): Device(major, minor) {

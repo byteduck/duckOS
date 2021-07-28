@@ -21,9 +21,7 @@
 #define DUCKOS_PROCFSINODE_H
 
 #include <kernel/filesystem/Inode.h>
-#include "ProcFS.h"
 #include "ProcFSInodeType.h"
-#include "ProcFSEntry.h"
 
 #define PROCFS_CDIR_ENTRY_SIZE (sizeof(DirectoryEntry::id) + sizeof(DirectoryEntry::type) + sizeof(DirectoryEntry::name_length) + sizeof(char))
 #define PROCFS_PDIR_ENTRY_SIZE (sizeof(DirectoryEntry::id) + sizeof(DirectoryEntry::type) + sizeof(DirectoryEntry::name_length) + sizeof(char) * 2)

@@ -20,15 +20,18 @@
 #ifndef TASKING_H
 #define TASKING_H
 
-#include <kernel/kstd/kstddef.h>
-#include "Process.h"
+#include <kernel/kstd/vector.hpp>
+#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/Result.hpp>
+#include <kernel/kstd/unix_types.h>
 #include "Thread.h"
-#include "TSS.h"
-#include "SpinLock.h"
+#include "Process.h"
 
 class Process;
 class Thread;
 class SpinLock;
+struct TSS;
+
 namespace TaskManager {
 	extern TSS tss;
 	extern SpinLock lock;

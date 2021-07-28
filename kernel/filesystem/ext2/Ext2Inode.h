@@ -20,8 +20,8 @@
 #ifndef DUCKOS_EXT2INODE_H
 #define DUCKOS_EXT2INODE_H
 
-#include <kernel/filesystem/FileBasedFilesystem.h>
-#include "Ext2Filesystem.h"
+#include <kernel/filesystem/Inode.h>
+#include <kernel/kstd/vector.hpp>
 
 class Ext2Filesystem;
 class Ext2Inode: public Inode {

@@ -17,13 +17,13 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <kernel/terminal/VirtualTTY.h>
-#include <kernel/filesystem/VFS.h>
-#include <kernel/time/Time.h>
-#include <kernel/interrupt/interrupt.h>
 #include "Thread.h"
 #include "Process.h"
-#include "WaitBlocker.h"
+#include "ProcessArgs.h"
+#include "Blocker.h"
+#include "TaskManager.h"
+#include <kernel/memory/Memory.h>
+#include <kernel/memory/PageDirectory.h>
 
 Thread::Thread(Process* process, pid_t tid, size_t entry_point, ProcessArgs* args, bool kernel): _tid(tid), ring(kernel ? 0 : 3), _process(process), _kernel_stack_size(THREAD_KERNEL_STACK_SIZE) {
 	//Create the kernel stack

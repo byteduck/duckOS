@@ -21,7 +21,6 @@
 #define DUCKOS_STRING_H
 
 #include <kernel/kstd/types.h>
-#include <kernel/kstd/cstring.h>
 
 namespace kstd {
 	class string {

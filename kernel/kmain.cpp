@@ -17,30 +17,32 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/kstddef.h>
-#include <kernel/multiboot.h>
+#include "kmain.h"
 #include <kernel/kstd/kstdio.h>
 #include <kernel/memory/Memory.h>
-#include <kernel/filesystem/ext2/Ext2Filesystem.h>
-#include <kernel/time/PIT.h>
-#include <kernel/tasking/TaskManager.h>
-#include <kernel/device/PartitionDevice.h>
-#include <kernel/kmain.h>
-#include <kernel/filesystem/VFS.h>
-#include <kernel/terminal/VirtualTTY.h>
-#include <kernel/kstd/defines.h>
+#include <kernel/memory/gdt.h>
+#include <kernel/device/Device.h>
+#include <kernel/time/TimeManager.h>
+#include <kernel/interrupt/interrupt.h>
+#include <kernel/CommandLine.h>
 #include <kernel/device/BochsVGADevice.h>
 #include <kernel/device/MultibootVGADevice.h>
+#include <kernel/tasking/TaskManager.h>
+#include <kernel/tasking/Process.h>
+#include <kernel/tasking/Thread.h>
 #include <kernel/device/PATADevice.h>
+#include <kernel/terminal/VirtualTTY.h>
+#include <kernel/filesystem/ext2/Ext2Filesystem.h>
+#include <kernel/device/PartitionDevice.h>
+#include <kernel/filesystem/FileDescriptor.h>
+#include <kernel/User.h>
 #include <kernel/filesystem/procfs/ProcFS.h>
-#include <kernel/filesystem/socketfs/SocketFS.h>
+#include <kernel/filesystem/VFS.h>
 #include <kernel/filesystem/ptyfs/PTYFS.h>
-#include <kernel/memory/gdt.h>
-#include <kernel/interrupt/interrupt.h>
-#include <kernel/time/TimeManager.h>
-#include <kernel/kstd/unix_types.h>
-#include "CommandLine.h"
-#include "KernelMapper.h"
+#include <kernel/filesystem/socketfs/SocketFS.h>
+#include <kernel/KernelMapper.h>
+#include <kernel/tasking/ProcessArgs.h>
+#include <kernel/filesystem/LinkedInode.h>
 
 uint8_t boot_disk;
 

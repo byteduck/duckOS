@@ -17,10 +17,11 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/defines.h>
-#include <kernel/time/PIT.h>
-#include <kernel/time/Time.h>
 #include "FileBasedFilesystem.h"
+#include <kernel/kstd/cstring.h>
+#include <kernel/time/Time.h>
+#include "Inode.h"
+#include "FileDescriptor.h"
 
 BlockCacheEntry::BlockCacheEntry(size_t block, uint8_t *data): block(block), data(data) {
 

@@ -21,6 +21,8 @@
 #include "MultibootVGADevice.h"
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/tasking/Process.h>
+#include <kernel/kstd/cstring.h>
+#include <kernel/multiboot.h>
 
 MultibootVGADevice *MultibootVGADevice::create(struct multiboot_info *mboot_header) {
 	auto* ret = new MultibootVGADevice();

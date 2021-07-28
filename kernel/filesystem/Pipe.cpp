@@ -17,10 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include "Pipe.h"
 #include <kernel/tasking/Signal.h>
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/kstd/defines.h>
-#include "Pipe.h"
+#include <kernel/filesystem/FileDescriptor.h>
 
 Pipe::Pipe(): _queue(PIPE_SIZE) {}
 

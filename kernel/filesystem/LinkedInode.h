@@ -20,11 +20,9 @@
 #ifndef DUCKOS_LINKEDINODE_H
 #define DUCKOS_LINKEDINODE_H
 
-#include <kernel/filesystem/Inode.h>
 #include <kernel/kstd/unique_ptr.hpp>
 #include <kernel/kstd/string.h>
-
-class Inode;
+#include "Inode.h"
 
 class LinkedInode {
 public:

@@ -20,8 +20,8 @@
 #ifndef DUCKOS_PTYFSINODE_H
 #define DUCKOS_PTYFSINODE_H
 
-#include <kernel/filesystem/InodeMetadata.h>
-#include <kernel/filesystem/LinkedInode.h>
+#include <kernel/filesystem/Inode.h>
+#include <kernel/filesystem/DirectoryEntry.h>
 
 #define PTYFS_CDIR_ENTRY_SIZE (sizeof(DirectoryEntry::id) + sizeof(DirectoryEntry::type) + sizeof(DirectoryEntry::name_length) + sizeof(char))
 #define PTYFS_PDIR_ENTRY_SIZE (sizeof(DirectoryEntry::id) + sizeof(DirectoryEntry::type) + sizeof(DirectoryEntry::name_length) + sizeof(char) * 2)

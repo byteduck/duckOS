@@ -20,49 +20,27 @@
 #ifndef DUCKOS_PROCESS_H
 #define DUCKOS_PROCESS_H
 
-#include <kernel/kstd/kstddef.h>
-#include <kernel/kstd/string.h>
-#include <kernel/memory/PageDirectory.h>
-#include <kernel/tasking/TaskManager.h>
-#include <kernel/tasking/ELF.h>
 #include <kernel/kstd/shared_ptr.hpp>
-#include <kernel/filesystem/LinkedInode.h>
-#include <kernel/tasking/TSS.h>
-#include "ProcessArgs.h"
-#include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/queue.hpp>
 #include "Signal.h"
-#include "Blocker.h"
-#include <kernel/filesystem/Pipe.h>
-#include <kernel/interrupt/syscall.h>
+#include <kernel/User.h>
+#include <kernel/kstd/string.h>
 
 class FileDescriptor;
 class Blocker;
+class ProcessArgs;
+class TTYDevice;
+class Thread;
+class PageDirectory;
+class LinkedInode;
 
 namespace ELF {struct elf32_header;};
 
 #define SHM_READ 0x1u
 #define SHM_WRITE 0x2u
 
-struct shm {
-	void* ptr;
-	size_t size;
-	int id;
-};
-
-struct pollfd {
-public:
-	int fd;
-	short events;
-	short revents;
-};
-
-typedef size_t nfds_t;
-
 extern const char* PROC_STATUS_NAMES[];
 
-class TTYDevice;
-class Thread;
 class Process {
 public:
 	enum State {

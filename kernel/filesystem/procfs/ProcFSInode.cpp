@@ -17,13 +17,19 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/defines.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/CommandLine.h>
-#include <kernel/time/PIT.h>
 #include <kernel/filesystem/VFS.h>
 #include <kernel/time/TimeManager.h>
 #include "ProcFSInode.h"
+#include "ProcFSEntry.h"
+#include <kernel/filesystem/Inode.h>
+#include <kernel/User.h>
+#include "ProcFS.h"
+#include <kernel/memory/Memory.h>
+#include <kernel/kstd/cstring.h>
+#include <kernel/tasking/Process.h>
+#include <kernel/memory/PageDirectory.h>
 
 ProcFSInode::ProcFSInode(ProcFS& fs, ProcFSEntry& entry): Inode(fs, entry.dir_entry.id), procfs(fs), pid(entry.pid), type(entry.type), parent(entry.parent) {
 	switch(entry.dir_entry.type) {

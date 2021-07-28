@@ -21,8 +21,9 @@
 #define DUCKOS_SOCKETFS_H
 
 #include <kernel/filesystem/Filesystem.h>
-#include "SocketFSInode.h"
 #include "socketfs_defines.h"
+#include <kernel/kstd/vector.hpp>
+#include <kernel/tasking/SpinLock.h>
 
 #define SOCKETFS_FSID 3
 

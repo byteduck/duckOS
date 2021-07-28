@@ -19,9 +19,10 @@
 
 #include "PTYFSInode.h"
 #include <kernel/terminal/PTYDevice.h>
-#include <kernel/kstd/defines.h>
 #include "PTYFS.h"
 #include <kernel/terminal/PTYControllerDevice.h>
+#include <kernel/kstd/cstring.h>
+#include <kernel/filesystem/LinkedInode.h>
 
 PTYFSInode::PTYFSInode(PTYFS& fs, Type type, const kstd::shared_ptr<PTYDevice>& pty): Inode(fs, type == PTY ? pty->id() + 2 : 1), type(type), _pty(pty), ptyfs(fs) {
 	// Inode ID 1 = Root, 2+ = (pty ID + 2)

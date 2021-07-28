@@ -17,9 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/tasking/TaskManager.h>
 #include "PageTable.h"
-#include <kernel/memory/PageDirectory.h>
+#include "PageDirectory.h"
+#include "LinkedMemoryRegion.h"
 
 void PageTable::Entry::Data::set_address(size_t address) {
 	page_addr = address >> 12u;

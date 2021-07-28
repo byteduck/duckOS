@@ -21,13 +21,14 @@
 #define DUCKOS_PAGEDIRECTORY_H
 
 #include <kernel/kstd/unix_types.h>
-#include "Memory.h"
 #include "MemoryMap.h"
-#include "LinkedMemoryRegion.h"
-#include "PageTable.h"
+#include <kernel/tasking/SpinLock.h>
 #include <kernel/Result.hpp>
 
 class PageTable;
+class LinkedMemoryRegion;
+class MemoryRegion;
+
 class PageDirectory {
 public:
 	typedef union Entry {

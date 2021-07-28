@@ -22,13 +22,15 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/unix_types.h>
-#include "Blocker.h"
-#include "ProcessArgs.h"
+#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/memory/LinkedMemoryRegion.h>
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
 #define THREAD_KERNEL_STACK_SIZE 4096 //4KiB
 
 class Process;
+class Blocker;
+class ProcessArgs;
 class Thread {
 public:
 	enum State {

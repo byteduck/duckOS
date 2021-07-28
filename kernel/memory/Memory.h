@@ -20,10 +20,7 @@
 #ifndef PAGING_H
 #define PAGING_H
 
-#include "PageTable.h"
-#include "MemoryMap.h"
-#include <kernel/memory/PageDirectory.h>
-#include <kernel/multiboot.h>
+#include <kernel/kstd/types.h>
 
 #define PAGING_4KiB 0
 #define PAGING_4MiB 1
@@ -63,15 +60,19 @@
  * often)
  */
 
-
 class PageTable;
 class PageDirectory;
+class MemoryMap;
+
 extern "C" long _KERNEL_TEXT;
 extern "C" long _KERNEL_TEXT_END;
 extern "C" long _KERNEL_DATA;
 extern "C" long _KERNEL_DATA_END;
 extern "C" long _PAGETABLES_START;
 extern "C" long _PAGETABLES_END;
+
+struct multiboot_info;
+struct multiboot_mmap_entry;
 
 namespace Memory {
 	extern PageDirectory kernel_page_directory;
@@ -147,7 +148,7 @@ namespace Memory {
 	 /**
 	  * Parses the multiboot memory map.
 	  */
-	 void parse_mboot_memory_map(struct multiboot_info* header, struct multiboot_mmap_entry* first_entry);
+	 void parse_mboot_memory_map(multiboot_info* header, multiboot_mmap_entry* first_entry);
 };
 
 int liballoc_lock();

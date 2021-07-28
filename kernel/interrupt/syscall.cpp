@@ -21,6 +21,10 @@
 #include <kernel/interrupt/syscall.h>
 #include <kernel/kstd/kstdio.h>
 #include <kernel/tasking/TaskManager.h>
+#include <kernel/kstd/unix_types.h>
+#include <kernel/tasking/Thread.h>
+#include <kernel/tasking/Process.h>
+#include <kernel/tasking/Signal.h>
 
 void syscall_handler(Registers& regs){
 	regs.eax = handle_syscall(regs, regs.eax, regs.ebx, regs.ecx, regs.edx);

@@ -21,8 +21,7 @@
 #define DUCKOS_VECTOR_HPP
 
 #include "kstdlib.h"
-#include "types.h"
-#include "cstring.h"
+#include "kstddef.h"
 #include "utility.h"
 
 namespace kstd {

@@ -30,6 +30,7 @@
 
 #include "BlockDevice.h"
 
+class Process;
 class VGADevice: public BlockDevice {
 public:
 	VGADevice();

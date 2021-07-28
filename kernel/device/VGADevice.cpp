@@ -19,7 +19,8 @@
 
 #include "VGADevice.h"
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/kstd/defines.h>
+#include <kernel/tasking/Thread.h>
+#include <kernel/tasking/Process.h>
 
 VGADevice* VGADevice::_inst = nullptr;
 

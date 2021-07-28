@@ -22,12 +22,13 @@
 
 #include <kernel/kstd/types.h>
 #include <kernel/kstd/kstdlib.h>
-#include <kernel/memory/MemoryRegion.h>
-#include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/pci/PCI.h>
 #include <kernel/interrupt/IRQHandler.h>
 #include "BlockDevice.h"
 #include "ATA.h"
+#include <kernel/tasking/SpinLock.h>
+#include <kernel/memory/LinkedMemoryRegion.h>
+#include <kernel/memory/Memory.h>
 
 #define ATA_MAX_SECTORS_AT_ONCE (PAGE_SIZE / 512)
 

@@ -20,10 +20,11 @@
 #ifndef DUCKOS_PROCESSARGS_H
 #define DUCKOS_PROCESSARGS_H
 
-
 #include <kernel/kstd/vector.hpp>
-#include <kernel/filesystem/LinkedInode.h>
+#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/string.h>
 
+class LinkedInode;
 class ProcessArgs {
 public:
 	ProcessArgs(const kstd::shared_ptr<LinkedInode>& working_dir);

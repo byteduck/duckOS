@@ -22,6 +22,7 @@
 #include <kernel/IO.h>
 #include "MouseDevice.h"
 #include "I8042.h"
+#include <kernel/kstd/cstring.h>
 
 MouseDevice* MouseDevice::instance;
 

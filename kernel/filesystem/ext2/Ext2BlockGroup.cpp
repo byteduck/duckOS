@@ -18,6 +18,8 @@
 */
 
 #include "Ext2BlockGroup.h"
+#include "Ext2.h"
+#include "Ext2Filesystem.h"
 
 Ext2BlockGroup::Ext2BlockGroup(Ext2Filesystem* fs, uint32_t num): fs(fs), num(num) {
 	auto* buf = new ext2_block_group_descriptor;

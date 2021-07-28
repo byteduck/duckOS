@@ -22,8 +22,8 @@
 
 #include <kernel/kstd/circular_queue.hpp>
 #include <kernel/device/CharacterDevice.h>
-#include <kernel/device/KeyboardDevice.h>
 #include <kernel/kstd/unix_types.h>
+#include <kernel/tasking/SpinLock.h>
 
 #define NUM_TTYS 8
 

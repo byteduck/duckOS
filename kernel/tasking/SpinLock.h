@@ -39,5 +39,4 @@ private:
 	kstd::shared_ptr<Thread> _holding_thread;
 };
 
-
 #endif //DUCKOS_SPINLOCK_H

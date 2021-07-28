@@ -19,12 +19,15 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/kstdio.h>
-#include <kernel/memory/Memory.h>
 #include <kernel/interrupt/isr.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/interrupt.h>
 #include "PageTable.h"
 #include "MemoryMap.h"
+#include "Memory.h"
+#include <kernel/multiboot.h>
+#include "MemoryRegion.h"
+#include <kernel/tasking/Thread.h>
 
 namespace Memory {
 	PageDirectory kernel_page_directory;

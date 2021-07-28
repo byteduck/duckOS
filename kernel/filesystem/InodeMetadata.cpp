@@ -18,6 +18,7 @@
 */
 
 #include "InodeMetadata.h"
+#include <kernel/User.h>
 
 bool InodeMetadata::is_directory() const {
 	return (mode & 0xF000u) == MODE_DIRECTORY;

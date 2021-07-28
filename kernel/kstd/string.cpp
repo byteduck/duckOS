@@ -18,6 +18,7 @@
 */
 
 #include "string.h"
+#include "cstring.h"
 
 namespace kstd {
 	string::string(): _size(1), _length(0), _cstring(new char[1]) {

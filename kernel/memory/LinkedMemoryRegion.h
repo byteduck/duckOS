@@ -20,7 +20,6 @@
 #ifndef DUCKOS_LINKEDMEMORYREGION_H
 #define DUCKOS_LINKEDMEMORYREGION_H
 
-
 #include "MemoryRegion.h"
 
 class LinkedMemoryRegion {

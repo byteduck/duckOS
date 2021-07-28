@@ -22,7 +22,6 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/kstdio.h>
-#include <kernel/filesystem/FileDescriptor.h>
 
 #define ELF_MAGIC 0x464C457F //0x7F followed by 'ELF'
 
@@ -53,8 +52,12 @@
 #define ELF_PF_R 4u
 
 #include <kernel/kstd/vector.hpp>
-#include <kernel/filesystem/LinkedInode.h>
+#include <kernel/Result.hpp>
+#include <kernel/kstd/string.h>
 
+class FileDescriptor;
+class User;
+class PageDirectory;
 namespace ELF {
 	typedef struct __attribute__((packed)) elf32_header {
 		uint32_t magic;

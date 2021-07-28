@@ -20,8 +20,7 @@
 #ifndef DUCKOS_INODEMETADATA_H
 #define DUCKOS_INODEMETADATA_H
 
-#include <kernel/kstd/types.h>
-#include <kernel/User.h>
+#include <kernel/kstd/unix_types.h>
 
 #define MODE_FIFO 0x1000u
 #define MODE_CHAR_DEVICE 0x2000u
@@ -66,6 +65,8 @@ struct stat {
 	blksize_t	st_blksize;
 	blkcnt_t	st_blocks;
 };
+
+class User;
 
 class InodeMetadata {
 public:

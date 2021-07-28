@@ -27,6 +27,7 @@
 #include "MouseDevice.h"
 #include "KernelLogDevice.h"
 #include "I8042.h"
+#include <kernel/kstd/unix_types.h>
 
 kstd::vector<kstd::shared_ptr<Device>> Device::_devices;
 SpinLock Device::_lock;

@@ -22,16 +22,16 @@
 
 #include <kernel/kstd/unix_types.h>
 #include <kernel/kstd/shared_ptr.hpp>
-#include <kernel/kstd/string.h>
-#include "InodeMetadata.h"
-#include "DirectoryEntry.h"
-#include "LinkedInode.h"
 #include <kernel/Result.hpp>
 #include <kernel/tasking/SpinLock.h>
+#include "InodeMetadata.h"
+#include <kernel/kstd/string.h>
 
+class DirectoryEntry;
 class Filesystem;
 class LinkedInode;
 class FileDescriptor;
+
 class Inode {
 public:
 	Filesystem& fs;

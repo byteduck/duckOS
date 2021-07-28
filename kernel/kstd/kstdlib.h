@@ -21,7 +21,6 @@
 #define DUCKOS_KSTDLIB_H
 
 #include <kernel/kstd/types.h>
-#include <kernel/kstd/cstring.h>
 #include <kernel/memory/kliballoc.h>
 
 #define max(a,b) \

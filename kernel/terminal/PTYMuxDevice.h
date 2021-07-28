@@ -21,8 +21,9 @@
 #define DUCKOS_PTYMUXDEVICE_H
 
 #include <kernel/device/CharacterDevice.h>
-#include "PTYControllerDevice.h"
+#include <kernel/tasking/SpinLock.h>
 
+class PTYControllerDevice;
 class PTYMuxDevice: public CharacterDevice {
 public:
 	PTYMuxDevice();

@@ -48,6 +48,24 @@ typedef long off_t;
 typedef long blksize_t;
 typedef long blkcnt_t;
 
+/// SHM
+struct shm {
+	void* ptr;
+	size_t size;
+	int id;
+};
+
+
+/// FDs
+struct pollfd {
+public:
+	int fd;
+	short events;
+	short revents;
+};
+
+typedef size_t nfds_t;
+
 #define O_RDONLY  	0x000000
 #define O_WRONLY  	0x000001
 #define O_RDWR    	0x000002

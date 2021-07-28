@@ -17,13 +17,11 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/defines.h>
-#include <kernel/kstd/cstring.h>
-#include <kernel/kstd/kstdio.h>
-#include <kernel/memory/kliballoc.h>
-#include <kernel/kstd/kstddef.h>
-#include <kernel/kstd/kstdlib.h>
 #include "Ext2Inode.h"
+#include <kernel/kstd/cstring.h>
+#include "Ext2BlockGroup.h"
+#include "Ext2Filesystem.h"
+#include <kernel/filesystem/DirectoryEntry.h>
 
 Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id) {
 	//Get the block group

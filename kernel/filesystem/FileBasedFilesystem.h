@@ -22,6 +22,8 @@
 
 #include "Filesystem.h"
 #include <kernel/time/Time.h>
+#include <kernel/tasking/SpinLock.h>
+#include <kernel/kstd/vector.hpp>
 
 #define MAX_FILESYSTEM_CACHE_SIZE 0x1000000 //16 MiB
 

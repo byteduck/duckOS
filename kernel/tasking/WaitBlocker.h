@@ -21,8 +21,10 @@
 #define DUCKOS_WAITBLOCKER_H
 
 #include "Blocker.h"
-#include "Process.h"
+#include <kernel/kstd/unix_types.h>
+#include <kernel/kstd/shared_ptr.hpp>
 
+class Thread;
 class WaitBlocker: public Blocker {
 public:
 	WaitBlocker(kstd::shared_ptr<Thread> thread, pid_t wait_for);

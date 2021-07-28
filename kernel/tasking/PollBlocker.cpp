@@ -19,6 +19,7 @@
 
 #include "PollBlocker.h"
 #include <kernel/time/PIT.h>
+#include <kernel/filesystem/FileDescriptor.h>
 
 PollBlocker::PollBlocker(kstd::vector<PollFD>& pollfd, Time timeout):
 	polls(pollfd), has_timeout(timeout >= Time()), start_time(Time::now()), end_time(Time::now() + timeout)

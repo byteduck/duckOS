@@ -21,6 +21,7 @@
 #define DUCKOS_COMMANDLINE_H
 
 #include <kernel/multiboot.h>
+#include <kernel/kstd/string.h>
 
 namespace CommandLine {
 	struct Option {

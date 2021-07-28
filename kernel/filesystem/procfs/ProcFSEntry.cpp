@@ -17,8 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/kstdlib.h>
 #include "ProcFSEntry.h"
+#include <kernel/kstd/kstdlib.h>
+#include "ProcFS.h"
 
 ProcFSEntry::ProcFSEntry(ProcFSInodeType type, pid_t pid): type(type), pid(pid) {
 	uint8_t dirent_type;

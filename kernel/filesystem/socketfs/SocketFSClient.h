@@ -20,11 +20,15 @@
 #ifndef DUCKOS_SOCKETFSCLIENT_H
 #define DUCKOS_SOCKETFSCLIENT_H
 
-#include <kernel/tasking/Process.h>
+#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/queue.hpp>
+#include <kernel/kstd/unix_types.h>
+#include <kernel/tasking/SpinLock.h>
 
+class Process;
 class SocketFSClient {
 public:
-	SocketFSClient(kstd::shared_ptr<Process> process, pid_t pid);
+	SocketFSClient(const kstd::shared_ptr<Process>& process, pid_t pid);
 
 	kstd::shared_ptr<Process> process;
 	pid_t pid;

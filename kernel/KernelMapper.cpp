@@ -20,6 +20,8 @@
 #include <kernel/filesystem/VFS.h>
 #include <kernel/tasking/TaskManager.h>
 #include "KernelMapper.h"
+#include <kernel/kstd/cstring.h>
+#include <kernel/memory/PageDirectory.h>
 
 kstd::vector<KernelMapper::Symbol>* symbols = nullptr;
 size_t lowest_addr = 0xFFFFFFFF;

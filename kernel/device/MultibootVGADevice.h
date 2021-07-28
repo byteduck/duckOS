@@ -21,6 +21,7 @@
 #define DUCKOS_MULTIBOOTVGADEVICE_H
 
 #include "VGADevice.h"
+#include <kernel/tasking/SpinLock.h>
 
 class MultibootVGADevice: VGADevice {
 public:

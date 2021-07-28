@@ -17,9 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/kstdio.h>
-#include <kernel/tasking/Process.h>
 #include "MemoryMap.h"
+#include "MemoryRegion.h"
+#include <kernel/tasking/Thread.h>
 
 MemoryMap::MemoryMap(size_t page_size, MemoryRegion *first_region): _page_size(page_size), _first_region(first_region) {
 	MemoryRegion* cur = _first_region;

@@ -22,6 +22,7 @@
 
 #include "File.h"
 
+class Inode;
 class InodeFile: public File {
 public:
 	InodeFile(kstd::shared_ptr<Inode>);

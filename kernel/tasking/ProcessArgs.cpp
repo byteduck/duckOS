@@ -17,8 +17,9 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/filesystem/LinkedInode.h>
 #include "ProcessArgs.h"
+#include <kernel/filesystem/LinkedInode.h>
+#include <kernel/kstd/cstring.h>
 
 ProcessArgs::ProcessArgs(const kstd::shared_ptr<LinkedInode>& working_dir): working_dir(working_dir) {}
 

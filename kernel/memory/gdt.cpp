@@ -21,6 +21,7 @@
 #include <kernel/memory/gdt.h>
 #include <kernel/tasking/TSS.h>
 #include <kernel/tasking/TaskManager.h>
+#include <kernel/kstd/cstring.h>
 
 Memory::GDTEntry gdt[GDT_ENTRIES];
 Memory::GDTPointer gp;

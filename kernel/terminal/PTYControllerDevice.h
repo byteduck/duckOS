@@ -22,6 +22,8 @@
 
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/kstd/circular_queue.hpp>
+#include <kernel/tasking/SpinLock.h>
+#include <kernel/kstd/shared_ptr.hpp>
 
 class PTYDevice;
 class PTYControllerDevice: public CharacterDevice {

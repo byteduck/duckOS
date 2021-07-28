@@ -21,10 +21,13 @@
 #define DUCKOS_PTYFS_H
 
 #include <kernel/filesystem/Filesystem.h>
-#include "PTYFSInode.h"
+#include <kernel/tasking/SpinLock.h>
+#include <kernel/kstd/vector.hpp>
 
 #define PTYFS_FSID 4
 
+class PTYFSInode;
+class PTYDevice;
 class PTYFS: public Filesystem {
 public:
 	static PTYFS& inst();

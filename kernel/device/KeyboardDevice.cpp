@@ -21,6 +21,7 @@
 #include <kernel/IO.h>
 #include "KeyboardDevice.h"
 #include "I8042.h"
+#include <kernel/kstd/cstring.h>
 
 //KeyEvent
 

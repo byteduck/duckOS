@@ -17,10 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include "PTYFS.h"
 #include <kernel/terminal/PTYDevice.h>
 #include <kernel/terminal/PTYControllerDevice.h>
-#include "PTYFS.h"
-#include <kernel/kstd/defines.h>
+#include "PTYFSInode.h"
 
 PTYFS* _inst = nullptr;
 

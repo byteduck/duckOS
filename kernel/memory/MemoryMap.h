@@ -23,8 +23,8 @@
 
 #include <kernel/kstd/types.h>
 #include <kernel/tasking/SpinLock.h>
-#include "MemoryRegion.h"
 
+class MemoryRegion;
 class MemoryMap {
 public:
 	MemoryMap(size_t page_size, MemoryRegion* first_region);

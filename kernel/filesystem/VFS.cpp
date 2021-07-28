@@ -17,11 +17,15 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include "VFS.h"
 #include <kernel/kstd/kstdio.h>
 #include <kernel/kstd/cstring.h>
-#include <kernel/kstd/defines.h>
-#include "VFS.h"
 #include "ext2/Ext2Filesystem.h"
+#include "LinkedInode.h"
+#include "Inode.h"
+#include "FileDescriptor.h"
+#include <kernel/device/Device.h>
+#include <kernel/User.h>
 #include "InodeFile.h"
 
 VFS* VFS::instance;

@@ -20,11 +20,7 @@
 #ifndef DUCKOS_INTERRUPT_H
 #define DUCKOS_INTERRUPT_H
 
-#include <kernel/kstd/kstdio.h>
 #include <kernel/IO.h>
-#include "idt.h"
-#include "irq.h"
-#include "isr.h"
 
 #define CMOS_PORT 0x70
 #define NMI_FLAG 0x80

@@ -17,8 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/defines.h>
 #include "WaitBlocker.h"
+#include "TaskManager.h"
+#include "Thread.h"
+#include "Process.h"
 
 WaitBlocker::WaitBlocker(kstd::shared_ptr<Thread> thread, pid_t wait_for) {
 	_thread = thread;

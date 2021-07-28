@@ -20,6 +20,8 @@
 #ifndef ISR_H
 #define ISR_H
 
+#include <kernel/kstd/kstddef.h>
+
 namespace Interrupt {
 	extern "C" void isr0();
 	extern "C" void isr1();

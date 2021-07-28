@@ -20,14 +20,19 @@
 #ifndef DUCKOS_SOCKETFSINODE_H
 #define DUCKOS_SOCKETFSINODE_H
 
-#include <kernel/tasking/Process.h>
 #include "SocketFS.h"
 #include "SocketFSClient.h"
+#include <kernel/filesystem/Inode.h>
+#include <kernel/kstd/string.h>
+#include <kernel/filesystem/DirectoryEntry.h>
 
 #define SOCKETFS_CDIR_ENTRY_SIZE (sizeof(DirectoryEntry::id) + sizeof(DirectoryEntry::type) + sizeof(DirectoryEntry::name_length) + sizeof(char))
 #define SOCKETFS_PDIR_ENTRY_SIZE (sizeof(DirectoryEntry::id) + sizeof(DirectoryEntry::type) + sizeof(DirectoryEntry::name_length) + sizeof(char) * 2)
 
 class SocketFS;
+class Process;
+class LinkedInode;
+class InodeMetadata;
 class SocketFSInode: public Inode {
 public:
 	//SocketFSInode

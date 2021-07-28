@@ -20,6 +20,8 @@
 #ifndef GDT_H
 #define GDT_H
 
+#include <kernel/kstd/types.h>
+
 #define GDT_ENTRIES 6
 
 namespace Memory {

@@ -22,8 +22,8 @@
 
 #include <kernel/kstd/vector.hpp>
 #include "Blocker.h"
-#include <kernel/filesystem/FileDescriptor.h>
 #include <kernel/time/Time.h>
+#include <kernel/kstd/shared_ptr.hpp>
 
 #define POLLIN 0x01
 #define POLLPRI 0x02
@@ -32,6 +32,7 @@
 #define POLLHUP 0x10
 #define POLLINVAL 0x20
 
+class FileDescriptor;
 class PollBlocker: public Blocker {
 public:
 	class PollFD {

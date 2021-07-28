@@ -21,16 +21,14 @@
 #define DUCKOS_FILEDESCRIPTOR_H
 
 #include <kernel/kstd/shared_ptr.hpp>
-#include "File.h"
-#include "Inode.h"
-#include "InodeMetadata.h"
-#include "DirectoryEntry.h"
 #include <kernel/tasking/SpinLock.h>
-#include <kernel/tasking/Lock.h>
+#include <kernel/kstd/unix_types.h>
+#include "File.h"
 
-class File;
 class DirectoryEntry;
 class Device;
+class InodeMetadata;
+class Inode;
 class FileDescriptor {
 public:
 	explicit FileDescriptor(const kstd::shared_ptr<File>& file);

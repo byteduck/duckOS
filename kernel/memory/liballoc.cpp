@@ -18,6 +18,8 @@
 */
 
 #include <kernel/memory/kliballoc.h>
+#include <kernel/kstd/kstdio.h>
+#include "Memory.h"
 
 /**  Durand's Amazing Super Duper Memory functions.  */
 

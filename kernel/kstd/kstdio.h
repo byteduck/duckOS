@@ -21,7 +21,6 @@
 #define STDIO_H
 
 #include <kernel/kstd/kstddef.h>
-#include <kernel/kstd/string.h>
 
 #ifdef DEBUG
 #define ASSERT(cond) \

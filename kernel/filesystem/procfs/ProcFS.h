@@ -21,8 +21,10 @@
 #define DUCKOS_PROCFS_H
 
 #include <kernel/filesystem/Filesystem.h>
-#include "ProcFSInode.h"
-#include "ProcFSEntry.h"
+#include "ProcFSInodeType.h"
+#include <kernel/tasking/SpinLock.h>
+#include <kernel/kstd/vector.hpp>
+
 #define PROCFS_FSID 1
 
 class ProcFSInode;

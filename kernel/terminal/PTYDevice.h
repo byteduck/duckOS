@@ -21,6 +21,8 @@
 #define DUCKOS_PTYDEVICE_H
 
 #include "TTYDevice.h"
+#include <kernel/kstd/string.h>
+#include <kernel/tasking/SpinLock.h>
 
 class PTYControllerDevice;
 class PTYFS;

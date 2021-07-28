@@ -18,7 +18,11 @@
 */
 
 #include "SocketFSInode.h"
-#include <kernel/kstd/defines.h>
+#include <kernel/filesystem/FileDescriptor.h>
+#include <kernel/tasking/Thread.h>
+#include <kernel/tasking/TaskManager.h>
+#include <kernel/kstd/cstring.h>
+#include <kernel/filesystem/LinkedInode.h>
 
 SocketFSInode::SocketFSInode(SocketFS& fs, kstd::shared_ptr<Process> owner, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
 Inode(fs, id), owner(owner), fs(fs), id(id), name(name), host(owner, owner ? owner->pid() : -1)

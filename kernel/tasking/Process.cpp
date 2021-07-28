@@ -19,7 +19,6 @@
 
 #include <kernel/filesystem/VFS.h>
 #include <kernel/terminal/TTYDevice.h>
-#include <kernel/time/PIT.h>
 #include "Process.h"
 #include "TaskManager.h"
 #include "ELF.h"
@@ -34,6 +33,9 @@
 #include <kernel/terminal/PTYDevice.h>
 #include <kernel/interrupt/interrupt.h>
 #include <kernel/KernelMapper.h>
+#include "Thread.h"
+#include <kernel/filesystem/Pipe.h>
+#include <kernel/kstd/cstring.h>
 
 const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 

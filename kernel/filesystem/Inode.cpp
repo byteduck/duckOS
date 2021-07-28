@@ -17,11 +17,10 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/kstdio.h>
-#include <kernel/kstd/defines.h>
 #include "Inode.h"
 #include "Filesystem.h"
 #include "VFS.h"
+#include <kernel/kstd/string.h>
 
 Inode::Inode(Filesystem& fs, ino_t id): fs(fs), id(id) {
 }

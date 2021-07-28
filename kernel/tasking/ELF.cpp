@@ -18,10 +18,11 @@
 */
 
 #include <kernel/tasking/ELF.h>
-#include <kernel/kstd/defines.h>
 #include <kernel/filesystem/VFS.h>
 #include <kernel/memory/Memory.h>
-#include "TaskManager.h"
+#include <kernel/memory/LinkedMemoryRegion.h>
+#include <kernel/filesystem/FileDescriptor.h>
+#include <kernel/memory/PageDirectory.h>
 
 bool ELF::is_valid_elf_header(elf32_header* header) {
 	return header->magic == ELF_MAGIC;

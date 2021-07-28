@@ -20,7 +20,7 @@
 #ifndef DUCKOS_EXT2BLOCKGROUP_H
 #define DUCKOS_EXT2BLOCKGROUP_H
 
-#include "Ext2Filesystem.h"
+#include <kernel/kstd/unix_types.h>
 
 class Ext2Filesystem;
 class Ext2BlockGroup {

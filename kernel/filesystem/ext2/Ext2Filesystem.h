@@ -20,11 +20,11 @@
 #ifndef DUCKOS_EXT2FILESYSTEM_H
 #define DUCKOS_EXT2FILESYSTEM_H
 
-#include "Ext2.h"
-#include "Ext2BlockGroup.h"
-#include "Ext2Inode.h"
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/filesystem/FileBasedFilesystem.h>
+#include <kernel/Result.hpp>
+#include <kernel/kstd/vector.hpp>
+#include "Ext2.h"
 
 class Ext2Filesystem;
 class Ext2BlockGroup;

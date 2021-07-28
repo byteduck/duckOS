@@ -17,11 +17,16 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <kernel/kstd/vector.hpp>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/defines.h>
 #include <kernel/Atomic.h>
 #include "PageTable.h"
+#include "MemoryRegion.h"
+#include "LinkedMemoryRegion.h"
+#include "Memory.h"
+#include <kernel/kstd/cstring.h>
 
 PageDirectory::Entry PageDirectory::kernel_entries[256];
 PageTable PageDirectory::kernel_page_tables[256];

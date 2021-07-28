@@ -20,11 +20,14 @@
 #include "FileDescriptor.h"
 #include "InodeFile.h"
 #include "DirectoryEntry.h"
+#include "InodeMetadata.h"
+#include "Inode.h"
 #include "Pipe.h"
-#include <kernel/tasking/Process.h>
-#include <kernel/kstd/kstdio.h>
+#include <kernel/kstd/cstring.h>
 #include <kernel/terminal/PTYMuxDevice.h>
 #include <kernel/terminal/PTYDevice.h>
+#include <kernel/terminal/PTYControllerDevice.h>
+#include <kernel/tasking/Process.h>
 
 FileDescriptor::FileDescriptor(const kstd::shared_ptr<File>& file): _file(file) {
 	if(file->is_inode())

@@ -20,13 +20,20 @@
 #ifndef DUCKOS_VFS_H
 #define DUCKOS_VFS_H
 
-#include "LinkedInode.h"
-#include "FileDescriptor.h"
+#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/unix_types.h>
+#include <kernel/kstd/vector.hpp>
+#include <kernel/Result.hpp>
 #include <kernel/kstd/string.h>
+#include <kernel/User.h>
+#include "FileDescriptor.h"
+#include "LinkedInode.h"
+#include "Inode.h"
 
 #define O_INTERNAL_RETLINK 0x1000000
 #define VFS_RECURSION_LIMIT 5
 
+class Filesystem;
 class VFS {
 public:
 	class Mount {

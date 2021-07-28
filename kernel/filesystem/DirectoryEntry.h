@@ -20,8 +20,8 @@
 #ifndef DUCKOS_DIRECTORYENTRY_H
 #define DUCKOS_DIRECTORYENTRY_H
 
-#include <kernel/memory/kliballoc.h>
-#include "InodeMetadata.h"
+#include <kernel/kstd/unix_types.h>
+#include <kernel/kstd/string.h>
 
 #define TYPE_UNKNOWN 0
 #define TYPE_FILE 1
