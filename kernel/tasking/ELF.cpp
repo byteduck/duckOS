@@ -103,7 +103,7 @@ ResultRet<kstd::string> ELF::read_interp(FileDescriptor& fd, kstd::vector<elf32_
 	return -ENOENT;
 }
 
-ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, PageDirectory* page_directory) {
+ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const kstd::shared_ptr<PageDirectory>& page_directory) {
 	uint32_t current_brk = 0;
 
 	for(uint32_t i = 0; i < headers.size(); i++) {

@@ -24,6 +24,7 @@
 #include <kernel/kstd/unix_types.h>
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/memory/LinkedMemoryRegion.h>
+#include <kernel/memory/Stack.h>
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
 #define THREAD_KERNEL_STACK_SIZE 4096 //4KiB
@@ -39,7 +40,7 @@ public:
 		DEAD
 	};
 
-	Thread(Process* process, pid_t tid, size_t entry_point, ProcessArgs* args, bool kernel);
+	Thread(Process* process, pid_t tid, size_t entry_point, ProcessArgs* args);
 	Thread(Process* process, pid_t tid, Registers& regs);
 	~Thread();
 
@@ -47,6 +48,8 @@ public:
 	kstd::shared_ptr<Process>& process();
 	pid_t tid();
 	void* kernel_stack_top();
+	State state();
+	bool is_kernel_mode();
 
 	//Blocking
 	void block(Blocker& blocker);
@@ -64,7 +67,6 @@ public:
 	//Misc
 	void handle_pagefault(Registers* regs);
 
-	State state = ALIVE;
 	uint8_t fpu_state[512] __attribute__((aligned(16)));
 	Registers registers = {};
 	Registers signal_registers = {};
@@ -72,18 +74,17 @@ public:
 private:
 	friend class Process;
 
-	void setup_stack(uint32_t*& kernel_stack, const uint32_t* user_stack, Registers& registers);
+	void setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Registers& regs);
 	void die();
 
 	//Thread stuff
 	kstd::shared_ptr<Process> _process;
 	pid_t _tid;
-	uint8_t ring;
+	State _state = ALIVE;
 
-	//Kernel stack
-	void* _kernel_stack_base;
-	size_t _kernel_stack_size;
-	size_t _stack_size;
+	//Stack
+	LinkedMemoryRegion _kernel_stack_region;
+	LinkedMemoryRegion _stack_region;
 
 	//Blocking
 	Blocker* _blocker = nullptr;

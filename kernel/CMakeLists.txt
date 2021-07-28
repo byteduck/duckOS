@@ -87,6 +87,7 @@ SET(KERNEL_SRCS
         memory/MemoryRegion.cpp
         memory/MemoryMap.cpp
         memory/LinkedMemoryRegion.cpp
+        memory/Stack.h
         device/PATADevice.cpp
         CommandLine.cpp
         tasking/Signal.cpp

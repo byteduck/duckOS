@@ -21,6 +21,7 @@
 #define PAGING_H
 
 #include <kernel/kstd/types.h>
+#include <kernel/kstd/shared_ptr.hpp>
 
 #define PAGING_4KiB 0
 #define PAGING_4MiB 1
@@ -76,12 +77,18 @@ struct multiboot_mmap_entry;
 
 namespace Memory {
 	extern PageDirectory kernel_page_directory;
-	extern "C" void load_page_dir(size_t* dir);
 
 	/**
 	 * Sets up paging.
 	 */
 	void setup_paging();
+
+	/**
+	 * Loads a page directory.
+	 */
+	void load_page_directory(const kstd::shared_ptr<PageDirectory>& page_directory);
+	void load_page_directory(PageDirectory* page_directory);
+	void load_page_directory(PageDirectory& page_directory);
 
 	/**
 	 * Called when the CPU encounters a page fault in the kernel.

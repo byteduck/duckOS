@@ -26,6 +26,7 @@
 #include "TSS.h"
 #include "Process.h"
 #include "Thread.h"
+#include <kernel/memory/PageDirectory.h>
 
 TSS TaskManager::tss;
 SpinLock TaskManager::lock;
@@ -54,7 +55,7 @@ ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_pid(pid_t pid){
 		return -ENOENT;
 	for(int i = 0; i < processes->size(); i++) {
 		auto cur = processes->at(i);
-		if(cur->pid() == pid && cur->state != Process::DEAD)
+		if(cur->pid() == pid && cur->state() != Process::DEAD)
 			return processes->at(i);
 	}
 	return -ENOENT;
@@ -65,7 +66,7 @@ ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_pgid(pid_t pgid, p
 		return -ENOENT;
 	for(int i = 0; i < processes->size(); i++) {
 		auto cur = processes->at(i);
-		if(cur->pgid() == pgid && cur->pid() != excl && cur->state != Process::DEAD)
+		if(cur->pgid() == pgid && cur->pid() != excl && cur->state() != Process::DEAD)
 			return processes->at(i);
 	}
 	return -ENOENT;
@@ -76,7 +77,7 @@ ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_ppid(pid_t ppid, p
 		return -ENOENT;
 	for(int i = 0; i < processes->size(); i++) {
 		auto cur = processes->at(i);
-		if(cur->ppid() == ppid && cur->pid() != excl && cur->state != Process::DEAD)
+		if(cur->ppid() == ppid && cur->pid() != excl && cur->state() != Process::DEAD)
 			return processes->at(i);
 	}
 	return -ENOENT;
@@ -87,7 +88,7 @@ ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_sid(pid_t sid, pid
 		return -ENOENT;
 	for(int i = 0; i < processes->size(); i++) {
 		auto cur = processes->at(i);
-		if(cur->sid() == sid && cur->pid() != excl && cur->state != Process::DEAD)
+		if(cur->sid() == sid && cur->pid() != excl && cur->state() != Process::DEAD)
 			return processes->at(i);
 	}
 	return -ENOENT;
@@ -183,7 +184,7 @@ void TaskManager::queue_thread(const kstd::shared_ptr<Thread>& thread) {
 		printf("[TaskManager] WARN: Tried queuing kidle thread!\n");
 		return;
 	}
-	if(thread->state != Thread::ALIVE) {
+	if(thread->state() != Thread::ALIVE) {
 		printf("[TaskManager] WARN: Tried queuing blocked thread!\n");
 		return;
 	}
@@ -195,7 +196,7 @@ void TaskManager::notify_current(uint32_t sig){
 }
 
 kstd::shared_ptr<Thread> TaskManager::next_thread() {
-	while(!thread_queue->empty() && thread_queue->front()->state != Thread::ALIVE)
+	while(!thread_queue->empty() && thread_queue->front()->state() != Thread::ALIVE)
 		thread_queue->pop_front();
 
 	if(thread_queue->empty())
@@ -250,21 +251,21 @@ void TaskManager::preempt(){
 	//Handle pending signals, cleanup dead processes, and release zombie processes' resources
 	for(int i = 0; i < processes->size(); i++) {
 		auto current = processes->at(i);
-		switch(current->state) {
+		switch(current->state()) {
 			case Process::ALIVE: {
 				current->handle_pending_signal();
 				auto& threads = current->threads();
 				//Evaluate if any of the process's threads are alive or need unblocking
 				for (int j = 0; j < threads.size(); j++) {
 					auto thread = threads[j];
-					if (thread->state == Thread::BLOCKED) {
+					if (thread->state() == Thread::BLOCKED) {
 						if (thread->should_unblock()) {
 							any_alive = true;
 							thread->unblock();
 							if(cur_thread != thread)
 								queue_thread(thread);
 						}
-					} else if (thread->state == Thread::ALIVE) {
+					} else if (thread->state() == Thread::ALIVE) {
 						any_alive = true;
 					}
 				}
@@ -297,7 +298,7 @@ void TaskManager::preempt(){
 		//Pick a new process and decrease the quantum counter
 		auto old_thread = cur_thread;
 		cur_thread = next_thread();
-		quantum_counter = cur_thread->process()->quantum - 1;
+		quantum_counter = 1; //Every process has a quantum of 1 for now
 
 		bool should_preempt = old_thread != cur_thread;
 
@@ -338,20 +339,20 @@ void TaskManager::preempt(){
 
 		//Switch tasks.
 		preempting = false;
-		ASSERT(cur_thread->state == Thread::ALIVE);
+		ASSERT(cur_thread->state() == Thread::ALIVE);
 		if(should_preempt) {
-			if(old_thread != kidle_process->main_thread() && old_thread->state == Thread::ALIVE)
+			if(old_thread != kidle_process->main_thread() && old_thread->state() == Thread::ALIVE)
 				queue_thread(old_thread);
 
 			//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
 			old_thread = kstd::shared_ptr<Thread>(nullptr);
 
 			asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
-			preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory_loc);
+			preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());
 			asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
 		}
 	} else {
-		ASSERT(cur_thread->state == Thread::ALIVE);
+		ASSERT(cur_thread->state() == Thread::ALIVE);
 		quantum_counter--;
 		preempting = false;
 	}

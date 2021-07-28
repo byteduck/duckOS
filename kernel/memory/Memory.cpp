@@ -98,6 +98,18 @@ namespace Memory {
 		kernel_page_directory.update_kernel_entries();
 	}
 
+	void load_page_directory(const kstd::shared_ptr<PageDirectory>& page_directory) {
+		load_page_directory(*page_directory);
+	}
+
+	void load_page_directory(PageDirectory* page_directory) {
+		load_page_directory(*page_directory);
+	}
+
+	void load_page_directory(PageDirectory& page_directory) {
+		asm volatile("movl %0, %%cr3" :: "r"(page_directory.entries_physaddr()));
+	}
+
 
 	MemoryMap& pmem_map() {
 		return _pmem_map;

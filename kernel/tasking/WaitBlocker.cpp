@@ -45,7 +45,7 @@ bool WaitBlocker::is_ready() {
 		auto proc = procs->at(i);
 		if(proc->ppid() == _thread->process()->pid()) {
 			found_one = true;
-			if((_wait_pgid == -1 || proc->pgid() == _wait_pgid) && (_wait_pid == -1 || proc->pid() == _wait_pid) && proc->state == Process::ZOMBIE) {
+			if((_wait_pgid == -1 || proc->pgid() == _wait_pgid) && (_wait_pid == -1 || proc->pid() == _wait_pid) && proc->state() == Process::ZOMBIE) {
 				_wait_pid = proc->pid();
 				_exit_status = proc->exit_status();
 				proc->reap();

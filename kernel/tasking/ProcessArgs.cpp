@@ -20,33 +20,28 @@
 #include "ProcessArgs.h"
 #include <kernel/filesystem/LinkedInode.h>
 #include <kernel/kstd/cstring.h>
+#include <kernel/memory/Stack.h>
 
 ProcessArgs::ProcessArgs(const kstd::shared_ptr<LinkedInode>& working_dir): working_dir(working_dir) {}
 
-const void* ProcessArgs::setup_stack(void *stackptr) {
-	auto*& stack8 = reinterpret_cast<uint8_t *&>(stackptr);
-	auto*& stack32 = reinterpret_cast<uint32_t *&>(stackptr);
-
+void ProcessArgs::setup_stack(Stack& stack) {
 	auto* argp = new size_t[argv.size()];
 
 	//Copy contents of all args into stack
 	for(auto i = argv.size(); i > 0; i--) {
-		stack8 -= argv[i - 1].length() + 1;
-		argp[i - 1] = (size_t)stack8;
-		strcpy((char*)stack8, argv[i - 1].c_str());
+		stack.push_string(argv[i - 1].c_str());
+		argp[i - 1] = stack.real_stackptr();
 	}
 
 	//Copy pointers to all args into stack
-	for(auto i = argv.size(); i > 0; i--) {
-		*--stack32 = argp[i - 1];
-	}
+	for(auto i = argv.size(); i > 0; i--)
+		stack.push32(argp[i - 1]);
 
-	void* argvp = stackptr;
+	size_t argvp = stack.real_stackptr();
 
 	//Push argc, argv, and env on to stack
-	*--stack32 = 0; //env
-	*--stack32 = (uint32_t) argvp; //argv
-	*--stack32 = argv.size(); //argc
-
-	return stackptr;
+	stack.push_sizet(0); //env
+	stack.push_sizet(argvp); //argv
+	stack.push_int(argv.size()); //argc
+	stack.push32(0);
 }

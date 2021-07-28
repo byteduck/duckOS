@@ -133,7 +133,7 @@ namespace ELF {
 	 * @param page_directory The page directory to load the program into.
 	 * @return An error or the program break.
 	 */
-	ResultRet<size_t> load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, PageDirectory* page_directory);
+	ResultRet<size_t> load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const kstd::shared_ptr<PageDirectory>& page_directory);
 
 	/**
 	 * Gets information about an ELF executable.

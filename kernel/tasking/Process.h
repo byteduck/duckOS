@@ -51,9 +51,11 @@ public:
 
 	~Process();
 
+	//Construction
 	static kstd::shared_ptr<Process> create_kernel(const kstd::string& name, void (*func)());
 	static ResultRet<kstd::shared_ptr<Process>> create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent);
 
+	//Process Info
 	pid_t pid();
 	pid_t pgid();
 	pid_t ppid();
@@ -64,17 +66,23 @@ public:
 	kstd::string exe();
 	kstd::shared_ptr<LinkedInode> cwd();
 	void set_tty(kstd::shared_ptr<TTYDevice> tty);
+	State state();
+	int exit_status();
+	bool is_kernel_mode();
 
+	//Threads
 	kstd::shared_ptr<Thread> main_thread();
 	const kstd::vector<kstd::shared_ptr<Thread>>& threads();
 
-	int exit_status();
+	//Signals and death
 	void kill(int signal);
 	void reap();
 	void free_resources();
-
 	bool handle_pending_signal();
 	bool has_pending_signals();
+
+	//Memory
+	PageDirectory* page_directory();
 
 	//Syscalls
 	void check_ptr(const void* ptr);
@@ -145,13 +153,6 @@ public:
 	int sys_ptsname(int fd, char* buf, size_t bufsize);
 	int sys_sleep(timespec* time, timespec* remainder);
 
-	size_t page_directory_loc;
-	bool kernel = false;
-	uint8_t ring;
-	uint8_t quantum;
-	PageDirectory* page_directory;
-	State state;
-
 private:
 	friend class Thread;
 	Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
@@ -169,6 +170,11 @@ private:
 	mode_t _umask = 022;
 	int _exit_status = 0;
 	bool _freed_resources = false;
+	State _state;
+	bool _kernel_mode = false;
+
+	//Memory
+	kstd::shared_ptr<PageDirectory> _page_directory;
 
 	//Files & Pipes
 	kstd::vector<kstd::shared_ptr<FileDescriptor>> _file_descriptors;

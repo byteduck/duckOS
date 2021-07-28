@@ -159,6 +159,11 @@ public:
 
 	PageDirectory();
 	~PageDirectory();
+
+	/**
+	 * Gets a pointer to the entries in the PageDirectory.
+	 * @return
+	 */
 	Entry* entries();
 
 	/**

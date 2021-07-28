@@ -99,7 +99,7 @@ void KernelMapper::print_stacktrace() {
 	//Get the page directory of the current process (if there is one)
 	PageDirectory* page_directory = nullptr;
 	if(TaskManager::current_process())
-	    page_directory = TaskManager::current_process()->page_directory;
+	    page_directory = TaskManager::current_process()->page_directory();
 
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
 	    //Check if the stack pointer is mapped

@@ -83,7 +83,7 @@ ResultRet<kstd::shared_ptr<Process>> Process::create_user(const kstd::string& ex
 	proc->_exe = executable_loc;
 
 	//Load the ELF into the process's page directory and set proc->current_brk
-	auto brk_or_err = ELF::load_sections(*info.fd, info.segments, proc->page_directory);
+	auto brk_or_err = ELF::load_sections(*info.fd, info.segments, proc->_page_directory);
 	if(brk_or_err.is_error())
 		return brk_or_err.code();
 
@@ -130,6 +130,18 @@ void Process::set_tty(kstd::shared_ptr<TTYDevice> tty) {
 	_tty = tty;
 }
 
+Process::State Process::state() {
+	return _state;
+}
+
+int Process::exit_status() {
+	return _exit_status;
+}
+
+bool Process::is_kernel_mode() {
+	return _kernel_mode;
+}
+
 kstd::shared_ptr<Thread> Process::main_thread() {
 	return _threads[0];
 }
@@ -138,22 +150,17 @@ const kstd::vector<kstd::shared_ptr<Thread>>& Process::threads() {
 	return _threads;
 }
 
-int Process::exit_status() {
-	return _exit_status;
-}
-
-Process::Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid): _user(User::root()) {
+Process::Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid):
+		_user(User::root()),
+		_name(name),
+		_pid(TaskManager::get_new_pid()),
+		_kernel_mode(kernel),
+		_ppid(_pid > 1 ? ppid : 0),
+		_state(ALIVE)
+{
 	//Disable task switching so we don't screw up paging
 	bool en = TaskManager::enabled();
 	TaskManager::enabled() = false;
-
-	_name = name;
-	_pid = TaskManager::get_new_pid();
-	this->kernel = kernel;
-	ring = kernel ? 0 : 3;
-	_ppid = _pid > 1 ? ppid : 0; //kidle and init have a parent of 0
-	quantum = 1;
-	state = ALIVE;
 
 	if(!kernel) {
 		auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
@@ -164,45 +171,32 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 		_file_descriptors.push_back(ttydesc);
 		_cwd = args->working_dir;
 
-		//Make a new page directory
-		page_directory = new PageDirectory();
-		page_directory_loc = page_directory->entries_physaddr();
-	} else {
-		page_directory_loc = Memory::kernel_page_directory.entries_physaddr();
+		//Make new page directory
+		_page_directory = kstd::make_shared<PageDirectory>();
 	}
-
-	//Load the page directory of the process
-	asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
 
 	//Create the main thread
-	auto* main_thread = new Thread(this, _cur_tid++, entry_point, args, kernel);
+	auto* main_thread = new Thread(this, _cur_tid++, entry_point, args);
 	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
-
-	if(!kernel) {
-		//Load back the page directory of the current process
-		asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_thread()->process()->page_directory_loc));
-	}
 
 	TaskManager::enabled() = en;
 }
 
 Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
-	if(to_fork->kernel)
+	if(to_fork->_kernel_mode)
 		PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
 
 	TaskManager::enabled() = false;
 	_name = to_fork->_name;
 	_pid = TaskManager::get_new_pid();
-	kernel = false;
-	ring = 3;
+	_kernel_mode = false;
 	_cwd = to_fork->_cwd;
 	_ppid = to_fork->_pid;
 	_sid = to_fork->_sid;
 	_pgid = to_fork->_pgid;
 	_umask = to_fork->_umask;
-	quantum = to_fork->quantum;
 	_tty = to_fork->_tty;
-	state = ALIVE;
+	_state = ALIVE;
 
 	//Copy signal handlers and file descriptors
 	for(int i = 0; i < 32; i++)
@@ -217,19 +211,18 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	}
 
 	//Create and load page directory
-	page_directory = new PageDirectory();
-	page_directory_loc = page_directory->entries_physaddr();
-	asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
+	_page_directory = kstd::make_shared<PageDirectory>();
+	Memory::load_page_directory(_page_directory);
 
 	//Fork the old page directory
-	page_directory->fork_from(to_fork->page_directory, _ppid, _pid);
+	_page_directory->fork_from(to_fork->_page_directory.get(), _ppid, _pid);
 
 	//Create the main thread
 	auto* main_thread = new Thread(this, _cur_tid++,regs);
 	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
 
 	//Load back the page directory of the current process
-	asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_thread()->process()->page_directory_loc));
+	Memory::load_page_directory(TaskManager::current_process()->_page_directory);
 
 	TaskManager::enabled() = true;
 }
@@ -243,7 +236,7 @@ void Process::free_resources() {
 		return;
 	LOCK(_lock);
 	_freed_resources = true;
-	delete page_directory;
+	_page_directory.reset();
 	for(int i = 0; i < _threads.size(); i++)
 		_threads[i]->die();
 	_threads.resize(0);
@@ -253,9 +246,9 @@ void Process::free_resources() {
 
 void Process::reap() {
 	LOCK(_lock);
-	if(state != ZOMBIE)
+	if(_state != ZOMBIE)
 		return;
-	state = DEAD;
+	_state = DEAD;
 }
 
 void Process::kill(int signal) {
@@ -288,7 +281,7 @@ bool Process::handle_pending_signal() {
 			auto parent = TaskManager::process_for_pid(_ppid);
 			if(!parent.is_error() && parent.value().get() != this)
 				parent.value()->kill(SIGCHLD);
-			state = ZOMBIE;
+			_state = ZOMBIE;
 			for(int i = 0; i < _threads.size(); i++)
 				_threads[i]->die();
 			TaskManager::reparent_orphans(this);
@@ -307,13 +300,19 @@ bool Process::has_pending_signals() {
 	return !pending_signals.empty();
 }
 
+PageDirectory* Process::page_directory() {
+	if(is_kernel_mode())
+		return &Memory::kernel_page_directory;
+	else
+		return _page_directory.get();
+}
 
 /************
  * SYSCALLS *
  ************/
 
 void Process::check_ptr(const void *ptr) {
-	if((size_t) ptr >= HIGHER_HALF || !page_directory->is_mapped((size_t) ptr)) {
+	if((size_t) ptr >= HIGHER_HALF || !_page_directory->is_mapped((size_t) ptr)) {
 		kill(SIGSEGV);
 	}
 }
@@ -358,7 +357,7 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 		new_proc->_user = _user;
 		new_proc->_pgid = _pgid;
 		new_proc->_sid = _sid;
-		if (kernel) {
+		if (_kernel_mode) {
 			//Kernel processes have no file descriptors, so we need to initialize them
 			auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
 			ttydesc->set_owner(_self_ptr);
@@ -393,7 +392,7 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 		//Add the new process to the process list
 		TaskManager::enabled() = false;
 		_pid = -1;
-		state = DEAD;
+		_state = DEAD;
 		TaskManager::add_process(new_proc);
 	}
 
@@ -942,13 +941,13 @@ int Process::sys_ioctl(int fd, unsigned request, void* argp) {
 void* Process::sys_memacquire(void* addr, size_t size) const {
 	if(addr) {
 		//We requested a specific address
-		auto region = page_directory->allocate_region((size_t) addr, size, true);
+		auto region = _page_directory->allocate_region((size_t) addr, size, true);
 		if(!region.virt)
 			return (void*) -EINVAL;
 		return (void*) region.virt->start;
 	} else {
 		//We didn't request a specific address
-		auto region = page_directory->allocate_region(size, true);
+		auto region = _page_directory->allocate_region(size, true);
 		if(!region.virt)
 			return (void*) -ENOMEM;
 		return (void*) region.virt->start;
@@ -956,7 +955,7 @@ void* Process::sys_memacquire(void* addr, size_t size) const {
 }
 
 int Process::sys_memrelease(void* addr, size_t size) const {
-	if(!page_directory->free_region((size_t) addr, size))
+	if(!_page_directory->free_region((size_t) addr, size))
 		return -EINVAL;
 	return SUCCESS;
 }
@@ -964,7 +963,7 @@ int Process::sys_memrelease(void* addr, size_t size) const {
 int Process::sys_shmcreate(void* addr, size_t size, struct shm* s) {
 	check_ptr(s);
 
-	auto res = page_directory->create_shared_region((size_t) addr, size, _pid);
+	auto res = _page_directory->create_shared_region((size_t) addr, size, _pid);
 	if(res.is_error())
 		return res.code();
 
@@ -979,7 +978,7 @@ int Process::sys_shmcreate(void* addr, size_t size, struct shm* s) {
 int Process::sys_shmattach(int id, void* addr, struct shm* s) {
 	check_ptr(s);
 
-	auto res = page_directory->attach_shared_region(id, (size_t) addr, _pid);
+	auto res = _page_directory->attach_shared_region(id, (size_t) addr, _pid);
 	if(res.is_error())
 		return res.code();
 
@@ -992,7 +991,7 @@ int Process::sys_shmattach(int id, void* addr, struct shm* s) {
 }
 
 int Process::sys_shmdetach(int id) {
-	return page_directory->detach_shared_region(id).code();
+	return _page_directory->detach_shared_region(id).code();
 }
 
 int Process::sys_shmallow(int id, pid_t pid, int perms) {
@@ -1005,7 +1004,7 @@ int Process::sys_shmallow(int id, pid_t pid, int perms) {
 	if(TaskManager::process_for_pid(pid).is_error())
 		return -EINVAL;
 
-	return page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE).code();
+	return _page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE).code();
 }
 
 int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {

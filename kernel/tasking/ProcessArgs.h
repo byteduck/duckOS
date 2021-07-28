@@ -25,11 +25,12 @@
 #include <kernel/kstd/string.h>
 
 class LinkedInode;
+class Stack;
 class ProcessArgs {
 public:
 	ProcessArgs(const kstd::shared_ptr<LinkedInode>& working_dir);
 
-	const void* setup_stack(void* stackptr);
+	void setup_stack(Stack& stack);
 
 	kstd::vector<kstd::string> argv;
 	kstd::vector<kstd::string> env;

@@ -184,10 +184,10 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			str += proc.value()->name();
 
 			str += "\nState: ";
-			itoa(proc.value()->state, numbuf, 10);
+			itoa(proc.value()->state(), numbuf, 10);
 			str += numbuf;
 			str += " (";
-			str += PROC_STATUS_NAMES[proc.value()->state];
+			str += PROC_STATUS_NAMES[proc.value()->state()];
 			str += ")";
 
 			str += "\nPid: ";
@@ -207,11 +207,11 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			str += numbuf;
 
 			str += "\nPMemUsed: ";
-			itoa(proc.value()->page_directory->used_pmem(), numbuf, 10);
+			itoa(proc.value()->page_directory()->used_pmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nVMemUsed: ";
-			itoa(proc.value()->page_directory->used_vmem(), numbuf, 10);
+			itoa(proc.value()->page_directory()->used_vmem(), numbuf, 10);
 			str += numbuf;
 			str += "\n";
 
