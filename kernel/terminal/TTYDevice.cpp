@@ -44,7 +44,7 @@ ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size
 
 	//Block until there's something to read
 	while(!_buffer_blocker.is_ready())
-		TaskManager::current_process()->block(_buffer_blocker);
+		TaskManager::current_thread()->block(_buffer_blocker);
 
 	size_t nread = 0;
 
@@ -145,7 +145,7 @@ bool TTYDevice::can_write(const FileDescriptor& fd) {
 }
 
 int TTYDevice::ioctl(unsigned int request, void* argp) {
-	auto* cur_proc = TaskManager::current_process();
+	auto cur_proc = TaskManager::current_process();
 	auto* termios_arg = (termios*)argp;
 	auto* winsize_arg = (winsize*)argp;
 	switch(request) {
@@ -161,10 +161,10 @@ int TTYDevice::ioctl(unsigned int request, void* argp) {
 			auto pgid = (pid_t) argp;
 			if(pgid <= 0)
 				return -EINVAL;
-			auto* proc = TaskManager::process_for_pgid(pgid);
-			if(!proc)
+			auto proc = TaskManager::process_for_pgid(pgid);
+			if(proc.is_error())
 				return -EINVAL;
-			if(cur_proc->sid() != proc->sid())
+			if(cur_proc->sid() != proc.value()->sid())
 				return -EPERM;
 			_pgid = pgid;
 			return SUCCESS;

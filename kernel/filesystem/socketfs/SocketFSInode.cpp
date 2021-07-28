@@ -20,7 +20,7 @@
 #include "SocketFSInode.h"
 #include <kernel/kstd/defines.h>
 
-SocketFSInode::SocketFSInode(SocketFS& fs, Process* owner, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
+SocketFSInode::SocketFSInode(SocketFS& fs, kstd::shared_ptr<Process> owner, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
 Inode(fs, id), owner(owner), fs(fs), id(id), name(name), host(owner, owner ? owner->pid() : -1)
 {
 	if(!owner) { //We're the root inode
@@ -70,7 +70,7 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 
 	//Find the client that is reading
 	SocketFSClient* reader = nullptr;
-	Process* current_proc = TaskManager::current_process();
+	kstd::shared_ptr<Process> current_proc = TaskManager::current_process();
 	if(current_proc == owner) {
 		reader = &host;
 	} else {
@@ -150,7 +150,7 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 	bool is_broadcast = packet->pid == SOCKETFS_BROADCAST;
 
 	//Find the client that the packet is coming from
-	Process* current_proc = TaskManager::current_process();
+	kstd::shared_ptr<Process> current_proc = TaskManager::current_process();
 	if(current_proc == owner) {
 		sender = &host;
 	} else {
@@ -217,7 +217,7 @@ ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::strin
 		hash = hash * 31 + create_name[i];
 	}
 
-	Process* proc = TaskManager::current_process();
+	kstd::shared_ptr<Process> proc = TaskManager::current_process();
 	ino_t create_id = SocketFS::get_inode_id(proc->pid(), hash);
 
 	//Make sure that nothing exists with the same name / id
@@ -255,7 +255,7 @@ Result SocketFSInode::chown(uid_t new_uid, gid_t new_gid) {
 
 void SocketFSInode::open(FileDescriptor& fd, int options) {
 	LOCK(lock);
-	Process* current_proc = TaskManager::current_process();
+	auto current_proc = TaskManager::current_process();
 	if(current_proc == owner)
 		return;
 	for(size_t i = 0; i < clients.size(); i++)
@@ -311,7 +311,7 @@ Result SocketFSInode::write_packet(SocketFSClient& client, pid_t pid, size_t len
 	while(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE) {
 		if(!nonblock) {
 			client._blocker.set_ready(false);
-			TaskManager::current_process()->block(client._blocker);
+			TaskManager::current_thread()->block(client._blocker);
 		} else {
 			return -ENOSPC;
 		}

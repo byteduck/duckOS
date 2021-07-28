@@ -62,7 +62,7 @@ namespace Interrupt {
 	}
 
 	bool fpanic(char *a, char *b, uint32_t sig){
-		if(!TaskManager::enabled() || TaskManager::current_process()->kernel){
+		if(!TaskManager::enabled() || TaskManager::current_thread()->process()->kernel){
 			Interrupt::Disabler disabler;
 			PANIC(a,b,false);
 			return true;
@@ -90,10 +90,10 @@ namespace Interrupt {
 					break;
 
 				case 14: //Page fault
-					if(TaskManager::current_process() == nullptr || TaskManager::current_process()->kernel) {
+					if(TaskManager::current_thread().get() == nullptr || TaskManager::current_thread()->process()->kernel) {
 						Memory::page_fault_handler(r);
 					} else {
-						TaskManager::current_process()->handle_pagefault(r);
+						TaskManager::current_thread()->handle_pagefault(r);
 					}
 					break;
 

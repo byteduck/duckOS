@@ -24,9 +24,9 @@
 
 class SocketFSClient {
 public:
-	SocketFSClient(Process* process, pid_t pid);
+	SocketFSClient(kstd::shared_ptr<Process> process, pid_t pid);
 
-	Process* process;
+	kstd::shared_ptr<Process> process;
 	pid_t pid;
 	kstd::shared_ptr<kstd::queue<uint8_t>> data_queue;
 	BooleanBlocker _blocker;

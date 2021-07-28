@@ -37,7 +37,7 @@ public:
 	size_t framebuffer_size();
 	void scroll(size_t pixels) override;
 	void clear(uint32_t color) override;
-	void* map_framebuffer(Process* proc) override;
+	void* map_framebuffer(const kstd::shared_ptr<Process>& proc) override;
 
 private:
 	MultibootVGADevice() = default;

@@ -71,6 +71,7 @@ SET(KERNEL_SRCS
         memory/PageDirectory.cpp
         memory/PageTable.cpp
         tasking/Process.cpp
+        tasking/Thread.cpp
         tasking/Lock.cpp
         tasking/SpinLock.cpp
         tasking/ProcessArgs.cpp

@@ -27,8 +27,11 @@
 TSS TaskManager::tss;
 SpinLock TaskManager::lock;
 
-Process *current_proc = nullptr;
-Process *kidle_proc;
+kstd::shared_ptr<Thread> cur_thread;
+kstd::shared_ptr<Process> kidle_process;
+kstd::vector<kstd::shared_ptr<Process>>* processes = nullptr;
+
+kstd::queue<kstd::shared_ptr<Thread>>* thread_queue = nullptr;
 
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
@@ -43,62 +46,69 @@ void kidle(){
 	}
 }
 
-Process* TaskManager::process_for_pid(pid_t pid){
-	Process *current = kidle_proc;
-	do{
-		if(current->pid() == pid && current->pid() && current->state != PROCESS_DEAD)
-			return current;
-		current = current->next;
-	} while(current != kidle_proc);
-	return (Process *) nullptr;
+ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_pid(pid_t pid){
+	if(!pid)
+		return -ENOENT;
+	for(int i = 0; i < processes->size(); i++) {
+		auto cur = processes->at(i);
+		if(cur->pid() == pid && cur->state != Process::DEAD)
+			return processes->at(i);
+	}
+	return -ENOENT;
 }
 
-Process* TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
-	Process *current = kidle_proc;
-	do{
-		if(current->pgid() == pgid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD)
-			return current;
-		current = current->next;
-	} while(current != kidle_proc);
-	return (Process *) nullptr;
+ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
+	if(!pgid)
+		return -ENOENT;
+	for(int i = 0; i < processes->size(); i++) {
+		auto cur = processes->at(i);
+		if(cur->pgid() == pgid && cur->pid() != excl && cur->state != Process::DEAD)
+			return processes->at(i);
+	}
+	return -ENOENT;
 }
 
-Process* TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
-	Process *current = kidle_proc;
-	do{
-		if(current->ppid() == ppid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD)
-			return current;
-		current = current->next;
-	} while(current != kidle_proc);
-	return (Process *) nullptr;
+ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
+	if(!ppid)
+		return -ENOENT;
+	for(int i = 0; i < processes->size(); i++) {
+		auto cur = processes->at(i);
+		if(cur->ppid() == ppid && cur->pid() != excl && cur->state != Process::DEAD)
+			return processes->at(i);
+	}
+	return -ENOENT;
 }
 
-Process* TaskManager::process_for_sid(pid_t sid, pid_t excl){
-	Process *current = kidle_proc;
-	do{
-		if(current->sid() == sid && current->pid() && current->pid() != excl && current->state != PROCESS_DEAD)
-			return current;
-		current = current->next;
-	} while(current != kidle_proc);
-	return (Process *) nullptr;
+ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_sid(pid_t sid, pid_t excl){
+	if(!sid)
+		return -ENOENT;
+	for(int i = 0; i < processes->size(); i++) {
+		auto cur = processes->at(i);
+		if(cur->sid() == sid && cur->pid() != excl && cur->state != Process::DEAD)
+			return processes->at(i);
+	}
+	return -ENOENT;
 }
 
 void TaskManager::kill_pgid(pid_t pgid, int sig) {
-	Process *current = kidle_proc;
-	do {
-		if(current->pgid() == pgid)
-			current->kill(sig);
-		current = current->next;
-	} while(current != kidle_proc);
+	if(!pgid)
+		return;
+	for(int i = 0; i < processes->size(); i++) {
+		auto cur = processes->at(i);
+		if(cur->pgid() == pgid) {
+			cur->kill(sig);
+			return;
+		}
+	}
 }
 
 void TaskManager::reparent_orphans(Process* proc) {
-	auto* cchild = kidle_proc->next;
-	do {
-		if(cchild->ppid() == proc->pid())
-			cchild->set_ppid(1);
-		cchild = cchild->next;
-	} while(cchild != kidle_proc);
+	for(int i = 0; i < processes->size(); i++) {
+		auto cur = processes->at(i);
+		if(cur->ppid() == proc->pid()) {
+			cur->set_ppid(1);
+		}
+	}
 }
 
 bool& TaskManager::enabled(){
@@ -106,7 +116,9 @@ bool& TaskManager::enabled(){
 }
 
 bool TaskManager::is_idle() {
-	return current_proc == kidle_proc;
+	if(!kidle_process)
+		return true;
+	return cur_thread == kidle_process->main_thread();
 }
 
 pid_t TaskManager::get_new_pid(){
@@ -116,54 +128,77 @@ pid_t TaskManager::get_new_pid(){
 void TaskManager::init(){
 	lock = SpinLock();
 
+	processes = new kstd::vector<kstd::shared_ptr<Process>>();
+	thread_queue = new kstd::queue<kstd::shared_ptr<Thread>>();
+
 	//Create kidle process
-	kidle_proc = Process::create_kernel("kidle", kidle);
+	kidle_process = Process::create_kernel("kidle", kidle);
+	processes->push_back(kidle_process);
 
 	//Create kinit process
-	auto* kinit_proc = Process::create_kernel("kinit", kmain_late);
+	auto kinit_process = Process::create_kernel("kinit", kmain_late);
+	processes->push_back(kinit_process);
 
-	//Link processes together manually
-	kidle_proc->next = kinit_proc;
-	kidle_proc->prev = kinit_proc;
-	kinit_proc->next = kidle_proc;
-	kinit_proc->prev = kidle_proc;
+	//Add kinit thread to queue
+	queue_thread(kinit_process->main_thread());
 
 	//Preempt
-	current_proc = kidle_proc;
-	preempt_init_asm(current_proc->registers.esp);
+	cur_thread = kidle_process->main_thread();
+	preempt_init_asm(cur_thread->registers.esp);
 }
 
-Process* TaskManager::current_process(){
-	return current_proc;
+kstd::vector<kstd::shared_ptr<Process>>* TaskManager::process_list() {
+	return processes;
 }
 
-int TaskManager::add_process(Process *p){
+kstd::shared_ptr<Thread>& TaskManager::current_thread() {
+	return cur_thread;
+}
+
+kstd::shared_ptr<Process>& TaskManager::current_process() {
+	return cur_thread->process();
+}
+
+int TaskManager::add_process(const kstd::shared_ptr<Process>& proc){
 	tasking_enabled = false;
-	ProcFS::inst().proc_add(p);
-	p->next = current_proc->next;
-	p->next->prev = p;
-	p->prev = current_proc;
-	current_proc->next = p;
+	ProcFS::inst().proc_add(proc);
+	processes->push_back(proc);
+	auto& threads = proc->threads();
+	for(int i = 0; i < threads.size(); i++)
+		queue_thread(threads[i]);
 	tasking_enabled = true;
-	return p->pid();
+	return proc->pid();
+}
+
+void TaskManager::queue_thread(const kstd::shared_ptr<Thread>& thread) {
+	TaskManager::Disabler disabler;
+	if(!thread) {
+		printf("[TaskManager] WARN: Tried queueing null thread!\n");
+		return;
+	}
+	if(thread == kidle_process->main_thread()) {
+		printf("[TaskManager] WARN: Tried queuing kidle thread!\n");
+		return;
+	}
+	if(thread->state != Thread::ALIVE) {
+		printf("[TaskManager] WARN: Tried queuing blocked thread!\n");
+		return;
+	}
+	thread_queue->push_back(thread);
 }
 
 void TaskManager::notify_current(uint32_t sig){
-	current_proc->kill(sig);
+	cur_thread->process()->kill(sig);
 }
 
-Process *TaskManager::next_process() {
-	Process* next_proc = current_proc->next;
+kstd::shared_ptr<Thread> TaskManager::next_thread() {
+	while(!thread_queue->empty() && thread_queue->front()->state != Thread::ALIVE)
+		thread_queue->pop_front();
 
-	//Don't switch to a blocking/zombie process or the kidle proc
-	while((next_proc->state != PROCESS_ALIVE || next_proc == kidle_proc) && next_proc != current_proc)
-		next_proc = next_proc->next;
+	if(thread_queue->empty())
+		return kidle_process->main_thread();
 
-	//There are no processes alive, switch to kidle
-	if(next_proc == current_proc && current_proc->state != PROCESS_ALIVE)
-		next_proc = kidle_proc;
-
-	return next_proc;
+	return thread_queue->pop_front();
 }
 
 bool TaskManager::yield() {
@@ -186,7 +221,9 @@ bool TaskManager::yield_if_not_preempting() {
 }
 
 bool TaskManager::yield_if_idle() {
-	if(current_proc == kidle_proc)
+	if(!kidle_process)
+		return false;
+	if(cur_thread->process() == kidle_process)
 		return yield();
 	return false;
 }
@@ -208,41 +245,43 @@ void TaskManager::preempt(){
 	bool any_alive = false;
 
 	//Handle pending signals, cleanup dead processes, and release zombie processes' resources
-	Process* current = kidle_proc->next;
-	do {
+	for(int i = 0; i < processes->size(); i++) {
+		auto current = processes->at(i);
 		switch(current->state) {
-			case PROCESS_BLOCKED:
+			case Process::ALIVE: {
 				current->handle_pending_signal();
-				if(current->should_unblock()) {
-					any_alive = true;
-					current->unblock();
+				auto& threads = current->threads();
+				//Evaluate if any of the process's threads are alive or need unblocking
+				for (int j = 0; j < threads.size(); j++) {
+					auto thread = threads[j];
+					if (thread->state == Thread::BLOCKED) {
+						if (thread->should_unblock()) {
+							any_alive = true;
+							thread->unblock();
+							if(cur_thread != thread)
+								queue_thread(thread);
+						}
+					} else if (thread->state == Thread::ALIVE) {
+						any_alive = true;
+					}
 				}
-				current = current->next;
-				break;
-			case PROCESS_ALIVE:
-				current->handle_pending_signal();
-				current = current->next;
-				any_alive = true;
-				break;
-			case PROCESS_DEAD: {
-				if(current != current_proc) {
-					current->prev->next = current->next;
-					current->next->prev = current->prev;
-					Process* to_delete = current;
-					current = current->next;
-					ProcFS::inst().proc_remove(to_delete);
-					delete to_delete;
-				} else
-					current = current->next;
 				break;
 			}
-			case PROCESS_ZOMBIE:
-				current = current->next;
+			case Process::DEAD: {
+				if(cur_thread->process() != current) {
+					current->free_resources();
+					ProcFS::inst().proc_remove(current);
+					processes->erase(i);
+					i--;
+				}
+				break;
+			}
+			case Process::ZOMBIE:
 				break;
 			default:
 				PANIC("PROC_INVALID_STATE", "A process had an invalid state.", true);
 		}
-	} while(current != kidle_proc);
+	}
 
 	/*
 	 * If it's time to switch, switch.
@@ -253,57 +292,63 @@ void TaskManager::preempt(){
 	prev_alive = any_alive;
 	if(quantum_counter == 0 || force_switch) {
 		//Pick a new process and decrease the quantum counter
-		auto old_proc = current_proc;
-		current_proc = next_process();
-		quantum_counter = current_proc->quantum - 1;
+		auto old_thread = cur_thread;
+		cur_thread = next_thread();
+		quantum_counter = cur_thread->process()->quantum - 1;
 
-		bool should_preempt = old_proc != current_proc;
+		bool should_preempt = old_thread != cur_thread;
 
 		//If we were just in a signal handler, don't save the esp to old_proc->registers
 		unsigned int* old_esp;
 		unsigned int dummy_esp;
-		if(!old_proc) {
+		if(!old_thread) {
 			old_esp = &dummy_esp;
-		} if(old_proc->in_signal_handler()) {
-			old_esp = &old_proc->signal_registers.esp;
+		} if(old_thread->in_signal_handler()) {
+			old_esp = &old_thread->signal_registers.esp;
 		} else {
-			old_esp = &old_proc->registers.esp;
+			old_esp = &old_thread->registers.esp;
 		}
 
 		//If we just finished handling a signal, set in_signal_handler to false.
-		if(old_proc && old_proc->just_finished_signal()) {
+		if(old_thread && old_thread->just_finished_signal()) {
 			should_preempt = true;
-			old_proc->just_finished_signal() = false;
-			old_proc->in_signal_handler() = false;
+			old_thread->just_finished_signal() = false;
+			old_thread->in_signal_handler() = false;
 		}
 
 		//If we're about to start handling a signal, set in_signal_handler to true.
-		if(current_proc->ready_to_handle_signal()) {
+		if(cur_thread->ready_to_handle_signal()) {
 			should_preempt = true;
-			current_proc->in_signal_handler() = true;
-			current_proc->ready_to_handle_signal() = false;
+			cur_thread->in_signal_handler() = true;
+			cur_thread->ready_to_handle_signal() = false;
 		}
 
 		//If we're switching to a process in a signal handler, use the esp from signal_registers
 		unsigned int* new_esp;
-		if(current_proc->in_signal_handler()){
-			new_esp = &current_proc->signal_registers.esp;
-			tss.esp0 = (size_t) current_proc->signal_stack_top();
+		if(cur_thread->in_signal_handler()){
+			new_esp = &cur_thread->signal_registers.esp;
+			tss.esp0 = (size_t) cur_thread->signal_stack_top();
 		} else {
-			new_esp = &current_proc->registers.esp;
-			tss.esp0 = (size_t) current_proc->kernel_stack_top();
+			new_esp = &cur_thread->registers.esp;
+			tss.esp0 = (size_t) cur_thread->kernel_stack_top();
 		}
 
 		//Switch tasks.
 		preempting = false;
-		ASSERT(current_proc->state == PROCESS_ALIVE);
+		ASSERT(cur_thread->state == Thread::ALIVE);
 		if(should_preempt) {
-			asm volatile("fxsave %0" : "=m"(old_proc->fpu_state));
-			preempt_asm(old_esp, new_esp, current_proc->page_directory_loc);
-			asm volatile("fxrstor %0" ::"m"(current_proc->fpu_state));
+			if(old_thread != kidle_process->main_thread() && old_thread->state == Thread::ALIVE)
+				queue_thread(old_thread);
+
+			//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
+			old_thread = kstd::shared_ptr<Thread>(nullptr);
+
+			asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
+			preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory_loc);
+			asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
 		}
 	} else {
-		ASSERT(current_proc->state == PROCESS_ALIVE);
+		ASSERT(cur_thread->state == Thread::ALIVE);
 		quantum_counter--;
 		preempting = false;
 	}

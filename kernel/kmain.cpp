@@ -184,7 +184,7 @@ void kmain_late(){
 	//Replace kinit with init
 	auto* init_args = new ProcessArgs(VFS::inst().root_ref());
 	init_args->argv.push_back("/bin/init");
-	TaskManager::current_process()->exec(kstd::string("/bin/init"), init_args);
+	TaskManager::current_thread()->process()->exec(kstd::string("/bin/init"), init_args);
 
 	//We shouldn't get here
 	PANIC("INIT_FAILED", "Failed to start init.", true);

@@ -18,6 +18,7 @@
 */
 
 #include "SpinLock.h"
+#include "Thread.h"
 #include "TaskManager.h"
 #include <kernel/Atomic.h>
 
@@ -38,30 +39,30 @@ void SpinLock::release() {
 
 	//If the counter is zero, release the lock
 	if(_times_locked == 0) {
-		_holding_process = nullptr;
+		_holding_thread = kstd::shared_ptr<Thread>();
 		Atomic::store(&_locked, 0);
 		_blocker.set_ready(true);
 	}
 }
 
 void SpinLock::acquire() {
-	auto* cur_proc = TaskManager::current_process();
-	if(!TaskManager::enabled() || !cur_proc) return; //Tasking isn't initialized yet
+	auto cur_thread = TaskManager::current_thread();
+	if(!TaskManager::enabled() || !cur_thread) return; //Tasking isn't initialized yet
 
 	//Loop while the lock is held
 	while(Atomic::swap(&_locked, 1)) {
-		if(_holding_process == cur_proc) {
+		if(_holding_thread == cur_thread) {
 			//We are the holding process, so increment the counter and return
 			_blocker.set_ready(false);
 			Atomic::inc(&_times_locked);
 			return;
 		}
 		//TODO: Find a good way to unblock just one waiting task
-		cur_proc->block(_blocker);
+		cur_thread->block(_blocker);
 	}
 
 	//We now hold the lock
 	_blocker.set_ready(false);
 	Atomic::inc(&_times_locked);
-	_holding_process = cur_proc;
+	_holding_thread = cur_thread;
 }

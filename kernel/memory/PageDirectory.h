@@ -192,6 +192,13 @@ public:
 	LinkedMemoryRegion allocate_region(size_t mem_size, bool read_write);
 
 	/**
+	 * Allocates a region of memory to be used for a program stack (ie near the end of the program space).
+	 * @param mem_size The amount of memory to allocate. Will be rounded up to be page-aligned.
+	 * @return The LinkedMemoryRegion allocated.
+	 */
+	LinkedMemoryRegion allocate_stack_region(size_t mem_size, bool read_write);
+
+	/**
 	 * Allocates a region of memory in program space starting at vaddr and returns the region allocated.
 	 * @param vaddr The virtual address to start mapping at. Will be rounded down to be page-aligned.
 	 * @param mem_size The amount of memory to allocate. Will be rounded up to be page-aligned.

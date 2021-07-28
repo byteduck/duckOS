@@ -36,13 +36,6 @@
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/interrupt/syscall.h>
 
-#define PROCESS_STACK_SIZE 1048576 //1024KiB
-#define PROCESS_KERNEL_STACK_SIZE 4096 //4KiB
-#define PROCESS_ALIVE 0
-#define PROCESS_ZOMBIE 1
-#define PROCESS_DEAD 2
-#define PROCESS_BLOCKED 3
-
 class TaskBlockQueue;
 class FileDescriptor;
 class Blocker;
@@ -70,12 +63,19 @@ typedef size_t nfds_t;
 extern const char* PROC_STATUS_NAMES[];
 
 class TTYDevice;
+class Thread;
 class Process {
 public:
+	enum State {
+		ALIVE,
+		ZOMBIE,
+		DEAD
+	};
+
 	~Process();
 
-	static Process* create_kernel(const kstd::string& name, void (*func)());
-	static ResultRet<Process*> create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent);
+	static kstd::shared_ptr<Process> create_kernel(const kstd::string& name, void (*func)());
+	static ResultRet<kstd::shared_ptr<Process>> create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent);
 
 	pid_t pid();
 	pid_t pgid();
@@ -88,25 +88,16 @@ public:
 	kstd::shared_ptr<LinkedInode> cwd();
 	void set_tty(kstd::shared_ptr<TTYDevice> tty);
 
+	kstd::shared_ptr<Thread> main_thread();
+	const kstd::vector<kstd::shared_ptr<Thread>>& threads();
+
 	int exit_status();
 	void kill(int signal);
 	void reap();
 	void free_resources();
-	void handle_pagefault(Registers *regs);
-	void* kernel_stack_top();
 
 	bool handle_pending_signal();
 	bool has_pending_signals();
-	void call_signal_handler(int signal);
-	bool& in_signal_handler();
-	bool& ready_to_handle_signal();
-	bool& just_finished_signal();
-	void* signal_stack_top();
-
-	void block(Blocker& blocker);
-	void unblock();
-	bool is_blocked();
-	bool should_unblock();
 
 	//Syscalls
 	void check_ptr(const void* ptr);
@@ -177,23 +168,17 @@ public:
 	int sys_ptsname(int fd, char* buf, size_t bufsize);
 	int sys_sleep(timespec* time, timespec* remainder);
 
-	uint32_t state = 0;
-	Process *next = nullptr, *prev = nullptr;
 	size_t page_directory_loc;
-	Registers registers = {};
-	Registers signal_registers = {};
 	bool kernel = false;
-	bool in_syscall = false;
 	uint8_t ring;
 	uint8_t quantum;
 	PageDirectory* page_directory;
-	uint8_t fpu_state[512] __attribute__((aligned(16)));
+	State state;
 
 private:
+	friend class Thread;
 	Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
-
-	void setup_stack(uint32_t*& kernel_stack, const uint32_t* user_stack, Registers& registers);
 
 	//Identifying info and state
 	kstd::string _name = "";
@@ -208,28 +193,22 @@ private:
 	int _exit_status = 0;
 	bool _freed_resources = false;
 
-	//Kernel stack
-	void* _kernel_stack_base;
-	size_t _kernel_stack_size;
-	size_t _stack_size;
-
 	//Files & Pipes
 	kstd::vector<kstd::shared_ptr<FileDescriptor>> _file_descriptors;
 	kstd::shared_ptr<LinkedInode> _cwd;
 
 	//Blocking stuff
-	Blocker* _blocker = nullptr;
 	SpinLock _lock;
 
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
 	kstd::queue<int> pending_signals;
-	bool _in_signal = false;
-	bool _ready_to_handle_signal = false;
-	bool _just_finished_signal = false;
-	size_t _signal_stack_top = 0;
-	LinkedMemoryRegion _sighandler_ustack_region;
-	LinkedMemoryRegion _sighandler_kstack_region;
+
+	//Threads
+	kstd::vector<kstd::shared_ptr<Thread>> _threads;
+	pid_t _cur_tid = 1;
+
+	kstd::shared_ptr<Process> _self_ptr;
 };
 
 

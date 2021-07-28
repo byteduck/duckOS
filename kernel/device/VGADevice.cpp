@@ -28,7 +28,7 @@ VGADevice::VGADevice(): BlockDevice(29, 0) {
 }
 
 int VGADevice::ioctl(unsigned request, void* argp) {
-	Process* proc = TaskManager::current_process();
+	auto proc = TaskManager::current_thread()->process();
 	proc->check_ptr(argp);
 	switch(request) {
 		case IO_VIDEO_WIDTH:

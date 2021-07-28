@@ -45,8 +45,8 @@ ProcFSInode::~ProcFSInode() {
 }
 
 InodeMetadata ProcFSInode::metadata() {
-	Process* proc = TaskManager::process_for_pid(pid);
-	User user = proc ? proc->user() : User::root();
+	auto proc = TaskManager::process_for_pid(pid);
+	User user = proc.is_error() ? User::root() : proc.value()->user();
 
 	_metadata.uid = user.euid;
 	_metadata.gid = user.gid;
@@ -167,44 +167,45 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 		}
 
 		case ProcStatus: {
-			auto* proc = TaskManager::process_for_pid(pid);
-			if(!proc) return -EIO;
+			auto proc = TaskManager::process_for_pid(pid);
+			if(proc.is_error())
+				return -EIO;
 
 			char numbuf[12];
 			kstd::string str;
 
 			str += "Name: ";
-			str += proc->name();
+			str += proc.value()->name();
 
 			str += "\nState: ";
-			itoa(proc->state, numbuf, 10);
+			itoa(proc.value()->state, numbuf, 10);
 			str += numbuf;
 			str += " (";
-			str += PROC_STATUS_NAMES[proc->state];
+			str += PROC_STATUS_NAMES[proc.value()->state];
 			str += ")";
 
 			str += "\nPid: ";
-			itoa(proc->pid(), numbuf, 10);
+			itoa(proc.value()->pid(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nPPid: ";
-			itoa(proc->ppid(), numbuf, 10);
+			itoa(proc.value()->ppid(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nUid: ";
-			itoa(proc->user().euid, numbuf, 10);
+			itoa(proc.value()->user().euid, numbuf, 10);
 			str += numbuf;
 
 			str += "\nGid: ";
-			itoa(proc->user().egid, numbuf, 10);
+			itoa(proc.value()->user().egid, numbuf, 10);
 			str += numbuf;
 
 			str += "\nPMemUsed: ";
-			itoa(proc->page_directory->used_pmem(), numbuf, 10);
+			itoa(proc.value()->page_directory->used_pmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nVMemUsed: ";
-			itoa(proc->page_directory->used_vmem(), numbuf, 10);
+			itoa(proc.value()->page_directory->used_vmem(), numbuf, 10);
 			str += numbuf;
 			str += "\n";
 
@@ -220,18 +221,19 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 }
 
 ResultRet<kstd::shared_ptr<LinkedInode>> ProcFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
-	auto* proc = TaskManager::process_for_pid(pid);
-	if(!proc) return -EIO;
+	auto proc = TaskManager::process_for_pid(pid);
+	if(proc.is_error())
+		return -EIO;
 
 	kstd::string loc;
 
 	switch(type) {
 		case ProcExe:
-			loc = proc->exe();
+			loc = proc.value()->exe();
 			break;
 
 		case ProcCwd:
-			loc = proc->cwd()->get_full_path();
+			loc = proc.value()->cwd()->get_full_path();
 			break;
 
 		default:

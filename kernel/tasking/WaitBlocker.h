@@ -25,7 +25,7 @@
 
 class WaitBlocker: public Blocker {
 public:
-	WaitBlocker(Process* proc, pid_t wait_for);
+	WaitBlocker(kstd::shared_ptr<Thread> thread, pid_t wait_for);
 	bool is_ready() override;
 
 	pid_t waited_pid();
@@ -37,7 +37,7 @@ private:
 	int _exit_status = 0;
 	pid_t _wait_pid;
 	pid_t _wait_pgid;
-	Process* _process;
+	kstd::shared_ptr<Thread> _thread;
 };
 
 #endif //DUCKOS_WAITBLOCKER_H

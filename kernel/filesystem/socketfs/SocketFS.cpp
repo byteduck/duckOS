@@ -21,7 +21,7 @@
 #include "SocketFS.h"
 
 SocketFS::SocketFS() {
-	root_entry = kstd::make_shared<SocketFSInode>(*this, nullptr, 1, "", 0777u | MODE_DIRECTORY, 0, 0);
+	root_entry = kstd::make_shared<SocketFSInode>(*this, kstd::shared_ptr<Process>(nullptr), 1, "", 0777u | MODE_DIRECTORY, 0, 0);
 }
 
 ino_t SocketFS::get_inode_id(pid_t pid, uint16_t fileno) {

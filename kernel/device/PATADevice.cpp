@@ -162,7 +162,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *bu
 	IO::outb(_bus_master_base, 0x9);
 
 	//Wait for irq
-	TaskManager::current_process()->block(_blocker);
+	TaskManager::current_thread()->block(_blocker);
 	_blocker.set_ready(false);
 	uninstall_irq();
 
@@ -209,7 +209,7 @@ Result PATADevice::write_sectors_dma(size_t lba, uint8_t num_sectors, const uint
 	IO::outb(_bus_master_base, 0x1);
 
 	//Wait for irq
-	TaskManager::current_process()->block(_blocker);
+	TaskManager::current_thread()->block(_blocker);
 	_blocker.set_ready(false);
 	uninstall_irq();
 
@@ -235,7 +235,7 @@ void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8
 		for(auto i = 0; i < 256; i++) {
 			IO::outw(_io_base + ATA_DATA, buffer[i * 2] + (buffer[i * 2 + 1] << 8u));
 		}
-		TaskManager::current_process()->block(_blocker);
+		TaskManager::current_thread()->block(_blocker);
 		_blocker.set_ready(false);
 		asm volatile("cli");
 		buffer += 512;
@@ -250,7 +250,7 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
     access_drive(ATA_READ_PIO, sector, sectors);
 
 	for(auto j = 0; j < sectors; j++) {
-		TaskManager::current_process()->block(_blocker);
+		TaskManager::current_thread()->block(_blocker);
 		_blocker.set_ready(false);
 		asm volatile("cli");
 

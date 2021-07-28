@@ -36,8 +36,8 @@ public:
 	static ino_t id_for_entry(pid_t pid, ProcFSInodeType type);
 	static ProcFSInodeType type_for_id(ino_t id);
 	static pid_t pid_for_id(ino_t id);
-	void proc_add(Process* proc);
-	void proc_remove(Process* proc);
+	void proc_add(kstd::shared_ptr<Process> proc);
+	void proc_remove(const kstd::shared_ptr<Process>& proc);
 
 	//Filesystem
 	char* name() override;

@@ -24,7 +24,7 @@
 #include "BooleanBlocker.h"
 #include <kernel/kstd/shared_ptr.hpp>
 
-class Process;
+class Thread;
 class SpinLock: public Lock {
 public:
 	SpinLock();
@@ -36,7 +36,7 @@ private:
 	BooleanBlocker _blocker;
 	volatile int _locked = 0;
 	volatile int _times_locked = 0;
-	volatile Process* _holding_process = nullptr;
+	kstd::shared_ptr<Thread> _holding_thread;
 };
 
 

@@ -37,12 +37,14 @@
 
 const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 
-Process* Process::create_kernel(const kstd::string& name, void (*func)()){
+kstd::shared_ptr<Process> Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::shared_ptr<LinkedInode>(nullptr));
-	return new Process(name, (size_t)func, true, &args, 1);
+	auto ret = kstd::shared_ptr<Process>(new Process(name, (size_t)func, true, &args, 1));
+	ret->_self_ptr = ret;
+	return ret;
 }
 
-ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
+ResultRet<kstd::shared_ptr<Process>> Process::create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
 	//Open the executable
 	auto fd_or_error = VFS::inst().open((kstd::string&) executable_loc, O_RDONLY, 0, file_open_user, args->working_dir);
 	if(fd_or_error.is_error())
@@ -74,7 +76,8 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 	}
 
 	//Create the process
-	auto* proc = new Process(VFS::path_base(executable_loc), info.header->program_entry_position, false, args, parent);
+	auto proc = kstd::shared_ptr<Process>(new Process(VFS::path_base(executable_loc), info.header->program_entry_position, false, args, parent));
+	proc->_self_ptr = proc;
 	proc->_exe = executable_loc;
 
 	//Load the ELF into the process's page directory and set proc->current_brk
@@ -125,6 +128,14 @@ void Process::set_tty(kstd::shared_ptr<TTYDevice> tty) {
 	_tty = tty;
 }
 
+kstd::shared_ptr<Thread> Process::main_thread() {
+	return _threads[0];
+}
+
+const kstd::vector<kstd::shared_ptr<Thread>>& Process::threads() {
+	return _threads;
+}
+
 int Process::exit_status() {
 	return _exit_status;
 }
@@ -136,86 +147,38 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 
 	_name = name;
 	_pid = TaskManager::get_new_pid();
-	state = PROCESS_ALIVE;
 	this->kernel = kernel;
 	ring = kernel ? 0 : 3;
 	_ppid = _pid > 1 ? ppid : 0; //kidle and init have a parent of 0
 	quantum = 1;
+	state = ALIVE;
 
 	if(!kernel) {
 		auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
-		ttydesc->set_owner(this);
+		ttydesc->set_owner(_self_ptr);
 		ttydesc->set_options(O_RDWR);
 		_file_descriptors.push_back(ttydesc);
 		_file_descriptors.push_back(ttydesc);
 		_file_descriptors.push_back(ttydesc);
 		_cwd = args->working_dir;
-	}
 
-	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
-	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
-
-	size_t stack_base;
-	if(!kernel) {
-		//Make and load a new page directory
+		//Make a new page directory
 		page_directory = new PageDirectory();
 		page_directory_loc = page_directory->entries_physaddr();
-		asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
-
-		if(!page_directory->allocate_region(HIGHER_HALF - PROCESS_STACK_SIZE, PROCESS_STACK_SIZE, true).virt)
-			PANIC("NEW_PROC_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new process's stack.", true);
-
-		stack_base = HIGHER_HALF - PROCESS_STACK_SIZE;
-		_stack_size = PROCESS_STACK_SIZE;
 	} else {
 		page_directory_loc = Memory::kernel_page_directory.entries_physaddr();
-		stack_base = (size_t) _kernel_stack_base;
-		_stack_size = PROCESS_KERNEL_STACK_SIZE;
 	}
 
-	//Setup registers
-	registers.eflags = 0x202;
-	registers.cs = kernel ? 0x8 : 0x1B;
-	registers.eip = entry_point;
-	registers.eax = 0;
-	registers.ebx = 0;
-	registers.ecx = 0;
-	registers.edx = 0;
-	registers.ebp = stack_base;
-	registers.edi = 0;
-	registers.esi = 0;
-	if(kernel) {
-		registers.ds = 0x10; // ds
-		registers.es = 0x10; // es
-		registers.fs = 0x10; // fs
-		registers.gs = 0x10; // gs
-	} else {
-		registers.ds = 0x23; // ds
-		registers.es = 0x23; // es
-		registers.fs = 0x23; // fs
-		registers.gs = 0x23; // gs
-	}
+	//Load the page directory of the process
+	asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
 
-	//Setup stack
-	if(ring != 0) {
-		//Set up the user stack for the program arguments
-		auto user_stack = (uint32_t *) (stack_base + _stack_size);
-		user_stack = (uint32_t *) args->setup_stack(user_stack);
-		*--user_stack = 0; //Honestly? Not sure why this is needed but nothing works without it :)
-
-		//Setup the kernel stack with register states
-		auto *kernel_stack = (uint32_t *) ((size_t) _kernel_stack_base + _kernel_stack_size);
-		setup_stack(kernel_stack, user_stack, registers);
-	} else {
-		auto *stack = (uint32_t*) (stack_base + _stack_size);
-		stack = (uint32_t *) args->setup_stack(stack);
-		*--stack = 0;
-		setup_stack(stack, stack, registers);
-	}
+	//Create the main thread
+	auto* main_thread = new Thread(this, _cur_tid++, entry_point, args, kernel);
+	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
 
 	if(!kernel) {
 		//Load back the page directory of the current process
-		asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
+		asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_thread()->process()->page_directory_loc));
 	}
 
 	TaskManager::enabled() = en;
@@ -228,7 +191,6 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	TaskManager::enabled() = false;
 	_name = to_fork->_name;
 	_pid = TaskManager::get_new_pid();
-	state = PROCESS_ALIVE;
 	kernel = false;
 	ring = 3;
 	_cwd = to_fork->_cwd;
@@ -238,6 +200,7 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	_umask = to_fork->_umask;
 	quantum = to_fork->quantum;
 	_tty = to_fork->_tty;
+	state = ALIVE;
 
 	//Copy signal handlers and file descriptors
 	for(int i = 0; i < 32; i++)
@@ -247,68 +210,26 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++) {
 		if(to_fork->_file_descriptors[i]) {
 			_file_descriptors[i] = kstd::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
-			_file_descriptors[i]->set_owner(this);
+			_file_descriptors[i]->set_owner(_self_ptr);
 		}
 	}
 
-	//Allocate kernel stack
-	_kernel_stack_base = (void*) PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE).virt->start;
-	_kernel_stack_size = PROCESS_KERNEL_STACK_SIZE;
-
-	//Create page directory
+	//Create and load page directory
 	page_directory = new PageDirectory();
 	page_directory_loc = page_directory->entries_physaddr();
-
-	//Load the page directory of the new process
 	asm volatile("movl %0, %%cr3" :: "r"(page_directory_loc));
 
 	//Fork the old page directory
 	page_directory->fork_from(to_fork->page_directory, _ppid, _pid);
 
-	//Setup registers and stack
-	registers = regs;
-	registers.eax = 0; // fork() in child returns zero
-	auto* user_stack = (size_t*) regs.useresp;
-	auto* kernel_stack = (size_t*) ((size_t) _kernel_stack_base + _kernel_stack_size);
-	setup_stack(kernel_stack, user_stack, registers);
+	//Create the main thread
+	auto* main_thread = new Thread(this, _cur_tid++,regs);
+	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
 
 	//Load back the page directory of the current process
-	asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_process()->page_directory_loc));
+	asm volatile("movl %0, %%cr3" :: "r"(TaskManager::current_thread()->process()->page_directory_loc));
 
 	TaskManager::enabled() = true;
-}
-
-void Process::setup_stack(uint32_t*& kernel_stack, const uint32_t* userstack, Registers& regs) {
-	//If usermode, push ss and useresp
-	if(ring != 0) {
-		*--kernel_stack = 0x23;
-		*--kernel_stack = (size_t) userstack;
-	}
-
-	//Push EFLAGS, CS, and EIP for iret
-	*--kernel_stack = regs.eflags; // eflags
-	*--kernel_stack = regs.cs; // cs
-	*--kernel_stack = regs.eip; // eip
-
-	*--kernel_stack = regs.eax;
-	*--kernel_stack = regs.ebx;
-	*--kernel_stack = regs.ecx;
-	*--kernel_stack = regs.edx;
-	*--kernel_stack = regs.ebp;
-	*--kernel_stack = regs.edi;
-	*--kernel_stack = regs.esi;
-	*--kernel_stack = regs.ds;
-	*--kernel_stack = regs.es;
-	*--kernel_stack = regs.fs;
-	*--kernel_stack = regs.gs;
-
-	if(_pid != 0) {
-		*--kernel_stack = (size_t) TaskManager::proc_first_preempt;
-		*--kernel_stack = 0; //Fake popped EBP
-	}
-
-	regs.esp = (size_t) kernel_stack;
-	regs.useresp = (size_t) userstack;
 }
 
 Process::~Process() {
@@ -321,25 +242,28 @@ void Process::free_resources() {
 	LOCK(_lock);
 	_freed_resources = true;
 	delete page_directory;
-	if(_kernel_stack_base)
-		PageDirectory::k_free_region(_kernel_stack_base);
+	for(int i = 0; i < _threads.size(); i++)
+		_threads[i]->die();
+	_threads.resize(0);
 	_file_descriptors.resize(0);
+	_self_ptr = kstd::shared_ptr<Process>(nullptr);
 }
 
 void Process::reap() {
 	LOCK(_lock);
-	if(state != PROCESS_ZOMBIE) return;
-	state = PROCESS_DEAD;
+	if(state != ZOMBIE)
+		return;
+	state = DEAD;
 }
 
 void Process::kill(int signal) {
 	pending_signals.push_back(signal);
-	if(TaskManager::current_process() == this)
+	if(TaskManager::current_thread()->process() == _self_ptr)
 		ASSERT(TaskManager::yield_if_not_preempting());
 }
 
 bool Process::handle_pending_signal() {
-	if(pending_signals.empty() || _in_signal)
+	if(pending_signals.empty() || main_thread()->in_signal_handler())
 		return false;
 
 	int signal = pending_signals.front();
@@ -359,25 +283,19 @@ bool Process::handle_pending_signal() {
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
-			Process* parent = TaskManager::process_for_pid(_ppid);
-			if(parent && parent != this)
-				parent->kill(SIGCHLD);
-			state = PROCESS_ZOMBIE;
+			auto parent = TaskManager::process_for_pid(_ppid);
+			if(!parent.is_error() && parent.value().get() != this)
+				parent.value()->kill(SIGCHLD);
+			state = ZOMBIE;
+			for(int i = 0; i < _threads.size(); i++)
+				_threads[i]->die();
 			TaskManager::reparent_orphans(this);
 		} else if(signal_actions[signal].action) {
 			//We have a signal handler for this. If the process is blocked but can be interrupted, do so.
-			if(is_blocked()) {
-				if(_blocker->can_be_interrupted()) {
-					_blocker->interrupt();
-					unblock();
-				} else {
-					pending_signals.push_back(signal);
-					return false;
-				}
+			if(!main_thread()->call_signal_handler(signal)) {
+				pending_signals.push_back(signal);
+				return false;
 			}
-
-			//Call the signal handler.
-			call_signal_handler(signal);
 		}
 	}
 	return true;
@@ -385,143 +303,6 @@ bool Process::handle_pending_signal() {
 
 bool Process::has_pending_signals() {
 	return !pending_signals.empty();
-}
-
-void Process::call_signal_handler(int signal) {
-	if(signal < 1 || signal >= 32)
-		return;
-	auto signal_loc = (size_t) signal_actions[signal].action;
-	if(!signal_loc || signal_loc >= HIGHER_HALF)
-		return;
-
-	//Allocate a userspace stack
-	_sighandler_ustack_region = page_directory->allocate_region(HIGHER_HALF - PROCESS_STACK_SIZE * 2, PROCESS_STACK_SIZE, true);
-	if(!_sighandler_ustack_region.virt) {
-		printf("FATAL: Failed to allocate sighandler user stack for pid %d!\n", pid());
-		kill(SIGKILL);
-		return;
-	}
-
-	//Allocate a kernel stack
-	_sighandler_kstack_region = PageDirectory::k_alloc_region(PROCESS_KERNEL_STACK_SIZE);
-	if(!_sighandler_kstack_region.virt) {
-		printf("FATAL: Failed to allocate sighandler kernel stack for pid %d!\n", pid());
-		kill(SIGKILL);
-		return;
-	}
-
-	//Map the user stack into the kernel temporarily
-	auto k_ustack_region = PageDirectory::k_map_physical_region(_sighandler_ustack_region.phys, true);
-
-	auto* user_stack = (size_t*) (k_ustack_region.virt->start + PROCESS_STACK_SIZE);
-	_signal_stack_top = _sighandler_kstack_region.virt->start + _sighandler_kstack_region.virt->size;
-
-	//Push signal number and fake return address to the stack
-	*--user_stack = signal;
-	*--user_stack = SIGNAL_RETURN_FAKE_ADDR;
-
-	//Calculate the current location in the user stack in program space
-	size_t real_userstack = _sighandler_ustack_region.virt->start + PROCESS_STACK_SIZE - sizeof(size_t) * 2;
-
-	//Setup signal registers
-	signal_registers.eflags = 0x202;
-	signal_registers.cs = ring == 0 ? 0x8 : 0x1B;
-	signal_registers.eip = signal_loc;
-	signal_registers.eax = 0;
-	signal_registers.ebx = 0;
-	signal_registers.ecx = 0;
-	signal_registers.edx = 0;
-	signal_registers.ebp = real_userstack;
-	signal_registers.edi = 0;
-	signal_registers.esi = 0;
-	if(ring == 0) {
-		signal_registers.ds = 0x10; // ds
-		signal_registers.es = 0x10; // es
-		signal_registers.fs = 0x10; // fs
-		signal_registers.gs = 0x10; // gs
-	} else {
-		signal_registers.ds = 0x23; // ds
-		signal_registers.es = 0x23; // es
-		signal_registers.fs = 0x23; // fs
-		signal_registers.gs = 0x23; // gs
-	}
-
-	//Take note of the stack location before
-	auto* stack_before = user_stack;
-
-	//Set up the stack
-	setup_stack(user_stack, (uint32_t*) real_userstack, signal_registers);
-
-	//Set the esp register using the real user stack location
-	signal_registers.esp = real_userstack - ((size_t) stack_before - (size_t) user_stack);
-
-	//Unmap the user stack from kernel space
-	PageDirectory::k_free_virtual_region(k_ustack_region);
-
-	_ready_to_handle_signal = true;
-}
-
-bool& Process::in_signal_handler() {
-	return _in_signal;
-}
-
-bool& Process::just_finished_signal() {
-	return _just_finished_signal;
-}
-
-bool& Process::ready_to_handle_signal() {
-	return _ready_to_handle_signal;
-}
-
-void* Process::signal_stack_top() {
-	return (void*) _signal_stack_top;
-}
-
-void Process::handle_pagefault(Registers *regs) {
-	size_t err_pos;
-	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-
-	//If the fault is at the fake signal return address, exit the signal handler
-	if(_in_signal && err_pos == SIGNAL_RETURN_FAKE_ADDR) {
-		_just_finished_signal = true;
-		PageDirectory::k_free_region(_sighandler_kstack_region);
-		page_directory->free_region(_sighandler_ustack_region);
-		ASSERT(TaskManager::yield());
-	}
-
-	//Otherwise, try CoW and kill the process if it doesn't work
-	if(!page_directory->try_cow(err_pos))
-		kill(SIGSEGV);
-}
-
-void *Process::kernel_stack_top() {
-	return (void*)((size_t)_kernel_stack_base + _kernel_stack_size);
-}
-
-void Process::block(Blocker& blocker) {
-	ASSERT(state == PROCESS_ALIVE);
-	ASSERT(!_blocker);
-	TaskManager::enabled() = false;
-	state = PROCESS_BLOCKED;
-	_blocker = &blocker;
-	TaskManager::enabled() = true;
-	ASSERT(TaskManager::yield());
-}
-
-void Process::unblock() {
-	if(!_blocker)
-		return;
-	_blocker = nullptr;
-	if(state == PROCESS_BLOCKED)
-		state = PROCESS_ALIVE;
-}
-
-bool Process::is_blocked() {
-	return state == PROCESS_BLOCKED;
-}
-
-bool Process::should_unblock() {
-	return _blocker && _blocker->is_ready();
 }
 
 
@@ -555,59 +336,65 @@ ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 }
 
 pid_t Process::sys_fork(Registers& regs) {
-	auto* new_proc = new Process(this, regs);
+	auto new_proc = kstd::shared_ptr<Process>(new Process(this, regs));
+	new_proc->_self_ptr = new_proc;
 	TaskManager::add_process(new_proc);
 	return new_proc->pid();
 }
 
 int Process::exec(const kstd::string& filename, ProcessArgs* args) {
-	//Create the new process
-	auto R_new_proc = Process::create_user(filename, _user, args, _ppid);
-	if(R_new_proc.is_error())
-		return R_new_proc.code();
-	auto* new_proc = R_new_proc.value();
+	//Scoped so that stack variables are cleaned up before yielding
+	{
+		//Create the new process
+		auto R_new_proc = Process::create_user(filename, _user, args, _ppid);
+		if (R_new_proc.is_error())
+			return R_new_proc.code();
+		auto new_proc = R_new_proc.value();
 
-	//Properly set new process's PID, blocker, and stdout/in/err
-	new_proc->_pid = _pid;
-	new_proc->_user = _user;
-	new_proc->_pgid = _pgid;
-	new_proc->_sid = _sid;
-	if(kernel) {
-		//Kernel processes have no file descriptors, so we need to initialize them
-		auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
-		ttydesc->set_owner(this);
-		ttydesc->set_options(O_RDWR);
-		_file_descriptors.resize(0); //Just in case
-		_file_descriptors.push_back(ttydesc);
-		_file_descriptors.push_back(ttydesc);
-		_file_descriptors.push_back(ttydesc);
-		_cwd = args->working_dir;
-	}
-
-	//Give new process all of the file descriptors
-	new_proc->_file_descriptors.resize(_file_descriptors.size());
-	int last_fd = 0;
-	for(size_t i = 0; i < _file_descriptors.size(); i++) {
-		if(_file_descriptors[i] && !_file_descriptors[i]->cloexec()) {
-			last_fd = i;
-			new_proc->_file_descriptors[i] = _file_descriptors[i];
-			new_proc->_file_descriptors[i]->set_owner(new_proc);
+		//Properly set new process's PID, blocker, and stdout/in/err
+		new_proc->_pid = _pid;
+		new_proc->_user = _user;
+		new_proc->_pgid = _pgid;
+		new_proc->_sid = _sid;
+		if (kernel) {
+			//Kernel processes have no file descriptors, so we need to initialize them
+			auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
+			ttydesc->set_owner(_self_ptr);
+			ttydesc->set_options(O_RDWR);
+			_file_descriptors.resize(0); //Just in case
+			_file_descriptors.push_back(ttydesc);
+			_file_descriptors.push_back(ttydesc);
+			_file_descriptors.push_back(ttydesc);
+			_cwd = args->working_dir;
 		}
+
+		//Give new process all of the file descriptors
+		new_proc->_file_descriptors.resize(_file_descriptors.size());
+		int last_fd = 0;
+		for (size_t i = 0; i < _file_descriptors.size(); i++) {
+			if (_file_descriptors[i] && !_file_descriptors[i]->cloexec()) {
+				last_fd = i;
+				new_proc->_file_descriptors[i] = _file_descriptors[i];
+				new_proc->_file_descriptors[i]->set_owner(new_proc);
+			}
+		}
+		//Trim off null file descriptors
+		new_proc->_file_descriptors.resize(last_fd + 1);
+
+		_file_descriptors.resize(0);
+
+		//Manually delete because we won't return from here and we need to clean up resources
+		//TODO a better way of doing this
+		delete args;
+		filename.~string();
+
+		//Add the new process to the process list
+		TaskManager::enabled() = false;
+		_pid = -1;
+		state = DEAD;
+		TaskManager::add_process(new_proc);
 	}
-	//Trim off null file descriptors
-	new_proc->_file_descriptors.resize(last_fd + 1);
 
-	_file_descriptors.resize(0);
-
-	//Manually delete because we won't return from here and we need to clean up resources
-	delete args;
-	filename.~string();
-
-	//Add the new process to the process list
-	TaskManager::enabled() = false;
-	_pid = -1;
-	state = PROCESS_DEAD;
-	TaskManager::add_process(new_proc);
 	TaskManager::enabled() = true;
 	TaskManager::yield();
 	ASSERT(false);
@@ -659,7 +446,7 @@ int Process::sys_open(char *filename, int options, int mode) {
 	if(fd_or_err.is_error())
 		return fd_or_err.code();
 	_file_descriptors.push_back(fd_or_err.value());
-	fd_or_err.value()->set_owner(this);
+	fd_or_err.value()->set_owner(_self_ptr);
 	return (int)_file_descriptors.size() - 1;
 }
 
@@ -738,8 +525,8 @@ int Process::sys_waitpid(pid_t pid, int* status, int flags) {
 	//TODO: Flags
 	if(status)
 		check_ptr(status);
-	WaitBlocker blocker(this, pid);
-	block(blocker);
+	WaitBlocker blocker(TaskManager::current_thread(), pid);
+	TaskManager::current_thread()->block(blocker);
 	if(blocker.error())
 		return blocker.error();
 	if(status)
@@ -783,39 +570,39 @@ int Process::sys_kill(pid_t pid, int sig) {
 		kill(sig);
 	else if(pid == 0) {
 		//Kill all processes with _pgid == this->_pgid
-		Process* c_proc = this->next;
-		while(c_proc != this) {
+		auto* procs = TaskManager::process_list();
+		for(int i = 0; i < procs->size(); i++) {
+			auto c_proc = procs->at(i);
 			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pgid == _pgid && c_proc->_pid != 1)
 				c_proc->kill(sig);
-			c_proc = c_proc->next;
 		}
 		kill(sig);
 	} else if(pid == -1) {
 		//kill all processes for which we have permission to kill except init
-		Process* c_proc = this->next;
-		while(c_proc != this) {
+		auto* procs = TaskManager::process_list();
+		for(int i = 0; i < procs->size(); i++) {
+			auto c_proc = procs->at(i);
 			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pid != 1)
 				c_proc->kill(sig);
-			c_proc = c_proc->next;
 		}
 		kill(sig);
 	} else if(pid < -1) {
 		//Kill all processes with _pgid == -pid
-		Process* c_proc = this->next;
-		while(c_proc != this) {
+		auto* procs = TaskManager::process_list();
+		for(int i = 0; i < procs->size(); i++) {
+			auto c_proc = procs->at(i);
 			if((_user.uid == 0 || c_proc->_user.uid == _user.uid) && c_proc->_pgid == -pid && c_proc->_pid != 1)
 				c_proc->kill(sig);
-			c_proc = c_proc->next;
 		}
 		kill(sig);
 	} else {
 		//Kill process with _pid == pid
-		Process* proc = TaskManager::process_for_pid(pid);
-		if(!proc)
+		auto proc = TaskManager::process_for_pid(pid);
+		if(proc.is_error())
 			return -ESRCH;
-		if((_user.uid != 0 && proc->_user.uid != _user.uid) || proc->_pid == 1)
+		if((_user.uid != 0 && proc.value()->_user.uid != _user.uid) || proc.value()->_pid == 1)
 			return -EPERM;
-		proc->kill(sig);
+		proc.value()->kill(sig);
 	}
 	return 0;
 }
@@ -881,7 +668,7 @@ int Process::sys_pipe(int filedes[2], int options) {
 
 	//Make the read FD
 	auto pipe_read_fd = kstd::make_shared<FileDescriptor>(pipe);
-	pipe_read_fd->set_owner(this);
+	pipe_read_fd->set_owner(_self_ptr);
 	pipe_read_fd->set_options(O_RDONLY | options);
 	pipe_read_fd->set_fifo_reader();
 	_file_descriptors.push_back(pipe_read_fd);
@@ -889,7 +676,7 @@ int Process::sys_pipe(int filedes[2], int options) {
 
 	//Make the write FD
 	auto pipe_write_fd = kstd::make_shared<FileDescriptor>(pipe);
-	pipe_write_fd->set_owner(this);
+	pipe_write_fd->set_owner(_self_ptr);
 	pipe_write_fd->set_options(O_WRONLY | options);
 	pipe_write_fd->set_fifo_writer();
 	_file_descriptors.push_back(pipe_write_fd);
@@ -965,21 +752,21 @@ int Process::sys_readlinkat(struct readlinkat_args* args) {
 int Process::sys_getsid(pid_t pid) {
 	if(pid == 0)
 		return _sid;
-	auto* proc = TaskManager::process_for_pid(pid);
-	if(!proc)
+	auto proc = TaskManager::process_for_pid(pid);
+	if(proc.is_error())
 		return -ESRCH;
-	if(proc->_sid != _sid)
+	if(proc.value()->_sid != _sid)
 		return -EPERM;
-	return proc->_sid;
+	return proc.value()->_sid;
 }
 
 int Process::sys_setsid() {
 	//Make sure there's no other processes in the group
-	Process* c_proc = this->next;
-	while(c_proc != this) {
+	auto* procs = TaskManager::process_list();
+	for(int i = 0; i < procs->size(); i++) {
+		auto c_proc = procs->at(i);
 		if(c_proc->_pgid == _pid)
 			return -EPERM;
-		c_proc = c_proc->next;
 	}
 
 	_sid = _pid;
@@ -991,10 +778,10 @@ int Process::sys_setsid() {
 int Process::sys_getpgid(pid_t pid) {
 	if(pid == 0)
 		return _pgid;
-	Process* proc = TaskManager::process_for_pid(pid);
-	if(!proc)
+	auto proc = TaskManager::process_for_pid(pid);
+	if(proc.is_error())
 		return -ESRCH;
-	return proc->_pgid;
+	return proc.value()->_pgid;
 }
 
 int Process::sys_getpgrp() {
@@ -1006,30 +793,30 @@ int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
 		return -EINVAL;
 
 	//Validate specified pid
-	Process* proc = pid ? TaskManager::process_for_pid(pid) : this;
-	if(!proc || (proc->_pid != _pid && proc->_ppid != _pid))
+	auto proc = pid ? TaskManager::process_for_pid(pid) : ResultRet<kstd::shared_ptr<Process>>(_self_ptr);
+	if(proc.is_error() || (proc.value()->_pid != _pid && proc.value()->_ppid != _pid))
 		return -ESRCH; //Process doesn't exist or is not self or child
-	if(proc->_ppid == _pid && proc->_sid != _sid)
+	if(proc.value()->_ppid == _pid && proc.value()->_sid != _sid)
 		return -EPERM; //Process is a child but not in the same session
-	if(proc->_pid == proc->_sid)
+	if(proc.value()->_pid == proc.value()->_sid)
 		return -EPERM; //Process is session leader
 
 	//If new_pgid is 0, use the pid of the target process
 	if(!new_pgid)
-		new_pgid = proc->_pid;
+		new_pgid = proc.value()->_pid;
 
 	//Make sure we're not switching to another session
-	Process* c_proc = this->next;
 	pid_t new_sid = _sid;
-	while(c_proc != this) {
+	auto* procs = TaskManager::process_list();
+	for(int i = 0; i < procs->size(); i++) {
+		auto c_proc = procs->at(i);
 		if(c_proc->_pgid == new_pgid)
 			new_sid = c_proc->_sid;
-		c_proc = c_proc->next;
 	}
 	if(new_sid != _sid)
 		return -EPERM;
 
-	proc->_pgid = new_pgid;
+	proc.value()->_pgid = new_pgid;
 	return SUCCESS;
 }
 
@@ -1213,7 +1000,7 @@ int Process::sys_shmallow(int id, pid_t pid, int perms) {
 		return -EINVAL;
 	if((perms & SHM_WRITE) && !(perms & SHM_READ))
 		return -EINVAL;
-	if(!TaskManager::process_for_pid(pid))
+	if(TaskManager::process_for_pid(pid).is_error())
 		return -EINVAL;
 
 	return page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE).code();
@@ -1238,7 +1025,7 @@ int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {
 
 	//Block
 	PollBlocker blocker(polls, Time(0, timeout * 1000));
-	block(blocker);
+	TaskManager::current_thread()->block(blocker);
 
 	//Set appropriate revent
 	for(nfds_t i = 0; i < nfd; i++) {
@@ -1276,7 +1063,7 @@ int Process::sys_sleep(timespec* time, timespec* remainder) {
 	check_ptr(time);
 	check_ptr(remainder);
 	auto blocker = SleepBlocker(Time(*time));
-	block(blocker);
+	TaskManager::current_thread()->block(blocker);
 	*remainder = blocker.time_left().to_timespec();
 	return blocker.was_interrupted() ? -EINTR : SUCCESS;
 }

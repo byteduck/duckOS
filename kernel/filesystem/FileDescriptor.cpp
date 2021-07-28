@@ -21,7 +21,7 @@
 #include "InodeFile.h"
 #include "DirectoryEntry.h"
 #include "Pipe.h"
-#include <kernel/kstd/defines.h>
+#include <kernel/tasking/Process.h>
 #include <kernel/kstd/kstdio.h>
 #include <kernel/terminal/PTYMuxDevice.h>
 #include <kernel/terminal/PTYDevice.h>
@@ -162,11 +162,11 @@ void FileDescriptor::open() {
 	_file->open(*this, _options);
 }
 
-Process* FileDescriptor::owner() const {
+kstd::shared_ptr<Process> FileDescriptor::owner() const {
 	return _owner;
 }
 
-void FileDescriptor::set_owner(Process* owner) {
+void FileDescriptor::set_owner(const kstd::shared_ptr<Process>& owner) {
 	_owner = owner;
 }
 

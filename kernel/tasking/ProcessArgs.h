@@ -22,6 +22,7 @@
 
 
 #include <kernel/kstd/vector.hpp>
+#include <kernel/filesystem/LinkedInode.h>
 
 class ProcessArgs {
 public:

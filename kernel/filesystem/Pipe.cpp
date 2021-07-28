@@ -48,7 +48,7 @@ void Pipe::remove_writer() {
 ssize_t Pipe::read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) {
 	if(!_writers && _queue.empty()) return 0;
 	if(!_blocker.is_ready())
-		TaskManager::current_process()->block(_blocker);
+		TaskManager::current_thread()->block(_blocker);
 	LOCK(_lock);
 	if(count > _queue.size())
 		count = _queue.size();

@@ -451,6 +451,39 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t mem_size, bool read_wri
 	return region;
 }
 
+LinkedMemoryRegion PageDirectory::allocate_stack_region(size_t mem_size, bool read_write) {
+	//First, try allocating a region of virtual memory.
+	MemoryRegion *vmem_region = _vmem_map.allocate_stack_region(mem_size);
+	if (!vmem_region) {
+		//TODO: Send a signal instead
+		PANIC("NO_VMEM_SPACE", "A program ran out of vmem space.", true);
+	}
+
+	//Next, try allocating the physical pages.
+	MemoryRegion *pmem_region = Memory::pmem_map().allocate_region(mem_size);
+	if (!pmem_region) {
+		PANIC("NO_MEM", "There's no more physical memory left.", true);
+	}
+	_used_pmem += pmem_region->size;
+
+	//Finally, map the pages.
+	pmem_region->related = vmem_region;
+	vmem_region->related = pmem_region;
+	LinkedMemoryRegion region(pmem_region, vmem_region);
+	map_region(region, read_write);
+
+	if(is_mapped()) {
+		memset((void*)vmem_region->start, 0, vmem_region->size);
+	} else {
+		//If the region isn't mapped, we have to map it to the kernel temporarily to zero it out
+		auto kernel_region = k_map_physical_region(pmem_region, true);
+		memset((void*)kernel_region.virt->start, 0, vmem_region->size);
+		k_free_virtual_region(kernel_region);
+	}
+
+	return region;
+}
+
 LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size, bool read_write) {
 	//First, try allocating a region of virtual memory.
 	MemoryRegion *vmem_region = _vmem_map.allocate_region(vaddr, mem_size);

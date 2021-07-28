@@ -22,10 +22,12 @@
 
 #include <kernel/kstd/kstddef.h>
 #include "Process.h"
+#include "Thread.h"
 #include "TSS.h"
 #include "SpinLock.h"
 
 class Process;
+class Thread;
 class SpinLock;
 namespace TaskManager {
 	extern TSS tss;
@@ -36,12 +38,15 @@ namespace TaskManager {
 	bool is_idle();
 	void reparent_orphans(Process* proc);
 
-	int add_process(Process *p);
-	Process *current_process();
-	Process *process_for_pid(pid_t pid);
-	Process *process_for_pgid(pid_t pgid, pid_t exclude = -1);
-	Process *process_for_ppid(pid_t ppid, pid_t exclude = -1);
-	Process *process_for_sid(pid_t sid, pid_t exclude = -1);
+	kstd::vector<kstd::shared_ptr<Process>>* process_list();
+	int add_process(const kstd::shared_ptr<Process>& proc);
+	void queue_thread(const kstd::shared_ptr<Thread>& thread);
+	kstd::shared_ptr<Thread>& current_thread();
+	kstd::shared_ptr<Process>& current_process();
+	ResultRet<kstd::shared_ptr<Process>> process_for_pid(pid_t pid);
+	ResultRet<kstd::shared_ptr<Process>> process_for_pgid(pid_t pgid, pid_t exclude = -1);
+	ResultRet<kstd::shared_ptr<Process>> process_for_ppid(pid_t ppid, pid_t exclude = -1);
+	ResultRet<kstd::shared_ptr<Process>> process_for_sid(pid_t sid, pid_t exclude = -1);
 
 	void kill_pgid(pid_t pgid, int sig);
 
@@ -53,7 +58,7 @@ namespace TaskManager {
 	void notify_current(uint32_t sig);
 
 	pid_t get_new_pid();
-	Process* next_process();
+	kstd::shared_ptr<Thread> next_thread();
 
 	extern "C" void preempt();
 	extern "C" void __attribute((cdecl)) preempt_init_asm(unsigned int new_esp);

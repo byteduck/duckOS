@@ -39,6 +39,14 @@ public:
 	MemoryRegion* allocate_region(size_t minimum_size, MemoryRegion* storage = nullptr);
 
 	/**
+	 * Allocates a memory region with a size of at least minimum_size, starting the search from the end of the region and working backwards.
+	 * @param minimum_size The minimum size of the allocated region (will be rounded up to page boundary)
+	 * @param storage If not null, the newly allocated region will be stored here (if a new one needs to be allocated)
+	 * @return The region allocated. Will be nullptr if allocation failed.
+	 */
+	MemoryRegion* allocate_stack_region(size_t minimum_size, MemoryRegion* storage = nullptr);
+
+	/**
 	 * Allocates a region that contains the address given and is at least minimum_size.
 	 * @param address The address that the returned region should contain.
 	 * @param minimum_size The minimum size of the region returned (will be rounded up to page boundary)
@@ -104,6 +112,7 @@ public:
 private:
 	size_t _page_size = 0;
 	MemoryRegion* _first_region = nullptr;
+	MemoryRegion* _last_region = nullptr;
 	size_t bytes_used = 0;
 	size_t bytes_reserved = 0;
 };

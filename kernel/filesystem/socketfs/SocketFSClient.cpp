@@ -19,4 +19,4 @@
 
 #include "SocketFSClient.h"
 
-SocketFSClient::SocketFSClient(Process* process, pid_t pid): process(process), pid(pid), data_queue(kstd::make_shared<kstd::queue<uint8_t>>()) {}
+SocketFSClient::SocketFSClient(kstd::shared_ptr<Process> process, pid_t pid): process(process), pid(pid), data_queue(kstd::make_shared<kstd::queue<uint8_t>>()) {}
