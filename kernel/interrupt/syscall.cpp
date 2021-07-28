@@ -177,10 +177,8 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		default:
 #ifdef DEBUG
 			printf("UNKNOWN_SYSCALL(%d, %d, %d, %d)\n", call, arg1, arg2, arg3);
-			return 0;
-#else
-			;
 #endif
+			return 0;
 
 	}
 }
