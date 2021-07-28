@@ -22,51 +22,73 @@
 
 #include "types.h"
 #include "utility.h"
-#include "kstdlib.h"
+#include "../memory/kliballoc.h"
 
 namespace kstd {
 	template<typename T>
 	class circular_queue {
 	public:
-		circular_queue(size_t size): _storage(new T[size]), _capacity(size), _size(0) {
+		circular_queue(size_t capacity): _storage((T*) kcalloc(capacity, sizeof(T))), _capacity(capacity), _size(0) {
+
+		}
+
+		circular_queue(circular_queue<T>& other): _capacity(other._capacity), _size(other._size), _front(other._front), _back(other._back) {
+			_storage = (T*) kcalloc(_size, sizeof(T));
+			for(size_t i = 0; i < _size; i++)
+				new (&_storage[i]) T(other._storage[i]);
+		}
+
+		circular_queue(circular_queue<T>&& other) noexcept : _capacity(other._capacity), _size(other._size), _front(other._front), _back(other._back) {
+			_storage = (T*) kcalloc(_size, sizeof(T));
+			for(size_t i = 0; i < _size; i++)
+				new (&_storage[i]) T(kstd::move(other._storage[i]));
 		}
 
 		~circular_queue() {
-			delete[] _storage;
+			for(size_t i = 0; i < _size; i++)
+				_storage[(_front + i) % _capacity].~T();
+			kfree(_storage);
 		}
 
-		bool push(const T& elem) {
-			if(size() == _capacity) return false;
-			if((int) _front == -1) _front = 0;
-			_back++;
-			_back = _back % _capacity;
-			_storage[_back] = kstd::move(elem);
+		bool push_back(const T& elem) {
+			if(size() == _capacity)
+				return false;
+			if(_size == 0) {
+				_front = 0;
+				_back = 0;
+			} else {
+				_back = (_back + 1) % _capacity;
+			}
+			new(&_storage[_back]) T(elem);
 			_size++;
 			return true;
 		}
 
-		T& pop_front() {
-			T& ret = _storage[_front];
-			if(_front == _back) {
-				_front = -1;
-				_back = -1;
-			} else {
-				_front++;
-				_front = _front % _capacity;
-			}
+		T pop_front() {
+			T ret = _storage[_front];
+			_storage[_front].~T();
 			_size--;
+			if(_size == 0) {
+				_front = 0;
+				_back = 0;
+			} else {
+				_front = (_front + 1) % _capacity;
+			}
 			return ret;
 		}
 
-		T& pop_back() {
-			T& ret = _storage[_back];
-			if(_front == _back) {
-				_front = -1;
-				_back = -1;
+		T pop_back() {
+			T ret = _storage[_back];
+			_storage[_back].~T();
+			_size--;
+			if(_size == 0) {
+				_front = 0;
+				_back = 0;
 			} else if(_back == 0) {
 				_back = _capacity - 1;
-			} else _back--;
-			_size--;
+			} else {
+				_back--;
+			}
 			return ret;
 		}
 
@@ -94,12 +116,42 @@ namespace kstd {
 			return _storage;
 		}
 
+		circular_queue<T>& operator=(const circular_queue<T>& other) noexcept {
+			if(this != &other) {
+				for(size_t i = 0; i < _size; i++) _storage[i].~T();
+				kfree(_storage);
+				_size = other._size;
+				_capacity = other._capacity;
+				_front = other._front;
+				_back = other._back;
+				_storage = (T*) kcalloc(_capacity, sizeof(T));
+				for (size_t i = 0; i < _size; i++)
+					new (&_storage[i]) T(kstd::move(other._storage[i]));
+			}
+			return *this;
+		}
+
+		circular_queue<T>& operator=(circular_queue<T>&& other) noexcept {
+			if(this != &other) {
+				for(size_t i = 0; i < _size; i++) _storage[i].~T();
+				kfree(_storage);
+				_size = other._size;
+				_capacity = other._capacity;
+				_front = other._front;
+				_back = other._back;
+				_storage = (T*) kcalloc(_capacity, sizeof(T));
+				for (size_t i = 0; i < _size; i++)
+					new (&_storage[i]) T(kstd::move(other._storage[i]));
+			}
+			return *this;
+		}
+
 	private:
 		T* _storage;
 		size_t _capacity;
 		size_t _size = 0;
-		size_t _front = -1;
-		size_t _back = -1;
+		size_t _front = 0;
+		size_t _back = 0;
 	};
 }
 

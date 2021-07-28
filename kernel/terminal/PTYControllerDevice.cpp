@@ -38,7 +38,8 @@ ssize_t PTYControllerDevice::read(FileDescriptor& fd, size_t offset, uint8_t* bu
 	LOCK(_output_lock);
 	count = min(count, _output_buffer.size());
 	size_t count_loop = count;
-	while(count_loop--) *buffer++ = _output_buffer.pop_front();
+	while(count_loop--)
+		*buffer++ = _output_buffer.pop_front();
 	return count;
 }
 
@@ -73,7 +74,7 @@ size_t PTYControllerDevice::putchars(const uint8_t* buffer, size_t count) {
 	LOCK(_output_lock);
 	count = min(count, _output_buffer.capacity());
 	size_t count_loop = count;
-	while(count_loop--) _output_buffer.push(*(buffer++));
+	while(count_loop--) _output_buffer.push_back(*(buffer++));
 	return count;
 }
 

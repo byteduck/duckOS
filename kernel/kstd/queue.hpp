@@ -20,10 +20,9 @@
 #ifndef DUCKOS_QUEUE_HPP
 #define DUCKOS_QUEUE_HPP
 
-#include "kstdlib.h"
 #include "types.h"
-#include "cstring.h"
 #include "utility.h"
+#include "../memory/kliballoc.h"
 
 namespace kstd {
 	template<typename T>
@@ -46,18 +45,12 @@ namespace kstd {
 		}
 
 		~queue() {
-			if(_front > _back) {
-				for(size_t i = _back; i <= _front; i++)
-					_storage[i].~T();
-			} else if(_back > _front) {
-				for(size_t i = _front; i <= _back; i++)
-					_storage[i].~T();
-			}
-
+			for(size_t i = 0; i < _size; i++)
+				_storage[(_front + i) % _capacity].~T();
 			kfree(_storage);
 		}
 
-		void push(const T& elem) {
+		void push_back(const T& elem) {
 			if(size() == _capacity)
 				realloc(_capacity ? _capacity * 2 : 1);
 
@@ -90,25 +83,44 @@ namespace kstd {
 
 			T* tmp_storage = (T*) kcalloc(new_capacity, sizeof(T));
 			for(size_t i = 0; i < _size; i++) {
-				new (&tmp_storage[i]) T(_storage[i]);
-				_storage[i].~T();
+				int old_index = (_front + i) % _capacity;
+				new (&tmp_storage[i]) T(_storage[old_index]);
+				_storage[old_index].~T();
 			}
 
 			kfree(_storage);
 			_storage = tmp_storage;
 			_capacity = new_capacity;
+			_front = 0;
+			_back = _size - 1;
 		}
 
-		void pop() {
+		T pop_front() {
+			T ret = _storage[_front];
 			_storage[_front].~T();
 			_size--;
-
 			if(_size == 0) {
 				_front = 0;
 				_back = 0;
 			} else {
 				_front = (_front + 1) % _capacity;
 			}
+			return ret;
+		}
+
+		T pop_back() {
+			T ret = _storage[_back];
+			_storage[_back].~T();
+			_size--;
+			if(_size == 0) {
+				_front = 0;
+				_back = 0;
+			} else if(_back == 0) {
+				_back = _capacity - 1;
+			} else {
+				_back--;
+			}
+			return ret;
 		}
 
 		T& front() const {
@@ -125,6 +137,10 @@ namespace kstd {
 
 		size_t size() const {
 			return _size;
+		}
+
+		size_t capacity() const {
+			return _capacity;
 		}
 
 		queue<T>& operator=(const queue<T>& other) noexcept {

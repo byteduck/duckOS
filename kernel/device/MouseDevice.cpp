@@ -151,6 +151,6 @@ void MouseDevice::handle_packet() {
 	}
 
 	LOCK(lock);
-	if(!event_buffer.push({x, y, z, (uint8_t) (packet_data[0] & 0x7u)}))
+	if(!event_buffer.push_back({x, y, z, (uint8_t) (packet_data[0] & 0x7u)}))
 		printf("[I8042/Mouse] Event buffer full!\n");
 }

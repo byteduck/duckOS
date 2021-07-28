@@ -333,7 +333,7 @@ void Process::reap() {
 }
 
 void Process::kill(int signal) {
-	pending_signals.push(signal);
+	pending_signals.push_back(signal);
 	if(TaskManager::current_process() == this)
 		ASSERT(TaskManager::yield_if_not_preempting());
 }
@@ -343,7 +343,7 @@ bool Process::handle_pending_signal() {
 		return false;
 
 	int signal = pending_signals.front();
-	pending_signals.pop();
+	pending_signals.pop_front();
 
 	if(signal >= 0 && signal <= 32) {
 		Signal::SignalSeverity severity = Signal::signal_severities[signal];
@@ -371,7 +371,7 @@ bool Process::handle_pending_signal() {
 					_blocker->interrupt();
 					unblock();
 				} else {
-					pending_signals.push(signal);
+					pending_signals.push_back(signal);
 					return false;
 				}
 			}

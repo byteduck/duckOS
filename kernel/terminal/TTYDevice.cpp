@@ -106,7 +106,7 @@ void TTYDevice::emit(uint8_t c) {
 	//Canonical mode stuff
 	if(_termios.c_lflag & ICANON) {
 		if(c == _termios.c_cc[VEOF]) {
-			_input_buffer.push('\0');
+			_input_buffer.push_back('\0');
 			_lines++;
 			_buffer_blocker.set_ready(true);
 			return;
@@ -132,7 +132,7 @@ void TTYDevice::emit(uint8_t c) {
 		}
 	}
 
-	_input_buffer.push(c);
+	_input_buffer.push_back(c);
 	echo(c);
 }
 

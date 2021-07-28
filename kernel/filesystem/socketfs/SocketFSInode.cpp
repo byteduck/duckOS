@@ -97,7 +97,7 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 	auto& queue = reader->data_queue;
 	for(size_t i = 0; i < length; i++) {
 		*buffer++ = queue->front();
-		queue->pop();
+		queue->pop_front();
 	}
 
 	reader->_blocker.set_ready(true);
@@ -324,12 +324,12 @@ Result SocketFSInode::write_packet(SocketFSClient& client, pid_t pid, size_t len
 	SocketFSPacket packet_header = {pid, length};
 	auto* data = (const uint8_t*) &packet_header;
 	for(size_t i = 0; i < sizeof(SocketFSPacket); i++)
-		client.data_queue->push(*data++);
+		client.data_queue->push_back(*data++);
 
 	//Write the packet body
 	data = (uint8_t*) buffer;
 	for(size_t i = 0; i < length; i++)
-		client.data_queue->push(*data++);
+		client.data_queue->push_back(*data++);
 
 	return SUCCESS;
 }

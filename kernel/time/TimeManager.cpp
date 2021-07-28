@@ -53,7 +53,7 @@ void TimeManager::tick() {
 	if(_ticks % (_keeper->frequency() / 64) == 0) {
 		if(idle_ticks.size() == 100)
 			idle_ticks.pop_front();
-		idle_ticks.push(TaskManager::is_idle());
+		idle_ticks.push_back(TaskManager::is_idle());
 		TaskManager::preempt();
 	}
 

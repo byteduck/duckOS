@@ -40,8 +40,10 @@ ssize_t KeyboardDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer,
 	LOCK(_lock);
 	size_t ret = 0;
 	while(ret < count) {
-		if(_event_buffer.empty()) break;
-		if((count - ret) < sizeof(KeyEvent)) break;
+		if(_event_buffer.empty())
+			break;
+		if((count - ret) < sizeof(KeyEvent))
+			break;
 		auto evt = _event_buffer.pop_front();
 		memcpy(buffer, &evt, sizeof(KeyEvent));
 		ret += sizeof(KeyEvent);
@@ -126,6 +128,6 @@ void KeyboardDevice::set_key_state(uint8_t scancode, bool pressed) {
 		_handler->handle_key(event);
 	_e0_flag = false;
 	LOCK(_lock);
-	if(!_event_buffer.push(event))
+	if(!_event_buffer.push_back(event))
 		printf("[I8042/Keyboard] Event buffer full!\n");
 }

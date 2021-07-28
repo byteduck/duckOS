@@ -71,7 +71,7 @@ ssize_t Pipe::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, si
 	size_t nwrote = 0;
 	bool flag = true;
 	while(nwrote < count && flag) {
-		flag = _queue.push(buffer[nwrote]);
+		flag = _queue.push_back(buffer[nwrote]);
 		nwrote++;
 	}
 
