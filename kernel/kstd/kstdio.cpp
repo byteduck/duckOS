@@ -25,6 +25,7 @@
 #include <kernel/kstd/defines.h>
 #include <kernel/IO.h>
 #include <kernel/KernelMapper.h>
+#include <kernel/interrupt/interrupt.h>
 #include "cstring.h"
 
 kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
@@ -127,7 +128,7 @@ void printf(const char* fmt, ...){
 void PANIC(char *error, char *msg, bool hang){
 	TaskManager::enabled() = false;
 	use_tty = true;
-	printf("\033[41;97m\033[2J"); //Red BG, bright white FG, clear screen
+	printf("\n\033[41;97m"); //Red BG, bright white FG
 	print("Good job, you crashed it.\nHere are the details, since you probably need them.\nTry not to mess it up again.\n\n");
 	printf("%s\n", error);
 	printf("%s\n", msg);
@@ -135,8 +136,13 @@ void PANIC(char *error, char *msg, bool hang){
 	printf("Stack trace:\n");
 	KernelMapper::print_stacktrace();
 
-	while(hang);
-	TaskManager::enabled() = true;
+	if(!hang) {
+		TaskManager::enabled() = true;
+	} else {
+		Interrupt::Disabler disabler;
+		Interrupt::NMIDisabler disabler2;
+		while(true);
+	}
 }
 
 void clearScreen(){
