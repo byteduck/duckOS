@@ -36,7 +36,6 @@
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/interrupt/syscall.h>
 
-class TaskBlockQueue;
 class FileDescriptor;
 class Blocker;
 
