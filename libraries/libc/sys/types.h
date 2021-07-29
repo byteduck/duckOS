@@ -28,6 +28,7 @@ __DECL_BEGIN
 
 typedef int32_t ssize_t;
 typedef int pid_t;
+typedef int tid_t;
 typedef unsigned long ino_t;
 typedef short dev_t;
 typedef uint32_t mode_t;

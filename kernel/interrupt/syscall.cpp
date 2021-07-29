@@ -35,7 +35,6 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 	switch(call) {
 		case SYS_EXIT:
 			cur_proc->sys_exit(arg1);
-			cur_proc->kill(SIGKILL);
 			return 0;
 		case SYS_FORK:
 			return cur_proc->sys_fork(regs);
@@ -169,6 +168,14 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return cur_proc->sys_ptsname(arg1, (char*) arg2, (int) arg3);
 		case SYS_SLEEP:
 			return cur_proc->sys_sleep((timespec*) arg1, (timespec*) arg2);
+		case SYS_THREADCREATE:
+			return cur_proc->sys_threadcreate((void* (*)(void* (*)(void*), void*)) arg1, (void* (*)(void*)) arg2, (void*) arg3);
+		case SYS_GETTID:
+			return cur_proc->sys_gettid();
+		case SYS_THREADJOIN:
+			return cur_proc->sys_threadjoin((tid_t) arg1, (void**) arg2);
+		case SYS_THREADEXIT:
+			return cur_proc->sys_threadexit((void*) arg1);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

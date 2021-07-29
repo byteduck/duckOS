@@ -25,6 +25,7 @@
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/memory/Stack.h>
+#include <kernel/Result.hpp>
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
 #define THREAD_KERNEL_STACK_SIZE 4096 //4KiB
@@ -37,11 +38,13 @@ public:
 	enum State {
 		ALIVE,
 		BLOCKED,
+		ZOMBIE,
 		DEAD
 	};
 
-	Thread(Process* process, pid_t tid, size_t entry_point, ProcessArgs* args);
-	Thread(Process* process, pid_t tid, Registers& regs);
+	Thread(const kstd::shared_ptr<Process>& process, tid_t tid, size_t entry_point, ProcessArgs* args);
+	Thread(const kstd::shared_ptr<Process>& process, tid_t tid, Registers& regs);
+	Thread(const kstd::shared_ptr<Process>& process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg);
 	~Thread();
 
 	//Properties
@@ -50,12 +53,14 @@ public:
 	void* kernel_stack_top();
 	State state();
 	bool is_kernel_mode();
+	void* return_value();
 
-	//Blocking
+	//Blocking and Joining
 	void block(Blocker& blocker);
 	void unblock();
 	bool is_blocked();
 	bool should_unblock();
+	Result join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, void** retp);
 
 	//Signals
 	bool call_signal_handler(int sig);
@@ -75,19 +80,24 @@ private:
 	friend class Process;
 
 	void setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Registers& regs);
-	void die();
+	void exit(void* return_value);
+	void reap();
 
 	//Thread stuff
 	kstd::shared_ptr<Process> _process;
-	pid_t _tid;
+	tid_t _tid;
 	State _state = ALIVE;
+	void* _return_value = nullptr;
 
 	//Stack
 	LinkedMemoryRegion _kernel_stack_region;
 	LinkedMemoryRegion _stack_region;
 
-	//Blocking
+	//Blocking and Joining
 	Blocker* _blocker = nullptr;
+	bool _joined = false;
+	SpinLock _join_lock;
+	kstd::shared_ptr<Thread> _joined_thread;
 
 	//Signals
 	bool _in_signal = false;

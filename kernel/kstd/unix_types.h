@@ -24,6 +24,7 @@
 
 /// Misc typedefs
 typedef int pid_t;
+typedef int tid_t;
 typedef int64_t time_t;
 struct timespec {
 	time_t tv_sec;

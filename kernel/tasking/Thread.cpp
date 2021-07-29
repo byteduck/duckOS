@@ -22,11 +22,12 @@
 #include "ProcessArgs.h"
 #include "Blocker.h"
 #include "TaskManager.h"
+#include "JoinBlocker.h"
 #include <kernel/memory/Memory.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/Stack.h>
 
-Thread::Thread(Process* process, pid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
+Thread::Thread(const kstd::shared_ptr<Process>& process, tid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
 	//Create the kernel stack
 	_kernel_stack_region = PageDirectory::k_alloc_region(THREAD_KERNEL_STACK_SIZE);
 	LinkedMemoryRegion mapped_user_stack_region;
@@ -80,7 +81,7 @@ Thread::Thread(Process* process, pid_t tid, size_t entry_point, ProcessArgs* arg
 		PageDirectory::k_free_virtual_region(mapped_user_stack_region);
 }
 
-Thread::Thread(Process* process, pid_t tid, Registers& regs): _process(process), _tid(tid), registers(regs) {
+Thread::Thread(const kstd::shared_ptr<Process>& process, tid_t tid, Registers& regs): _process(process), _tid(tid), registers(regs) {
 	//Allocate kernel stack
 	_kernel_stack_region = PageDirectory::k_alloc_region(THREAD_KERNEL_STACK_SIZE);
 
@@ -88,6 +89,62 @@ Thread::Thread(Process* process, pid_t tid, Registers& regs): _process(process),
 	registers.eax = 0; // fork() in child returns zero
 	Stack stack((void*) (_kernel_stack_region.virt->start + _kernel_stack_region.virt->size));
 	setup_kernel_stack(stack, regs.useresp, registers);
+}
+
+Thread::Thread(const kstd::shared_ptr<Process>& process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (* thread_func)(void*), void* arg): _tid(tid), _process(process) {
+	//Create the kernel stack
+	_kernel_stack_region = PageDirectory::k_alloc_region(THREAD_KERNEL_STACK_SIZE);
+	LinkedMemoryRegion mapped_user_stack_region;
+	Stack user_stack(nullptr, 0);
+	Stack kernel_stack((void*) (_kernel_stack_region.virt->start + _kernel_stack_region.virt->size));
+
+	if(!is_kernel_mode()) {
+		_stack_region = _process->_page_directory->allocate_stack_region(THREAD_STACK_SIZE, true);
+		if (!_stack_region.virt)
+			PANIC("NEW_THREAD_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new thread's stack.", true);
+		mapped_user_stack_region = PageDirectory::k_map_physical_region(_stack_region.phys, true);
+		user_stack = Stack((void*) (mapped_user_stack_region.virt->start + _stack_region.virt->size), _stack_region.virt->start + _stack_region.virt->size);
+	} else {
+		user_stack = Stack((void*) (_kernel_stack_region.virt->start + _kernel_stack_region.virt->size));
+	}
+
+	//Setup registers
+	registers.eflags = 0x202;
+	registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
+	registers.eip = (size_t) entry_func;
+	registers.eax = 0;
+	registers.ebx = 0;
+	registers.ecx = 0;
+	registers.edx = 0;
+	registers.ebp = user_stack.real_stackptr();
+	registers.edi = 0;
+	registers.esi = 0;
+	if(_process->_kernel_mode) {
+		registers.ds = 0x10; // ds
+		registers.es = 0x10; // es
+		registers.fs = 0x10; // fs
+		registers.gs = 0x10; // gs
+	} else {
+		registers.ds = 0x23; // ds
+		registers.es = 0x23; // es
+		registers.fs = 0x23; // fs
+		registers.gs = 0x23; // gs
+	}
+
+	//Set up the user stack for the thread arguments
+	user_stack.push_sizet((size_t) arg);
+	user_stack.push_sizet((size_t) thread_func);
+	user_stack.push_sizet(0);
+
+	//Setup the kernel stack with register states
+	if(is_kernel_mode())
+		setup_kernel_stack(kernel_stack, kernel_stack.real_stackptr(), registers);
+	else
+		setup_kernel_stack(kernel_stack, user_stack.real_stackptr(), registers);
+
+	//Unmap the user stack
+	if(!is_kernel_mode())
+		PageDirectory::k_free_virtual_region(mapped_user_stack_region);
 }
 
 Thread::~Thread() = default;
@@ -110,6 +167,10 @@ Thread::State Thread::state() {
 
 bool Thread::is_kernel_mode() {
 	return _process->is_kernel_mode();
+}
+
+void* Thread::return_value() {
+	return _return_value;
 }
 
 void Thread::block(Blocker& blocker) {
@@ -136,6 +197,44 @@ bool Thread::is_blocked() {
 
 bool Thread::should_unblock() {
 	return _blocker && _blocker->is_ready();
+}
+
+Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, void** retp) {
+	//See if we're trying to join ourself
+	if(other.get() == this)
+		return -EDEADLK;
+
+	{
+		ScopedLocker __locker1(other->_join_lock);
+		ScopedLocker __locker2(_join_lock);
+
+		//Check if the other thread has been joined already
+		if (other->_joined || other->_state == DEAD)
+			return -EINVAL;
+
+		//Check if the other thread joined this thread
+		if (other->_joined_thread == self_ptr)
+			return -EDEADLK;
+
+		//Join the other thread
+		other->_joined = true;
+		_joined_thread = other;
+	}
+
+	JoinBlocker blocker(self_ptr, other);
+	block(blocker);
+
+	{
+		//Reap the joined thread and set the return status
+		other->reap();
+		*retp = other->return_value();
+
+		//Unset the joined thread
+		LOCK(_join_lock);
+		_joined_thread.reset();
+	}
+
+	return SUCCESS;
 }
 
 bool Thread::call_signal_handler(int signal) {
@@ -282,8 +381,11 @@ void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Regi
 	regs.useresp = (size_t) user_stack_ptr;
 }
 
-void Thread::die() {
-	if(is_blocked())
-		unblock();
+void Thread::exit(void* return_value) {
+	_return_value = return_value;
+	_state = ZOMBIE;
+}
+
+void Thread::reap() {
 	_state = DEAD;
 }

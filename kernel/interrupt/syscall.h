@@ -88,6 +88,10 @@
 #define SYS_POLL 67
 #define SYS_PTSNAME 68
 #define SYS_SLEEP 69
+#define SYS_THREADCREATE 70
+#define SYS_GETTID 71
+#define SYS_THREADJOIN 72
+#define SYS_THREADEXIT 73
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

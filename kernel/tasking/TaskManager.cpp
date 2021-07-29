@@ -241,7 +241,7 @@ void TaskManager::do_yield_async() {
 
 
 void TaskManager::preempt(){
-	ASSERT(!preempting);
+	if(preempting) return;
 	if(!tasking_enabled) return;
 	preempting = true;
 
@@ -258,6 +258,8 @@ void TaskManager::preempt(){
 				//Evaluate if any of the process's threads are alive or need unblocking
 				for (int j = 0; j < threads.size(); j++) {
 					auto thread = threads[j];
+					if(!thread)
+						continue;
 					if (thread->state() == Thread::BLOCKED) {
 						if (thread->should_unblock()) {
 							any_alive = true;

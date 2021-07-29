@@ -78,6 +78,7 @@ SET(KERNEL_SRCS
         tasking/ProcessArgs.cpp
         tasking/Blocker.cpp
         tasking/WaitBlocker.cpp
+        tasking/JoinBlocker.cpp
         tasking/BooleanBlocker.cpp
         tasking/PollBlocker.cpp
         tasking/SleepBlocker.cpp

@@ -152,6 +152,10 @@ public:
 	int sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout);
 	int sys_ptsname(int fd, char* buf, size_t bufsize);
 	int sys_sleep(timespec* time, timespec* remainder);
+	int sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg);
+	int sys_gettid();
+	int sys_threadjoin(tid_t tid, void** retp);
+	int sys_threadexit(void* return_value);
 
 private:
 	friend class Thread;

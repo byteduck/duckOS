@@ -34,6 +34,7 @@
 #include <kernel/interrupt/interrupt.h>
 #include <kernel/KernelMapper.h>
 #include "Thread.h"
+#include "JoinBlocker.h"
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/kstd/cstring.h>
 
@@ -41,9 +42,8 @@ const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 
 kstd::shared_ptr<Process> Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::shared_ptr<LinkedInode>(nullptr));
-	auto ret = kstd::shared_ptr<Process>(new Process(name, (size_t)func, true, &args, 1));
-	ret->_self_ptr = ret;
-	return ret;
+	auto* ret = new Process(name, (size_t)func, true, &args, 1);
+	return ret->_self_ptr;
 }
 
 ResultRet<kstd::shared_ptr<Process>> Process::create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
@@ -78,8 +78,7 @@ ResultRet<kstd::shared_ptr<Process>> Process::create_user(const kstd::string& ex
 	}
 
 	//Create the process
-	auto proc = kstd::shared_ptr<Process>(new Process(VFS::path_base(executable_loc), info.header->program_entry_position, false, args, parent));
-	proc->_self_ptr = proc;
+	auto* proc = new Process(VFS::path_base(executable_loc), info.header->program_entry_position, false, args, parent);
 	proc->_exe = executable_loc;
 
 	//Load the ELF into the process's page directory and set proc->current_brk
@@ -87,7 +86,7 @@ ResultRet<kstd::shared_ptr<Process>> Process::create_user(const kstd::string& ex
 	if(brk_or_err.is_error())
 		return brk_or_err.code();
 
-	return proc;
+	return proc->_self_ptr;
 }
 
 pid_t Process::pid() {
@@ -156,7 +155,8 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 		_pid(TaskManager::get_new_pid()),
 		_kernel_mode(kernel),
 		_ppid(_pid > 1 ? ppid : 0),
-		_state(ALIVE)
+		_state(ALIVE),
+		_self_ptr(this)
 {
 	//Disable task switching so we don't screw up paging
 	bool en = TaskManager::enabled();
@@ -176,13 +176,13 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 	}
 
 	//Create the main thread
-	auto* main_thread = new Thread(this, _cur_tid++, entry_point, args);
+	auto* main_thread = new Thread(_self_ptr, _cur_tid++, entry_point, args);
 	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
 
 	TaskManager::enabled() = en;
 }
 
-Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
+Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _self_ptr(this) {
 	if(to_fork->_kernel_mode)
 		PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
 
@@ -218,7 +218,7 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user) {
 	_page_directory->fork_from(to_fork->_page_directory.get(), _ppid, _pid);
 
 	//Create the main thread
-	auto* main_thread = new Thread(this, _cur_tid++,regs);
+	auto* main_thread = new Thread(_self_ptr, _cur_tid++,regs);
 	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
 
 	//Load back the page directory of the current process
@@ -238,10 +238,11 @@ void Process::free_resources() {
 	_freed_resources = true;
 	_page_directory.reset();
 	for(int i = 0; i < _threads.size(); i++)
-		_threads[i]->die();
+		if(_threads[i])
+			_threads[i]->reap();
 	_threads.resize(0);
 	_file_descriptors.resize(0);
-	_self_ptr = kstd::shared_ptr<Process>(nullptr);
+	_self_ptr.reset();
 }
 
 void Process::reap() {
@@ -283,7 +284,8 @@ bool Process::handle_pending_signal() {
 				parent.value()->kill(SIGCHLD);
 			_state = ZOMBIE;
 			for(int i = 0; i < _threads.size(); i++)
-				_threads[i]->die();
+				if(_threads[i])
+					_threads[i]->reap();
 			TaskManager::reparent_orphans(this);
 		} else if(signal_actions[signal].action) {
 			//We have a signal handler for this. If the process is blocked but can be interrupted, do so.
@@ -319,6 +321,7 @@ void Process::check_ptr(const void *ptr) {
 
 void Process::sys_exit(int status) {
 	_exit_status = status;
+	kill(SIGKILL);
 }
 
 ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
@@ -337,9 +340,8 @@ ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
 }
 
 pid_t Process::sys_fork(Registers& regs) {
-	auto new_proc = kstd::shared_ptr<Process>(new Process(this, regs));
-	new_proc->_self_ptr = new_proc;
-	TaskManager::add_process(new_proc);
+	auto* new_proc = new Process(this, regs);
+	TaskManager::add_process(new_proc->_self_ptr);
 	return new_proc->pid();
 }
 
@@ -996,7 +998,6 @@ int Process::sys_shmdetach(int id) {
 
 int Process::sys_shmallow(int id, pid_t pid, int perms) {
 	//TODO: If PIDs end up getting recycled and we previously allowed a PID that was recycled, it could be a security issue
-
 	if(!(perms &  (SHM_READ | SHM_WRITE)))
 		return -EINVAL;
 	if((perms & SHM_WRITE) && !(perms & SHM_READ))
@@ -1067,4 +1068,36 @@ int Process::sys_sleep(timespec* time, timespec* remainder) {
 	TaskManager::current_thread()->block(blocker);
 	*remainder = blocker.time_left().to_timespec();
 	return blocker.was_interrupted() ? -EINTR : SUCCESS;
+}
+
+int Process::sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg) {
+	check_ptr((void*) entry_func);
+	auto thread = kstd::make_shared<Thread>(_self_ptr, _cur_tid++, entry_func, thread_func, arg);
+	_threads.push_back(thread);
+	TaskManager::queue_thread(thread);
+	return thread->tid();
+}
+
+int Process::sys_gettid() {
+	return TaskManager::current_thread()->tid();
+}
+
+int Process::sys_threadjoin(tid_t tid, void** retp) {
+	check_ptr(retp);
+	auto cur_thread = TaskManager::current_thread();
+	if(tid > _threads.size() || !_threads[tid - 1])
+		return -ESRCH;
+	Result result = cur_thread->join(cur_thread, _threads[tid - 1], retp).code();
+	if(result.is_success()) {
+		ASSERT(_threads[tid - 1]->state() == Thread::DEAD);
+		_threads[tid - 1].reset();
+	}
+	return result.code();
+}
+
+int Process::sys_threadexit(void* return_value) {
+	TaskManager::current_thread()->exit(return_value);
+	TaskManager::yield();
+	ASSERT(false);
+	return -1;
 }
