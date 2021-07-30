@@ -24,7 +24,7 @@
 #include <kernel/kstd/cstring.h>
 #include <kernel/filesystem/LinkedInode.h>
 
-SocketFSInode::SocketFSInode(SocketFS& fs, kstd::shared_ptr<Process> owner, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
+SocketFSInode::SocketFSInode(SocketFS& fs, Process* owner, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
 Inode(fs, id), owner(owner), fs(fs), id(id), name(name), host(owner, owner ? owner->pid() : -1)
 {
 	if(!owner) { //We're the root inode
@@ -74,7 +74,7 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 
 	//Find the client that is reading
 	SocketFSClient* reader = nullptr;
-	kstd::shared_ptr<Process> current_proc = TaskManager::current_process();
+	Process* current_proc = TaskManager::current_process();
 	if(current_proc == owner) {
 		reader = &host;
 	} else {
@@ -154,7 +154,7 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 	bool is_broadcast = packet->pid == SOCKETFS_BROADCAST;
 
 	//Find the client that the packet is coming from
-	kstd::shared_ptr<Process> current_proc = TaskManager::current_process();
+	Process* current_proc = TaskManager::current_process();
 	if(current_proc == owner) {
 		sender = &host;
 	} else {
@@ -221,7 +221,7 @@ ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::strin
 		hash = hash * 31 + create_name[i];
 	}
 
-	kstd::shared_ptr<Process> proc = TaskManager::current_process();
+	Process* proc = TaskManager::current_process();
 	ino_t create_id = SocketFS::get_inode_id(proc->pid(), hash);
 
 	//Make sure that nothing exists with the same name / id

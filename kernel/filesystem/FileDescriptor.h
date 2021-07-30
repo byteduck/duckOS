@@ -45,8 +45,8 @@ public:
 	InodeMetadata metadata();
 	kstd::shared_ptr<File> file();
 	void open();
-	kstd::shared_ptr<Process> owner() const;
-	void set_owner(const kstd::shared_ptr<Process>& owner);
+	Process* owner() const;
+	void set_owner(Process* owner);
 
 	int seek(off_t offset, int whence);
 	ssize_t read(uint8_t* buffer, size_t count);
@@ -63,7 +63,7 @@ public:
 private:
 	kstd::shared_ptr<File> _file;
 	kstd::shared_ptr<Inode> _inode;
-	kstd::shared_ptr<Process> _owner;
+	Process* _owner;
 
 	bool _readable {false};
 	bool _writable {false};

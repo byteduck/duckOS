@@ -27,7 +27,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/Stack.h>
 
-Thread::Thread(const kstd::shared_ptr<Process>& process, tid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
+Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
 	//Create the kernel stack
 	_kernel_stack_region = PageDirectory::k_alloc_region(THREAD_KERNEL_STACK_SIZE);
 	LinkedMemoryRegion mapped_user_stack_region;
@@ -81,7 +81,7 @@ Thread::Thread(const kstd::shared_ptr<Process>& process, tid_t tid, size_t entry
 		PageDirectory::k_free_virtual_region(mapped_user_stack_region);
 }
 
-Thread::Thread(const kstd::shared_ptr<Process>& process, tid_t tid, Registers& regs): _process(process), _tid(tid), registers(regs) {
+Thread::Thread(Process* process, tid_t tid, Registers& regs): _process(process), _tid(tid), registers(regs) {
 	//Allocate kernel stack
 	_kernel_stack_region = PageDirectory::k_alloc_region(THREAD_KERNEL_STACK_SIZE);
 
@@ -91,7 +91,7 @@ Thread::Thread(const kstd::shared_ptr<Process>& process, tid_t tid, Registers& r
 	setup_kernel_stack(stack, regs.useresp, registers);
 }
 
-Thread::Thread(const kstd::shared_ptr<Process>& process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (* thread_func)(void*), void* arg): _tid(tid), _process(process) {
+Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (* thread_func)(void*), void* arg): _tid(tid), _process(process) {
 	//Create the kernel stack
 	_kernel_stack_region = PageDirectory::k_alloc_region(THREAD_KERNEL_STACK_SIZE);
 	LinkedMemoryRegion mapped_user_stack_region;
@@ -149,7 +149,7 @@ Thread::Thread(const kstd::shared_ptr<Process>& process, tid_t tid, void* (*entr
 
 Thread::~Thread() = default;
 
-kstd::shared_ptr<Process>& Thread::process() {
+Process* Thread::process() {
 	return _process;
 }
 

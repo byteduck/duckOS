@@ -42,13 +42,13 @@ public:
 		DEAD
 	};
 
-	Thread(const kstd::shared_ptr<Process>& process, tid_t tid, size_t entry_point, ProcessArgs* args);
-	Thread(const kstd::shared_ptr<Process>& process, tid_t tid, Registers& regs);
-	Thread(const kstd::shared_ptr<Process>& process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg);
+	Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args);
+	Thread(Process* process, tid_t tid, Registers& regs);
+	Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg);
 	~Thread();
 
 	//Properties
-	kstd::shared_ptr<Process>& process();
+	Process* process();
 	pid_t tid();
 	void* kernel_stack_top();
 	State state();
@@ -84,7 +84,7 @@ private:
 	void reap();
 
 	//Thread stuff
-	kstd::shared_ptr<Process> _process;
+	Process* _process;
 	tid_t _tid;
 	State _state = ALIVE;
 	void* _return_value = nullptr;

@@ -32,8 +32,8 @@ TSS TaskManager::tss;
 SpinLock TaskManager::lock;
 
 kstd::shared_ptr<Thread> cur_thread;
-kstd::shared_ptr<Process> kidle_process;
-kstd::vector<kstd::shared_ptr<Process>>* processes = nullptr;
+Process* kidle_process;
+kstd::vector<Process*>* processes = nullptr;
 
 kstd::queue<kstd::shared_ptr<Thread>>* thread_queue = nullptr;
 
@@ -50,7 +50,7 @@ void kidle(){
 	}
 }
 
-ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_pid(pid_t pid){
+ResultRet<Process*> TaskManager::process_for_pid(pid_t pid){
 	if(!pid)
 		return -ENOENT;
 	for(int i = 0; i < processes->size(); i++) {
@@ -61,7 +61,7 @@ ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_pid(pid_t pid){
 	return -ENOENT;
 }
 
-ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
+ResultRet<Process*> TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
 	if(!pgid)
 		return -ENOENT;
 	for(int i = 0; i < processes->size(); i++) {
@@ -72,7 +72,7 @@ ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_pgid(pid_t pgid, p
 	return -ENOENT;
 }
 
-ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
+ResultRet<Process*> TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
 	if(!ppid)
 		return -ENOENT;
 	for(int i = 0; i < processes->size(); i++) {
@@ -83,7 +83,7 @@ ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_ppid(pid_t ppid, p
 	return -ENOENT;
 }
 
-ResultRet<kstd::shared_ptr<Process>> TaskManager::process_for_sid(pid_t sid, pid_t excl){
+ResultRet<Process*> TaskManager::process_for_sid(pid_t sid, pid_t excl){
 	if(!sid)
 		return -ENOENT;
 	for(int i = 0; i < processes->size(); i++) {
@@ -132,7 +132,7 @@ pid_t TaskManager::get_new_pid(){
 void TaskManager::init(){
 	lock = SpinLock();
 
-	processes = new kstd::vector<kstd::shared_ptr<Process>>();
+	processes = new kstd::vector<Process*>();
 	thread_queue = new kstd::queue<kstd::shared_ptr<Thread>>();
 
 	//Create kidle process
@@ -151,7 +151,7 @@ void TaskManager::init(){
 	preempt_init_asm(cur_thread->registers.esp);
 }
 
-kstd::vector<kstd::shared_ptr<Process>>* TaskManager::process_list() {
+kstd::vector<Process*>* TaskManager::process_list() {
 	return processes;
 }
 
@@ -159,11 +159,11 @@ kstd::shared_ptr<Thread>& TaskManager::current_thread() {
 	return cur_thread;
 }
 
-kstd::shared_ptr<Process>& TaskManager::current_process() {
+Process* TaskManager::current_process() {
 	return cur_thread->process();
 }
 
-int TaskManager::add_process(const kstd::shared_ptr<Process>& proc){
+int TaskManager::add_process(Process* proc){
 	tasking_enabled = false;
 	ProcFS::inst().proc_add(proc);
 	processes->push_back(proc);
@@ -278,6 +278,7 @@ void TaskManager::preempt(){
 					current->free_resources();
 					ProcFS::inst().proc_remove(current);
 					processes->erase(i);
+					delete current;
 					i--;
 				}
 				break;

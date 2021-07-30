@@ -40,13 +40,13 @@
 
 const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
 
-kstd::shared_ptr<Process> Process::create_kernel(const kstd::string& name, void (*func)()){
+Process* Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::shared_ptr<LinkedInode>(nullptr));
 	auto* ret = new Process(name, (size_t)func, true, &args, 1);
 	return ret->_self_ptr;
 }
 
-ResultRet<kstd::shared_ptr<Process>> Process::create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
+ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
 	//Open the executable
 	auto fd_or_error = VFS::inst().open((kstd::string&) executable_loc, O_RDONLY, 0, file_open_user, args->working_dir);
 	if(fd_or_error.is_error())
@@ -141,7 +141,7 @@ bool Process::is_kernel_mode() {
 	return _kernel_mode;
 }
 
-kstd::shared_ptr<Thread> Process::main_thread() {
+kstd::shared_ptr<Thread>& Process::main_thread() {
 	return _threads[0];
 }
 
@@ -242,7 +242,6 @@ void Process::free_resources() {
 			_threads[i]->reap();
 	_threads.resize(0);
 	_file_descriptors.resize(0);
-	_self_ptr.reset();
 }
 
 void Process::reap() {
@@ -280,7 +279,7 @@ bool Process::handle_pending_signal() {
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill the process
 			auto parent = TaskManager::process_for_pid(_ppid);
-			if(!parent.is_error() && parent.value().get() != this)
+			if(!parent.is_error() && parent.value() != this)
 				parent.value()->kill(SIGCHLD);
 			_state = ZOMBIE;
 			for(int i = 0; i < _threads.size(); i++)
@@ -796,7 +795,7 @@ int Process::sys_setpgid(pid_t pid, pid_t new_pgid) {
 		return -EINVAL;
 
 	//Validate specified pid
-	auto proc = pid ? TaskManager::process_for_pid(pid) : ResultRet<kstd::shared_ptr<Process>>(_self_ptr);
+	auto proc = pid ? TaskManager::process_for_pid(pid) : ResultRet<Process*>(_self_ptr);
 	if(proc.is_error() || (proc.value()->_pid != _pid && proc.value()->_ppid != _pid))
 		return -ESRCH; //Process doesn't exist or is not self or child
 	if(proc.value()->_ppid == _pid && proc.value()->_sid != _sid)

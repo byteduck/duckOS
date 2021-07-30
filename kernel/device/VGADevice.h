@@ -40,7 +40,7 @@ public:
 	virtual size_t get_display_width() = 0;
 	virtual size_t get_display_height() = 0;
 	virtual void clear(uint32_t color) = 0;
-	virtual void* map_framebuffer(const kstd::shared_ptr<Process>& proc) = 0;
+	virtual void* map_framebuffer(Process* proc) = 0;
 
 	//File
 	virtual int ioctl(unsigned request, void* argp) override;

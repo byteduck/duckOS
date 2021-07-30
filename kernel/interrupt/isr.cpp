@@ -93,7 +93,7 @@ namespace Interrupt {
 					break;
 
 				case 14: //Page fault
-					if(TaskManager::current_thread().get() == nullptr || TaskManager::current_thread()->is_kernel_mode()) {
+					if(!TaskManager::current_thread() || TaskManager::current_thread()->is_kernel_mode()) {
 						Memory::page_fault_handler(r);
 					} else {
 						TaskManager::current_thread()->handle_pagefault(r);

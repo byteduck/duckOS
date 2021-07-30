@@ -52,8 +52,8 @@ public:
 	~Process();
 
 	//Construction
-	static kstd::shared_ptr<Process> create_kernel(const kstd::string& name, void (*func)());
-	static ResultRet<kstd::shared_ptr<Process>> create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent);
+	static Process* create_kernel(const kstd::string& name, void (*func)());
+	static ResultRet<Process*> create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent);
 
 	//Process Info
 	pid_t pid();
@@ -71,7 +71,7 @@ public:
 	bool is_kernel_mode();
 
 	//Threads
-	kstd::shared_ptr<Thread> main_thread();
+	kstd::shared_ptr<Thread>& main_thread();
 	const kstd::vector<kstd::shared_ptr<Thread>>& threads();
 
 	//Signals and death
@@ -195,7 +195,7 @@ private:
 	kstd::vector<kstd::shared_ptr<Thread>> _threads;
 	pid_t _cur_tid = 1;
 
-	kstd::shared_ptr<Process> _self_ptr;
+	Process* _self_ptr;
 };
 
 

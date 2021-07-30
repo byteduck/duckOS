@@ -165,11 +165,11 @@ void FileDescriptor::open() {
 	_file->open(*this, _options);
 }
 
-kstd::shared_ptr<Process> FileDescriptor::owner() const {
+Process* FileDescriptor::owner() const {
 	return _owner;
 }
 
-void FileDescriptor::set_owner(const kstd::shared_ptr<Process>& owner) {
+void FileDescriptor::set_owner(Process* owner) {
 	_owner = owner;
 }
 

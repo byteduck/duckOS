@@ -55,7 +55,7 @@ pid_t ProcFS::pid_for_id(ino_t id) {
 	return (pid_t)(id >> 8u);
 }
 
-void ProcFS::proc_add(kstd::shared_ptr<Process> proc) {
+void ProcFS::proc_add(Process* proc) {
 	pid_t pid = proc->pid();
 	//Make sure we don't add a duplicate entry (would happen with exec())
 	for(size_t i = 0; i < entries.size(); i++)
@@ -66,7 +66,7 @@ void ProcFS::proc_add(kstd::shared_ptr<Process> proc) {
 	entries.push_back(ProcFSEntry(ProcStatus, pid));
 }
 
-void ProcFS::proc_remove(const kstd::shared_ptr<Process>& proc) {
+void ProcFS::proc_remove(Process* proc) {
 	pid_t pid = proc->pid();
 	for(size_t i = 0; i < entries.size();) {
 		if(entries[i].pid == pid) entries.erase(i);

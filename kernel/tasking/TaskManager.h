@@ -41,15 +41,15 @@ namespace TaskManager {
 	bool is_idle();
 	void reparent_orphans(Process* proc);
 
-	kstd::vector<kstd::shared_ptr<Process>>* process_list();
-	int add_process(const kstd::shared_ptr<Process>& proc);
+	kstd::vector<Process*>* process_list();
+	int add_process(Process* proc);
 	void queue_thread(const kstd::shared_ptr<Thread>& thread);
 	kstd::shared_ptr<Thread>& current_thread();
-	kstd::shared_ptr<Process>& current_process();
-	ResultRet<kstd::shared_ptr<Process>> process_for_pid(pid_t pid);
-	ResultRet<kstd::shared_ptr<Process>> process_for_pgid(pid_t pgid, pid_t exclude = -1);
-	ResultRet<kstd::shared_ptr<Process>> process_for_ppid(pid_t ppid, pid_t exclude = -1);
-	ResultRet<kstd::shared_ptr<Process>> process_for_sid(pid_t sid, pid_t exclude = -1);
+	Process* current_process();
+	ResultRet<Process*> process_for_pid(pid_t pid);
+	ResultRet<Process*> process_for_pgid(pid_t pgid, pid_t exclude = -1);
+	ResultRet<Process*> process_for_ppid(pid_t ppid, pid_t exclude = -1);
+	ResultRet<Process*> process_for_sid(pid_t sid, pid_t exclude = -1);
 
 	void kill_pgid(pid_t pgid, int sig);
 
