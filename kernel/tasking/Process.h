@@ -39,14 +39,12 @@ namespace ELF {struct elf32_header;};
 #define SHM_READ 0x1u
 #define SHM_WRITE 0x2u
 
-extern const char* PROC_STATUS_NAMES[];
-
 class Process {
 public:
 	enum State {
-		ALIVE,
-		ZOMBIE,
-		DEAD
+		ALIVE = 0, //The process has not exited yet
+		ZOMBIE = 1, //The process has exited and needs to be reaped
+		DEAD = 2 //The process has been reaped and needs to be removed from the process table
 	};
 
 	~Process();
@@ -67,6 +65,7 @@ public:
 	kstd::shared_ptr<LinkedInode> cwd();
 	void set_tty(kstd::shared_ptr<TTYDevice> tty);
 	State state();
+	int main_thread_state();
 	int exit_status();
 	bool is_kernel_mode();
 

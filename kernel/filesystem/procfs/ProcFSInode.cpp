@@ -31,6 +31,8 @@
 #include <kernel/tasking/Process.h>
 #include <kernel/memory/PageDirectory.h>
 
+const char* PROC_STATE_NAMES[] = {"Running", "Zombie", "Dead", "Sleeping"};
+
 ProcFSInode::ProcFSInode(ProcFS& fs, ProcFSEntry& entry): Inode(fs, entry.dir_entry.id), procfs(fs), pid(entry.pid), type(entry.type), parent(entry.parent) {
 	switch(entry.dir_entry.type) {
 		case TYPE_SYMLINK:
@@ -184,10 +186,10 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			str += proc.value()->name();
 
 			str += "\nState: ";
-			itoa(proc.value()->state(), numbuf, 10);
+			itoa(proc.value()->main_thread_state(), numbuf, 10);
 			str += numbuf;
 			str += " (";
-			str += PROC_STATUS_NAMES[proc.value()->state()];
+			str += PROC_STATE_NAMES[proc.value()->main_thread_state()];
 			str += ")";
 
 			str += "\nPid: ";

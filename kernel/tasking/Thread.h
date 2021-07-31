@@ -36,10 +36,10 @@ class ProcessArgs;
 class Thread {
 public:
 	enum State {
-		ALIVE,
-		BLOCKED,
-		ZOMBIE,
-		DEAD
+		ALIVE = 0,
+		ZOMBIE = 1,
+		DEAD = 2,
+		BLOCKED = 3
 	};
 
 	Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args);

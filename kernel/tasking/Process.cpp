@@ -38,8 +38,6 @@
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/kstd/cstring.h>
 
-const char* PROC_STATUS_NAMES[] = {"Alive", "Zombie", "Dead", "Sleeping"};
-
 Process* Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::shared_ptr<LinkedInode>(nullptr));
 	auto* ret = new Process(name, (size_t)func, true, &args, 1);
@@ -131,6 +129,13 @@ void Process::set_tty(kstd::shared_ptr<TTYDevice> tty) {
 
 Process::State Process::state() {
 	return _state;
+}
+
+int Process::main_thread_state() {
+	if(_state == ALIVE)
+		return _threads[0]->state();
+	else
+		return _state;
 }
 
 int Process::exit_status() {
