@@ -1087,7 +1087,8 @@ int Process::sys_gettid() {
 }
 
 int Process::sys_threadjoin(tid_t tid, void** retp) {
-	check_ptr(retp);
+	if(retp)
+		check_ptr(retp);
 	auto cur_thread = TaskManager::current_thread();
 	if(tid > _threads.size() || !_threads[tid - 1])
 		return -ESRCH;

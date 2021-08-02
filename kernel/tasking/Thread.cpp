@@ -227,7 +227,8 @@ Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared
 	{
 		//Reap the joined thread and set the return status
 		other->reap();
-		*retp = other->return_value();
+		if(retp)
+			*retp = other->return_value();
 
 		//Unset the joined thread
 		LOCK(_join_lock);
