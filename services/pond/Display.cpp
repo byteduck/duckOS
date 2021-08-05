@@ -155,17 +155,17 @@ void Display::repaint() {
 	gettimeofday(&t0, nullptr);
 #endif
 
+	if(!invalid_areas.empty())
+		display_buffer_dirty = true;
+	else
+		return;
+
     //If it hasn't been 1/60 of a second since the last repaint, don't bother
     if(millis_until_next_flip())
         return;
     gettimeofday(&paint_time, NULL);
 
 	auto fb = _root_window->framebuffer();
-
-	if(!invalid_areas.empty())
-		display_buffer_dirty = true;
-	else
-		return;
 
 	//Combine areas that overlap
 	auto it = invalid_areas.begin();
