@@ -199,8 +199,12 @@ kstd::shared_ptr<Thread> TaskManager::next_thread() {
 	while(!thread_queue->empty() && thread_queue->front()->state() != Thread::ALIVE)
 		thread_queue->pop_front();
 
-	if(thread_queue->empty())
-		return kidle_process->main_thread();
+	if(thread_queue->empty()) {
+		if(cur_thread->state() == Thread::ALIVE)
+			return cur_thread;
+		else
+			return kidle_process->main_thread();
+	}
 
 	return thread_queue->pop_front();
 }
