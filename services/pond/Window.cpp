@@ -20,7 +20,7 @@
 #include "Window.h"
 #include <cstdio>
 #include "Display.h"
-#include "Log.h"
+#include <libduck/KLog.h>
 #include <memory.h>
 #include <libpond/Window.h>
 
@@ -330,7 +330,7 @@ void Window::set_hint(int hint, int value) {
 	        set_resizable(value);
 	        break;
 		default:
-			Log::logf("Unknown window hint %d!\n", hint);
+			KLog::logf("Unknown window hint %d!\n", hint);
 	}
 }
 

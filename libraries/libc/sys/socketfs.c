@@ -22,28 +22,32 @@
 #include <stdlib.h>
 #include <string.h>
 
-socketfs_packet* read_packet(int fd) {
-	socketfs_packet packet_header;
+struct socketfs_packet* read_packet(int fd) {
+	struct socketfs_packet packet_header;
 	ssize_t nread = read(fd, &packet_header, sizeof(struct socketfs_packet));
-	if(!nread || nread < 0) return NULL;
-
-	socketfs_packet* ret = malloc(sizeof(socketfs_packet) + packet_header.length);
-	ret->id = packet_header.id;
-	ret->pid = packet_header.pid;
-	ret->length = packet_header.length;
-	nread = read(fd, ret->data, packet_header.length);
-
-	if(nread < 0) {
-		free(ret);
+	if(!nread || nread < 0)
 		return NULL;
+
+	struct socketfs_packet* ret = malloc(sizeof(struct socketfs_packet) + packet_header.length);
+	ret->type = packet_header.type;
+	ret->sender = packet_header.sender;
+	ret->sender_pid = packet_header.sender_pid;
+	ret->length = packet_header.length;
+
+	if(packet_header.length) {
+		if(read(fd, ret->data, packet_header.length) < 0) {
+			free(ret);
+			return NULL;
+		}
 	}
 
 	return ret;
 }
 
-int write_packet(int fd, int id, size_t length, void* data) {
-	socketfs_packet* packet = malloc(sizeof(struct socketfs_packet) + length);
-	packet->id = id;
+int write_packet_of_type(int fd, int type, sockid_t id, size_t length, void* data) {
+	struct socketfs_packet* packet = malloc(sizeof(struct socketfs_packet) + length);
+	packet->type = SOCKETFS_TYPE_MSG;
+	packet->recipient = id;
 	packet->length = length;
 	memcpy(packet->data, data, length);
 	int ret = write(fd, packet, length);

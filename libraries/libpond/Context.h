@@ -82,7 +82,7 @@ namespace Pond {
 		 */
 		template<typename T>
 		bool send_packet(const T& packet) {
-			return write_packet(fd, SOCKETFS_HOST, sizeof(T), (void*) &packet) >= 0;
+			return write_packet_to_host(fd, sizeof(T), (void*) &packet) >= 0;
 		}
 
 		/**

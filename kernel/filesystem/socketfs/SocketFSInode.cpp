@@ -79,13 +79,13 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 
 	//Find the client that is reading
 	SocketFSClient* reader = nullptr;
-	int reader_id = (int) fd;
+	auto client_hash = SocketFS::client_hash(fd);
 
-	if(host == reader_id) {
+	if(host == client_hash) {
 		reader = &host;
 	} else {
 		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i] == reader_id) {
+			if(clients[i] == client_hash) {
 				reader = &clients[i];
 				break;
 			}
@@ -93,10 +93,8 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 	}
 
 	if(!reader) {
-		//Couldn't find the client it came from... Probably a forked process. Create a new client.
-		clients.push_back(SocketFSClient(reader_id));
-		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(int), &reader_id, true);
-		return 0;
+		//Couldn't find the client reading...
+		return -EIO;
 	}
 
 	if(length > reader->data_queue->size())
@@ -160,15 +158,15 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 
 	SocketFSClient* recipient = nullptr;
 	SocketFSClient* sender = nullptr;
-	bool is_broadcast = packet->id == SOCKETFS_BROADCAST;
+	bool is_broadcast = packet->type == SOCKETFS_TYPE_BROADCAST;
 
 	//Find the client that the packet is coming from
-	int writer_id = (int) fd;
-	if(host == writer_id) {
+	auto client_hash = SocketFS::client_hash(fd);
+	if(host == client_hash) {
 		sender = &host;
 	} else {
 		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i] == writer_id) {
+			if(clients[i] == client_hash) {
 				sender = &clients[i];
 				break;
 			}
@@ -176,30 +174,28 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 	}
 
 	if(!sender) {
-		//Couldn't find the client it came from... Probably a forked process. Create a new client.
-		clients.push_back(SocketFSClient(writer_id));
-		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(int), &writer_id, true);
-		sender = &clients[clients.size() - 1];
+		//Couldn't find the client it came from...
+		return -EIO;
 	}
 
 	if(is_broadcast && sender == &host) {
 		//If it's a broadcast, send it to all clients
 		for(size_t i = 0; i < clients.size(); i++) {
 			//We don't care about errors here, we should just continue sending it to the rest of the clients
-			write_packet(clients[i], SOCKETFS_HOST, packet->length, packet->data, fd->nonblock());
+			write_packet(clients[i], SOCKETFS_TYPE_MSG, sender->id, packet->length, packet->data, fd->nonblock());
 		}
 		return SUCCESS;
 	} else if(sender == &host) {
 		//Find the client this packet has to go to
 		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i] == packet->id) {
+			if(clients[i] == packet->recipient) {
 				recipient = &clients[i];
 				break;
 			}
 		}
 	} else if(sender != &host) {
 		//Clients can only send packets to the host
-		if(packet->id != SOCKETFS_HOST)
+		if(packet->recipient != SOCKETFS_RECIPIENT_HOST)
 			return -EINVAL;
 		recipient = &host;
 	}
@@ -208,8 +204,7 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 		return -EINVAL; //No such recipient
 
 	//Finally, write the packet to the correct queue
-	int from_id = sender == &host ? SOCKETFS_HOST : sender->id;
-	auto res = write_packet(*recipient, from_id, packet->length, packet->data, fd->nonblock());
+	auto res = write_packet(*recipient, SOCKETFS_TYPE_MSG, sender->id, packet->length, packet->data, fd->nonblock());
 	return res.code();
 }
 
@@ -269,25 +264,26 @@ Result SocketFSInode::chown(uid_t new_uid, gid_t new_gid) {
 void SocketFSInode::open(FileDescriptor& fd, int options) {
 	LOCK(lock);
 
-	int opener_id = (int) &fd;
+	auto client_hash = SocketFS::client_hash(&fd);
 
 	//If nobody has taken ownership of this socket, make this file descriptor the owner
 	if(!host && (options & O_CREAT)) {
-		host.id = opener_id;
+		host.id = client_hash;
 		return;
 	}
 
 	//Add the client and send the connect message to the host
-	clients.push_back(SocketFSClient(opener_id));
-	write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(int), &opener_id, true);
+	clients.push_back(SocketFSClient(client_hash));
+	printf("CONNECT %x %d\n", client_hash, TaskManager::current_process()->pid());
+	write_packet(host, SOCKETFS_TYPE_MSG_CONNECT, client_hash, 0, nullptr, true);
 }
 
 void SocketFSInode::close(FileDescriptor& fd) {
 	LOCK(lock);
 
-	int closer_id = (int) &fd;
+	auto client_hash = SocketFS::client_hash(&fd);
 
-	if(host == closer_id) {
+	if(host == client_hash) {
 		//Remove the socket
 		is_open = false;
 		ScopedLocker __locker2(fs.lock);
@@ -302,8 +298,8 @@ void SocketFSInode::close(FileDescriptor& fd) {
 	}
 
 	for(size_t i = 0; i < clients.size(); i++) {
-		if(clients[i] == closer_id) {
-			write_packet(host, SOCKETFS_MSG_DISCONNECT, sizeof(int), &closer_id, true);
+		if(clients[i] == client_hash) {
+			write_packet(host, SOCKETFS_TYPE_MSG_DISCONNECT, client_hash, 0, nullptr, true);
 			clients.erase(i);
 			break;
 		}
@@ -311,21 +307,20 @@ void SocketFSInode::close(FileDescriptor& fd) {
 }
 
 bool SocketFSInode::can_read(const FileDescriptor& fd) {
-	LOCK(lock);
-	int reader_id = (int) &fd;
+	auto client_hash = SocketFS::client_hash(&fd);
 
-	if(host == reader_id)
+	if(host == client_hash)
 		return !host.data_queue->empty();
 
 	for(size_t i = 0; i < clients.size(); i++) {
-		if(clients[i] == reader_id)
+		if(clients[i] == client_hash)
 			return !clients[i].data_queue->empty();
 	}
 
 	return false;
 }
 
-Result SocketFSInode::write_packet(SocketFSClient& client, int id, size_t length, const void* buffer, bool nonblock) {
+Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t sender, size_t length, const void* buffer, bool nonblock) {
 	//If there's room in the buffer, block (if O_NONBLOCK isn't set)
 	while(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE) {
 		if(!nonblock) {
@@ -340,7 +335,7 @@ Result SocketFSInode::write_packet(SocketFSClient& client, int id, size_t length
 	LOCK(client._lock);
 
 	//Write the packet header
-	SocketFSPacket packet_header = {id, TaskManager::current_process()->pid(), length};
+	SocketFSPacket packet_header = {type, sender, TaskManager::current_process()->pid(), length};
 	auto* data = (const uint8_t*) &packet_header;
 	for(size_t i = 0; i < sizeof(SocketFSPacket); i++)
 		client.data_queue->push_back(*data++);

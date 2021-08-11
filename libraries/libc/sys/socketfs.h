@@ -23,12 +23,22 @@
 #include <sys/types.h>
 #include <kernel/filesystem/socketfs/socketfs_defines.h>
 
-typedef struct socketfs_packet {
-	int id;
-	pid_t pid;
+struct socketfs_packet {
+	int type;
+	union {
+		sockid_t sender;
+		sockid_t recipient;
+		sockid_t connected_id;
+		sockid_t disconnected_id;
+	};
+	union {
+		pid_t sender_pid;
+		pid_t connected_pid;
+		pid_t disconnected_pid;
+	};
 	size_t length;
 	uint8_t data[];
-} socketfs_packet;
+};
 
 #ifdef __cplusplus
 	typedef socketfs_packet SocketFSPacket;
@@ -36,8 +46,17 @@ typedef struct socketfs_packet {
 
 __DECL_BEGIN
 
-socketfs_packet* read_packet(int fd);
-int write_packet(int fd, int id, size_t length, void* data);
+struct socketfs_packet* read_packet(int fd);
+
+int write_packet_of_type(int fd, int type, sockid_t id, size_t length, void* data);
+
+inline int write_packet(int fd, sockid_t id, size_t length, void* data) {
+	return write_packet_of_type(fd, SOCKETFS_TYPE_MSG, id, length, data);
+}
+
+inline int write_packet_to_host(int fd, size_t length, void* data) {
+	return write_packet_of_type(fd, SOCKETFS_TYPE_MSG, SOCKETFS_RECIPIENT_HOST, length, data);
+}
 
 __DECL_END
 

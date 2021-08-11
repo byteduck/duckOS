@@ -20,10 +20,10 @@
 #include "Client.h"
 #include "Display.h"
 #include "FontManager.h"
-#include "Log.h"
+#include <libduck/KLog.h>
 #include <libpond/packet.h>
 
-Client::Client(int socketfs_fd, int id, pid_t pid): socketfs_fd(socketfs_fd), id(id), pid(pid) {
+Client::Client(int socketfs_fd, sockid_t id, pid_t pid): socketfs_fd(socketfs_fd), id(id), pid(pid) {
 
 }
 
@@ -80,7 +80,7 @@ void Client::handle_packet(socketfs_packet* packet) {
 			bring_to_front(packet);
 			break;
 		default:
-			Log::logf("Invalid packet sent by client %d\n", id);
+			KLog::logf("Invalid packet sent by client %x\n", id);
 			return;
 	}
 }

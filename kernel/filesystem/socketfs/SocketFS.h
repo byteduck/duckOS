@@ -28,8 +28,18 @@
 #define SOCKETFS_FSID 3
 
 struct SocketFSPacket {
-	int id;
-	pid_t pid;
+	int type;
+	union {
+		sockid_t sender;
+		sockid_t recipient;
+		sockid_t connected_id;
+		sockid_t disconnected_id;
+	};
+	union {
+		pid_t sender_pid;
+		pid_t connected_pid;
+		pid_t disconnected_pid;
+	};
 	size_t length;
 	uint8_t data[];
 };
@@ -42,6 +52,7 @@ public:
 	static ino_t get_inode_id(pid_t pid, uint16_t fileno);
 	static pid_t get_pid(ino_t inode);
 	static uint16_t get_fileno(ino_t inode);
+	static sockid_t client_hash(const void* fd_pointer);
 
 	//Filesystem
 	char* name() override;

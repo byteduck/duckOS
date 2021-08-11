@@ -29,7 +29,7 @@
 class Window;
 class Client {
 public:
-	Client(int socketfs_fd, int id, pid_t pid);
+	Client(int socketfs_fd, sockid_t id, pid_t pid);
 	~Client();
 
 	void handle_packet(socketfs_packet* packet);
@@ -59,7 +59,7 @@ private:
 	void set_hint(socketfs_packet* packet);
 	void bring_to_front(socketfs_packet* packet);
 
-	int id;
+	sockid_t id;
 	pid_t pid;
 	int socketfs_fd;
 	std::map<int, Window*> windows;

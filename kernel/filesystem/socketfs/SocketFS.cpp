@@ -38,6 +38,14 @@ uint16_t SocketFS::get_fileno(ino_t inode) {
 	return (uint16_t) (inode & 0xFFFFu);
 }
 
+unsigned int SocketFS::client_hash(const void* fd_pointer) {
+	auto hash = (sockid_t) fd_pointer;
+	hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+	hash = ((hash >> 16) ^ hash) * 0x45d9f3b;
+	hash = (hash >> 16) ^ hash;
+	return hash;
+}
+
 char* SocketFS::name() {
 	return "socketfs";
 }

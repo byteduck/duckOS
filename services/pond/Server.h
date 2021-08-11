@@ -32,7 +32,7 @@ public:
 	void handle_packets();
 
 private:
-	std::map<pid_t, Client*> clients;
+	std::map<sockid_t, Client*> clients;
 
 	int socket_fd;
 };

@@ -18,7 +18,7 @@
 */
 
 #include "Server.h"
-#include "Log.h"
+#include <libduck/KLog.h>
 #include <fcntl.h>
 #include <cstdio>
 #include <cstdlib>
@@ -40,27 +40,31 @@ int Server::fd() {
 void Server::handle_packets() {
 	SocketFSPacket* packet;
 	while((packet = read_packet(socket_fd))) {
-		switch(packet->id) {
-			case SOCKETFS_MSG_CONNECT:
-				Log::logf("New client connected to socket: %d\n", *((pid_t*) packet->data));
-				clients.insert(std::make_pair(*((pid_t*) packet->data), new Client(socket_fd, *((pid_t*) packet->data), packet->pid)));
+		switch(packet->type) {
+			case SOCKETFS_TYPE_MSG_CONNECT:
+				KLog::logf("New client connected to socket: %x\n", packet->connected_id);
+				clients[packet->connected_id] = new Client(socket_fd, packet->connected_id, packet->connected_pid);
 				break;
-			case SOCKETFS_MSG_DISCONNECT: {
-				Log::logf("Client disconnected from socket: %d\n", *((pid_t*) packet->data));
-				auto client = clients.find(*((pid_t*) packet->data));
-				if(client != clients.end()) {
-					delete client->second;
-					clients.erase(client);
+			case SOCKETFS_TYPE_MSG_DISCONNECT: {
+				KLog::logf("Client disconnected from socket: %x\n", packet->disconnected_id);
+				auto client = clients[packet->disconnected_id];
+				if(client) {
+					delete client;
+					clients.erase(packet->disconnected_id);
 				} else
-					Log::logf("Unknown id %d disconnected\n", *((pid_t*) packet->data));
+					KLog::logf("Unknown client %x disconnected\n", packet->disconnected_id);
 				break;
 			}
-			default: {
-				auto client = clients[packet->id];
+			case SOCKETFS_TYPE_MSG: {
+				auto client = clients[packet->sender];
 				if(client)
 					client->handle_packet(packet);
 				else
-					Log::logf("Packet received from non-registered id %d\n", packet->id);
+					KLog::logf("Packet received from non-registered client %x\n", packet->sender);
+				break;
+			}
+			default: {
+				KLog::logf("Unknown packet type received from client %x\n", packet->sender);
 				break;
 			}
 		}
