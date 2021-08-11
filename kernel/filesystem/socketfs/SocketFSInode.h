@@ -36,7 +36,7 @@ class InodeMetadata;
 class SocketFSInode: public Inode {
 public:
 	//SocketFSInode
-	SocketFSInode(SocketFS& fs, Process* owner, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid);
+	SocketFSInode(SocketFS& fs, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid);
 	~SocketFSInode();
 
 	//Inode
@@ -56,13 +56,12 @@ public:
 	void close(FileDescriptor& fd) override;
 	bool can_read(const FileDescriptor& fd) override;
 
-	Process* owner;
 	SocketFS& fs;
 	ino_t id;
 	kstd::string name;
 
 private:
-	static Result write_packet(SocketFSClient& client, pid_t pid, size_t size, const void* buffer, bool nonblock);
+	static Result write_packet(SocketFSClient& client, int id, size_t size, const void* buffer, bool nonblock);
 
 	kstd::vector<SocketFSClient> clients;
 	SocketFSClient host;

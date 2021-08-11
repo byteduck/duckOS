@@ -28,6 +28,7 @@ socketfs_packet* read_packet(int fd) {
 	if(!nread || nread < 0) return NULL;
 
 	socketfs_packet* ret = malloc(sizeof(socketfs_packet) + packet_header.length);
+	ret->id = packet_header.id;
 	ret->pid = packet_header.pid;
 	ret->length = packet_header.length;
 	nread = read(fd, ret->data, packet_header.length);
@@ -40,9 +41,9 @@ socketfs_packet* read_packet(int fd) {
 	return ret;
 }
 
-int write_packet(int fd, int pid, size_t length, void* data) {
+int write_packet(int fd, int id, size_t length, void* data) {
 	socketfs_packet* packet = malloc(sizeof(struct socketfs_packet) + length);
-	packet->pid = pid;
+	packet->id = id;
 	packet->length = length;
 	memcpy(packet->data, data, length);
 	int ret = write(fd, packet, length);

@@ -29,7 +29,7 @@
 class Window;
 class Client {
 public:
-	Client(int socketfs_fd, pid_t pid);
+	Client(int socketfs_fd, int id, pid_t pid);
 	~Client();
 
 	void handle_packet(socketfs_packet* packet);
@@ -45,7 +45,7 @@ public:
 private:
 	template<typename T>
 	bool send_packet(const T& packet) {
-		return write_packet(socketfs_fd, pid, sizeof(T), (void*) &packet) >= 0;
+		return write_packet(socketfs_fd, id, sizeof(T), (void*) &packet) >= 0;
 	}
 
 	void open_window(socketfs_packet* packet);
@@ -59,6 +59,7 @@ private:
 	void set_hint(socketfs_packet* packet);
 	void bring_to_front(socketfs_packet* packet);
 
+	int id;
 	pid_t pid;
 	int socketfs_fd;
 	std::map<int, Window*> windows;
