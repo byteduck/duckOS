@@ -70,7 +70,7 @@ public:
 	Dimensions size_of(const char* string);
 
 private:
-	Font(shm fontshm);
+	explicit Font(shm fontshm);
 	~Font();
 
 	bool uses_shm = false;
