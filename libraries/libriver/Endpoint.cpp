@@ -17,23 +17,27 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "Log.h"
-#include <cstdio>
+#include "Endpoint.h"
+#include "Function.hpp"
 
-FILE* klog = nullptr;
+using namespace River;
 
-void Log::init() {
-	klog = fopen("/dev/klog", "we");
-	setvbuf(klog, nullptr, _IOLBF, 2048);
-	if(!klog)
-		fprintf(stderr, "Couldn't open kernel log!");
+Endpoint::Endpoint(BusConnection* bus, const std::string& name, ConnectionType type): _bus(bus), _type(type), _name(name) {
+
 }
 
-void Log::logf(const char* format, ...) {
-	va_list arg;
-	int ret;
-	va_start(arg, format);
-	fprintf(klog ? klog : stdout, "[Pond] ");
-	vfprintf(klog ? klog : stdout, format, arg);
-	va_end(arg);
+std::shared_ptr<IFunction> Endpoint::get_ifunction(const std::string& path) {
+	return _functions[path];
+}
+
+const std::string& Endpoint::name() {
+	return _name;
+}
+
+Endpoint::ConnectionType Endpoint::type() const {
+	return _type;
+}
+
+BusConnection* Endpoint::bus() {
+	return _bus;
 }

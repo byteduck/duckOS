@@ -17,14 +17,13 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_POND_LOG_H
-#define DUCKOS_POND_LOG_H
+#ifndef DUCKOS_LIBRIVER_RIVER_H
+#define DUCKOS_LIBRIVER_RIVER_H
 
+#include "BusConnection.h"
+#include "BusServer.h"
+#include "Endpoint.h"
+#include "Function.hpp"
+#include "packet.h"
 
-namespace Log {
-	void init();
-	void logf(const char* format, ...);
-}
-
-
-#endif //DUCKOS_POND_LOG_H
+#endif //DUCKOS_LIBRIVER_RIVER_H
