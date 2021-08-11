@@ -40,10 +40,10 @@ int Server::fd() {
 void Server::handle_packets() {
 	SocketFSPacket* packet;
 	while((packet = read_packet(socket_fd))) {
-		switch(packet->pid) {
+		switch(packet->id) {
 			case SOCKETFS_MSG_CONNECT:
 				Log::logf("New client connected to socket: %d\n", *((pid_t*) packet->data));
-				clients.insert(std::make_pair(*((pid_t*) packet->data), new Client(socket_fd, *((pid_t*) packet->data))));
+				clients.insert(std::make_pair(*((pid_t*) packet->data), new Client(socket_fd, *((pid_t*) packet->data), packet->pid)));
 				break;
 			case SOCKETFS_MSG_DISCONNECT: {
 				Log::logf("Client disconnected from socket: %d\n", *((pid_t*) packet->data));
@@ -52,15 +52,15 @@ void Server::handle_packets() {
 					delete client->second;
 					clients.erase(client);
 				} else
-					Log::logf("Unknown pid %d disconnected\n", *((pid_t*) packet->data));
+					Log::logf("Unknown id %d disconnected\n", *((pid_t*) packet->data));
 				break;
 			}
 			default: {
-				auto client = clients[packet->pid];
+				auto client = clients[packet->id];
 				if(client)
 					client->handle_packet(packet);
 				else
-					Log::logf("Packet received from non-registered pid %d\n", packet->pid);
+					Log::logf("Packet received from non-registered id %d\n", packet->id);
 				break;
 			}
 		}

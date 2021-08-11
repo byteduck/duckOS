@@ -24,7 +24,8 @@
 #include <kernel/filesystem/socketfs/socketfs_defines.h>
 
 typedef struct socketfs_packet {
-	int pid;
+	int id;
+	pid_t pid;
 	size_t length;
 	uint8_t data[];
 } socketfs_packet;
@@ -36,7 +37,7 @@ typedef struct socketfs_packet {
 __DECL_BEGIN
 
 socketfs_packet* read_packet(int fd);
-int write_packet(int fd, int pid, size_t length, void* data);
+int write_packet(int fd, int id, size_t length, void* data);
 
 __DECL_END
 

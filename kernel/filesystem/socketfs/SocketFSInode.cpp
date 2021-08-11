@@ -24,10 +24,10 @@
 #include <kernel/kstd/cstring.h>
 #include <kernel/filesystem/LinkedInode.h>
 
-SocketFSInode::SocketFSInode(SocketFS& fs, Process* owner, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
-Inode(fs, id), owner(owner), fs(fs), id(id), name(name), host(owner, owner ? owner->pid() : -1)
+SocketFSInode::SocketFSInode(SocketFS& fs, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
+Inode(fs, id), fs(fs), id(id), name(name), host(0)
 {
-	if(!owner) { //We're the root inode
+	if(id == 1) { //We're the root inode
 		_metadata.mode = MODE_DIRECTORY;
 		dir_entry.type = TYPE_DIR;
 	} else {
@@ -49,7 +49,8 @@ SocketFSInode::~SocketFSInode() {
 }
 
 InodeMetadata SocketFSInode::metadata() {
-	if(owner) return _metadata;
+	if(id != 1)
+		return _metadata;
 
 	LOCK(fs.lock);
 	InodeMetadata ret = _metadata;
@@ -69,17 +70,22 @@ ino_t SocketFSInode::find_id(const kstd::string& find_name) {
 }
 
 ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) {
-	if(!is_open) return -ENOENT;
+	if(!is_open)
+		return -ENOENT;
+	if(!fd)
+		return -EINVAL;
+
 	LOCK(lock);
 
 	//Find the client that is reading
 	SocketFSClient* reader = nullptr;
-	Process* current_proc = TaskManager::current_process();
-	if(current_proc == owner) {
+	int reader_id = (int) fd;
+
+	if(host == reader_id) {
 		reader = &host;
 	} else {
 		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i].process == current_proc) {
+			if(clients[i] == reader_id) {
 				reader = &clients[i];
 				break;
 			}
@@ -88,9 +94,8 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 
 	if(!reader) {
 		//Couldn't find the client it came from... Probably a forked process. Create a new client.
-		pid_t pid = current_proc->pid();
-		clients.push_back(SocketFSClient(current_proc, pid));
-		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(pid_t), &pid, true);
+		clients.push_back(SocketFSClient(reader_id));
+		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(int), &reader_id, true);
 		return 0;
 	}
 
@@ -114,7 +119,8 @@ ResultRet<kstd::shared_ptr<LinkedInode>> SocketFSInode::resolve_link(const kstd:
 }
 
 ssize_t SocketFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) {
-	if(owner) return -ENOTDIR;
+	if(id != 1)
+		return -ENOTDIR;
 
 	if(start == 0) {
 		DirectoryEntry ent(id, TYPE_DIR, ".");
@@ -131,7 +137,7 @@ ssize_t SocketFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, File
 
 	for(size_t i = 0; i < fs.sockets.size(); i++) {
 		auto& e = fs.sockets[i];
-		if(e->owner) {
+		if(e->is_open) {
 			if(cur_index >= start) {
 				memcpy(buffer, &e->dir_entry, sizeof(DirectoryEntry));
 				return e->dir_entry.entry_length();
@@ -144,22 +150,25 @@ ssize_t SocketFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, File
 }
 
 ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) {
-	if(!is_open) return -ENOENT;
+	if(!is_open)
+		return -EIO;
+	if(!fd)
+		return -EINVAL;
 
 	LOCK(lock);
 	auto* packet = (const SocketFSPacket*) buf;
 
 	SocketFSClient* recipient = nullptr;
 	SocketFSClient* sender = nullptr;
-	bool is_broadcast = packet->pid == SOCKETFS_BROADCAST;
+	bool is_broadcast = packet->id == SOCKETFS_BROADCAST;
 
 	//Find the client that the packet is coming from
-	Process* current_proc = TaskManager::current_process();
-	if(current_proc == owner) {
+	int writer_id = (int) fd;
+	if(host == writer_id) {
 		sender = &host;
 	} else {
 		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i].process == current_proc) {
+			if(clients[i] == writer_id) {
 				sender = &clients[i];
 				break;
 			}
@@ -168,9 +177,8 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 
 	if(!sender) {
 		//Couldn't find the client it came from... Probably a forked process. Create a new client.
-		pid_t pid = current_proc->pid();
-		clients.push_back(SocketFSClient(current_proc, pid));
-		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(pid_t), &pid, true);
+		clients.push_back(SocketFSClient(writer_id));
+		write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(int), &writer_id, true);
 		sender = &clients[clients.size() - 1];
 	}
 
@@ -184,14 +192,14 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 	} else if(sender == &host) {
 		//Find the client this packet has to go to
 		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i].pid == packet->pid) {
+			if(clients[i] == packet->id) {
 				recipient = &clients[i];
 				break;
 			}
 		}
 	} else if(sender != &host) {
 		//Clients can only send packets to the host
-		if(packet->pid != SOCKETFS_HOST)
+		if(packet->id != SOCKETFS_HOST)
 			return -EINVAL;
 		recipient = &host;
 	}
@@ -200,8 +208,8 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 		return -EINVAL; //No such recipient
 
 	//Finally, write the packet to the correct queue
-	pid_t from_pid = sender == &host ? SOCKETFS_HOST : sender->pid;
-	auto res = write_packet(*recipient, from_pid, packet->length, packet->data, fd->nonblock());
+	int from_id = sender == &host ? SOCKETFS_HOST : sender->id;
+	auto res = write_packet(*recipient, from_id, packet->length, packet->data, fd->nonblock());
 	return res.code();
 }
 
@@ -210,7 +218,8 @@ Result SocketFSInode::add_entry(const kstd::string& add_name, Inode& inode) {
 }
 
 ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::string& create_name, mode_t mode, uid_t uid, gid_t gid) {
-	if(owner) return -ENOTDIR;
+	if(id != 1)
+		return -ENOTDIR;
 	LOCK(fs.lock);
 
 	mode = (mode & 0x0FFFu) | MODE_SOCKET;
@@ -231,7 +240,7 @@ ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::strin
 	}
 
 	//Create the socket and return it
-	auto new_inode = kstd::make_shared<SocketFSInode>(fs, proc, create_id, create_name, mode, uid, gid);
+	auto new_inode = kstd::make_shared<SocketFSInode>(fs, create_id, create_name, mode, uid, gid);
 	fs.sockets.push_back(new_inode);
 	return static_cast<kstd::shared_ptr<Inode>>(new_inode);
 }
@@ -245,13 +254,13 @@ Result SocketFSInode::truncate(off_t length) {
 }
 
 Result SocketFSInode::chmod(mode_t new_mode) {
-	if(TaskManager::current_process() != owner) return -EPERM;
+	LOCK(lock);
 	_metadata.mode = new_mode;
 	return SUCCESS;
 }
 
 Result SocketFSInode::chown(uid_t new_uid, gid_t new_gid) {
-	if(TaskManager::current_process() != owner) return -EPERM;
+	LOCK(lock);
 	_metadata.uid = new_uid;
 	_metadata.gid = new_gid;
 	return SUCCESS;
@@ -259,23 +268,26 @@ Result SocketFSInode::chown(uid_t new_uid, gid_t new_gid) {
 
 void SocketFSInode::open(FileDescriptor& fd, int options) {
 	LOCK(lock);
-	auto current_proc = TaskManager::current_process();
-	if(current_proc == owner)
+
+	int opener_id = (int) &fd;
+
+	//If nobody has taken ownership of this socket, make this file descriptor the owner
+	if(!host && (options & O_CREAT)) {
+		host.id = opener_id;
 		return;
-	for(size_t i = 0; i < clients.size(); i++)
-		if(clients[i].process == current_proc)
-			return; //Don't want to send a duplicate connection packet
+	}
 
 	//Add the client and send the connect message to the host
-	pid_t pid = current_proc->pid();
-	clients.push_back(SocketFSClient(current_proc, pid));
-	write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(pid_t), &pid, true);
+	clients.push_back(SocketFSClient(opener_id));
+	write_packet(host, SOCKETFS_MSG_CONNECT, sizeof(int), &opener_id, true);
 }
 
 void SocketFSInode::close(FileDescriptor& fd) {
 	LOCK(lock);
 
-	if(fd.owner() == host.process) {
+	int closer_id = (int) &fd;
+
+	if(host == closer_id) {
 		//Remove the socket
 		is_open = false;
 		ScopedLocker __locker2(fs.lock);
@@ -290,8 +302,8 @@ void SocketFSInode::close(FileDescriptor& fd) {
 	}
 
 	for(size_t i = 0; i < clients.size(); i++) {
-		if(clients[i].process == fd.owner()) {
-			write_packet(host, SOCKETFS_MSG_DISCONNECT, sizeof(pid_t), &clients[i].pid, true);
+		if(clients[i] == closer_id) {
+			write_packet(host, SOCKETFS_MSG_DISCONNECT, sizeof(int), &closer_id, true);
 			clients.erase(i);
 			break;
 		}
@@ -299,18 +311,21 @@ void SocketFSInode::close(FileDescriptor& fd) {
 }
 
 bool SocketFSInode::can_read(const FileDescriptor& fd) {
-	if(fd.owner() == host.process)
+	LOCK(lock);
+	int reader_id = (int) &fd;
+
+	if(host == reader_id)
 		return !host.data_queue->empty();
 
 	for(size_t i = 0; i < clients.size(); i++) {
-		if(clients[i].process == fd.owner())
+		if(clients[i] == reader_id)
 			return !clients[i].data_queue->empty();
 	}
 
 	return false;
 }
 
-Result SocketFSInode::write_packet(SocketFSClient& client, pid_t pid, size_t length, const void* buffer, bool nonblock) {
+Result SocketFSInode::write_packet(SocketFSClient& client, int id, size_t length, const void* buffer, bool nonblock) {
 	//If there's room in the buffer, block (if O_NONBLOCK isn't set)
 	while(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE) {
 		if(!nonblock) {
@@ -325,7 +340,7 @@ Result SocketFSInode::write_packet(SocketFSClient& client, pid_t pid, size_t len
 	LOCK(client._lock);
 
 	//Write the packet header
-	SocketFSPacket packet_header = {pid, length};
+	SocketFSPacket packet_header = {id, TaskManager::current_process()->pid(), length};
 	auto* data = (const uint8_t*) &packet_header;
 	for(size_t i = 0; i < sizeof(SocketFSPacket); i++)
 		client.data_queue->push_back(*data++);

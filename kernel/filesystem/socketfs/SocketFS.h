@@ -28,7 +28,8 @@
 #define SOCKETFS_FSID 3
 
 struct SocketFSPacket {
-	int pid;
+	int id;
+	pid_t pid;
 	size_t length;
 	uint8_t data[];
 };

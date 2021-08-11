@@ -28,10 +28,25 @@
 class Process;
 class SocketFSClient {
 public:
-	SocketFSClient(Process* process, pid_t pid);
+	explicit SocketFSClient(int id): id(id), data_queue(kstd::make_shared<kstd::queue<uint8_t>>()) {}
 
-	Process* process;
-	pid_t pid;
+	explicit operator bool() const {
+		return id;
+	}
+
+	bool operator!() const {
+		return !id;
+	}
+
+	explicit operator int() const {
+		return id;
+	}
+
+	bool operator==(int other) const {
+		return id == other;
+	}
+
+	int id;
 	kstd::shared_ptr<kstd::queue<uint8_t>> data_queue;
 	BooleanBlocker _blocker;
 	SpinLock _lock;

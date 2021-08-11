@@ -107,7 +107,6 @@ SET(KERNEL_SRCS
         filesystem/procfs/ProcFSEntry.cpp
         filesystem/socketfs/SocketFS.cpp
         filesystem/socketfs/SocketFSInode.cpp
-        filesystem/socketfs/SocketFSClient.cpp
         filesystem/ptyfs/PTYFS.cpp
         filesystem/ptyfs/PTYFSInode.cpp
         IO.cpp
