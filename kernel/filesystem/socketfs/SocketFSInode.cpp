@@ -274,7 +274,6 @@ void SocketFSInode::open(FileDescriptor& fd, int options) {
 
 	//Add the client and send the connect message to the host
 	clients.push_back(SocketFSClient(client_hash));
-	printf("CONNECT %x %d\n", client_hash, TaskManager::current_process()->pid());
 	write_packet(host, SOCKETFS_TYPE_MSG_CONNECT, client_hash, 0, nullptr, true);
 }
 
