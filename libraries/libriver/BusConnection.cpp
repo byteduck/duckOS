@@ -28,7 +28,7 @@
 
 using namespace River;
 
-ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(std::string& socket_name) {
+ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(const std::string& socket_name) {
 	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR);
 	if(fd < 0) {
 		fprintf(stderr, "[River] Failed to open socket %s for bus connection: %s\n", socket_name.c_str(), strerror(errno));

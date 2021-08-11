@@ -58,7 +58,7 @@ namespace River {
 		ILLEGAL_REQUEST = 8
 	};
 
-	const char* error_str(ErrorType type);
+	const char* error_str(int type);
 
 	struct RawPacket {
 		int __river_magic = LIBRIVER_PACKET_MAGIC;

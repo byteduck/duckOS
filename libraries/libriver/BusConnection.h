@@ -40,7 +40,7 @@ namespace River {
 			CUSTOM
 		};
 
-		static ResultRet<std::shared_ptr<BusConnection>> connect(std::string& socket_name);
+		static ResultRet<std::shared_ptr<BusConnection>> connect(const std::string& socket_name);
 		static ResultRet<std::shared_ptr<BusConnection>> connect(BusType type);
 		explicit BusConnection(int fd, BusType type): _fd(fd), _type(type) {}
 		explicit BusConnection(BusServer* server): _server(server) {}

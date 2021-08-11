@@ -20,7 +20,7 @@
 #include "packet.h"
 using namespace River;
 
-const char* River::error_str(ErrorType error) {
+const char* River::error_str(int error) {
 	switch(error) {
 		case SUCCESS:
 			return "No error";
