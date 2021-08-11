@@ -71,17 +71,17 @@ namespace River {
 				packet.data.resize(sizeof(data_tuple));
 				memcpy(packet.data.data(), &data_tuple, sizeof(data_tuple));
 
-				//Send the function call packet and await a reply
+				//Send the function call packet and await a reply (if the function has a non-void return type)
 				_endpoint->bus()->send_packet(packet);
-				auto pkt = _endpoint->bus()->await_packet(FUNCTION_RETURN, _endpoint->name(), _path);
-				if(pkt.error) {
-					fprintf(stderr, "[River] Remote function call %s:%s failed: %s\n", _endpoint->name().c_str(), _path.c_str(),
-							error_str(pkt.error));
-					if constexpr(!std::is_void<RetT>())
-						return RetT();
-				}
-
 				if constexpr(!std::is_void<RetT>()) {
+					auto pkt = _endpoint->bus()->await_packet(FUNCTION_RETURN, _endpoint->name(), _path);
+					if(pkt.error) {
+						fprintf(stderr, "[River] Remote function call %s:%s failed: %s\n", _endpoint->name().c_str(), _path.c_str(),
+								error_str(pkt.error));
+						if constexpr(!std::is_void<RetT>())
+							return RetT();
+					}
+
 					//Deserialize and return the return value
 					RetT ret;
 					if(pkt.data.size() == sizeof(RetT))
@@ -113,25 +113,22 @@ namespace River {
 			std::tuple<ParamTs...> data_tuple;
 			memcpy(&data_tuple, packet.data.data(), sizeof(data_tuple));
 
-			RiverPacket resp {
-					FUNCTION_RETURN,
-					packet.endpoint,
-					packet.path
-			};
-			resp.recipient = packet.sender;
-
 			//Call the function
 			if constexpr(!std::is_void<RetT>()) {
-				//Serialize the return value
+				//Serialize the return value and send the response
+				RiverPacket resp {
+						FUNCTION_RETURN,
+						packet.endpoint,
+						packet.path
+				};
+				resp.recipient = packet.sender;
 				RetT ret = _callback(packet.sender, std::get<ParamTs>(data_tuple)...);
 				resp.data.resize(sizeof(RetT));
 				memcpy(resp.data.data(), &ret, sizeof(RetT));
+				_endpoint->bus()->send_packet(resp);
 			} else {
 				_callback(packet.sender, std::get<ParamTs>(data_tuple)...);
 			}
-
-			//Send the response
-			_endpoint->bus()->send_packet(resp);
 		}
 
 	private:
