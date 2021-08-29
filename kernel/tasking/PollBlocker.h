@@ -38,7 +38,7 @@ public:
 	class PollFD {
 	public:
 		int fd_num;
-		kstd::shared_ptr<FileDescriptor>& fd;
+		kstd::shared_ptr<FileDescriptor> fd;
 		short events;
 	};
 
