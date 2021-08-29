@@ -37,7 +37,7 @@ listener(listener)
 {
 	screen.resize(dimensions.lines);
 	for(int y = 0; y < dimensions.lines; y++)
-		screen[y].resize(dimensions.lines);
+		screen[y].resize(dimensions.cols);
 	set_cursor({0, 0});
 }
 
