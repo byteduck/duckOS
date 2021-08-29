@@ -150,6 +150,14 @@ kstd::shared_ptr<Thread>& Process::main_thread() {
 	return _threads[0];
 }
 
+tid_t Process::last_active_thread() {
+	return _last_active_thread;
+}
+
+void Process::set_last_active_thread(tid_t tid) {
+	_last_active_thread = tid;
+}
+
 const kstd::vector<kstd::shared_ptr<Thread>>& Process::threads() {
 	return _threads;
 }
@@ -233,7 +241,6 @@ Process::~Process() {
 void Process::free_resources() {
 	if(_freed_resources)
 		return;
-	LOCK(_lock);
 	_freed_resources = true;
 	_page_directory.reset();
 	for(int i = 0; i < _threads.size(); i++)
@@ -268,7 +275,7 @@ bool Process::handle_pending_signal() {
 
 		//Print signal if unhandled and fatal
 		if(severity == Signal::FATAL && !signal_actions[signal].action) {
-			printf("PID %d exiting with signal %s\n", _pid, Signal::signal_names[signal]);
+			printf("PID %d exiting with signal %s in thread %d\n", _pid, Signal::signal_names[signal], _last_active_thread);
 #ifdef DEBUG
 			printf("Stack trace:\n");
 			KernelMapper::print_stacktrace();

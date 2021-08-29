@@ -344,6 +344,9 @@ void TaskManager::preempt(){
 			tss.esp0 = (size_t) cur_thread->kernel_stack_top();
 		}
 
+		if(should_preempt)
+			cur_thread->process()->set_last_active_thread(cur_thread->tid());
+
 		//Switch tasks.
 		preempting = false;
 		ASSERT(cur_thread->state() == Thread::ALIVE);

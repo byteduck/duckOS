@@ -71,6 +71,8 @@ public:
 
 	//Threads
 	kstd::shared_ptr<Thread>& main_thread();
+	tid_t last_active_thread();
+	void set_last_active_thread(tid_t tid);
 	const kstd::vector<kstd::shared_ptr<Thread>>& threads();
 
 	//Signals and death
@@ -192,7 +194,8 @@ private:
 
 	//Threads
 	kstd::vector<kstd::shared_ptr<Thread>> _threads;
-	pid_t _cur_tid = 1;
+	tid_t _cur_tid = 1;
+	tid_t _last_active_thread = 1;
 
 	Process* _self_ptr;
 };
