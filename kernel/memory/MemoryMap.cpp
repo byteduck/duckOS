@@ -350,8 +350,10 @@ MemoryRegion *MemoryMap::find_shared_region(int id) {
 	lock.acquire();
 	MemoryRegion* cur = _first_region;
 	while(cur) {
-		if(cur->is_shm && cur->shm_id == id)
+		if(cur->is_shm && cur->shm_id == id) {
+			lock.release();
 			return cur;
+		}
 		cur = cur->next;
 	}
 	lock.release();
