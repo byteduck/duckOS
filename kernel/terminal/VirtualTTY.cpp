@@ -46,7 +46,8 @@ void VirtualTTY::set_current_tty(size_t tty) {
 }
 
 void VirtualTTY::register_tty(size_t id, VirtualTTY *device) {
-	if(_ttys[id]) PANIC("DUPLICATE_TTY", "A TTY tried to register with an ID that was already registered.", true);
+	if(_ttys[id])
+		PANIC("DUPLICATE_TTY", "A TTY tried to register with an ID that was already registered.");
 	_ttys[id] = kstd::shared_ptr<TTYDevice>(device);
 }
 

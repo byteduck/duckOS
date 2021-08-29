@@ -189,7 +189,7 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 
 Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _self_ptr(this) {
 	if(to_fork->_kernel_mode)
-		PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.",  true);
+		PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.");
 
 	TaskManager::enabled() = false;
 	_name = to_fork->_name;

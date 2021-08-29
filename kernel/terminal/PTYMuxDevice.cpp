@@ -33,6 +33,6 @@ kstd::shared_ptr<PTYControllerDevice> PTYMuxDevice::create_new() {
 	LOCK(lock);
 	auto pty = (new PTYControllerDevice(current_pty++))->shared_ptr();
 	if(!pty)
-		PANIC("PTY_CREATE_FAILED", "The PTY Multiplexer failed to create a new PTY Controller and PTY.", true);
+		PANIC("PTY_CREATE_FAILED", "The PTY Multiplexer failed to create a new PTY Controller and PTY.");
 	return pty;
 }

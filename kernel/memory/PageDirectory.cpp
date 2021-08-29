@@ -136,7 +136,7 @@ LinkedMemoryRegion PageDirectory::k_map_physical_region(MemoryRegion* physregion
 	//First, try allocating a region of virtual memory.
 	MemoryRegion* virtregion = kernel_vmem_map.allocate_region(physregion->size);
 	if(!virtregion) {
-		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region.", true);
+		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region.");
 	}
 
 	//Then, map it.
@@ -154,13 +154,13 @@ LinkedMemoryRegion PageDirectory::k_alloc_region(size_t mem_size) {
 	//First, try allocating a region of virtual memory.
 	MemoryRegion* vmem_region = kernel_vmem_map.allocate_region(mem_size);
 	if(!vmem_region) {
-		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region.", true);
+		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region.");
 	}
 
 	//Next, try allocating the physical pages.
 	MemoryRegion* pmem_region = Memory::pmem_map().allocate_region(mem_size);
 	if(!pmem_region) {
-		PANIC("NO_MEM", "There's no more physical memory left.", true);
+		PANIC("NO_MEM", "There's no more physical memory left.");
 	}
 	used_kernel_pmem += pmem_region->size;
 
@@ -182,7 +182,7 @@ LinkedMemoryRegion next_kmalloc_region(nullptr, nullptr);
 
 void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
 	if(allocing_new_heap_region)
-		PANIC("KRNL_HEAP_FAIL", "The kernel tried to allocate more heap memory while already doing so.", true);
+		PANIC("KRNL_HEAP_FAIL", "The kernel tried to allocate more heap memory while already doing so.");
 
 	//Use the first regions if we need to
 	MemoryRegion *vregion_storage, *pregion_storage;
@@ -197,13 +197,13 @@ void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
 	auto* vmem_region = kernel_vmem_map.allocate_region(mem_size, vregion_storage);
 	if(!vmem_region) {
 		Memory::kernel_page_directory.dump();
-		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region for the heap.", true);
+		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region for the heap.");
 	}
 
 	auto* pmem_region = Memory::pmem_map().allocate_region(mem_size, pregion_storage);
 	if(!pmem_region) {
 		Memory::kernel_page_directory.dump();
-		PANIC("NO_MEM", "There's no more physical memory left.", true);
+		PANIC("NO_MEM", "There's no more physical memory left.");
 	}
 
 	used_kernel_pmem += pmem_region->size;
@@ -244,7 +244,8 @@ bool PageDirectory::k_free_region(void* virtaddr) {
 	MemoryRegion* vregion = kernel_vmem_map.find_region((size_t) virtaddr);
 	if(!vregion) return false;
 	if(vregion->reserved) return false;
-	if(!vregion->related) PANIC("VREGION_NO_RELATED", "A virtual kernel memory region had no corresponding physical region.", true);
+	if(!vregion->related)
+		PANIC("VREGION_NO_RELATED", "A virtual kernel memory region had no corresponding physical region.");
 	if(vregion->related->reserved) return false;
 	LinkedMemoryRegion region(vregion->related, vregion);
 	k_unmap_region(region);
@@ -428,13 +429,13 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t mem_size, bool read_wri
 	MemoryRegion *vmem_region = _vmem_map.allocate_region(mem_size);
 	if (!vmem_region) {
 		//TODO: Send a signal instead
-		PANIC("NO_VMEM_SPACE", "A program ran out of vmem space.", true);
+		PANIC("NO_VMEM_SPACE", "A program ran out of vmem space.");
 	}
 
 	//Next, try allocating the physical pages.
 	MemoryRegion *pmem_region = Memory::pmem_map().allocate_region(mem_size);
 	if (!pmem_region) {
-		PANIC("NO_MEM", "There's no more physical memory left.", true);
+		PANIC("NO_MEM", "There's no more physical memory left.");
 	}
 	_used_pmem += pmem_region->size;
 
@@ -461,13 +462,13 @@ LinkedMemoryRegion PageDirectory::allocate_stack_region(size_t mem_size, bool re
 	MemoryRegion *vmem_region = _vmem_map.allocate_stack_region(mem_size);
 	if (!vmem_region) {
 		//TODO: Send a signal instead
-		PANIC("NO_VMEM_SPACE", "A program ran out of vmem space.", true);
+		PANIC("NO_VMEM_SPACE", "A program ran out of vmem space.");
 	}
 
 	//Next, try allocating the physical pages.
 	MemoryRegion *pmem_region = Memory::pmem_map().allocate_region(mem_size);
 	if (!pmem_region) {
-		PANIC("NO_MEM", "There's no more physical memory left.", true);
+		PANIC("NO_MEM", "There's no more physical memory left.");
 	}
 	_used_pmem += pmem_region->size;
 
@@ -498,7 +499,7 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size,
 	//Next, try allocating the physical pages.
 	MemoryRegion *pmem_region = Memory::pmem_map().allocate_region(mem_size);
 	if (!pmem_region) {
-		PANIC("NO_MEM", "There's no more physical memory left.", true);
+		PANIC("NO_MEM", "There's no more physical memory left.");
 	}
 	_used_pmem += pmem_region->size;
 
@@ -549,7 +550,8 @@ bool PageDirectory::free_region(size_t virtaddr, size_t size) {
 	if(!vregion) return false;
 	if(!vregion->used) return false;
 	if(vregion->is_shm) return false;
-	if(!vregion->related) PANIC("VREGION_NO_RELATED", "A virtual program memory region had no corresponding physical region.", true);
+	if(!vregion->related)
+		PANIC("VREGION_NO_RELATED", "A virtual program memory region had no corresponding physical region.");
 
 	auto* pregion = vregion->related;
 	if(pregion->is_shm) return false;
@@ -564,7 +566,7 @@ bool PageDirectory::free_region(size_t virtaddr, size_t size) {
 	//Split the virtual region
 	vregion = _vmem_map.split_region(vregion, virtaddr, size);
 	if(!vregion)
-		PANIC("VREGION_SPLIT_FAIL", "A virtual program memory region couldn't be split after its physical region was split.", true);
+		PANIC("VREGION_SPLIT_FAIL", "A virtual program memory region couldn't be split after its physical region was split.");
 
 	//Unmap and free the regions
 	LinkedMemoryRegion region(pregion, vregion);
@@ -785,7 +787,7 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 		if(parent_region->used) {
 			auto* new_region = _vmem_map.allocate_region(parent_region->start, parent_region->size);
 			if(!new_region)
-				PANIC("COW_FAILED", "CoW failed to allocate a vmem region.", true);
+				PANIC("COW_FAILED", "CoW failed to allocate a vmem region.");
 
 			if(parent_region->is_shm) {
 				//If the region is shared, increase the number of refs on it and map it with the correct permissions.
@@ -860,7 +862,8 @@ bool PageDirectory::try_cow(size_t virtaddr) {
 
 	//Allocate a temporary kernel region to copy the memory into
 	LinkedMemoryRegion tmp_region = k_alloc_region(region->size);
-	if(!tmp_region.virt) PANIC("COW_COPY_FAIL", "CoW failed to allocate a memory region to copy.", true);
+	if(!tmp_region.virt)
+		PANIC("COW_COPY_FAIL", "CoW failed to allocate a memory region to copy.");
 
 	//Copy the region into the buffer
 	memcpy((void*)tmp_region.virt->start, (void*)region->start, region->size);

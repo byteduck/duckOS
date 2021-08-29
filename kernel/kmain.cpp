@@ -63,7 +63,7 @@ int kmain(uint32_t mbootptr){
 		//We didn't find a bochs VGA device, try using the multiboot VGA device
 		auto* mboot_vga = MultibootVGADevice::create(&mboot_header);
 		if(!mboot_vga || mboot_vga->is_textmode())
-			PANIC("MBOOT_TEXTMODE", "duckOS doesn't support textmode.", true);
+			PANIC("MBOOT_TEXTMODE", "duckOS doesn't support textmode.");
 	}
 
 	clearScreen();
@@ -189,7 +189,7 @@ void kmain_late(){
 	TaskManager::current_thread()->process()->exec(kstd::string("/bin/init"), init_args);
 
 	//We shouldn't get here
-	PANIC("INIT_FAILED", "Failed to start init.", true);
+	PANIC("INIT_FAILED", "Failed to start init.");
 	ASSERT(false);
 }
 
@@ -201,7 +201,7 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 		boot_disk = (header->boot_device & 0xF0000000u) >> 28u;
 		printf("[kinit] BIOS boot disk: 0x%x\n", boot_disk);
 	} else {
-		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have boot device info. Cannot boot.\n", true);
+		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have boot device info. Cannot boot.");
 	}
 
 	//Parse memory map
@@ -209,7 +209,7 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 		auto* mmap_entry = (multiboot_mmap_entry*) (header->mmap_addr + HIGHER_HALF);
 		Memory::parse_mboot_memory_map(header, mmap_entry);
 	} else {
-		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have a memory map. Cannot boot.\n", true);
+		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have a memory map. Cannot boot.");
 	}
 
 	return *header;

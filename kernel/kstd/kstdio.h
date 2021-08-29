@@ -25,7 +25,7 @@
 #ifdef DEBUG
 #define ASSERT(cond) \
 if(!(cond)) { \
-  PANIC("Assertion failed:", __FILE__ " at line " STR(__LINE__), true); \
+  PANIC("Assertion failed:", __FILE__ " at line " STR(__LINE__)); \
 }
 #else
 #define ASSERT(cond) \
@@ -37,9 +37,10 @@ if(!(cond)) { \
 
 void putch(char c);
 void serial_putch(char c);
-void printf(const char *fmt, ...);
-void print(char* str);
-void PANIC(char *error, char *msg, bool hang);
+void vprintf(const char* fmt, va_list list);
+void printf(const char* fmt, ...);
+void print(const char* str);
+[[noreturn]] void PANIC(const char *error, const char *msg, ...);
 void clearScreen();
 void setup_tty();
 

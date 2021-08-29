@@ -61,21 +61,25 @@ void serial_putch(char c) {
 	IO::outb(0x3F8, c);
 }
 
-void print(char* str){
+void print(const char* str){
 	if(tty && use_tty)
 		tty_desc->write((uint8_t*) str, strlen(str));
 	while(*str)
 		serial_putch(*(str++));
 }
 
-void printf(const char* fmt, ...){
+void printf(const char* fmt, ...) {
+	va_list list;
+	va_start(list, fmt);
+	vprintf(fmt, list);
+	va_end(list);
+}
+
+void vprintf(const char* fmt, va_list argp){
 	const char *p;
-	va_list argp;
 	int i;
 	char *s;
 	char fmtbuf[256];
-
-	va_start(argp, fmt);
 
 	for(p = fmt; *p != '\0'; p++){
 		if(*p != '%'){
@@ -123,27 +127,27 @@ void printf(const char* fmt, ...){
 				break;
 		}
 	}
-	va_end(argp);
 }
 
-void PANIC(char *error, char *msg, bool hang){
+[[noreturn]] void PANIC(const char* error, const char* msg, ...){
+	asm volatile("cli");
 	TaskManager::enabled() = false;
+
 	use_tty = true;
 	printf("\n\033[41;97m"); //Red BG, bright white FG
 	print("Good job, you crashed it.\nHere are the details, since you probably need them.\nTry not to mess it up again.\n\n");
 	printf("%s\n", error);
-	printf("%s\n", msg);
 
-	printf("Stack trace:\n");
+	va_list list;
+	va_start(list, msg);
+	vprintf(msg, list);
+	va_end(list);
+
+	printf("\n\nStack trace:\n");
 	KernelMapper::print_stacktrace();
 
-	if(!hang) {
-		TaskManager::enabled() = true;
-	} else {
-		Interrupt::Disabler disabler;
-		Interrupt::NMIDisabler disabler2;
-		while(true);
-	}
+	asm volatile("cli; hlt");
+	while(1);
 }
 
 void clearScreen(){

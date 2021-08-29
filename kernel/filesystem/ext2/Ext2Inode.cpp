@@ -825,7 +825,7 @@ uint32_t Ext2Inode::calculate_num_ptr_blocks(uint32_t num_blocks) {
 	if(blocks_left == 0) return ret;
 
 	//TODO: Calculate triply indirect blocks
-	PANIC("EXT2_TIND", "We don't know how to calculate triply indirect blocks yet!", true);
+	PANIC("EXT2_TIND", "We don't know how to calculate triply indirect blocks yet!");
 	return ret;
 }
 

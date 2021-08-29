@@ -290,7 +290,7 @@ void TaskManager::preempt(){
 			case Process::ZOMBIE:
 				break;
 			default:
-				PANIC("PROC_INVALID_STATE", "A process had an invalid state.", true);
+				PANIC("PROC_INVALID_STATE", "A process had an invalid state (%d).", current->state());
 		}
 	}
 

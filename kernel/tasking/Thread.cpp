@@ -37,7 +37,7 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 	if(!is_kernel_mode()) {
 		_stack_region = _process->_page_directory->allocate_stack_region(THREAD_STACK_SIZE, true);
 		if (!_stack_region.virt)
-			PANIC("NEW_THREAD_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new thread's stack.", true);
+			PANIC("NEW_THREAD_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new thread's stack.");
 		mapped_user_stack_region = PageDirectory::k_map_physical_region(_stack_region.phys, true);
 		user_stack = Stack((void*) (mapped_user_stack_region.virt->start + _stack_region.virt->size), _stack_region.virt->start + _stack_region.virt->size);
 	} else {
@@ -101,7 +101,7 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 	if(!is_kernel_mode()) {
 		_stack_region = _process->_page_directory->allocate_stack_region(THREAD_STACK_SIZE, true);
 		if (!_stack_region.virt)
-			PANIC("NEW_THREAD_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new thread's stack.", true);
+			PANIC("NEW_THREAD_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new thread's stack.");
 		mapped_user_stack_region = PageDirectory::k_map_physical_region(_stack_region.phys, true);
 		user_stack = Stack((void*) (mapped_user_stack_region.virt->start + _stack_region.virt->size), _stack_region.virt->start + _stack_region.virt->size);
 	} else {

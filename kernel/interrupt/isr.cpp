@@ -64,14 +64,11 @@ namespace Interrupt {
 		idt_set_gate(31, (unsigned)isr31, 0x08, 0x8E);
 	}
 
-	bool fpanic(char *a, char *b, uint32_t sig){
+	void handle_fault(const char* err, const char* panic_msg, uint32_t sig){
 		if(!TaskManager::enabled() || TaskManager::current_thread()->is_kernel_mode()){
-			Interrupt::Disabler disabler;
-			PANIC(a,b,false);
-			return true;
-		}else{
+			PANIC(err, panic_msg);
+		} else {
 			TaskManager::notify_current(sig);
-			return false;
 		}
 	}
 
@@ -79,17 +76,11 @@ namespace Interrupt {
 		if(r->num < 32){
 			switch(r->num){
 				case 0:
-					if(fpanic("DIVIDE_BY_ZERO", "Instruction pointer:", SIGILL)){
-						printf("%x", r->err_code);
-						while(true);
-					}
+					handle_fault("DIVIDE_BY_ZERO", "Please don't do that.", SIGILL);
 					break;
 
 				case 13: //GPF
-					if(fpanic("GENERAL_PROTECTION_FAULT", "Instruction pointer, error code, and Registers:", SIGILL)){
-						print_regs(r);
-						while(true);
-					}
+					handle_fault("GENERAL_PROTECTION_FAULT", "How did you manage to do that?", SIGILL);
 					break;
 
 				case 14: //Page fault
@@ -101,11 +92,7 @@ namespace Interrupt {
 					break;
 
 				default:
-					if(fpanic("Something weird happened.", "Fault and Instruction pointer:", SIGILL)){
-						printf("%x and %x", r->num, r->err_code);
-						while(true);
-					}
-					break;
+					handle_fault("UNKNOWN_FAULT", "What did you do?", SIGILL);
 			}
 		}
 	}

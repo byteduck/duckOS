@@ -87,10 +87,10 @@ namespace Memory {
 		_pmem_map = MemoryMap(PAGE_SIZE, &multiboot_memory_regions[0]);
 		MemoryRegion* text_region = _pmem_map.allocate_region(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, early_pmem_text_region_storage);
 		if(!text_region)
-			PANIC("KRNL_MAP_FAIL", "The kernel's text section could not be allocated in the physical memory map.\n", true);
+			PANIC("KRNL_MAP_FAIL", "The kernel's text section could not be allocated in the physical memory map.");
 		MemoryRegion* data_region = _pmem_map.allocate_region(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, early_pmem_data_region_storage);
 		if(!text_region)
-			PANIC("KRNL_MAP_FAIL", "The kernel's data section could not be allocated in the physical memory map.\n", true);
+			PANIC("KRNL_MAP_FAIL", "The kernel's data section could not be allocated in the physical memory map.");
 		_pmem_map.recalculate_memory_totals();
 
 		//Now, map and write everything to the directory
@@ -118,41 +118,28 @@ namespace Memory {
 
 	void page_fault_handler(struct Registers *r) {
 		Interrupt::Disabler disabler;
-		switch (r->err_code) {
-			case 0:
-				PANIC("KRNL_READ_NONPAGED_AREA", "", false);
-				break;
-			case 1:
-				PANIC("KRNL_READ_PROTECTION_FAULT", "", false);
-				break;
-			case 2:
-				PANIC("KRNL_WRITE_NONPAGED_AREA", "", false);
-				break;
-			case 3:
-				PANIC("KRNL_WRITE_PROTECTION_FAULT", "", false);
-				break;
-			case 4:
-				PANIC("USR_READ_NONPAGED_AREA", "", false);
-				break;
-			case 5:
-				PANIC("USR_READ_PROTECTION_FAULT", "", false);
-				break;
-			case 6:
-				PANIC("USR_WRITE_NONPAGED_AREA", "", false);
-				break;
-			case 7:
-				PANIC("USR_WRITE_PROTECTION_FAULT", "", false);
-				break;
-			default:
-				PANIC("UNKNOWN_PAGE_FAULT", "", false);
-				break;
-		}
-
 		uint32_t err_pos;
 		asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-		printf("Virtual address: 0x%X\n", err_pos);
-		print_regs(r);
-		while (true);
+		switch (r->err_code) {
+			case 0:
+				PANIC("KRNL_READ_NONPAGED_AREA", "0x%x", err_pos);
+			case 1:
+				PANIC("KRNL_READ_PROTECTION_FAULT", "0x%x", err_pos);
+			case 2:
+				PANIC("KRNL_WRITE_NONPAGED_AREA", "0x%x", err_pos);
+			case 3:
+				PANIC("KRNL_WRITE_PROTECTION_FAULT", "0x%x", err_pos);
+			case 4:
+				PANIC("USR_READ_NONPAGED_AREA", "0x%x", err_pos);
+			case 5:
+				PANIC("USR_READ_PROTECTION_FAULT", "0x%x", err_pos);
+			case 6:
+				PANIC("USR_WRITE_NONPAGED_AREA", "0x%x", err_pos);
+			case 7:
+				PANIC("USR_WRITE_PROTECTION_FAULT", "0x%x", err_pos);
+			default:
+				PANIC("UNKNOWN_PAGE_FAULT", "0x%x", err_pos);
+		}
 	}
 
 
