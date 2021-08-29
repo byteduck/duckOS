@@ -187,6 +187,8 @@ void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
 	//Use the first regions if we need to
 	MemoryRegion *vregion_storage, *pregion_storage;
 	if(next_kmalloc_region.virt == nullptr) {
+		first_kmalloc_vregion.heap_allocated = false;
+		first_kmalloc_pregion.heap_allocated = false;
 		vregion_storage = &first_kmalloc_vregion;
 		pregion_storage = &first_kmalloc_pregion;
 	} else {
