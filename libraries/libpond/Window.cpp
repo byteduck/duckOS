@@ -27,28 +27,22 @@ Window::Window(int id, Rect rect, struct shm shm, Context* ctx): _id(id), _rect(
 	_framebuffer = {(uint32_t*) shm.ptr, rect.width, rect.height};
 }
 
-int Window::destroy() {
-	if(!_context->send_packet(PDestroyWindowPkt(_id))) {
-		perror("Pond: Failed to write destroy window packet");
-		return -1;
-	}
-	return 0;
+void Window::destroy() {
+	_context->__river_destroy_window({_id});
 }
 
 void Window::invalidate() {
-	if(!_context->send_packet(PInvalidatePkt(_id, {-1, -1, -1, -1})))
-		perror("Pond: Failed to write invalidate packet");
+	_context->__river_invalidate_window({_id, {-1, -1, -1, -1}});
 }
 
 void Window::invalidate_area(Rect area) {
-	if(!_context->send_packet(PInvalidatePkt(_id, area)))
-		perror("Pond: Failed to write invalidate area packet");
+	_context->__river_invalidate_window({_id, area});
 }
 
 void Window::resize(Dimensions dims) {
-	if(!_context->send_packet(PResizeWindowPkt(_id, dims)))
-		return perror("Pond: failed to write set_rect window packet");
-	_context->next_event(PEVENT_WINDOW_RESIZE);
+	auto resp = _context->__river_resize_window({_id, dims});
+	Event evt;
+	_context->handle_window_resized(resp, evt);
 	_rect.width = dims.width;
 	_rect.height = dims.height;
 }
@@ -58,9 +52,7 @@ void Window::resize(int width, int height) {
 }
 
 void Window::set_position(Point pos) {
-	if(!_context->send_packet(PMoveWindowPkt(_id, pos)))
-		return perror("Pond: failed to write set_rect window packet");
-	_context->next_event(PEVENT_WINDOW_MOVE);
+	_context->__river_move_window({_id, pos});
 	_rect.x = pos.x;
 	_rect.y = pos.y;
 }
@@ -82,44 +74,36 @@ Rect Window::rect() const {
 }
 
 void Window::set_title(const char* title) {
-	if(!_context->send_packet(PSetTitlePkt(_id, title)))
-		perror("Pond: failed to write set title packet");
+	_context->__river_set_title({_id, title});
 }
 
 void Window::reparent(Window* window) {
-	if(!_context->send_packet(PReparentPkt(_id, window ? window->_id : 0)))
-		perror("Pond: failed to write set parent packet");
+	_context->__river_reparent({_id, window ? window->_id : 0});
 }
 
 void Window::set_global_mouse(bool global) {
-	if(!_context->send_packet(PWindowHintPkt(_id, PWINDOW_HINT_GLOBALMOUSE, global)))
-		perror("Pond: failed to write set hint packet");
+	_context->__river_set_hint({_id, PWINDOW_HINT_GLOBALMOUSE, global});
 }
 
 void Window::set_draggable(bool draggable) {
-	if(!_context->send_packet(PWindowHintPkt(_id, PWINDOW_HINT_DRAGGABLE, draggable)))
-		perror("Pond: failed to write set hint packet");
+	_context->__river_set_hint({_id, PWINDOW_HINT_DRAGGABLE, draggable});
 }
 
 void Window::set_resizable(bool resizable) {
-    if(!_context->send_packet(PWindowHintPkt(_id, PWINDOW_HINT_RESIZABLE, resizable)))
-        perror("Pond: failed to write set hint packet");
+    _context->__river_set_hint({_id, PWINDOW_HINT_RESIZABLE, resizable});
 }
 
 void Window::bring_to_front() {
-	if(!_context->send_packet(PWindowToFrontPkt(_id)))
-		perror("Pond: failed to write bring to front packet");
+	_context->__river_window_to_front({_id});
 }
 
 void Window::set_hidden(bool hidden) {
-	if(!_context->send_packet(PWindowHintPkt(_id, PWINDOW_HINT_HIDDEN, hidden)))
-		perror("Pond: failed to write window hint packet");
+	_context->__river_set_hint({_id, PWINDOW_HINT_HIDDEN, hidden});
 	_hidden = hidden;
 }
 
 void Window::set_uses_alpha(bool alpha_blending) {
-	if(!_context->send_packet(PWindowHintPkt(_id, PWINDOW_HINT_USEALPHA, alpha_blending)))
-		perror("Pond: failed to write window hint packet");
+	_context->__river_set_hint({_id, PWINDOW_HINT_USEALPHA, alpha_blending});
 }
 
 int Window::id() const {

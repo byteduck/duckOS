@@ -22,19 +22,22 @@
 
 #include <sys/types.h>
 #include <map>
-#include "Client.h"
+#include <libriver/river.h>
 
+class Client;
 class Server {
 public:
 	Server();
 
 	int fd();
 	void handle_packets();
+	const std::shared_ptr<River::Endpoint>& endpoint();
 
 private:
 	std::map<sockid_t, Client*> clients;
-
-	int socket_fd;
+	River::BusServer* _server;
+	std::shared_ptr<River::BusConnection> _connection;
+	std::shared_ptr<River::Endpoint> _endpoint;
 };
 
 

@@ -29,11 +29,14 @@
 
 int main(int argc, char** argv, char** envp) {
 	KLog::init("Pond");
+	KLog::logf("Starting...\n");
+
 	auto* display = new Display;
 	auto* server = new Server;
 	auto* main_window = new Window(display);
 	main_window->set_hidden(false);
 	auto* mouse = new Mouse(main_window);
+	auto* font_manager = new FontManager();
 
 	struct pollfd polls[3];
 	polls[0].fd = mouse->fd();
@@ -44,13 +47,13 @@ int main(int argc, char** argv, char** envp) {
 	polls[2].events = POLLIN;
 
 	if(!fork()) {
+		dup2(fileno(KLog::klog_file()), STDOUT_FILENO);
+		dup2(fileno(KLog::klog_file()), STDERR_FILENO);
 		char* argv[] = {NULL};
 		char* envp[] = {NULL};
 		execve("/bin/terminal", argv, envp);
 		exit(-1);
 	}
-
-	auto* font_manager = new FontManager();
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"

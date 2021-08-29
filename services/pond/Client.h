@@ -25,14 +25,15 @@
 #include <sys/socketfs.h>
 #include "Window.h"
 #include <sys/input.h>
+#include <libpond/packet.h>
 
 class Window;
+class Server;
 class Client {
 public:
-	Client(int socketfs_fd, sockid_t id, pid_t pid);
+	Client(Server* server, sockid_t id, pid_t pid);
 	~Client();
 
-	void handle_packet(socketfs_packet* packet);
 	void mouse_moved(Window* window, Point delta, Point relative_pos, Point absolute_pos);
 	void mouse_buttons_changed(Window* window, uint8_t new_buttons);
 	void mouse_scrolled(Window* window, int scroll);
@@ -42,26 +43,21 @@ public:
 	void window_moved(Window* window);
 	void window_resized(Window* window);
 
+	Pond::WindowOpenedPkt open_window(Pond::OpenWindowPkt& packet);
+	void destroy_window(Pond::WindowDestroyPkt& packet);
+	void move_window(Pond::WindowMovePkt& packet);
+	Pond::WindowResizedPkt resize_window(Pond::WindowResizePkt& packet);
+	void invalidate_window(Pond::WindowInvalidatePkt& packet);
+	Pond::FontResponsePkt get_font(Pond::GetFontPkt& packet);
+	void set_title(Pond::SetTitlePkt& packet);
+	void reparent(Pond::WindowReparentPkt& packet);
+	void set_hint(Pond::SetHintPkt& packet);
+	void bring_to_front(Pond::WindowToFrontPkt& packet);
+
 private:
-	template<typename T>
-	bool send_packet(const T& packet) {
-		return write_packet(socketfs_fd, id, sizeof(T), (void*) &packet) >= 0;
-	}
-
-	void open_window(socketfs_packet* packet);
-	void destroy_window(socketfs_packet* packet);
-	void move_window(socketfs_packet* packet);
-	void resize_window(socketfs_packet* packet);
-	void invalidate_window(socketfs_packet* packet);
-	void get_font(socketfs_packet* packet);
-	void set_title(socketfs_packet* packet);
-	void reparent(socketfs_packet* packet);
-	void set_hint(socketfs_packet* packet);
-	void bring_to_front(socketfs_packet* packet);
-
+	Server* server;
 	sockid_t id;
 	pid_t pid;
-	int socketfs_fd;
 	std::map<int, Window*> windows;
 	bool disconnected = false;
 };

@@ -28,6 +28,8 @@
 #include "Event.h"
 #include "packet.h"
 #include <deque>
+#include <memory>
+#include <libriver/river.h>
 
 namespace Pond {
 	/**
@@ -77,15 +79,6 @@ namespace Pond {
 		Font* get_font(const char* font);
 
 		/**
-		 * Sends a packet to the pond server.
-		 * @return Whether or not the write was successful.
-		 */
-		template<typename T>
-		bool send_packet(const T& packet) {
-			return write_packet_to_host(fd, sizeof(T), (void*) &packet) >= 0;
-		}
-
-		/**
 		 * Returns the file descriptor for the socket used to listen for events. This can be used to wait on
 		 * events from pond as well as other file descriptors with select(), poll(), or similar.
 		 * @return The file descriptor used to connect to pond's socket.
@@ -93,25 +86,38 @@ namespace Pond {
 		int connection_fd();
 
 	private:
-		explicit Context(int _fd);
+		friend class Window;
+		explicit Context(std::shared_ptr<River::Endpoint> endpoint);
 
 		void read_events(bool block);
 
-		void handle_open_window(socketfs_packet* packet, Event* event);
-		void handle_destroy_window(socketfs_packet* packet, Event* event);
-		void handle_move_window(socketfs_packet* packet, Event* event);
-		void handle_resize_window(socketfs_packet* packet, Event* event);
-		void handle_mouse_move(socketfs_packet* packet, Event* event);
-		void handle_mouse_button(socketfs_packet* packet, Event* event);
-		void handle_mouse_scroll(socketfs_packet* packet, Event* event);
-		void handle_mouse_leave(socketfs_packet* packet, Event* event);
-		void handle_key(socketfs_packet* packet, Event* event);
-		void handle_font_response(socketfs_packet* packet, Event* event);
+		void handle_window_opened(const WindowOpenedPkt& pkt, Event& event);
+		void handle_window_destroyed(const WindowDestroyPkt& pkt, Event& event);
+		void handle_window_moved(const WindowMovePkt& pkt, Event& event);
+		void handle_window_resized(const WindowResizedPkt& pkt, Event& event);
+		void handle_mouse_moved(const MouseMovePkt& pkt, Event& event);
+		void handle_mouse_button(const MouseButtonPkt& pkt, Event& event);
+		void handle_mouse_scrolled(const MouseScrollPkt& pkt, Event& event);
+		void handle_mouse_left(const MouseLeavePkt& pkt, Event& event);
+		void handle_key_event(const KeyEventPkt& pkt, Event& event);
+		void handle_font_response(const FontResponsePkt& pkt, Event& event);
 
-		int fd;
+		std::shared_ptr<River::Endpoint> endpoint;
 		std::map<int, Window*> windows;
 		std::map<std::string, Font*> fonts;
 		std::deque<Event> events;
+
+#define PONDFUNC(name, ret_t, data_t) River::Function<ret_t, data_t> __river_##name = {#name}
+		PONDFUNC(open_window, WindowOpenedPkt, OpenWindowPkt);
+		PONDFUNC(destroy_window, void, WindowDestroyPkt);
+		PONDFUNC(move_window, void, WindowMovePkt);
+		PONDFUNC(resize_window, WindowResizedPkt, WindowResizePkt);
+		PONDFUNC(invalidate_window, void, WindowInvalidatePkt);
+		PONDFUNC(get_font, FontResponsePkt, GetFontPkt);
+		PONDFUNC(set_title, void, SetTitlePkt);
+		PONDFUNC(reparent, void, WindowReparentPkt);
+		PONDFUNC(set_hint, void, SetHintPkt);
+		PONDFUNC(window_to_front, void, WindowToFrontPkt);
 	};
 }
 

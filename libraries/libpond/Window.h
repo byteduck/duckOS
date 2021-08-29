@@ -41,9 +41,8 @@ namespace Pond {
 	public:
 		/**
 		 * Closes a window.
-		 * @return 0 if the close was successful, or -1 if not.
 		 */
-		int destroy();
+		void destroy();
 
 		/**
 		 * Tells the compositor to redraw the entire window.

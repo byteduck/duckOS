@@ -44,149 +44,111 @@
 
 #include <cstdint>
 #include <libgraphics/geometry.h>
+#include <libriver/SerializedString.hpp>
 
-struct POpenWindowPkt {
-	explicit POpenWindowPkt(int parent, Rect rect, bool hidden): parent(parent), rect(rect), hidden(hidden) {}
-	short _PACKET_ID = PPKT_OPEN_WINDOW;
-	int parent;
-	Rect rect;
-	bool hidden;
-};
+namespace Pond {
+	struct OpenWindowPkt {
+		int parent;
+		bool hidden;
+		Rect rect;
+	};
 
-struct PWindowOpenedPkt {
-	explicit PWindowOpenedPkt(int window_id): window_id(window_id) {}
-	explicit PWindowOpenedPkt(int window_id, Rect rect, int shm_id): window_id(window_id), rect(rect), shm_id(shm_id) {}
-	short _PACKET_ID = PPKT_WINDOW_OPENED;
-	int window_id = -1;
-	Rect rect;
-	int shm_id = -1;
-};
+	struct WindowOpenedPkt {
+		int window_id;
+		int shm_id;
+		Rect rect;
+	};
 
-struct PDestroyWindowPkt {
-	explicit PDestroyWindowPkt(int window_id): window_id(window_id) {}
-	short _PACKET_ID = PPKT_DESTROY_WINDOW;
-	int window_id;
-};
+	struct WindowDestroyPkt {
+		int window_id;
+	};
 
-struct PWindowDestroyedPkt {
-	explicit PWindowDestroyedPkt(int window_id): window_id(window_id) {}
-	short _PACKET_ID = PPKT_WINDOW_DESTROYED;
-	int window_id;
-};
+	struct WindowMovePkt {
+		int window_id;
+		Point pos;
+	};
 
-struct PMoveWindowPkt {
-	explicit PMoveWindowPkt(int window_id, Point pos): window_id(window_id), pos(pos) {}
-	short _PACKET_ID = PPKT_MOVE_WINDOW;
-	int window_id;
-	Point pos;
-};
+	struct WindowResizePkt {
+		int window_id;
+		Dimensions dims;
+	};
 
-struct PWindowMovedPkt {
-	explicit PWindowMovedPkt(int window_id, Point pos): window_id(window_id), pos(pos) {}
-	short _PACKET_ID = PPKT_WINDOW_MOVED;
-	int window_id;
-	Point pos;
-};
+	struct WindowResizedPkt {
+		int window_id;
+		int shm_id;
+		Rect rect;
+	};
 
-struct PResizeWindowPkt {
-	explicit PResizeWindowPkt(int window_id, Dimensions dims): window_id(window_id), dims(dims) {}
-	short _PACKET_ID = PPKT_RESIZE_WINDOW;
-	int window_id;
-	Dimensions dims;
-};
+	struct WindowInvalidatePkt {
+		int window_id;
+		Rect area;
+	};
 
-struct PWindowResizedPkt {
-	explicit PWindowResizedPkt(int window_id, Rect rect, int shm_id): window_id(window_id), rect(rect), shm_id(shm_id) {}
-	short _PACKET_ID = PPKT_WINDOW_RESIZED;
-	int window_id;
-	Rect rect;
-	int shm_id;
-};
+	struct MouseMovePkt {
+		int window_id;
+		Point delta;
+		Point relative;
+		Point absolute;
+	};
 
-struct PInvalidatePkt {
-	explicit PInvalidatePkt(int window_id, Rect area): window_id(window_id), area(area) {}
-	short _PACKET_ID = PPKT_INVALIDATE_WINDOW;
-	int window_id;
-	Rect area;
-};
+	struct MouseButtonPkt {
+		int window_id;
+		uint8_t buttons;
+	};
 
-struct PMouseMovePkt {
-	explicit PMouseMovePkt(int window_id, Point del, Point rel, Point abs): window_id(window_id), delta(del), relative(rel), absolute(abs) {}
-	short _PACKET_ID = PPKT_MOUSE_MOVE;
-	int window_id;
-	Point delta;
-	Point relative;
-	Point absolute;
-};
+	struct MouseScrollPkt {
+		int window_id;
+		int scroll;
+	};
 
-struct PMouseButtonPkt {
-	explicit PMouseButtonPkt(int window_id, uint8_t buttons): window_id(window_id), buttons(buttons) {}
-	short _PACKET_ID = PPKT_MOUSE_BUTTON;
-	int window_id;
-	uint8_t buttons;
-};
+	struct MouseLeavePkt {
+		int window_id;
+	};
 
-struct PMouseScrollPkt {
-	explicit PMouseScrollPkt(int window_id, int scroll): window_id(window_id), scroll(scroll) {}
-	short _PACKET_ID = PPKT_MOUSE_SCROLL;
-	int window_id;
-	int scroll;
-};
+	struct KeyEventPkt {
+		int window_id;
+		uint16_t scancode;
+		uint8_t key;
+		uint8_t character;
+		uint8_t modifiers;
+	};
 
-struct PMouseLeavePkt {
-	explicit PMouseLeavePkt(int window_id): window_id(window_id) {}
-	short _PACKET_ID = PPKT_MOUSE_LEAVE;
-	int window_id;
-};
+	struct GetFontPkt {
+		SerializedString<256> font_name;
+	};
 
-struct PKeyEventPkt {
-	explicit PKeyEventPkt(int window_id, uint16_t scancode, uint8_t key, uint8_t character, uint8_t modifiers): window_id(window_id), scancode(scancode), key(key), character(character), modifiers(modifiers) {}
-	short _PACKET_ID = PPKT_KEY_EVENT;
-	int window_id;
-	uint16_t scancode;
-	uint8_t key;
-	uint8_t character;
-	uint8_t modifiers;
-};
+	struct FontResponsePkt {
+		int font_shm_id;
+	};
 
-struct PGetFontPkt {
-	explicit PGetFontPkt(const char* name);
-	short _PACKET_ID = PPKT_GET_FONT;
-	char font_name[256];
-};
+	struct SetTitlePkt {
+		int window_id;
+		SerializedString<256> title;
+	};
 
-struct PFontResponsePkt {
-	explicit PFontResponsePkt(int shm_id): font_shm_id(shm_id) {}
-	short _PACKET_ID = PPKT_FONT_RESPONSE;
-	int font_shm_id;
-};
+	struct WindowReparentPkt {
+		int window_id;
+		int parent_id;
+	};
 
-struct PSetTitlePkt {
-	explicit PSetTitlePkt(int window_id, const char* title);
-	short _PACKET_ID = PPKT_SET_TITLE;
-	int window_id;
-	char title[256];
-};
+	struct SetHintPkt {
+		int window_id;
+		int hint;
+		int value;
+	};
 
-struct PReparentPkt {
-	explicit PReparentPkt(int window_id, int parent_id): window_id(window_id), parent_id(parent_id) {}
-	short _PACKET_ID = PPKT_REPARENT;
-	int window_id;
-	int parent_id;
-};
+	struct WindowToFrontPkt {
+		int window_id;
+	};
+}
 
-struct PWindowHintPkt {
-	explicit PWindowHintPkt(int window_id, int hint, int value): window_id(window_id), hint(hint), value(value) {}
-	short _PACKET_ID = PPKT_WINDOW_HINT;
-	int window_id;
-	int hint;
-	int value;
-};
 
-struct PWindowToFrontPkt {
-	explicit PWindowToFrontPkt(int window_id): window_id(window_id) {};
-	short _PACKET_ID = PPKT_WINDOW_TO_FRONT;
-	int window_id;
-};
+
+
+
+
+
+
+
 
 #endif //DUCKOS_PACKET_H

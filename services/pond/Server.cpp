@@ -20,55 +20,109 @@
 #include "Server.h"
 #include <libduck/KLog.h>
 #include <fcntl.h>
-#include <cstdio>
 #include <cstdlib>
-#include <cerrno>
 #include <sys/socketfs.h>
+#include <libpond/packet.h>
+#include "Client.h"
+
+using namespace River;
+using namespace Pond;
+
+#define REGISTER_FUNC(name, ret_t, arg_t, client_func) \
+auto __funcres_##name = _endpoint->register_function<ret_t, arg_t>((#name), [&] (sockid_t id, arg_t pkt) -> ret_t { \
+	auto& client = clients[id]; \
+	if(!client) { \
+		KLog::logf("Function %s called by unregistered client %d!\n", #name, id); \
+		return ret_t(); \
+	} \
+	return client->client_func(pkt); \
+}); \
+if(__funcres_##name.is_error()) { \
+	KLog::logf("Couldn't register function %s: %s\n", error_str(__funcres_##name.code())); \
+	exit(__funcres_##name.code()); \
+}
+
+#define REGISTER_MSG(name, arg) \
+auto __msgres_##name = _endpoint->register_message<arg>(#name); \
+if(__msgres_##name.is_error()) { \
+	KLog::logf("Couldn't register message %s: %s\n", error_str(__msgres_##name.code())); \
+	exit(__msgres_##name.code()); \
+}
 
 Server::Server() {
-	socket_fd = open("/sock/pond", O_RDWR | O_CREAT | O_NONBLOCK | O_CLOEXEC);
-	if(socket_fd < 0) {
-		perror("Couldn't open window server socket");
-		exit(errno);
+	KLog::logf("Creating bus server...\n");
+	auto server_res = BusServer::create("pond");
+	if(server_res.is_error()) {
+		KLog::logf("Couldn't create BusServer: %s\n", River::error_str(server_res.code()));
+		exit(server_res.code());
 	}
+	_server = server_res.value();
+	_server->spawn_thread();
+
+	KLog::logf("Connecting to bus...\n");
+	auto conn_res = BusConnection::connect("pond");
+	if(conn_res.is_error()) {
+		KLog::logf("Couldn't create BusConnection: %s\n", River::error_str(conn_res.code()));
+		exit(conn_res.code());
+	}
+	_connection = conn_res.value();
+
+	KLog::logf("Creating endpoint...\n");
+	auto end_res = _connection->register_endpoint("pond_server");
+	if(end_res.is_error()) {
+		KLog::logf("Couldn't register endpoint: %s\n", River::error_str(end_res.code()));
+		exit(end_res.code());
+	}
+	_endpoint = end_res.value();
+	_server->set_allow_new_endpoints(false);
+
+	_endpoint->on_client_connect = [this](sockid_t id, pid_t pid) {
+		KLog::logf("New client connected: %x\n", id);
+		this->clients[id] = new Client(this, id, pid);
+	};
+
+	_endpoint->on_client_disconnect = [this](sockid_t id, pid_t pid) {
+		auto client = clients[id];
+		if(client) {
+			delete client;
+			clients.erase(id);
+		} else
+			KLog::logf("Unknown client %x disconnected\n", id);
+	};
+
+	/** Functions (client --> server) **/
+	KLog::logf("Registering functions...\n");
+	REGISTER_FUNC(open_window, WindowOpenedPkt, OpenWindowPkt, open_window);
+	REGISTER_FUNC(destroy_window, void, WindowDestroyPkt, destroy_window);
+	REGISTER_FUNC(move_window, void, WindowMovePkt, move_window);
+	REGISTER_FUNC(resize_window, WindowResizedPkt, WindowResizePkt, resize_window);
+	REGISTER_FUNC(invalidate_window, void, WindowInvalidatePkt, invalidate_window);
+	REGISTER_FUNC(get_font, FontResponsePkt, GetFontPkt, get_font);
+	REGISTER_FUNC(set_title, void, SetTitlePkt, set_title);
+	REGISTER_FUNC(reparent, void, WindowReparentPkt, reparent);
+	REGISTER_FUNC(set_hint, void, SetHintPkt, set_hint);
+	REGISTER_FUNC(window_to_front, void, WindowToFrontPkt, bring_to_front);
+
+	/** Messages (server --> client) **/
+	KLog::logf("Registering messages...\n");
+	REGISTER_MSG(window_moved, WindowMovePkt);
+	REGISTER_MSG(window_resized, WindowResizedPkt);
+	REGISTER_MSG(window_destroyed, WindowDestroyPkt);
+	REGISTER_MSG(mouse_moved, MouseMovePkt);
+	REGISTER_MSG(mouse_button, MouseButtonPkt);
+	REGISTER_MSG(mouse_scrolled, MouseScrollPkt);
+	REGISTER_MSG(mouse_left, MouseLeavePkt);
+	REGISTER_MSG(key_event, KeyEventPkt);
 }
 
 int Server::fd() {
-	return socket_fd;
+	return _connection->file_descriptor();
 }
 
 void Server::handle_packets() {
-	SocketFSPacket* packet;
-	while((packet = read_packet(socket_fd))) {
-		switch(packet->type) {
-			case SOCKETFS_TYPE_MSG_CONNECT:
-				KLog::logf("New client connected to socket: %x\n", packet->connected_id);
-				clients[packet->connected_id] = new Client(socket_fd, packet->connected_id, packet->connected_pid);
-				break;
-			case SOCKETFS_TYPE_MSG_DISCONNECT: {
-				KLog::logf("Client disconnected from socket: %x\n", packet->disconnected_id);
-				auto client = clients[packet->disconnected_id];
-				if(client) {
-					delete client;
-					clients.erase(packet->disconnected_id);
-				} else
-					KLog::logf("Unknown client %x disconnected\n", packet->disconnected_id);
-				break;
-			}
-			case SOCKETFS_TYPE_MSG: {
-				auto client = clients[packet->sender];
-				if(client)
-					client->handle_packet(packet);
-				else
-					KLog::logf("Packet received from non-registered client %x\n", packet->sender);
-				break;
-			}
-			default: {
-				KLog::logf("Unknown packet type received from client %x\n", packet->sender);
-				break;
-			}
-		}
+	_connection->read_and_handle_packets(false);
+}
 
-		delete packet;
-	}
+const std::shared_ptr<River::Endpoint>& Server::endpoint() {
+	return _endpoint;
 }

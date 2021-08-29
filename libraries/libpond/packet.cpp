@@ -18,12 +18,3 @@
 */
 
 #include "packet.h"
-#include <cstring>
-
-PGetFontPkt::PGetFontPkt(const char* name) {
-	strncpy(font_name, name, 255);
-}
-
-PSetTitlePkt::PSetTitlePkt(int window_id, const char* new_title): window_id(window_id) {
-	strncpy(title, new_title, 255);
-}
