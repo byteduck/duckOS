@@ -47,8 +47,6 @@ int main(int argc, char** argv, char** envp) {
 	polls[2].events = POLLIN;
 
 	if(!fork()) {
-		dup2(fileno(KLog::klog_file()), STDOUT_FILENO);
-		dup2(fileno(KLog::klog_file()), STDERR_FILENO);
 		char* argv[] = {NULL};
 		char* envp[] = {NULL};
 		execve("/bin/terminal", argv, envp);
