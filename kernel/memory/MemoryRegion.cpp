@@ -21,6 +21,7 @@
 #include "Memory.h"
 #include "MemoryMap.h"
 #include <kernel/kstd/vector.hpp>
+#include <kernel/kstd/kstdio.h>
 
 MemoryRegion::MemoryRegion(size_t start, size_t size): start(start), size(size), next(nullptr), prev(nullptr), heap_allocated(true) {
 
@@ -85,4 +86,22 @@ void MemoryRegion::shm_deref() {
 		return;
 	}
 	lock.release();
+}
+
+size_t MemoryRegion::end() {
+	return start + size - 1;
+}
+
+void MemoryRegion::print(bool print_related) {
+	printf("{%x -> %x}(%s%s", start, end(), used ? "Used" : "Free", reserved ? ", Reserved" : "");
+	if(cow.marked_cow)
+		printf(", CoW[%d]", cow.num_refs);
+	if(is_shm)
+		printf(", Shared[%d]", shm_owner);
+	printf(")");
+	if(print_related && related) {
+		printf(" => ");
+		related->print(false);
+	} else
+		printf("\n");
 }

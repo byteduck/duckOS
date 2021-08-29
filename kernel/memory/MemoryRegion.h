@@ -51,6 +51,12 @@ public:
 	//Used to decrease the number of shared memory references on a physical region & free it if necessary.
 	void shm_deref();
 
+	//Returns the end of the region
+	size_t end();
+
+	//Prints a representation of the region.
+	void print(bool print_related = true);
+
 	//The memory location start of the region.
 	size_t start = 0;
 

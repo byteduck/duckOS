@@ -362,6 +362,21 @@ public:
 	/**
 	 * Dump information about the memory maps
 	 */
+	void dump_all();
+
+	/**
+	 * Dump the physical memory map
+	 */
+	static void dump_physical();
+
+	/**
+	 * Dump the kernel memory map
+	 */
+	static void dump_kernel();
+
+	/**
+	 * Dump the page directory's memory map
+	 */
 	void dump();
 
 private:

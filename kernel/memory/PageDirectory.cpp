@@ -196,13 +196,13 @@ void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
 
 	auto* vmem_region = kernel_vmem_map.allocate_region(mem_size, vregion_storage);
 	if(!vmem_region) {
-		Memory::kernel_page_directory.dump();
+		dump_kernel();
 		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region for the heap.");
 	}
 
 	auto* pmem_region = Memory::pmem_map().allocate_region(mem_size, pregion_storage);
 	if(!pmem_region) {
-		Memory::kernel_page_directory.dump();
+		dump_physical();
 		PANIC("NO_MEM", "There's no more physical memory left.");
 	}
 
@@ -902,27 +902,36 @@ bool PageDirectory::is_mapped() {
 
 }
 
-void PageDirectory::dump() {
+void PageDirectory::dump_all() {
+	dump_physical();
+	dump_kernel();
+	dump();
+}
+
+void PageDirectory::dump_physical() {
 	MemoryRegion* cur = Memory::pmem_map().first_region();
 	printf("\nPHYSICAL:\n");
 	while(cur) {
-		printf("%x %x %d | %x\n", cur->start, cur->size, cur->used, cur->related ? cur->related->start : -1);
+		cur->print();
 		cur = cur->next;
 	}
+}
+
+void PageDirectory::dump_kernel() {
+	MemoryRegion* cur = Memory::pmem_map().first_region();
 	printf("\nKERNEL:\n");
 	cur = kernel_vmem_map.first_region();
 	while(cur) {
-		printf("%x %x %d | %x\n", cur->start, cur->size, cur->used, cur->related ? cur->related->start : -1);
+		cur->print();
 		cur = cur->next;
 	}
-	if(!_vmem_map.first_region()) {
-		printf("\n");
-		return;
-	}
+}
+
+void PageDirectory::dump() {
 	printf("\nPROGRAM:\n");
-	cur = _vmem_map.first_region();
+	MemoryRegion* cur = _vmem_map.first_region();
 	while(cur) {
-		printf("%x %x %d | %x\n", cur->start, cur->size, cur->used, cur->related ? cur->related->start : -1);
+		cur->print();
 		cur = cur->next;
 	}
 	printf("\n");
