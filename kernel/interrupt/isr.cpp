@@ -65,7 +65,7 @@ namespace Interrupt {
 	}
 
 	void handle_fault(const char* err, const char* panic_msg, uint32_t sig){
-		if(!TaskManager::enabled() || TaskManager::current_thread()->is_kernel_mode()){
+		if(!TaskManager::enabled() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()){
 			PANIC(err, panic_msg);
 		} else {
 			TaskManager::notify_current(sig);
@@ -84,7 +84,7 @@ namespace Interrupt {
 					break;
 
 				case 14: //Page fault
-					if(!TaskManager::current_thread() || TaskManager::current_thread()->is_kernel_mode()) {
+					if(!TaskManager::current_thread() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()) {
 						Memory::page_fault_handler(r);
 					} else {
 						TaskManager::current_thread()->handle_pagefault(r);

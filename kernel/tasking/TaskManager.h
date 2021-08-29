@@ -39,6 +39,7 @@ namespace TaskManager {
 	void init();
 	bool& enabled();
 	bool is_idle();
+	bool is_preempting();
 	void reparent_orphans(Process* proc);
 
 	kstd::vector<Process*>* process_list();

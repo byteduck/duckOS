@@ -125,6 +125,10 @@ bool TaskManager::is_idle() {
 	return cur_thread == kidle_process->main_thread();
 }
 
+bool TaskManager::is_preempting() {
+	return preempting;
+}
+
 pid_t TaskManager::get_new_pid(){
 	return __cpid__++;
 }
