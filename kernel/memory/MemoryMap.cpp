@@ -20,6 +20,7 @@
 #include "MemoryMap.h"
 #include "MemoryRegion.h"
 #include <kernel/tasking/Thread.h>
+#include <kernel/KernelMapper.h>
 
 MemoryMap::MemoryMap(size_t page_size, MemoryRegion *first_region): _page_size(page_size), _first_region(first_region) {
 	MemoryRegion* cur = _first_region;
@@ -245,8 +246,8 @@ void MemoryMap::free_region(MemoryRegion *region) {
 	region->free();
 	bytes_used -= region->size;
 
-	//If the previous region is also free, merge them
-	if(region->prev && !region->prev->used) {
+	//If the previous region is also free and continuous with this one, merge them
+	if(region->prev && !region->prev->used && region->prev->start + region->prev->size == region->start) {
 		region->start = region->prev->start;
 		region->size += region->prev->size;
 		if(region->prev->prev)
@@ -259,8 +260,8 @@ void MemoryMap::free_region(MemoryRegion *region) {
 			_first_region = region;
 	}
 
-	//If the next region is also free, merge them
-	if(region->next && !region->next->used) {
+	//If the next region is also free and continuous with this one, merge them
+	if(region->next && !region->next->used && region->next->start == region->start + region->size) {
 		region->size += region->next->size;
 		if(region->next->next)
 			region->next->next->prev = region;
