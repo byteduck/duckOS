@@ -780,8 +780,8 @@ bool PageDirectory::is_mapped(size_t vaddr) {
 }
 
 void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new_pid) {
+	LOCK(parent->_lock);
 	//Iterate through every entry of the page directory we're copying from
-	TaskManager::enabled() = false;
 	MemoryRegion* parent_region = parent->_vmem_map.first_region();
 	while(parent_region) {
 		if(parent_region->used) {
@@ -792,6 +792,7 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 			if(parent_region->is_shm) {
 				//If the region is shared, increase the number of refs on it and map it with the correct permissions.
 				auto* shm_region = parent_region->related;
+				shm_region->lock.acquire();
 				shm_region->shm_ref();
 
 				//Figure out the permission
@@ -820,10 +821,12 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 				new_region->is_shm = true;
 				new_region->shm_id = shm_region->shm_id;
 				map_region(LinkedMemoryRegion(shm_region, new_region), write);
+				shm_region->lock.release();
 			} else if(parent_region->reserved) {
 				//This is reserved memory (AKA memory-mapped hardware or something), so don't map it to the child
 				_vmem_map.free_region(new_region);
 			} else {
+				parent_region->related->lock.acquire();
 				if(parent_region->cow.marked_cow) {
 					//If the region is already marked cow, increase the number of refs by one.
 					parent_region->related->cow.num_refs++;
@@ -831,6 +834,7 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 					//Otherwise, set it to 2
 					parent_region->related->cow.num_refs = 2;
 				}
+				parent_region->related->lock.release();
 
 				parent_region->cow.marked_cow = true;
 				new_region->cow.marked_cow = true;
@@ -851,7 +855,6 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 		}
 		parent_region = parent_region->next;
 	}
-	TaskManager::enabled() = true;
 }
 
 bool PageDirectory::try_cow(size_t virtaddr) {
@@ -859,6 +862,7 @@ bool PageDirectory::try_cow(size_t virtaddr) {
 	if(!region || !region->cow.marked_cow) return false;
 
 	TaskManager::enabled() = false;
+	ASSERT(is_mapped());
 
 	//Allocate a temporary kernel region to copy the memory into
 	LinkedMemoryRegion tmp_region = k_alloc_region(region->size);
@@ -869,8 +873,7 @@ bool PageDirectory::try_cow(size_t virtaddr) {
 	memcpy((void*)tmp_region.virt->start, (void*)region->start, region->size);
 
 	//Unmap the buffer region from the kernel
-	k_unmap_region(tmp_region);
-	kernel_vmem_map.free_region(tmp_region.virt);
+	k_free_virtual_region(tmp_region);
 
 	//Reduce reference count of physical region and map new physical region to virtual region
 	region->related->cow_deref();

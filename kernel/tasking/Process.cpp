@@ -191,7 +191,6 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 	if(to_fork->_kernel_mode)
 		PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.");
 
-	TaskManager::enabled() = false;
 	_name = to_fork->_name;
 	_pid = TaskManager::get_new_pid();
 	_kernel_mode = false;
@@ -203,10 +202,12 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 	_tty = to_fork->_tty;
 	_state = ALIVE;
 
-	//Copy signal handlers and file descriptors
+	//TODO: Prevent thread race condition when copying signal handlers/file descriptors
+	//Copy signal handlers
 	for(int i = 0; i < 32; i++)
 		signal_actions[i] = to_fork->signal_actions[i];
 
+	//Copy file descriptors
 	_file_descriptors.resize(to_fork->_file_descriptors.size());
 	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++) {
 		if(to_fork->_file_descriptors[i]) {
@@ -215,21 +216,14 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 		}
 	}
 
-	//Create and load page directory
+	//Create page directory and fork the old one
+	//TODO: Freeze other threads to prevent them from modifying memory before the fork can mark it CoW
 	_page_directory = kstd::make_shared<PageDirectory>();
-	Memory::load_page_directory(_page_directory);
-
-	//Fork the old page directory
 	_page_directory->fork_from(to_fork->_page_directory.get(), _ppid, _pid);
 
 	//Create the main thread
 	auto* main_thread = new Thread(_self_ptr, _cur_tid++,regs);
 	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
-
-	//Load back the page directory of the current process
-	Memory::load_page_directory(TaskManager::current_process()->_page_directory);
-
-	TaskManager::enabled() = true;
 }
 
 Process::~Process() {
