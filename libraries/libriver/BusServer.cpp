@@ -30,7 +30,7 @@
 using namespace River;
 
 ResultRet<BusServer*> BusServer::create(const std::string& socket_name) {
-	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR | O_CREAT | O_EXCL);
+	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK | O_CLOEXEC);
 	if(fd < 0) {
 		fprintf(stderr, "[River] Failed to create socket %s for bus connection: %s\n", socket_name.c_str(), strerror(errno));
 		return Result(errno);
@@ -40,7 +40,7 @@ ResultRet<BusServer*> BusServer::create(const std::string& socket_name) {
 
 ResultRet<BusServer*> BusServer::create(BusServer::ServerType type) {
 	if(type == SESSION || type == SYSTEM) {
-		int fd = open("/sock/river", O_RDWR | O_CREAT | O_EXCL);
+		int fd = open("/sock/river", O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK | O_CLOEXEC);
 		if (fd < 0) {
 			fprintf(stderr, "[River] Failed to create socket for system bus connection: %s\n", strerror(errno));
 			return Result(errno);
@@ -97,6 +97,18 @@ void BusServer::read_and_handle_packets(bool block) {
 				function_return(packet);
 				return;
 
+			case REGISTER_MESSAGE:
+				register_message(packet);
+				return;
+
+			case GET_MESSAGE:
+				get_message(packet);
+				return;
+
+			case SEND_MESSAGE:
+				send_message(packet);
+				return;
+
 			default:
 				packet.error = MALFORMED_DATA;
 				packet.data.clear();
@@ -116,6 +128,10 @@ tid_t BusServer::spawn_thread() {
 	if(_started)
 		return -1;
 	return thread_create(river_bus_server_thread, this);
+}
+
+void BusServer::set_allow_new_endpoints(bool allow) {
+	_allow_new_endpoints = allow;
 }
 
 void BusServer::send_packet(int pid, const RiverPacket& packet) {
@@ -145,8 +161,19 @@ void BusServer::send_packet(int pid, const RiverPacket& packet) {
 		return; \
 	} \
 
+#define VERIFY_MESSAGE \
+	if(!endpoint->messages[packet.path]) { \
+		send_packet(packet.__socketfs_from_id, { \
+			packet.type, \
+			packet.endpoint, \
+			packet.path, \
+			MESSAGE_DOES_NOT_EXIST \
+		}); \
+		return; \
+	} \
+
 void BusServer::client_connected(const RiverPacket& packet) {
-	_clients[packet.__socketfs_from_id] = std::make_unique<ServerClient>();
+	_clients[packet.__socketfs_from_id] = std::make_unique<ServerClient>(ServerClient {packet.__socketfs_from_id});
 }
 
 void BusServer::client_disconnected(const RiverPacket& packet) {
@@ -156,12 +183,40 @@ void BusServer::client_disconnected(const RiverPacket& packet) {
 		return;
 	}
 
+	//Erase the client's registered endpoints
 	auto& client = client_it->second;
-	for(auto& endpoint : client->endpoints)
+	for(auto& endpoint : client->registered_endpoints)
 		_endpoints.erase(endpoint);
+
+	//Send the disconnect message to all of the client's connected endpoints
+	for(auto& endpoint_name : client->connected_endpoints) {
+		auto& endpoint = _endpoints[endpoint_name];
+		if(!endpoint)
+			continue;
+
+		send_packet(endpoint->id, {
+			.type = CLIENT_DISCONNECTED,
+			.endpoint = endpoint_name,
+			.path = "",
+			.disconnected_pid = packet.__socketfs_from_pid,
+			.disconnected_id = client->id
+		});
+	}
+
+	_clients.erase(client_it);
 }
 
 void BusServer::register_endpoint(const RiverPacket& packet) {
+	if(!_allow_new_endpoints) {
+		send_packet(packet.__socketfs_from_id, {
+				packet.type,
+				packet.endpoint,
+				packet.path,
+				ILLEGAL_REQUEST
+		});
+		return;
+	}
+
 	if(_endpoints[packet.endpoint]) {
 		send_packet(packet.__socketfs_from_id, {
 			packet.type,
@@ -175,6 +230,11 @@ void BusServer::register_endpoint(const RiverPacket& packet) {
 	_endpoints[packet.endpoint] = std::make_unique<ServerEndpoint>(ServerEndpoint{packet.endpoint, packet.__socketfs_from_id});
 	printf("[River] Registering endpoint %s\n", packet.endpoint.c_str());
 
+	auto& client = _clients[packet.__socketfs_from_id];
+	if(client) {
+		client->registered_endpoints.push_back(packet.endpoint);
+	}
+
 	send_packet(packet.__socketfs_from_id, {
 		packet.type,
 		packet.endpoint,
@@ -186,6 +246,19 @@ void BusServer::register_endpoint(const RiverPacket& packet) {
 void BusServer::get_endpoint(const RiverPacket& packet) {
 	VERIFY_ENDPOINT
 
+	//Send client connected message to applicable endpoint
+	auto& client = _clients[packet.__socketfs_from_id];
+	if(client) {
+		client->connected_endpoints.push_back(packet.endpoint);
+		send_packet(endpoint->id, {
+			.type = CLIENT_CONNECTED,
+			.endpoint = packet.endpoint,
+			.path = "",
+			.connected_pid = packet.__socketfs_from_pid,
+			.connected_id = client->id
+		});
+	}
+
 	send_packet(packet.__socketfs_from_id, {
 			packet.type,
 			packet.endpoint,
@@ -196,6 +269,16 @@ void BusServer::get_endpoint(const RiverPacket& packet) {
 
 void BusServer::register_function(const RiverPacket& packet) {
 	VERIFY_ENDPOINT
+
+	if(endpoint->id != packet.__socketfs_from_id) {
+		send_packet(packet.__socketfs_from_id, {
+				packet.type,
+				packet.endpoint,
+				packet.path,
+				ILLEGAL_REQUEST
+		});
+		return;
+	}
 
 	if(endpoint->functions[packet.path]) {
 		send_packet(packet.__socketfs_from_id, {
@@ -255,4 +338,60 @@ void BusServer::function_return(const RiverPacket& packet) {
 	}
 
 	send_packet(packet.recipient, packet);
+}
+
+void BusServer::register_message(const RiverPacket& packet) {
+	VERIFY_ENDPOINT
+
+	if(endpoint->id != packet.__socketfs_from_id) {
+		send_packet(packet.__socketfs_from_id, {
+				packet.type,
+				packet.endpoint,
+				packet.path,
+				ILLEGAL_REQUEST
+		});
+		return;
+	}
+
+	if(endpoint->messages[packet.path]) {
+		send_packet(packet.__socketfs_from_id, {
+				packet.type,
+				packet.endpoint,
+				packet.path,
+				MESSAGE_ALREADY_REGISTERED
+		});
+		return;
+	}
+
+	endpoint->messages[packet.path] = std::make_unique<ServerMessage>(ServerMessage {packet.path});
+	printf("[River] Registering message %s:%s\n", endpoint->name.c_str(), packet.path.c_str());
+
+	send_packet(packet.__socketfs_from_id, {
+			packet.type,
+			packet.endpoint,
+			packet.path,
+			SUCCESS
+	});
+}
+
+void BusServer::get_message(const RiverPacket& packet) {
+	VERIFY_ENDPOINT
+	VERIFY_MESSAGE
+
+	send_packet(packet.__socketfs_from_id, {
+			packet.type,
+			packet.endpoint,
+			packet.path,
+			SUCCESS
+	});
+}
+
+void BusServer::send_message(const RiverPacket& packet) {
+	VERIFY_ENDPOINT
+	VERIFY_MESSAGE
+
+	RiverPacket message_packet = packet;
+	message_packet.sender = packet.__socketfs_from_id;
+	message_packet.__socketfs_from_id = 0;
+	send_packet(packet.recipient, message_packet);
 }

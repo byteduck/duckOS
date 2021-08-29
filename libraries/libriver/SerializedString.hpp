@@ -17,14 +17,29 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBRIVER_RIVER_H
-#define DUCKOS_LIBRIVER_RIVER_H
+#ifndef DUCKOS_LIBRIVER_SAFESTRING_H
+#define DUCKOS_LIBRIVER_SAFESTRING_H
 
-#include "BusConnection.h"
-#include "BusServer.h"
-#include "Endpoint.h"
-#include "Function.hpp"
-#include "Message.hpp"
-#include "packet.h"
+#include <cstring>
+#include <string>
 
-#endif //DUCKOS_LIBRIVER_RIVER_H
+template<int len>
+class SerializedString {
+public:
+	char _data[len + 1];
+
+	SerializedString() = default;
+	SerializedString(const char* data) {
+		strncpy(_data, data, len + 1);
+	}
+	SerializedString(const std::string& str) {
+		strncpy(_data, str.c_str(), len + 1);
+	}
+
+	const char* str() {
+		_data[len] = '\0';
+		return _data;
+	}
+};
+
+#endif //DUCKOS_LIBRIVER_SAFESTRING_H

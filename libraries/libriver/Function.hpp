@@ -43,9 +43,11 @@ namespace River {
 		static_assert((std::is_pod<ParamTs>() && ...), "Function arguments must be plain-old datatypes!");
 
 	public:
-		Function(const std::string& path, Endpoint* endpoint, std::function<RetT(sockid_t, ParamTs...)> callback = nullptr):
+		Function(const std::string& path): _path(path), _endpoint(nullptr), _callback(nullptr) {}
+
+		Function(const std::string& path, std::shared_ptr<Endpoint> endpoint, std::function<RetT(sockid_t, ParamTs...)> callback = nullptr):
 				_path(stringname_of(path)),
-				_endpoint(endpoint),
+				_endpoint(std::move(endpoint)),
 				_callback(callback) {}
 
 		static std::string stringname_of(const std::string& path) {
@@ -59,6 +61,11 @@ namespace River {
 		}
 
 		RetT operator()(ParamTs... args) const {
+			if(!_endpoint) {
+				fprintf(stderr, "[River] WARN: Tried calling uninitialized function %s!\n", _path.c_str());
+				return RetT();
+			}
+
 			if(_endpoint->type() == Endpoint::PROXY) {
 				RiverPacket packet = {
 						FUNCTION_CALL,
@@ -133,7 +140,7 @@ namespace River {
 
 	private:
 		std::string _path;
-		Endpoint* _endpoint;
+		std::shared_ptr<Endpoint> _endpoint;
 		std::function<RetT(sockid_t, ParamTs...)> _callback;
 	};
 }

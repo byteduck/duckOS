@@ -46,6 +46,8 @@ namespace River {
 		void read_and_handle_packets(bool block);
 		tid_t spawn_thread();
 
+		void set_allow_new_endpoints(bool allow);
+
 	private:
 		struct ServerMessage {
 			std::string path;
@@ -59,11 +61,13 @@ namespace River {
 			std::string name;
 			sockid_t id;
 			std::map<std::string, std::unique_ptr<ServerFunction>> functions;
+			std::map<std::string, std::unique_ptr<ServerMessage>> messages;
 		};
 
 		struct ServerClient {
 			sockid_t id;
-			std::vector<std::string> endpoints;
+			std::vector<std::string> registered_endpoints;
+			std::vector<std::string> connected_endpoints;
 		};
 
 		BusServer(int fd, ServerType type): _fd(fd), _type(type), _self_pid(getpid()) {}
@@ -78,10 +82,14 @@ namespace River {
 		void get_function(const RiverPacket& packet);
 		void call_function(const RiverPacket& packet);
 		void function_return(const RiverPacket& packet);
+		void register_message(const RiverPacket& packet);
+		void get_message(const RiverPacket& packet);
+		void send_message(const RiverPacket& packet);
 
 		int _fd = 0;
 		ServerType _type;
 		bool _started = false;
+		bool _allow_new_endpoints = true;
 
 		std::map<sockid_t, std::unique_ptr<ServerClient>> _clients;
 		std::map<std::string, std::unique_ptr<ServerEndpoint>> _endpoints;

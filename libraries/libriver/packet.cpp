@@ -40,7 +40,7 @@ const char* River::error_str(int error) {
 
 		case UNKNOWN_ERROR:
 		default:
-			return "Unknown error";
+			return strerror(error);
 	}
 }
 
@@ -156,7 +156,8 @@ void River::send_packet(int fd, sockid_t recipient, const RiverPacket& packet) {
 	if(!packet.data.empty())
 		memcpy(raw_packet->data + full_name.length() + 1, packet.data.data(), packet.data.size());
 
-	::write_packet(fd, recipient, sizeof(RawPacket) + n_bytes, raw_packet);
+	if(::write_packet(fd, recipient, sizeof(RawPacket) + n_bytes, raw_packet))
+		fprintf(stderr, "[River] Error writing packet: %s\n", strerror(errno));
 
 	free(raw_packet);
 }

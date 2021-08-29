@@ -22,12 +22,16 @@
 
 using namespace River;
 
-Endpoint::Endpoint(BusConnection* bus, const std::string& name, ConnectionType type): _bus(bus), _type(type), _name(name) {
+Endpoint::Endpoint(std::shared_ptr<BusConnection> bus, const std::string& name, ConnectionType type): _bus(std::move(bus)), _type(type), _name(name) {
 
 }
 
 std::shared_ptr<IFunction> Endpoint::get_ifunction(const std::string& path) {
 	return _functions[path];
+}
+
+std::shared_ptr<IMessage> Endpoint::get_imessage(const std::string& path) {
+	return _messages[path];
 }
 
 const std::string& Endpoint::name() {
@@ -38,6 +42,6 @@ Endpoint::ConnectionType Endpoint::type() const {
 	return _type;
 }
 
-BusConnection* Endpoint::bus() {
+const std::shared_ptr<BusConnection>& Endpoint::bus() {
 	return _bus;
 }

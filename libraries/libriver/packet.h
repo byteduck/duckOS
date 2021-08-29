@@ -35,6 +35,9 @@ namespace River {
 		SOCKETFS_CLIENT_CONNECTED = -1,
 		SOCKETFS_CLIENT_DISCONNECTED = -2,
 
+		CLIENT_CONNECTED = 1,
+		CLIENT_DISCONNECTED = 2,
+
 		REGISTER_ENDPOINT = 10,
 		GET_ENDPOINT = 11,
 
@@ -42,6 +45,10 @@ namespace River {
 		FUNCTION_RETURN = 21,
 		REGISTER_FUNCTION = 22,
 		GET_FUNCTION = 23,
+
+		REGISTER_MESSAGE = 24,
+		GET_MESSAGE = 26,
+		SEND_MESSAGE = 25,
 
 		DEREGISTER_PATH = 30
 	};
@@ -55,7 +62,10 @@ namespace River {
 		FUNCTION_ALREADY_REGISTERED = 5,
 		FUNCTION_DOES_NOT_EXIST = 6,
 		MALFORMED_DATA = 7,
-		ILLEGAL_REQUEST = 8
+		ILLEGAL_REQUEST = 8,
+		MESSAGE_ALREADY_REGISTERED = 9,
+		MESSAGE_DOES_NOT_EXIST = 10,
+		MESSAGE_HANDLER_ALREADY_SET = 11
 	};
 
 	const char* error_str(int type);
@@ -74,10 +84,16 @@ namespace River {
 		PacketType type;
 		std::string endpoint;
 		std::string path;
-		ErrorType error;
+		union {
+			ErrorType error;
+			pid_t connected_pid;
+			pid_t disconnected_pid;
+		};
 		union {
 			sockid_t recipient;
 			sockid_t sender;
+			sockid_t connected_id;
+			sockid_t disconnected_id;
 		};
 		sockid_t __socketfs_from_id;
 		pid_t __socketfs_from_pid;

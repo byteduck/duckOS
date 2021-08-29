@@ -25,11 +25,12 @@
 #include "Endpoint.h"
 #include "BusServer.h"
 #include "Function.hpp"
+#include "Message.hpp"
 
 using namespace River;
 
 ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(const std::string& socket_name) {
-	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR);
+	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR | O_CLOEXEC);
 	if(fd < 0) {
 		fprintf(stderr, "[River] Failed to open socket %s for bus connection: %s\n", socket_name.c_str(), strerror(errno));
 		return Result(errno);
@@ -39,7 +40,7 @@ ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(const std::stri
 
 ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(BusConnection::BusType type) {
 	if(type == SESSION || type == SYSTEM) {
-		int fd = open("/sock/river", O_RDWR);
+		int fd = open("/sock/river", O_RDWR | O_CLOEXEC);
 		if (fd < 0) {
 			fprintf(stderr, "[River] Failed to open socket for system bus connection: %s\n", strerror(errno));
 			return Result(errno);
@@ -65,7 +66,7 @@ ResultRet<std::shared_ptr<Endpoint>> BusConnection::register_endpoint(const std:
 		fprintf(stderr, "[River] Error registering endpoint %s: %s\n", name.c_str(), error_str(packet.error));
 		return Result(packet.error);
 	}
-	auto ret = std::make_shared<Endpoint>(this, name, Endpoint::HOST);
+	auto ret = std::make_shared<Endpoint>(shared_from_this(), name, Endpoint::HOST);
 	_endpoints[name] = ret;
 	return ret;
 }
@@ -79,7 +80,7 @@ ResultRet<std::shared_ptr<Endpoint>> BusConnection::get_endpoint(const std::stri
 		fprintf(stderr, "[River] Error getting endpoint %s: %s\n", name.c_str(), error_str(packet.error));
 		return Result(packet.error);
 	}
-	auto ret = std::make_shared<Endpoint>(this, name, Endpoint::PROXY);
+	auto ret = std::make_shared<Endpoint>(shared_from_this(), name, Endpoint::PROXY);
 	_endpoints[name] = ret;
 	return ret;
 }
@@ -97,13 +98,25 @@ void BusConnection::read_all_packets(bool block) {
 }
 
 void BusConnection::read_and_handle_packets(bool block) {
-	read_all_packets(block);
+	read_all_packets(_packet_queue.empty() ? block : false);
 	while(!_packet_queue.empty()) {
 		auto& pkt = _packet_queue.front();
 
 		switch(pkt.type) {
 			case FUNCTION_CALL:
 				handle_function_call(pkt);
+				break;
+
+			case CLIENT_CONNECTED:
+				handle_client_connected(pkt);
+				break;
+
+			case CLIENT_DISCONNECTED:
+				handle_client_disconnected(pkt);
+				break;
+
+			case SEND_MESSAGE:
+				handle_message(pkt);
 				break;
 
 			default:
@@ -155,4 +168,42 @@ void BusConnection::handle_function_call(const RiverPacket& packet) {
 	}
 
 	func->remote_call(packet);
+}
+
+void BusConnection::handle_message(const RiverPacket& packet) {
+	if(!_endpoints[packet.endpoint]) {
+		fprintf(stderr, "[River] Got message for unknown endpoint %s!\n", packet.endpoint.c_str());
+		return;
+	}
+
+	auto& endpoint = _endpoints[packet.endpoint];
+	auto message = endpoint->get_imessage(packet.path);
+	if(!message) {
+		fprintf(stderr, "[River] Tried handling unknown message %s:%s!\n", packet.endpoint.c_str(), packet.path.c_str());
+		return;
+	}
+
+	message->handle_message(packet);
+}
+
+void BusConnection::handle_client_connected(const RiverPacket& packet) {
+	if(!_endpoints[packet.endpoint]) {
+		fprintf(stderr, "[River] Got client connected message for unknown endpoint %s!\n", packet.endpoint.c_str());
+		return;
+	}
+
+	auto& endpoint = _endpoints[packet.endpoint];
+	if(endpoint->on_client_connect)
+		endpoint->on_client_connect(packet.connected_id, packet.connected_pid);
+}
+
+void BusConnection::handle_client_disconnected(const RiverPacket& packet) {
+	if(!_endpoints[packet.endpoint]) {
+		fprintf(stderr, "[River] Got client disconnected message for unknown endpoint %s!\n", packet.endpoint.c_str());
+		return;
+	}
+
+	auto& endpoint = _endpoints[packet.endpoint];
+	if(endpoint->on_client_disconnect)
+		endpoint->on_client_disconnect(packet.disconnected_id, packet.disconnected_pid);
 }

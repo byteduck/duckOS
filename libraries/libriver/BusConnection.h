@@ -32,7 +32,7 @@ namespace River {
 	class Endpoint;
 	class BusServer;
 
-	class BusConnection {
+	class BusConnection: public std::enable_shared_from_this<BusConnection> {
 	public:
 		enum BusType {
 			SESSION,
@@ -59,6 +59,9 @@ namespace River {
 
 	private:
 		void handle_function_call(const RiverPacket& packet);
+		void handle_message(const RiverPacket& packet);
+		void handle_client_connected(const RiverPacket& packet);
+		void handle_client_disconnected(const RiverPacket& packet);
 
 		int _fd = 0;
 		BusServer* _server = nullptr;
