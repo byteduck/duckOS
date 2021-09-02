@@ -20,28 +20,6 @@
 #ifndef DUCKOS_LIBPOND_PACKET_H
 #define DUCKOS_LIBPOND_PACKET_H
 
-#define PPKT_ERROR (-1)
-#define PPKT_OPEN_WINDOW 1
-#define PPKT_WINDOW_OPENED 2
-#define PPKT_DESTROY_WINDOW 3
-#define PPKT_WINDOW_DESTROYED 4
-#define PPKT_MOVE_WINDOW 5
-#define PPKT_WINDOW_MOVED 6
-#define PPKT_RESIZE_WINDOW 7
-#define PPKT_WINDOW_RESIZED 8
-#define PPKT_INVALIDATE_WINDOW 9
-#define PPKT_MOUSE_MOVE 10
-#define PPKT_MOUSE_BUTTON 11
-#define PPKT_KEY_EVENT 12
-#define PPKT_GET_FONT 13
-#define PPKT_FONT_RESPONSE 14
-#define PPKT_SET_TITLE 15
-#define PPKT_REPARENT 16
-#define PPKT_MOUSE_LEAVE 17
-#define PPKT_WINDOW_HINT 18
-#define PPKT_WINDOW_TO_FRONT 19
-#define PPKT_MOUSE_SCROLL 20
-
 #include <cstdint>
 #include <libgraphics/geometry.h>
 #include <libriver/SerializedString.hpp>
@@ -139,6 +117,14 @@ namespace Pond {
 
 	struct WindowToFrontPkt {
 		int window_id;
+	};
+
+	struct GetDisplayInfoPkt {
+		int display; ///< Unused
+	};
+
+	struct DisplayInfoPkt {
+		Dimensions dimensions;
 	};
 }
 

@@ -82,6 +82,7 @@ Context::Context(std::shared_ptr<Endpoint> endpt): endpoint(std::move(endpt)) {
 	GET_FUNC(reparent, void, WindowReparentPkt, reparent);
 	GET_FUNC(set_hint, void, SetHintPkt, set_hint);
 	GET_FUNC(window_to_front, void, WindowToFrontPkt, window_to_front);
+	GET_FUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt, get_display_info);
 }
 
 void Context::read_events(bool block) {
@@ -300,4 +301,8 @@ void Context::handle_font_response(const FontResponsePkt& pkt, Event& event) {
 
 	//Load the font (if it errors out, a message should be printed and it will return nullptr)
 	event.font_response.font = Font::load_from_shm(fontshm);
+}
+
+Dimensions Context::get_display_dimensions() {
+	return __river_get_display_info({}).dimensions;
 }

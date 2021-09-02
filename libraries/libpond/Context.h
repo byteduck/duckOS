@@ -85,6 +85,12 @@ namespace Pond {
 		 */
 		int connection_fd();
 
+		/**
+		 * Gets the dimensions of the display.
+		 * @return The dimensions of the display.
+		 */
+		Dimensions get_display_dimensions();
+
 	private:
 		friend class Window;
 		explicit Context(std::shared_ptr<River::Endpoint> endpoint);
@@ -118,6 +124,7 @@ namespace Pond {
 		PONDFUNC(reparent, void, WindowReparentPkt);
 		PONDFUNC(set_hint, void, SetHintPkt);
 		PONDFUNC(window_to_front, void, WindowToFrontPkt);
+		PONDFUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt);
 	};
 }
 

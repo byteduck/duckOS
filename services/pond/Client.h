@@ -53,6 +53,7 @@ public:
 	void reparent(Pond::WindowReparentPkt& packet);
 	void set_hint(Pond::SetHintPkt& packet);
 	void bring_to_front(Pond::WindowToFrontPkt& packet);
+	Pond::DisplayInfoPkt get_display_info(Pond::GetDisplayInfoPkt &pkt);
 
 private:
 	Server* server;

@@ -188,3 +188,7 @@ void Client::bring_to_front(WindowToFrontPkt& params) {
 	if(window)
 		window->move_to_front();
 }
+
+Pond::DisplayInfoPkt Client::get_display_info(Pond::GetDisplayInfoPkt& pkt) {
+	return {Display::inst().dimensions().dimensions()};
+}

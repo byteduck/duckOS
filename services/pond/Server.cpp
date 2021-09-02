@@ -84,6 +84,7 @@ Server::Server() {
 	_endpoint->on_client_disconnect = [this](sockid_t id, pid_t pid) {
 		auto client = clients[id];
 		if(client) {
+			KLog::logf("Client %x disconnected\n", id);
 			delete client;
 			clients.erase(id);
 		} else
@@ -102,6 +103,7 @@ Server::Server() {
 	REGISTER_FUNC(reparent, void, WindowReparentPkt, reparent);
 	REGISTER_FUNC(set_hint, void, SetHintPkt, set_hint);
 	REGISTER_FUNC(window_to_front, void, WindowToFrontPkt, bring_to_front);
+	REGISTER_FUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt, get_display_info);
 
 	/** Messages (server --> client) **/
 	KLog::logf("Registering messages...\n");
