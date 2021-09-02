@@ -23,6 +23,7 @@
 #include "types.h"
 #include "utility.h"
 #include "../memory/kliballoc.h"
+#include "kstdio.h"
 
 namespace kstd {
 	template<typename T>
@@ -96,6 +97,7 @@ namespace kstd {
 		}
 
 		T pop_front() {
+			ASSERT(_size);
 			T ret = _storage[_front];
 			_storage[_front].~T();
 			_size--;
@@ -109,6 +111,7 @@ namespace kstd {
 		}
 
 		T pop_back() {
+			ASSERT(_size);
 			T ret = _storage[_back];
 			_storage[_back].~T();
 			_size--;
@@ -124,10 +127,12 @@ namespace kstd {
 		}
 
 		T& front() const {
+			ASSERT(_size);
 			return _storage[_front];
 		}
 
 		T& back() const {
+			ASSERT(_size);
 			return _storage[_back];
 		}
 

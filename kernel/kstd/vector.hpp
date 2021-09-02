@@ -23,6 +23,7 @@
 #include "kstdlib.h"
 #include "kstddef.h"
 #include "utility.h"
+#include "kstdio.h"
 
 namespace kstd {
 	template<typename T>
@@ -102,7 +103,7 @@ namespace kstd {
 		}
 
 		void erase(size_t elem) {
-			if(elem >= _size) return;
+			ASSERT(elem < _size);
 			_storage[elem].~T();
 			for(size_t i = elem; i < _size - 1; i++) {
 				new(&_storage[i]) T(_storage[i + 1]);
@@ -133,10 +134,12 @@ namespace kstd {
 		}
 
 		T& at(size_t index) const {
+			ASSERT(index < _size);
 			return _storage[index];
 		}
 
 		T& operator[](size_t index) const {
+			ASSERT(index < _size);
 			return _storage[index];
 		}
 
@@ -167,10 +170,12 @@ namespace kstd {
 		}
 
 		T& front() {
+			ASSERT(_storage);
 			return _storage[0];
 		}
 
 		T& back() {
+			ASSERT(_storage);
 			return _storage[_size - 1];
 		}
 
