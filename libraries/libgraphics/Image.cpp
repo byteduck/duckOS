@@ -66,4 +66,5 @@ Image& Image::operator=(Image&& other) noexcept {
 	height = other.height;
 	data = other.data;
 	other.data = nullptr;
+	return *this;
 }
