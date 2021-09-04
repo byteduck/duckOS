@@ -102,7 +102,7 @@ void Mouse::load_cursor(Image*& storage, const std::string& filename) {
         return;
     }
 
-    Image* cursor_image = load_png(cursor);
+    Image* cursor_image = load_png_from_file(cursor);
     fclose(cursor);
     if(!cursor_image) {
         perror("Failed to load cursor icon");

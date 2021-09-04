@@ -142,7 +142,7 @@ bool Theme::load() {
 			auto* imagefile = fopen((theme_location + value).c_str(), "r");
 			if(!imagefile)
 				continue;
-			images[key] = load_png(imagefile);
+			images[key] = load_png_from_file(imagefile);
 			fclose(imagefile);
 		} else if(type == "Color") {
 			if(value[0] == '#')

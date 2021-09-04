@@ -101,7 +101,7 @@ void Display::set_root_window(Window* window) {
 		return;
 	}
 
-	_wallpaper = load_png(wallpaper);
+	_wallpaper = load_png_from_file(wallpaper);
 	if(!_wallpaper) {
 		KLog::logf("Failed to load wallpaper.\n");
 		return;

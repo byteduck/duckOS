@@ -263,7 +263,7 @@ uint8_t png_read(void* png_void) {
 	return fgetc(png->file);
 }
 
-Image* Gfx::load_png(FILE* file) {
+Image* Gfx::load_png_from_file(FILE* file) {
 	//Read the header
 	fseek(file, 0, SEEK_SET);
 	uint8_t header[8];
@@ -369,4 +369,13 @@ Image* Gfx::load_png(FILE* file) {
 	}
 
 	return png.image;
+}
+
+Image* Gfx::load_png(const std::string& filename) {
+	auto* file = fopen(filename.c_str(), "r");
+	if(!file)
+		return nullptr;
+	auto* ret = load_png_from_file(file);
+	fclose(file);
+	return ret;
 }

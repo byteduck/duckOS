@@ -24,18 +24,14 @@
 #include "Image.h"
 #include "deflate.h"
 
-#ifdef __cplusplus
+#include <string>
 #include <cstdio>
-#include <cstring>
-
-#else
-#include <stdio.h>
-#endif
 
 __DECL_BEGIN
 
 namespace Gfx {
-	Gfx::Image* load_png(FILE* file);
+	Gfx::Image* load_png_from_file(FILE* file);
+	Gfx::Image* load_png(const std::string& filename);
 }
 
 __DECL_END
