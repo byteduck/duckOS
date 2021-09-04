@@ -25,7 +25,8 @@
 
 class Result {
 public:
-	static const int Success = 0;
+	static const int SUCCESS = 0;
+	static const int FAILURE = -1;
 
 	Result(int code): _code(code) {}
 
@@ -54,6 +55,7 @@ public:
 	bool is_error() const {return _result.is_error();}
 	bool has_value() const {return _ret.has_value();}
 	int code() const {return _result.code();}
+	Result result() const {return _result;}
 	T& value() {
 		assert(_ret.has_value());
 		return _ret.value();
