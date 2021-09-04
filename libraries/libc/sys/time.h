@@ -17,8 +17,8 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_TIMEMANAGER_H
-#define DUCKOS_TIME_H
+#ifndef DUCKOS_LIBC_SYSTIME_H
+#define DUCKOS_LIBC_SYSTIME_H
 
 #include <time.h>
 
@@ -38,4 +38,4 @@ int gettimeofday(struct timeval *tv, void *tz);
 
 __DECL_END
 
-#endif //DUCKOS_TIMEKEEPER_H
+#endif //DUCKOS_LIBC_SYSTIME_H
