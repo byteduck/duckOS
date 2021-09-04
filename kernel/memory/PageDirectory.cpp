@@ -608,6 +608,8 @@ bool PageDirectory::munmap(void* virtaddr) {
 }
 
 ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, size_t mem_size, pid_t pid) {
+	LOCK(_lock);
+
 	if(!mem_size)
 		mem_size = 1; //Make sure we're allocating at least one byte...
 
@@ -631,10 +633,14 @@ ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, 
 	region.phys->shm_allowed = new kstd::vector<MemoryRegion::ShmPermissions>();
 	region.phys->shm_allowed->push_back({pid, true});
 
+	_attached_shm_regions.push_back(region.virt);
+
 	return region;
 }
 
 ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t vaddr, pid_t pid) {
+	LOCK(_lock);
+
 	//Shared memory IDs are just the location of the physcal region divided by page size, so find the region
 	size_t shm_loc = ((size_t) id) * PAGE_SIZE;
 	auto* pmem_region = Memory::pmem_map().find_region(shm_loc);
@@ -659,17 +665,33 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 	if(!has_perms)
 		return -ENOENT;
 
-	//Then, allocate a vmem region for it
-	size_t vaddr_pagealigned = (vaddr / PAGE_SIZE) * PAGE_SIZE;
-	MemoryRegion* vmem_region;
-	if(vaddr)
-		vmem_region = _vmem_map.allocate_region(vaddr_pagealigned, pmem_region->size);
-	else
-		vmem_region = _vmem_map.allocate_region(pmem_region->size);
+	//Then, allocate a vmem region for it, if we haven't already attached it
+	bool already_attached = false;
+	MemoryRegion* vmem_region = nullptr;
+
+	//Check if we've already attached the region
+	for(auto i = 0; i < _attached_shm_regions.size(); i++) {
+		if(_attached_shm_regions[i]->is_shm && _attached_shm_regions[i]->shm_id == id) {
+			vmem_region = _attached_shm_regions[i];
+			already_attached = true;
+			break;
+		}
+	}
+
+	if(!vmem_region) {
+		size_t vaddr_pagealigned = (vaddr / PAGE_SIZE) * PAGE_SIZE;
+		if(vaddr) {
+			//Allocate the region at the specified address
+			vmem_region = _vmem_map.allocate_region(vaddr_pagealigned, pmem_region->size);
+		} else {
+			//Allocate a new region
+			vmem_region = _vmem_map.allocate_region(pmem_region->size);
+		}
+	}
 
 	//If we failed to allocate the virtual region, error out
 	if(!vmem_region)
-		return -ENOMEM;
+		return vaddr ? -EEXIST : -ENOMEM;
 
 	vmem_region->is_shm = true;
 	vmem_region->shm_id = id;
@@ -681,10 +703,15 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 	pmem_region->shm_ref();
 	_used_pmem += pmem_region->size;
 
+	if(!already_attached)
+		_attached_shm_regions.push_back(vmem_region);
+
 	return linked_region;
 }
 
 Result PageDirectory::detach_shared_region(int id) {
+	LOCK(_lock);
+
 	//Find the virtual region in question and if it doesn't exist, return ENOENT
 	MemoryRegion* vreg = _vmem_map.find_shared_region(id);
 	if(!vreg)
@@ -698,6 +725,14 @@ Result PageDirectory::detach_shared_region(int id) {
 	vreg->is_shm = false;
 	vreg->shm_id = 0;
 	_vmem_map.free_region(vreg);
+
+	//Remove the region from the attached shm regions list
+	for(auto i = 0; i < _attached_shm_regions.size(); i++) {
+		if(_attached_shm_regions[i]->is_shm && _attached_shm_regions[i]->shm_id == id) {
+			_attached_shm_regions.erase(i);
+			break;
+		}
+	}
 
 	return SUCCESS;
 }

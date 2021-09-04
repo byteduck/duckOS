@@ -24,6 +24,7 @@
 #include "MemoryMap.h"
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/Result.hpp>
+#include <kernel/kstd/vector.hpp>
 
 class PageTable;
 class LinkedMemoryRegion;
@@ -392,7 +393,8 @@ private:
 	size_t _used_pmem = 0;
 	//A lock used to prevent race conditions.
 	SpinLock _lock;
-
+	//A list of attached shared memory region ids.
+	kstd::vector<MemoryRegion*> _attached_shm_regions;
 };
 
 #endif //DUCKOS_PAGEDIRECTORY_H
