@@ -25,6 +25,7 @@
 #include <cstdio>
 #include "libgraphics/geometry.h"
 #include "Window.h"
+#include <libgraphics/Image.h>
 #include <sys/input.h>
 #include <libpond/Cursor.h>
 
@@ -41,14 +42,14 @@ public:
 
 private:
 	int mouse_fd;
-	Image* cursor_normal = nullptr;
-	Image* cursor_resize_v = nullptr;
-	Image* cursor_resize_h = nullptr;
-	Image* cursor_resize_dr = nullptr;
-	Image* cursor_resize_dl = nullptr;
+	Gfx::Image* cursor_normal = nullptr;
+	Gfx::Image* cursor_resize_v = nullptr;
+	Gfx::Image* cursor_resize_h = nullptr;
+	Gfx::Image* cursor_resize_dr = nullptr;
+	Gfx::Image* cursor_resize_dl = nullptr;
 	Pond::CursorType current_type;
 
-    void load_cursor(Image*& storage, const std::string& filename);
+    void load_cursor(Gfx::Image*& storage, const std::string& filename);
 };
 
 

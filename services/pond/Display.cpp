@@ -19,6 +19,8 @@
 
 #include "Display.h"
 #include "FontManager.h"
+#include <libgraphics/Image.h>
+#include <libgraphics/png.h>
 #include <libduck/KLog.h>
 #include <unistd.h>
 #include <cstdio>
@@ -26,8 +28,9 @@
 #include <kernel/device/VGADevice.h>
 #include <cstring>
 #include <sys/input.h>
-#include <libgraphics/png.h>
 #include <libgraphics/memory.h>
+
+using namespace Gfx;
 
 Display* Display::_inst = nullptr;
 
@@ -78,7 +81,7 @@ Rect Display::dimensions() {
 	return _dimensions;
 }
 
-Image Display::framebuffer() {
+Framebuffer& Display::framebuffer() {
 	return _framebuffer;
 }
 
@@ -165,7 +168,7 @@ void Display::repaint() {
         return;
     gettimeofday(&paint_time, NULL);
 
-	auto fb = _root_window->framebuffer();
+	auto& fb = _root_window->framebuffer();
 
 	//Combine areas that overlap
 	auto it = invalid_areas.begin();

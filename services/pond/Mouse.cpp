@@ -20,7 +20,10 @@
 #include <unistd.h>
 #include "Mouse.h"
 #include "Display.h"
+#include <libgraphics/Image.h>
 #include <libgraphics/png.h>
+
+using namespace Gfx;
 
 Mouse::Mouse(Window* parent): Window(parent, {0, 0, 1, 1}, false) {
 	display()->set_mouse_window(this);
@@ -65,7 +68,7 @@ bool Mouse::update() {
 
 void Mouse::set_cursor(Pond::CursorType cursor) {
     current_type = cursor;
-    Image* cursor_image;
+    Framebuffer* cursor_image;
     switch(cursor) {
         case Pond::NORMAL:
             cursor_image = cursor_normal;

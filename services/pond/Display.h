@@ -25,6 +25,7 @@
 #include <libgraphics/geometry.h>
 #include "Window.h"
 #include "Mouse.h"
+#include <libgraphics/Image.h>
 #include <sys/time.h>
 
 #define WINDOW_RESIZE_BORDER 4
@@ -36,7 +37,7 @@ public:
 	Display();
 
 	Rect dimensions();
-	Image framebuffer();
+	Gfx::Framebuffer& framebuffer();
 	void clear(uint32_t color);
 
 	/**
@@ -143,8 +144,8 @@ private:
 	Rect calculate_resize_rect();
 
 	int framebuffer_fd = 0; ///The file descriptor of the framebuffer.
-	Image _framebuffer; ///The framebuffer image.
-	Image* _wallpaper = nullptr; ///The image representing the wallpaper.
+	Gfx::Framebuffer _framebuffer; ///The framebuffer framebuffer.
+	Gfx::Image* _wallpaper = nullptr; ///The framebuffer representing the wallpaper.
 	Rect _dimensions; ///The dimensions of the display.
 	std::vector<Rect> invalid_areas; ///The invalidated areas that need to be redrawn.
 	std::vector<Window*> _windows; ///The windows on the display.

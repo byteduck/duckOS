@@ -26,58 +26,65 @@
 #include <map>
 #include "graphics.h"
 
-struct FontGlyph {
-	uint32_t codepoint = -1;
+namespace Gfx {
+	struct FontGlyph {
+		uint32_t codepoint = -1;
 
-	int width = 0;
-	int height = 0;
-	int base_x = 0;
-	int base_y = 0;
+		int width = 0;
+		int height = 0;
+		int base_x = 0;
+		int base_y = 0;
 
-	struct {
-		int x = 0;
-		int y = 0;
-	} next_offset; ///< The offset of the next glyph from the origin of this glyph
+		struct {
+			int x = 0;
+			int y = 0;
+		} next_offset; ///< The offset of the next glyph from the origin of this glyph
 
-	uint32_t bitmap[]; ///< The actual pixels making up the glyph. Should be grayscale.
-};
+		uint32_t bitmap[]; ///< The actual pixels making up the glyph. Should be grayscale.
+	};
 
-struct FontData {
-	char MAGIC[6] = "@FONT";
-	char id[128];
-	int size;
-	typedef struct {
-		int width;
-		int height;
-		int base_x;
-		int base_y;
-	} BoundingBox;
-	BoundingBox bounding_box;
-	int num_glyphs;
-	FontGlyph glyphs[];
-};
+	struct FontData {
+		char MAGIC[6] = "@FONT";
+		char id[128];
+		int size;
+		typedef struct {
+			int width;
+			int height;
+			int base_x;
+			int base_y;
+		} BoundingBox;
+		BoundingBox bounding_box;
+		int num_glyphs;
+		FontGlyph glyphs[];
+	};
 
-class Font {
-public:
-	static Font* load_bdf_shm(const char* path);
-	static Font* load_from_shm(shm shm);
+	class Font {
+	public:
+		static Font* load_bdf_shm(const char* path);
 
-	int size();
-	int shm_id();
-	FontData::BoundingBox bounding_box();
-	FontGlyph* glyph(uint32_t codepoint);
+		static Font* load_from_shm(shm shm);
 
-	Dimensions size_of(const char* string);
+		int size();
 
-private:
-	explicit Font(shm fontshm);
-	~Font();
+		int shm_id();
 
-	bool uses_shm = false;
-	shm fontshm = {nullptr, 0, 0};
-	FontData* data;
-	std::map<uint32_t, FontGlyph*> glyphs;
-	FontGlyph* unknown_glyph;
-};
+		FontData::BoundingBox bounding_box();
+
+		FontGlyph* glyph(uint32_t codepoint);
+
+		Dimensions size_of(const char* string);
+
+	private:
+		explicit Font(shm fontshm);
+
+		~Font();
+
+		bool uses_shm = false;
+		shm fontshm = {nullptr, 0, 0};
+		FontData* data;
+		std::map<uint32_t, FontGlyph*> glyphs;
+		FontGlyph* unknown_glyph;
+	};
+}
 
 #endif //DUCKOS_LIBGRAPHICS_FONT_H

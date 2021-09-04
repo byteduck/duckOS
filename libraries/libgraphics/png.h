@@ -21,16 +21,22 @@
 #define DUCKOS_GRAPHICS_PNG_H
 
 #include "graphics.h"
+#include "Image.h"
+#include "deflate.h"
 
 #ifdef __cplusplus
 #include <cstdio>
+#include <cstring>
+
 #else
 #include <stdio.h>
 #endif
 
 __DECL_BEGIN
 
-Image* load_png(FILE* file);
+namespace Gfx {
+	Gfx::Image* load_png(FILE* file);
+}
 
 __DECL_END
 

@@ -18,9 +18,12 @@
 */
 
 #include "DrawContext.h"
+#include <libgraphics/Image.h>
 #include <libgraphics/font.h>
 
-UI::DrawContext::DrawContext(const Image& framebuffer): fb(&framebuffer) {
+using namespace Gfx;
+
+UI::DrawContext::DrawContext(const Framebuffer& framebuffer): fb(&framebuffer) {
 
 }
 
@@ -32,7 +35,7 @@ int UI::DrawContext::height() const {
 	return fb->height;
 }
 
-const Image& UI::DrawContext::framebuffer() const {
+const Framebuffer& UI::DrawContext::framebuffer() const {
 	return *fb;
 }
 
@@ -91,7 +94,7 @@ void UI::DrawContext::draw_glyph(Font* font, uint32_t codepoint, Point pos, Colo
 	fb->draw_glyph(font, codepoint, pos, color);
 }
 
-void UI::DrawContext::draw_image(const Image& img, Point pos) const {
+void UI::DrawContext::draw_image(const Framebuffer& img, Point pos) const {
 	fb->draw_image(img, pos);
 }
 
@@ -99,7 +102,7 @@ void UI::DrawContext::draw_image(const std::string& name, Point pos) const {
 	fb->draw_image(Theme::image(name), pos);
 }
 
-void UI::DrawContext::draw_image(const Image& img, Rect img_area, Point pos) const {
+void UI::DrawContext::draw_image(const Framebuffer& img, Rect img_area, Point pos) const {
 	fb->draw_image(img, img_area, pos);
 }
 
@@ -169,7 +172,7 @@ void UI::DrawContext::draw_button(Rect rect, const std::string& text, bool press
 	fb->draw_text(text.c_str(), text_pos, Theme::font(), Theme::button_text());
 }
 
-void UI::DrawContext::draw_button(Rect rect, const Image& img, bool pressed) const {
+void UI::DrawContext::draw_button(Rect rect, const Framebuffer& img, bool pressed) const {
 	draw_button_base(rect, pressed);
 	int padding = pressed ? 3 : 2;
 	fb->draw_image(img, rect.position() + Point{padding, padding});

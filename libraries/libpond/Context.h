@@ -76,7 +76,7 @@ namespace Pond {
 		 * @param font The name of the font to get.
 		 * @return A pointer to the font, or NULL if the font isn't loaded by pond.
 		 */
-		Font* get_font(const char* font);
+		Gfx::Font* get_font(const char* font);
 
 		/**
 		 * Returns the file descriptor for the socket used to listen for events. This can be used to wait on
@@ -110,7 +110,7 @@ namespace Pond {
 
 		std::shared_ptr<River::Endpoint> endpoint;
 		std::map<int, Window*> windows;
-		std::map<std::string, Font*> fonts;
+		std::map<std::string, Gfx::Font*> fonts;
 		std::deque<Event> events;
 
 #define PONDFUNC(name, ret_t, data_t) River::Function<ret_t, data_t> __river_##name = {#name}

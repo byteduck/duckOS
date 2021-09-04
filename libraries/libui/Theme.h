@@ -23,6 +23,7 @@
 #include <map>
 #include <string>
 #include <libgraphics/graphics.h>
+#include <libgraphics/Image.h>
 
 #define LIBUI_THEME_DEFAULT "default"
 #define LIBUI_THEME_LOCATION "/usr/share/themes/"
@@ -33,25 +34,25 @@ namespace UI {
 		///NON-STATIC
 		~Theme();
 
-		Image& get_image(const std::string& key);
+		Gfx::Image& get_image(const std::string& key);
 		int get_value(const std::string& key);
 		Color get_color(const std::string& key);
 		std::string get_string(const std::string& key);
-		Font* get_font();
-		Font* get_font_mono();
+		Gfx::Font* get_font();
+		Gfx::Font* get_font_mono();
 
 		///STATIC
 		static Theme* get_theme(const std::string& name);
 		static Theme* current();
 
-		static Image& image(const std::string& key);
+		static Gfx::Image& image(const std::string& key);
 		static int value(const std::string& key);
 		static Color color(const std::string& key);
 		static std::string string(const std::string& key);
 
 		//Standard fonts
-		static Font* font();
-		static Font* font_mono();
+		static Gfx::Font* font();
+		static Gfx::Font* font_mono();
 
 		//Standard colors
 		static Color bg();
@@ -81,14 +82,14 @@ namespace UI {
 		bool load();
 
 		std::string name;
-		std::map<std::string, Image*> images;
+		std::map<std::string, Gfx::Image*> images;
 		std::map<std::string, Color> colors;
 		std::map<std::string, int> values;
 		std::map<std::string, std::string> strings;
 
 		std::string _font = "gohu-11";
 		std::string _font_mono = "gohu-11";
-		Image* blank_image = new Image();
+		Gfx::Image* blank_image = new Gfx::Image(1, 1);
 	};
 }
 

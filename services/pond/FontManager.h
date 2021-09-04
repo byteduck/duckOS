@@ -29,12 +29,12 @@ public:
 	FontManager();
 	static FontManager& inst();
 
-	Font* get_font(const std::string& name);
+	Gfx::Font* get_font(const std::string& name);
 
 private:
 	bool load_font(const char* name, const char* path);
 
-	std::map<std::string, Font*> fonts;
+	std::map<std::string, Gfx::Font*> fonts;
 };
 
 

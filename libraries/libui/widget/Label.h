@@ -35,8 +35,8 @@ namespace UI {
 		TextAlignment vertical_alignment();
         TextAlignment horizontal_alignment();
 		void set_alignment(TextAlignment vertical, TextAlignment horizontal);
-		Font* font();
-		void set_font(Font* font);
+		Gfx::Font* font();
+		void set_font(Gfx::Font* font);
 		Dimensions padding();
 		void set_padding(const Dimensions& padding);
 
@@ -51,7 +51,7 @@ namespace UI {
 		Color _color;
 		TextAlignment _v_alignment = CENTER;
 		TextAlignment _h_alignment = CENTER;
-		Font* _font;
+		Gfx::Font* _font;
 		Dimensions _padding;
 	};
 }

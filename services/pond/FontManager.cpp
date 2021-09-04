@@ -19,6 +19,8 @@
 
 #include "FontManager.h"
 
+using namespace Gfx;
+
 FontManager* instance;
 
 FontManager::FontManager() {

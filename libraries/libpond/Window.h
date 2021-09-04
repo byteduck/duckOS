@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <libgraphics/graphics.h>
 #include "Context.h"
+#include <libgraphics/Image.h>
 #include <sys/mem.h>
 
 #define PWINDOW_HINT_GLOBALMOUSE 0x1
@@ -157,7 +158,7 @@ namespace Pond {
 		 * Gets the window's framebuffer.
 		 * @return The framebuffer of the window.
 		 */
-		Image framebuffer() const;
+		Gfx::Framebuffer framebuffer() const;
 
 		/**
 		 * Gets the current mouse buttons of the window.
@@ -182,7 +183,7 @@ namespace Pond {
 		Point _mouse_pos = {-1, -1}; ///< The position of the mouse inside the window.
 		unsigned int _mouse_buttons = 0; ///< A bitfield containing the last-known pressed mouse buttons inside the window.
 		bool _hidden = true; ///< Whether or not the window is hidden.
-		Image _framebuffer; ///< The window's framebuffer.
+		Gfx::Framebuffer _framebuffer; ///< The window's framebuffer.
 		Context* _context = nullptr; ///< The context associated with the window.
 	};
 }

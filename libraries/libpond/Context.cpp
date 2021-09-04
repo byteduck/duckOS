@@ -27,6 +27,7 @@
 
 using namespace Pond;
 using namespace River;
+using namespace Gfx;
 
 #define MSG_HANDLER(name, pkt_type, event_type) \
 auto __msgres_##name = endpoint->set_message_handler<pkt_type>(#name, [&] (pkt_type pkt) { \

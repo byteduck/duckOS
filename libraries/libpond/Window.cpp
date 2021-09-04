@@ -19,9 +19,10 @@
 
 #include "Window.h"
 #include "Context.h"
-#include <cstdio>
+#include <libgraphics/Image.h>
 
 using namespace Pond;
+using namespace Gfx;
 
 Window::Window(int id, Rect rect, struct shm shm, Context* ctx): _id(id), _rect(rect), _context(ctx), _shm_id(shm.id) {
 	_framebuffer = {(uint32_t*) shm.ptr, rect.width, rect.height};
@@ -110,7 +111,7 @@ int Window::id() const {
 	return _id;
 }
 
-Image Window::framebuffer() const {
+Framebuffer Window::framebuffer() const {
 	return _framebuffer;
 }
 

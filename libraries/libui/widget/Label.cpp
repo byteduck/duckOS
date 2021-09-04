@@ -21,6 +21,7 @@
 #include <libgraphics/font.h>
 
 using namespace UI;
+using namespace Gfx;
 
 Label::Label(const std::string& label): _label(label) {
 	_color = Theme::fg();

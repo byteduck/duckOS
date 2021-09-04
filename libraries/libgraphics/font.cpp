@@ -24,6 +24,8 @@
 #include <sys/mem.h>
 #include <memory>
 
+using namespace Gfx;
+
 Font* Font::load_bdf_shm(const char* path) {
 	FILE* file = fopen(path, "r");
 	if(!file) {

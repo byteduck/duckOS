@@ -48,7 +48,7 @@ public:
 	void emit(const uint8_t* data, size_t size);
 
 private:
-	Font* font = nullptr;
+	Gfx::Font* font = nullptr;
 	Term::Terminal* term = nullptr;
 	int pty_fd = -1;
 	pid_t proc_pid = -1;

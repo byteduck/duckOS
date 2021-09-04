@@ -24,6 +24,7 @@
 #include <libgraphics/geometry.h>
 #include <libgraphics/graphics.h>
 #include "Client.h"
+#include <libgraphics/Image.h>
 #include <sys/mem.h>
 #include <sys/input.h>
 
@@ -52,7 +53,7 @@ public:
 	Client* client() const;
 	void set_client(Client* client);
 	int id() const;
-	Image framebuffer() const;
+	const Gfx::Framebuffer& framebuffer() const;
 	Display* display() const;
 
 	/**
@@ -227,7 +228,7 @@ private:
 	void alloc_framebuffer();
 	void recalculate_rects();
 
-	Image _framebuffer = {nullptr, 0, 0};
+	Gfx::Framebuffer _framebuffer = {nullptr, 0, 0};
 	shm _framebuffer_shm;
 	Rect _rect;
 	Rect _absolute_rect;

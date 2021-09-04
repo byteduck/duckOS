@@ -105,7 +105,7 @@ namespace Pond {
 
 	struct FontResponseEvent {
 		int type; ///< Equal to PEVENT_FONT_RESPONSE
-		Font* font;
+		Gfx::Font* font;
 	};
 
 	union Event {

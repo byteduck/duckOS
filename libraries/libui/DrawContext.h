@@ -21,6 +21,7 @@
 #define DUCKOS_LIBUI_DRAWCONTEXT_H
 
 #include "Theme.h"
+#include <libgraphics/Image.h>
 #include <libgraphics/graphics.h>
 
 namespace UI {
@@ -30,24 +31,24 @@ namespace UI {
 
 	class DrawContext {
 	public:
-		DrawContext(const Image& framebuffer);
+		DrawContext(const Gfx::Framebuffer& framebuffer);
 
 		///Properties
 		int width() const;
 		int height() const;
-		const Image& framebuffer() const;
+		const Gfx::Framebuffer& framebuffer() const;
 
 		///Drawing
 		void fill(Rect rect, Color color) const;
 		void fill_gradient_h(Rect rect, Color color_a, Color color_b) const;
 
-		void draw_text(const char* str, Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color) const;
-		void draw_text(const char* str, Point pos, Font* font, Color color) const;
+		void draw_text(const char* str, Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Color color) const;
+		void draw_text(const char* str, Point pos, Gfx::Font* font, Color color) const;
 		void draw_text(const char* str, Point pos, Color color) const;
-		void draw_glyph(Font* font, uint32_t codepoint, Point pos, Color color) const;
-		void draw_image(const Image& img, Point pos) const;
+		void draw_glyph(Gfx::Font* font, uint32_t codepoint, Point pos, Color color) const;
+		void draw_image(const Gfx::Framebuffer& img, Point pos) const;
 		void draw_image(const std::string& name, Point pos) const;
-		void draw_image(const Image& img, Rect img_area, Point pos) const;
+		void draw_image(const Gfx::Framebuffer& img, Rect img_area, Point pos) const;
 		void draw_image(const std::string& name, Rect img_area, Point pos) const;
 
 		void draw_inset_rect(Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const;
@@ -60,14 +61,14 @@ namespace UI {
 
 		void draw_button_base(Rect button, bool pressed) const;
 		void draw_button(Rect button, const std::string& text, bool pressed) const;
-		void draw_button(Rect button, const Image& img, bool pressed) const;
+		void draw_button(Rect button, const Gfx::Framebuffer& img, bool pressed) const;
 
 		void draw_vertical_scrollbar(Rect area, Rect handle_area, bool enabled) const;
 
 		void draw_progressbar(Rect area, double progress) const;
 
 	private:
-		const Image* fb;
+		const Gfx::Framebuffer* fb;
 	};
 }
 

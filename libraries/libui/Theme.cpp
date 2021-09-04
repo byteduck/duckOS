@@ -21,8 +21,10 @@
 #include <libgraphics/png.h>
 #include <string.h>
 #include "libui.h"
+#include <libgraphics/Image.h>
 
 using namespace UI;
+using namespace Gfx;
 
 std::map<std::string, Theme*> Theme::themes;
 Theme* Theme::_current;

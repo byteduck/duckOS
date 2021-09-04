@@ -22,7 +22,7 @@
 
 #include <sys/types.h>
 #include "geometry.h"
-#include "Image.h"
+#include "Framebuffer.h"
 
 __DECL_BEGIN
 

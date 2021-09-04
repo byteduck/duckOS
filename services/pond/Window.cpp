@@ -20,9 +20,12 @@
 #include "Window.h"
 #include <cstdio>
 #include "Display.h"
+#include <libgraphics/Image.h>
 #include <libduck/KLog.h>
 #include <memory.h>
 #include <libpond/Window.h>
+
+using namespace Gfx;
 
 int Window::current_id = 0;
 
@@ -98,7 +101,7 @@ int Window::id() const {
 	return _id;
 }
 
-Image Window::framebuffer() const {
+const Framebuffer& Window::framebuffer() const {
 	return _framebuffer;
 }
 
