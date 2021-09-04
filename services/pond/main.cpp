@@ -49,7 +49,7 @@ int main(int argc, char** argv, char** envp) {
 	if(!fork()) {
 		char* argv[] = {NULL};
 		char* envp[] = {NULL};
-		execve("/bin/terminal", argv, envp);
+		execve("/bin/sandbar", argv, envp);
 		exit(-1);
 	}
 
