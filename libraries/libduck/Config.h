@@ -23,24 +23,25 @@
 #include <string>
 #include <map>
 #include <fstream>
+#include "Result.hpp"
 
 namespace Duck {
-	class ConfigFile {
+	class Config {
 	public:
-		explicit ConfigFile(const std::string& filename);
-		~ConfigFile();
-
 		std::map<std::string, std::string>& operator[](const std::string& name);
 		std::map<std::string, std::string>& section(const std::string& name);
 		std::map<std::string, std::string>& defaults();
-
 		bool has_section(const std::string& name);
 
-		bool read();
-		void close();
+		static ResultRet<Config> read_from(const std::string& filename);
+		static ResultRet<Config> read_from(std::istream& stream);
+
 	private:
-			std::fstream _file;
-			std::map<std::string, std::map<std::string, std::string>> _values;
+		Config() = default;
+
+		static Result read_from(std::istream& stream, Config& config);
+
+		std::map<std::string, std::map<std::string, std::string>> _values;
 	};
 }
 

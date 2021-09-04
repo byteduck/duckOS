@@ -19,31 +19,49 @@
 
 #include <cstring>
 #include <iostream>
-#include "ConfigFile.h"
+#include "Config.h"
 #include <libduck/StringUtils.h>
 
 using namespace Duck;
 
-ConfigFile::ConfigFile(const std::string& filename) {
-	try {
-		_file.open(filename, std::ios::in);
-	} catch(const std::ifstream::failure& e) {
-		fprintf(stderr, "ConfigFile(%s) failed to open: %s\n", filename.c_str(), e.what());
-	}
+std::map<std::string, std::string>& Config::operator[](const std::string& name) {
+	return _values[name];
 }
 
-ConfigFile::~ConfigFile() {
-	if(_file.is_open())
-		_file.close();
+std::map<std::string, std::string>& Config::section(const std::string& name) {
+	return _values[name];
 }
 
-bool ConfigFile::read() {
-	if(!_file.is_open())
-		return false;
+bool Config::has_section(const std::string& name) {
+	return _values.find(name) != _values.end();
+}
+
+std::map<std::string, std::string>& Config::defaults() {
+	return _values[""];
+}
+
+ResultRet<Config> Config::read_from(const std::string& filename) {
+	std::ifstream file(filename);
+	if(file.fail())
+		return Result(Result::FAILURE);
+	return read_from(file);
+}
+
+ResultRet<Config> Config::read_from(std::istream& stream) {
+	Config ret;
+	auto res = read_from(stream, ret);
+	if(res.is_error())
+		return res;
+	return ret;
+}
+
+Result Config::read_from(std::istream& stream, Config& config) {
+	if(stream.fail())
+		return Result::FAILURE;
 
 	std::string curr_header = "";
 	std::string line;
-	while(getline(_file, line)) {
+	while(std::getline(stream, line)) {
 		trim(line);
 		if(line[0] == '[' && line[line.length() - 1] == ']') {
 			curr_header = line.substr(1, line.length() - 2);
@@ -61,32 +79,10 @@ bool ConfigFile::read() {
 			if(val[0] == '"' && val[val.length() - 1] == '"')
 				val = val.substr(1, val.length() - 2);
 
-			_values[curr_header][key] = val;
+			config._values[curr_header][key] = val;
 		}
 	}
 
-	_file.close();
-	return true;
-}
-
-void ConfigFile::close() {
-	if(_file.is_open())
-		return _file.close();
-}
-
-std::map<std::string, std::string>& ConfigFile::operator[](const std::string& name) {
-	return _values[name];
-}
-
-std::map<std::string, std::string>& ConfigFile::section(const std::string& name) {
-	return _values[name];
-}
-
-bool ConfigFile::has_section(const std::string& name) {
-	return _values.find(name) != _values.end();
-}
-
-std::map<std::string, std::string>& ConfigFile::defaults() {
-	return _values[""];
+	return Result::SUCCESS;
 }
 

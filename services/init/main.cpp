@@ -5,7 +5,7 @@
 #include <cerrno>
 #include <cstring>
 #include <cstdlib>
-#include <libduck/ConfigFile.h>
+#include <libduck/Config.h>
 #include <sstream>
 #include <vector>
 
@@ -40,11 +40,12 @@ int main(int argc, char** argv, char** envp) {
 	printf("[init] Welcome to duckOS!\n");
 
 	//Read config file
-	auto cfg = Duck::ConfigFile("/etc/init.conf");
-	if(!cfg.read()) {
+	auto cfg_res = Duck::Config::read_from("/etc/init.conf");
+	if(cfg_res.is_error()) {
 		fprintf(stderr, "[init] Failed to read /etc/init.conf: %s\n", strerror(errno));
 		exit(errno);
 	}
+	auto& cfg = cfg_res.value();
 
 	std::string exec = cfg["init"]["exec"];
 	std::stringstream exec_stream(exec);

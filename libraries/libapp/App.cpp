@@ -19,14 +19,18 @@
 
 #include "App.h"
 #include <libgraphics/png.h>
-#include <libduck/ConfigFile.h>
+#include <libduck/Config.h>
 #include <filesystem>
 
 using namespace App;
 
 ResultRet<Info> Info::from_config_file(const std::string& config_file) {
-	Duck::ConfigFile cfg(config_file);
-	if(cfg.read() && cfg.has_section("app")) {
+	auto config_res = Duck::Config::read_from(config_file);
+	if(config_res.is_error())
+		return config_res.result();
+	auto& cfg = config_res.value();
+
+	if(cfg.has_section("app")) {
 		auto& app_config = cfg["app"];
 		auto has_name = app_config.find("name") != app_config.end();
 		auto has_exec = app_config.find("exec") != app_config.end();
