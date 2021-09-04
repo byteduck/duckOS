@@ -24,16 +24,31 @@
 
 using namespace UI;
 
-Button::Button(const std::string& label): _label(label) {
+Button::Button(std::string label): _label(std::move(label)), _is_image_button(false) {
 
 }
 
-std::string Button::label() {
+Button::Button(Gfx::Image image): _image(std::move(image)), _is_image_button(true) {
+
+}
+
+const std::string& Button::label() {
 	return _label;
 }
 
-void Button::set_label(const std::string& new_label) {
-	_label = new_label;
+void Button::set_label(std::string new_label) {
+	_is_image_button = false;
+	_label = std::move(new_label);
+	repaint();
+}
+
+const Gfx::Image& Button::image() {
+	return _image;
+}
+
+void Button::set_image(Gfx::Image new_image) {
+	_is_image_button = true;
+	_image = std::move(new_image);
 	repaint();
 }
 
@@ -65,13 +80,24 @@ void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 }
 
 Dimensions Button::preferred_size() {
-	auto dims =  Dimensions { Theme::font()->size_of(_label.c_str()).width, Theme::font()->bounding_box().height };
-	int padding = Theme::button_padding() * 2;
-	dims.width += padding;
-	dims.height += padding;
-	return dims;
+	if(_is_image_button) {
+		auto dims = Dimensions {_image.width, _image.height};
+		int padding = 4;
+		dims.width += padding;
+		dims.height += padding;
+		return dims;
+	} else {
+		auto dims = Dimensions{Theme::font()->size_of(_label.c_str()).width, Theme::font()->bounding_box().height};
+		int padding = Theme::button_padding() * 2;
+		dims.width += padding;
+		dims.height += padding;
+		return dims;
+	}
 }
 
 void Button::do_repaint(const DrawContext& ctx) {
-	ctx.draw_button({0, 0, ctx.width(), ctx.height()}, _label, _pressed);
+	if(_is_image_button)
+		ctx.draw_button({0, 0, ctx.width(), ctx.height()}, _image, _pressed);
+	else
+		ctx.draw_button({0, 0, ctx.width(), ctx.height()}, _label, _pressed);
 }

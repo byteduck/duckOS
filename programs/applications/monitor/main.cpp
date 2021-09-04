@@ -124,6 +124,7 @@ int main(int argc, char** argv, char** envp) {
 
 	//Init libUI
 	UI::init(argv, envp);
+	UI::set_app_name("monitor");
 
 	//Make window
 	auto* window = UI::Window::create();

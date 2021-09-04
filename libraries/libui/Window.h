@@ -27,7 +27,7 @@
 #include <functional>
 #include <libpond/Event.h>
 
-#define UI_TITLEBAR_HEIGHT 16
+#define UI_TITLEBAR_HEIGHT 20
 #define UI_WINDOW_BORDER_SIZE 2
 #define UI_WINDOW_PADDING 2
 

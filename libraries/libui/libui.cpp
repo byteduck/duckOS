@@ -32,6 +32,7 @@ std::map<int, Window*> windows;
 int num_windows = 0;
 std::map<int, Widget*> widgets;
 bool should_exit = false;
+App::Info _app_info;
 
 void handle_pond_events();
 
@@ -234,6 +235,17 @@ void UI::update(int timeout) {
 
 bool UI::ready_to_exit() {
 	return should_exit;
+}
+
+bool UI::set_app_name(const std::string& app_name) {
+	auto app_res = App::Info::from_app_name(app_name);
+	if(!app_res.is_error())
+		_app_info = app_res.value();
+	return !app_res.is_error();
+}
+
+App::Info& UI::app_info() {
+	return _app_info;
 }
 
 void UI::add_poll(const Poll& poll) {

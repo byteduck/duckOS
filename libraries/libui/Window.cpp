@@ -122,9 +122,20 @@ void Window::repaint() {
 				UI_TITLEBAR_HEIGHT
 		};
 
+		//Title bar background
 		ctx.fill_gradient_h(titlebar_rect, Theme::window_titlebar_a(), Theme::window_titlebar_b());
+
+		//Title bar icon
+		int title_xpos = 4;
+		if(UI::app_info().exists()) {
+			auto& icon = UI::app_info().icon();
+			ctx.draw_image(icon, titlebar_rect.position() + Point {2, titlebar_rect.height / 2 - icon.height / 2});
+			title_xpos += 2 + icon.width;
+		}
+
+		//Title bar text
 		int font_height = Theme::font()->bounding_box().height;
-		Point title_pos = titlebar_rect.position() + Point{4, titlebar_rect.height / 2 - font_height / 2};
+		Point title_pos = titlebar_rect.position() + Point{title_xpos, titlebar_rect.height / 2 - font_height / 2};
 		ctx.draw_text(_title.c_str(), title_pos, Theme::window_title());
 
 		//Buttons

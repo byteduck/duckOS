@@ -28,6 +28,7 @@
 #include "Poll.h"
 #include "Theme.h"
 #include "DrawContext.h"
+#include <libapp/App.h>
 
 namespace UI {
 	extern Pond::Context* pond_context;
@@ -36,6 +37,9 @@ namespace UI {
 	void run();
 	void update(int timeout);
 	bool ready_to_exit();
+
+	bool set_app_name(const std::string& app_name);
+	App::Info& app_info();
 
 	void add_poll(const Poll& poll);
 

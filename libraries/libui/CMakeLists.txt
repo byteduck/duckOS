@@ -16,4 +16,4 @@ SET(SOURCES
         widget/layout/FlexLayout.cpp
 )
 MAKE_LIBRARY(libui)
-TARGET_LINK_LIBRARIES(libui libpond)
+TARGET_LINK_LIBRARIES(libui libpond libapp)

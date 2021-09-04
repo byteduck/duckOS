@@ -174,8 +174,7 @@ void UI::DrawContext::draw_button(Rect rect, const std::string& text, bool press
 
 void UI::DrawContext::draw_button(Rect rect, const Framebuffer& img, bool pressed) const {
 	draw_button_base(rect, pressed);
-	int padding = pressed ? 3 : 2;
-	fb->draw_image(img, rect.position() + Point{padding, padding});
+	fb->draw_image(img, rect.position() + Point {rect.dimensions().width / 2, rect.dimensions().height / 2} - Point {img.width / 2, img.height / 2});
 }
 
 void UI::DrawContext::draw_vertical_scrollbar(Rect area, Rect handle_area, bool enabled) const {

@@ -27,11 +27,15 @@
 namespace UI {
 	class Button: public Widget {
 	public:
-		Button(const std::string& label);
+		Button(std::string label);
+		Button(Gfx::Image image);
 
 		//Button
-		std::string label();
-		void set_label(const std::string& new_label);
+		const std::string& label();
+		void set_label(std::string new_label);
+		const Gfx::Image& image();
+		void set_image(Gfx::Image new_image);
+
 
 		//Widget
 		virtual bool on_mouse_button(Pond::MouseButtonEvent evt) override;
@@ -45,7 +49,9 @@ namespace UI {
 		void do_repaint(const DrawContext& ctx) override;
 
 		std::string _label;
+		Gfx::Image _image;
 		bool _pressed = false;
+		bool _is_image_button = false;
 	};
 }
 
