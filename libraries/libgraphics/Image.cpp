@@ -44,3 +44,26 @@ Gfx::Image::~Image() {
 	if(data)
 		delete data;
 }
+
+Image& Image::operator=(const Image& other) {
+	if(data)
+		delete data;
+	width = other.width;
+	height = other.height;
+	if(other.data) {
+		data = new uint32_t[width * height];
+		memcpy_uint32(data, other.data, width * height);
+	} else {
+		data = nullptr;
+	}
+	return *this;
+}
+
+Image& Image::operator=(Image&& other) noexcept {
+	if(data)
+		delete data;
+	width = other.width;
+	height = other.height;
+	data = other.data;
+	other.data = nullptr;
+}

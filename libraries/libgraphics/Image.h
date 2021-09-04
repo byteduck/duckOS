@@ -25,12 +25,15 @@
 namespace Gfx {
 	class Image: public Framebuffer {
 	public:
+		Image() = default;
 		Image(int width, int height);
 		Image(const Image& other);
 		Image(Image&& other) noexcept;
 		explicit Image(const Framebuffer& other);
 		~Image();
 
+		Image& operator=(const Image& other);
+		Image& operator=(Image&& other) noexcept;
 	};
 }
 
