@@ -140,6 +140,8 @@ Font* Context::get_font(const char* font) {
 	Event event = {PEVENT_FONT_RESPONSE};
 	handle_font_response(resp, event);
 
+	fonts[font] = event.font_response.font;
+
 	return event.font_response.font;
 }
 
