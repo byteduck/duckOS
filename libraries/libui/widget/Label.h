@@ -52,7 +52,7 @@ namespace UI {
 		TextAlignment _v_alignment = CENTER;
 		TextAlignment _h_alignment = CENTER;
 		Gfx::Font* _font;
-		Dimensions _padding;
+		Dimensions _padding = {0, 0};
 	};
 }
 
