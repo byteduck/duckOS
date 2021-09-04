@@ -1,2 +1,3 @@
-SET(SOURCES main.c)
+SET(SOURCES main.cpp)
 MAKE_PROGRAM(init)
+TARGET_LINK_LIBRARIES(init libduck)

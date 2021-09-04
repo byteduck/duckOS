@@ -1,10 +1,13 @@
-#include <signal.h>
-#include <stdio.h>
+#include <csignal>
+#include <cstdio>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <errno.h>
-#include <string.h>
-#include <stdlib.h>
+#include <cerrno>
+#include <cstring>
+#include <cstdlib>
+#include <libduck/ConfigFile.h>
+#include <sstream>
+#include <vector>
 
 /*
     This file is part of duckOS.
@@ -36,54 +39,39 @@ int main(int argc, char** argv, char** envp) {
 	setsid();
 	printf("[init] Welcome to duckOS!\n");
 
-	//Open the config file
-	FILE* config = fopen("/etc/init.conf", "r");
-	if(!config) {
-		printf("[init] Failed to open /etc/init.conf: %s\n", strerror(errno));
+	//Read config file
+	auto cfg = Duck::ConfigFile("/etc/init.conf");
+	if(!cfg.read()) {
+		fprintf(stderr, "[init] Failed to read /etc/init.conf: %s\n", strerror(errno));
 		exit(errno);
 	}
 
-	//Read the config
-	char* line = malloc(512);
-	char* exec = malloc(512);
-	while((line = fgets(line, 512, config))) {
-		//Trim beginning whitespace
-		while(*line == ' ' || *line == '\t') line++;
-
-		//Get key and value separated by =
-		char* key = strtok(line, "= \t");
-		char* value = strtok(NULL, "\n");
-		if(!value) continue;
-
-		//Parse the key/value
-		if(!strcmp(key, "exec"))
-			strcpy(exec, value);
-	}
-	free(line);
-	fclose(config);
+	std::string exec = cfg["init"]["exec"];
+	std::stringstream exec_stream(exec);
 
 	//Execute the program given by the exec key in the config
 	pid_t pid = fork();
 	if(pid == 0) {
-		//Split the arguments
-		int eargc = 0;
-		char* args[512];
-		char* arg = strtok(exec, " \t");
-		args[eargc++] = arg;
-		while((arg = strtok(NULL, " \t"))) {
-			args[eargc++] = arg;
-		}
-		args[eargc] = NULL;
+		//Split arguments from exec command
+		std::vector<std::string> args;
+		std::string arg;
+		while(std::getline(exec_stream, arg, ' '))
+			args.push_back(arg);
 
-		//Execute the
+		//Convert c++ string vector into cstring array
+		const char* c_args[args.size() + 1];
+		for(auto i = 0; i < args.size(); i++)
+			c_args[i] = args[i].c_str();
+		c_args[args.size()] = NULL;
+
 		char* env[] = {NULL};
-		execve(args[0], args, env);
 
-		printf("[init] Failed to execute %s: %s\n", exec, strerror(errno));
+		//Execute the command
+		execve(c_args[0], (char* const*) c_args, env);
+
+		printf("[init] Failed to execute %s: %s\n", exec.c_str(), strerror(errno));
 		exit(errno);
 	}
-
-	free(exec);
 
 	//Wait for all child processes
 	while(1) {
