@@ -25,9 +25,6 @@
 
 class Result {
 public:
-	static const int SUCCESS = 0;
-	static const int FAILURE = -1;
-
 	Result(int code): _code(code) {}
 
 	bool is_success() const {
@@ -41,6 +38,9 @@ public:
 	int code() const {
 		return _code;
 	}
+
+	static const Result SUCCESS;
+	static const Result FAILURE;
 
 private:
 	int _code;
