@@ -129,6 +129,16 @@ void Terminal::write_codepoint(uint32_t codepoint) {
 		case '\b':
 			backspace();
 			break;
+		case '\t': {
+			int next_mult = cursor_position.col + (8 - cursor_position.col % 8);
+			if(next_mult >= dimensions.cols) {
+				cursor_position.line++;
+				cursor_position.col = 0;
+			} else {
+				cursor_position.col = next_mult;
+			}
+			break;
+		}
 		case '\033':
 			escape_mode = true;
 			escape_status = Beginning;
