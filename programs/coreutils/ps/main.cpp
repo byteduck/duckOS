@@ -22,11 +22,11 @@
 int main(int argc, char** argv, char** envp) {
 	auto procs = Sys::Process::get_all();
 
-	printf("Name\tPID\tPPID\tState\n");
+	printf("PID\tPPID\tState\tName\n");
 
 	for(auto& proc_pair : procs) {
 		auto& proc = proc_pair.second;
-		printf("%s\t%d\t%d\t%s\n", proc.name().c_str(), proc.pid(), proc.ppid(), proc.state_name().c_str());
+		printf("%d\t%d\t%c\t%s\n", proc.pid(), proc.ppid(), proc.state_name()[0], proc.name().c_str());
 	}
 
 	return 0;
