@@ -161,6 +161,7 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 		switch(*p) {
 			case 'c': //Character
 				*buf++ = (char) va_arg(arg, int);
+				len++;
 				break;
 
 			case 'p': //Pointer address
