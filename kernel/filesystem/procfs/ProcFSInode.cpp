@@ -102,27 +102,27 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			char numbuf[12];
 			kstd::string str;
 
-			str += "Usable: ";
+			str += "[mem]\nusable = ";
 			itoa((int) Memory::get_usable_mem(), numbuf, 10);
 			str += numbuf;
 
-			str += "\nUsed: ";
+			str += "\nused = ";
 			itoa((int) Memory::get_used_mem(), numbuf, 10);
 			str += numbuf;
 
-			str += "\nReserved: ";
+			str += "\nreserved = ";
 			itoa((int) Memory::get_reserved_mem(), numbuf, 10);
 			str += numbuf;
 
-			str += "\nKernel Virt: ";
+			str += "\nkvirt = ";
 			itoa((int) Memory::get_kernel_vmem(), numbuf, 10);
 			str += numbuf;
 
-			str += "\nKernel Phys: ";
+			str += "\nkphys = ";
 			itoa((int) Memory::get_kernel_pmem(), numbuf, 10);
 			str += numbuf;
 
-			str += "\nKernel Heap: ";
+			str += "\nkheap = ";
 			itoa((int) Memory::get_kheap_pmem(), numbuf, 10);
 			str += numbuf;
 			str += "\n";
@@ -149,7 +149,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			char numbuf[4];
 			double percent_used = (1.00 - TimeManager::percent_idle()) * 100.0;
 
-			kstd::string str = "Utilization: ";
+			kstd::string str = "[cpu]\nutil = ";
 
 			itoa((int) percent_used, numbuf, 10);
 			str += numbuf;
@@ -167,7 +167,6 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 				num_decimals++;
 			}
 
-			str += "%\n";
 			if(start + length > str.length())
 				length = str.length() - start;
 			memcpy(buffer, str.c_str() + start, length);
@@ -182,37 +181,37 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			char numbuf[12];
 			kstd::string str;
 
-			str += "Name: ";
+			str += "[proc]\nname = ";
 			str += proc.value()->name();
 
-			str += "\nState: ";
+			str += "\nstate = ";
 			itoa(proc.value()->main_thread_state(), numbuf, 10);
 			str += numbuf;
-			str += " (";
-			str += PROC_STATE_NAMES[proc.value()->main_thread_state()];
-			str += ")";
 
-			str += "\nPid: ";
+			str += "\nstate_name = ";
+			str += PROC_STATE_NAMES[proc.value()->main_thread_state()];
+
+			str += "\npid = ";
 			itoa(proc.value()->pid(), numbuf, 10);
 			str += numbuf;
 
-			str += "\nPPid: ";
+			str += "\nppid = ";
 			itoa(proc.value()->ppid(), numbuf, 10);
 			str += numbuf;
 
-			str += "\nUid: ";
+			str += "\nuid = ";
 			itoa(proc.value()->user().euid, numbuf, 10);
 			str += numbuf;
 
-			str += "\nGid: ";
+			str += "\ngid = ";
 			itoa(proc.value()->user().egid, numbuf, 10);
 			str += numbuf;
 
-			str += "\nPMemUsed: ";
+			str += "\npmem = ";
 			itoa(proc.value()->page_directory()->used_pmem(), numbuf, 10);
 			str += numbuf;
 
-			str += "\nVMemUsed: ";
+			str += "\nvmem = ";
 			itoa(proc.value()->page_directory()->used_vmem(), numbuf, 10);
 			str += numbuf;
 			str += "\n";
