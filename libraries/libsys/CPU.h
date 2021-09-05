@@ -14,16 +14,23 @@
     You should have received a copy of the GNU General Public License
     along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
 
-    Copyright (c) Byteduck 2016-2020. All rights reserved.
+    Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_MAIN_H
-#define DUCKOS_MAIN_H
+#ifndef DUCKOS_LIBSYS_CPU_H
+#define DUCKOS_LIBSYS_CPU_H
 
-#include <string>
+#include <libduck/Result.hpp>
+#include <istream>
 
-void print_proc_info(const std::string& proc);
-void get_value(const std::string& line, const std::string& prefix, int& value);
-void get_value(const std::string& line, const std::string& prefix, std::string& value);
+namespace Sys::CPU {
+	class Info {
+	public:
+		double utilization;
+	};
 
-#endif //DUCKOS_MAIN_H
+	ResultRet<Info> get_info(std::istream& file);
+	ResultRet<Info> get_info();
+}
+
+#endif //DUCKOS_LIBSYS_CPU_H

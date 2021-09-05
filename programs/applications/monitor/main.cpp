@@ -23,46 +23,27 @@
 #include <libui/widget/layout/BoxLayout.h>
 #include <cstring>
 #include <sys/time.h>
-
-#define GiB 1073742000
-#define MiB 1048576
-#define KiB 1024
+#include <fstream>
+#include <libsys/Memory.h>
+#include <libsys/CPU.h>
 
 #define UPDATE_FREQ 250
+
+using namespace Sys;
 
 UI::ProgressBar* mem_bar;
 UI::ProgressBar* cpu_bar;
 UI::Label* mem_label;
 UI::Label* cpu_label;
 
-FILE* meminfo;
-FILE* cpuinfo;
+std::ifstream mem_stream;
+std::ifstream cpu_stream;
 
-int get_human_size(unsigned long bytes) {
-	if(bytes > GiB) {
-		return bytes / GiB;
-	} else if(bytes > MiB) {
-		return bytes / MiB;
-	} else if(bytes > KiB) {
-		return bytes / KiB;
-	} else return bytes;
-}
-
-const char* get_human_suffix(unsigned long bytes) {
-	if(bytes > GiB) {
-		return "GiB";
-	} else if(bytes > MiB) {
-		return "MiB";
-	} else if(bytes > KiB) {
-		return "KiB";
-	} else return "bytes";
-}
+CPU::Info cpu_info;
+Mem::Info mem_info;
 
 void update() {
 	static timeval last_update = {0, 0};
-	static char buf[1024];
-	static long usable, used;
-	static double utilization;
 
 	//See if it's time to update
 	timeval tv = {0, 0};
@@ -72,52 +53,33 @@ void update() {
 		return;
 	last_update = tv;
 
-	//Read meminfo
-	fseek(meminfo, 0, SEEK_SET);
-	fread(buf, 1, 1024, meminfo);
-	char* key = strtok(buf, ":");
-	do {
-		char* valuestr = strtok(NULL, "\n");
-		long value = strtol(valuestr, NULL, 0);
+	auto cpu_res = CPU::get_info(cpu_stream);
+	if(!cpu_res.is_error())
+		cpu_info = cpu_res.value();
 
-		if(!strcmp(key, "Usable"))
-			usable = value;
-		else if(!strcmp(key, "Used"))
-			used = value;
-	} while((key = strtok(NULL, ":")));
-
-	//Read cpuinfo
-	fseek(cpuinfo, 0, SEEK_SET);
-	fread(buf, 1, 1024, cpuinfo);
-	key = strtok(buf, ":");
-	do {
-		char* valuestr = strtok(NULL, "%\n");
-		double value = strtod(valuestr, NULL);
-
-		if(!strcmp(key, "Utilization"))
-			utilization = value;
-	} while((key = strtok(NULL, ":")));
+	auto mem_res = Mem::get_info(mem_stream);
+	if(!mem_res.is_error())
+		mem_info = mem_res.value();
 
 	//Update widgets
-	auto mem_percent = (double)((long double) used / (long double) usable);
-	mem_bar->set_progress(mem_percent);
-	std::string mem_string = "Memory: " + std::to_string(get_human_size(used)) + std::string(get_human_suffix(used)) + " / " + std::to_string(get_human_size(usable)) + std::string(get_human_suffix(usable)) + " used";
+	mem_bar->set_progress(mem_info.used_frac());
+	std::string mem_string = "Memory: " + mem_info.used.readable() + " / " + mem_info.usable.readable() + " used";
 	mem_label->set_label(mem_string);
 
-	cpu_bar->set_progress(utilization / 100.0);
-	cpu_label->set_label("CPU: " + std::to_string(utilization) + "%");
+	cpu_bar->set_progress(cpu_info.utilization / 100.0);
+	cpu_label->set_label("CPU: " + std::to_string(cpu_info.utilization) + "%");
 }
 
 int main(int argc, char** argv, char** envp) {
 	//Open meminfo and cpuinfo
-	meminfo = fopen("/proc/meminfo", "r");
-	if(!meminfo) {
+	mem_stream.open("/proc/meminfo");
+	if(mem_stream.fail()) {
 		perror("Failed to open meminfo");
 		return EXIT_FAILURE;
 	}
 
-	cpuinfo = fopen("/proc/cpuinfo", "r");
-	if(!cpuinfo) {
+	cpu_stream.open("/proc/cpuinfo");
+	if(cpu_stream.fail()) {
 		perror("Failed to open cpuinfo");
 		return EXIT_FAILURE;
 	}

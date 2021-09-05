@@ -1,2 +1,3 @@
 SET(SOURCES main.cpp)
 MAKE_PROGRAM(ps)
+TARGET_LINK_LIBRARIES(ps libsys)
