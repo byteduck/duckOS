@@ -37,12 +37,12 @@ ResultRet<Mem::Info> Mem::get_info(std::istream& file) {
 	auto& cfg = cfg_res.value().section("mem");
 
 	return Mem::Info {
-		std::stoul(cfg["usable"]),
-		std::stoul(cfg["used"]),
-		std::stoul(cfg["reserved"]),
-		std::stoul(cfg["kvirt"]),
-		std::stoul(cfg["kphys"]),
-		std::stoul(cfg["kheap"])
+		strtoul(cfg["usable"].c_str(), nullptr, 0),
+		strtoul(cfg["used"].c_str(), nullptr, 0),
+		strtoul(cfg["reserved"].c_str(), nullptr, 0),
+		strtoul(cfg["kvirt"].c_str(), nullptr, 0),
+		strtoul(cfg["kphys"].c_str(), nullptr, 0),
+		strtoul(cfg["kheap"].c_str(), nullptr, 0)
 	};
 }
 
