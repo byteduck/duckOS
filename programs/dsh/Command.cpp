@@ -21,6 +21,7 @@
 #include <utility>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <cstring>
 #include "Command.h"
 
 Command::Command(std::string command): cmd(std::move(command)) {
@@ -60,7 +61,7 @@ void Command::evaluate(pid_t pgid) {
 		}
 		c_args[args.size() + 1] = NULL;
 		execvp(cmd.c_str(), (char* const*) c_args);
-		perror("Could not execute");
+		fprintf(stderr, "Could not execute %s: %s\n", c_args[0], strerror(errno));
 		exit(errno);
 	}
 

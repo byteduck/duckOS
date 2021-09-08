@@ -41,7 +41,7 @@ int Shell::run() {
 		//Print the prompt if we're in a TTY (We don't want to do this if we're evaluating from a file)
 		if(is_tty) {
 			auto* color_code = result ? "31" : "39";
-			printf("\033[%sm[\033[39mdsh %s\033[%sm]# \033[39m", color_code, cwd, color_code);
+			printf("\033[%sm[\033[39mdsh \033[36m%s\033[%sm]# \033[39m", color_code, cwd, color_code);
 			fflush(stdout);
 		}
 
