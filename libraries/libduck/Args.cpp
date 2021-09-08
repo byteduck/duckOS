@@ -258,26 +258,26 @@ bool Args::parse_arg(void* storage, const std::string& arg, Args::DataType data_
 			case INT:
 			case LONG:
 				((std::vector<int>*) storage)->push_back(strtol(arg.c_str(), &endptr, 0));
-				break;;
+				break;
 			case LLONG:
 				((std::vector<long long>*) storage)->push_back(strtoll(arg.c_str(), &endptr, 0));
-				break;;
+				break;
 			case UINT:
 			case ULONG:
 				((std::vector<unsigned int>*) storage)->push_back(strtoul(arg.c_str(), &endptr, 0));
-				break;;
+				break;
 			case ULLONG:
 				((std::vector<unsigned long long>*) storage)->push_back(strtoull(arg.c_str(), &endptr, 0));
-				break;;
+				break;
 			case DOUBLE:
 				((std::vector<double>*) storage)->push_back(strtod(arg.c_str(), &endptr));
-				break;;
+				break;
 			case LDOUBLE:
 				((std::vector<long double>*) storage)->push_back(strtold(arg.c_str(), &endptr));
-				break;;
+				break;
 			case STRING:
 				((std::vector<std::string>*) storage)->push_back(arg);
-				break;;
+				break;
 		}
 	} else {
 		switch(data_type) {
@@ -286,26 +286,26 @@ bool Args::parse_arg(void* storage, const std::string& arg, Args::DataType data_
 			case INT:
 			case LONG:
 				*((int*) storage) = strtol(arg.c_str(), &endptr, 0);
-				break;;
+				break;
 			case LLONG:
 				*((long long*) storage) = strtoll(arg.c_str(), &endptr, 0);
-				break;;
+				break;
 			case UINT:
 			case ULONG:
 				*((unsigned int*) storage) = strtoul(arg.c_str(), &endptr, 0);
-				break;;
+				break;
 			case ULLONG:
 				*((unsigned long long*) storage) = strtoull(arg.c_str(), &endptr, 0);
-				break;;
+				break;
 			case DOUBLE:
 				*((double*) storage) = strtod(arg.c_str(), &endptr);
-				break;;
+				break;
 			case LDOUBLE:
 				*((long double*) storage) = strtold(arg.c_str(), &endptr);
-				break;;
+				break;
 			case STRING:
 				*((std::string*) storage) = arg;
-				break;;
+				return true;
 		}
 	}
 
