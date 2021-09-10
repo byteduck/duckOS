@@ -22,6 +22,7 @@
 #include "KernelMapper.h"
 #include <kernel/kstd/cstring.h>
 #include <kernel/memory/PageDirectory.h>
+#include <kernel/memory/MemoryManager.h>
 
 kstd::vector<KernelMapper::Symbol>* symbols = nullptr;
 size_t lowest_addr = 0xFFFFFFFF;
@@ -96,14 +97,12 @@ void KernelMapper::print_stacktrace() {
     //Start walking the stack
 	auto* stk = (uint32_t*) __builtin_frame_address(0);
 
-	//Get the page directory of the current process (if there is one)
-	PageDirectory* page_directory = nullptr;
-	if(TaskManager::current_process())
-	    page_directory = TaskManager::current_process()->page_directory();
-
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
+		if(stk[1] < HIGHER_HALF)
+			break;
+
 	    //Check if the stack pointer is mapped
-	    if((page_directory && !page_directory->is_mapped((size_t) stk)) || (!page_directory && !PageDirectory::k_is_mapped((size_t) stk))) {
+	    if(!PageDirectory::k_is_mapped((size_t) stk)) {
 	        printf("0x%x (Unmapped)\n", stk[1]);
             break;
         }

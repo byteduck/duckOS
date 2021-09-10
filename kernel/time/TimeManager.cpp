@@ -50,12 +50,10 @@ timespec TimeManager::now() {
 void TimeManager::tick() {
 	_ticks++;
 
-	if(_ticks % (_keeper->frequency() / 64) == 0) {
-		if(idle_ticks.size() == 100)
-			idle_ticks.pop_front();
-		idle_ticks.push_back(TaskManager::is_idle());
-		TaskManager::preempt();
-	}
+	if(idle_ticks.size() == 100)
+		idle_ticks.pop_front();
+	idle_ticks.push_back(TaskManager::is_idle());
+	TaskManager::preempt();
 
 	if(_ticks == _keeper->frequency()) {
 		_ticks = 0;

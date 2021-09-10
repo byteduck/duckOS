@@ -20,7 +20,7 @@
 #include "isr.h"
 #include "interrupt.h"
 #include <kernel/kstd/kstddef.h>
-#include <kernel/memory/Memory.h>
+#include <kernel/memory/MemoryManager.h>
 #include <kernel/kstd/kstdio.h>
 #include <kernel/interrupt/idt.h>
 #include <kernel/tasking/TaskManager.h>
@@ -85,7 +85,7 @@ namespace Interrupt {
 
 				case 14: //Page fault
 					if(!TaskManager::current_thread() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()) {
-						Memory::page_fault_handler(r);
+						MemoryManager::inst().page_fault_handler(r);
 					} else {
 						TaskManager::current_thread()->handle_pagefault(r);
 					}

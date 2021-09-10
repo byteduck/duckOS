@@ -23,11 +23,13 @@
 #include <kernel/KernelMapper.h>
 
 MemoryMap::MemoryMap(size_t page_size, MemoryRegion *first_region): _page_size(page_size), _first_region(first_region) {
-	MemoryRegion* cur = _first_region;
-	while(cur->next) {
-		cur = cur->next;
+	if(first_region) {
+		MemoryRegion* cur = _first_region;
+		while(cur->next) {
+			cur = cur->next;
+		}
+		_last_region = cur;
 	}
-	_last_region = cur;
 }
 
 MemoryMap::~MemoryMap() {
@@ -379,6 +381,7 @@ void MemoryMap::replace_entry(MemoryRegion *old_region, MemoryRegion *new_region
 }
 
 void MemoryMap::recalculate_memory_totals() {
+	lock.acquire();
 	bytes_used = 0;
 	bytes_reserved = 0;
 	MemoryRegion* cur = _first_region;
@@ -387,4 +390,5 @@ void MemoryMap::recalculate_memory_totals() {
 		bytes_reserved += cur->reserved ? cur->size : 0;
 		cur = cur->next;
 	}
+	lock.release();
 }

@@ -309,7 +309,7 @@ bool Process::has_pending_signals() {
 
 PageDirectory* Process::page_directory() {
 	if(is_kernel_mode())
-		return &Memory::kernel_page_directory;
+		return &MemoryManager::inst().kernel_page_directory;
 	else
 		return _page_directory.get();
 }
@@ -404,8 +404,7 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 	}
 
 	TaskManager::enabled() = true;
-	TaskManager::yield();
-	ASSERT(false);
+	ASSERT(TaskManager::yield());
 	return -1;
 }
 

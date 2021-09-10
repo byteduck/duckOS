@@ -19,7 +19,7 @@
 
 #include "kmain.h"
 #include <kernel/kstd/kstdio.h>
-#include <kernel/memory/Memory.h>
+#include <kernel/memory/MemoryManager.h>
 #include <kernel/memory/gdt.h>
 #include <kernel/device/Device.h>
 #include <kernel/time/TimeManager.h>
@@ -46,16 +46,38 @@
 
 uint8_t boot_disk;
 
+typedef void (*constructor_func)();
+extern constructor_func start_ctors[];
+extern constructor_func end_ctors[];
+
+//This method should be called with global constructors, so we'll assert that did_constructors == true after we do that
+bool did_constructors = false;
+__attribute__((constructor)) void constructor_test() {
+	did_constructors = true;
+}
+
+//Use a uint8_t array to store the memory manager, or else it would be re-initialized when global constructors are called
+uint8_t __mem_manager_storage[sizeof(MemoryManager)];
+
 int kmain(uint32_t mbootptr){
 	clearScreen();
 	printf("[kinit] Starting duckOS...\n");
+
+	new (__mem_manager_storage) MemoryManager;
+
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
 	Memory::load_gdt();
 	Interrupt::init();
-	Memory::setup_paging();
+	MemoryManager::inst().setup_paging();
+
+	//Call global constructors, now that memory management is initialized
+	for (constructor_func* ctor = start_ctors; ctor < end_ctors; ctor++)
+		(*ctor)();
+	ASSERT(did_constructors);
+
 	TimeManager::init();
 	Device::init();
-	CommandLine::init(mboot_header);
+	CommandLine cmd_line(mboot_header);
 
 	//Try setting up VGA
 	BochsVGADevice* bochs_vga = BochsVGADevice::create();
@@ -90,7 +112,7 @@ void kmain_late(){
 	auto disk = kstd::shared_ptr<PATADevice>(PATADevice::find(
 					PATADevice::PRIMARY,
 					PATADevice::MASTER,
-					CommandLine::has_option("use_pio") //Use PIO if the command line option is present
+					CommandLine::inst().has_option("use_pio") //Use PIO if the command line option is present
 				));
 	if(!disk) {
 		printf("[kinit] Couldn't find IDE controller! Hanging...\n");
@@ -207,7 +229,7 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 	//Parse memory map
 	if(header->flags & MULTIBOOT_INFO_MEM_MAP) {
 		auto* mmap_entry = (multiboot_mmap_entry*) (header->mmap_addr + HIGHER_HALF);
-		Memory::parse_mboot_memory_map(header, mmap_entry);
+		MemoryManager::inst().parse_mboot_memory_map(header, mmap_entry);
 	} else {
 		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have a memory map. Cannot boot.");
 	}

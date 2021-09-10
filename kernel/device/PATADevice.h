@@ -28,7 +28,7 @@
 #include "ATA.h"
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/memory/LinkedMemoryRegion.h>
-#include <kernel/memory/Memory.h>
+#include <kernel/memory/MemoryManager.h>
 
 #define ATA_MAX_SECTORS_AT_ONCE (PAGE_SIZE / 512)
 

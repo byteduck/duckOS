@@ -22,6 +22,11 @@
 
 #include <kernel/kstd/types.h>
 #include <kernel/kstd/shared_ptr.hpp>
+#include "MemoryRegion.h"
+#include "PageTable.h"
+#include "PageDirectory.h"
+#include "MemoryMap.h"
+#include <kernel/tasking/SpinLock.h>
 
 #define PAGING_4KiB 0
 #define PAGING_4MiB 1
@@ -61,10 +66,6 @@
  * often)
  */
 
-class PageTable;
-class PageDirectory;
-class MemoryMap;
-
 extern "C" long _KERNEL_TEXT;
 extern "C" long _KERNEL_TEXT_END;
 extern "C" long _KERNEL_DATA;
@@ -75,8 +76,26 @@ extern "C" long _PAGETABLES_END;
 struct multiboot_info;
 struct multiboot_mmap_entry;
 
-namespace Memory {
-	extern PageDirectory kernel_page_directory;
+class MemoryManager {
+public:
+	PageDirectory kernel_page_directory = {true};
+
+	PageDirectory::Entry kernel_page_directory_entries[1024] __attribute__((aligned(4096)));
+	PageTable::Entry kernel_early_page_table_entries1[1024] __attribute__((aligned(4096)));
+	PageTable::Entry kernel_early_page_table_entries2[1024] __attribute__((aligned(4096)));
+
+	MemoryMap _pmem_map = {0,nullptr};
+	MemoryRegion kernel_pmem_region = {0,0};
+	MemoryRegion multiboot_memory_regions[32];
+	MemoryRegion early_pmem_text_region_storage[2];
+	MemoryRegion early_pmem_data_region_storage[2];
+	uint8_t num_multiboot_memory_regions = 0;
+
+	SpinLock liballoc_spinlock;
+
+	MemoryManager();
+
+	static MemoryManager& inst();
 
 	/**
 	 * Sets up paging.
@@ -156,6 +175,9 @@ namespace Memory {
 	  * Parses the multiboot memory map.
 	  */
 	 void parse_mboot_memory_map(multiboot_info* header, multiboot_mmap_entry* first_entry);
+
+private:
+	static MemoryManager* _inst;
 };
 
 int liballoc_lock();

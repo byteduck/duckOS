@@ -131,6 +131,9 @@ void I8042::handle_irq() {
 		return;
 
 	uint8_t byte = IO::inb(I8042_BUFFER);
+	controller_command(I8042_CMD_ENABLE_PORT1);
+	controller_command(I8042_CMD_ENABLE_PORT2);
+
 	if((status & I8042_STATUS_WHICH_BUFFER) == I8042_KEYBOARD_BUFFER) {
 		if(!_keyboard) {
 			printf("[I8042] Received keyboard buffer data, but no keyboard device is present!\n");
@@ -144,9 +147,6 @@ void I8042::handle_irq() {
 		}
 		_mouse->handle_byte(byte);
 	}
-
-	controller_command(I8042_CMD_ENABLE_PORT1);
-	controller_command(I8042_CMD_ENABLE_PORT2);
 }
 
 void I8042::controller_command(uint8_t command) {

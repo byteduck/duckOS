@@ -136,8 +136,8 @@ pid_t TaskManager::get_new_pid(){
 void TaskManager::init(){
 	lock = SpinLock();
 
-	processes = new kstd::vector<Process*>();
 	thread_queue = new kstd::queue<kstd::shared_ptr<Thread>>();
+	processes = new kstd::vector<Process*>();
 
 	//Create kidle process
 	kidle_process = Process::create_kernel("kidle", kidle);
@@ -249,126 +249,125 @@ void TaskManager::do_yield_async() {
 
 
 void TaskManager::preempt(){
-	if(preempting) return;
 	if(!tasking_enabled) return;
-	preempting = true;
 
 	static bool prev_alive = false; // Whether or not there was an alive process last preemption
 	bool any_alive = false;
 
-	//Handle pending signals, cleanup dead processes, and release zombie processes' resources
-	for(int i = 0; i < processes->size(); i++) {
-		auto current = processes->at(i);
-		switch(current->state()) {
-			case Process::ALIVE: {
-				current->handle_pending_signal();
-				auto& threads = current->threads();
-				//Evaluate if any of the process's threads are alive or need unblocking
-				for (int j = 0; j < threads.size(); j++) {
-					auto thread = threads[j];
-					if(!thread)
-						continue;
-					if (thread->state() == Thread::BLOCKED) {
-						if (thread->should_unblock()) {
+	/*
+	 * Only update process/thread states if the thread we're switching from isn't already blocked, as doing so may
+	 * try to block the thread again (ie acquiring the liballoc lock)
+	 */
+	if(cur_thread->state() == Thread::ALIVE) {
+		LOCK(lock);
+		//Handle pending signals, cleanup dead processes, and release zombie processes' resources
+		for(int i = 0; i < processes->size(); i++) {
+			auto current = processes->at(i);
+			switch(current->state()) {
+				case Process::ALIVE: {
+					current->handle_pending_signal();
+					auto& threads = current->threads();
+					//Evaluate if any of the process's threads are alive or need unblocking
+					for(int j = 0; j < threads.size(); j++) {
+						auto thread = threads[j];
+						if(!thread)
+							continue;
+						if(thread->state() == Thread::BLOCKED) {
+							if(thread->should_unblock()) {
+								any_alive = true;
+								thread->unblock();
+								if(cur_thread != thread)
+									queue_thread(thread);
+							}
+						} else if(thread->state() == Thread::ALIVE) {
 							any_alive = true;
-							thread->unblock();
-							if(cur_thread != thread)
-								queue_thread(thread);
 						}
-					} else if (thread->state() == Thread::ALIVE) {
-						any_alive = true;
 					}
+					break;
 				}
-				break;
-			}
-			case Process::DEAD: {
-				if(cur_thread->process() != current) {
-					current->free_resources();
-					ProcFS::inst().proc_remove(current);
-					processes->erase(i);
-					delete current;
-					i--;
+				case Process::DEAD: {
+					if(cur_thread->process() != current) {
+						current->free_resources();
+						ProcFS::inst().proc_remove(current);
+						processes->erase(i);
+						delete current;
+						i--;
+					}
+					break;
 				}
-				break;
+				case Process::ZOMBIE:
+					break;
+				default:
+					PANIC("PROC_INVALID_STATE", "A process had an invalid state (%d).", current->state());
 			}
-			case Process::ZOMBIE:
-				break;
-			default:
-				PANIC("PROC_INVALID_STATE", "A process had an invalid state (%d).", current->state());
 		}
 	}
+
+	preempting = true;
 
 	/*
 	 * If it's time to switch, switch.
 	 * A task switch will occur if the current process's quantum is up, if there were previously no running processes
 	 * and one has become ready, and only if there is more than one running process.
 	 */
-	bool force_switch = !prev_alive && any_alive;
-	prev_alive = any_alive;
-	if(quantum_counter == 0 || force_switch) {
-		//Pick a new process and decrease the quantum counter
-		auto old_thread = cur_thread;
-		cur_thread = next_thread();
-		quantum_counter = 1; //Every process has a quantum of 1 for now
+	//Pick a new process and decrease the quantum counter
+	auto old_thread = cur_thread;
+	cur_thread = next_thread();
+	quantum_counter = 1; //Every process has a quantum of 1 for now
 
-		bool should_preempt = old_thread != cur_thread;
+	bool should_preempt = old_thread != cur_thread;
 
-		//If we were just in a signal handler, don't save the esp to old_proc->registers
-		unsigned int* old_esp;
-		unsigned int dummy_esp;
-		if(!old_thread) {
-			old_esp = &dummy_esp;
-		} if(old_thread->in_signal_handler()) {
-			old_esp = &old_thread->signal_registers.esp;
-		} else {
-			old_esp = &old_thread->registers.esp;
-		}
-
-		//If we just finished handling a signal, set in_signal_handler to false.
-		if(old_thread && old_thread->just_finished_signal()) {
-			should_preempt = true;
-			old_thread->just_finished_signal() = false;
-			old_thread->in_signal_handler() = false;
-		}
-
-		//If we're about to start handling a signal, set in_signal_handler to true.
-		if(cur_thread->ready_to_handle_signal()) {
-			should_preempt = true;
-			cur_thread->in_signal_handler() = true;
-			cur_thread->ready_to_handle_signal() = false;
-		}
-
-		//If we're switching to a process in a signal handler, use the esp from signal_registers
-		unsigned int* new_esp;
-		if(cur_thread->in_signal_handler()){
-			new_esp = &cur_thread->signal_registers.esp;
-			tss.esp0 = (size_t) cur_thread->signal_stack_top();
-		} else {
-			new_esp = &cur_thread->registers.esp;
-			tss.esp0 = (size_t) cur_thread->kernel_stack_top();
-		}
-
-		if(should_preempt)
-			cur_thread->process()->set_last_active_thread(cur_thread->tid());
-
-		//Switch tasks.
-		preempting = false;
-		ASSERT(cur_thread->state() == Thread::ALIVE);
-		if(should_preempt) {
-			if(old_thread != kidle_process->main_thread() && old_thread->state() == Thread::ALIVE)
-				queue_thread(old_thread);
-
-			//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
-			old_thread = kstd::shared_ptr<Thread>(nullptr);
-
-			asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
-			preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());
-			asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
-		}
+	//If we were just in a signal handler, don't save the esp to old_proc->registers
+	unsigned int* old_esp;
+	unsigned int dummy_esp;
+	if(!old_thread) {
+		old_esp = &dummy_esp;
+	} if(old_thread->in_signal_handler()) {
+		old_esp = &old_thread->signal_registers.esp;
 	} else {
-		ASSERT(cur_thread->state() == Thread::ALIVE);
-		quantum_counter--;
-		preempting = false;
+		old_esp = &old_thread->registers.esp;
+	}
+
+	//If we just finished handling a signal, set in_signal_handler to false.
+	if(old_thread && old_thread->just_finished_signal()) {
+		should_preempt = true;
+		old_thread->just_finished_signal() = false;
+		old_thread->in_signal_handler() = false;
+	}
+
+	//If we're about to start handling a signal, set in_signal_handler to true.
+	if(cur_thread->ready_to_handle_signal()) {
+		should_preempt = true;
+		cur_thread->in_signal_handler() = true;
+		cur_thread->ready_to_handle_signal() = false;
+	}
+
+	//If we're switching to a process in a signal handler, use the esp from signal_registers
+	unsigned int* new_esp;
+	if(cur_thread->in_signal_handler()){
+		new_esp = &cur_thread->signal_registers.esp;
+		tss.esp0 = (size_t) cur_thread->signal_stack_top();
+	} else {
+		new_esp = &cur_thread->registers.esp;
+		tss.esp0 = (size_t) cur_thread->kernel_stack_top();
+	}
+
+	if(should_preempt)
+		cur_thread->process()->set_last_active_thread(cur_thread->tid());
+
+	//Switch tasks.
+	preempting = false;
+	ASSERT(cur_thread->state() == Thread::ALIVE);
+	if(should_preempt) {
+		if(old_thread != kidle_process->main_thread() && old_thread->state() == Thread::ALIVE)
+			queue_thread(old_thread);
+
+		//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
+		old_thread = kstd::shared_ptr<Thread>(nullptr);
+
+		asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
+		preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());
+		asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
 	}
 }
 

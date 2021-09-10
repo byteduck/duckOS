@@ -20,7 +20,7 @@
 #ifndef DUCKOS_PIPE_H
 #define DUCKOS_PIPE_H
 
-#include <kernel/memory/Memory.h>
+#include <kernel/memory/MemoryManager.h>
 #include <kernel/filesystem/File.h>
 #include <kernel/kstd/circular_queue.hpp>
 #include <kernel/tasking/SpinLock.h>

@@ -81,19 +81,18 @@ namespace Interrupt {
 	}
 
 	void irq_handler(struct Registers *r){
-		//Call handler if it exists
 		auto handler = handlers[r->num - 0x20];
-		if(handler)
-			handler->handle_irq(r);
+		if(handler) {
+			//Mark that we're in an interrupt so that yield will be async if it occurs
+			_in_interrupt = handler->mark_in_irq();
 
-		_in_interrupt = !handler || handler->mark_in_irq();
+			//Handle the IRQ
+			handler->handle(r);
+		}
 
-		//Send EOI
-		if(r->num - 0x20 >= 8)
-			IO::outb(PIC2_COMMAND, 0x20);
-		IO::outb(PIC1_COMMAND, 0x20);
-
-		_in_interrupt = false;
+		//Send EOI if we haven't already
+		if(!handler || !handler->sent_eoi())
+			send_eoi(r->num - 0x20);
 
 		//If we need to yield asynchronously after the interrupt because we called TaskManager::yield() during it, do so
 		TaskManager::do_yield_async();
@@ -101,5 +100,12 @@ namespace Interrupt {
 
 	bool in_irq() {
 		return _in_interrupt;
+	}
+
+	void send_eoi(int irq_number) {
+		if(irq_number >= 8)
+			IO::outb(PIC2_COMMAND, 0x20);
+		IO::outb(PIC1_COMMAND, 0x20);
+		_in_interrupt = false;
 	}
 }

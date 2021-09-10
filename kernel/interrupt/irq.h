@@ -53,6 +53,7 @@ namespace Interrupt {
 	void irq_remap();
 	void irq_init();
 	bool in_irq();
+	void send_eoi(int irq_number);
 	int current_interrupt();
 }
 

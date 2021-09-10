@@ -33,8 +33,6 @@ kstd::vector<kstd::shared_ptr<Device>> Device::_devices;
 SpinLock Device::_lock;
 
 void Device::init() {
-	new (&_devices) kstd::vector<kstd::shared_ptr<Device>>();
-	new (&_lock) SpinLock();
 	new ZeroDevice();
 	new RandomDevice();
 	new NullDevice();

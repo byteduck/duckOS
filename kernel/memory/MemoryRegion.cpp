@@ -18,7 +18,7 @@
 */
 
 #include "MemoryRegion.h"
-#include "Memory.h"
+#include "MemoryManager.h"
 #include "MemoryMap.h"
 #include <kernel/kstd/vector.hpp>
 #include <kernel/kstd/kstdio.h>
@@ -66,7 +66,7 @@ void MemoryRegion::cow_deref() {
 	lock.acquire();
 	cow.num_refs--;
 	if(!cow.num_refs) {
-		Memory::pmem_map().free_region(this);
+		MemoryManager::inst().pmem_map().free_region(this);
 	}
 	lock.release();
 }
@@ -82,7 +82,7 @@ void MemoryRegion::shm_deref() {
 	shm_refs--;
 	if(!shm_refs) {
 		lock.release();
-		Memory::pmem_map().free_region(this);
+		MemoryManager::inst().pmem_map().free_region(this);
 		return;
 	}
 	lock.release();

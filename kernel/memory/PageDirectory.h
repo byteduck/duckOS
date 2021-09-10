@@ -57,11 +57,11 @@ public:
 	 * Static kernel page directory stuff *
 	 **************************************/
 
-	static Entry kernel_entries[256];
-	static MemoryMap kernel_vmem_map;
-	static PageTable kernel_page_tables[256] __attribute__((aligned(4096)));
+	static Entry (&kernel_entries)[256];
+	static MemoryMap& kernel_vmem_map;
+	static PageTable (&kernel_page_tables)[256];
 	static size_t kernel_page_tables_physaddr[1024];
-	static MemoryRegion early_vmem_regions[3];
+	static MemoryRegion (&early_vmem_regions)[3];
 	static size_t used_kernel_pmem;
 	static size_t used_kheap_pmem;
 
@@ -158,7 +158,7 @@ public:
 	 * Per-process page directory stuff *
 	 ************************************/
 
-	PageDirectory();
+	PageDirectory(bool no_init = false);
 	~PageDirectory();
 
 	/**

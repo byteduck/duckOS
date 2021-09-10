@@ -19,7 +19,7 @@
 
 #include <kernel/tasking/ELF.h>
 #include <kernel/filesystem/VFS.h>
-#include <kernel/memory/Memory.h>
+#include <kernel/memory/MemoryManager.h>
 #include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/filesystem/FileDescriptor.h>
 #include <kernel/memory/PageDirectory.h>
@@ -123,7 +123,7 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segm
 			MemoryRegion* vmem_region = page_directory->vmem_map().allocate_region(loadloc_pagealigned, loadsize_pagealigned);
 			if(!vmem_region) {
 				//If we failed to allocate the program vmem region, free the tmp region
-				Memory::pmem_map().free_region(tmp_region.phys);
+				MemoryManager::inst().pmem_map().free_region(tmp_region.phys);
 				printf("FATAL: Failed to allocate a vmem region in load_elf!\n");
 				return -ENOMEM;
 			}

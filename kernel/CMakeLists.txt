@@ -35,7 +35,7 @@ SET(KERNEL_SRCS
         pci/PCI.cpp
         memory/gdt.cpp
         memory/liballoc.cpp
-        memory/Memory.cpp
+        memory/MemoryManager.cpp
         interrupt/interrupt.cpp
         interrupt/idt.cpp
         interrupt/irq.cpp

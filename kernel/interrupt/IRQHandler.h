@@ -24,18 +24,22 @@
 
 class IRQHandler {
 public:
-	virtual void handle_irq(Registers* regs) = 0;
+	void handle(Registers* regs);
+	bool sent_eoi();
 	virtual bool mark_in_irq();
 
 protected:
+	virtual void handle_irq(Registers* regs) = 0;
 	explicit IRQHandler();
 	IRQHandler(int irq);
 	void set_irq(int irq);
 	void uninstall_irq();
 	void reinstall_irq();
+	void send_eoi();
 
 private:
 	int _irq = 0;
+	bool _sent_eoi = false;
 };
 
 

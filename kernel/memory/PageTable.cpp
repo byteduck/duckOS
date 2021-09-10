@@ -52,7 +52,3 @@ PageTable::Entry &PageTable::operator[](int index) {
 size_t PageTable::vaddr() {
 	return _vaddr;
 }
-
-namespace Memory {
-
-}

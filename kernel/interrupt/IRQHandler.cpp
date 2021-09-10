@@ -25,6 +25,15 @@ IRQHandler::IRQHandler() {
 
 }
 
+void IRQHandler::handle(Registers* regs) {
+	_sent_eoi = false;
+	handle_irq(regs);
+}
+
+bool IRQHandler::sent_eoi() {
+	return _sent_eoi;
+}
+
 IRQHandler::IRQHandler(int irq): _irq(irq) {
 	Interrupt::irq_set_handler(irq, this);
 }
@@ -44,4 +53,9 @@ void IRQHandler::reinstall_irq() {
 
 bool IRQHandler::mark_in_irq() {
 	return true;
+}
+
+void IRQHandler::send_eoi() {
+	Interrupt::send_eoi(_irq);
+	_sent_eoi = true;
 }

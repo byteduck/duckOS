@@ -15,6 +15,15 @@ SECTIONS {
     . = ALIGN(0x1000);
     PROVIDE(_KERNEL_TEXT_END = .);
     PROVIDE(_KERNEL_DATA = .);
+
+	.rodata ALIGN(4K) : AT(ADDR(.rodata) - 0xC0000000)
+	{
+		start_ctors = .;
+		*(.ctors)
+		end_ctors = .;
+
+		*(.rodata*)
+	}
 	
 	.data : AT(ADDR(.data) - 0xC0000000)
 	{

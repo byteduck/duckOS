@@ -19,7 +19,7 @@
 
 #include <kernel/memory/kliballoc.h>
 #include <kernel/kstd/kstdio.h>
-#include "Memory.h"
+#include "MemoryManager.h"
 
 /**  Durand's Amazing Super Duper Memory functions.  */
 
@@ -35,8 +35,6 @@
 #define USE_CASE3
 #define USE_CASE4
 #define USE_CASE5
-
-extern bool _ALLOC_ENABLED;
 
 /** This macro will conveniently align our pointer upwards */
 #define ALIGN( ptr )													\
@@ -254,7 +252,6 @@ static struct liballoc_major *allocate_new_page( unsigned int size )
 
 void *PREFIX(malloc)(size_t req_size)
 {
-	ASSERT(_ALLOC_ENABLED);
 	int startedBet = 0;
 	unsigned long long bestSize = 0;
 	void *p = NULL;
@@ -614,7 +611,6 @@ void *PREFIX(malloc)(size_t req_size)
 
 void PREFIX(free)(void *ptr)
 {
-	ASSERT(_ALLOC_ENABLED);
 	struct liballoc_minor *min;
 	struct liballoc_major *maj;
 
@@ -744,7 +740,6 @@ void PREFIX(free)(void *ptr)
 
 void* PREFIX(calloc)(size_t nobj, size_t size)
 {
-	ASSERT(_ALLOC_ENABLED);
 	int real_size;
 	void *p;
 
@@ -761,7 +756,6 @@ void* PREFIX(calloc)(size_t nobj, size_t size)
 
 void*   PREFIX(realloc)(void *p, size_t size)
 {
-	ASSERT(_ALLOC_ENABLED);
 	void *ptr;
 	struct liballoc_minor *min;
 	unsigned int real_size;

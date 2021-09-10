@@ -129,6 +129,8 @@ bool MouseDevice::can_write(const FileDescriptor& fd) {
 }
 
 void MouseDevice::handle_packet() {
+	send_eoi();
+
 	packet_state = 0;
 	int x = packet_data[1];
 	int y = packet_data[2];

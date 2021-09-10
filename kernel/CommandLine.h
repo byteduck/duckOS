@@ -22,17 +22,28 @@
 
 #include <kernel/multiboot.h>
 #include <kernel/kstd/string.h>
+#include <kernel/kstd/vector.hpp>
 
-namespace CommandLine {
+class CommandLine {
+public:
 	struct Option {
 		kstd::string name, value;
 	};
 
-	void init(const struct multiboot_info& header);
-	kstd::string get_option_value(char* name);
+	CommandLine(const struct multiboot_info& header);
+	static CommandLine& inst();
+
+	const kstd::string& get_option_value(char* name);
 	bool has_option(char* name);
-	kstd::string get_cmdline();
-}
+	const kstd::string& get_cmdline();
+
+private:
+	static CommandLine* _inst;
+
+	kstd::string cmdline;
+	kstd::string nullopt = "";
+	kstd::vector<Option> options;
+};
 
 
 #endif //DUCKOS_COMMANDLINE_H

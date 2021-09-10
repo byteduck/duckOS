@@ -23,7 +23,7 @@
 #include "Blocker.h"
 #include "TaskManager.h"
 #include "JoinBlocker.h"
-#include <kernel/memory/Memory.h>
+#include <kernel/memory/MemoryManager.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/Stack.h>
 
@@ -162,6 +162,8 @@ void* Thread::kernel_stack_top() {
 }
 
 Thread::State Thread::state() {
+	if(process()->state() != Process::ALIVE)
+		return (State) process()->state();
 	return _state;
 }
 

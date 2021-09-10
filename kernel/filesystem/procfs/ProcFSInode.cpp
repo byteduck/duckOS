@@ -26,7 +26,7 @@
 #include <kernel/filesystem/Inode.h>
 #include <kernel/User.h>
 #include "ProcFS.h"
-#include <kernel/memory/Memory.h>
+#include <kernel/memory/MemoryManager.h>
 #include <kernel/kstd/cstring.h>
 #include <kernel/tasking/Process.h>
 #include <kernel/memory/PageDirectory.h>
@@ -91,7 +91,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			return -EISDIR;
 
 		case RootCmdLine: {
-			auto str = CommandLine::get_cmdline() + "\n";
+			auto str = CommandLine::inst().get_cmdline() + "\n";
 			if(start + length > str.length())
 				length = str.length() - start;
 			memcpy(buffer, str.c_str() + start, length);
@@ -103,27 +103,27 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			kstd::string str;
 
 			str += "[mem]\nusable = ";
-			itoa((int) Memory::get_usable_mem(), numbuf, 10);
+			itoa((int) MemoryManager::inst().get_usable_mem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nused = ";
-			itoa((int) Memory::get_used_mem(), numbuf, 10);
+			itoa((int) MemoryManager::inst().get_used_mem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nreserved = ";
-			itoa((int) Memory::get_reserved_mem(), numbuf, 10);
+			itoa((int) MemoryManager::inst().get_reserved_mem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nkvirt = ";
-			itoa((int) Memory::get_kernel_vmem(), numbuf, 10);
+			itoa((int) MemoryManager::inst().get_kernel_vmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nkphys = ";
-			itoa((int) Memory::get_kernel_pmem(), numbuf, 10);
+			itoa((int) MemoryManager::inst().get_kernel_pmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nkheap = ";
-			itoa((int) Memory::get_kheap_pmem(), numbuf, 10);
+			itoa((int) MemoryManager::inst().get_kheap_pmem(), numbuf, 10);
 			str += numbuf;
 			str += "\n";
 
