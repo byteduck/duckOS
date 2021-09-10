@@ -43,7 +43,7 @@ int main(int argc, char** argv, char** envp) {
 
 	if(human_readable) {
 		printf("Total: %s\n", info.usable.readable().c_str());
-		printf("Used: %s (%.2f%%)\n", info.usable.readable().c_str(), info.used_frac() * 100.0);
+		printf("Used: %s (%.2f%%)\n", info.used.readable().c_str(), info.used_frac() * 100.0);
 		printf("Available: %s (%.2f%%)\n", info.free().readable().c_str(), info.free_frac() * 100.0);
 		if(kernel_memory) {
 			printf("Kernel physical: %s\n", info.kernel_phys.readable().c_str());
