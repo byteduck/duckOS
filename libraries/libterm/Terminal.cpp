@@ -25,6 +25,7 @@
 #else
 #include <cstring>
 #include <stdlib.h>
+#include <cstdio>
 #endif
 
 using namespace Term;
@@ -110,8 +111,49 @@ void Terminal::emit_str(const char* str) {
 	listener.emit((const uint8_t*) str, strlen(str));
 }
 
-void Terminal::write_char(char c) {
-	write_codepoint((uint32_t) c);
+void Terminal::write_char(char c_signed) {
+	static uint32_t utf8_buffer = 0;
+	static int utf8_index = 0;
+	static int utf8_char_length = 1;
+	static uint8_t utf8_remaining_bits = 0;
+	static uint8_t utf8_first_char_mask = 0;
+
+	char c = (unsigned char) c_signed;
+
+	if(utf8_index == 0) {
+		if((c & 0xF0) == 0xF0) { //Four most significant bits of first byte are set
+			utf8_char_length = 4;
+			//Lower three bits of first byte are used
+			utf8_buffer = (((uint32_t) c) & 0x7) << 18;
+			utf8_remaining_bits = 18;
+		} else if((c & 0xE0) == 0xE0) { //Three most significant bits of first byte are set
+			utf8_char_length = 3;
+			//Lower four bits of first byte are used
+			utf8_buffer = (((uint32_t) c) & 0xF) << 12;
+			utf8_remaining_bits = 12;
+		} else if((c & 0xC0) == 0xC0) { //Two most significant bits of first byte are set
+			utf8_char_length = 2;
+			//Lower five bits of first byte are used
+			utf8_buffer = (((uint32_t) c) & 0x1F) << 6;
+			utf8_remaining_bits = 6;
+		} else
+			utf8_char_length = 1;
+	}
+
+	if(utf8_char_length == 1)
+		utf8_buffer = (uint32_t) c; //ASCII character
+	else if(utf8_index != 0) {
+		//Lower six bits of the rest of the bytes make up the rest of the code
+		utf8_remaining_bits -= 6;
+		utf8_buffer |= (((uint32_t) c) & 0x3F) << utf8_remaining_bits;
+	}
+
+	utf8_index++;
+	if(utf8_index == utf8_char_length) {
+		write_codepoint(utf8_buffer);
+		utf8_index = 0;
+		utf8_buffer = 0;
+	}
 }
 
 void Terminal::write_codepoint(uint32_t codepoint) {
@@ -164,7 +206,7 @@ void Terminal::write_codepoint(uint32_t codepoint) {
 
 void Terminal::write_chars(const char* buffer, size_t length) {
 	for(size_t i = 0; i < length; i++)
-		write_codepoint((uint32_t) buffer[i]);
+		write_char(buffer[i]);
 }
 
 void Terminal::write_codepoints(const uint32_t* buffer, size_t length) {
