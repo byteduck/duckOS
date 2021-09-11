@@ -7,7 +7,7 @@ A hobby UNIX-like OS with a graphical window manager for x86 computers.
 ![Kernel](https://github.com/byteduck/duckOS/workflows/Kernel/badge.svg)
 ![duckOS](https://github.com/byteduck/duckOS/workflows/duckOS/badge.svg)
 
-![Screenshot](screenshot.png)
+![Screenshot](docs/screenshot-2021-09-11.png)
 
 ### What's working
 - Booting off of the primary master IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
@@ -15,11 +15,11 @@ A hobby UNIX-like OS with a graphical window manager for x86 computers.
 - A virtual filesystem with device files (`/dev/hda`, `/dev/zero`, `/dev/random`, `/dev/fb`, `/dev/tty`, etc)
   - The root filesystem is ext2, and is writeable
 - Filesystem caching (the cache size can be changed by changing `MAX_FILESYSTEM_CACHE_SIZE` in `FileBasedFilesystem.h`)
-- A semicomplete dynamically-linked c standard library for programs
 - Dynamic linking with shared libraries
 - A Bochs/Qemu/VirtualBox/Multiboot video driver (640x480x32bpp)
-- A filesystem called SocketFS that allows processes to open a socket by creating a file in `/sock/` that other processes can then read and write to using a defined packet struct
-- An experimental window manager / compositor called pond
+- A window manager / compositor called pond
+- Various GUI applications
+- More!
  
 ### Services
 
@@ -35,6 +35,7 @@ The code for these can be found in [programs](/programs)
 - Terminal (/bin/terminal): A libui-based terminal application.
 - System Monitor (/bin/monitor): A basic system monitor showing memory and CPU utilization.
 - 4 In a Row (/bin/4inarow): A basic four-in-a-row game. Play with two players or against the computer.
+- Sandbar (/bin/sandbar): A basic "taskbar" that displays a row of buttons at the bottom of the screen to launch applications.
  
 ### CLI Programs
 
@@ -68,7 +69,12 @@ Programs that take arguments will provide you with the correct usage when you ru
 - [libm](libraries/libm): The math portion of the standard C library.
 - [libpond](libraries/libpond): The library used for interfacing with the pond window manager / compositor.
 - [libgraphics](libraries/libgraphics): A library which provides a few utilities for working with graphics such as image format loading.
-- [libui](/libraries/libui): A library which provides a UI framework for applications.
+- [libui](/libraries/libui): A UI framework for applications.
+- [libterm](/libraries/libterm): A framework for handling terminals.
+- [libduck](/libraries/libduck): A library containing commonly used classes and utilities, such as argument and configuration file parsing.
+- [libriver](/libraries/libriver): An IPC library not dissimilar to D-Bus, which provides a framework for remote function calls and data passing.
+- [libapp](/libraries/libapp): A library providing methods to retrieve information about installed and running applications.
+- [libsys](/libraries/libsys): Provides higher-level C++ abstractions for retrieving system information, namely from procFS.
 
 ### Ports
 
@@ -86,10 +92,17 @@ Ports will only compile if their corresponding submodule is downloaded with `git
 - It's pretty unstable
 
 ### Future Goals
-- Make shared libraries use CoW to save memory
+- Cut down on memory usage by sharing memory for various commonly used items (libraries, icons, configuration, etc)
 - Better support for real hardware
 - Network support
 - Sound support
+- More s t a b i l i t y and s p e e d
+- Multiprocessor (multicore) support
+- An in-house heap implementation
+- More POSIX compatibility
+- Better looking UI with animations and effects such as shadows and blur/transparency
+- Slowly transition various functions from the kernel to userspace (ie microkernel)
+- A better filesystem cache implementation that doesn't use the kernel heap
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
