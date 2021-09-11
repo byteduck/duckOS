@@ -24,5 +24,5 @@ String font = gohu-11
 String font-mono = gohu-11
 
 # Images
-Image win-close = res/close.png
-Image check = res/check.png
+FgImage win-close = res/close.png
+FgImage check = res/check.png

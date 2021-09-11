@@ -121,6 +121,12 @@ namespace Gfx {
 		Point draw_glyph(Font* font, uint32_t codepoint, const Point& pos, uint32_t color) const;
 
 		/**
+		 * Multiplies the image with a certain color.
+		 * @param color The color to multiply by.
+		 */
+		void multiply(uint32_t color);
+
+		/**
 		 * Returns a pointer to the Image buffer at a certain position. Returns NULL if outside the constraints.
 		 */
 		uint32_t* at(const Point& position) const;

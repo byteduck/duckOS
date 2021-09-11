@@ -33,6 +33,15 @@ __DECL_BEGIN
 #define RGB(r,g,b) (0xFF000000 | ((r) << 16) | ((g) << 8) | (b))
 #define RGBA(r,g,b,a) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
 
+#define COLOR_COMPONENT_MULT(a, b) (((unsigned) (a) *  (unsigned) (b) + 255 ) >> 8)
+#define COLOR_MULT(a, b) \
+	RGBA( \
+			COLOR_COMPONENT_MULT(COLOR_R(a), COLOR_R(b)), \
+			COLOR_COMPONENT_MULT(COLOR_G(a), COLOR_G(b)), \
+			COLOR_COMPONENT_MULT(COLOR_B(a), COLOR_B(b)), \
+			COLOR_COMPONENT_MULT(COLOR_A(a), COLOR_A(b)) \
+		)
+
 typedef uint32_t Color;
 
 __DECL_END

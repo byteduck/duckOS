@@ -222,6 +222,14 @@ Point Framebuffer::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph
 	return glyph_pos + Point {glyph->next_offset.x, glyph->next_offset.y};
 }
 
+void Framebuffer::multiply(uint32_t color) {
+	for(int y = 0; y < height; y++) {
+		for(int x = 0; x < width; x++) {
+			data[x + y * width] = COLOR_MULT(data[x + y * width], color);
+		}
+	}
+}
+
 uint32_t* Framebuffer::at(const Point& position) const {
 	if(position.x < 0 || position.y < 0 || position.y >= height || position.x >= width)
 		return NULL;

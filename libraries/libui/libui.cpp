@@ -22,6 +22,7 @@
 #include "UIException.h"
 #include <poll.h>
 #include <map>
+#include <libduck/Config.h>
 
 using namespace UI;
 
@@ -43,6 +44,13 @@ void UI::init(char** argv, char** envp) {
 	Poll pond_poll = {pond_context->connection_fd()};
 	pond_poll.on_ready_to_read = handle_pond_events;
 	add_poll(pond_poll);
+
+	auto cfg_res = Duck::Config::read_from("/etc/libui.conf");
+	if(!cfg_res.is_error()) {
+		auto& cfg = cfg_res.value();
+		if(cfg.has_section("theme"))
+			Theme::load_config(cfg["theme"]);
+	}
 
 	Theme::current();
 }

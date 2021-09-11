@@ -28,6 +28,7 @@ using namespace Gfx;
 
 std::map<std::string, Theme*> Theme::themes;
 Theme* Theme::_current;
+std::string Theme::_current_theme_name = LIBUI_THEME_DEFAULT;
 
 Theme* Theme::get_theme(const std::string& name) {
 	auto* theme = themes[name];
@@ -47,9 +48,16 @@ Theme* Theme::get_theme(const std::string& name) {
 
 Theme* Theme::current() {
 	if(!_current) {
-		_current = get_theme(LIBUI_THEME_DEFAULT);
+		_current = get_theme(_current_theme_name);
+		if(!_current)
+			_current = get_theme(LIBUI_THEME_DEFAULT);
 	}
 	return _current;
+}
+
+void Theme::load_config(std::map<std::string, std::string>& config) {
+	if(!config["name"].empty())
+		_current_theme_name = config["name"];
 }
 
 Image& Theme::image(const std::string& key) {
@@ -112,6 +120,7 @@ Theme::Theme(std::string name): name(std::move(name)) {}
 bool Theme::load() {
 	//Find the theme.thm file
 	auto theme_location = std::string(LIBUI_THEME_LOCATION) + name + "/";
+	auto default_theme_location = std::string(LIBUI_THEME_LOCATION) + LIBUI_THEME_DEFAULT + "/";
 	FILE* theme_info = fopen((theme_location + "theme.thm").c_str(), "r");
 	if(!theme_info)
 		return false;
@@ -138,11 +147,22 @@ bool Theme::load() {
 		std::string key = key_cstr;
 		std::string value = value_cstr;
 
-		if(type == "Image") {
+		if(type == "Image" | type == "FgImage" || type == "BgImage" || type == "AccentImage") {
 			auto* imagefile = fopen((theme_location + value).c_str(), "r");
-			if(!imagefile)
-				continue;
+			if(!imagefile) {
+				imagefile = fopen((default_theme_location + value).c_str(), "r");
+				if(!imagefile)
+					continue;
+			}
 			images[key] = load_png_from_file(imagefile);
+
+			if(type == "FgImage")
+				images[key]->multiply(colors["fg"]);
+			else if(type == "BgImage")
+				images[key]->multiply(colors["bg"]);
+			else if(type == "AccentImage")
+				images[key]->multiply(colors["accent"]);
+
 			fclose(imagefile);
 		} else if(type == "Color") {
 			if(value[0] == '#')

@@ -44,6 +44,7 @@ namespace UI {
 		///STATIC
 		static Theme* get_theme(const std::string& name);
 		static Theme* current();
+		static void load_config(std::map<std::string, std::string>& config);
 
 		static Gfx::Image& image(const std::string& key);
 		static int value(const std::string& key);
@@ -76,6 +77,7 @@ namespace UI {
 		//STATIC
 		static std::map<std::string, Theme*> themes;
 		static Theme* _current;
+		static std::string _current_theme_name;
 
 		//NON-STATIC
 		explicit Theme(std::string name);
