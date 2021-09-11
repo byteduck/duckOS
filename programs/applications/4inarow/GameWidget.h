@@ -26,7 +26,7 @@
 
 #define CELL_SIZE 28
 #define CELL_COLOR UI::Theme::bg()
-#define EMPTY_COLOR RGB(25, 25, 25)
+#define EMPTY_COLOR UI::Theme::shadow_1()
 #define PLAYER1_COLOR RGB(240, 50, 50)
 #define PLAYER2_COLOR RGB(50, 50, 240)
 #define HOVER1_COLOR RGB(240, 150, 150)

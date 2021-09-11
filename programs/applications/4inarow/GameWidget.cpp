@@ -78,7 +78,7 @@ void GameWidget::do_repaint(const UI::DrawContext& ctx) {
 				}, color);
 		}
 	}
-	ctx.draw_text(status.c_str(), {2, ROWS * CELL_SIZE + 6}, UI::Theme::font(), RGB(255, 255, 255));
+	ctx.draw_text(status.c_str(), {2, ROWS * CELL_SIZE + 6}, UI::Theme::font(), UI::Theme::fg());
 }
 
 bool GameWidget::on_mouse_move(Pond::MouseMoveEvent evt) {
