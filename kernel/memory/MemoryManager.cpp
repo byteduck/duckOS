@@ -87,10 +87,10 @@ void MemoryManager::setup_paging() {
 
 	//Setup the pmem map
 	_pmem_map = MemoryMap(PAGE_SIZE, &multiboot_memory_regions[0]);
-	MemoryRegion* text_region = _pmem_map.allocate_region(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, early_pmem_text_region_storage);
+	MemoryRegion* text_region = _pmem_map.allocate_region(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, &early_pmem_text_region_storage[0], &early_pmem_text_region_storage[1]);
 	if(!text_region)
 		PANIC("KRNL_MAP_FAIL", "The kernel's text section could not be allocated in the physical memory map.");
-	MemoryRegion* data_region = _pmem_map.allocate_region(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, early_pmem_data_region_storage);
+	MemoryRegion* data_region = _pmem_map.allocate_region(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, &early_pmem_data_region_storage[0], &early_pmem_data_region_storage[1]);
 	if(!text_region)
 		PANIC("KRNL_MAP_FAIL", "The kernel's data section could not be allocated in the physical memory map.");
 	_pmem_map.recalculate_memory_totals();

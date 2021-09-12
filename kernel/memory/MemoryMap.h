@@ -53,7 +53,7 @@ public:
 	 * @param storage If not null, the newly allocated region(s) will be stored here (if they need to be allocated)
 	 * @return The memory region allocated. Will be nullptr if allocation failed.
 	 */
-	MemoryRegion* allocate_region(size_t address, size_t minimum_size, MemoryRegion storage[2] = nullptr);
+	MemoryRegion* allocate_region(size_t address, size_t minimum_size, MemoryRegion *storage_a = nullptr, MemoryRegion* storage_b = nullptr);
 
 	/**
 	 * Frees the region given.

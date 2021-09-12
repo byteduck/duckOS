@@ -245,6 +245,7 @@ void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
 }
 
 void PageDirectory::k_after_alloc() {
+	LOCK(MemoryManager::inst().kernel_page_directory._lock);
 	if(new_heap_region) {
 		new_heap_region = false;
 		allocing_new_heap_region = true;
