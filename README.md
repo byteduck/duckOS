@@ -102,7 +102,7 @@ Ports will only compile if their corresponding submodule is downloaded with `git
 - More POSIX compatibility
 - Better looking UI with animations and effects such as shadows and blur/transparency
 - Slowly transition various functions from the kernel to userspace (ie microkernel)
-- A better filesystem cache implementation that doesn't use the kernel heap
+- A better filesystem cache implementation that can free memory when needed and periodically flushes writes
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.

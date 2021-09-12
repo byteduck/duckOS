@@ -20,21 +20,15 @@
 #include "FileBasedFilesystem.h"
 #include <kernel/kstd/cstring.h>
 #include <kernel/time/Time.h>
+#include <climits>
 #include "Inode.h"
 #include "FileDescriptor.h"
-
-BlockCacheEntry::BlockCacheEntry(size_t block, uint8_t *data): block(block), data(data) {
-
-}
 
 FileBasedFilesystem::FileBasedFilesystem(const kstd::shared_ptr<FileDescriptor>& file): _file(file) {
 
 }
 
-FileBasedFilesystem::~FileBasedFilesystem() {
-	for(size_t i = 0; i < cache.size(); i++)
-		if (cache[i].data) delete cache[i].data;
-}
+FileBasedFilesystem::~FileBasedFilesystem() = default;
 
 Result FileBasedFilesystem::read_logical_block(size_t block, uint8_t *buffer) {
 	return read_logical_blocks(block, 1, buffer);
@@ -81,31 +75,16 @@ void FileBasedFilesystem::set_block_size(size_t block_size) {
 Result FileBasedFilesystem::read_block(size_t block, uint8_t *buffer) {
 	LOCK(lock);
 
-	//If we have a cache entry already, just read that
-	BlockCacheEntry *cache_entry = get_chache_entry(block);
-	if (cache_entry) {
-		memcpy(buffer, cache_entry->data, block_size());
-		return SUCCESS;
-	}
+	int res = _file->seek(block * block_size(), SEEK_SET);
+	if (res < 0)
+		return res;
 
-	//Try seeking the file
-	int seekres = _file->seek(block * block_size(), SEEK_SET);
-	if (seekres < 0) return seekres;
-
-	//Make a cache entry
-	cache_entry = make_cache_entry(block);
-
-	//Read into the cache entry
-	ssize_t nread = _file->read(cache_entry->data, block_size());
-	if (nread <= 0) {
-		//If we failed, free it and return the appropriate error
-		free_cache_entry(block);
-		if (nread == 0) return -EIO;
+	ssize_t nread = _file->read(buffer, block_size());
+	if (nread == 0)
+		return -EIO;
+	else if(nread < 0)
 		return nread;
-	}
 
-	//If we succeeded, copy the cache data into the buffer and return success
-	memcpy(buffer, cache_entry->data, block_size());
 	return SUCCESS;
 }
 
@@ -129,96 +108,70 @@ Result FileBasedFilesystem::write_blocks(size_t block, size_t count, const uint8
 
 Result FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
 	LOCK(lock);
-	BlockCacheEntry* entry = get_chache_entry(block);
-	if(!entry) entry = make_cache_entry(block);
-	memcpy(entry->data, buffer, block_size());
-	entry->dirty = true;
+
+	int res = _file->seek(block * block_size(), SEEK_SET);
+	if(res < 0)
+		return res;
+
+	ssize_t nwrote = _file->write(buffer, block_size());
+	if(nwrote == 0)
+		return -EIO;
+	else if(nwrote < 0)
+		return nwrote;
+
 	return SUCCESS;
 }
 
 Result FileBasedFilesystem::zero_block(size_t block) {
 	LOCK(lock);
-	BlockCacheEntry* entry = get_chache_entry(block);
-	if(!entry) entry = make_cache_entry(block);
-	memset(entry->data, 0, block_size());
-	entry->dirty = true;
+
+	//TODO: Implementation that doesn't require allocating a buffer
+
+	int res = _file->seek(block * block_size(), SEEK_SET);
+	if(res < 0)
+		return res;
+
+	auto* zero_buf = new uint8_t[block_size()];
+	memset(zero_buf, 0, block_size());
+
+	ssize_t nwrote = _file->write(zero_buf, block_size());
+	delete[] zero_buf;
+
+	if(nwrote == 0)
+		return -EIO;
+	else if(nwrote < 0)
+		return nwrote;
+
 	return SUCCESS;
 }
 
 Result FileBasedFilesystem::truncate_block(size_t block, size_t new_size) {
 	if(new_size >= block_size()) return -EOVERFLOW;
 	LOCK(lock);
-	BlockCacheEntry* entry = get_chache_entry(block);
-	if(!entry) {
-		entry = make_cache_entry(block);
-		int res = _file->seek(block * block_size(), SEEK_SET);
-		if(res < 0) return res;
-		res = _file->read(entry->data, block_size());
-		if(res < 0) return res;
-		if(res != block_size()) return -EIO;
+
+	//TODO: Implementation that doesn't require allocating a buffer
+
+	int res = _file->seek(block * block_size(), SEEK_SET);
+	if(res < 0)
+		return res;
+
+	auto* buf = new uint8_t[block_size()];
+	res = _file->read(buf, block_size());
+	if(res < 0) {
+		delete[] buf;
+		return res;
 	}
-	memset(entry->data + new_size, 0, (int)(block_size() - new_size));
-	entry->dirty = true;
+
+	memset(buf + new_size, 0, (int)(block_size() - new_size));
+	ssize_t nwrote = _file->write(buf, block_size());
+	delete[] buf;
+
+	if(nwrote == 0)
+		return -EIO;
+	else if(nwrote < 0)
+		return nwrote;
+
 	return SUCCESS;
-}
-
-BlockCacheEntry* FileBasedFilesystem::get_chache_entry(size_t block) {
-	LOCK(lock);
-	for(size_t i = 0; i < cache.size(); i++) {
-		if (cache[i].block == block) {
-			BlockCacheEntry* entry = &cache[i];
-			entry->last_used = Time::now();
-			return entry;
-		}
-	}
-	return nullptr;
-}
-
-BlockCacheEntry* FileBasedFilesystem::make_cache_entry(size_t block) {
-	LOCK(lock);
-	BlockCacheEntry* entry;
-	if(cache.size() >= MAX_FILESYSTEM_CACHE_SIZE / block_size()) {
-		//If the cache is full, find the oldest entry and replace it
-		size_t oldest_entry = 0;
-		Time oldest_entry_time = Time::now();
-		for(size_t i = 0; i < cache.size(); i++) {
-			if(cache[i].last_used < oldest_entry_time) {
-				oldest_entry = i;
-				oldest_entry_time = cache[i].last_used;
-			}
-		}
-		//Update entry's data
-		entry = &cache[oldest_entry];
-		if(entry->dirty) flush_cache_entry(entry);
-		entry->block = block;
-	} else {
-		cache.push_back(BlockCacheEntry(block, new uint8_t[block_size()]));
-		entry = &cache[cache.size() - 1];
-	}
-	entry->last_used = Time::now();
-	return entry;
-}
-
-void FileBasedFilesystem::flush_cache_entry(BlockCacheEntry* entry) {
-	LOCK(lock);
-	ssize_t nwrote;
-	if(_file->seek(entry->block * block_size(), SEEK_SET) < 0) return;
-	if((nwrote =_file->write(entry->data, block_size())) == block_size()) {
-		entry->dirty = false;
-	} else {
-		printf("WARNING: Error writing filesystem cache entry to disk! (Block %d, Error %d)\n", entry->block, nwrote);
-	}
-}
-
-void FileBasedFilesystem::free_cache_entry(size_t block) {
-	LOCK(lock);
-	for(size_t i = 0; i < cache.size(); i++) {
-		if (cache[i].block == block) {
-			delete[] cache[i].data;
-			cache.erase(i);
-			return;
-		}
-	}
 }
 
 ResultRet<kstd::shared_ptr<Inode>> FileBasedFilesystem::get_cached_inode(ino_t id) {
@@ -241,13 +194,6 @@ void FileBasedFilesystem::remove_cached_inode(ino_t id) {
 			_inode_cache.erase(i);
 			return;
 		}
-	}
-}
-
-void FileBasedFilesystem::flush_cache() {
-	LOCK(lock);
-	for(size_t i = 0; i < cache.size(); i++) {
-		if(cache[i].dirty) flush_cache_entry(&cache[i]);
 	}
 }
 

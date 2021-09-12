@@ -38,7 +38,7 @@ PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType 
 
 PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio)
 	: IRQHandler()
-	, BlockDevice(channel == PRIMARY ? 3 : 4, drive == MASTER ? 0 : 1)
+	, DiskDevice(channel == PRIMARY ? 3 : 4, drive == MASTER ? 0 : 1)
 	, _pci_addr(addr), _channel(channel), _drive(drive), _use_pio(use_pio)
 {
 	//IO Ports
@@ -291,7 +291,7 @@ void PATADevice::access_drive(uint8_t command, uint32_t lba, uint8_t num_sectors
 	reinstall_irq();
 }
 
-Result PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
+Result PATADevice::read_uncached_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
 	if(!_use_pio) {
 		//DMA mode
 		size_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
@@ -314,7 +314,7 @@ Result PATADevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) 
 	}
 }
 
-Result PATADevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
+Result PATADevice::write_uncached_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
 	if(!_use_pio) {
 		//DMA mode
 		size_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
@@ -341,6 +341,8 @@ Result PATADevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *b
 size_t PATADevice::block_size() {
 	return 512;
 }
+
+#include <kernel/filesystem/FileDescriptor.h>
 
 ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
 	size_t first_block = offset / block_size();

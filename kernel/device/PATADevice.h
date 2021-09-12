@@ -24,15 +24,15 @@
 #include <kernel/kstd/kstdlib.h>
 #include <kernel/pci/PCI.h>
 #include <kernel/interrupt/IRQHandler.h>
-#include "BlockDevice.h"
 #include "ATA.h"
+#include "DiskDevice.h"
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/memory/MemoryManager.h>
 
 #define ATA_MAX_SECTORS_AT_ONCE (PAGE_SIZE / 512)
 
-class PATADevice: public IRQHandler, public BlockDevice {
+class PATADevice: public IRQHandler, public DiskDevice {
 public:
 	typedef enum Channel { PRIMARY, SECONDARY } Channel;
 	typedef enum DriveType { MASTER, SLAVE } DriveType;
@@ -51,8 +51,8 @@ public:
 
 
 	//BlockDevice
-	Result read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
-	Result write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override;
+	Result read_uncached_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
+	Result write_uncached_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override;
 	size_t block_size() override;
 
 	//File

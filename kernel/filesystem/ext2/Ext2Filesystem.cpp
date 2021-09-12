@@ -34,8 +34,6 @@ Ext2Filesystem::~Ext2Filesystem() {
 		}
 		delete block_groups;
 	}
-
-	flush_cache();
 }
 
 void Ext2Filesystem::init() {
@@ -206,7 +204,6 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	write_superblock();
 
 	delete[] block_buf;
-	flush_cache();
 	ino.mark_deleted();
 	ext2lock.release();
 

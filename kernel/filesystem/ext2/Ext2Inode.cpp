@@ -226,7 +226,6 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t* buf, FileDe
 	}
 
 	delete[] block_buf;
-	ext2fs().flush_cache();
 
 	return length;
 }
@@ -658,7 +657,6 @@ Result Ext2Inode::write_inode_entry(uint8_t* block_buf) {
 	//Write the inode table to disk
 	ext2fs().write_block(bg->inode_table_block + block(), block_buf);
 	_dirty = false;
-	ext2fs().flush_cache();
 
 	FREE_BLOCKBUF(block_buf);
 	return SUCCESS;
@@ -730,7 +728,6 @@ Result Ext2Inode::write_directory_entries(kstd::vector<DirectoryEntry> &entries)
 
 	//Write the last block
 	ext2fs().write_block(get_block_pointer(cur_block), block_buf);
-	ext2fs().flush_cache();
 
 	return SUCCESS;
 }

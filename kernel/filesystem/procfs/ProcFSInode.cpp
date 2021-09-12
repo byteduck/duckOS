@@ -30,6 +30,7 @@
 #include <kernel/kstd/cstring.h>
 #include <kernel/tasking/Process.h>
 #include <kernel/memory/PageDirectory.h>
+#include <kernel/device/DiskDevice.h>
 
 const char* PROC_STATE_NAMES[] = {"Running", "Zombie", "Dead", "Sleeping"};
 
@@ -124,6 +125,10 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 
 			str += "\nkheap = ";
 			itoa((int) MemoryManager::inst().get_kheap_pmem(), numbuf, 10);
+			str += numbuf;
+
+			str += "\nkcache = ";
+			itoa((int) DiskDevice::used_cache_memory(), numbuf, 10);
 			str += numbuf;
 			str += "\n";
 

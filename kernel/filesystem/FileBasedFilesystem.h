@@ -24,18 +24,7 @@
 #include <kernel/time/Time.h>
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/kstd/vector.hpp>
-
-#define MAX_FILESYSTEM_CACHE_SIZE 0x1000000 //16 MiB
-
-class BlockCacheEntry {
-public:
-	BlockCacheEntry() = default;
-	BlockCacheEntry(size_t block, uint8_t* data);
-	size_t block = 0;
-	uint8_t* data = nullptr;
-	Time last_used = Time();
-	bool dirty = false;
-};
+#include <kernel/memory/LinkedMemoryRegion.h>
 
 class FileBasedFilesystem: public Filesystem {
 public:
@@ -60,20 +49,14 @@ public:
 	ResultRet<kstd::shared_ptr<Inode>> get_cached_inode(ino_t id);
 	void add_cached_inode(const kstd::shared_ptr<Inode>& inode);
 	void remove_cached_inode(ino_t id);
-	void flush_cache();
 
 	virtual Inode* get_inode_rawptr(ino_t id);
 	virtual ResultRet<kstd::shared_ptr<Inode>> get_inode(ino_t id);
 
 protected:
-	BlockCacheEntry* get_chache_entry(size_t block);
-	BlockCacheEntry* make_cache_entry(size_t block);
-	void flush_cache_entry(BlockCacheEntry* entry);
-	void free_cache_entry(size_t block);
 	void set_block_size(size_t block_size);
 
 	size_t _logical_block_size {512};
-	kstd::vector<BlockCacheEntry> cache;
 	SpinLock lock;
 	kstd::shared_ptr<FileDescriptor> _file;
 	size_t _block_size;
