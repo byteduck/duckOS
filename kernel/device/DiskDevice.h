@@ -39,32 +39,23 @@ public:
 	static size_t used_cache_memory();
 
 private:
-	class BlockCacheEntry {
-	public:
-		BlockCacheEntry() = default;
-		BlockCacheEntry(size_t block, size_t size, uint8_t* data);
-		size_t block = 0;
-		size_t size = 0;
-		uint8_t* data = nullptr;
-		Time last_used = Time::now();
-		bool dirty = false;
-	};
-
 	class BlockCacheRegion {
 	public:
 		explicit BlockCacheRegion(size_t start_block, size_t block_size);
 		~BlockCacheRegion();
-		ResultRet<BlockCacheEntry*> get_cached_block(size_t block);
-		inline size_t num_blocks() { return PAGE_SIZE / block_size; }
-		inline uint8_t* block_data(int index) { return (uint8_t*) (region.virt->start + block_size * index); }
+
+		inline bool has_block(size_t block) const { return block >= start_block && block < start_block + num_blocks(); }
+		inline size_t num_blocks() const { return PAGE_SIZE / block_size; }
+		inline uint8_t* block_data(size_t block) const { return (uint8_t*) (region.virt->start + block_size * (block - start_block)); }
 
 		LinkedMemoryRegion region;
-		kstd::vector<BlockCacheEntry> cached_blocks;
 		size_t block_size;
 		size_t start_block;
+		Time last_used = Time::now();
+		bool dirty = false;
 	};
 
-	BlockCacheEntry* get_cache_entry(size_t block);
+	BlockCacheRegion* get_cache_region(size_t block);
 	inline size_t blocks_per_cache_region() { return PAGE_SIZE / block_size(); }
 	inline size_t block_cache_region_start(size_t block) { return block - (block % blocks_per_cache_region()); }
 
