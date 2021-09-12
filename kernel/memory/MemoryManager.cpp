@@ -228,14 +228,12 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 	}
 }
 
-int liballoc_lock() {
+void liballoc_lock() {
 	MemoryManager::inst().liballoc_spinlock.acquire();
-	return 0;
 }
 
-int liballoc_unlock() {
+void liballoc_unlock() {
 	MemoryManager::inst().liballoc_spinlock.release();
-	return 0;
 }
 
 void *liballoc_alloc(int pages) {
@@ -247,8 +245,7 @@ void liballoc_afteralloc(void* ptr_alloced) {
 	PageDirectory::k_after_alloc();
 }
 
-int liballoc_free(void *ptr, int pages) {
+void liballoc_free(void *ptr, int pages) {
 	PageDirectory::used_kheap_pmem -= pages * PAGE_SIZE;
 	PageDirectory::k_free_region(ptr);
-	return 0;
 }

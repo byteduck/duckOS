@@ -180,10 +180,10 @@ private:
 	static MemoryManager* _inst;
 };
 
-int liballoc_lock();
-int liballoc_unlock();
+void liballoc_lock();
+void liballoc_unlock();
 void* liballoc_alloc(int);
 void liballoc_afteralloc(void* ptr_alloced);
-int liballoc_free(void*,int);
+void liballoc_free(void*,int);
 
 #endif
