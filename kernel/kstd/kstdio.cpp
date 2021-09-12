@@ -132,13 +132,12 @@ void vprintf(const char* fmt, va_list argp){
 bool panicked = false;
 
 [[noreturn]] void PANIC(const char* error, const char* msg, ...){
-	panicked = true;
-
 	asm volatile("cli");
 	TaskManager::enabled() = false;
 
 	use_tty = true;
-	printf("\n\033[41;97m"); //Red BG, bright white FG
+	tty->set_graphical(false);
+	printf("\033[41;97m\033[2J"); //Red BG, bright white FG
 	print("Good job, you crashed it.\nHere are the details, since you probably need them.\nTry not to mess it up again.\n\n");
 	printf("%s\n", error);
 
@@ -148,10 +147,13 @@ bool panicked = false;
 	va_end(list);
 
 	//Printing the stacktrace may panic if done early in kernel initialization. Don't print stacktrace in a nested panic.
+#ifdef DEBUG
 	if(!panicked) {
+		panicked = true;
 		printf("\n\nStack trace:\n");
 		KernelMapper::print_stacktrace();
 	}
+#endif
 
 	asm volatile("cli; hlt");
 	while(1);

@@ -32,6 +32,7 @@ public:
 	void set_active();
 	bool active();
 	void clear();
+	void set_graphical(bool graphical);
 
 protected:
 	static void register_tty(size_t id, VirtualTTY* device);
