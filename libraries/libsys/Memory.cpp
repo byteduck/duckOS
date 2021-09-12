@@ -42,7 +42,8 @@ ResultRet<Mem::Info> Mem::get_info(std::istream& file) {
 		strtoul(cfg["reserved"].c_str(), nullptr, 0),
 		strtoul(cfg["kvirt"].c_str(), nullptr, 0),
 		strtoul(cfg["kphys"].c_str(), nullptr, 0),
-		strtoul(cfg["kheap"].c_str(), nullptr, 0)
+		strtoul(cfg["kheap"].c_str(), nullptr, 0),
+		strtoul(cfg["kcache"].c_str(), nullptr, 0)
 	};
 }
 

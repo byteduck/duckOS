@@ -49,6 +49,7 @@ int main(int argc, char** argv, char** envp) {
 			printf("Kernel physical: %s\n", info.kernel_phys.readable().c_str());
 			printf("Kernel virtual: %s\n", info.kernel_virt.readable().c_str());
 			printf("Kernel heap: %s\n", info.kernel_heap.readable().c_str());
+			printf("Kernel disk cache: %s\n", info.kernel_disk_cache.readable().c_str());
 		}
 	} else {
 		printf("Total: %lu\n", info.usable.bytes);
@@ -58,6 +59,7 @@ int main(int argc, char** argv, char** envp) {
 			printf("Kernel physical: %lu\n", info.kernel_phys.bytes);
 			printf("Kernel virtual: %lu\n", info.kernel_virt.bytes);
 			printf("Kernel heap: %lu\n", info.kernel_heap.bytes);
+			printf("Kernel disk cache: %lu\n", info.kernel_disk_cache.bytes);
 		}
 	}
 

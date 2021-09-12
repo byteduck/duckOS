@@ -59,6 +59,7 @@ namespace Sys::Mem {
 		Amount kernel_virt;
 		Amount kernel_phys;
 		Amount kernel_heap;
+		Amount kernel_disk_cache;
 
 		inline double used_frac() const {
 			return (double)((long double) used / (long double) usable);
