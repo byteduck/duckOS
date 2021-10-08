@@ -57,7 +57,7 @@ __attribute__((constructor)) void constructor_test() {
 }
 
 //Use a uint8_t array to store the memory manager, or else it would be re-initialized when global constructors are called
-uint8_t __mem_manager_storage[sizeof(MemoryManager)];
+uint8_t __mem_manager_storage[sizeof(MemoryManager)] __attribute__((aligned(4096)));
 
 int kmain(uint32_t mbootptr){
 	clearScreen();
