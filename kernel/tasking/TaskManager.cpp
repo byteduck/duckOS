@@ -255,6 +255,28 @@ void TaskManager::preempt(){
 	bool any_alive = false;
 
 	/*
+	 * Try unblocking threads that are blocked
+	 */
+	for(int i = 0; i < processes->size(); i++) {
+		auto current = processes->at(i);
+		if(current->state() == Process::ALIVE) {
+			auto& threads = current->threads();
+			for(int j = 0; j < threads.size(); j++) {
+				auto& thread = threads[j];
+				if(!thread)
+					continue;
+				if(thread->state() == Thread::BLOCKED) {
+					if(thread->should_unblock()) {
+						thread->unblock();
+						if(cur_thread != thread)
+							queue_thread(thread);
+					}
+				}
+			}
+		}
+	}
+
+	/*
 	 * Only update process/thread states if the thread we're switching from isn't already blocked, as doing so may
 	 * try to block the thread again (ie acquiring the liballoc lock)
 	 */
@@ -272,14 +294,7 @@ void TaskManager::preempt(){
 						auto thread = threads[j];
 						if(!thread)
 							continue;
-						if(thread->state() == Thread::BLOCKED) {
-							if(thread->should_unblock()) {
-								any_alive = true;
-								thread->unblock();
-								if(cur_thread != thread)
-									queue_thread(thread);
-							}
-						} else if(thread->state() == Thread::ALIVE) {
+						if(thread->state() == Thread::ALIVE) {
 							any_alive = true;
 						}
 					}
