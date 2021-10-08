@@ -34,7 +34,7 @@ namespace UI {
 
         //Widget
         virtual Dimensions preferred_size() override;
-        virtual Rect bounds_for_child(Widget* child) override;
+        virtual void calculate_layout() override;
 
     protected:
         Direction direction;

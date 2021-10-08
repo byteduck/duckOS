@@ -70,6 +70,9 @@ namespace UI {
 		void on_mouse_leave(Pond::MouseLeaveEvent evt);
 		void on_resize(const Rect& old_rect);
 
+		//UI
+		void calculate_layout();
+
 	protected:
 		Window();
 

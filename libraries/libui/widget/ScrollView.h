@@ -35,7 +35,6 @@ namespace UI {
         void on_child_added(Widget* child) override;
         Dimensions preferred_size() override;
         void do_repaint(const UI::DrawContext& ctx) override;
-		Rect bounds_for_child(Widget* child) override;
 		bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 		bool on_mouse_scroll(Pond::MouseScrollEvent evt) override;
 		bool on_mouse_button(Pond::MouseButtonEvent evt) override;
@@ -46,9 +45,6 @@ namespace UI {
         public:
         	//ScrollContainer
             ScrollContainer(ScrollView* scroll_view);
-
-        	//Widget
-        	Rect bounds_for_child(Widget* child) override;
 
         private:
             ScrollView* scroll_view;

@@ -50,21 +50,17 @@ Dimensions UI::FlexLayout::preferred_size() {
         return Dimensions {max_other_dim, size};
 }
 
-Rect UI::FlexLayout::bounds_for_child(UI::Widget *child) {
+void UI::FlexLayout::calculate_layout() {
     Dimensions size = current_size();
     for(int i = 0; i < children.size(); i++) {
-        if(children[i] == child) {
-            if(direction == VERTICAL) {
-                int cell_size = size.height / (int) children.size();
-                int cell_position = cell_size * i;
-                return {0, cell_position, size.width, cell_size};
-            } else {
-                int cell_size = size.width / (int) children.size();
-                int cell_position = cell_size * i;
-                return {cell_position, 0, cell_size, size.height};
-            }
-        }
+		if(direction == VERTICAL) {
+			int cell_size = size.height / (int) children.size();
+			int cell_position = cell_size * i;
+			children[i]->set_layout_bounds({0, cell_position, size.width, cell_size});
+		} else {
+			int cell_size = size.width / (int) children.size();
+			int cell_position = cell_size * i;
+			children[i]->set_layout_bounds({cell_position, 0, cell_size, size.height});
+		}
     }
-
-    return {0, 0, 0, 0};
 }

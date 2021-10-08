@@ -50,25 +50,21 @@ void UI::BoxLayout::set_spacing(int new_spacing) {
     update_layout();
 }
 
-Rect UI::BoxLayout::bounds_for_child(UI::Widget *child) {
+void UI::BoxLayout::calculate_layout() {
     int pos = 0;
     Dimensions size = current_size();
-    for(auto it_child : children) {
-        if(it_child == child) {
-            //If we've gotten to the child in question, return its calculated bounds
-            if(direction == VERTICAL)
-                return {0, pos, size.width, child->preferred_size().height};
-            else
-                return {pos, 0, child->preferred_size().width, size.height};
-        } else {
-            //Otherwise, keep calculating
-            Dimensions child_dims = it_child->preferred_size();
-            if(direction == VERTICAL)
-                pos += child_dims.height;
-            else
-                pos += child_dims.width;
-            pos += spacing;
-        }
+    for(auto child : children) {
+		auto preferred_size = child->preferred_size();
+
+		if(direction == VERTICAL)
+			child->set_layout_bounds({0, pos, size.width, preferred_size.height});
+		else
+			child->set_layout_bounds({pos, 0, preferred_size.width, size.height});
+
+		if(direction == VERTICAL)
+			pos += preferred_size.height;
+		else
+			pos += preferred_size.width;
+		pos += spacing;
     }
-    return {0, 0, 0, 0};
 }

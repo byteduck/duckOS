@@ -34,10 +34,6 @@ Dimensions Widget::current_size() {
 	return _rect.dimensions();
 }
 
-Rect Widget::bounds_for_child(Widget *child) {
-    return {0, 0, _rect.width, _rect.height};
-}
-
 PositioningMode Widget::positioning_mode() {
     return _positioning_mode;
 }
@@ -97,6 +93,8 @@ Window* Widget::parent_window() {
 }
 
 Window* Widget::root_window() {
+	if(!_parent_window && !_parent)
+		return nullptr;
 	return _parent_window ? _parent_window : _parent->root_window();
 }
 
@@ -130,6 +128,23 @@ void Widget::show() {
 		_window->set_hidden(false);
 }
 
+void Widget::set_layout_bounds(Rect new_bounds) {
+	Rect old_rect = _rect;
+	_rect = new_bounds;
+	calculate_layout();
+	on_layout_change(old_rect);
+	if(_window) {
+		_window->set_position(_rect.position());
+		_window->resize(_rect.dimensions());
+		repaint();
+		if(!_first_layout_done) {
+			_first_layout_done = true;
+			repaint_now();
+			_window->set_hidden(_hidden);
+		}
+	}
+}
+
 void Widget::set_window(UI::Window* window) {
 	if(_parent || _parent_window)
 		return;
@@ -149,10 +164,10 @@ void Widget::set_parent(UI::Widget* widget) {
 }
 
 void Widget::update_layout() {
-	if(_parent_window)
-		calculate_layout();
-    if(_parent)
-    	_parent->update_layout();
+	//TODO: Find a better way of doing this that doesn't involve re-layouting everything everytime anything is updated
+	auto* root = root_window();
+	if(root)
+		root->calculate_layout();
 }
 
 void Widget::do_repaint(const DrawContext& framebuffer) {
@@ -187,6 +202,38 @@ unsigned int Widget::mouse_buttons() {
 	return _window ? _window->mouse_buttons() : 0;
 }
 
+void Widget::calculate_layout() {
+	for(auto& child : children) {
+		Rect child_rect = child->_rect;
+
+		switch(child->_sizing_mode) {
+			case FILL:
+				child_rect.set_dimensions(_rect.dimensions());
+				break;
+			case PREFERRED:
+				child_rect.set_dimensions(preferred_size());
+				break;
+		}
+
+		switch(child->_positioning_mode) {
+			case AUTO: {
+				auto dims = child_rect.dimensions();
+				child_rect.set_position({
+					_rect.x + _rect.width / 2 - dims.width / 2,
+					_rect.y + _rect.height / 2 - dims.height / 2
+				});
+				break;
+			}
+			case ABSOLUTE: {
+				child_rect.set_position(_rect.position() + child->_absolute_position);
+				break;
+			}
+		}
+
+		child->set_layout_bounds(child_rect);
+	}
+}
+
 void Widget::parent_window_created() {
 	create_window(_parent ? _parent->_window : _parent_window->_window);
 }
@@ -199,53 +246,4 @@ void Widget::create_window(Pond::Window* parent) {
     __register_widget(this, _window->id());
     for(auto &child : children)
         child->parent_window_created();
-}
-
-void Widget::calculate_layout() {
-	if(!_parent_window && !_parent)
-		return;
-
-	Rect old_rect = _rect;
-	Rect parent_rect = _parent_window ? _parent_window->contents_rect() : _parent->bounds_for_child(this);
-
-	switch(_sizing_mode) {
-		case FILL:
-			_rect.set_dimensions(parent_rect.dimensions());
-			break;
-		case PREFERRED:
-			_rect.set_dimensions(preferred_size());
-			break;
-	}
-
-	switch(_positioning_mode) {
-		case AUTO: {
-			auto dims = _rect.dimensions();
-			_rect.set_position({
-									   parent_rect.position().x + parent_rect.width / 2 - dims.width / 2,
-									   parent_rect.position().y + parent_rect.height / 2 - dims.height / 2
-							   });
-			break;
-		}
-		case ABSOLUTE: {
-			_rect.set_position(parent_rect.position() + _absolute_position);
-			break;
-		}
-	}
-
-	on_layout_change(old_rect);
-
-	if(_window) {
-		_window->set_position(_rect.position());
-		_window->resize(_rect.dimensions());
-		repaint();
-		if(!_first_layout_done) {
-			_first_layout_done = true;
-			repaint_now();
-			_window->set_hidden(_hidden);
-		}
-	}
-
-	for(auto child : children) {
-		child->calculate_layout();
-	}
 }

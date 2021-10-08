@@ -49,12 +49,6 @@ namespace UI {
 		Dimensions current_size();
 
 		/**
-		 * Returns the rect that the given child of this widget should position itself within.
-		 * @return The bounds that the child should position itself within.
-		 */
-		virtual Rect bounds_for_child(Widget* child);
-
-		/**
 		 * Returns the positioning mode of the widget.
 		 * @return The positioning mode of the widget.
 		 */
@@ -169,6 +163,12 @@ namespace UI {
 		  */
 		 void show();
 
+		/**
+		* Sets the bounds for the widget. (called during a layout update)
+		* @param new_bounds The new bounds of the widget.
+		*/
+		void set_layout_bounds(Rect new_bounds);
+
 	protected:
 		friend class Window;
 
@@ -231,10 +231,14 @@ namespace UI {
 		 */
 		unsigned int mouse_buttons();
 
+		/**
+		 * Sets the bounds for each child of the widget according to its layout.
+		 */
+		virtual void calculate_layout();
+
 		std::vector<Widget*> children;
 
 	private:
-		void calculate_layout();
 
 		friend class ScrollView; //TODO: Better way for ScrollView to access this stuff
 

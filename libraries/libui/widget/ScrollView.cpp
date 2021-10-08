@@ -68,10 +68,11 @@ void UI::ScrollView::do_repaint(const UI::DrawContext& ctx) {
 	ctx.draw_vertical_scrollbar(scrollbar_area, handle_area, handle_area.height != scrollbar_area.height);
 }
 
-Rect UI::ScrollView::bounds_for_child(UI::Widget* child) {
+//TODO: Re-implement
+/*Rect UI::ScrollView::bounds_for_child(UI::Widget* child) {
 	auto size = current_size();
 	return {0, 0, size.width - 12, size.height};
-}
+}*/
 
 bool UI::ScrollView::on_mouse_move(Pond::MouseMoveEvent evt) {
 	if(!dragging_scrollbar || !contents)
@@ -148,7 +149,8 @@ UI::ScrollView::ScrollContainer::ScrollContainer(UI::ScrollView* scroll_view): s
 	set_uses_alpha(true);
 }
 
-Rect UI::ScrollView::ScrollContainer::bounds_for_child(UI::Widget* child) {
+//TODO: Re-implement
+/*Rect UI::ScrollView::ScrollContainer::bounds_for_child(UI::Widget* child) {
 	Dimensions child_size = child->preferred_size();
 	return {-scroll_view->scroll_position.x, -scroll_view->scroll_position.y, current_size().width, child_size.height};
-}
+}*/

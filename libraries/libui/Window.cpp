@@ -17,6 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+#include <sys/time.h>
 #include "Window.h"
 #include "libui.h"
 #include "Theme.h"
@@ -245,5 +246,40 @@ void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 }
 
 void Window::on_resize(const Rect& old_rect) {
-    _contents->update_layout();
+    calculate_layout();
+}
+
+void Window::calculate_layout() {
+	if(!_contents)
+		return;
+
+	Rect new_rect = _contents->_rect;
+	Rect bounds = contents_rect();
+
+	switch(_contents->_sizing_mode) {
+		case FILL:
+			new_rect.set_dimensions(bounds.dimensions());
+			break;
+		case PREFERRED:
+			new_rect.set_dimensions(_contents->preferred_size());
+			break;
+	}
+
+	switch(contents()->_positioning_mode) {
+		case AUTO: {
+			auto dims = new_rect.dimensions();
+			new_rect.set_position({
+				bounds.x + bounds.width / 2 - dims.width / 2,
+				bounds.y + bounds.height / 2 - dims.height / 2
+			});
+			break;
+		}
+
+		case ABSOLUTE: {
+			new_rect.set_position(bounds.position() + _contents->_absolute_position);
+			break;
+		}
+	}
+
+	_contents->set_layout_bounds(new_rect);
 }
