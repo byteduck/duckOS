@@ -18,7 +18,7 @@
 */
 
 #include <kernel/memory/PageDirectory.h>
-#include <cstring>
+#include <kernel/kstd/cstring.h>
 #include <kernel/memory/MemoryManager.h>
 #include "DiskDevice.h"
 
