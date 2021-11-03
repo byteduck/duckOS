@@ -41,7 +41,7 @@ To build something from the `edit` directory, pass the `edited-[thing]` to the `
 ## Configuring cmake
 1. Make sure you've built the toolchain first.
 2. Go to the `cmake-build` directory.
-3. From that directory, run `cmake ..`.
+3. From that directory, run `cmake .. -DCMAKE_TOOLCHAIN_FILE=toolchain/CMakeToolchain.txt`.
 
 ## Building and running duckOS
 1. In the `cmake-build` directory, run `make` and then `make install` to build the kernel & programs.
