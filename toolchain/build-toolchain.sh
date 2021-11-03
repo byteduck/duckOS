@@ -57,7 +57,7 @@ build_gcc () {
   mkdir -p "$SYSROOT"/usr/include
   LIBC_HEADERS=$(find "$LIBC_LOC" -name '*.h' -print)
   while IFS= read -r HEADER; do
-    install -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
+    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
   done <<< "$LIBC_HEADERS"
   printf "libc headers installed!...\n"
 
@@ -65,7 +65,7 @@ build_gcc () {
   mkdir -p "$SYSROOT"/usr/include
   LIBM_HEADERS=$(find "$LIBM_LOC" -name '*.h' -print)
   while IFS= read -r HEADER; do
-    install -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
+    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
   done <<< "$LIBM_HEADERS"
   printf "libm headers installed!...\n"
   
@@ -73,7 +73,7 @@ build_gcc () {
   mkdir -p "$SYSROOT"/usr/include/kernel
   KERNEL_HEADERS=$(find "$KERNEL_LOC" -name '*.h' -print)
   while IFS= read -r HEADER; do
-    install -D "$HEADER" "$SYSROOT/usr/include/kernel/$(echo "$HEADER" | sed -e "s@$KERNEL_LOC@@")"
+    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/kernel/$(echo "$HEADER" | sed -e "s@$KERNEL_LOC@@")"
   done <<< "$KERNEL_HEADERS"
   printf "kernel headers installed!...\n"
 
@@ -95,13 +95,13 @@ build_libc() {
   mkdir -p "$SYSROOT"/usr/include
   LIBC_HEADERS=$(find "$LIBC_LOC" -name '*.h' -print)
   while IFS= read -r HEADER; do
-    install -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
+    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
   done <<< "$LIBC_HEADERS"
   printf "libc headers installed!\nInstalling libm headers...\n"
   mkdir -p "$SYSROOT"/usr/include
   LIBM_HEADERS=$(find "$LIBM_LOC" -name '*.h' -print)
   while IFS= read -r HEADER; do
-    install -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
+    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
   done <<< "$LIBM_HEADERS"
   printf "libm headers installed!\nBuilding libstdc++...\n"
   cd "gcc-$GCC_VERSION-build" || exit 1

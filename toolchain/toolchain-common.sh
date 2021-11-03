@@ -19,6 +19,13 @@ GCC_VERSION="9.3.0"
 GCC_FILE="gcc-$GCC_VERSION"
 GCC_URL="https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/$GCC_FILE.tar.gz"
 
+SYS_NAME="$(uname -s)"
+INSTALL_BIN="install"
+
+if [ "$SYS_NAME" = "Darwin" ]; then
+  INSTALL_BIN="ginstall"
+fi
+
 download-binutils () {
   if [ ! -d "$BINUTILS_FILE" ]; then
     printf "Downloading binutils %s...\n" "$BINUTILS_VERSION"
