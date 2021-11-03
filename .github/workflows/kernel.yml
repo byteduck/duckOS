@@ -35,5 +35,5 @@ jobs:
       - name: Build Kernel
         run: |
           cd cmake-build
-          cmake ..
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=toolchain/CMakeToolchain.txt
           make kernel
