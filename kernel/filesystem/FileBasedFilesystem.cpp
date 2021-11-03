@@ -20,7 +20,6 @@
 #include "FileBasedFilesystem.h"
 #include <kernel/kstd/cstring.h>
 #include <kernel/time/Time.h>
-#include <climits>
 #include "Inode.h"
 #include "FileDescriptor.h"
 
