@@ -40,6 +40,14 @@ else
 	DUCKOS_QEMU="qemu-system-x86_64"
 fi
 
+DUCKOS_QEMU_DISPLAY=""
+
+if "$DUCKOS_QEMU" --display help | grep -iq sdl; then
+	DUCKOS_QEMU_DISPLAY="--display sdl"
+elif "$DUCKOS_QEMU" --display help | grep -iq cocoa; then
+	DUCKOS_QEMU_DISPLAY="--display cocoa"
+fi
+
 # Run!
 DUCKOS_QEMU_ARGS="
 	-s
@@ -48,7 +56,7 @@ DUCKOS_QEMU_ARGS="
 	-drive file=$DUCKOS_IMAGE,cache=directsync,format=raw,id=disk,if=ide
 	-m 512M
 	-serial stdio
-	-display sdl
+	$DUCKOS_QEMU_DISPLAY
 	$DUCKOS_QEMU_ACCEL"
 
 "$DUCKOS_QEMU" $DUCKOS_QEMU_ARGS
