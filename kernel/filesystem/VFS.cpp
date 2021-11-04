@@ -285,18 +285,11 @@ ResultRet<kstd::string> VFS::readlink(const kstd::string& path, const User& user
 	if(!inode->metadata().is_symlink()) return -EINVAL;
 
 	//Read it
-	auto* buf = new uint8_t[inode->metadata().size + 1];
-	size = inode->read(0, inode->metadata().size, buf, nullptr);
-	buf[inode->metadata().size] = '\0';
-	if(size < 0) {
-		delete[] buf;
-		return size;
-	}
-
-	//Return the result
-	kstd::string ret((char*)buf);
-	delete[] buf;
-	return ret;
+	auto link_or_err = inode->resolve_link(base, user, nullptr, 0, 1);
+	if(link_or_err.is_error())
+		return link_or_err.code();
+	else
+		return link_or_err.value()->get_full_path();
 }
 
 Result VFS::rmdir(kstd::string path, const User& user, const kstd::shared_ptr<LinkedInode> &base) {
