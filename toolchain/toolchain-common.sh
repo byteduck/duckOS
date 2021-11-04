@@ -11,6 +11,8 @@ EDIT="$DIR/edit"
 SYSROOT="$DIR/../cmake-build/root"
 NUM_JOBS=$(( $(nproc) / 2 ))
 
+source "$DIR/../scripts/duckos.sh"
+
 BINUTILS_VERSION="2.34"
 BINUTILS_FILE="binutils-$BINUTILS_VERSION"
 BINUTILS_URL="https://ftp.gnu.org/gnu/binutils/$BINUTILS_FILE.tar.gz"
@@ -28,14 +30,14 @@ fi
 
 download-binutils () {
   if [ ! -d "$BINUTILS_FILE" ]; then
-    printf "Downloading binutils %s...\n" "$BINUTILS_VERSION"
+    msg "Downloading binutils $BINUTILS_VERSION..."
     curl "$BINUTILS_URL" > "$BINUTILS_FILE.tar.gz" || exit 1
-    printf "Extracting binutils...\n"
+    msg "Extracting binutils..."
     tar -xzf "$BINUTILS_FILE.tar.gz" || exit 1
     rm "$BINUTILS_FILE.tar.gz"
 
     cd "$BINUTILS_FILE" || exit 1
-    printf "Patching binutils...\n"
+    msg "Patching binutils..."
     if [ "$1" == "use-git" ]; then
       git init . > /dev/null || exit 1
       git add -A > /dev/null || exit 1
@@ -44,23 +46,23 @@ download-binutils () {
     else
       patch -p1 < "$DIR/binutils-$BINUTILS_VERSION.patch" > /dev/null || exit 1
     fi
-    printf "binutils patched!\n"
+    success "Pathed binutils!"
     cd ..
   else
-    printf "binutils already downloaded.\n"
+    msg "Already downloaded binutils."
   fi
 }
 
 download-gcc () {
   if [ ! -d "$GCC_FILE" ]; then
-    printf "Downloading gcc %s...\n" "$GCC_VERSION"
+    msg "Downloading gcc $GCC_VERSION..."
     curl "$GCC_URL" > "$GCC_FILE.tar.gz" || exit 1
-    printf "Extracting gcc...\n"
+    msg "Extracting gcc..."
     tar -xzf "$GCC_FILE.tar.gz" || exit 1
     rm "$GCC_FILE.tar.gz"
 
     cd "$GCC_FILE" || exit 1
-    printf "Patching gcc...\n"
+    msg "Patching gcc..."
     if [ "$1" == "use-git" ]; then
       git init . > /dev/null || exit 1
       git add -A > /dev/null || exit 1
@@ -69,9 +71,9 @@ download-gcc () {
     else
       patch -p1 < "$DIR/gcc-$GCC_VERSION.patch" > /dev/null || exit 1
     fi
-    printf "gcc patched!\n"
+    success "Patched gcc!"
     cd ..
   else
-    printf "gcc already downloaded.\n"
+    msg "Already downloaded gcc."
   fi
 }

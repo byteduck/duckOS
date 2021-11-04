@@ -1,25 +1,26 @@
 #!/bin/bash
 set -e
 
+SCRIPTDIR=$(dirname "$BASH_SOURCE")
+source "$SCRIPTDIR/duckos.sh"
+
 if [ $# -eq 0 ]; then
-  echo "Please provide a directory to create the filesystem in."
-  exit 1
+  fail "Please provide a directory to create the filesystem in."
 fi
 
 FS_DIR="$1"
 
-echo "Copying base and kernel to filesystem..."
+msg "Copying base and kernel to filesystem..."
 if [ -f "${SOURCE_DIR}/user/"* ]; then
-  rsync -avuH --inplace "${SOURCE_DIR}/user/"* "$FS_DIR" || (echo "Couldn't copy user folder." && exit 1)
+  rsync -auH --inplace "${SOURCE_DIR}/user/"* "$FS_DIR" || (echo "Couldn't copy user folder." && exit 1)
 else
-  echo "No user folder, or empty user folder."
+  warn "No user folder, or empty user folder."
 fi
-rsync -avuH --inplace "${SOURCE_DIR}/base/"* "$FS_DIR" || (echo "Couldn't copy base." && exit 1)
-rsync -avuH --inplace "root/"* "$FS_DIR"/ || (echo "Couldn't copy root." && exit 1)
-echo "Copied."
+rsync -auH --inplace "${SOURCE_DIR}/base/"* "$FS_DIR" || (echo "Couldn't copy base." && exit 1)
+rsync -auH --inplace "root/"* "$FS_DIR"/ || (echo "Couldn't copy root." && exit 1)
 
-echo "Setting up root filesystem..."
-echo "Setting up devices..."
+msg "Setting up root filesystem..."
+msg "Setting up devices..."
 if [ -d "$FS_DIR"/dev ]; then
   rm -rf "${FS_DIR:?}"/dev/*
 fi
@@ -36,20 +37,18 @@ mknod "$FS_DIR"/dev/input/keyboard c 13 0
 mknod "$FS_DIR"/dev/input/mouse c 13 1
 mknod "$FS_DIR"/dev/ptmx c 5 2
 mkdir -p "$FS_DIR"/dev/pts
-echo "Done setting up devices!"
-echo "Setting up directories..."
+msg "Setting up directories..."
 chmod -R g+rX,o+rX "$FS_DIR"/
 
-echo "Setting up /proc/..."
+msg "Setting up /proc/..."
 mkdir -p "$FS_DIR"/proc
 chmod 555 "$FS_DIR"/proc
 
-echo "Setting up /sock/..."
+msg "Setting up /sock/..."
 mkdir -p "$FS_DIR"/sock
 chmod 777 "$FS_DIR"/sock
 
-echo "Setting up /etc/..."
+msg "Setting up /etc/..."
 chown -R 0:0 "$FS_DIR"/etc
 
-echo "Done setting up directories!"
-echo "Done setting up root filesystem!"
+success "Done setting up root filesystem!"

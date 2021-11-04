@@ -2,6 +2,7 @@
 set -e
 
 source "./toolchain-common.sh"
+source "../scripts/duckos.sh"
 
 build_binutils () {
   pushd .
@@ -15,15 +16,15 @@ build_binutils () {
     download-binutils
   fi
 
-  printf "Configuring binutils...\n"
+  msg "Configuring binutils..."
   mkdir -p "binutils-$BINUTILS_VERSION-build"
   cd "binutils-$BINUTILS_VERSION-build"
   "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --with-sysroot="$SYSROOT" --disable-nls --enable-shared || exit 1
-  printf "Making binutils...\n"
+  msg "Making binutils..."
   make -j "$NUM_JOBS" || exit 1
-  printf "Installing binutils...\n"
+  msg "Installing binutils..."
   make install || exit 1
-  printf "binutils installed!\n"
+  success "Installed binutils!"
   cd ..
 
   popd
@@ -41,75 +42,49 @@ build_gcc () {
     download-gcc
   fi
 
-  printf "Configuring gcc...\n"
+  msg "Configuring gcc..."
   mkdir -p "gcc-$GCC_VERSION-build"
   cd "gcc-$GCC_VERSION-build"
   "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --with-newlib --enable-shared || exit 1
-  printf "gcc configured!\n"
 
-  printf "Making gcc...\n"
+  msg "Making gcc..."
   make -j "$NUM_JOBS" all-gcc all-target-libgcc || exit 1
-  printf "Installing gcc...\n"
+  msg "Installing gcc..."
   make install-gcc install-target-libgcc || exit 1
-  printf "gcc installed!\n"
+  success "Installed gcc!"
 
-  printf "Installing libc headers...\n"
+  msg "Installing libc headers..."
   mkdir -p "$SYSROOT"/usr/include
   LIBC_HEADERS=$(find "$LIBC_LOC" -name '*.h' -print)
   while IFS= read -r HEADER; do
     "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
   done <<< "$LIBC_HEADERS"
-  printf "libc headers installed!...\n"
+  success "Installed libc headers!"
 
-  printf "Installing libm headers...\n"
+  msg "Installing libm headers..."
   mkdir -p "$SYSROOT"/usr/include
   LIBM_HEADERS=$(find "$LIBM_LOC" -name '*.h' -print)
   while IFS= read -r HEADER; do
     "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
   done <<< "$LIBM_HEADERS"
-  printf "libm headers installed!...\n"
+  success "Installed libm headers!"
   
-  printf "Installing kernel headers...\n"
+  msg "Installing kernel headers..."
   mkdir -p "$SYSROOT"/usr/include/kernel
   KERNEL_HEADERS=$(find "$KERNEL_LOC" -name '*.h' -print)
   while IFS= read -r HEADER; do
     "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/kernel/$(echo "$HEADER" | sed -e "s@$KERNEL_LOC@@")"
   done <<< "$KERNEL_HEADERS"
-  printf "kernel headers installed!...\n"
+  success "Installed kernel headers!"
 
-  printf "Making libstdc++...\n"
+  msg "Making libstdc++..."
   make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1
-  printf "Installing libstdc++...\n"
+  msg "Installing libstdc++..."
   make install-gcc install-target-libstdc++-v3
-  printf "libstdc++ installed!\n"
+  success "Installed libstdc++!"
 
   cd ..
   popd
-}
-
-build_libc() {
-  printf "Making and installing libc...\n"
-  cd "$BUILD"
-  make libc || exit 1
-  printf "Made and installed libc!\Installing libc headers...\n"
-  mkdir -p "$SYSROOT"/usr/include
-  LIBC_HEADERS=$(find "$LIBC_LOC" -name '*.h' -print)
-  while IFS= read -r HEADER; do
-    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
-  done <<< "$LIBC_HEADERS"
-  printf "libc headers installed!\nInstalling libm headers...\n"
-  mkdir -p "$SYSROOT"/usr/include
-  LIBM_HEADERS=$(find "$LIBM_LOC" -name '*.h' -print)
-  while IFS= read -r HEADER; do
-    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
-  done <<< "$LIBM_HEADERS"
-  printf "libm headers installed!\nBuilding libstdc++...\n"
-  cd "gcc-$GCC_VERSION-build" || exit 1
-  "$BUILD/$GCC_FILE/configure" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --with-newlib --enable-shared || exit 1
-  make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1
-  printf "Installing libstdc++...\n"
-  make install-gcc install-target-libstdc++-v3
-  printf "libstdc++ installed!\nDone building libc and libstdc++!\n"
 }
 
 mkdir -p "$BUILD"
@@ -119,27 +94,14 @@ if [ "$1" ]; then
     build_binutils edited
   elif [ "$1" == "edited-gcc" ]; then
     build_gcc edited
-  elif [ "$1" == "libc" ]; then
-    build_libc
   else
-    printf "Unknown argument %s. Please pass either edited-binutils, edited-gcc or libc to rebuild the respective component from the edit directory.\n" "$1"
-    exit
+    fail "Unknown argument ${1}. Please pass either edited-binutils or edited-gcc to rebuild the respective component from the edit directory."
   fi
-  BUILT_SOMETHING="YES"
 else
-  if [ ! -d "$PREFIX" ]; then
-    printf "Building binutils and gcc...\n"
-    build_binutils
-    build_gcc
-    BUILT_SOMETHING="YES"
-  fi
+  msg "Building binutils and gcc..."
+  build_binutils
+  build_gcc
 fi
 
-if [ ! "$BUILT_SOMETHING" ]; then
-  printf "There's nothing to build.\n"
-  printf "To rebuild binutils & gcc, delete %s.\n" "$PREFIX"
-  exit 1
-else
-  printf "Done! The toolchain (%s) is installed at %s and the sysroot is at %s.\n" "$TARGET" "$PREFIX" "$SYSROOT"
-  printf "You can safely delete the four binutils and gcc related folders in %s if you don't want the cached toolchain sources anymore.\n" "$BUILD"
-fi
+success "Done! The toolchain ($TARGET) is installed at $PREFIX and the sysroot is at $SYSROOT."
+msg "You can safely delete the four binutils and gcc related folders in $BUILD if you don't want the cached toolchain sources anymore."

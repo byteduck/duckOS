@@ -63,16 +63,6 @@ ADD_CUSTOM_TARGET(base-system
         USES_TERMINAL
 )
 
-ADD_CUSTOM_TARGET(qemu-kernel
-        COMMAND ${CMAKE_SOURCE_DIR}/scripts/qemu-kernel.sh
-        USES_TERMINAL
-)
-
-ADD_CUSTOM_TARGET(qemu-image
-        COMMAND ${CMAKE_SOURCE_DIR}/scripts/qemu-image.sh
-        USES_TERMINAL
-)
-
 ADD_CUSTOM_TARGET(qemu
 	COMMAND ${CMAKE_SOURCE_DIR}/scripts/qemu.sh
 	USES_TERMINAL
