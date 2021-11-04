@@ -58,12 +58,6 @@ ADD_CUSTOM_TARGET(image
         USES_TERMINAL
 )
 
-ADD_CUSTOM_TARGET(image-qemu
-        COMMAND ${CMAKE_COMMAND} -E env "SOURCE_DIR=${CMAKE_SOURCE_DIR}" ${CMAKE_SOURCE_DIR}/scripts/image-qemu.sh $(IMAGE_DEV)
-        BYPRODUCTS ${CMAKE_BINARY_DIR}/duckOS.img
-        USES_TERMINAL
-)
-
 ADD_CUSTOM_TARGET(base-system
         COMMAND ${CMAKE_COMMAND} -E env "SOURCE_DIR=${CMAKE_SOURCE_DIR}" ${CMAKE_SOURCE_DIR}/scripts/base-system.sh $(ROOT_DIR)
         USES_TERMINAL
