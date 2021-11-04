@@ -46,13 +46,13 @@ ResultRet<Info> Info::from_app_name(const std::string& app_name) {
 }
 
 Info::Info(std::filesystem::path base_path, std::string name, std::string exec):
-    _exists(true), _base_path(std::move(base_path)), _name(std::move(name)), _exec(std::move(exec)) {}
+	_exists(true), _base_path(std::move(base_path)), _name(std::move(name)), _exec(std::move(exec)) {}
 
 const Gfx::Image& Info::icon() {
 	if(!_icon) {
-        _icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(_base_path / "icon" / "16x16.png"));
-        if(!_icon)
-            _icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(LIBAPP_MISSING_ICON));
+		_icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(_base_path / "icon" / "16x16.png"));
+		if(!_icon)
+			_icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(LIBAPP_MISSING_ICON));
 		if(!_icon)
 			_icon = std::make_shared<Gfx::Image>(16, 16);
 	}
@@ -64,10 +64,10 @@ const std::string& Info::name() const {
 }
 
 const std::string Info::exec() const {
-    if(_exec[0] != '/')
-	    return _base_path / _exec;
-    else
-        return _exec;
+	if(_exec[0] != '/')
+		return _base_path / _exec;
+	else
+		return _exec;
 }
 
 bool Info::exists() const {
