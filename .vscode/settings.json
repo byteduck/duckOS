@@ -1,0 +1,6 @@
+{
+    "cmake.buildArgs": [
+        "-DCMAKE_TOOLCHAIN_FILE=\"${workspaceFolder}/toolchain/CMakeToolchain.txt\""
+    ],
+    "cmake.buildDirectory": "${workspaceFolder}/cmake-build"
+}
