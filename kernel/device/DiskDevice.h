@@ -24,6 +24,7 @@
 #include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/memory/MemoryManager.h>
 #include "BlockDevice.h"
+#include <kernel/kstd/map.hpp>
 
 class DiskDevice: public BlockDevice {
 public:
@@ -59,9 +60,8 @@ private:
 	inline size_t blocks_per_cache_region() { return PAGE_SIZE / block_size(); }
 	inline size_t block_cache_region_start(size_t block) { return block - (block % blocks_per_cache_region()); }
 
-	//TODO: Use a map for keeping track of cache regions (when implemented)
 	//TODO: Free cache regions when low on memory
-	kstd::vector<BlockCacheRegion*> _cache_regions;
+	kstd::map<size_t, BlockCacheRegion*> _cache_regions;
 	SpinLock _cache_lock;
 
 	static size_t _used_cache_memory;

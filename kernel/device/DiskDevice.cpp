@@ -54,8 +54,9 @@ Result DiskDevice::write_blocks(uint32_t start_block, uint32_t count, const uint
 }
 
 DiskDevice::~DiskDevice() {
-	for(auto i = 0; i < _cache_regions.size(); i++)
-		delete _cache_regions[i];
+	for(auto i = 0; i < _cache_regions.leaves().size(); i++)
+		if(_cache_regions.leaves()[i])
+			delete _cache_regions.leaves()[i];
 }
 
 size_t DiskDevice::used_cache_memory() {
@@ -63,14 +64,13 @@ size_t DiskDevice::used_cache_memory() {
 }
 
 DiskDevice::BlockCacheRegion* DiskDevice::get_cache_region(size_t block) {
-	//See if any cache regions already have the block we're looking for
-	for(auto i = 0; i < _cache_regions.size(); i++)
-		if(_cache_regions[i]->has_block(block))
-			return _cache_regions[i];
+	//See if we already have the block
+	auto& reg = _cache_regions[block_cache_region_start(block)];
+	if(reg)
+		return reg;
 
 	//Create a new cache region
-	auto* reg = new BlockCacheRegion(block_cache_region_start(block), block_size());
-	_cache_regions.push_back(reg);
+	reg = new BlockCacheRegion(block_cache_region_start(block), block_size());
 	_used_cache_memory += PAGE_SIZE;
 
 	//Read the blocks into it
