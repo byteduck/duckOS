@@ -41,6 +41,10 @@ void UI::init(char** argv, char** envp) {
 	pond_context = Pond::Context::init();
 	pollfds.clear();
 
+    auto app_res = App::Info::from_current_app();
+    if(app_res.has_value())
+        _app_info = app_res.value();
+
 	Poll pond_poll = {pond_context->connection_fd()};
 	pond_poll.on_ready_to_read = handle_pond_events;
 	add_poll(pond_poll);

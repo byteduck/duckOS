@@ -26,7 +26,6 @@
 int main(int argc, char** argv, char** envp) {
 	//Init LibUI
 	UI::init(argv, envp);
-	UI::set_app_name("4inarow");
 
 	//Make window
 	auto* window = UI::Window::create();

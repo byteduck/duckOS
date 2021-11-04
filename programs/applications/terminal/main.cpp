@@ -24,7 +24,6 @@
 int main(int argc, char** argv, char** envp) {
 	//Init LibUI
 	UI::init(argv, envp);
-	UI::set_app_name("terminal");
 
 	//Make window
 	auto* window = UI::Window::create();

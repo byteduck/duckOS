@@ -20,6 +20,7 @@
 #include "App.h"
 #include <libgraphics/png.h>
 #include <libduck/Config.h>
+#include <unistd.h>
 
 using namespace App;
 
@@ -34,15 +35,24 @@ ResultRet<Info> Info::from_app_directory(const std::filesystem::path& app_direct
 		auto has_name = app_config.find("name") != app_config.end();
 		auto has_exec = app_config.find("exec") != app_config.end();
 		if(!has_name || !has_exec)
-			return Result(-EINVAL);
+			return Result(EINVAL);
 		return Info(app_directory, app_config["name"],  app_config["exec"]);
 	}
 
-	return Result(-EINVAL);
+	return Result(EINVAL);
 }
 
 ResultRet<Info> Info::from_app_name(const std::string& app_name) {
-	return from_app_directory(std::filesystem::path(LIBAPP_BASEPATH) / (app_name + ".app") / "app.conf");
+	return from_app_directory(std::filesystem::path(LIBAPP_BASEPATH) / (app_name + ".app"));
+}
+
+ResultRet<Info> Info::from_current_app() {
+    char exe_path[512];
+    if(!readlink("/proc/$$/exe", exe_path, 512)) {
+        return from_app_directory(std::filesystem::path(exe_path).parent_path());
+    } else {
+        return Result(errno);
+    }
 }
 
 Info::Info(std::filesystem::path base_path, std::string name, std::string exec):
