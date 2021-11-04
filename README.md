@@ -32,9 +32,9 @@ The code for these can be found in [services](services/).
 
 The code for these can be found in [programs](/programs)
 
-- Terminal (/bin/terminal): A libui-based terminal application.
-- System Monitor (/bin/monitor): A basic system monitor showing memory and CPU utilization.
-- 4 In a Row (/bin/4inarow): A basic four-in-a-row game. Play with two players or against the computer.
+- Terminal (/apps/terminal.app): A libui-based terminal application.
+- System Monitor (/apps/monitor.app): A basic system monitor showing memory and CPU utilization.
+- 4 In a Row (/apps/4inarow.app): A basic four-in-a-row game. Play with two players or against the computer.
 - Sandbar (/bin/sandbar): A basic "taskbar" that displays a row of buttons at the bottom of the screen to launch applications.
  
 ### CLI Programs
@@ -59,6 +59,7 @@ The code for these can be found in [programs](programs/).
 - ps (/bin/ps): Shows the currently running processes.
 - dsh (/bin/dsh): A basic userspace shell with support for pipes (`|`) and redirections (`>`/`>>`).
   - There is only support for one redirection at a time right now.
+- apprun (/bin/apprun)
 
 Programs that take arguments will provide you with the correct usage when you run them without arguments.
 
