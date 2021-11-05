@@ -97,12 +97,14 @@ else
   MOUNTED="1"
 fi
 
-if [ "$SYSTEM" = "Darwin" ]; then
-  warn "IMPORTANT: GRUB command line tools are not present on macOS. GRUB will not be installed."
-else
-  msg "Installing grub..."
-  grub-install --boot-directory=mnt/boot --target=i386-pc --modules="ext2 part_msdos" "${dev}" || fail "Couldn't install grub."
-  cp "${SOURCE_DIR}/scripts/grub.cfg" mnt/boot/grub || fail "Couldn't copy grub.cfg."
+if [ ! "$USE_EXISTING" ]; then
+  if [ "$SYSTEM" = "Darwin" ]; then
+    warn "IMPORTANT: GRUB command line tools are not present on macOS. GRUB will not be installed."
+  else
+    msg "Installing grub..."
+    grub-install --boot-directory=mnt/boot --target=i386-pc --modules="ext2 part_msdos" "${dev}" || fail "Couldn't install grub."
+    cp "${SOURCE_DIR}/scripts/grub.cfg" mnt/boot/grub || fail "Couldn't copy grub.cfg."
+  fi
 fi
 
 msg "Setting up base filesystem..."
