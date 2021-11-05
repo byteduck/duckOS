@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include "Memory.h"
 #include <map>
+#include <libapp/App.h>
 
 namespace Sys {
 	class Process {
@@ -36,9 +37,10 @@ namespace Sys {
 
 		static std::map<pid_t, Process> get_all();
 		static ResultRet<Process> get(pid_t pid);
-		static ResultRet<Process> get_current();
+		static ResultRet<Process> self();
 
 		const std::string& name() const { return _name; }
+        std::string exe() const;
 		pid_t pid() const { return _pid; }
 		pid_t ppid() const { return _ppid; }
 		gid_t gid() const { return _gid; }
@@ -47,6 +49,8 @@ namespace Sys {
 		std::string state_name() const;
 		Mem::Amount physical_mem() const { return _physical_mem; }
 		Mem::Amount virtual_mem() const { return _virtual_mem; }
+
+        ResultRet<App::Info> app_info() const;
 
 		Result update();
 

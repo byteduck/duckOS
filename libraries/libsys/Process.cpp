@@ -47,7 +47,7 @@ ResultRet<Process> Process::get(pid_t pid) {
 	return ret;
 }
 
-ResultRet<Process> Process::get_current() {
+ResultRet<Process> Process::self() {
 	return get(getpid());
 }
 
@@ -64,6 +64,17 @@ std::string Process::state_name() const {
 		default:
 			return "Unknown";
 	}
+}
+
+std::string Process::exe() const {
+    char link[256];
+    link[0] = '\0';
+    readlink(("/proc/" + std::to_string(_pid) + "/exe").c_str(), link, 256);
+    return link;
+}
+
+ResultRet<App::Info> Process::app_info() const {
+    return App::Info::from_app_directory(std::filesystem::path(exe()).parent_path());
 }
 
 Result Process::update() {
