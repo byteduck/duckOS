@@ -87,6 +87,14 @@ namespace Gfx {
 		 */
 		void draw_image(const Framebuffer& other, const Point& pos) const;
 
+        /**
+		 * Draws another Image on top of this one with alpha blending, scaled to
+         * fit inside of the specified rect.
+		 * @param other The Image to draw.
+         * @param size The rect on this Image to scale the image to and draw on.
+		 */
+        void draw_image_scaled(const Framebuffer& other, const Rect& rect) const;
+
 		/**
 		 * Fills an area of the Image with a color.
 		 * @param area The area to fill.

@@ -151,6 +151,37 @@ void Framebuffer::draw_image(const Framebuffer& other, const Point& pos) const {
 	draw_image(other, {0, 0, other.width, other.height}, pos);
 }
 
+void Framebuffer::draw_image_scaled(const Framebuffer& other, const Rect& rect) const {
+    double scale_x = (double) rect.width / (double) other.width;
+    double scale_y = (double) rect.height / (double) other.height;
+
+    //Make sure self_area is in bounds of the framebuffer
+    Rect self_area = rect;
+    self_area = self_area.overlapping_area({0, 0, width, height});
+    if(self_area.empty())
+        return;
+
+    //Update other area with the changes made to self_area
+    Rect other_area = {0, 0, other.width, other.height};
+    other_area.x += (int) ((self_area.x - rect.x) / scale_x);
+    other_area.y += (int) ((self_area.y - rect.y) / scale_y);
+    other_area.width = (int) (self_area.width / scale_x);
+    other_area.height = (int) (self_area.height / scale_y);
+
+    for(int y = 0; y < self_area.height; y++) {
+        for(int x = 0; x < self_area.width; x++) {
+            auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
+            auto& other_val = other.data[(int) (other_area.x + x / scale_x) + (int) (other_area.y + y / scale_y) * other.width];
+            unsigned int alpha = COLOR_A(other_val) + 1;
+            unsigned int inv_alpha = 256 - COLOR_A(other_val);
+            this_val = RGB(
+                    (uint8_t)((alpha * COLOR_R(other_val) + inv_alpha * COLOR_R(this_val)) >> 8),
+                    (uint8_t)((alpha * COLOR_G(other_val) + inv_alpha * COLOR_G(this_val)) >> 8),
+                    (uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8));
+        }
+    }
+}
+
 void Framebuffer::fill(Rect area, uint32_t color) const {
 	//Make sure area is in the bounds of the framebuffer
 	area = area.overlapping_area({0, 0, width, height});
