@@ -25,30 +25,29 @@
 #include <libgraphics/Image.h>
 #include <libduck/Result.hpp>
 #include <memory>
+#include <filesystem>
 
-#define LIBAPP_CONFIG_BASEPATH "/usr/share/applications/"
-#define LIBAPP_ICON_BASEPATH "/usr/share/icons/16x16/"
+#define LIBAPP_BASEPATH "/apps/"
 #define LIBAPP_MISSING_ICON "/usr/share/icons/16x16/missing_icon.png"
 
 namespace App {
 	class Info {
 	public:
-		static ResultRet<Info> from_config_file(const std::string& config_file);
+		static ResultRet<Info> from_app_directory(const std::filesystem::path& app_directory);
 		static ResultRet<Info> from_app_name(const std::string& app_name);
 
 		Info() = default;
-		Info(std::string name, std::string icon_name, std::string exec);
+		Info(std::filesystem::path app_directory, std::string name, std::string exec);
 
 		const Gfx::Image& icon();
 		const std::string& name() const;
-		const std::string& icon_name() const;
-		const std::string& exec() const;
+		const std::string exec() const;
 		bool exists() const;
 
 	private:
 		bool _exists = false;
+        std::filesystem::path _base_path;
 		std::string _name;
-		std::string _icon_name;
 		std::string _exec;
 		std::shared_ptr<Gfx::Image> _icon = nullptr;
 	};

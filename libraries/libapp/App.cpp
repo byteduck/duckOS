@@ -20,12 +20,11 @@
 #include "App.h"
 #include <libgraphics/png.h>
 #include <libduck/Config.h>
-#include <filesystem>
 
 using namespace App;
 
-ResultRet<Info> Info::from_config_file(const std::string& config_file) {
-	auto config_res = Duck::Config::read_from(config_file);
+ResultRet<Info> Info::from_app_directory(const std::filesystem::path& app_directory) {
+	auto config_res = Duck::Config::read_from(app_directory / "app.conf");
 	if(config_res.is_error())
 		return config_res.result();
 	auto& cfg = config_res.value();
@@ -36,29 +35,24 @@ ResultRet<Info> Info::from_config_file(const std::string& config_file) {
 		auto has_exec = app_config.find("exec") != app_config.end();
 		if(!has_name || !has_exec)
 			return Result(-EINVAL);
-		return Info(app_config["name"], app_config["icon"], app_config["exec"]);
+		return Info(app_directory, app_config["name"],  app_config["exec"]);
 	}
 
 	return Result(-EINVAL);
 }
 
 ResultRet<Info> Info::from_app_name(const std::string& app_name) {
-	return from_config_file(std::string(LIBAPP_CONFIG_BASEPATH) + app_name + ".app");
+	return from_app_directory(std::filesystem::path(LIBAPP_BASEPATH) / (app_name + ".app") / "app.conf");
 }
 
-Info::Info(std::string name, std::string icon_name, std::string exec): _exists(true), _name(std::move(name)), _icon_name(std::move(icon_name)), _exec(std::move(exec)) {
-
-}
+Info::Info(std::filesystem::path base_path, std::string name, std::string exec):
+    _exists(true), _base_path(std::move(base_path)), _name(std::move(name)), _exec(std::move(exec)) {}
 
 const Gfx::Image& Info::icon() {
 	if(!_icon) {
-		if(!_icon_name.empty()) {
-			_icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(std::string(LIBAPP_ICON_BASEPATH) + _icon_name + ".png"));
-			if(!_icon)
-				_icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(LIBAPP_MISSING_ICON));
-		} else {
-			_icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(LIBAPP_MISSING_ICON));
-		}
+        _icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(_base_path / "icon" / "16x16.png"));
+        if(!_icon)
+            _icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(LIBAPP_MISSING_ICON));
 		if(!_icon)
 			_icon = std::make_shared<Gfx::Image>(16, 16);
 	}
@@ -69,12 +63,11 @@ const std::string& Info::name() const {
 	return _name;
 }
 
-const std::string& Info::icon_name() const {
-	return _icon_name;
-}
-
-const std::string& Info::exec() const {
-	return _exec;
+const std::string Info::exec() const {
+    if(_exec[0] != '/')
+	    return _base_path / _exec;
+    else
+        return _exec;
 }
 
 bool Info::exists() const {
@@ -83,10 +76,10 @@ bool Info::exists() const {
 
 std::vector<Info> App::get_all_apps() {
 	std::vector<Info> ret;
-	for(const auto& ent : std::filesystem::directory_iterator("/usr/share/applications")) {
-		if(ent.is_regular_file()) {
+	for(const auto& ent : std::filesystem::directory_iterator(LIBAPP_BASEPATH)) {
+		if(ent.is_directory()) {
 			if(ent.path().extension() == ".app") {
-				auto app_res = Info::from_config_file(ent.path());
+				auto app_res = Info::from_app_directory(ent.path());
 				if(!app_res.is_error())
 					ret.push_back(app_res.value());
 			}
