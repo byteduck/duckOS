@@ -112,6 +112,11 @@ void Widget::set_position(const Point& position) {
     update_layout();
 }
 
+void Widget::set_position_nolayout(const Point& position) {
+    _rect.set_position(position);
+    _window->set_position(_rect.position());
+}
+
 Point Widget::position() {
 	return _absolute_position;
 }

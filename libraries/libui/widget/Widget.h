@@ -26,6 +26,7 @@
 
 #define WIDGET_DEF(name) \
     using Ptr = std::shared_ptr<name>; \
+    using ArgPtr = const std::shared_ptr<name>&; \
     template<class... ArgTs> \
     static inline std::shared_ptr<name> make(ArgTs&&... args) { \
         return std::shared_ptr<name>(new name(args...)); \
@@ -33,6 +34,10 @@
     inline std::shared_ptr<name> self() { \
         return std::static_pointer_cast<name>(shared_from_this()); \
     }
+
+#define VIRTUAL_WIDGET_DEF(name) \
+    using Ptr = std::shared_ptr<name>; \
+    using ArgPtr = const std::shared_ptr<name>&;
 
 namespace UI {
     enum SizingMode {
@@ -46,6 +51,9 @@ namespace UI {
 	class Window;
     class Widget: public std::enable_shared_from_this<Widget> {
 	public:
+        using Ptr = std::shared_ptr<Widget>;
+        using ArgPtr = const std::shared_ptr<Widget>&;
+
         /**
          * Returns the preferred size of the widget (which may not be its current size).
          * @return The preferred size of the widget.
@@ -156,6 +164,12 @@ namespace UI {
          * @param position The new position of the widget.
          */
         void set_position(const Point& position);
+
+        /**
+         * Sets the position of the widget without recalculating layouts.
+         * @param position The new position of the widget.
+         */
+        void set_position_nolayout(const Point& position);
 
         /**
          * Gets the position of the widget.

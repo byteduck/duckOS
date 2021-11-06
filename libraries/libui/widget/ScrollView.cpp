@@ -20,44 +20,61 @@
 #include <libui/libui.h>
 #include <libui/UIException.h>
 #include "ScrollView.h"
+#include "ScrollContainer.h"
 
-UI::ScrollView::ScrollView(): container(ScrollContainer::make(self())) {
-    add_child(container);
+using namespace UI;
+
+ScrollView::ScrollView() {
     set_sizing_mode(FILL);
 }
 
-void UI::ScrollView::set_contents(const std::shared_ptr<Widget>& widget) {
-    if(contents)
+void ScrollView::set_scrollable(UI::ArgPtr<Scrollable> scrollable) {
+    if(_scrollable)
         return;
-    contents = widget;
-    container->add_child(widget);
+    _scrollable = scrollable;
+    add_child(scrollable);
+    scrollable->set_scrollview(self());
 }
 
-void UI::ScrollView::scroll(int pixels) {
+void ScrollView::set_contents(UI::ArgPtr<Widget> widget) {
+    auto container = ScrollContainer::make();
+    container->set_contents(widget);
+    set_scrollable(container);
+}
+
+void ScrollView::scroll(int pixels) {
 	Dimensions size = current_size();
-	scroll_position.y += pixels;
-	double scroll_percent = (double)scroll_position.y / (double)(contents->current_size().height - size.height);
+    _scroll_position.y += pixels;
+	double scroll_percent = (double)_scroll_position.y / (double)(_scrollable->scrollable_area().height - size.height);
 	if(scroll_percent < 0) {
-		scroll_position.y = 0;
+        _scroll_position.y = 0;
 		scroll_percent = 0;
 	} else if(scroll_percent > 1) {
-		scroll_position.y = contents->current_size().height - size.height;
+        _scroll_position.y = _scrollable->scrollable_area().height - size.height;
 		scroll_percent = 1;
 	}
 	handle_area.y = (int)(scroll_percent * (scrollbar_area.height - handle_area.height));
-	contents->_rect.set_position(scroll_position * -1);
-	contents->_window->set_position(scroll_position * -1);
+	_scrollable->on_scroll(_scroll_position);
 	repaint();
 }
 
-void UI::ScrollView::on_child_added(const std::shared_ptr<Widget>& child) {
+Point ScrollView::scroll_position() {
+    return _scroll_position;
+}
+
+void ScrollView::calculate_layout() {
+    if(_scrollable)
+        _scrollable->set_layout_bounds({0, 0, current_size().width - 15, current_size().height});
+}
+
+void ScrollView::on_child_added(Widget::ArgPtr child) {
     if(children.size() > 1)
         throw UIException("Added child to ScrollView");
 }
 
 Dimensions UI::ScrollView::preferred_size() {
-	if(contents)
-		return contents->preferred_size();
+	if(_scrollable)
+		return _scrollable->preferred_size() + Dimensions {15, 0};
 	else
 		return {100, 100};
 }
@@ -68,28 +85,10 @@ void UI::ScrollView::do_repaint(const UI::DrawContext& ctx) {
 	ctx.draw_vertical_scrollbar(scrollbar_area, handle_area, handle_area.height != scrollbar_area.height);
 }
 
-//TODO: Re-implement
-/*Rect UI::ScrollView::bounds_for_child(UI::Widget* child) {
-	auto size = current_size();
-	return {0, 0, size.width - 12, size.height};
-}*/
-
 bool UI::ScrollView::on_mouse_move(Pond::MouseMoveEvent evt) {
-	if(!dragging_scrollbar || !contents)
+	if(!dragging_scrollbar || !_scrollable)
 		return false;
-
-	handle_area.y += evt.delta.y;
-	if(handle_area.y < 0)
-		handle_area.y = 0;
-	else if(handle_area.y > scrollbar_area.height - handle_area.height)
-		handle_area.y = scrollbar_area.height - handle_area.height;
-
-	scroll_position.y = ((contents->current_size().height - scrollbar_area.height) * handle_area.y) / (scrollbar_area.height - handle_area.height);
-	contents->_rect.set_position(scroll_position * -1);
-	contents->_window->set_position(scroll_position * -1);
-
-	repaint();
-
+	scroll(evt.delta.y);
 	return true;
 }
 
@@ -122,35 +121,30 @@ void UI::ScrollView::on_layout_change(const Rect& old_rect) {
 	handle_area = scrollbar_area;
 
 	//If there are no contents, just draw a scrollbar with a full-size handle
-	if(!contents)
+	if(!_scrollable)
 		return;
 
+    Dimensions scrollable_area = _scrollable->scrollable_area();
+
 	//Calculate the height of the scrollbar handle
-	handle_area.height = (int)(((double) scrollbar_area.height / (double) contents->current_size().height) * scrollbar_area.height);
+	handle_area.height = (int)(((double) scrollbar_area.height / (double) scrollable_area.height) * scrollbar_area.height);
 	if(handle_area.height < 10)
 		handle_area.height = 10;
 	else if(handle_area.height > scrollbar_area.height)
 		handle_area.height = scrollbar_area.height;
 
 	//Calculate the position of the scrollbar handle
-	double scroll_percent = (double)scroll_position.y / (double)(contents->current_size().height - size.height);
-	if(scroll_percent < 0) {
-		//These conditions may happen if the view was resized
-		scroll_position.y = 0;
-		scroll_percent = 0;
-	} else if(scroll_percent > 1) {
-		scroll_position.y = contents->current_size().height - size.height;
-		scroll_percent = 1;
-	}
+    double scroll_percent = 0;
+    if(scrollable_area.height != size.height) {
+        scroll_percent = (double)_scroll_position.y / (double)(scrollable_area.height - size.height);
+        if(scroll_percent < 0) {
+            //These conditions may happen if the view was resized
+            _scroll_position.y = 0;
+            scroll_percent = 0;
+        } else if(scroll_percent > 1) {
+            _scroll_position.y = scrollable_area.height - size.height;
+            scroll_percent = 1;
+        }
+    }
 	handle_area.y = (int)(scroll_percent * (scrollbar_area.height - handle_area.height));
 }
-
-UI::ScrollView::ScrollContainer::ScrollContainer(const std::shared_ptr<UI::ScrollView>& scroll_view): scroll_view(scroll_view) {
-	set_uses_alpha(true);
-}
-
-//TODO: Re-implement
-/*Rect UI::ScrollView::ScrollContainer::bounds_for_child(UI::Widget* child) {
-	Dimensions child_size = child->preferred_size();
-	return {-scroll_view->scroll_position.x, -scroll_view->scroll_position.y, current_size().width, child_size.height};
-}*/

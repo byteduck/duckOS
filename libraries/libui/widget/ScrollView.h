@@ -21,6 +21,7 @@
 #define DUCKOS_LIBUI_SCROLLVIEW_H
 
 #include "Widget.h"
+#include "Scrollable.h"
 
 namespace UI {
     class ScrollView: public Widget {
@@ -28,10 +29,13 @@ namespace UI {
         WIDGET_DEF(ScrollView)
 
         //ScrollView
-        void set_contents(const std::shared_ptr<Widget>& contents);
+        void set_scrollable(Scrollable::ArgPtr contents);
+        void set_contents(Widget::ArgPtr contents);
         void scroll(int pixels);
+        Point scroll_position();
 
         //Widget
+        void calculate_layout() override;
         void on_child_added(const std::shared_ptr<Widget>& child) override;
         Dimensions preferred_size() override;
         void do_repaint(const UI::DrawContext& ctx) override;
@@ -43,18 +47,8 @@ namespace UI {
     private:
         explicit ScrollView();
 
-        class ScrollContainer: public Widget {
-        public:
-            WIDGET_DEF(ScrollContainer)
-
-        private:
-            ScrollContainer(const std::shared_ptr<ScrollView>& scroll_view);
-            std::shared_ptr<ScrollView> scroll_view;
-        };
-
-        std::shared_ptr<Widget> contents = nullptr;
-        std::shared_ptr<ScrollContainer> container;
-        Point scroll_position = {0, 0};
+        Scrollable::Ptr _scrollable = nullptr;
+        Point _scroll_position = {0, 0};
         Rect scrollbar_area;
         Rect handle_area;
         bool dragging_scrollbar = false;
