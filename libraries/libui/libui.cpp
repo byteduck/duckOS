@@ -29,9 +29,9 @@ using namespace UI;
 Pond::Context* UI::pond_context = nullptr;
 std::vector<pollfd> pollfds;
 std::map<int, Poll> polls;
-std::map<int, Window*> windows;
+std::map<int, std::shared_ptr<Window>> windows;
 int num_windows = 0;
-std::map<int, Widget*> widgets;
+std::map<int, std::shared_ptr<Widget>> widgets;
 bool should_exit = false;
 App::Info _app_info;
 
@@ -65,11 +65,11 @@ void handle_pond_events() {
 		switch(event.type) {
 			case PEVENT_KEY: {
 				auto& evt = event.key;
-				auto* window = windows[evt.window->id()];
+				auto window = windows[evt.window->id()];
 				if(window) {
 					window->on_keyboard(evt);
 				} else {
-					auto* widget = widgets[evt.window->id()];
+					auto widget = widgets[evt.window->id()];
 					if(!widget)
 						break;
 
@@ -92,11 +92,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_MOVE: {
 				auto& evt = event.mouse_move;
-				auto* window = windows[evt.window->id()];
+				auto window = windows[evt.window->id()];
 				if(window) {
 					window->on_mouse_move(evt);
 				} else {
-					auto* widget = widgets[evt.window->id()];
+					auto widget = widgets[evt.window->id()];
 					if(!widget)
 						break;
 
@@ -119,11 +119,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_BUTTON: {
 				auto& evt = event.mouse_button;
-				auto* window = windows[evt.window->id()];
+				auto window = windows[evt.window->id()];
 				if(window) {
 					window->on_mouse_button(evt);
 				} else {
-					auto* widget = widgets[evt.window->id()];
+					auto widget = widgets[evt.window->id()];
 					if(!widget)
 						break;
 
@@ -150,11 +150,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_SCROLL: {
 				auto& evt = event.mouse_scroll;
-				auto* window = windows[evt.window->id()];
+				auto window = windows[evt.window->id()];
 				if(window) {
 					window->on_mouse_scroll(evt);
 				} else {
-					auto* widget = widgets[evt.window->id()];
+					auto widget = widgets[evt.window->id()];
 					if(!widget)
 						break;
 
@@ -177,11 +177,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_LEAVE: {
 				auto& evt = event.mouse_leave;
-				auto* window = windows[evt.window->id()];
+				auto window = windows[evt.window->id()];
 				if(window) {
 					window->on_mouse_leave(evt);
 				} else {
-					auto* widget = widgets[evt.window->id()];
+					auto widget = widgets[evt.window->id()];
 					if(!widget)
 						break;
 					widget->on_mouse_leave(evt);
@@ -199,7 +199,7 @@ void handle_pond_events() {
 
 			case PEVENT_WINDOW_RESIZE: {
                 auto& evt = event.window_resize;
-                auto* window = windows[evt.window->id()];
+                auto window = windows[evt.window->id()];
                 if(window) {
                     window->on_resize(evt.old_rect);
                     window->repaint();
@@ -273,7 +273,7 @@ void UI::add_poll(const Poll& poll) {
 	pollfds.push_back(pfd);
 }
 
-void UI::__register_window(UI::Window* window, int id) {
+void UI::__register_window(const std::shared_ptr<Window>& window, int id) {
 	windows[id] = window;
 	num_windows++;
 }
@@ -288,7 +288,7 @@ void UI::__deregister_window(int id) {
 	}
 }
 
-void UI::__register_widget(UI::Widget* widget, int id) {
+void UI::__register_widget(const std::shared_ptr<Widget>& widget, int id) {
 	widgets[id] = widget;
 }
 

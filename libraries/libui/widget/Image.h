@@ -10,13 +10,13 @@
 namespace UI {
     class Image: public Widget {
     public:
+        WIDGET_DEF(Image)
+
         enum ScalingMode {
             STRETCH,
             CENTER,
             FILL
         };
-
-        explicit Image(const Gfx::Image& image, ScalingMode mode = CENTER);
 
         //Image
         const Gfx::Image& image();
@@ -29,6 +29,8 @@ namespace UI {
         Dimensions preferred_size() override;
 
     private:
+        explicit Image(const Gfx::Image& image, ScalingMode mode = CENTER);
+
         Gfx::Image _image;
         ScalingMode _scaling_mode;
     };

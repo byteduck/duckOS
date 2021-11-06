@@ -25,7 +25,7 @@
 namespace UI {
 	class ProgressBar : public Widget {
 	public:
-		explicit ProgressBar();
+        WIDGET_DEF(ProgressBar)
 
 		//ProgressBar
 		double progress();
@@ -36,6 +36,7 @@ namespace UI {
 
 	private:
 		//ProgressBar
+        explicit ProgressBar();
 		double _progress = 0;
 
 		//Widget

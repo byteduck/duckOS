@@ -21,12 +21,12 @@
 #include <libui/UIException.h>
 #include "ScrollView.h"
 
-UI::ScrollView::ScrollView(): container(new ScrollContainer(this)) {
+UI::ScrollView::ScrollView(): container(ScrollContainer::make(self())) {
     add_child(container);
     set_sizing_mode(FILL);
 }
 
-void UI::ScrollView::set_contents(UI::Widget* widget) {
+void UI::ScrollView::set_contents(const std::shared_ptr<Widget>& widget) {
     if(contents)
         return;
     contents = widget;
@@ -50,7 +50,7 @@ void UI::ScrollView::scroll(int pixels) {
 	repaint();
 }
 
-void UI::ScrollView::on_child_added(Widget *child) {
+void UI::ScrollView::on_child_added(const std::shared_ptr<Widget>& child) {
     if(children.size() > 1)
         throw UIException("Added child to ScrollView");
 }
@@ -145,7 +145,7 @@ void UI::ScrollView::on_layout_change(const Rect& old_rect) {
 	handle_area.y = (int)(scroll_percent * (scrollbar_area.height - handle_area.height));
 }
 
-UI::ScrollView::ScrollContainer::ScrollContainer(UI::ScrollView* scroll_view): scroll_view(scroll_view) {
+UI::ScrollView::ScrollContainer::ScrollContainer(const std::shared_ptr<UI::ScrollView>& scroll_view): scroll_view(scroll_view) {
 	set_uses_alpha(true);
 }
 

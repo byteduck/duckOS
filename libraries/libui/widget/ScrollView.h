@@ -25,14 +25,14 @@
 namespace UI {
     class ScrollView: public Widget {
     public:
-        //ScrollView
-        ScrollView();
+        WIDGET_DEF(ScrollView)
 
-        void set_contents(Widget* contents);
+        //ScrollView
+        void set_contents(const std::shared_ptr<Widget>& contents);
         void scroll(int pixels);
 
         //Widget
-        void on_child_added(Widget* child) override;
+        void on_child_added(const std::shared_ptr<Widget>& child) override;
         Dimensions preferred_size() override;
         void do_repaint(const UI::DrawContext& ctx) override;
 		bool on_mouse_move(Pond::MouseMoveEvent evt) override;
@@ -41,17 +41,19 @@ namespace UI {
 		void on_layout_change(const Rect& old_rect) override;
 
     private:
+        explicit ScrollView();
+
         class ScrollContainer: public Widget {
         public:
-        	//ScrollContainer
-            ScrollContainer(ScrollView* scroll_view);
+            WIDGET_DEF(ScrollContainer)
 
         private:
-            ScrollView* scroll_view;
+            ScrollContainer(const std::shared_ptr<ScrollView>& scroll_view);
+            std::shared_ptr<ScrollView> scroll_view;
         };
 
-        Widget* contents = nullptr;
-        ScrollContainer* container;
+        std::shared_ptr<Widget> contents = nullptr;
+        std::shared_ptr<ScrollContainer> container;
         Point scroll_position = {0, 0};
         Rect scrollbar_area;
         Rect handle_area;

@@ -34,7 +34,7 @@
 
 class GameWidget: public UI::Widget {
 public:
-	GameWidget();
+    WIDGET_DEF(GameWidget)
 
 	void reset(bool vs_cpu);
 	void show_hint();
@@ -46,6 +46,8 @@ public:
 	bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 
 private:
+    GameWidget();
+
 	Board board;
 	int current_player = 1;
 	Point hovered_cell = {-1, -1};

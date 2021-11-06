@@ -84,25 +84,25 @@ void Widget::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 
 }
 
-Widget* Widget::parent() {
+std::shared_ptr<Widget> Widget::parent() {
 	return _parent;
 }
 
-Window* Widget::parent_window() {
+std::shared_ptr<Window> Widget::parent_window() {
 	return _parent_window;
 }
 
-Window* Widget::root_window() {
+std::shared_ptr<Window> Widget::root_window() {
 	if(!_parent_window && !_parent)
 		return nullptr;
 	return _parent_window ? _parent_window : _parent->root_window();
 }
 
-void Widget::add_child(Widget* child) {
+void Widget::add_child(const std::shared_ptr<Widget>& child) {
 	if(child->parent() || child->parent_window())
 		return;
 	children.push_back(child);
-	child->set_parent(this);
+	child->set_parent(shared_from_this());
 	on_child_added(child);
 	update_layout();
 }
@@ -145,7 +145,7 @@ void Widget::set_layout_bounds(Rect new_bounds) {
 	}
 }
 
-void Widget::set_window(UI::Window* window) {
+void Widget::set_window(const std::shared_ptr<Window>& window) {
 	if(_parent || _parent_window)
 		return;
 
@@ -153,7 +153,7 @@ void Widget::set_window(UI::Window* window) {
 	create_window(window->_window);
 }
 
-void Widget::set_parent(UI::Widget* widget) {
+void Widget::set_parent(const std::shared_ptr<Widget>& widget) {
 	if(_parent || _parent_window)
 		return;
 
@@ -165,7 +165,7 @@ void Widget::set_parent(UI::Widget* widget) {
 
 void Widget::update_layout() {
 	//TODO: Find a better way of doing this that doesn't involve re-layouting everything everytime anything is updated
-	auto* root = root_window();
+	auto root = root_window();
 	if(root)
 		root->calculate_layout();
 }
@@ -174,7 +174,7 @@ void Widget::do_repaint(const DrawContext& framebuffer) {
 	framebuffer.fill({0, 0, framebuffer.width(), framebuffer.height()}, RGBA(0, 0, 0, 0));
 }
 
-void Widget::on_child_added(UI::Widget* child) {
+void Widget::on_child_added(const std::shared_ptr<Widget>& child) {
 
 }
 
@@ -243,7 +243,7 @@ void Widget::create_window(Pond::Window* parent) {
     _window = pond_context->create_window(parent, _rect, true);
     _window->set_uses_alpha(_uses_alpha);
     _window->set_global_mouse(_global_mouse);
-    __register_widget(this, _window->id());
+    __register_widget(shared_from_this(), _window->id());
     for(auto &child : children)
         child->parent_window_created();
 }

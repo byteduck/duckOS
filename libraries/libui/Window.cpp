@@ -25,12 +25,13 @@
 using namespace UI;
 
 Window::Window(): _window(pond_context->create_window(nullptr, {-1, -1, -1, -1}, true)) {
-	UI::__register_window(this, _window->id());
 	_window->set_draggable(true);
 }
 
-Window* Window::create() {
-	return new Window();
+std::shared_ptr<Window> Window::create() {
+	auto ret = std::shared_ptr<Window>(new Window());
+    UI::__register_window(ret, ret->_window->id());
+    return ret;
 }
 
 void Window::resize(Dimensions dims) {
@@ -72,14 +73,14 @@ Point Window::position() {
 	return _window->position();
 }
 
-void Window::set_contents(Widget* contents) {
+void Window::set_contents(const std::shared_ptr<Widget>& contents) {
 	_contents = contents;
-	_contents->set_window(this);
+	_contents->set_window(shared_from_this());
     resize(_contents->current_size());
     _contents->update_layout();
 }
 
-Widget* Window::contents() {
+std::shared_ptr<Widget> Window::contents() {
 	return _contents;
 }
 

@@ -28,22 +28,22 @@ int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
 	//Make window
-	auto* window = UI::Window::create();
+	auto window = UI::Window::create();
 	window->set_title("4 in a row");
 
-	auto* mainview = new UI::BoxLayout(UI::BoxLayout::HORIZONTAL, 2);
+	auto mainview = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL, 2);
 
-	auto* toolbar = new UI::BoxLayout(UI::BoxLayout::VERTICAL, 2);
+	auto toolbar = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 2);
 
-	auto* pvp_button = new UI::Button("New Game");
-	auto* cpu_checkbox = new UI::Checkbox("CPU");
-	auto* hint_button = new UI::Button("Hint");
+	auto pvp_button = UI::Button::make("New Game");
+	auto cpu_checkbox = UI::Checkbox::make("CPU");
+	auto hint_button = UI::Button::make("Hint");
 	toolbar->add_child(pvp_button);
     toolbar->add_child(hint_button);
 	toolbar->add_child(cpu_checkbox);
 
 	//Create connect 4 widget
-	auto* gamewidget = new GameWidget();
+	auto gamewidget = GameWidget::make();
 	pvp_button->on_pressed = [&]{
         gamewidget->reset(cpu_checkbox->checked());
 	};

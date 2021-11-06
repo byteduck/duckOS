@@ -31,10 +31,10 @@
 
 using namespace Sys;
 
-UI::ProgressBar* mem_bar;
-UI::ProgressBar* cpu_bar;
-UI::Label* mem_label;
-UI::Label* cpu_label;
+UI::ProgressBar::Ptr mem_bar;
+UI::ProgressBar::Ptr cpu_bar;
+UI::Label::Ptr mem_label;
+UI::Label::Ptr cpu_label;
 
 std::ifstream mem_stream;
 std::ifstream cpu_stream;
@@ -88,24 +88,24 @@ int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
 	//Make window
-	auto* window = UI::Window::create();
+	auto window = UI::Window::create();
 	window->set_title("System Monitor");
 
 	//Make widgets
-	mem_bar = new UI::ProgressBar();
-	cpu_bar = new UI::ProgressBar();
-	mem_label = new UI::Label("Memory");
-	cpu_label = new UI::Label("CPU");
+	mem_bar = UI::ProgressBar::make();
+	cpu_bar = UI::ProgressBar::make();
+	mem_label = UI::Label::make("Memory");
+	cpu_label = UI::Label::make("CPU");
 
 	//Make layout
-	auto* layout = new UI::BoxLayout(UI::BoxLayout::VERTICAL, 10);
+	auto layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 10);
 
-	auto* mem_layout = new UI::BoxLayout(UI::BoxLayout::VERTICAL);
+	auto mem_layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL);
 	layout->add_child(mem_layout);
 	mem_layout->add_child(mem_bar);
 	mem_layout->add_child(mem_label);
 
-	auto* cpu_layout = new UI::BoxLayout(UI::BoxLayout::VERTICAL);
+	auto cpu_layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL);
 	layout->add_child(cpu_layout);
 	cpu_layout->add_child(cpu_bar);
 	cpu_layout->add_child(cpu_label);

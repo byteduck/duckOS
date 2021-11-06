@@ -25,7 +25,7 @@
 namespace UI {
 	class GridLayout: public Widget {
 	public:
-		explicit GridLayout(const Dimensions& num_cells);
+        WIDGET_DEF(GridLayout)
 
 		void set_cells(const Dimensions& cell_size);
 		Dimensions cells();
@@ -35,8 +35,9 @@ namespace UI {
 		Dimensions preferred_size() override;
 
 	private:
-		Dimensions calculate_num_cells();
+        explicit GridLayout(const Dimensions& num_cells);
 
+		Dimensions calculate_num_cells();
 		Dimensions _num_cells;
 	};
 }

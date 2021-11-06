@@ -25,12 +25,12 @@
 namespace UI {
 	class BoxLayout: public Widget {
 	public:
+        WIDGET_DEF(BoxLayout)
+
 		enum Direction {
 			HORIZONTAL,
 			VERTICAL
 		};
-
-		explicit BoxLayout(Direction direction, int spacing = 0);
 
 		void set_spacing(int new_spacing);
 
@@ -39,8 +39,10 @@ namespace UI {
 		void calculate_layout() override;
 
 	protected:
+        explicit BoxLayout(Direction direction, int spacing = 0);
 		int spacing = 0;
 		Direction direction;
+
 	};
 }
 

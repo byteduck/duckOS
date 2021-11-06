@@ -25,12 +25,12 @@
 namespace UI {
     class FlexLayout: public Widget {
     public:
+        WIDGET_DEF(FlexLayout)
+
         enum Direction {
             HORIZONTAL,
             VERTICAL
         };
-
-        explicit FlexLayout(Direction direction);
 
         //Widget
         virtual Dimensions preferred_size() override;
@@ -38,6 +38,9 @@ namespace UI {
 
     protected:
         Direction direction;
+
+    private:
+        explicit FlexLayout(Direction direction);
     };
 }
 

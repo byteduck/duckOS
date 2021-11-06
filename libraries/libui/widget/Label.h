@@ -25,7 +25,7 @@
 namespace UI {
 	class Label: public Widget {
 	public:
-		Label(const std::string& label);
+        WIDGET_DEF(Label)
 
 		//Label
 		std::string label();
@@ -44,6 +44,8 @@ namespace UI {
 		virtual Dimensions preferred_size() override;
 
 	private:
+        explicit Label(const std::string& label);
+
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
 

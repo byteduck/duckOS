@@ -32,10 +32,10 @@ int main(int argc, char** argv, char** envp) {
 	auto dims = UI::pond_context->get_display_dimensions();
 
 	//Make application button list
-	auto* layout = new UI::BoxLayout(UI::BoxLayout::HORIZONTAL);
+	auto layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL);
 
 	//Make window
-	auto* window = UI::Window::create();
+	auto window = UI::Window::create();
 	window->set_contents(layout);
 	window->set_title("Sandbar");
 	window->set_decorated(false);
@@ -46,7 +46,7 @@ int main(int argc, char** argv, char** envp) {
 	auto apps = App::get_all_apps();
 
 	for(auto& app : apps) {
-		auto* btn = new UI::Button(app.icon());
+		auto btn = UI::Button::make(app.icon());
 		btn->on_pressed = [&]{
 			if(!fork()) {
 				char* argv[] = {NULL};

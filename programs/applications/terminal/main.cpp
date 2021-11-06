@@ -26,11 +26,11 @@ int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
 	//Make window
-	auto* window = UI::Window::create();
+	auto window = UI::Window::create();
 	window->set_title("Terminal");
 
 	//Create terminal widget
-	auto* termwidget = new TerminalWidget();
+	auto termwidget = TerminalWidget::make();
 	termwidget->run("/bin/dsh");
 	window->set_contents(termwidget);
 
@@ -40,8 +40,6 @@ int main(int argc, char** argv, char** envp) {
 
 	//Run event loop
 	UI::run();
-
-	delete termwidget;
 
 	return 0;
 }

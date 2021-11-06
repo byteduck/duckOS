@@ -27,8 +27,7 @@
 namespace UI {
 	class Button: public Widget {
 	public:
-		Button(std::string label);
-		Button(Gfx::Image image);
+        WIDGET_DEF(Button)
 
 		//Button
 		const std::string& label();
@@ -45,6 +44,9 @@ namespace UI {
 		std::function<void()> on_pressed = nullptr;
 		std::function<void()> on_released = nullptr;
 	private:
+        explicit Button(std::string label);
+        explicit Button(Gfx::Image image);
+
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
 
