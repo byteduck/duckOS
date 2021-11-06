@@ -42,6 +42,12 @@ class Dimensions {
 public:
 	int width;
 	int height;
+
+    Dimensions operator+(const Dimensions& other) const;
+    Dimensions operator-(const Dimensions& other) const;
+    Dimensions operator*(int scalar) const;
+    Dimensions operator/(int scalar) const;
+    bool operator==(const Dimensions& other) const;
 };
 
 class Rect {

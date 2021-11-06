@@ -77,6 +77,27 @@ bool Point::operator==(const Point& other) const {
 }
 
 
+Dimensions Dimensions::operator+(const Dimensions& other) const {
+	return {width + other.width, height + other.height};
+}
+
+Dimensions Dimensions::operator-(const Dimensions& other) const {
+	return {width - other.width, height - other.height};
+}
+
+Dimensions Dimensions::operator*(int scalar) const {
+	return {width * scalar, height * scalar};
+}
+
+Dimensions Dimensions::operator/(int scalar) const {
+	return {width / scalar, height / scalar};
+}
+
+bool Dimensions::operator==(const Dimensions& other) const {
+	return height == other.height && width == other.width;
+}
+
+
 Point Rect::position() const {
 	return {x, y};
 }
