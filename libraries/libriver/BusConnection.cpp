@@ -29,8 +29,8 @@
 
 using namespace River;
 
-ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(const std::string& socket_name) {
-	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR | O_CLOEXEC);
+ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(const std::string& socket_name, bool nonblock) {
+	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR | O_CLOEXEC | (nonblock ? O_NONBLOCK : 0));
 	if(fd < 0) {
 		fprintf(stderr, "[River] Failed to open socket %s for bus connection: %s\n", socket_name.c_str(), strerror(errno));
 		return Result(errno);
@@ -38,9 +38,9 @@ ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(const std::stri
 	return std::make_shared<BusConnection>(fd, CUSTOM);
 }
 
-ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(BusConnection::BusType type) {
+ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(BusConnection::BusType type, bool nonblock) {
 	if(type == SESSION || type == SYSTEM) {
-		int fd = open("/sock/river", O_RDWR | O_CLOEXEC);
+		int fd = open("/sock/river", O_RDWR | O_CLOEXEC | (nonblock ? O_NONBLOCK : 0));
 		if (fd < 0) {
 			fprintf(stderr, "[River] Failed to open socket for system bus connection: %s\n", strerror(errno));
 			return Result(errno);
