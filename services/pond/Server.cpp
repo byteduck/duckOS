@@ -60,7 +60,7 @@ Server::Server() {
 	_server->spawn_thread();
 
 	KLog::logf("Connecting to bus...\n");
-	auto conn_res = BusConnection::connect("pond");
+	auto conn_res = BusConnection::connect("pond", true);
 	if(conn_res.is_error()) {
 		KLog::logf("Couldn't create BusConnection: %s\n", River::error_str(conn_res.code()));
 		exit(conn_res.code());
