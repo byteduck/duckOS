@@ -34,7 +34,9 @@
 namespace UI {
     class Window: public std::enable_shared_from_this<Window> {
 	public:
-		static std::shared_ptr<Window> create();
+        using Ptr = std::shared_ptr<Window>;
+        using ArgPtr = const std::shared_ptr<Window>&;
+		static Window::Ptr create();
 
 		///Getters and setters
 		void resize(Dimensions dims);
