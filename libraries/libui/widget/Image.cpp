@@ -30,8 +30,8 @@ void Image::set_scaling_mode(ScalingMode mode) {
 }
 
 void Image::do_repaint(const DrawContext& ctx) {
+    ctx.framebuffer().fill({0, 0, ctx.width(), ctx.height()}, RGBA(0, 0, 0, 0));
     if(_scaling_mode == CENTER) {
-        ctx.framebuffer().fill({0, 0, ctx.width(), ctx.height()}, RGBA(0, 0, 0, 0));
         ctx.framebuffer().draw_image(_image, {
             ctx.width() / 2 - _image.width / 2,
             ctx.height() / 2 - _image.height / 2
