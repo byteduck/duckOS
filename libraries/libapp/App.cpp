@@ -84,6 +84,10 @@ bool Info::exists() const {
 	return _exists;
 }
 
+std::filesystem::path Info::resource_path(const std::filesystem::path& path) {
+    return _base_path / path;
+}
+
 std::vector<Info> App::get_all_apps() {
 	std::vector<Info> ret;
 	for(const auto& ent : std::filesystem::directory_iterator(LIBAPP_BASEPATH)) {
