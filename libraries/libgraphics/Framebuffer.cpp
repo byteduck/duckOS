@@ -137,12 +137,13 @@ void Framebuffer::draw_image(const Framebuffer& other, Rect other_area, const Po
 		for(int x = 0; x < self_area.width; x++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
-			unsigned int alpha = COLOR_A(other_val) + 1;
-			unsigned int inv_alpha = 256 - COLOR_A(other_val);
-			this_val = RGB(
+			unsigned int alpha = (unsigned int) COLOR_A(other_val) + 1;
+			unsigned int inv_alpha = 256 - (unsigned int) COLOR_A(other_val);
+			this_val = RGBA(
 					(uint8_t)((alpha * COLOR_R(other_val) + inv_alpha * COLOR_R(this_val)) >> 8),
 					(uint8_t)((alpha * COLOR_G(other_val) + inv_alpha * COLOR_G(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8));
+					(uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8),
+                    (uint8_t)((alpha * COLOR_A(other_val) + inv_alpha * COLOR_A(this_val)) >> 8));
 		}
 	}
 }
@@ -174,10 +175,11 @@ void Framebuffer::draw_image_scaled(const Framebuffer& other, const Rect& rect) 
             auto& other_val = other.data[(int) (other_area.x + x / scale_x) + (int) (other_area.y + y / scale_y) * other.width];
             unsigned int alpha = COLOR_A(other_val) + 1;
             unsigned int inv_alpha = 256 - COLOR_A(other_val);
-            this_val = RGB(
+            this_val = RGBA(
                     (uint8_t)((alpha * COLOR_R(other_val) + inv_alpha * COLOR_R(this_val)) >> 8),
                     (uint8_t)((alpha * COLOR_G(other_val) + inv_alpha * COLOR_G(this_val)) >> 8),
-                    (uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8));
+                    (uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8),
+                    (uint8_t)((alpha * COLOR_A(other_val) + inv_alpha * COLOR_A(this_val)) >> 8));
         }
     }
 }
