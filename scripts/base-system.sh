@@ -11,7 +11,7 @@ fi
 FS_DIR="$1"
 
 msg "Copying base and kernel to filesystem..."
-if [ -f "${SOURCE_DIR}/user/"* ]; then
+if [ -d "${SOURCE_DIR}/user" ]; then
   rsync -auH --inplace "${SOURCE_DIR}/user/"* "$FS_DIR" || (echo "Couldn't copy user folder." && exit 1)
 else
   warn "No user folder, or empty user folder."

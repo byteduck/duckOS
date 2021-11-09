@@ -31,7 +31,7 @@ fi
 SYSTEM="$(uname -s)"
 DU_COMMAND="du"
 IMAGE_NAME="duckOS.img"
-IMAGE_EXTRASIZE="50000"
+IMAGE_EXTRASIZE="100000"
 
 if [ "$SYSTEM" = "Darwin" ]; then
     export PATH="/usr/local/opt/e2fsprogs/bin:/usr/local/opt/e2fsprogs/sbin:$PATH"
@@ -40,7 +40,11 @@ fi
 
 if [ $# -eq 0 ]; then
   # Calculate size of image
-  IMAGE_SIZE=$(($("$DU_COMMAND" -sk root | cut -f1) + IMAGE_EXTRASIZE))
+  USER_SIZE=0
+  if [ -d "${SOURCE_DIR}/user" ]; then
+    USER_SIZE=$("$DU_COMMAND" -sk "${SOURCE_DIR}/user" | cut -f1)
+  fi
+  IMAGE_SIZE=$(($("$DU_COMMAND" -sk root | cut -f1) + IMAGE_EXTRASIZE + USER_SIZE))
 
   if [ -f "$IMAGE_NAME" ]; then
     USE_EXISTING=1
