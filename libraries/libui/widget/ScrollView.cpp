@@ -86,9 +86,19 @@ void UI::ScrollView::do_repaint(const UI::DrawContext& ctx) {
 }
 
 bool UI::ScrollView::on_mouse_move(Pond::MouseMoveEvent evt) {
-	if(!dragging_scrollbar || !_scrollable)
-		return false;
-	scroll(evt.delta.y);
+    if(!dragging_scrollbar || !_scrollable)
+        return false;
+
+    handle_area.y += evt.delta.y;
+    if(handle_area.y < 0)
+        handle_area.y = 0;
+    else if(handle_area.y > scrollbar_area.height - handle_area.height)
+        handle_area.y = scrollbar_area.height - handle_area.height;
+
+    _scroll_position.y = ((_scrollable->scrollable_area().height - scrollbar_area.height) * handle_area.y) / (scrollbar_area.height - handle_area.height);
+    _scrollable->on_scroll(_scroll_position);
+
+    repaint();
 	return true;
 }
 
