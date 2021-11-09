@@ -84,7 +84,11 @@ bool Info::exists() const {
 	return _exists;
 }
 
-std::filesystem::path Info::resource_path(const std::filesystem::path& path) {
+std::filesystem::path Info::base_path() const {
+    return _base_path;
+}
+
+std::filesystem::path Info::resource_path(const std::filesystem::path& path) const {
     return _base_path / path;
 }
 

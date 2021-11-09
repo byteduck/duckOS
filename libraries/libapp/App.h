@@ -44,8 +44,8 @@ namespace App {
 		const std::string& name() const;
 		const std::string exec() const;
 		bool exists() const;
-
-        std::filesystem::path resource_path(const std::filesystem::path& path);
+        std::filesystem::path base_path() const;
+        std::filesystem::path resource_path(const std::filesystem::path& path) const;
 
 	private:
 		bool _exists = false;
