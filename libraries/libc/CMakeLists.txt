@@ -16,7 +16,7 @@ SET(SOURCES
         sys/ioctl.c
         sys/mem.c
         sys/printf.c
-        sys/liballoc.c
+        sys/liballoc.cpp
         sys/socketfs.c
         sys/stat.c
         sys/syscall.c
@@ -24,10 +24,11 @@ SET(SOURCES
         sys/wait.c
         termios.c
         time.c
-        unistd.c)
+        unistd.c
+        ../libduck/SpinLock.cpp)
 
 SET(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-nostdlib -Wall")
-SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-nostdlib -Wall")
+SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-nostdlib -Wall -fno-exceptions -fno-rtti")
 
 # Install crt0.o
 ADD_LIBRARY(crt0 STATIC crt0.c)

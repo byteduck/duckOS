@@ -21,13 +21,16 @@
 #include <limits.h>
 #include <libc/stdio.h>
 #include "mem.h"
+#include <libduck/SpinLock.h>
+
+Duck::SpinLock __liballoc_lock;
 
 void liballoc_lock() {
-	//TODO
+	__liballoc_lock.acquire();
 }
 
 void liballoc_unlock() {
-	//TODO
+	__liballoc_lock.release();
 }
 
 void* liballoc_alloc(int pages) {
