@@ -23,6 +23,9 @@
 #include "Widget.h"
 #include "Scrollable.h"
 
+#define LIBUI_SCROLLVIEW_MAX_PREFERRED_WIDTH 300
+#define LIBUI_SCROLLVIEW_MAX_PREFERRED_HEIGHT 200
+
 namespace UI {
     class ScrollView: public Widget {
     public:

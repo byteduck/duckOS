@@ -35,6 +35,9 @@ namespace UI {
         std::shared_ptr<ScrollView> scroll_view();
         Point scroll_position();
 
+        //Widget
+        virtual bool needs_layout_on_child_change() override;
+
     private:
         friend class ScrollView;
 

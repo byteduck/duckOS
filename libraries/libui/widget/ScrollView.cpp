@@ -73,10 +73,16 @@ void ScrollView::on_child_added(Widget::ArgPtr child) {
 }
 
 Dimensions UI::ScrollView::preferred_size() {
-	if(_scrollable)
-		return _scrollable->preferred_size() + Dimensions {15, 0};
-	else
-		return {100, 100};
+	if(_scrollable) {
+        Dimensions size = _scrollable->scrollable_area();
+        if(size.width > LIBUI_SCROLLVIEW_MAX_PREFERRED_WIDTH)
+            size.width = LIBUI_SCROLLVIEW_MAX_PREFERRED_WIDTH;
+        if(size.height > LIBUI_SCROLLVIEW_MAX_PREFERRED_HEIGHT - 15)
+            size.height = LIBUI_SCROLLVIEW_MAX_PREFERRED_HEIGHT - 15;
+        return size + Dimensions{15, 0};
+    } else {
+        return {100, 100};
+    }
 }
 
 void UI::ScrollView::do_repaint(const UI::DrawContext& ctx) {
@@ -95,7 +101,11 @@ bool UI::ScrollView::on_mouse_move(Pond::MouseMoveEvent evt) {
     else if(handle_area.y > scrollbar_area.height - handle_area.height)
         handle_area.y = scrollbar_area.height - handle_area.height;
 
-    _scroll_position.y = ((_scrollable->scrollable_area().height - scrollbar_area.height) * handle_area.y) / (scrollbar_area.height - handle_area.height);
+    if(scrollbar_area.height != handle_area.height)
+        _scroll_position.y = ((_scrollable->scrollable_area().height - scrollbar_area.height) * handle_area.y) / (scrollbar_area.height - handle_area.height);
+    else
+        _scroll_position.y = 0;
+
     _scrollable->on_scroll(_scroll_position);
 
     repaint();
@@ -157,4 +167,5 @@ void UI::ScrollView::on_layout_change(const Rect& old_rect) {
         }
     }
 	handle_area.y = (int)(scroll_percent * (scrollbar_area.height - handle_area.height));
+    _scrollable->on_scroll(_scroll_position);
 }

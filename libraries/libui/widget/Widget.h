@@ -200,6 +200,12 @@ namespace UI {
 		*/
 		void set_layout_bounds(Rect new_bounds);
 
+        /**
+         * Whether or not the widget needs a layout update when a child is added or removed.
+         * @return If a layout update should be preformed on child addition/removal.
+         */
+        virtual bool needs_layout_on_child_change();
+
 	protected:
 		friend class Window;
 

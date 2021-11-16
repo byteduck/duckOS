@@ -33,3 +33,7 @@ Point UI::Scrollable::scroll_position() {
         return {0, 0};
     return scroll_view()->scroll_position();
 }
+
+bool UI::Scrollable::needs_layout_on_child_change() {
+    return false;
+}

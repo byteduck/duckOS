@@ -104,7 +104,8 @@ void Widget::add_child(const std::shared_ptr<Widget>& child) {
 	children.push_back(child);
 	child->set_parent(shared_from_this());
 	on_child_added(child);
-	update_layout();
+    if(needs_layout_on_child_change())
+	    update_layout();
 }
 
 bool Widget::remove_child(const std::shared_ptr<Widget>& child) {
@@ -118,7 +119,8 @@ bool Widget::remove_child(const std::shared_ptr<Widget>& child) {
     children.erase(child_it);
     child->remove_parent();
     on_child_removed(child);
-    update_layout();
+    if(needs_layout_on_child_change())
+        update_layout();
     return true;
 }
 
@@ -151,6 +153,7 @@ void Widget::show() {
 void Widget::set_layout_bounds(Rect new_bounds) {
 	Rect old_rect = _rect;
 	_rect = new_bounds;
+    _initialized_size = true;
 	calculate_layout();
 	on_layout_change(old_rect);
 	if(_window) {
@@ -163,6 +166,10 @@ void Widget::set_layout_bounds(Rect new_bounds) {
 			_window->set_hidden(_hidden);
 		}
 	}
+}
+
+bool Widget::needs_layout_on_child_change() {
+    return true;
 }
 
 void Widget::set_window(const std::shared_ptr<Window>& window) {
@@ -268,7 +275,7 @@ void Widget::parent_window_created() {
 }
 
 void Widget::create_window(Pond::Window* parent) {
-    _rect.set_dimensions(preferred_size());
+    _rect.set_dimensions(current_size());
     _window = pond_context->create_window(parent, _rect, true);
     _window->set_uses_alpha(_uses_alpha);
     _window->set_global_mouse(_global_mouse);

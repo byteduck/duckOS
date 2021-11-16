@@ -30,6 +30,7 @@ namespace UI {
     protected:
         //Widget
         void calculate_layout() override;
+        void on_layout_change(const Rect& old_rect) override;
 
         //Scrollable
         void on_scroll(Point scroll_position) override;
@@ -40,11 +41,14 @@ namespace UI {
         virtual Dimensions preferred_item_dimensions() = 0;
         virtual int num_items() = 0;
         void update_item(int index);
-        void update();
+        void update_data();
 
         ListScrollable();
 
     private:
+        void do_update(bool dimensions_changed);
+        Widget::Ptr setup_entry(int index);
+
         std::map<int, Widget::Ptr> _items;
         int _prev_first_visible = 0;
         int _prev_last_visible = 0;
