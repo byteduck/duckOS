@@ -79,7 +79,7 @@ void UI::DrawContext::draw_text(const char* str, Rect rect, TextAlignment h_alig
             text_pos.y = rect.y + rect.height - dims.height;
             break;
     }
-    fb->draw_text(str, text_pos, Theme::font(), Theme::button_text());
+    fb->draw_text(str, text_pos, font, color);
 }
 
 void UI::DrawContext::draw_text(const char* str, Point point, Font* font, Color color) const {
