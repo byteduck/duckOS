@@ -57,6 +57,7 @@ int main(int argc, char** argv, char** envp) {
 
 	for(auto& app : apps) {
 		auto btn = UI::Button::make(app.icon());
+        btn->set_sizing_mode(UI::PREFERRED);
 		btn->on_pressed = [&]{
 			if(!fork()) {
 				char* argv[] = {NULL};

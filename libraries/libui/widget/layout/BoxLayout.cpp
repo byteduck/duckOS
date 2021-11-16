@@ -52,19 +52,30 @@ void UI::BoxLayout::set_spacing(int new_spacing) {
 
 void UI::BoxLayout::calculate_layout() {
     int pos = 0;
+    int i = 0;
     Dimensions size = current_size();
     for(auto child : children) {
 		auto preferred_size = child->preferred_size();
 
-		if(direction == VERTICAL)
-			child->set_layout_bounds({0, pos, size.width, preferred_size.height});
-		else
-			child->set_layout_bounds({pos, 0, preferred_size.width, size.height});
+        //If the last child's sizing mode is fill, then resize it to fit the rest of the space
+        if(i == children.size() - 1 && child->sizing_mode() == FILL) {
+            if(direction == VERTICAL)
+                child->set_layout_bounds({0, pos, size.width, size.height - pos});
+            else
+                child->set_layout_bounds({pos, 0, size.width - pos, size.height});
+        } else {
+            if(direction == VERTICAL)
+                child->set_layout_bounds({0, pos, size.width, preferred_size.height});
+            else
+                child->set_layout_bounds({pos, 0, preferred_size.width, size.height});
+        }
 
 		if(direction == VERTICAL)
 			pos += preferred_size.height;
 		else
 			pos += preferred_size.width;
 		pos += spacing;
+
+        i++;
     }
 }
