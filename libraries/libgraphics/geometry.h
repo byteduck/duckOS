@@ -54,6 +54,12 @@ class Rect {
 public:
 	int x, y, width, height;
 
+	Rect() = default;
+	Rect(int x, int y, int width, int height): x(x), y(y), width(width), height(height) {}
+	Rect(Point pos, Dimensions dims): x(pos.x), y(pos.y), width(dims.width), height(dims.height) {}
+	Rect(int x, int y, Dimensions dims): x(x), y(y), width(dims.width), height(dims.height) {}
+	Rect(Point pos, int width, int height): x(pos.x), y(pos.y), width(width), height(height) {}
+
 	Point position() const;
 	void set_position(Point pos);
 	Dimensions dimensions() const;
