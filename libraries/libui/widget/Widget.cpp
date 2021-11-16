@@ -107,6 +107,21 @@ void Widget::add_child(const std::shared_ptr<Widget>& child) {
 	update_layout();
 }
 
+bool Widget::remove_child(const std::shared_ptr<Widget>& child) {
+    if(child->parent().get() != this)
+        return false;
+
+    auto child_it = std::find(children.begin(), children.end(), child);
+    if(child_it == children.end())
+        return false;
+
+    children.erase(child_it);
+    child->remove_parent();
+    on_child_removed(child);
+    update_layout();
+    return true;
+}
+
 void Widget::set_position(const Point& position) {
     _absolute_position = position;
     update_layout();
@@ -168,6 +183,11 @@ void Widget::set_parent(const std::shared_ptr<Widget>& widget) {
 		create_window(widget->_window);
 }
 
+void Widget::remove_parent() {
+    _parent = nullptr;
+    destroy_window();
+}
+
 void Widget::update_layout() {
 	//TODO: Find a better way of doing this that doesn't involve re-layouting everything everytime anything is updated
 	auto root = root_window();
@@ -180,6 +200,10 @@ void Widget::do_repaint(const DrawContext& framebuffer) {
 }
 
 void Widget::on_child_added(const std::shared_ptr<Widget>& child) {
+
+}
+
+void Widget::on_child_removed(const std::shared_ptr<Widget>& child) {
 
 }
 
@@ -251,4 +275,12 @@ void Widget::create_window(Pond::Window* parent) {
     __register_widget(shared_from_this(), _window->id());
     for(auto &child : children)
         child->parent_window_created();
+}
+
+void Widget::destroy_window() {
+    if(!_window)
+        return;
+    _window->destroy();
+    delete _window;
+    _window = nullptr;
 }

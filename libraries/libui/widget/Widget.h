@@ -159,6 +159,13 @@ namespace UI {
         void add_child(const std::shared_ptr<Widget>& child);
 
         /**
+         * Removes a child from the widget.
+         * @param child The child to remove.
+         * @return Whether or not the removal was successful (i.e. if the specified widget was a child of this widget)
+         */
+        bool remove_child(const std::shared_ptr<Widget>& child);
+
+        /**
          * Sets the position of the widget.
          * The behavior of this depends on the positioning mode of the widget and the parent's layout specifications.
          * @param position The new position of the widget.
@@ -210,6 +217,11 @@ namespace UI {
 		 */
 		void set_parent(const std::shared_ptr<Widget>& widget);
 
+        /**
+         * Removes the parent of the widget.
+         */
+        void remove_parent();
+
 		/**
 		 * Moves and resizes the widget according to the sizing mode, positioning mode, and parent's specifications.
 		 */
@@ -226,6 +238,12 @@ namespace UI {
 		 * @param child The child added.
 		 */
 		virtual void on_child_added(const std::shared_ptr<Widget>& child);
+
+        /**
+         * Called when a child is removed from the widget.
+         * @param child The child removed.
+         */
+        virtual void on_child_removed(const std::shared_ptr<Widget>& child);
 
         /**
          * This function is called whenever the widget's position or size are changed.
@@ -283,6 +301,7 @@ namespace UI {
 
 		void parent_window_created();
 		void create_window(Pond::Window* parent);
+        void destroy_window();
 	};
 }
 
