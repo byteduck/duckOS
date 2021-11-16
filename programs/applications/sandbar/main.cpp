@@ -21,10 +21,20 @@
 #include <libui/widget/Button.h>
 #include <libui/widget/layout/BoxLayout.h>
 #include <libapp/App.h>
+#include <csignal>
+#include <sys/wait.h>
 
 #define SANDBAR_HEIGHT 20
 
+void sigchld_handler(int sig) {
+    int dummy;
+    wait(&dummy);
+}
+
 int main(int argc, char** argv, char** envp) {
+    //Signal handler
+    signal(SIGCHLD, sigchld_handler);
+
 	//Init LibUI
 	UI::init(argv, envp);
 
