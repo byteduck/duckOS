@@ -50,6 +50,7 @@ public:
 
 	Window* parent() const;
 	void reparent(Window* new_parent);
+    void remove_child(Window* child);
 	Client* client() const;
 	void set_client(Client* client);
 	int id() const;
@@ -246,6 +247,7 @@ private:
 	char* _title = nullptr;
 	bool _hidden = true;
 	bool _uses_alpha = false;
+    bool _destructing = false;
 
 	static int current_id;
 };

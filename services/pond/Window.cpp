@@ -42,18 +42,21 @@ Window::Window(Window* parent, const Rect& rect, bool hidden): _parent(parent), 
 }
 
 Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions()), _display(display), _id(++current_id) {
-	alloc_framebuffer();
+    alloc_framebuffer();
 	_display->set_root_window(this);
 	recalculate_rects();
 	invalidate();
 }
 
 Window::~Window() {
+    _destructing = true;
 	for(auto& child : _children)
 		delete child;
 	_display->remove_window(this);
 	if(_client)
 		_client->window_destroyed(this);
+    if(_parent)
+        _parent->remove_child(this);
 	invalidate();
 	if(_framebuffer.data) {
 		//Deallocate the old framebuffer since there is one
@@ -87,6 +90,15 @@ void Window::reparent(Window* new_parent) {
 	_parent = new_parent;
 	recalculate_rects();
 	invalidate();
+}
+
+void Window::remove_child(Window* child) {
+    //No sense in wasting time removing children if we're destroying this window
+    if(_destructing)
+        return;
+    auto child_it = std::find(_children.begin(), _children.end(), child);
+    if(child_it != _children.end())
+        _children.erase(child_it);
 }
 
 Client* Window::client() const {
