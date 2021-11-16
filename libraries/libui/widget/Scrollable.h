@@ -33,6 +33,7 @@ namespace UI {
 
     protected:
         std::shared_ptr<ScrollView> scroll_view();
+        Point scroll_position();
 
     private:
         friend class ScrollView;

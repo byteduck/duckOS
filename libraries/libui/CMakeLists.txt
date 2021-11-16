@@ -11,6 +11,8 @@ SET(SOURCES
         widget/Image.cpp
         widget/Label.cpp
         widget/ProgressBar.cpp
+
+        widget/ListScrollable.cpp
         widget/Scrollable.cpp
         widget/ScrollContainer.cpp
         widget/ScrollView.cpp

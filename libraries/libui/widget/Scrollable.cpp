@@ -27,3 +27,9 @@ std::shared_ptr<UI::ScrollView> UI::Scrollable::scroll_view() {
 void UI::Scrollable::set_scrollview(const UI::ScrollView::Ptr& view) {
     _scroll_view = view;
 }
+
+Point UI::Scrollable::scroll_position() {
+    if(!scroll_view())
+        return {0, 0};
+    return scroll_view()->scroll_position();
+}
