@@ -247,7 +247,8 @@ void TaskManager::do_yield_async() {
 	}
 }
 
-
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 void TaskManager::preempt(){
 	if(!tasking_enabled) return;
 
@@ -385,6 +386,7 @@ void TaskManager::preempt(){
 		asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
 	}
 }
+#pragma GCC pop_options
 
 TaskManager::Disabler::Disabler(): _enabled(enabled()) {
 	enabled() = false;
