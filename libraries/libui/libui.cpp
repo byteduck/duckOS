@@ -59,17 +59,32 @@ void UI::init(char** argv, char** envp) {
 	Theme::current();
 }
 
+//We need to use these functions to avoid memory leaks due to adding null entries to the maps
+UI::Ptr<Window> find_window(int id) {
+    auto it = windows.find(id);
+    if(it == windows.end())
+        return nullptr;
+    return it->second;
+}
+
+UI::Widget::Ptr find_widget(int id) {
+    auto it = widgets.find(id);
+    if(it == widgets.end())
+        return nullptr;
+    return it->second;
+}
+
 void handle_pond_events() {
 	while(UI::pond_context->has_event()) {
 		Pond::Event event = UI::pond_context->next_event();
 		switch(event.type) {
 			case PEVENT_KEY: {
 				auto& evt = event.key;
-				auto window = windows[evt.window->id()];
+				auto window = find_window(evt.window->id());
 				if(window) {
 					window->on_keyboard(evt);
 				} else {
-					auto widget = widgets[evt.window->id()];
+					auto widget = find_widget(evt.window->id());
 					if(!widget)
 						break;
 
@@ -92,11 +107,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_MOVE: {
 				auto& evt = event.mouse_move;
-				auto window = windows[evt.window->id()];
+				auto window = find_window(evt.window->id());
 				if(window) {
 					window->on_mouse_move(evt);
 				} else {
-					auto widget = widgets[evt.window->id()];
+					auto widget = find_widget(evt.window->id());
 					if(!widget)
 						break;
 
@@ -119,11 +134,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_BUTTON: {
 				auto& evt = event.mouse_button;
-				auto window = windows[evt.window->id()];
+				auto window = find_window(evt.window->id());
 				if(window) {
 					window->on_mouse_button(evt);
 				} else {
-					auto widget = widgets[evt.window->id()];
+					auto widget = find_widget(evt.window->id());
 					if(!widget)
 						break;
 
@@ -150,11 +165,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_SCROLL: {
 				auto& evt = event.mouse_scroll;
-				auto window = windows[evt.window->id()];
+				auto window = find_window(evt.window->id());
 				if(window) {
 					window->on_mouse_scroll(evt);
 				} else {
-					auto widget = widgets[evt.window->id()];
+					auto widget = find_widget(evt.window->id());
 					if(!widget)
 						break;
 
@@ -177,11 +192,11 @@ void handle_pond_events() {
 
 			case PEVENT_MOUSE_LEAVE: {
 				auto& evt = event.mouse_leave;
-				auto window = windows[evt.window->id()];
+				auto window = find_window(evt.window->id());
 				if(window) {
 					window->on_mouse_leave(evt);
 				} else {
-					auto widget = widgets[evt.window->id()];
+					auto widget = find_widget(evt.window->id());
 					if(!widget)
 						break;
 					widget->on_mouse_leave(evt);
@@ -190,16 +205,16 @@ void handle_pond_events() {
 			}
 
 			case PEVENT_WINDOW_DESTROY: {
-				if(windows[event.window_destroy.id])
+				if(windows.find(event.window_destroy.id) != windows.end())
 					__deregister_window(event.window_destroy.id);
-				if(widgets[event.window_destroy.id])
+				if(widgets.find(event.window_destroy.id) != widgets.end())
 				    __deregister_widget(event.window_destroy.id);
 				break;
 			}
 
 			case PEVENT_WINDOW_RESIZE: {
                 auto& evt = event.window_resize;
-                auto window = windows[evt.window->id()];
+                auto window = find_window(evt.window->id());
                 if(window) {
                     window->on_resize(evt.old_rect);
                     window->repaint();
@@ -230,7 +245,8 @@ void UI::run() {
 void UI::update(int timeout) {
 	//Perform needed repaints
 	for(auto widget : widgets) {
-		widget.second->repaint_now();
+        if(widget.second)
+		    widget.second->repaint_now();
 	}
 
 	//Read and process events
