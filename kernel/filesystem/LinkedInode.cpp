@@ -28,15 +28,15 @@ LinkedInode::LinkedInode(const kstd::shared_ptr<Inode>& inode, const kstd::strin
 LinkedInode::~LinkedInode() = default;
 
 kstd::shared_ptr<Inode> LinkedInode::inode() {
-    return _inode;
+	return _inode;
 }
 
 kstd::string LinkedInode::name() {
-    return _name;
+	return _name;
 }
 
 kstd::shared_ptr<LinkedInode> LinkedInode::parent() {
-    return _parent;
+	return _parent;
 }
 
 kstd::string LinkedInode::get_full_path() {

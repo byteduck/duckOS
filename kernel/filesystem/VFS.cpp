@@ -337,7 +337,7 @@ Result VFS::mkdir(kstd::string path, mode_t mode, const User& user, const kstd::
 
 Result VFS::truncate(const kstd::string& path, off_t length, const User& user, const kstd::shared_ptr<LinkedInode>& base) {
 	if(length < 0) return -EINVAL;
- 	auto ino_or_err = resolve_path(path, base, user);
+	auto ino_or_err = resolve_path(path, base, user);
 	if(ino_or_err.is_error()) return ino_or_err.code();
 	if(ino_or_err.value()->inode()->metadata().is_directory()) return -EISDIR;
 	if(!ino_or_err.value()->inode()->metadata().can_write(user)) return -EACCES;

@@ -67,14 +67,14 @@ std::string Process::state_name() const {
 }
 
 std::string Process::exe() const {
-    char link[256];
-    link[0] = '\0';
-    readlink(("/proc/" + std::to_string(_pid) + "/exe").c_str(), link, 256);
-    return link;
+	char link[256];
+	link[0] = '\0';
+	readlink(("/proc/" + std::to_string(_pid) + "/exe").c_str(), link, 256);
+	return link;
 }
 
 ResultRet<App::Info> Process::app_info() const {
-    return App::Info::from_app_directory(std::filesystem::path(exe()).parent_path());
+	return App::Info::from_app_directory(std::filesystem::path(exe()).parent_path());
 }
 
 Result Process::update() {
@@ -95,7 +95,7 @@ Result Process::update() {
 	_state = (State) std::stoi(proc["state"]);
 	_physical_mem = {std::stoul(proc["pmem"])};
 	_virtual_mem = {std::stoul(proc["vmem"])};
-    _shared_mem = {std::stoul(proc["shmem"])};
+	_shared_mem = {std::stoul(proc["shmem"])};
 
 	return Result::SUCCESS;
 }

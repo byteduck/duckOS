@@ -93,7 +93,7 @@ void Window::set_draggable(bool draggable) {
 }
 
 void Window::set_resizable(bool resizable) {
-    _context->__river_set_hint({_id, PWINDOW_HINT_RESIZABLE, resizable});
+	_context->__river_set_hint({_id, PWINDOW_HINT_RESIZABLE, resizable});
 }
 
 void Window::bring_to_front() {

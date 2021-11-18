@@ -44,7 +44,7 @@ public:
 
 	PollBlocker(kstd::vector<PollFD>& pollfd, Time timeout);
 	bool is_ready() override;
-    bool can_be_interrupted() override;
+	bool can_be_interrupted() override;
 
 	int polled;
 	short polled_revent;

@@ -84,12 +84,12 @@ void Client::window_destroyed(Window* window) {
 }
 
 void Client::window_moved(Window *window) {
-    SEND_MESSAGE("window_moved", (WindowMovePkt {window->id(), window->rect().position()}));
+	SEND_MESSAGE("window_moved", (WindowMovePkt {window->id(), window->rect().position()}));
 }
 
 void Client::window_resized(Window *window) {
-    shmallow(window->framebuffer_shm().id, pid, SHM_WRITE | SHM_READ);
-    SEND_MESSAGE("window_resized", (WindowResizedPkt {window->id(), window->framebuffer_shm().id, window->rect()}));
+	shmallow(window->framebuffer_shm().id, pid, SHM_WRITE | SHM_READ);
+	SEND_MESSAGE("window_resized", (WindowResizedPkt {window->id(), window->framebuffer_shm().id, window->rect()}));
 }
 
 WindowOpenedPkt Client::open_window(OpenWindowPkt& params) {

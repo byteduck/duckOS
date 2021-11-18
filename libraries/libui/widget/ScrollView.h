@@ -27,35 +27,35 @@
 #define LIBUI_SCROLLVIEW_MAX_PREFERRED_HEIGHT 200
 
 namespace UI {
-    class ScrollView: public Widget {
-    public:
-        WIDGET_DEF(ScrollView)
+	class ScrollView: public Widget {
+	public:
+		WIDGET_DEF(ScrollView)
 
-        //ScrollView
-        void set_scrollable(Scrollable::ArgPtr contents);
-        void set_contents(Widget::ArgPtr contents);
-        void scroll(int pixels);
-        Point scroll_position();
+		//ScrollView
+		void set_scrollable(Scrollable::ArgPtr contents);
+		void set_contents(Widget::ArgPtr contents);
+		void scroll(int pixels);
+		Point scroll_position();
 
-        //Widget
-        void calculate_layout() override;
-        void on_child_added(const std::shared_ptr<Widget>& child) override;
-        Dimensions preferred_size() override;
-        void do_repaint(const UI::DrawContext& ctx) override;
+		//Widget
+		void calculate_layout() override;
+		void on_child_added(const std::shared_ptr<Widget>& child) override;
+		Dimensions preferred_size() override;
+		void do_repaint(const UI::DrawContext& ctx) override;
 		bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 		bool on_mouse_scroll(Pond::MouseScrollEvent evt) override;
 		bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 		void on_layout_change(const Rect& old_rect) override;
 
-    private:
-        explicit ScrollView();
+	private:
+		explicit ScrollView();
 
-        Scrollable::Ptr _scrollable = nullptr;
-        Point _scroll_position = {0, 0};
-        Rect scrollbar_area;
-        Rect handle_area;
-        bool dragging_scrollbar = false;
-    };
+		Scrollable::Ptr _scrollable = nullptr;
+		Point _scroll_position = {0, 0};
+		Rect scrollbar_area;
+		Rect handle_area;
+		bool dragging_scrollbar = false;
+	};
 }
 
 

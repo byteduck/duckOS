@@ -72,7 +72,7 @@ void update() {
 	cpu_bar->set_progress(cpu_info.utilization / 100.0);
 	cpu_label->set_label("CPU: " + std::to_string(cpu_info.utilization) + "%");
 
-    proc_list->update();
+	proc_list->update();
 }
 
 int main(int argc, char** argv, char** envp) {
@@ -115,10 +115,10 @@ int main(int argc, char** argv, char** envp) {
 	cpu_layout->add_child(cpu_bar);
 	cpu_layout->add_child(cpu_label);
 
-    proc_list = ProcessListScrollable::make();
-    auto scrollview = UI::ScrollView::make();
-    scrollview->set_scrollable(proc_list);
-    layout->add_child(scrollview);
+	proc_list = ProcessListScrollable::make();
+	auto scrollview = UI::ScrollView::make();
+	scrollview->set_scrollable(proc_list);
+	layout->add_child(scrollview);
 
 	//Show window
 	update();

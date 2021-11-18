@@ -42,21 +42,21 @@ Window::Window(Window* parent, const Rect& rect, bool hidden): _parent(parent), 
 }
 
 Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions()), _display(display), _id(++current_id) {
-    alloc_framebuffer();
+	alloc_framebuffer();
 	_display->set_root_window(this);
 	recalculate_rects();
 	invalidate();
 }
 
 Window::~Window() {
-    _destructing = true;
+	_destructing = true;
 	for(auto& child : _children)
 		delete child;
 	_display->remove_window(this);
 	if(_client)
 		_client->window_destroyed(this);
-    if(_parent)
-        _parent->remove_child(this);
+	if(_parent)
+		_parent->remove_child(this);
 	invalidate();
 	if(_framebuffer.data) {
 		//Deallocate the old framebuffer since there is one
@@ -93,12 +93,12 @@ void Window::reparent(Window* new_parent) {
 }
 
 void Window::remove_child(Window* child) {
-    //No sense in wasting time removing children if we're destroying this window
-    if(_destructing)
-        return;
-    auto child_it = std::find(_children.begin(), _children.end(), child);
-    if(child_it != _children.end())
-        _children.erase(child_it);
+	//No sense in wasting time removing children if we're destroying this window
+	if(_destructing)
+		return;
+	auto child_it = std::find(_children.begin(), _children.end(), child);
+	if(child_it != _children.end())
+		_children.erase(child_it);
 }
 
 Client* Window::client() const {
@@ -134,20 +134,20 @@ Rect Window::visible_absolute_rect() const {
 }
 
 void Window::set_dimensions(const Dimensions& new_dims, bool notify_client) {
-    if(new_dims.width == _rect.dimensions().width && new_dims.height == _rect.dimensions().height)
-        return;
-    Dimensions dims = new_dims;
-    if(dims.width < 1)
-    	dims.width = 1;
-    if(dims.height < 1)
-    	dims.height = 1;
+	if(new_dims.width == _rect.dimensions().width && new_dims.height == _rect.dimensions().height)
+		return;
+	Dimensions dims = new_dims;
+	if(dims.width < 1)
+		dims.width = 1;
+	if(dims.height < 1)
+		dims.height = 1;
 	invalidate();
 	_rect = {_rect.x, _rect.y, dims.width, dims.height};
 	alloc_framebuffer();
 	recalculate_rects();
 	invalidate();
 	if(notify_client && _client)
-	    _client->window_resized(this);
+		_client->window_resized(this);
 }
 
 void Window::set_position(const Point& position, bool notify_client) {
@@ -155,22 +155,22 @@ void Window::set_position(const Point& position, bool notify_client) {
 	_rect = {position.x, position.y, _rect.width, _rect.height};
 	recalculate_rects();
 	invalidate();
-    if(notify_client && _client)
-        _client->window_moved(this);
+	if(notify_client && _client)
+		_client->window_moved(this);
 }
 
 void Window::set_rect(const Rect& rect, bool notify_client) {
-    invalidate();
-    _rect = rect;
-    if(_rect.width < 1)
-    	_rect.width = 1;
-    if(_rect.height < 1)
-    	_rect.height = 1;
+	invalidate();
+	_rect = rect;
+	if(_rect.width < 1)
+		_rect.width = 1;
+	if(_rect.height < 1)
+		_rect.height = 1;
 	alloc_framebuffer();
 	recalculate_rects();
 	invalidate();
-    if(notify_client && _client)
-        _client->window_resized(this);
+	if(notify_client && _client)
+		_client->window_resized(this);
 }
 
 void Window::invalidate() {
@@ -242,11 +242,11 @@ bool Window::draggable() {
 }
 
 void Window::set_resizable(bool resizable) {
-    _resizable = resizable;
+	_resizable = resizable;
 }
 
 bool Window::resizable() {
-    return _resizable;
+	return _resizable;
 }
 
 void Window::set_hidden(bool hidden) {
@@ -278,10 +278,10 @@ void Window::handle_keyboard_event(const KeyboardEvent& event) {
 }
 
 Rect Window::calculate_absolute_rect(const Rect& rect) {
-    if(_parent)
-        return _parent->calculate_absolute_rect(rect.transform(_parent->_rect.position()));
-    else
-        return rect;
+	if(_parent)
+		return _parent->calculate_absolute_rect(rect.transform(_parent->_rect.position()));
+	else
+		return rect;
 }
 
 void Window::alloc_framebuffer() {
@@ -341,9 +341,9 @@ void Window::set_hint(int hint, int value) {
 				invalidate();
 			}
 			break;
-	    case PWINDOW_HINT_RESIZABLE:
-	        set_resizable(value);
-	        break;
+		case PWINDOW_HINT_RESIZABLE:
+			set_resizable(value);
+			break;
 		default:
 			KLog::logf("Unknown window hint %d!\n", hint);
 	}

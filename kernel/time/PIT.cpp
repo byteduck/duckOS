@@ -49,11 +49,11 @@ int PIT::frequency() {
 }
 
 void PIT::enable() {
-    //TODO
+	//TODO
 }
 
 void PIT::disable() {
-    //TODO
+	//TODO
 }
 
 void PIT::write(uint16_t data, uint8_t counter){

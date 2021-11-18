@@ -36,9 +36,9 @@ Mouse::Mouse(Window* parent): Window(parent, {0, 0, 1, 1}, false) {
 
 	load_cursor(cursor_normal, "cursor.png");
 	load_cursor(cursor_resize_v, "resize_v.png");
-    load_cursor(cursor_resize_h, "resize_h.png");
-    load_cursor(cursor_resize_dr, "resize_dr.png");
-    load_cursor(cursor_resize_dl, "resize_dl.png");
+	load_cursor(cursor_resize_h, "resize_h.png");
+	load_cursor(cursor_resize_dr, "resize_dr.png");
+	load_cursor(cursor_resize_dl, "resize_dl.png");
 	set_cursor(Pond::NORMAL);
 }
 
@@ -67,47 +67,47 @@ bool Mouse::update() {
 }
 
 void Mouse::set_cursor(Pond::CursorType cursor) {
-    current_type = cursor;
-    Framebuffer* cursor_image;
-    switch(cursor) {
-        case Pond::NORMAL:
-            cursor_image = cursor_normal;
-            break;
-        case Pond::RESIZE_H:
-            cursor_image = cursor_resize_h;
-            break;
-        case Pond::RESIZE_V:
-            cursor_image = cursor_resize_v;
-            break;
-        case Pond::RESIZE_DR:
-            cursor_image = cursor_resize_dr;
-            break;
-        case Pond::RESIZE_DL:
-            cursor_image = cursor_resize_dl;
-            break;
-        default:
-            cursor_image = cursor_normal;
-    }
-    if(!cursor_image)
-        return;
+	current_type = cursor;
+	Framebuffer* cursor_image;
+	switch(cursor) {
+		case Pond::NORMAL:
+			cursor_image = cursor_normal;
+			break;
+		case Pond::RESIZE_H:
+			cursor_image = cursor_resize_h;
+			break;
+		case Pond::RESIZE_V:
+			cursor_image = cursor_resize_v;
+			break;
+		case Pond::RESIZE_DR:
+			cursor_image = cursor_resize_dr;
+			break;
+		case Pond::RESIZE_DL:
+			cursor_image = cursor_resize_dl;
+			break;
+		default:
+			cursor_image = cursor_normal;
+	}
+	if(!cursor_image)
+		return;
 
-    set_dimensions({cursor_image->width, cursor_image->height});
-    _framebuffer.copy({cursor_image->data, cursor_image->width, cursor_image->height}, {0,0, cursor_image->width, cursor_image->height} ,{0,0});
+	set_dimensions({cursor_image->width, cursor_image->height});
+	_framebuffer.copy({cursor_image->data, cursor_image->width, cursor_image->height}, {0,0, cursor_image->width, cursor_image->height} ,{0,0});
 }
 
 void Mouse::load_cursor(Image*& storage, const std::string& filename) {
-    FILE* cursor = fopen((std::string("/usr/share/cursors/") + filename).c_str(), "re");
-    if(!cursor) {
-        perror("Failed to open cursor icon");
-        return;
-    }
+	FILE* cursor = fopen((std::string("/usr/share/cursors/") + filename).c_str(), "re");
+	if(!cursor) {
+		perror("Failed to open cursor icon");
+		return;
+	}
 
-    Image* cursor_image = load_png_from_file(cursor);
-    fclose(cursor);
-    if(!cursor_image) {
-        perror("Failed to load cursor icon");
-        return;
-    }
+	Image* cursor_image = load_png_from_file(cursor);
+	fclose(cursor);
+	if(!cursor_image) {
+		perror("Failed to load cursor icon");
+		return;
+	}
 
-    storage = cursor_image;
+	storage = cursor_image;
 }

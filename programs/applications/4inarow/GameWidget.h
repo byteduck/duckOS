@@ -34,7 +34,7 @@
 
 class GameWidget: public UI::Widget {
 public:
-    WIDGET_DEF(GameWidget)
+	WIDGET_DEF(GameWidget)
 
 	void reset(bool vs_cpu);
 	void show_hint();
@@ -46,7 +46,7 @@ public:
 	bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 
 private:
-    GameWidget();
+	GameWidget();
 
 	Board board;
 	int current_player = 1;

@@ -50,7 +50,7 @@ public:
 
 	Window* parent() const;
 	void reparent(Window* new_parent);
-    void remove_child(Window* child);
+	void remove_child(Window* child);
 	Client* client() const;
 	void set_client(Client* client);
 	int id() const;
@@ -167,15 +167,15 @@ public:
 	 */
 	bool draggable();
 
-    /**
-    * Sets whether or not the window is resizable.
-    */
-    void set_resizable(bool resizable);
+	/**
+	* Sets whether or not the window is resizable.
+	*/
+	void set_resizable(bool resizable);
 
-    /**
-     * Whether or not the window is resizable.
-     */
-    bool resizable();
+	/**
+	 * Whether or not the window is resizable.
+	 */
+	bool resizable();
 
 	/**
 	 * Sets whether or not the window is hidden.
@@ -247,7 +247,7 @@ private:
 	char* _title = nullptr;
 	bool _hidden = true;
 	bool _uses_alpha = false;
-    bool _destructing = false;
+	bool _destructing = false;
 
 	static int current_id;
 };

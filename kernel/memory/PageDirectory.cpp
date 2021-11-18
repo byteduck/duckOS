@@ -313,14 +313,14 @@ bool PageDirectory::k_munmap(void* virtaddr) {
 }
 
 bool PageDirectory::k_is_mapped(size_t addr) {
-    if(addr < HIGHER_HALF) { //Program space
-       return false;
-    } else { //Kernel space
-        size_t page = (addr - HIGHER_HALF) / PAGE_SIZE;
-        size_t directory_index = (page / 1024) % 1024;
-        if (!kernel_entries[directory_index].data.present) return false;
-    }
-    return true;
+	if(addr < HIGHER_HALF) { //Program space
+	   return false;
+	} else { //Kernel space
+		size_t page = (addr - HIGHER_HALF) / PAGE_SIZE;
+		size_t directory_index = (page / 1024) % 1024;
+		if (!kernel_entries[directory_index].data.present) return false;
+	}
+	return true;
 }
 
 /**
@@ -667,10 +667,10 @@ ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, 
 	//Then, set up the region
 	region.virt->is_shm = true;
 	region.phys->is_shm = true;
-    {
-        LOCK_N(shm_id_lock, __idlock);
-        region.phys->shm_id = cur_shm_id++;
-    }
+	{
+		LOCK_N(shm_id_lock, __idlock);
+		region.phys->shm_id = cur_shm_id++;
+	}
 	region.virt->shm_id = region.phys->shm_id;
 	region.phys->shm_refs = 1;
 	region.phys->shm_owner = pid;
@@ -679,7 +679,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, 
 
 	_attached_shm_regions.push_back(region.virt);
 
-    _used_shmem += region.virt->size;
+	_used_shmem += region.virt->size;
 	return region;
 }
 
@@ -746,7 +746,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 	map_region(linked_region, write);
 	pmem_region->shm_ref();
 	_used_pmem += pmem_region->size;
-    _used_shmem += pmem_region->size;
+	_used_shmem += pmem_region->size;
 
 	if(!already_attached)
 		_attached_shm_regions.push_back(vmem_region);
@@ -762,17 +762,17 @@ Result PageDirectory::detach_shared_region(int id) {
 	if(!vreg)
 		return -ENOENT;
 
-    //Decrease mem usage
-    _used_pmem -= vreg->size;
-    _used_shmem -= vreg->size;
+	//Decrease mem usage
+	_used_pmem -= vreg->size;
+	_used_shmem -= vreg->size;
 
-    //Remove the region from the attached shm regions list
-    for(auto i = 0; i < _attached_shm_regions.size(); i++) {
-        if(_attached_shm_regions[i]->is_shm && _attached_shm_regions[i]->shm_id == id) {
-            _attached_shm_regions.erase(i);
-            break;
-        }
-    }
+	//Remove the region from the attached shm regions list
+	for(auto i = 0; i < _attached_shm_regions.size(); i++) {
+		if(_attached_shm_regions[i]->is_shm && _attached_shm_regions[i]->shm_id == id) {
+			_attached_shm_regions.erase(i);
+			break;
+		}
+	}
 
 	//Unmap the region and decrease the reference count
 	LinkedMemoryRegion reg(vreg->related, vreg);
@@ -987,7 +987,7 @@ size_t PageDirectory::used_vmem() {
 }
 
 size_t PageDirectory::used_shmem() {
-    return _used_shmem;
+	return _used_shmem;
 }
 
 bool PageDirectory::is_mapped() {

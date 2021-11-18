@@ -26,10 +26,10 @@
 #define STR(x) STR_HELPER(x)
 
 struct Registers {
-    unsigned int gs, fs, es, ds;
-    unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;
-    unsigned int num, err_code;
-    unsigned int eip, cs, eflags, useresp, ss;
+	unsigned int gs, fs, es, ds;
+	unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;
+	unsigned int num, err_code;
+	unsigned int eip, cs, eflags, useresp, ss;
 };
 
 void *operator new(size_t size);

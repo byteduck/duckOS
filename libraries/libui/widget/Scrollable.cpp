@@ -21,19 +21,19 @@
 #include "ScrollView.h"
 
 std::shared_ptr<UI::ScrollView> UI::Scrollable::scroll_view() {
-    return _scroll_view;
+	return _scroll_view;
 }
 
 void UI::Scrollable::set_scrollview(const UI::ScrollView::Ptr& view) {
-    _scroll_view = view;
+	_scroll_view = view;
 }
 
 Point UI::Scrollable::scroll_position() {
-    if(!scroll_view())
-        return {0, 0};
-    return scroll_view()->scroll_position();
+	if(!scroll_view())
+		return {0, 0};
+	return scroll_view()->scroll_position();
 }
 
 bool UI::Scrollable::needs_layout_on_child_change() {
-    return false;
+	return false;
 }

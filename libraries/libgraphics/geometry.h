@@ -28,7 +28,7 @@ public:
 	int y;
 
 	bool in(const Rect& rect) const;
-    bool near_border(const Rect& rect, int border_size) const;
+	bool near_border(const Rect& rect, int border_size) const;
 	Point constrain(const Rect& rect) const;
 
 	Point operator+(const Point& other) const;
@@ -43,11 +43,11 @@ public:
 	int width;
 	int height;
 
-    Dimensions operator+(const Dimensions& other) const;
-    Dimensions operator-(const Dimensions& other) const;
-    Dimensions operator*(int scalar) const;
-    Dimensions operator/(int scalar) const;
-    bool operator==(const Dimensions& other) const;
+	Dimensions operator+(const Dimensions& other) const;
+	Dimensions operator-(const Dimensions& other) const;
+	Dimensions operator*(int scalar) const;
+	Dimensions operator/(int scalar) const;
+	bool operator==(const Dimensions& other) const;
 };
 
 class Rect {
@@ -91,19 +91,19 @@ public:
 	 */
 	Rect constrain(const Rect& parent) const;
 
-    /**
-     * Returns a rect consisting of the overlapping area of two rectangles.
-     * @param other The rect to use.
-     * @return The overlapping area of the two rectangles.
-     */
-    Rect overlapping_area(const Rect& other) const;
+	/**
+	 * Returns a rect consisting of the overlapping area of two rectangles.
+	 * @param other The rect to use.
+	 * @return The overlapping area of the two rectangles.
+	 */
+	Rect overlapping_area(const Rect& other) const;
 
-    /**
-     * Returns a rect that would contain both rectangles.
-     * @param other The other rectangle to combine with.
-     * @return The combined rect.
-     */
-    Rect combine(const Rect& other) const;
+	/**
+	 * Returns a rect that would contain both rectangles.
+	 * @param other The other rectangle to combine with.
+	 * @return The combined rect.
+	 */
+	Rect combine(const Rect& other) const;
 
 	/**
 	 * Returns true if the rect has an area of zero.

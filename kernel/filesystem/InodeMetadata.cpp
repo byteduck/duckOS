@@ -62,7 +62,7 @@ bool InodeMetadata::can_write(const User& user) const {
 	return  user.can_override_permissions() ||
 			(mode & PERM_O_W) ||
 			(mode & PERM_U_W && user.euid == uid) ||
-	        (mode & PERM_G_W && user.in_group(gid));
+			(mode & PERM_G_W && user.in_group(gid));
 }
 
 bool InodeMetadata::can_execute(const User& user) const {

@@ -47,12 +47,12 @@ ResultRet<Info> Info::from_app_name(const std::string& app_name) {
 }
 
 ResultRet<Info> Info::from_current_app() {
-    char exe_path[512];
-    if(!readlink("/proc/$$/exe", exe_path, 512)) {
-        return from_app_directory(std::filesystem::path(exe_path).parent_path());
-    } else {
-        return Result(errno);
-    }
+	char exe_path[512];
+	if(!readlink("/proc/$$/exe", exe_path, 512)) {
+		return from_app_directory(std::filesystem::path(exe_path).parent_path());
+	} else {
+		return Result(errno);
+	}
 }
 
 Info::Info(std::filesystem::path base_path, std::string name, std::string exec):
@@ -85,11 +85,11 @@ bool Info::exists() const {
 }
 
 std::filesystem::path Info::base_path() const {
-    return _base_path;
+	return _base_path;
 }
 
 std::filesystem::path Info::resource_path(const std::filesystem::path& path) const {
-    return _base_path / path;
+	return _base_path / path;
 }
 
 std::vector<Info> App::get_all_apps() {

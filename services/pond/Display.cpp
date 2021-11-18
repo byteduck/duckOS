@@ -135,7 +135,7 @@ void Display::remove_window(Window* window) {
 	if(window == _drag_window)
 		_drag_window = nullptr;
 	if(window == _resize_window)
-	    _resize_window = nullptr;
+		_resize_window = nullptr;
 	if(window == _mousedown_window)
 		_mousedown_window = nullptr;
 	for(size_t i = 0; i < _windows.size(); i++) {
@@ -163,10 +163,10 @@ void Display::repaint() {
 	else
 		return;
 
-    //If it hasn't been 1/60 of a second since the last repaint, don't bother
-    if(millis_until_next_flip())
-        return;
-    gettimeofday(&paint_time, NULL);
+	//If it hasn't been 1/60 of a second since the last repaint, don't bother
+	if(millis_until_next_flip())
+		return;
+	gettimeofday(&paint_time, NULL);
 
 	auto& fb = _root_window->framebuffer();
 
@@ -176,7 +176,7 @@ void Display::repaint() {
 		bool remove_area = false;
 		for(auto & other_area : invalid_areas) {
 			if(&*it != &other_area && it->collides(other_area)) {
-			    other_area = it->combine(other_area);
+				other_area = it->combine(other_area);
 				remove_area = true;
 				break;
 			}
@@ -189,11 +189,11 @@ void Display::repaint() {
 
 	//If the buffer can't be flipped, combine the invalid areas together to calculate the portion of the framebuffer to be redrawn
 	if(!_can_flip_buffer) {
-	    //If the invalid buffer area is empty (has an x of -1), initialize it to the first invalid area
-	    if(_invalid_buffer_area.x == -1)
-	        _invalid_buffer_area = invalid_areas[0];
-	    for(auto& area : invalid_areas)
-	        _invalid_buffer_area = _invalid_buffer_area.combine(area);
+		//If the invalid buffer area is empty (has an x of -1), initialize it to the first invalid area
+		if(_invalid_buffer_area.x == -1)
+			_invalid_buffer_area = invalid_areas[0];
+		for(auto& area : invalid_areas)
+			_invalid_buffer_area = _invalid_buffer_area.combine(area);
 	}
 
 	for(auto& area : invalid_areas) {
@@ -226,7 +226,7 @@ void Display::repaint() {
 
 	//If we're resizing a window, draw the outline
 	if(_resize_window)
-	    fb.outline(_resize_rect, RGB(255, 255, 255));
+		fb.outline(_resize_rect, RGB(255, 255, 255));
 
 	//Draw the mouse.
 	fb.draw_image(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height},
@@ -247,7 +247,7 @@ void Display::repaint() {
 #endif
 
 	//Flip the display buffers.
-    flip_buffers();
+	flip_buffers();
 }
 
 bool flipped = false;
@@ -263,8 +263,8 @@ void Display::flip_buffers() {
 		memcpy_uint32(video_buf, _root_window->framebuffer().data,_framebuffer.width * _framebuffer.height);
 		flipped = !flipped;
 	} else {
-	    _framebuffer.copy(_root_window->framebuffer(), _invalid_buffer_area, _invalid_buffer_area.position());
-	    _invalid_buffer_area.x = -1;
+		_framebuffer.copy(_root_window->framebuffer(), _invalid_buffer_area, _invalid_buffer_area.position());
+		_invalid_buffer_area.x = -1;
 	}
 
 	display_buffer_dirty = false;
@@ -309,17 +309,17 @@ void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t 
 
 	//If we're resizing the window, check if the user let go of the mouse button or if the window is no longer resizable
 	if(_resize_window) {
-	    //If the mouse has moved at all, we need to change the resize_rect
-	    if(!(delta_x == 0 && delta_y == 0)) {
-	        invalidate(_resize_rect);
-	        _resize_rect = _resize_window->calculate_absolute_rect(calculate_resize_rect());
-	    }
-        if(!_resize_window->resizable()) {
-            _resize_window = nullptr;
-        } else if(!(buttons & 1)) {
-            _resize_window->set_rect(_resize_rect, _resize_mode);
-            _resize_window = nullptr;
-        }
+		//If the mouse has moved at all, we need to change the resize_rect
+		if(!(delta_x == 0 && delta_y == 0)) {
+			invalidate(_resize_rect);
+			_resize_rect = _resize_window->calculate_absolute_rect(calculate_resize_rect());
+		}
+		if(!_resize_window->resizable()) {
+			_resize_window = nullptr;
+		} else if(!(buttons & 1)) {
+			_resize_window->set_rect(_resize_rect, _resize_mode);
+			_resize_window = nullptr;
+		}
 	}
 
 	//Process global mouse events
@@ -335,7 +335,7 @@ void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t 
 
 	//If we're moving or resizing a window, don't do anything else
 	if(_resize_window || _drag_window)
-	    return;
+		return;
 
 	//If we have a mousedown window and released the mouse button, stop sending events to it
 	if(_mousedown_window && !(buttons & 1))
@@ -357,45 +357,45 @@ void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t 
 		if(window == _mouse_window || window == _root_window || window->hidden())
 			continue;
 
-        //If it's near the border, see if we can resize it
-        static bool was_near_border = false;
-        if(!_resize_window && window->resizable() && mouse.near_border(window->absolute_rect(), WINDOW_RESIZE_BORDER)) {
-            was_near_border = true;
-            _resize_mode = get_resize_mode(window->absolute_rect(), mouse);
-            switch(_resize_mode) {
-                case NORTH:
-                case SOUTH:
-                    _mouse_window->set_cursor(Pond::RESIZE_V);
-                    break;
-                case EAST:
-                case WEST:
-                    _mouse_window->set_cursor(Pond::RESIZE_H);
-                    break;
-                case NORTHWEST:
-                case SOUTHEAST:
-                    _mouse_window->set_cursor(Pond::RESIZE_DR);
-                    break;
-                case NORTHEAST:
-                case SOUTHWEST:
-                    _mouse_window->set_cursor(Pond::RESIZE_DL);
-                    break;
-                default:
-                    _mouse_window->set_cursor(Pond::NORMAL);
-            }
+		//If it's near the border, see if we can resize it
+		static bool was_near_border = false;
+		if(!_resize_window && window->resizable() && mouse.near_border(window->absolute_rect(), WINDOW_RESIZE_BORDER)) {
+			was_near_border = true;
+			_resize_mode = get_resize_mode(window->absolute_rect(), mouse);
+			switch(_resize_mode) {
+				case NORTH:
+				case SOUTH:
+					_mouse_window->set_cursor(Pond::RESIZE_V);
+					break;
+				case EAST:
+				case WEST:
+					_mouse_window->set_cursor(Pond::RESIZE_H);
+					break;
+				case NORTHWEST:
+				case SOUTHEAST:
+					_mouse_window->set_cursor(Pond::RESIZE_DR);
+					break;
+				case NORTHEAST:
+				case SOUTHWEST:
+					_mouse_window->set_cursor(Pond::RESIZE_DL);
+					break;
+				default:
+					_mouse_window->set_cursor(Pond::NORMAL);
+			}
 
-            if(!(prev_mouse_buttons & 1) && (buttons & 1) && _resize_mode != NONE) {
-                _resize_window = window;
-                _resize_begin_point = mouse;
-                _resize_rect = window->absolute_rect();
-                window->move_to_front();
-            }
-            break;
-        } else if(was_near_border && !_resize_window) {
-            was_near_border = false;
-            _mouse_window->set_cursor(Pond::NORMAL);
-        }
+			if(!(prev_mouse_buttons & 1) && (buttons & 1) && _resize_mode != NONE) {
+				_resize_window = window;
+				_resize_begin_point = mouse;
+				_resize_rect = window->absolute_rect();
+				window->move_to_front();
+			}
+			break;
+		} else if(was_near_border && !_resize_window) {
+			was_near_border = false;
+			_mouse_window->set_cursor(Pond::NORMAL);
+		}
 
-        //Otherwise, if it's in the window, create the appropriate events
+		//Otherwise, if it's in the window, create the appropriate events
 		if(mouse.in(window->visible_absolute_rect())) {
 			event_window = window;
 			if(!window->gets_global_mouse()) {
@@ -464,7 +464,7 @@ void Display::window_hidden(Window* window) {
 	if(_drag_window && _drag_window->hidden())
 		_drag_window = nullptr;
 	if(_resize_window && _resize_window->hidden())
-	    _resize_window = nullptr;
+		_resize_window = nullptr;
 	if(_mousedown_window && _mousedown_window->hidden())
 		_mousedown_window = nullptr;
 }
@@ -474,73 +474,73 @@ Display& Display::inst() {
 }
 
 ResizeMode Display::get_resize_mode(Rect window, Point mouse) {
-    if(mouse.in({window.x - WINDOW_RESIZE_BORDER, window.y - WINDOW_RESIZE_BORDER, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
-        return NORTHWEST;
-    if(mouse.in({window.x + window.width - WINDOW_RESIZE_BORDER * 2, window.y - WINDOW_RESIZE_BORDER, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
-        return NORTHEAST;
-    if(mouse.in({window.x - WINDOW_RESIZE_BORDER, window.y + window.height - WINDOW_RESIZE_BORDER * 2, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
-        return SOUTHWEST;
-    if(mouse.in({window.x + window.width - WINDOW_RESIZE_BORDER * 2, window.y + window.height - WINDOW_RESIZE_BORDER * 2, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
-        return SOUTHEAST;
-    if(mouse.x < window.x + WINDOW_RESIZE_BORDER)
-        return WEST;
-    if(mouse.y < window.y + WINDOW_RESIZE_BORDER)
-        return NORTH;
-    if(mouse.x > window.x + window.width - WINDOW_RESIZE_BORDER)
-        return EAST;
-    if(mouse.y > window.y + window.height - WINDOW_RESIZE_BORDER)
-        return SOUTH;
+	if(mouse.in({window.x - WINDOW_RESIZE_BORDER, window.y - WINDOW_RESIZE_BORDER, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
+		return NORTHWEST;
+	if(mouse.in({window.x + window.width - WINDOW_RESIZE_BORDER * 2, window.y - WINDOW_RESIZE_BORDER, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
+		return NORTHEAST;
+	if(mouse.in({window.x - WINDOW_RESIZE_BORDER, window.y + window.height - WINDOW_RESIZE_BORDER * 2, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
+		return SOUTHWEST;
+	if(mouse.in({window.x + window.width - WINDOW_RESIZE_BORDER * 2, window.y + window.height - WINDOW_RESIZE_BORDER * 2, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
+		return SOUTHEAST;
+	if(mouse.x < window.x + WINDOW_RESIZE_BORDER)
+		return WEST;
+	if(mouse.y < window.y + WINDOW_RESIZE_BORDER)
+		return NORTH;
+	if(mouse.x > window.x + window.width - WINDOW_RESIZE_BORDER)
+		return EAST;
+	if(mouse.y > window.y + window.height - WINDOW_RESIZE_BORDER)
+		return SOUTH;
 
-    return NONE; //Shouldn't happen?
+	return NONE; //Shouldn't happen?
 }
 
 Rect Display::calculate_resize_rect() {
-    if(!_resize_window)
-        return {0, 0, 0, 0};
+	if(!_resize_window)
+		return {0, 0, 0, 0};
 
-    Point new_pos = _resize_window->rect().position();
-    Dimensions new_dims = _resize_window->rect().dimensions();
-    Point mouse_delta = _mouse_window->rect().position() - _resize_begin_point;
-    switch(_resize_mode) {
-        case NORTH:
-            new_pos.y += mouse_delta.y;
-            new_dims.height -= mouse_delta.y;
-            break;
-        case SOUTH:
-            new_dims.height += mouse_delta.y;
-            break;
-        case WEST:
-            new_pos.x += mouse_delta.x;
-            new_dims.width -= mouse_delta.x;
-            break;
-        case EAST:
-            new_dims.width += mouse_delta.x;
-            break;
-        case NORTHWEST:
-            new_pos = new_pos + mouse_delta;
-            new_dims.width -= mouse_delta.x;
-            new_dims.height -= mouse_delta.y;
-            break;
-        case NORTHEAST:
-            new_pos.y += mouse_delta.y;
-            new_dims.width += mouse_delta.x;
-            new_dims.height -= mouse_delta.y;
-            break;
-        case SOUTHWEST:
-            new_pos.x += mouse_delta.x;
-            new_dims.height += mouse_delta.y;
-            new_dims.width -= mouse_delta.x;
-            break;
-        case SOUTHEAST:
-            new_dims.height += mouse_delta.y;
-            new_dims.width += mouse_delta.x;
-            break;
-        case NONE:
-            break;
-    }
-    if(new_dims.height < 1)
-        new_dims.height = 1;
-    if(new_dims.width < 1)
-        new_dims.width = 1;
-    return {new_pos.x, new_pos.y, new_dims.width, new_dims.height};
+	Point new_pos = _resize_window->rect().position();
+	Dimensions new_dims = _resize_window->rect().dimensions();
+	Point mouse_delta = _mouse_window->rect().position() - _resize_begin_point;
+	switch(_resize_mode) {
+		case NORTH:
+			new_pos.y += mouse_delta.y;
+			new_dims.height -= mouse_delta.y;
+			break;
+		case SOUTH:
+			new_dims.height += mouse_delta.y;
+			break;
+		case WEST:
+			new_pos.x += mouse_delta.x;
+			new_dims.width -= mouse_delta.x;
+			break;
+		case EAST:
+			new_dims.width += mouse_delta.x;
+			break;
+		case NORTHWEST:
+			new_pos = new_pos + mouse_delta;
+			new_dims.width -= mouse_delta.x;
+			new_dims.height -= mouse_delta.y;
+			break;
+		case NORTHEAST:
+			new_pos.y += mouse_delta.y;
+			new_dims.width += mouse_delta.x;
+			new_dims.height -= mouse_delta.y;
+			break;
+		case SOUTHWEST:
+			new_pos.x += mouse_delta.x;
+			new_dims.height += mouse_delta.y;
+			new_dims.width -= mouse_delta.x;
+			break;
+		case SOUTHEAST:
+			new_dims.height += mouse_delta.y;
+			new_dims.width += mouse_delta.x;
+			break;
+		case NONE:
+			break;
+	}
+	if(new_dims.height < 1)
+		new_dims.height = 1;
+	if(new_dims.width < 1)
+		new_dims.width = 1;
+	return {new_pos.x, new_pos.y, new_dims.width, new_dims.height};
 }

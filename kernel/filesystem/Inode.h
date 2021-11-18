@@ -37,10 +37,10 @@ public:
 	Filesystem& fs;
 	ino_t id;
 
-    Inode(Filesystem& fs, ino_t id);
-    bool exists();
-    void mark_deleted();
-    virtual ~Inode();
+	Inode(Filesystem& fs, ino_t id);
+	bool exists();
+	void mark_deleted();
+	virtual ~Inode();
 
 	virtual ResultRet<kstd::shared_ptr<Inode>> find(const kstd::string& name);
 	virtual ino_t find_id(const kstd::string& name) = 0;

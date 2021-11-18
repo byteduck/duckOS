@@ -25,17 +25,17 @@
 
 class ProcessListScrollable: public UI::ListScrollable {
 public:
-    WIDGET_DEF(ProcessListScrollable);
-    void update();
+	WIDGET_DEF(ProcessListScrollable);
+	void update();
 
 protected:
-    Widget::Ptr create_entry(int index) override;
-    Dimensions preferred_item_dimensions() override;
-    int num_items() override;
+	Widget::Ptr create_entry(int index) override;
+	Dimensions preferred_item_dimensions() override;
+	int num_items() override;
 
 private:
-    ProcessListScrollable();
-    std::vector<Sys::Process> _processes;
+	ProcessListScrollable();
+	std::vector<Sys::Process> _processes;
 };
 
 #endif //DUCKOS_PROCESSLISTSCROLLABLE_H

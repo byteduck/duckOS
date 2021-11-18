@@ -15,7 +15,7 @@ __DECL_BEGIN
 
 #if defined(__GNUC__) && \
   ( (__GNUC__ >= 4) || \
-    ( (__GNUC__ >= 3) && defined(__GNUC_MINOR__) && (__GNUC_MINOR__ > 2) ) )
+	( (__GNUC__ >= 3) && defined(__GNUC_MINOR__) && (__GNUC_MINOR__ > 2) ) )
 /* gcc > 3.2 implicitly defines the values we are interested */
 #define __STDINT_EXP(x) __##x##__
 #else

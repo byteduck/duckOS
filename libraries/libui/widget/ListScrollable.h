@@ -23,37 +23,37 @@
 #include "Scrollable.h"
 
 namespace UI {
-    class ListScrollable: public Scrollable {
-    public:
-        VIRTUAL_WIDGET_DEF(ListScrollable)
+	class ListScrollable: public Scrollable {
+	public:
+		VIRTUAL_WIDGET_DEF(ListScrollable)
 
-    protected:
-        //Widget
-        void calculate_layout() override;
-        void on_layout_change(const Rect& old_rect) override;
+	protected:
+		//Widget
+		void calculate_layout() override;
+		void on_layout_change(const Rect& old_rect) override;
 
-        //Scrollable
-        void on_scroll(Point scroll_position) override;
-        Dimensions scrollable_area() override;
+		//Scrollable
+		void on_scroll(Point scroll_position) override;
+		Dimensions scrollable_area() override;
 
-        //ListScrollable
-        virtual Widget::Ptr create_entry(int index) = 0;
-        virtual Dimensions preferred_item_dimensions() = 0;
-        virtual int num_items() = 0;
-        void update_item(int index);
-        void update_data();
+		//ListScrollable
+		virtual Widget::Ptr create_entry(int index) = 0;
+		virtual Dimensions preferred_item_dimensions() = 0;
+		virtual int num_items() = 0;
+		void update_item(int index);
+		void update_data();
 
-        ListScrollable();
+		ListScrollable();
 
-    private:
-        void do_update(bool dimensions_changed);
-        Widget::Ptr setup_entry(int index);
+	private:
+		void do_update(bool dimensions_changed);
+		Widget::Ptr setup_entry(int index);
 
-        std::map<int, Widget::Ptr> _items;
-        int _prev_first_visible = 0;
-        int _prev_last_visible = 0;
-        Dimensions _item_dims = {-1, -1};
-    };
+		std::map<int, Widget::Ptr> _items;
+		int _prev_first_visible = 0;
+		int _prev_last_visible = 0;
+		Dimensions _item_dims = {-1, -1};
+	};
 }
 
 #endif //DUCKOS_LIBUI_LISTSCROLLABLE_H

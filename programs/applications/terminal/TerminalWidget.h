@@ -25,7 +25,7 @@
 
 class TerminalWidget: public UI::Widget, public Term::Listener {
 public:
-    WIDGET_DEF(TerminalWidget)
+	WIDGET_DEF(TerminalWidget)
 
 	~TerminalWidget();
 
@@ -49,7 +49,7 @@ public:
 	void emit(const uint8_t* data, size_t size);
 
 private:
-    TerminalWidget();
+	TerminalWidget();
 
 	Gfx::Font* font = nullptr;
 	Term::Terminal* term = nullptr;

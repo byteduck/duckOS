@@ -27,13 +27,13 @@
 #define SANDBAR_HEIGHT 20
 
 void sigchld_handler(int sig) {
-    int dummy;
-    wait(&dummy);
+	int dummy;
+	wait(&dummy);
 }
 
 int main(int argc, char** argv, char** envp) {
-    //Signal handler
-    signal(SIGCHLD, sigchld_handler);
+	//Signal handler
+	signal(SIGCHLD, sigchld_handler);
 
 	//Init LibUI
 	UI::init(argv, envp);
@@ -57,7 +57,7 @@ int main(int argc, char** argv, char** envp) {
 
 	for(auto& app : apps) {
 		auto btn = UI::Button::make(app.icon());
-        btn->set_sizing_mode(UI::PREFERRED);
+		btn->set_sizing_mode(UI::PREFERRED);
 		btn->on_pressed = [&]{
 			if(!fork()) {
 				char* argv[] = {NULL};

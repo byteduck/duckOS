@@ -25,176 +25,176 @@
 #include "../DrawContext.h"
 
 #define WIDGET_DEF(name) \
-    using Ptr = std::shared_ptr<name>; \
-    using ArgPtr = const std::shared_ptr<name>&; \
-    template<class... ArgTs> \
-    static inline std::shared_ptr<name> make(ArgTs&&... args) { \
-        return std::shared_ptr<name>(new name(args...)); \
-    } \
-    inline std::shared_ptr<name> self() { \
-        return std::static_pointer_cast<name>(shared_from_this()); \
-    }
+	using Ptr = std::shared_ptr<name>; \
+	using ArgPtr = const std::shared_ptr<name>&; \
+	template<class... ArgTs> \
+	static inline std::shared_ptr<name> make(ArgTs&&... args) { \
+		return std::shared_ptr<name>(new name(args...)); \
+	} \
+	inline std::shared_ptr<name> self() { \
+		return std::static_pointer_cast<name>(shared_from_this()); \
+	}
 
 #define VIRTUAL_WIDGET_DEF(name) \
-    using Ptr = std::shared_ptr<name>; \
-    using ArgPtr = const std::shared_ptr<name>&;
+	using Ptr = std::shared_ptr<name>; \
+	using ArgPtr = const std::shared_ptr<name>&;
 
 namespace UI {
-    enum SizingMode {
-        PREFERRED, FILL
-    };
+	enum SizingMode {
+		PREFERRED, FILL
+	};
 
-    enum PositioningMode {
-        AUTO, ABSOLUTE
-    };
+	enum PositioningMode {
+		AUTO, ABSOLUTE
+	};
 
 	class Window;
-    class Widget: public std::enable_shared_from_this<Widget> {
+	class Widget: public std::enable_shared_from_this<Widget> {
 	public:
-        using Ptr = std::shared_ptr<Widget>;
-        using ArgPtr = const std::shared_ptr<Widget>&;
+		using Ptr = std::shared_ptr<Widget>;
+		using ArgPtr = const std::shared_ptr<Widget>&;
 
-        ~Widget();
+		~Widget();
 
-        /**
-         * Returns the preferred size of the widget (which may not be its current size).
-         * @return The preferred size of the widget.
-         */
-        virtual Dimensions preferred_size();
+		/**
+		 * Returns the preferred size of the widget (which may not be its current size).
+		 * @return The preferred size of the widget.
+		 */
+		virtual Dimensions preferred_size();
 
-        /**
-         * Returns the current size of the widget (may not be its preferred size).
-         * @return The current size of the widget.
-         */
-        Dimensions current_size();
+		/**
+		 * Returns the current size of the widget (may not be its preferred size).
+		 * @return The current size of the widget.
+		 */
+		Dimensions current_size();
 
-        /**
-         * Returns the positioning mode of the widget.
-         * @return The positioning mode of the widget.
-         */
-        PositioningMode positioning_mode();
+		/**
+		 * Returns the positioning mode of the widget.
+		 * @return The positioning mode of the widget.
+		 */
+		PositioningMode positioning_mode();
 
-        /**
-         * Sets the positioning mode of the widget.
-         * @param mode The positioning mode of the widget.
-         */
-        void set_positioning_mode(PositioningMode mode);
+		/**
+		 * Sets the positioning mode of the widget.
+		 * @param mode The positioning mode of the widget.
+		 */
+		void set_positioning_mode(PositioningMode mode);
 
-        /**
-         * Returns the sizing mode of the widget.
-         * @return The sizing mode of the widget.
-         */
-        SizingMode sizing_mode();
+		/**
+		 * Returns the sizing mode of the widget.
+		 * @return The sizing mode of the widget.
+		 */
+		SizingMode sizing_mode();
 
-        /**
-         * Sets the sizing mode of the widget.
-         * @param mode The sizing mode of the widget.
-         */
-        void set_sizing_mode(SizingMode mode);
+		/**
+		 * Sets the sizing mode of the widget.
+		 * @param mode The sizing mode of the widget.
+		 */
+		void set_sizing_mode(SizingMode mode);
 
-        /**
-         * This function is called to scheduel a repaint of the widget.
-         */
-        void repaint();
+		/**
+		 * This function is called to scheduel a repaint of the widget.
+		 */
+		void repaint();
 
-        /**
-         * This function immediately repaints the contents of the widget if needed.
-         */
-        void repaint_now();
+		/**
+		 * This function immediately repaints the contents of the widget if needed.
+		 */
+		void repaint_now();
 
-        /**
-         * This function is called whenever a keyboard event happens on the widget.
-         * @param evt The event in question.
-         * @return Whether or not the event was handled and should stop propagating to the parent.
-         */
-        virtual bool on_keyboard(Pond::KeyEvent evt);
+		/**
+		 * This function is called whenever a keyboard event happens on the widget.
+		 * @param evt The event in question.
+		 * @return Whether or not the event was handled and should stop propagating to the parent.
+		 */
+		virtual bool on_keyboard(Pond::KeyEvent evt);
 
-        /**
-         * This function is called whenever a mouse movement event happens on the widget.
-         * @param evt The event in question.
-         * @return Whether or not the event was handled and should stop propagating to the parent.
-         */
-        virtual bool on_mouse_move(Pond::MouseMoveEvent evt);
+		/**
+		 * This function is called whenever a mouse movement event happens on the widget.
+		 * @param evt The event in question.
+		 * @return Whether or not the event was handled and should stop propagating to the parent.
+		 */
+		virtual bool on_mouse_move(Pond::MouseMoveEvent evt);
 
-        /**
-         * This function is called whenever a mouse button event happens on the widget.
-         * @param evt The event in question.
-         * @return Whether or not the event was handled and should stop propagating to the parent.
-         */
-        virtual bool on_mouse_button(Pond::MouseButtonEvent evt);
+		/**
+		 * This function is called whenever a mouse button event happens on the widget.
+		 * @param evt The event in question.
+		 * @return Whether or not the event was handled and should stop propagating to the parent.
+		 */
+		virtual bool on_mouse_button(Pond::MouseButtonEvent evt);
 
-        /**
-         * This function is called whenever a mouse scroll event happens on the widget.
-         * @param evt The event in question.
-         * @return Whether or not the event was handled and should stop propagating to the parent.
-         */
-        virtual bool on_mouse_scroll(Pond::MouseScrollEvent evt);
+		/**
+		 * This function is called whenever a mouse scroll event happens on the widget.
+		 * @param evt The event in question.
+		 * @return Whether or not the event was handled and should stop propagating to the parent.
+		 */
+		virtual bool on_mouse_scroll(Pond::MouseScrollEvent evt);
 
-        /**
-         * This function is called whenever the mouse leaves the widget (or enters a child widget).
-         * @param evt The event in question.
-         */
-        virtual void on_mouse_leave(Pond::MouseLeaveEvent evt);
+		/**
+		 * This function is called whenever the mouse leaves the widget (or enters a child widget).
+		 * @param evt The event in question.
+		 */
+		virtual void on_mouse_leave(Pond::MouseLeaveEvent evt);
 
-        /**
-         * The parent of this widget.
-         * @return A pointer to the parent widget, or nullptr if there isn't one.
-         */
-        std::shared_ptr<Widget> parent();
+		/**
+		 * The parent of this widget.
+		 * @return A pointer to the parent widget, or nullptr if there isn't one.
+		 */
+		std::shared_ptr<Widget> parent();
 
-        /**
-         * The parent window of this widget. Will only be non-null if this is a top-level widget.
-         * @return A pointer to the parent window, or nullptr if the parent is another widget.
-         */
-        std::shared_ptr<Window> parent_window();
+		/**
+		 * The parent window of this widget. Will only be non-null if this is a top-level widget.
+		 * @return A pointer to the parent window, or nullptr if the parent is another widget.
+		 */
+		std::shared_ptr<Window> parent_window();
 
-        /**
-         * The root window of this widget.
-         * @return A pointer to the root window of this widget.
-         */
-        std::shared_ptr<Window> root_window();
+		/**
+		 * The root window of this widget.
+		 * @return A pointer to the root window of this widget.
+		 */
+		std::shared_ptr<Window> root_window();
 
-        /**
-         * Adds a child to the widget.
-         * @param child The child to add.
-         */
-        void add_child(const std::shared_ptr<Widget>& child);
+		/**
+		 * Adds a child to the widget.
+		 * @param child The child to add.
+		 */
+		void add_child(const std::shared_ptr<Widget>& child);
 
-        /**
-         * Removes a child from the widget.
-         * @param child The child to remove.
-         * @return Whether or not the removal was successful (i.e. if the specified widget was a child of this widget)
-         */
-        bool remove_child(const std::shared_ptr<Widget>& child);
+		/**
+		 * Removes a child from the widget.
+		 * @param child The child to remove.
+		 * @return Whether or not the removal was successful (i.e. if the specified widget was a child of this widget)
+		 */
+		bool remove_child(const std::shared_ptr<Widget>& child);
 
-        /**
-         * Sets the position of the widget.
-         * The behavior of this depends on the positioning mode of the widget and the parent's layout specifications.
-         * @param position The new position of the widget.
-         */
-        void set_position(const Point& position);
+		/**
+		 * Sets the position of the widget.
+		 * The behavior of this depends on the positioning mode of the widget and the parent's layout specifications.
+		 * @param position The new position of the widget.
+		 */
+		void set_position(const Point& position);
 
-        /**
-         * Sets the position of the widget without recalculating layouts.
-         * @param position The new position of the widget.
-         */
-        void set_position_nolayout(const Point& position);
+		/**
+		 * Sets the position of the widget without recalculating layouts.
+		 * @param position The new position of the widget.
+		 */
+		void set_position_nolayout(const Point& position);
 
-        /**
-         * Gets the position of the widget.
-         * @return The position of the widget.
-         */
-         Point position();
+		/**
+		 * Gets the position of the widget.
+		 * @return The position of the widget.
+		 */
+		 Point position();
 
-         /**
-          * Hides the widget.
-          */
-         void hide();
+		 /**
+		  * Hides the widget.
+		  */
+		 void hide();
 
-        /**
-        * Shows the widget.
-        */
-        void show();
+		/**
+		* Shows the widget.
+		*/
+		void show();
 
 		/**
 		* Sets the bounds for the widget. (called during a layout update)
@@ -202,16 +202,16 @@ namespace UI {
 		*/
 		void set_layout_bounds(Rect new_bounds);
 
-        /**
-         * Whether or not the widget needs a layout update when a child is added or removed.
-         * @return If a layout update should be preformed on child addition/removal.
-         */
-        virtual bool needs_layout_on_child_change();
+		/**
+		 * Whether or not the widget needs a layout update when a child is added or removed.
+		 * @return If a layout update should be preformed on child addition/removal.
+		 */
+		virtual bool needs_layout_on_child_change();
 
 	protected:
 		friend class Window;
 
-        explicit Widget() = default;
+		explicit Widget() = default;
 
 		/**
 		 * Sets the parent window of the widget.
@@ -225,10 +225,10 @@ namespace UI {
 		 */
 		void set_parent(const std::shared_ptr<Widget>& widget);
 
-        /**
-         * Removes the parent of the widget.
-         */
-        void remove_parent();
+		/**
+		 * Removes the parent of the widget.
+		 */
+		void remove_parent();
 
 		/**
 		 * Moves and resizes the widget according to the sizing mode, positioning mode, and parent's specifications.
@@ -247,17 +247,17 @@ namespace UI {
 		 */
 		virtual void on_child_added(const std::shared_ptr<Widget>& child);
 
-        /**
-         * Called when a child is removed from the widget.
-         * @param child The child removed.
-         */
-        virtual void on_child_removed(const std::shared_ptr<Widget>& child);
+		/**
+		 * Called when a child is removed from the widget.
+		 * @param child The child removed.
+		 */
+		virtual void on_child_removed(const std::shared_ptr<Widget>& child);
 
-        /**
-         * This function is called whenever the widget's position or size are changed.
-         * @param old_rect The old rect of the widget.
-         */
-        virtual void on_layout_change(const Rect& old_rect);
+		/**
+		 * This function is called whenever the widget's position or size are changed.
+		 * @param old_rect The old rect of the widget.
+		 */
+		virtual void on_layout_change(const Rect& old_rect);
 
 		/**
 		 * Sets whether the widget should use alpha blending or not.
@@ -308,9 +308,9 @@ namespace UI {
 		SizingMode _sizing_mode = FILL;
 
 		void parent_window_created();
-        void parent_window_destroyed();
+		void parent_window_destroyed();
 		void create_window(Pond::Window* parent);
-        void destroy_window();
+		void destroy_window();
 	};
 }
 

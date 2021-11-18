@@ -23,7 +23,7 @@
 using namespace UI;
 
 Widget::~Widget() {
-    destroy_window();
+	destroy_window();
 }
 
 Dimensions Widget::preferred_size() {
@@ -32,28 +32,28 @@ Dimensions Widget::preferred_size() {
 
 Dimensions Widget::current_size() {
 	if(!_initialized_size) {
-        _rect.set_dimensions(preferred_size());
-        _initialized_size = true;
-    }
+		_rect.set_dimensions(preferred_size());
+		_initialized_size = true;
+	}
 	return _rect.dimensions();
 }
 
 PositioningMode Widget::positioning_mode() {
-    return _positioning_mode;
+	return _positioning_mode;
 }
 
 void Widget::set_positioning_mode(PositioningMode mode) {
-    _positioning_mode = mode;
-    update_layout();
+	_positioning_mode = mode;
+	update_layout();
 }
 
 SizingMode Widget::sizing_mode() {
-    return _sizing_mode;
+	return _sizing_mode;
 }
 
 void Widget::set_sizing_mode(SizingMode mode) {
-    _sizing_mode = mode;
-    update_layout();
+	_sizing_mode = mode;
+	update_layout();
 }
 
 void Widget::repaint() {
@@ -89,8 +89,8 @@ void Widget::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 }
 
 std::shared_ptr<Widget> Widget::parent() {
-    if(!_parent)
-        return nullptr;
+	if(!_parent)
+		return nullptr;
 	return _parent->shared_from_this();
 }
 
@@ -110,34 +110,34 @@ void Widget::add_child(const std::shared_ptr<Widget>& child) {
 	children.push_back(child);
 	child->set_parent(shared_from_this());
 	on_child_added(child);
-    if(needs_layout_on_child_change())
-	    update_layout();
+	if(needs_layout_on_child_change())
+		update_layout();
 }
 
 bool Widget::remove_child(const std::shared_ptr<Widget>& child) {
-    if(child->parent().get() != this)
-        return false;
+	if(child->parent().get() != this)
+		return false;
 
-    auto child_it = std::find(children.begin(), children.end(), child);
-    if(child_it == children.end())
-        return false;
+	auto child_it = std::find(children.begin(), children.end(), child);
+	if(child_it == children.end())
+		return false;
 
-    children.erase(child_it);
-    child->remove_parent();
-    on_child_removed(child);
-    if(needs_layout_on_child_change())
-        update_layout();
-    return true;
+	children.erase(child_it);
+	child->remove_parent();
+	on_child_removed(child);
+	if(needs_layout_on_child_change())
+		update_layout();
+	return true;
 }
 
 void Widget::set_position(const Point& position) {
-    _absolute_position = position;
-    update_layout();
+	_absolute_position = position;
+	update_layout();
 }
 
 void Widget::set_position_nolayout(const Point& position) {
-    _rect.set_position(position);
-    _window->set_position(_rect.position());
+	_rect.set_position(position);
+	_window->set_position(_rect.position());
 }
 
 Point Widget::position() {
@@ -159,7 +159,7 @@ void Widget::show() {
 void Widget::set_layout_bounds(Rect new_bounds) {
 	Rect old_rect = _rect;
 	_rect = new_bounds;
-    _initialized_size = true;
+	_initialized_size = true;
 	calculate_layout();
 	on_layout_change(old_rect);
 	if(_window) {
@@ -175,7 +175,7 @@ void Widget::set_layout_bounds(Rect new_bounds) {
 }
 
 bool Widget::needs_layout_on_child_change() {
-    return true;
+	return true;
 }
 
 void Widget::set_window(const std::shared_ptr<Window>& window) {
@@ -197,8 +197,8 @@ void Widget::set_parent(const std::shared_ptr<Widget>& widget) {
 }
 
 void Widget::remove_parent() {
-    _parent = nullptr;
-    destroy_window();
+	_parent = nullptr;
+	destroy_window();
 }
 
 void Widget::update_layout() {
@@ -281,32 +281,32 @@ void Widget::parent_window_created() {
 }
 
 void Widget::parent_window_destroyed() {
-    if(!_window)
-        return;
-    __deregister_widget(_window->id());
-    delete _window;
-    _window = nullptr;
-    for(auto child : children)
-        child->parent_window_destroyed();
+	if(!_window)
+		return;
+	__deregister_widget(_window->id());
+	delete _window;
+	_window = nullptr;
+	for(auto child : children)
+		child->parent_window_destroyed();
 }
 
 void Widget::create_window(Pond::Window* parent) {
-    _rect.set_dimensions(current_size());
-    _window = pond_context->create_window(parent, _rect, true);
-    _window->set_uses_alpha(_uses_alpha);
-    _window->set_global_mouse(_global_mouse);
-    __register_widget(shared_from_this(), _window->id());
-    for(auto &child : children)
-        child->parent_window_created();
+	_rect.set_dimensions(current_size());
+	_window = pond_context->create_window(parent, _rect, true);
+	_window->set_uses_alpha(_uses_alpha);
+	_window->set_global_mouse(_global_mouse);
+	__register_widget(shared_from_this(), _window->id());
+	for(auto &child : children)
+		child->parent_window_created();
 }
 
 void Widget::destroy_window() {
-    if(!_window)
-        return;
-    __deregister_widget(_window->id());
-    _window->destroy();
-    delete _window;
-    _window = nullptr;
-    for(auto child : children)
-        child->parent_window_destroyed();
+	if(!_window)
+		return;
+	__deregister_widget(_window->id());
+	_window->destroy();
+	delete _window;
+	_window = nullptr;
+	for(auto child : children)
+		child->parent_window_destroyed();
 }

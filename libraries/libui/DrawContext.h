@@ -25,9 +25,9 @@
 #include <libgraphics/graphics.h>
 
 namespace UI {
-    enum TextAlignment {
-        BEGINNING, CENTER, END
-    };
+	enum TextAlignment {
+		BEGINNING, CENTER, END
+	};
 
 	class DrawContext {
 	public:

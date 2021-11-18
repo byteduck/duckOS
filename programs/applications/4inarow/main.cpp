@@ -39,26 +39,26 @@ int main(int argc, char** argv, char** envp) {
 	auto cpu_checkbox = UI::Checkbox::make("CPU");
 	auto hint_button = UI::Button::make("Hint");
 	toolbar->add_child(pvp_button);
-    toolbar->add_child(hint_button);
+	toolbar->add_child(hint_button);
 	toolbar->add_child(cpu_checkbox);
 
 	//Create connect 4 widget
 	auto gamewidget = GameWidget::make();
 	pvp_button->on_pressed = [&]{
-        gamewidget->reset(cpu_checkbox->checked());
+		gamewidget->reset(cpu_checkbox->checked());
 	};
 	cpu_checkbox->on_change = [&](bool cpu){
 		gamewidget->reset(cpu);
 	};
 	hint_button->on_pressed = [&]{
-	    gamewidget->show_hint();
+		gamewidget->show_hint();
 	};
 
 	mainview->add_child(gamewidget);
 	mainview->add_child(toolbar);
 
 	//Show the main window
-    window->set_contents(mainview);
+	window->set_contents(mainview);
 	window->show();
 	window->set_resizable(false);
 

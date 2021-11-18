@@ -94,24 +94,24 @@ KernelMapper::Symbol* KernelMapper::get_symbol(size_t location) {
 }
 
 void KernelMapper::print_stacktrace() {
-    //Start walking the stack
+	//Start walking the stack
 	auto* stk = (uint32_t*) __builtin_frame_address(0);
 
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
 		if(stk[1] < HIGHER_HALF)
 			break;
 
-	    //Check if the stack pointer is mapped
-	    if(!PageDirectory::k_is_mapped((size_t) stk)) {
-	        printf("0x%x (Unmapped)\n", stk[1]);
-            break;
-        }
+		//Check if the stack pointer is mapped
+		if(!PageDirectory::k_is_mapped((size_t) stk)) {
+			printf("0x%x (Unmapped)\n", stk[1]);
+			break;
+		}
 
-        //If we've reached the end of the stack, break
-        if(!stk[1])
-            break;
+		//If we've reached the end of the stack, break
+		if(!stk[1])
+			break;
 
-        //Finally, get the symbol name and print
+		//Finally, get the symbol name and print
 		auto* sym = KernelMapper::get_symbol(stk[1]);
 		if(sym)
 			printf("0x%x %s\n", stk[1], sym->name);

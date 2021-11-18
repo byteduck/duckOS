@@ -49,7 +49,7 @@ private:
 	Gfx::Image* cursor_resize_dl = nullptr;
 	Pond::CursorType current_type;
 
-    void load_cursor(Gfx::Image*& storage, const std::string& filename);
+	void load_cursor(Gfx::Image*& storage, const std::string& filename);
 };
 
 

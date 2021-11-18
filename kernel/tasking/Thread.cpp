@@ -314,9 +314,9 @@ bool Thread::call_signal_handler(int signal) {
 	//Unmap the user stack from kernel space
 	PageDirectory::k_free_virtual_region(k_ustack_region);
 
-    //Queue this thread
+	//Queue this thread
 	_ready_to_handle_signal = true;
-    TaskManager::queue_thread(_process->_threads[_tid - 1]);
+	TaskManager::queue_thread(_process->_threads[_tid - 1]);
 
 	return true;
 }

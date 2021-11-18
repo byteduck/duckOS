@@ -35,7 +35,7 @@ namespace App {
 	public:
 		static ResultRet<Info> from_app_directory(const std::filesystem::path& app_directory);
 		static ResultRet<Info> from_app_name(const std::string& app_name);
-        static ResultRet<Info> from_current_app();
+		static ResultRet<Info> from_current_app();
 
 		Info() = default;
 		Info(std::filesystem::path app_directory, std::string name, std::string exec);
@@ -44,12 +44,12 @@ namespace App {
 		const std::string& name() const;
 		const std::string exec() const;
 		bool exists() const;
-        std::filesystem::path base_path() const;
-        std::filesystem::path resource_path(const std::filesystem::path& path) const;
+		std::filesystem::path base_path() const;
+		std::filesystem::path resource_path(const std::filesystem::path& path) const;
 
 	private:
 		bool _exists = false;
-        std::filesystem::path _base_path;
+		std::filesystem::path _base_path;
 		std::string _name;
 		std::string _exec;
 		std::shared_ptr<Gfx::Image> _icon = nullptr;

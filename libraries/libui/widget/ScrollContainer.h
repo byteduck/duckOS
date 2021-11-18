@@ -23,24 +23,24 @@
 #include "ScrollView.h"
 
 namespace UI {
-    class ScrollContainer : public Scrollable {
-    public:
-        WIDGET_DEF(ScrollContainer)
+	class ScrollContainer : public Scrollable {
+	public:
+		WIDGET_DEF(ScrollContainer)
 
-        //Scrollable
-        void on_scroll(Point new_position) override;
-        Dimensions scrollable_area() override;
-        void set_contents(Widget::ArgPtr contents);
+		//Scrollable
+		void on_scroll(Point new_position) override;
+		Dimensions scrollable_area() override;
+		void set_contents(Widget::ArgPtr contents);
 
-        //Widget
-        void calculate_layout() override;
-        Dimensions preferred_size() override;
+		//Widget
+		void calculate_layout() override;
+		Dimensions preferred_size() override;
 
-    private:
-        explicit ScrollContainer();
+	private:
+		explicit ScrollContainer();
 
-        Widget::Ptr _contents = nullptr;
-    };
+		Widget::Ptr _contents = nullptr;
+	};
 }
 
 #endif //DUCKOS_LIBUI_SCROLLCONTAINER_H

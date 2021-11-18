@@ -24,10 +24,10 @@
 #include <stdexcept>
 
 namespace UI {
-    class UIException: public std::runtime_error {
-    public:
-        UIException(const std::string& description);
-    };
+	class UIException: public std::runtime_error {
+	public:
+		UIException(const std::string& description);
+	};
 }
 
 

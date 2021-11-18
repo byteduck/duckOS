@@ -23,25 +23,25 @@
 #include "../Widget.h"
 
 namespace UI {
-    class FlexLayout: public Widget {
-    public:
-        WIDGET_DEF(FlexLayout)
+	class FlexLayout: public Widget {
+	public:
+		WIDGET_DEF(FlexLayout)
 
-        enum Direction {
-            HORIZONTAL,
-            VERTICAL
-        };
+		enum Direction {
+			HORIZONTAL,
+			VERTICAL
+		};
 
-        //Widget
-        virtual Dimensions preferred_size() override;
-        virtual void calculate_layout() override;
+		//Widget
+		virtual Dimensions preferred_size() override;
+		virtual void calculate_layout() override;
 
-    protected:
-        Direction direction;
+	protected:
+		Direction direction;
 
-    private:
-        explicit FlexLayout(Direction direction);
-    };
+	private:
+		explicit FlexLayout(Direction direction);
+	};
 }
 
 

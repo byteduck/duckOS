@@ -40,7 +40,7 @@ namespace Sys {
 		static ResultRet<Process> self();
 
 		const std::string& name() const { return _name; }
-        std::string exe() const;
+		std::string exe() const;
 		pid_t pid() const { return _pid; }
 		pid_t ppid() const { return _ppid; }
 		gid_t gid() const { return _gid; }
@@ -49,9 +49,9 @@ namespace Sys {
 		std::string state_name() const;
 		Mem::Amount physical_mem() const { return _physical_mem; }
 		Mem::Amount virtual_mem() const { return _virtual_mem; }
-        Mem::Amount shared_mem() const { return _shared_mem; }
+		Mem::Amount shared_mem() const { return _shared_mem; }
 
-        ResultRet<App::Info> app_info() const;
+		ResultRet<App::Info> app_info() const;
 
 		Result update();
 
@@ -64,7 +64,7 @@ namespace Sys {
 		State _state;
 		Mem::Amount _physical_mem;
 		Mem::Amount _virtual_mem;
-        Mem::Amount _shared_mem;
+		Mem::Amount _shared_mem;
 	};
 }
 

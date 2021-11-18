@@ -23,28 +23,28 @@
 #include "Widget.h"
 
 namespace UI {
-    class ScrollView;
+	class ScrollView;
 
-    class Scrollable : public Widget {
-    public:
-        VIRTUAL_WIDGET_DEF(Scrollable)
-        virtual void on_scroll(Point new_position) = 0;
-        virtual Dimensions scrollable_area() = 0;
+	class Scrollable : public Widget {
+	public:
+		VIRTUAL_WIDGET_DEF(Scrollable)
+		virtual void on_scroll(Point new_position) = 0;
+		virtual Dimensions scrollable_area() = 0;
 
-    protected:
-        std::shared_ptr<ScrollView> scroll_view();
-        Point scroll_position();
+	protected:
+		std::shared_ptr<ScrollView> scroll_view();
+		Point scroll_position();
 
-        //Widget
-        virtual bool needs_layout_on_child_change() override;
+		//Widget
+		virtual bool needs_layout_on_child_change() override;
 
-    private:
-        friend class ScrollView;
+	private:
+		friend class ScrollView;
 
-        void set_scrollview(const std::shared_ptr<ScrollView>& view);
+		void set_scrollview(const std::shared_ptr<ScrollView>& view);
 
-        std::shared_ptr<ScrollView> _scroll_view;
-    };
+		std::shared_ptr<ScrollView> _scroll_view;
+	};
 }
 
 #endif //DUCKOS_LIBUI_SCROLLABLE_H

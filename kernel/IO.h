@@ -30,10 +30,10 @@ namespace IO {
 	uint8_t inb(uint16_t port);
 	uint16_t inw(uint16_t port);
 	uint32_t inl(uint16_t port);
-    inline void wait(size_t us) {
-        while(us--)
-            inb(0x80);
-    }
+	inline void wait(size_t us) {
+		while(us--)
+			inb(0x80);
+	}
 };
 
 

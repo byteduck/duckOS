@@ -22,35 +22,35 @@
 using namespace UI;
 
 ScrollContainer::ScrollContainer() {
-    set_uses_alpha(true);
+	set_uses_alpha(true);
 }
 
 void ScrollContainer::on_scroll(Point new_position) {
-    if(_contents)
-        _contents->set_position_nolayout(new_position * -1);
+	if(_contents)
+		_contents->set_position_nolayout(new_position * -1);
 }
 
 Dimensions ScrollContainer::scrollable_area() {
-    return _contents->preferred_size();
+	return _contents->preferred_size();
 }
 
 void ScrollContainer::set_contents(const std::shared_ptr<Widget>& contents) {
-    if(_contents)
-        return;
-    _contents = contents;
-    add_child(_contents);
-    update_layout();
+	if(_contents)
+		return;
+	_contents = contents;
+	add_child(_contents);
+	update_layout();
 }
 
 void ScrollContainer::calculate_layout() {
-    if(_contents) {
-        auto size = _contents->preferred_size();
-        if(_contents->sizing_mode() == FILL)
-            size.width = current_size().width;
-        _contents->set_layout_bounds({0, -scroll_view()->scroll_position().y, size.width, size.height});
-    }
+	if(_contents) {
+		auto size = _contents->preferred_size();
+		if(_contents->sizing_mode() == FILL)
+			size.width = current_size().width;
+		_contents->set_layout_bounds({0, -scroll_view()->scroll_position().y, size.width, size.height});
+	}
 }
 
 Dimensions ScrollContainer::preferred_size() {
-    return _contents->preferred_size();
+	return _contents->preferred_size();
 }

@@ -25,7 +25,7 @@
 namespace UI {
 	class Label: public Widget {
 	public:
-        WIDGET_DEF(Label)
+		WIDGET_DEF(Label)
 
 		//Label
 		std::string label();
@@ -33,7 +33,7 @@ namespace UI {
 		Color color();
 		void set_color(Color new_color);
 		TextAlignment vertical_alignment();
-        TextAlignment horizontal_alignment();
+		TextAlignment horizontal_alignment();
 		void set_alignment(TextAlignment vertical, TextAlignment horizontal);
 		Gfx::Font* font();
 		void set_font(Gfx::Font* font);
@@ -44,7 +44,7 @@ namespace UI {
 		virtual Dimensions preferred_size() override;
 
 	private:
-        explicit Label(const std::string& label);
+		explicit Label(const std::string& label);
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;

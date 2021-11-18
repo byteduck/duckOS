@@ -26,21 +26,21 @@ bool Point::in(const Rect& rect) const {
 }
 
 bool Point::near_border(const Rect &rect, int border_size) const {
-    Rect border_rect = {
-            rect.x - border_size,
-            rect.y - border_size,
-            rect.width + border_size * 2,
-            rect.height + border_size * 2
-    };
+	Rect border_rect = {
+			rect.x - border_size,
+			rect.y - border_size,
+			rect.width + border_size * 2,
+			rect.height + border_size * 2
+	};
 
-    Rect inner_rect = {
-            rect.x + border_size,
-            rect.y + border_size,
-            rect.width - border_size * 2,
-            rect.height - border_size * 2
-    };
+	Rect inner_rect = {
+			rect.x + border_size,
+			rect.y + border_size,
+			rect.width - border_size * 2,
+			rect.height - border_size * 2
+	};
 
-    return in(border_rect) && !in(inner_rect);
+	return in(border_rect) && !in(inner_rect);
 }
 
 Point Point::constrain(const Rect& rect) const {
@@ -194,14 +194,14 @@ Rect Rect::overlapping_area(const Rect& other) const {
 }
 
 Rect Rect::combine(const Rect &other) const {
-    Point topleft_pos =  {std::min(x, other.x), std::min(y, other.y)};
-    Point bottomright_pos = {std::max(x + width, other.x + other.width), std::max(y + height, other.y + other.height)};
-    return Rect {
-        topleft_pos.x,
-        topleft_pos.y,
-        bottomright_pos.x - topleft_pos.x,
-        bottomright_pos.y - topleft_pos.y
-    };
+	Point topleft_pos =  {std::min(x, other.x), std::min(y, other.y)};
+	Point bottomright_pos = {std::max(x + width, other.x + other.width), std::max(y + height, other.y + other.height)};
+	return Rect {
+		topleft_pos.x,
+		topleft_pos.y,
+		bottomright_pos.x - topleft_pos.x,
+		bottomright_pos.y - topleft_pos.y
+	};
 }
 
 

@@ -41,9 +41,9 @@ void UI::init(char** argv, char** envp) {
 	pond_context = Pond::Context::init();
 	pollfds.clear();
 
-    auto app_res = App::Info::from_current_app();
-    if(app_res.has_value())
-        _app_info = app_res.value();
+	auto app_res = App::Info::from_current_app();
+	if(app_res.has_value())
+		_app_info = app_res.value();
 
 	Poll pond_poll = {pond_context->connection_fd()};
 	pond_poll.on_ready_to_read = handle_pond_events;
@@ -61,17 +61,17 @@ void UI::init(char** argv, char** envp) {
 
 //We need to use these functions to avoid memory leaks due to adding null entries to the maps
 UI::Ptr<Window> find_window(int id) {
-    auto it = windows.find(id);
-    if(it == windows.end())
-        return nullptr;
-    return it->second;
+	auto it = windows.find(id);
+	if(it == windows.end())
+		return nullptr;
+	return it->second;
 }
 
 UI::Widget::Ptr find_widget(int id) {
-    auto it = widgets.find(id);
-    if(it == widgets.end())
-        return nullptr;
-    return it->second;
+	auto it = widgets.find(id);
+	if(it == widgets.end())
+		return nullptr;
+	return it->second;
 }
 
 void handle_pond_events() {
@@ -208,25 +208,25 @@ void handle_pond_events() {
 				if(windows.find(event.window_destroy.id) != windows.end())
 					__deregister_window(event.window_destroy.id);
 				if(widgets.find(event.window_destroy.id) != widgets.end())
-				    __deregister_widget(event.window_destroy.id);
+					__deregister_widget(event.window_destroy.id);
 				break;
 			}
 
 			case PEVENT_WINDOW_RESIZE: {
-                auto& evt = event.window_resize;
-                auto window = find_window(evt.window->id());
-                if(window) {
-                    window->on_resize(evt.old_rect);
-                    window->repaint();
-                } else {
-                    //TODO: Shouldn't happen?
-                    /*auto* widget = widgets[evt.window->id()];
-                    if(!widget)
-                        break;
-                    //widget->on_layout_change(evt.old_rect);
-                    widget->repaint();*/
-                }
-                break;
+				auto& evt = event.window_resize;
+				auto window = find_window(evt.window->id());
+				if(window) {
+					window->on_resize(evt.old_rect);
+					window->repaint();
+				} else {
+					//TODO: Shouldn't happen?
+					/*auto* widget = widgets[evt.window->id()];
+					if(!widget)
+						break;
+					//widget->on_layout_change(evt.old_rect);
+					widget->repaint();*/
+				}
+				break;
 			}
 		}
 	}
@@ -245,8 +245,8 @@ void UI::run() {
 void UI::update(int timeout) {
 	//Perform needed repaints
 	for(auto widget : widgets) {
-        if(widget.second)
-		    widget.second->repaint_now();
+		if(widget.second)
+			widget.second->repaint_now();
 	}
 
 	//Read and process events

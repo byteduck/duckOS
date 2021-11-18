@@ -29,18 +29,18 @@ Memory::GDTPointer gp;
 extern "C" void* stack;
 
 void Memory::gdt_set_gate(uint32_t num, uint32_t limit, uint32_t base, bool read_write, bool executable, bool type, uint8_t ring, bool present, bool accessed) {
-    gdt[num].base_low = (base & 0xFFFFu);
-    gdt[num].base_middle = (base >> 16u) & 0xFFu;
-    gdt[num].base_high = (base >> 24u) & 0xFFu;
+	gdt[num].base_low = (base & 0xFFFFu);
+	gdt[num].base_middle = (base >> 16u) & 0xFFu;
+	gdt[num].base_high = (base >> 24u) & 0xFFu;
 
-    gdt[num].limit_low = limit & 0xFFFFu;
+	gdt[num].limit_low = limit & 0xFFFFu;
 
-    gdt[num].flags_and_limit.bits.limit_high = (limit >> 16u) & 0xFu;
+	gdt[num].flags_and_limit.bits.limit_high = (limit >> 16u) & 0xFu;
 	gdt[num].flags_and_limit.bits.zero = 0;
-    gdt[num].flags_and_limit.bits.size = true; //32-bit
+	gdt[num].flags_and_limit.bits.size = true; //32-bit
 	gdt[num].flags_and_limit.bits.granularity = true; //4KiB pages
 
-    gdt[num].access.bits.present = present;
+	gdt[num].access.bits.present = present;
 	gdt[num].access.bits.accessed = accessed;
 	gdt[num].access.bits.read_write = read_write;
 	gdt[num].access.bits.executable = executable;

@@ -26,18 +26,18 @@
 
 class LinkedInode {
 public:
-    LinkedInode(const kstd::shared_ptr<Inode>& inode, const kstd::string& name, const kstd::shared_ptr<LinkedInode>& parent);
-    ~LinkedInode();
+	LinkedInode(const kstd::shared_ptr<Inode>& inode, const kstd::string& name, const kstd::shared_ptr<LinkedInode>& parent);
+	~LinkedInode();
 	kstd::shared_ptr<Inode> inode();
-    kstd::string name();
+	kstd::string name();
 	kstd::shared_ptr<LinkedInode> parent();
-    kstd::string get_full_path();
-    ResultRet<kstd::shared_ptr<User>> user();
+	kstd::string get_full_path();
+	ResultRet<kstd::shared_ptr<User>> user();
 
 private:
 	kstd::shared_ptr<Inode> _inode;
 	kstd::shared_ptr<LinkedInode> _parent;
-    kstd::string _name;
+	kstd::string _name;
 };
 
 

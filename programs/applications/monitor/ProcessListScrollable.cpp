@@ -23,43 +23,43 @@
 #include <libui/widget/Label.h>
 
 void ProcessListScrollable::update() {
-    auto old_procs = _processes;
-    _processes.resize(0);
-    auto procs = Sys::Process::get_all();
-    int i = 0;
-    for(auto& proc : procs) {
-        _processes.push_back(proc.second);
-        if(i >= old_procs.size() || old_procs[i].pid() != proc.second.pid())
-            update_item(i);
-        i++;
-    }
-    update_data();
+	auto old_procs = _processes;
+	_processes.resize(0);
+	auto procs = Sys::Process::get_all();
+	int i = 0;
+	for(auto& proc : procs) {
+		_processes.push_back(proc.second);
+		if(i >= old_procs.size() || old_procs[i].pid() != proc.second.pid())
+			update_item(i);
+		i++;
+	}
+	update_data();
 }
 
 UI::Widget::Ptr ProcessListScrollable::create_entry(int index) {
-    auto& proc = _processes[index];
-    auto app_info = proc.app_info();
-    auto layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL);
-    layout->set_spacing(5);
-    std::string label_string = "[" + std::to_string(proc.pid()) + "] ";
-    if(app_info.has_value()) {
-        layout->add_child(UI::Image::make(app_info.value().icon()));
-        label_string += app_info.value().name();
-    } else {
-        label_string += proc.name();
-    }
-    auto label = UI::Label::make(label_string);
-    label->set_sizing_mode(UI::PREFERRED);
-    layout->add_child(label);
-    return layout;
+	auto& proc = _processes[index];
+	auto app_info = proc.app_info();
+	auto layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL);
+	layout->set_spacing(5);
+	std::string label_string = "[" + std::to_string(proc.pid()) + "] ";
+	if(app_info.has_value()) {
+		layout->add_child(UI::Image::make(app_info.value().icon()));
+		label_string += app_info.value().name();
+	} else {
+		label_string += proc.name();
+	}
+	auto label = UI::Label::make(label_string);
+	label->set_sizing_mode(UI::PREFERRED);
+	layout->add_child(label);
+	return layout;
 }
 
 Dimensions ProcessListScrollable::preferred_item_dimensions() {
-    return { 150, 20 };
+	return { 150, 20 };
 }
 
 int ProcessListScrollable::num_items() {
-    return _processes.size();
+	return _processes.size();
 }
 
 ProcessListScrollable::ProcessListScrollable() {

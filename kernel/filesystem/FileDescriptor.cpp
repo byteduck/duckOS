@@ -53,8 +53,8 @@ FileDescriptor::FileDescriptor(FileDescriptor& other) {
 	_seek = other._seek;
 	_options = other._options;
 	_owner = other._owner;
-    _path = other._path;
-    _id = other._id;
+	_path = other._path;
+	_id = other._id;
 
 	//Increase pipe reader/writer count if applicable
 	if(_file->is_fifo()) {
@@ -176,19 +176,19 @@ void FileDescriptor::set_owner(Process* owner) {
 }
 
 void FileDescriptor::set_path(const kstd::string& path) {
-    _path = path;
+	_path = path;
 }
 
 kstd::string FileDescriptor::path() {
-    return _path;
+	return _path;
 }
 
 void FileDescriptor::set_id(int id) {
-    _id = id;
+	_id = id;
 }
 
 int FileDescriptor::id() {
-    return _id;
+	return _id;
 }
 
 ssize_t FileDescriptor::read(uint8_t *buffer, size_t count) {

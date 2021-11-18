@@ -27,7 +27,7 @@
 namespace UI {
 	class Checkbox: public Widget {
 	public:
-        WIDGET_DEF(Checkbox)
+		WIDGET_DEF(Checkbox)
 
 		//Checkbox
 		bool checked();
@@ -42,8 +42,8 @@ namespace UI {
 
 		std::function<void(bool)> on_change = nullptr;
 	private:
-        explicit Checkbox();
-        explicit Checkbox(std::string label);
+		explicit Checkbox();
+		explicit Checkbox(std::string label);
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;

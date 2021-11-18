@@ -31,10 +31,10 @@
 #include <libapp/App.h>
 
 namespace UI {
-    template<typename T>
-    using Ptr = std::shared_ptr<T>;
-    template<typename T>
-    using ArgPtr = const std::shared_ptr<T>&;
+	template<typename T>
+	using Ptr = std::shared_ptr<T>;
+	template<typename T>
+	using ArgPtr = const std::shared_ptr<T>&;
 
 	extern Pond::Context* pond_context;
 

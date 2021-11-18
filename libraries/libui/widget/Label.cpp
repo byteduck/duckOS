@@ -35,7 +35,7 @@ std::string Label::label() {
 
 void Label::set_label(const std::string& new_label) {
 	_label = new_label;
-    update_layout();
+	update_layout();
 }
 
 Color Label::color() {
@@ -48,35 +48,35 @@ void Label::set_color(Color new_color) {
 }
 
 TextAlignment Label::vertical_alignment() {
-    return _v_alignment;
+	return _v_alignment;
 }
 
 TextAlignment Label::horizontal_alignment() {
-    return _h_alignment;
+	return _h_alignment;
 }
 
 void Label::set_alignment(TextAlignment vertical, TextAlignment horizontal) {
-    _v_alignment = vertical;
-    _h_alignment = horizontal;
-    repaint();
+	_v_alignment = vertical;
+	_h_alignment = horizontal;
+	repaint();
 }
 
 Font* Label::font() {
-    return _font;
+	return _font;
 }
 
 void Label::set_font(Font *font) {
-    _font = font;
-    update_layout();
+	_font = font;
+	update_layout();
 }
 
 Dimensions Label::padding() {
-    return _padding;
+	return _padding;
 }
 
 void Label::set_padding(const Dimensions& padding) {
-    _padding = padding;
-    update_layout();
+	_padding = padding;
+	update_layout();
 }
 
 Dimensions Label::preferred_size() {
@@ -87,13 +87,13 @@ Dimensions Label::preferred_size() {
 }
 
 void Label::do_repaint(const DrawContext& ctx) {
-    Dimensions size = current_size();
-    ctx.fill({0, 0, ctx.width(), ctx.height()}, RGBA(0,0,0,0));
-    Rect text_rect = {
-            _padding.width,
-            _padding.height,
-            size.width - _padding.width * 2,
-            size.height - _padding.height * 2
-    };
+	Dimensions size = current_size();
+	ctx.fill({0, 0, ctx.width(), ctx.height()}, RGBA(0,0,0,0));
+	Rect text_rect = {
+			_padding.width,
+			_padding.height,
+			size.width - _padding.width * 2,
+			size.height - _padding.height * 2
+	};
 	ctx.draw_text(_label.c_str(), text_rect, _h_alignment, _v_alignment, _font, _color);
 }

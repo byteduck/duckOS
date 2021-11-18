@@ -32,10 +32,10 @@
 #define UI_WINDOW_PADDING 2
 
 namespace UI {
-    class Window: public std::enable_shared_from_this<Window> {
+	class Window: public std::enable_shared_from_this<Window> {
 	public:
-        using Ptr = std::shared_ptr<Window>;
-        using ArgPtr = const std::shared_ptr<Window>&;
+		using Ptr = std::shared_ptr<Window>;
+		using ArgPtr = const std::shared_ptr<Window>&;
 		static Window::Ptr create();
 
 		///Getters and setters
@@ -45,7 +45,7 @@ namespace UI {
 		void set_position(Point pos);
 		Point position();
 		void set_contents(const std::shared_ptr<Widget>& contents);
-        std::shared_ptr<Widget> contents();
+		std::shared_ptr<Widget> contents();
 		void set_title(const std::string& title);
 		std::string title();
 		void set_resizable(bool resizable);

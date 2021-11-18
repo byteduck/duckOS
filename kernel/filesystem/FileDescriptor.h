@@ -48,10 +48,10 @@ public:
 	void open();
 	Process* owner() const;
 	void set_owner(Process* owner);
-    void set_path(const kstd::string& path);
-    kstd::string path();
-    void set_id(int id);
-    int id();
+	void set_path(const kstd::string& path);
+	kstd::string path();
+	void set_id(int id);
+	int id();
 
 	int seek(off_t offset, int whence);
 	ssize_t read(uint8_t* buffer, size_t count);
@@ -69,8 +69,8 @@ private:
 	kstd::shared_ptr<File> _file;
 	kstd::shared_ptr<Inode> _inode;
 	Process* _owner;
-    kstd::string _path = "";
-    int _id = -1;
+	kstd::string _path = "";
+	int _id = -1;
 
 	bool _readable {false};
 	bool _writable {false};

@@ -454,9 +454,9 @@ int Process::sys_open(char *filename, int options, int mode) {
 		return fd_or_err.code();
 	_file_descriptors.push_back(fd_or_err.value());
 	fd_or_err.value()->set_owner(_self_ptr);
-    fd_or_err.value()->set_path(filename);
-    fd_or_err.value()->set_id((int) _file_descriptors.size() - 1);
-    return (int)_file_descriptors.size() - 1;
+	fd_or_err.value()->set_path(filename);
+	fd_or_err.value()->set_id((int) _file_descriptors.size() - 1);
+	return (int)_file_descriptors.size() - 1;
 }
 
 int Process::sys_close(int file) {
@@ -681,7 +681,7 @@ int Process::sys_pipe(int filedes[2], int options) {
 	pipe_read_fd->set_options(O_RDONLY | options);
 	pipe_read_fd->set_fifo_reader();
 	_file_descriptors.push_back(pipe_read_fd);
-    pipe_read_fd->set_id((int) _file_descriptors.size() - 1);
+	pipe_read_fd->set_id((int) _file_descriptors.size() - 1);
 	filedes[0] = (int) _file_descriptors.size() - 1;
 
 	//Make the write FD
@@ -690,7 +690,7 @@ int Process::sys_pipe(int filedes[2], int options) {
 	pipe_write_fd->set_options(O_WRONLY | options);
 	pipe_write_fd->set_fifo_writer();
 	_file_descriptors.push_back(pipe_write_fd);
-    pipe_write_fd->set_id((int) _file_descriptors.size() - 1);
+	pipe_write_fd->set_id((int) _file_descriptors.size() - 1);
 	filedes[1] = (int) _file_descriptors.size() - 1;
 
 	return SUCCESS;
@@ -701,7 +701,7 @@ int Process::sys_dup(int oldfd) {
 		return -EBADF;
 	auto new_fd = kstd::make_shared<FileDescriptor>(*_file_descriptors[oldfd]);
 	_file_descriptors.push_back(new_fd);
-    new_fd->set_id((int) _file_descriptors.size() - 1);
+	new_fd->set_id((int) _file_descriptors.size() - 1);
 	new_fd->unset_options(O_CLOEXEC);
 	return (int) _file_descriptors.size() - 1;
 }
@@ -714,7 +714,7 @@ int Process::sys_dup2(int oldfd, int newfd) {
 	if(newfd >= _file_descriptors.size())
 		_file_descriptors.resize(newfd + 1);
 	auto new_fd = kstd::make_shared<FileDescriptor>(*_file_descriptors[oldfd]);
-    new_fd->set_id(newfd);
+	new_fd->set_id(newfd);
 	_file_descriptors[newfd] = new_fd;
 	new_fd->unset_options(O_CLOEXEC);
 	return newfd;
