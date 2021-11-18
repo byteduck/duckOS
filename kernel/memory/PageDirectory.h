@@ -343,16 +343,22 @@ public:
 	bool try_cow(size_t virtaddr);
 
 	/**
-	 * Get the used memory in KiB
-	 * @return The amount of used memory in KiB.
+	 * Get the used memory in bytes
+	 * @return The amount of used memory in bytes.
 	 */
 	size_t used_pmem();
 
 	/**
-	 * Get the used virtual memory in KiB
-	 * @return The amount of used virtual memory in KiB.
+	 * Get the used virtual memory in bytes
+	 * @return The amount of used virtual memory in bytes.
 	 */
 	size_t used_vmem();
+
+    /**
+     * Get the used shared memory in bytes
+     * @return The amount of used shared memory in bytes
+     */
+    size_t used_shmem();
 
 	/**
 	 * Gets whether or not this PageDirectory is currently mapped.
@@ -391,6 +397,8 @@ private:
 	volatile int _page_tables_num_mapped[1024] = {0};
 	//The used pmem in bytes.
 	size_t _used_pmem = 0;
+    //The used shared memory in bytes.
+    size_t _used_shmem = 0;
 	//A lock used to prevent race conditions.
 	SpinLock _lock;
 	//A list of attached shared memory region ids.

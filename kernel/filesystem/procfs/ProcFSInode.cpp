@@ -219,7 +219,11 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			str += "\nvmem = ";
 			itoa(proc.value()->page_directory()->used_vmem(), numbuf, 10);
 			str += numbuf;
-			str += "\n";
+
+            str += "\nshmem = ";
+            itoa(proc.value()->page_directory()->used_shmem(), numbuf, 10);
+            str += numbuf;
+            str += "\n";
 
 			if(start + length > str.length())
 				length = str.length() - start;
