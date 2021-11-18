@@ -95,5 +95,7 @@ Result Process::update() {
 	_state = (State) std::stoi(proc["state"]);
 	_physical_mem = {std::stoul(proc["pmem"])};
 	_virtual_mem = {std::stoul(proc["vmem"])};
+    _shared_mem = {std::stoul(proc["shmem"])};
+
 	return Result::SUCCESS;
 }

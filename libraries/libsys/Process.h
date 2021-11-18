@@ -49,6 +49,7 @@ namespace Sys {
 		std::string state_name() const;
 		Mem::Amount physical_mem() const { return _physical_mem; }
 		Mem::Amount virtual_mem() const { return _virtual_mem; }
+        Mem::Amount shared_mem() const { return _shared_mem; }
 
         ResultRet<App::Info> app_info() const;
 
@@ -63,6 +64,7 @@ namespace Sys {
 		State _state;
 		Mem::Amount _physical_mem;
 		Mem::Amount _virtual_mem;
+        Mem::Amount _shared_mem;
 	};
 }
 
