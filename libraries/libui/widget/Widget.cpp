@@ -22,6 +22,10 @@
 
 using namespace UI;
 
+Widget::~Widget() {
+    destroy_window();
+}
+
 Dimensions Widget::preferred_size() {
 	return {1, 1};
 }
@@ -85,7 +89,9 @@ void Widget::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 }
 
 std::shared_ptr<Widget> Widget::parent() {
-	return _parent;
+    if(!_parent)
+        return nullptr;
+	return _parent->shared_from_this();
 }
 
 std::shared_ptr<Window> Widget::parent_window() {
@@ -184,7 +190,7 @@ void Widget::set_parent(const std::shared_ptr<Widget>& widget) {
 	if(_parent || _parent_window)
 		return;
 
-	_parent = widget;
+	_parent = widget.get();
 
 	if(widget->_window)
 		create_window(widget->_window);
@@ -274,6 +280,16 @@ void Widget::parent_window_created() {
 	create_window(_parent ? _parent->_window : _parent_window->_window);
 }
 
+void Widget::parent_window_destroyed() {
+    if(!_window)
+        return;
+    __deregister_widget(_window->id());
+    delete _window;
+    _window = nullptr;
+    for(auto child : children)
+        child->parent_window_destroyed();
+}
+
 void Widget::create_window(Pond::Window* parent) {
     _rect.set_dimensions(current_size());
     _window = pond_context->create_window(parent, _rect, true);
@@ -287,7 +303,10 @@ void Widget::create_window(Pond::Window* parent) {
 void Widget::destroy_window() {
     if(!_window)
         return;
+    __deregister_widget(_window->id());
     _window->destroy();
     delete _window;
     _window = nullptr;
+    for(auto child : children)
+        child->parent_window_destroyed();
 }

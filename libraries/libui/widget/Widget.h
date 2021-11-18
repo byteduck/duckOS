@@ -54,6 +54,8 @@ namespace UI {
         using Ptr = std::shared_ptr<Widget>;
         using ArgPtr = const std::shared_ptr<Widget>&;
 
+        ~Widget();
+
         /**
          * Returns the preferred size of the widget (which may not be its current size).
          * @return The preferred size of the widget.
@@ -291,7 +293,7 @@ namespace UI {
 	private:
 		friend class ScrollView; //TODO: Better way for ScrollView to access this stuff
 
-		std::shared_ptr<Widget> _parent = nullptr;
+		Widget* _parent = nullptr;
 		std::shared_ptr<Window> _parent_window = nullptr;
 		Pond::Window* _window = nullptr;
 		Rect _rect = {0, 0, -1, -1};
@@ -306,6 +308,7 @@ namespace UI {
 		SizingMode _sizing_mode = FILL;
 
 		void parent_window_created();
+        void parent_window_destroyed();
 		void create_window(Pond::Window* parent);
         void destroy_window();
 	};
