@@ -39,6 +39,7 @@ namespace Pond {
 
 	struct WindowDestroyPkt {
 		int window_id;
+        int shm_id;
 	};
 
 	struct WindowMovePkt {

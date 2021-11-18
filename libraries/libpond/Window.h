@@ -40,6 +40,8 @@ namespace Pond {
 	class Context;
 	class Window {
 	public:
+        ~Window();
+
 		/**
 		 * Closes a window.
 		 */

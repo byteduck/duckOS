@@ -176,9 +176,12 @@ void Context::handle_window_destroyed(const WindowDestroyPkt& pkt, Event& event)
 
 	//Remove the window from the array
 	auto window_pair = windows.find(pkt.window_id);
-	if(window_pair != windows.end())
-		windows.erase(window_pair);
-	else
+	if(window_pair != windows.end()) {
+        //Detach the window's shared memory
+        if(shmdetach(pkt.shm_id) < 0)
+            fprintf(stderr, "libpond: WARNING - could not detach destroyed window shm\n");
+        windows.erase(window_pair);
+    } else
 		fprintf(stderr, "libpond: Failed to find window with id %d in map for removal\n", pkt.window_id);
 }
 
@@ -204,7 +207,8 @@ void Context::handle_window_resized(const WindowResizedPkt& pkt, Event& event) {
 		window->_rect = pkt.rect;
 		//Open the new shared memory for the framebuffer if necessary
 		if(pkt.shm_id != window->_shm_id) {
-			shmdetach(window->_shm_id);
+			if(shmdetach(window->_shm_id) < 0)
+                perror("WARNING: libpond failed to detach window shm");
 			window->_shm_id = pkt.shm_id;
 			struct shm shm;
 			if(shmattach(window->_shm_id, NULL, &shm) < 0) {

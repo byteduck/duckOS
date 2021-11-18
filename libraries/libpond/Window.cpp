@@ -28,6 +28,8 @@ Window::Window(int id, Rect rect, struct shm shm, Context* ctx): _id(id), _rect(
 	_framebuffer = {(uint32_t*) shm.ptr, rect.width, rect.height};
 }
 
+Window::~Window() = default;
+
 void Window::destroy() {
 	_context->__river_destroy_window({_id});
 }

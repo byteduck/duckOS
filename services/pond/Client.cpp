@@ -80,7 +80,7 @@ void Client::window_destroyed(Window* window) {
 	if(disconnected)
 		return;
 
-	SEND_MESSAGE("window_destroyed", (WindowDestroyPkt {window->id()}));
+	SEND_MESSAGE("window_destroyed", (WindowDestroyPkt {window->id(), window->framebuffer_shm().id}));
 }
 
 void Client::window_moved(Window *window) {
