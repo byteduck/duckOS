@@ -645,6 +645,9 @@ bool PageDirectory::munmap(void* virtaddr) {
 	return true;
 }
 
+SpinLock shm_id_lock;
+int cur_shm_id = 1;
+
 ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, size_t mem_size, pid_t pid) {
 	LOCK(_lock);
 
@@ -664,7 +667,10 @@ ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, 
 	//Then, set up the region
 	region.virt->is_shm = true;
 	region.phys->is_shm = true;
-	region.phys->shm_id = (int) (region.phys->start / PAGE_SIZE);
+    {
+        LOCK_N(shm_id_lock, __idlock);
+        region.phys->shm_id = cur_shm_id++;
+    }
 	region.virt->shm_id = region.phys->shm_id;
 	region.phys->shm_refs = 1;
 	region.phys->shm_owner = pid;
@@ -681,8 +687,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 	LOCK(_lock);
 
 	//Shared memory IDs are just the location of the physcal region divided by page size, so find the region
-	size_t shm_loc = ((size_t) id) * PAGE_SIZE;
-	auto* pmem_region = MemoryManager::inst().pmem_map().find_region(shm_loc);
+	auto* pmem_region = MemoryManager::inst().pmem_map().find_shared_region(id);
 	if(!pmem_region || !pmem_region->shm_allowed) //If it doesn't exist or isn't a shared memory region, return ENOENT
 		return -ENOENT;
 
