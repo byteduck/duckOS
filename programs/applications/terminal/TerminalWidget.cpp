@@ -80,6 +80,7 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 	if(needs_full_repaint) {
 		needs_full_repaint = false;
 		auto dims = term->get_dimensions();
+		ctx.draw_inset_rect({0, 0, ctx.width(), ctx.height()}, RGB(0, 0, 0));
 		for(int x = 0; x < dims.cols; x++) {
 			for(int y = 0; y < dims.lines; y++) {
 				auto character = term->get_character({x, y});
@@ -134,6 +135,7 @@ bool TerminalWidget::on_keyboard(Pond::KeyEvent event) {
 }
 
 void TerminalWidget::on_layout_change(const Rect& old_rect) {
+	printf("LAYOUT CHANGE\n");
 	Dimensions dims = current_size();
 	needs_full_repaint = true;
 	term->set_dimensions({
