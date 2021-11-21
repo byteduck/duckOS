@@ -19,6 +19,7 @@ SET(SOURCES
         sys/liballoc.cpp
         sys/socketfs.c
         sys/stat.c
+        sys/status.c
         sys/syscall.c
         sys/thread.cpp
         sys/wait.c

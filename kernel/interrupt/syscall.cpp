@@ -176,6 +176,8 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return cur_proc->sys_threadjoin((tid_t) arg1, (void**) arg2);
 		case SYS_THREADEXIT:
 			return cur_proc->sys_threadexit((void*) arg1);
+		case SYS_ISCOMPUTERON:
+			return true;
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:
