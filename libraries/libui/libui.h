@@ -50,8 +50,6 @@ namespace UI {
 
 	void __register_window(const std::shared_ptr<Window>& window, int id);
 	void __deregister_window(int id);
-	void __register_widget(const std::shared_ptr<Widget>& widget, int id);
-	void __deregister_widget(int id);
 }
 
 #endif //DUCKOS_LIBUI_H

@@ -54,6 +54,7 @@ namespace UI {
 		///Window management
 		void bring_to_front();
 		void repaint();
+		void repaint_now();
 		void close();
 		void show();
 		void hide();
@@ -79,14 +80,21 @@ namespace UI {
 		Window();
 
 	private:
+		void blit_widget(Widget::ArgPtr widget);
+		void set_focused_widget(Widget::ArgPtr widget);
+
 		friend class Widget;
 		Pond::Window* _window;
-		std::shared_ptr<Widget> _contents;
+		Widget::Ptr _contents;
+		Widget::Ptr _focused_widget;
+		std::vector<Widget::Ptr> _widgets;
 		std::string _title;
 		Point _mouse;
+		Point _abs_mouse;
 		bool _decorated = true;
 		bool _uses_alpha = false;
 		bool _resizable = false;
+		bool _needs_repaint = false;
 
 		struct TitleButton {
 			std::string image;

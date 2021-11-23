@@ -23,7 +23,6 @@
 using namespace UI;
 
 Widget::~Widget() {
-	destroy_window();
 }
 
 Dimensions Widget::preferred_size() {
@@ -57,14 +56,15 @@ void Widget::set_sizing_mode(SizingMode mode) {
 }
 
 void Widget::repaint() {
-	_dirty = true;
+	_dirty = true;	
+	if(_root_window)
+		_root_window->repaint();
 }
 
 void Widget::repaint_now() {
-	if(_dirty && _window) {
+	if(_dirty && _image.data) {
 		_dirty = false;
-		do_repaint(_window->framebuffer());
-		_window->invalidate();
+		do_repaint(_image);
 	}
 }
 
@@ -95,13 +95,15 @@ std::shared_ptr<Widget> Widget::parent() {
 }
 
 std::shared_ptr<Window> Widget::parent_window() {
-	return _parent_window;
+	if(_parent_window)
+		return _parent_window->shared_from_this();
+	return nullptr;
 }
 
 std::shared_ptr<Window> Widget::root_window() {
-	if(!_parent_window && !_parent)
-		return nullptr;
-	return _parent_window ? _parent_window : _parent->root_window();
+	if(_root_window)
+		return _root_window->shared_from_this();
+	return nullptr;
 }
 
 void Widget::add_child(const std::shared_ptr<Widget>& child) {
@@ -137,7 +139,7 @@ void Widget::set_position(const Point& position) {
 
 void Widget::set_position_nolayout(const Point& position) {
 	_rect.set_position(position);
-	_window->set_position(_rect.position());
+	recalculate_rects();
 }
 
 Point Widget::position() {
@@ -146,31 +148,25 @@ Point Widget::position() {
 
 void Widget::hide() {
 	_hidden = true;
-	if(_window)
-		_window->set_hidden(true);
 }
 
 void Widget::show() {
 	_hidden = false;
-	if(_window)
-		_window->set_hidden(false);
 }
 
 void Widget::set_layout_bounds(Rect new_bounds) {
 	Rect old_rect = _rect;
 	_rect = new_bounds;
 	_initialized_size = true;
+	if(Dimensions{_image.width, _image.height} != _rect.dimensions())
+		_image = {new_bounds.width, new_bounds.height};
+	recalculate_rects();
 	calculate_layout();
 	on_layout_change(old_rect);
-	if(_window) {
-		_window->set_position(_rect.position());
-		_window->resize(_rect.dimensions());
-		repaint();
-		if(!_first_layout_done) {
-			_first_layout_done = true;
-			repaint_now();
-			_window->set_hidden(_hidden);
-		}
+	repaint();
+	if(!_first_layout_done) {
+		_first_layout_done = true;
+		repaint_now();
 	}
 }
 
@@ -178,12 +174,23 @@ bool Widget::needs_layout_on_child_change() {
 	return true;
 }
 
-void Widget::set_window(const std::shared_ptr<Window>& window) {
+void Widget::focus() {
+	if(_root_window)
+		_root_window->set_focused_widget(shared_from_this());
+}
+
+void Widget::set_window(Window::ArgPtr window) {
 	if(_parent || _parent_window)
 		return;
 
-	_parent_window = window;
-	create_window(window->_window);
+	_parent_window = window.get();
+	set_root_window(window.get());
+}
+
+void Widget::set_root_window(Window* window) {
+	_root_window = window;
+	for(auto& child : children)
+		child->set_root_window(window);
 }
 
 void Widget::set_parent(const std::shared_ptr<Widget>& widget) {
@@ -191,21 +198,19 @@ void Widget::set_parent(const std::shared_ptr<Widget>& widget) {
 		return;
 
 	_parent = widget.get();
-
-	if(widget->_window)
-		create_window(widget->_window);
+	set_root_window(_parent->_root_window);
+	recalculate_rects();
 }
 
 void Widget::remove_parent() {
 	_parent = nullptr;
-	destroy_window();
+	set_root_window(nullptr);
 }
 
 void Widget::update_layout() {
 	//TODO: Find a better way of doing this that doesn't involve re-layouting everything everytime anything is updated
-	auto root = root_window();
-	if(root)
-		root->calculate_layout();
+	if(_root_window)
+		_root_window->calculate_layout();
 }
 
 void Widget::do_repaint(const DrawContext& framebuffer) {
@@ -225,23 +230,21 @@ void Widget::on_layout_change(const Rect& old_rect) {
 }
 
 void Widget::set_uses_alpha(bool uses_alpha) {
+	if(uses_alpha != _uses_alpha && _root_window)
+		_root_window->repaint();
 	_uses_alpha = uses_alpha;
-	if(_window)
-		_window->set_uses_alpha(uses_alpha);
 }
 
 void Widget::set_global_mouse(bool global_mouse) {
 	_global_mouse = global_mouse;
-	if(_window)
-		_window->set_global_mouse(_global_mouse);
 }
 
 Point Widget::mouse_position() {
-	return _window ? _window->mouse_pos() : Point {0, 0};
+	return _mouse_pos;
 }
 
 unsigned int Widget::mouse_buttons() {
-	return _window ? _window->mouse_buttons() : 0;
+	return _mouse_buttons;
 }
 
 void Widget::calculate_layout() {
@@ -276,37 +279,96 @@ void Widget::calculate_layout() {
 	}
 }
 
-void Widget::parent_window_created() {
-	create_window(_parent ? _parent->_window : _parent_window->_window);
+void Widget::recalculate_rects() {
+	//This assumes that the absolute rect of the parent has already been calculated
+	if(_parent) {
+		_absolute_rect = _rect.transform(_parent->_absolute_rect.position());
+		_visible_rect = _parent->_visible_rect.overlapping_area(_rect).transform(_rect.position() * -1);
+	} else {
+		_absolute_rect = _rect;
+		_visible_rect = _root_window ? _root_window->contents_rect().overlapping_area(_rect).transform(_rect.position() * -1) : _rect;
+	}
+
+	for(auto& child : children)
+		child->recalculate_rects();
 }
 
-void Widget::parent_window_destroyed() {
-	if(!_window)
-		return;
-	__deregister_widget(_window->id());
-	delete _window;
-	_window = nullptr;
-	for(auto child : children)
-		child->parent_window_destroyed();
+bool Widget::evt_mouse_move(Pond::MouseMoveEvent evt) {
+	auto old_mouse_pos = _mouse_pos;
+	_mouse_pos = evt.new_pos;
+
+	bool did_consume = false;
+	for(auto& child : children) {
+		if(_mouse_pos.in(child->_rect)) {
+			Pond::MouseMoveEvent child_evt = evt;
+			child_evt.new_pos = evt.new_pos - child->_rect.position();
+			did_consume = child->evt_mouse_move(child_evt);
+			break;
+		} else if(old_mouse_pos.in(child->_rect)) {
+			child->evt_mouse_leave({
+				PEVENT_MOUSE_LEAVE,
+				old_mouse_pos - child->_rect.position(),
+				evt.window
+			});
+		}
+	}
+
+	if(!did_consume)
+		did_consume = on_mouse_move(evt);
+
+	return did_consume;
 }
 
-void Widget::create_window(Pond::Window* parent) {
-	_rect.set_dimensions(current_size());
-	_window = pond_context->create_window(parent, _rect, true);
-	_window->set_uses_alpha(_uses_alpha);
-	_window->set_global_mouse(_global_mouse);
-	__register_widget(shared_from_this(), _window->id());
-	for(auto &child : children)
-		child->parent_window_created();
+bool Widget::evt_mouse_button(Pond::MouseButtonEvent evt) {
+	evt.old_buttons = _mouse_buttons;
+	_mouse_buttons = evt.new_buttons;
+
+	bool did_consume = false;
+	for(auto& child : children) {
+		if(_mouse_pos.in(child->_rect)) {
+			did_consume = child->evt_mouse_button(evt);
+			break;
+		}
+	}
+
+	if(!did_consume) {
+		did_consume = on_mouse_button(evt);
+		if(did_consume && !(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1))
+			focus();
+	}
+
+	return did_consume;
 }
 
-void Widget::destroy_window() {
-	if(!_window)
-		return;
-	__deregister_widget(_window->id());
-	_window->destroy();
-	delete _window;
-	_window = nullptr;
-	for(auto child : children)
-		child->parent_window_destroyed();
+bool Widget::evt_mouse_scroll(Pond::MouseScrollEvent evt) {
+	bool did_consume = false;
+	for(auto& child : children) {
+		if(_mouse_pos.in(child->_rect)) {
+			did_consume = child->evt_mouse_scroll(evt);
+			break;
+		}
+	}
+
+	if(!did_consume)
+		did_consume = on_mouse_scroll(evt);
+
+	return did_consume;
+}
+
+void Widget::evt_mouse_leave(Pond::MouseLeaveEvent evt) {
+	for(auto& child : children) {
+		if(evt.last_pos.in(child->_rect)) {
+			Pond::MouseLeaveEvent child_evt = evt;
+			child_evt.last_pos = evt.last_pos - child->_rect.position();
+			child->evt_mouse_leave(child_evt);
+			break;
+		}
+	}
+
+	on_mouse_leave(evt);
+}
+
+void Widget::evt_keyboard(Pond::KeyEvent evt) {
+	if(!on_keyboard(evt) && _parent)
+		_parent->evt_keyboard(evt);
 }

@@ -158,14 +158,14 @@ namespace UI {
 		 * Adds a child to the widget.
 		 * @param child The child to add.
 		 */
-		void add_child(const std::shared_ptr<Widget>& child);
+		void add_child(Widget::ArgPtr child);
 
 		/**
 		 * Removes a child from the widget.
 		 * @param child The child to remove.
 		 * @return Whether or not the removal was successful (i.e. if the specified widget was a child of this widget)
 		 */
-		bool remove_child(const std::shared_ptr<Widget>& child);
+		bool remove_child(Widget::ArgPtr child);
 
 		/**
 		 * Sets the position of the widget.
@@ -208,9 +208,12 @@ namespace UI {
 		 */
 		virtual bool needs_layout_on_child_change();
 
-	protected:
-		friend class Window;
+		/**
+		 * Focuses the widget. Focused widgets will receive keyboard events.
+		 */
+		void focus();
 
+	protected:
 		explicit Widget() = default;
 
 		/**
@@ -220,10 +223,15 @@ namespace UI {
 		void set_window(const std::shared_ptr<Window>& window);
 
 		/**
+		 * Called when the root window is set for a parent widget.
+		 */
+		void set_root_window(Window* window);
+
+		/**
 		 * Sets the parent widget of the widget.
 		 * @param widget The parent widget.
 		 */
-		void set_parent(const std::shared_ptr<Widget>& widget);
+		void set_parent(Widget::ArgPtr widget);
 
 		/**
 		 * Removes the parent of the widget.
@@ -245,13 +253,13 @@ namespace UI {
 		 * Called when a child is added to the widget.
 		 * @param child The child added.
 		 */
-		virtual void on_child_added(const std::shared_ptr<Widget>& child);
+		virtual void on_child_added(Widget::ArgPtr child);
 
 		/**
 		 * Called when a child is removed from the widget.
 		 * @param child The child removed.
 		 */
-		virtual void on_child_removed(const std::shared_ptr<Widget>& child);
+		virtual void on_child_removed(Widget::ArgPtr child);
 
 		/**
 		 * This function is called whenever the widget's position or size are changed.
@@ -288,16 +296,32 @@ namespace UI {
 		 */
 		virtual void calculate_layout();
 
-		std::vector<std::shared_ptr<Widget>> children;
+		/**
+		 * Recalculates the drawing-related rects of the widget.
+		 */
+		void recalculate_rects();
+
+		std::vector<Widget::Ptr> children;
 
 	private:
+		friend class Window;
 		friend class ScrollView; //TODO: Better way for ScrollView to access this stuff
 
+		bool evt_mouse_move(Pond::MouseMoveEvent evt);
+		bool evt_mouse_button(Pond::MouseButtonEvent evt);
+		bool evt_mouse_scroll(Pond::MouseScrollEvent evt);
+		void evt_mouse_leave(Pond::MouseLeaveEvent evt);
+		void evt_keyboard(Pond::KeyEvent evt);
+
 		Widget* _parent = nullptr;
-		std::shared_ptr<Window> _parent_window = nullptr;
-		Pond::Window* _window = nullptr;
-		Rect _rect = {0, 0, -1, -1};
+		Window* _parent_window = nullptr;
+		Window* _root_window = nullptr;
+		Rect _rect = {0, 0, 0, 0};
+		Rect _absolute_rect = {0, 0, 0, 0};
+		Rect _visible_rect = {0, 0, 0, 0};
 		Point _absolute_position = {0, 0};
+		Point _mouse_pos = {0, 0};
+		unsigned int _mouse_buttons = 0;
 		bool _initialized_size = false;
 		bool _uses_alpha = false;
 		bool _global_mouse = false;
@@ -306,11 +330,7 @@ namespace UI {
 		bool _first_layout_done = false;
 		PositioningMode _positioning_mode = AUTO;
 		SizingMode _sizing_mode = FILL;
-
-		void parent_window_created();
-		void parent_window_destroyed();
-		void create_window(Pond::Window* parent);
-		void destroy_window();
+		Gfx::Image _image;
 	};
 }
 

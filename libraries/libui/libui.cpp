@@ -31,7 +31,6 @@ std::vector<pollfd> pollfds;
 std::map<int, Poll> polls;
 std::map<int, std::shared_ptr<Window>> windows;
 int num_windows = 0;
-std::map<int, std::shared_ptr<Widget>> widgets;
 bool should_exit = false;
 App::Info _app_info;
 
@@ -67,13 +66,6 @@ UI::Ptr<Window> find_window(int id) {
 	return it->second;
 }
 
-UI::Widget::Ptr find_widget(int id) {
-	auto it = widgets.find(id);
-	if(it == widgets.end())
-		return nullptr;
-	return it->second;
-}
-
 void handle_pond_events() {
 	while(UI::pond_context->has_event()) {
 		Pond::Event event = UI::pond_context->next_event();
@@ -81,134 +73,46 @@ void handle_pond_events() {
 			case PEVENT_KEY: {
 				auto& evt = event.key;
 				auto window = find_window(evt.window->id());
-				if(window) {
+				if(window)
 					window->on_keyboard(evt);
-				} else {
-					auto widget = find_widget(evt.window->id());
-					if(!widget)
-						break;
-
-					//Propagate the event through parent widgets / window as appropriate
-					bool continue_propagating = true;
-					while(true) {
-						if(widget->on_keyboard(evt)) {
-							continue_propagating = false;
-							break;
-						}
-						if(!widget->parent())
-							break;
-						widget = widget->parent();
-					}
-					if(continue_propagating && !widget->on_keyboard(evt) && widget->parent_window())
-						widget->parent_window()->on_keyboard(evt);
-				}
 				break;
 			}
 
 			case PEVENT_MOUSE_MOVE: {
 				auto& evt = event.mouse_move;
 				auto window = find_window(evt.window->id());
-				if(window) {
+				if(window)
 					window->on_mouse_move(evt);
-				} else {
-					auto widget = find_widget(evt.window->id());
-					if(!widget)
-						break;
-
-					//Propagate the event through parent widgets / window as appropriate
-					bool continue_propagating = true;
-					while(true) {
-						if(widget->on_mouse_move(evt)) {
-							continue_propagating = false;
-							break;
-						}
-						if(!widget->parent())
-							break;
-						widget = widget->parent();
-					}
-					if(continue_propagating && widget->parent_window())
-						widget->parent_window()->on_mouse_move(evt);
-				}
 				break;
 			}
 
 			case PEVENT_MOUSE_BUTTON: {
 				auto& evt = event.mouse_button;
 				auto window = find_window(evt.window->id());
-				if(window) {
+				if(window)
 					window->on_mouse_button(evt);
-				} else {
-					auto widget = find_widget(evt.window->id());
-					if(!widget)
-						break;
-
-					//Bring the root window to the front if we moused down
-					if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1))
-						widget->root_window()->bring_to_front();
-
-					//Propagate the event through parent widgets / window as appropriate
-					bool continue_propagating = true;
-					while(true) {
-						if(widget->on_mouse_button(evt)) {
-							continue_propagating = false;
-							break;
-						}
-						if(!widget->parent())
-							break;
-						widget = widget->parent();
-					}
-					if(continue_propagating && widget->parent_window())
-						widget->parent_window()->on_mouse_button(evt);
-				}
 				break;
 			}
 
 			case PEVENT_MOUSE_SCROLL: {
 				auto& evt = event.mouse_scroll;
 				auto window = find_window(evt.window->id());
-				if(window) {
+				if(window)
 					window->on_mouse_scroll(evt);
-				} else {
-					auto widget = find_widget(evt.window->id());
-					if(!widget)
-						break;
-
-					//Propagate the event through parent widgets / window as appropriate
-					bool continue_propagating = true;
-					while(true) {
-						if(widget->on_mouse_scroll(evt)) {
-							continue_propagating = false;
-							break;
-						}
-						if(!widget->parent())
-							break;
-						widget = widget->parent();
-					}
-					if(continue_propagating && widget->parent_window())
-						widget->parent_window()->on_mouse_scroll(evt);
-				}
 				break;
 			}
 
 			case PEVENT_MOUSE_LEAVE: {
 				auto& evt = event.mouse_leave;
 				auto window = find_window(evt.window->id());
-				if(window) {
+				if(window)
 					window->on_mouse_leave(evt);
-				} else {
-					auto widget = find_widget(evt.window->id());
-					if(!widget)
-						break;
-					widget->on_mouse_leave(evt);
-				}
 				break;
 			}
 
 			case PEVENT_WINDOW_DESTROY: {
 				if(windows.find(event.window_destroy.id) != windows.end())
 					__deregister_window(event.window_destroy.id);
-				if(widgets.find(event.window_destroy.id) != widgets.end())
-					__deregister_widget(event.window_destroy.id);
 				break;
 			}
 
@@ -218,13 +122,6 @@ void handle_pond_events() {
 				if(window) {
 					window->on_resize(evt.old_rect);
 					window->repaint();
-				} else {
-					//TODO: Shouldn't happen?
-					/*auto* widget = widgets[evt.window->id()];
-					if(!widget)
-						break;
-					//widget->on_layout_change(evt.old_rect);
-					widget->repaint();*/
 				}
 				break;
 			}
@@ -244,9 +141,9 @@ void UI::run() {
 
 void UI::update(int timeout) {
 	//Perform needed repaints
-	for(auto widget : widgets) {
-		if(widget.second)
-			widget.second->repaint_now();
+	for(auto window : windows) {
+		if(window.second)
+			window.second->repaint_now();
 	}
 
 	//Read and process events
@@ -302,12 +199,4 @@ void UI::__deregister_window(int id) {
 	if(!(--num_windows)) {
 		should_exit = true;
 	}
-}
-
-void UI::__register_widget(const std::shared_ptr<Widget>& widget, int id) {
-	widgets[id] = widget;
-}
-
-void UI::__deregister_widget(int id) {
-	widgets.erase(id);
 }

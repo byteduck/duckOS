@@ -75,6 +75,7 @@ Point Window::position() {
 
 void Window::set_contents(const std::shared_ptr<Widget>& contents) {
 	_contents = contents;
+	_focused_widget = contents;
 	_contents->set_window(shared_from_this());
 	resize(_contents->current_size());
 	_contents->update_layout();
@@ -108,6 +109,15 @@ void Window::bring_to_front() {
 }
 
 void Window::repaint() {
+	_needs_repaint = true;
+}
+
+void Window::repaint_now() {
+	if(!_needs_repaint)
+		return;
+	_needs_repaint = false;
+
+	//Next, draw the window frame
 	auto framebuffer = _window->framebuffer();
 	auto ctx = DrawContext(framebuffer);
 	if(_decorated) {
@@ -153,6 +163,9 @@ void Window::repaint() {
 		ctx.fill({0, 0, ctx.width(), ctx.height()}, RGBA(0, 0, 0, 0));
 	}
 
+	//Then, draw widgets
+	if(_contents)
+		blit_widget(_contents);
 	_window->invalidate();
 }
 
@@ -211,21 +224,44 @@ Pond::Window* Window::pond_window() {
 }
 
 void Window::on_keyboard(Pond::KeyEvent evt) {
-	if(_contents)
-		_contents->on_keyboard(evt);
+	if(_focused_widget)
+		_focused_widget->on_keyboard(evt);
 }
 
 void Window::on_mouse_move(Pond::MouseMoveEvent evt) {
+	//TODO: Global mouse events
+
+	_abs_mouse = evt.abs_pos;
+	auto old_mouse = _mouse;
 	_mouse = evt.new_pos;
+
 	if(_close_button.pressed && !_mouse.in(_close_button.area)) {
 		_close_button.pressed = false;
 		_window->set_draggable(true);
 		repaint();
 	}
+
+	//TODO: Add some mechanism in pond to exclude an area from dragging
+	if(!_mouse.in(contents_rect()) && old_mouse.in(contents_rect()))
+		_window->set_draggable(true);
+	else if(_mouse.in(contents_rect()) && old_mouse.in(contents_rect()))
+		_window->set_draggable(false);
+
+	if(_contents && evt.new_pos.in(_contents->_rect)) {
+		evt.new_pos = evt.new_pos - _contents->_rect.position();
+		_contents->evt_mouse_move(evt);
+	} else if(_contents && old_mouse.in(_contents->_rect)) {
+		_contents->evt_mouse_leave({
+			PEVENT_MOUSE_LEAVE,
+			old_mouse - _contents->_rect.position(),
+			evt.window
+		});
+	}
 }
 
 void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
+		_window->bring_to_front();
 		if(_mouse.in(_close_button.area)) {
 			_close_button.pressed = true;
 			_window->set_draggable(false);
@@ -236,14 +272,23 @@ void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
 			close();
 		}
 	}
+
+	if(_contents && _mouse.in(_contents->_rect)) {
+		_contents->evt_mouse_button(evt);
+	}
 }
 
 void Window::on_mouse_scroll(Pond::MouseScrollEvent evt) {
-
+	if(_contents && _mouse.in(_contents->_rect)) {
+		_contents->evt_mouse_scroll(evt);
+	}
 }
 
 void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {
-
+	if(_contents && evt.last_pos.in(_contents->_rect)) {
+		evt.last_pos = evt.last_pos - _contents->_rect.position();
+		_contents->evt_mouse_leave(evt);
+	}
 }
 
 void Window::on_resize(const Rect& old_rect) {
@@ -283,4 +328,23 @@ void Window::calculate_layout() {
 	}
 
 	_contents->set_layout_bounds(new_rect);
+}
+
+void Window::blit_widget(Widget::ArgPtr widget) {
+	if(widget->_hidden)
+		return;
+
+	widget->repaint_now();
+	Point widget_pos = widget->_absolute_rect.position() + widget->_visible_rect.position();
+	if(widget->_uses_alpha)
+		_window->framebuffer().copy_blitting(widget->_image, widget->_visible_rect, widget_pos);
+	else
+		_window->framebuffer().copy(widget->_image, widget->_visible_rect, widget_pos);
+	
+	for(auto& child : widget->children)
+		blit_widget(child);
+}
+
+void Window::set_focused_widget(Widget::ArgPtr widget) {
+	_focused_widget = widget;
 }
