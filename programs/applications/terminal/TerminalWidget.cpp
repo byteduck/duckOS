@@ -135,7 +135,6 @@ bool TerminalWidget::on_keyboard(Pond::KeyEvent event) {
 }
 
 void TerminalWidget::on_layout_change(const Rect& old_rect) {
-	printf("LAYOUT CHANGE\n");
 	Dimensions dims = current_size();
 	needs_full_repaint = true;
 	term->set_dimensions({
