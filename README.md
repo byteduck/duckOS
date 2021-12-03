@@ -14,7 +14,7 @@ A hobby UNIX-like OS with a graphical window manager for x86 computers.
 - PATA DMA or PIO access (force PIO by using the `use_pio` grub kernel argument)
 - A virtual filesystem with device files (`/dev/hda`, `/dev/zero`, `/dev/random`, `/dev/fb`, `/dev/tty`, etc)
   - The root filesystem is ext2, and is writeable
-- Filesystem caching (the cache size can be changed by changing `MAX_FILESYSTEM_CACHE_SIZE` in `FileBasedFilesystem.h`)
+- Disk caching
 - Dynamic linking with shared libraries
 - A Bochs/Qemu/VirtualBox/Multiboot video driver (640x480x32bpp)
 - A window manager / compositor called pond
@@ -32,6 +32,7 @@ The code for these can be found in [services](services/).
 
 The code for these can be found in [programs](/programs)
 
+- Calculator (/apps/calculator.app): A basic calculator.
 - Terminal (/apps/terminal.app): A libui-based terminal application.
 - System Monitor (/apps/monitor.app): A basic system monitor showing memory and CPU utilization.
 - 4 In a Row (/apps/4inarow.app): A basic four-in-a-row game. Play with two players or against the computer.
@@ -59,7 +60,7 @@ The code for these can be found in [programs](programs/).
 - ps (/bin/ps): Shows the currently running processes.
 - dsh (/bin/dsh): A basic userspace shell with support for pipes (`|`) and redirections (`>`/`>>`).
   - There is only support for one redirection at a time right now.
-- apprun (/bin/apprun)
+- apprun (/bin/apprun): A utility to run applications from the command line.
 
 Programs that take arguments will provide you with the correct usage when you run them without arguments.
 
@@ -86,7 +87,6 @@ Ports will only compile if their corresponding submodule is downloaded with `git
 ### Known Issues / Limitations
 - Framebuffer scrolling is slow on real hardware. I'm not focusing on fixing this right now until I start working on a window manager.
 - Must be booted off of the master drive on the primary PATA controller as of now.
-- PATA DMA doesn't seem to work on real hardware at the moment, so the `use_pio` grub commandline option should be specified if you're crazy enough to test this on real hardware ;)
 - Ext2 triply indirect block pointers cannot be read/written, so there may be issues writing and reading large files
 - A buffer overflow attack on the kernel may be possible, because only pointers passed to syscalls are checked for validity (and not the length of the data to be read/written)
 - Dynamic linking does not currently use CoW to share memory between processes, so each process has its own copy of the library in memory
