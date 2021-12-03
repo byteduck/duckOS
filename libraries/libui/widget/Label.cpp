@@ -80,7 +80,7 @@ void Label::set_padding(const Dimensions& padding) {
 }
 
 Dimensions Label::preferred_size() {
-	Dimensions ret = Theme::font()->size_of(_label.c_str());
+	Dimensions ret = _font->size_of(_label.c_str());
 	ret.width += _padding.width * 2;
 	ret.height += _padding.height * 2;
 	return ret;

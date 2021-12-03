@@ -78,7 +78,6 @@ void Window::set_contents(const std::shared_ptr<Widget>& contents) {
 	_focused_widget = contents;
 	_contents->set_window(shared_from_this());
 	resize(_contents->current_size());
-	_contents->update_layout();
 }
 
 std::shared_ptr<Widget> Window::contents() {

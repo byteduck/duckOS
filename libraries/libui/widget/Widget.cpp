@@ -26,7 +26,10 @@ Widget::~Widget() {
 }
 
 Dimensions Widget::preferred_size() {
-	return {1, 1};
+    if(children.size())
+	    return children[0]->preferred_size();
+    else
+        return {1, 1};
 }
 
 Dimensions Widget::current_size() {
@@ -110,7 +113,7 @@ void Widget::add_child(const std::shared_ptr<Widget>& child) {
 	if(child->parent() || child->parent_window())
 		return;
 	children.push_back(child);
-	child->set_parent(shared_from_this());
+	child->set_parent(this);
 	on_child_added(child);
 	if(needs_layout_on_child_change())
 		update_layout();
@@ -193,11 +196,11 @@ void Widget::set_root_window(Window* window) {
 		child->set_root_window(window);
 }
 
-void Widget::set_parent(const std::shared_ptr<Widget>& widget) {
+void Widget::set_parent(Widget* widget) {
 	if(_parent || _parent_window)
 		return;
 
-	_parent = widget.get();
+	_parent = widget;
 	set_root_window(_parent->_root_window);
 	recalculate_rects();
 }

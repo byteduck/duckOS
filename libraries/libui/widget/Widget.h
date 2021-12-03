@@ -231,7 +231,7 @@ namespace UI {
 		 * Sets the parent widget of the widget.
 		 * @param widget The parent widget.
 		 */
-		void set_parent(Widget::ArgPtr widget);
+		void set_parent(Widget* widget);
 
 		/**
 		 * Removes the parent of the widget.
