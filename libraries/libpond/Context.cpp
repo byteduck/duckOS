@@ -206,17 +206,17 @@ void Context::handle_window_resized(const WindowResizedPkt& pkt, Event& event) {
 		event.window_resize.old_rect = window->_rect;
 		window->_rect = pkt.rect;
 		//Open the new shared memory for the framebuffer if necessary
-		if(pkt.shm_id != window->_shm_id) {
-			if(shmdetach(window->_shm_id) < 0)
+		if(pkt.shm_id != window->_shm.id) {
+			if(shmdetach(window->_shm.id) < 0)
 				perror("WARNING: libpond failed to detach window shm");
-			window->_shm_id = pkt.shm_id;
 			struct shm shm;
-			if(shmattach(window->_shm_id, NULL, &shm) < 0) {
+			if(shmattach(pkt.shm_id, NULL, &shm) < 0) {
 				perror("libpond failed to attach window shm");
 				event.window_create.window = NULL;
 				return;
 			}
-			window->_framebuffer = {(uint32_t*) shm.ptr, window->_rect.width, window->_rect.height};
+			window->_flipped = false;
+			window->_shm = shm;
 		}
 	} else {
 		event.type = PEVENT_UNKNOWN;

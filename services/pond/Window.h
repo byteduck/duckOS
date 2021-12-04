@@ -224,6 +224,12 @@ public:
 	  */
 	 Rect calculate_absolute_rect(const Rect& rect);
 
+	 /**
+	  * Sets whether or not the framebuffer is flipped.
+	  * @param flipped Whether or not the framebuffer has been flipped.
+	  */
+	 void set_flipped(bool flipped);
+
 private:
 	friend class Mouse;
 	void alloc_framebuffer();

@@ -61,6 +61,7 @@ namespace Pond {
 	struct WindowInvalidatePkt {
 		int window_id;
 		Rect area;
+		bool flipped;
 	};
 
 	struct MouseMovePkt {

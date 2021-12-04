@@ -284,6 +284,14 @@ Rect Window::calculate_absolute_rect(const Rect& rect) {
 		return rect;
 }
 
+void Window::set_flipped(bool flipped) {
+	_framebuffer = {
+			(uint32_t*) _framebuffer_shm.ptr + (flipped ? _rect.width * _rect.height : 0),
+			_rect.width,
+			_rect.height
+	};
+}
+
 void Window::alloc_framebuffer() {
 	if(_framebuffer.data) {
 		//Deallocate the old framebuffer since there is one
@@ -293,7 +301,7 @@ void Window::alloc_framebuffer() {
 		}
 	}
 
-	if(shmcreate(NULL, IMGSIZE(_rect.width, _rect.height), &_framebuffer_shm) < 0) {
+	if(shmcreate(NULL, IMGSIZE(_rect.width, _rect.height) * 2, &_framebuffer_shm) < 0) {
 		perror("Failed to allocate framebuffer for window");
 		return;
 	}
@@ -348,5 +356,4 @@ void Window::set_hint(int hint, int value) {
 			KLog::logf("Unknown window hint %d!\n", hint);
 	}
 }
-
 

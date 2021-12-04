@@ -157,7 +157,7 @@ namespace Pond {
 		int id() const;
 
 		/**
-		 * Gets the window's framebuffer.
+		 * Gets the window's inactive framebuffer (the one that will be used after the next flip)
 		 * @return The framebuffer of the window.
 		 */
 		Gfx::Framebuffer framebuffer() const;
@@ -179,14 +179,19 @@ namespace Pond {
 
 		Window(int id, Rect rect, struct shm shm, Context* ctx);
 
+		/**
+		 * Flips the framebuffer.
+		 */
+		void flip_buffer();
+
 		int _id = -1; ///< The ID of the window.
 		Rect _rect; ///< The rect of the window.
-		int _shm_id = 0; ///< The shared memory ID of the window's framebuffer.
+		struct shm _shm; ///< The shared memory object for the window's framebuffer.
 		Point _mouse_pos = {-1, -1}; ///< The position of the mouse inside the window.
 		unsigned int _mouse_buttons = 0; ///< A bitfield containing the last-known pressed mouse buttons inside the window.
 		bool _hidden = true; ///< Whether or not the window is hidden.
-		Gfx::Framebuffer _framebuffer; ///< The window's framebuffer.
 		Context* _context = nullptr; ///< The context associated with the window.
+		bool _flipped = false; ///< Whether or not the window's framebuffer is currently flipped.
 	};
 }
 

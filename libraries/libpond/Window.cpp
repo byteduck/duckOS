@@ -24,9 +24,7 @@
 using namespace Pond;
 using namespace Gfx;
 
-Window::Window(int id, Rect rect, struct shm shm, Context* ctx): _id(id), _rect(rect), _context(ctx), _shm_id(shm.id) {
-	_framebuffer = {(uint32_t*) shm.ptr, rect.width, rect.height};
-}
+Window::Window(int id, Rect rect, struct shm shm, Context* ctx): _id(id), _rect(rect), _context(ctx), _shm(shm) {}
 
 Window::~Window() = default;
 
@@ -35,11 +33,13 @@ void Window::destroy() {
 }
 
 void Window::invalidate() {
-	_context->__river_invalidate_window({_id, {-1, -1, -1, -1}});
+	flip_buffer();
+	_context->__river_invalidate_window({_id, {-1, -1, -1, -1}, _flipped});
 }
 
 void Window::invalidate_area(Rect area) {
-	_context->__river_invalidate_window({_id, area});
+	flip_buffer();
+	_context->__river_invalidate_window({_id, area, _flipped});
 }
 
 void Window::resize(Dimensions dims) {
@@ -114,7 +114,7 @@ int Window::id() const {
 }
 
 Framebuffer Window::framebuffer() const {
-	return _framebuffer;
+	return {(uint32_t*) _shm.ptr + (_flipped ? 0 : _rect.width * _rect.height), _rect.width, _rect.height};
 }
 
 unsigned int Window::mouse_buttons() const {
@@ -123,4 +123,8 @@ unsigned int Window::mouse_buttons() const {
 
 Point Window::mouse_pos() const {
 	return _mouse_pos;
+}
+
+void Window::flip_buffer() {
+	_flipped = !_flipped;
 }

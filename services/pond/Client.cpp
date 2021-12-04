@@ -149,6 +149,7 @@ WindowResizedPkt Client::resize_window(WindowResizePkt& params) {
 void Client::invalidate_window(WindowInvalidatePkt& params) {
 	auto window = windows.find(params.window_id);
 	if(window != windows.end()) {
+		window->second->set_flipped(params.flipped);
 		if(params.area.x < 0 || params.area.y < 0)
 			window->second->invalidate();
 		else
