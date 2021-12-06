@@ -23,6 +23,7 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/kstd/cstring.h>
 #include <kernel/filesystem/LinkedInode.h>
+#include <kernel/kstd/KLog.h>
 
 SocketFSInode::SocketFSInode(SocketFS& fs, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
 Inode(fs, id), fs(fs), id(id), name(name), host(0)
@@ -292,7 +293,7 @@ void SocketFSInode::close(FileDescriptor& fd) {
 				return;
 			}
 		}
-		printf("[SocketFS] Warning: Socket %d was closed by host but couldn't find an entry to remove!\n", id);
+		KLog::warn("SocketFS", "Socket %d was closed by host but couldn't find an entry to remove!", id);
 		return;
 	}
 

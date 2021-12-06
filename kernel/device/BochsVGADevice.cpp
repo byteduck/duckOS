@@ -24,6 +24,7 @@
 #include <kernel/tasking/Process.h>
 #include <kernel/IO.h>
 #include <kernel/kstd/cstring.h>
+#include <kernel/kstd/KLog.h>
 
 PCI::ID bochs_qemu_vga = {0x1234, 0x1111};
 PCI::ID vbox_vga = {0x80ee, 0xbeef};
@@ -47,15 +48,15 @@ bool BochsVGADevice::detect() {
 	}, &address);
 
 	if(address.bus == 0 && address.function == 0 && address.slot == 0) {
-		printf("[VGA] Could not find a bochs-compatible VGA device!\n");
+		KLog::warn("VGA", "Could not find a bochs-compatible VGA device!");
 		return false;
 	}
 
 	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
 	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
 	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size() * 2, true);
-	printf("[VGA] Found a bochs-compatible VGA device at %x:%x.%x\n", address.bus, address.slot, address.function);
-	printf("[VGA] virtual framebuffer mapped from 0x%x to 0x%x\n", framebuffer_paddr, framebuffer);
+	KLog::info("VGA", "Found a bochs-compatible VGA device at %x:%x.%x", address.bus, address.slot, address.function);
+	KLog::dbg("VGA", "virtual framebuffer mapped from 0x%x to 0x%x", framebuffer_paddr, framebuffer);
 	return true;
 }
 

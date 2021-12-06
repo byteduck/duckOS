@@ -23,6 +23,7 @@
 #include <kernel/tasking/Process.h>
 #include <kernel/kstd/cstring.h>
 #include <kernel/multiboot.h>
+#include <kernel/kstd/KLog.h>
 
 MultibootVGADevice *MultibootVGADevice::create(struct multiboot_info *mboot_header) {
 	auto* ret = new MultibootVGADevice();
@@ -39,7 +40,7 @@ MultibootVGADevice::~MultibootVGADevice() {
 
 bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 	if(!(mboot_header->flags & MULTIBOOT_INFO_FRAMEBUFFER_INFO)) {
-		printf("[VGA] Unable to find multiboot framebuffer info!\n");
+		KLog::warn("VGA", "Unable to find multiboot framebuffer info!");
 		return false;
 	}
 
@@ -56,7 +57,7 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 			textmode = false;
 			break;
 		default:
-			printf("[VGA] Unsupported multiboot framebuffer type %d!\n", mboot_header->framebuffer_type);
+			KLog::err("VGA", "Unsupported multiboot framebuffer type %d!", mboot_header->framebuffer_type);
 			return false;
 	}
 

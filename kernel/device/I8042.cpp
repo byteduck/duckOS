@@ -22,6 +22,7 @@
 #include <kernel/kstd/kstdio.h>
 #include "KeyboardDevice.h"
 #include "MouseDevice.h"
+#include <kernel/kstd/KLog.h>
 
 I8042* I8042::_inst = nullptr;
 
@@ -34,13 +35,13 @@ I8042& I8042::inst() {
 
 bool I8042::init() {
 	if(_inst) {
-		printf("[I8042] Already initialized!\n");
+		KLog::warn("I8042", "Already initialized!");
 		return false;
 	}
 
 	inst();
 
-	printf("[I8042] Attempting to initialize...\n");
+	KLog::dbg("I8042", "Attempting to initialize...");
 
 	//Disable both ports (Port 2 ignored if not present)
 	controller_command(I8042_CMD_DISABLE_PORT1);
@@ -59,59 +60,59 @@ bool I8042::init() {
 	//Perform self-test and restore configuration
 	/*uint8_t self_test = controller_command_read(I8042_CMD_SELF_TEST);
 	if(self_test != I8042_SELF_TEST_SUCCESSFUL) {
-		printf("[I8042] Self-test failed (Returned 0x%x)\n", self_test);
+		KLog::dbg("I8042", "Self-test failed (Returned 0x%x)", self_test);
 		return false;
 	}
 	write_config(config);*/
 
 	bool dual_channel = config & I8042_CONFIG_CLOCK2;
-	printf("[I8042] Found %s-channel controller\n", dual_channel ? "dual" : "single");
+	KLog::dbg("I8042", "Found %s-channel controller", dual_channel ? "dual" : "single");
 
 	bool keyboard_available = false, mouse_available = false;
 
 	//Test for the availability of the keyboard
 	if(!controller_command_read(I8042_CMD_TEST_PORT1)) {
-		printf("[I8042] Keyboard available\n");
+		KLog::dbg("I8042", "Keyboard available");
 		controller_command(I8042_CMD_ENABLE_PORT1);
 		config |= I8042_CONFIG_INT1;
 		config &= ~I8042_CONFIG_CLOCK1;
 		keyboard_available = true;
 	}
 	else {
-		printf("[I8042] Keyboard unavailable\n");
+		KLog::warn("I8042", "Keyboard unavailable");
 	}
 
 	//Test for the availability of the mouse
 	if(dual_channel) {
 		if(!controller_command_read(I8042_CMD_TEST_PORT2)) {
-			printf("[I8042] Mouse available\n");
+			KLog::dbg("I8042", "Mouse available");
 			controller_command(I8042_CMD_ENABLE_PORT2);
 			config |= I8042_CONFIG_INT2;
 			config &= ~I8042_CONFIG_CLOCK2;
 			mouse_available = true;
 		}
 		else {
-			printf("[I8042] Mouse unavailable\n");
+			KLog::warn("I8042", "Mouse unavailable");
 		}
 	}
 
 	//Reset the devices
 	if(keyboard_available) {
 		if(reset_device(KEYBOARD)) {
-			printf("[I8042] Keyboard successfully enabled\n");
+			KLog::dbg("I8042", "Keyboard successfully enabled");
 			_inst->_keyboard = new KeyboardDevice();
 		} else {
-			printf("[I8042] Error enabling keyboard\n");
+			KLog::err("I8042", "Error enabling keyboard");
 			_inst->_keyboard = nullptr;
 		}
 	}
 
 	if(mouse_available) {
 		if(reset_device(MOUSE)) {
-			printf("[I8042] Mouse successfully enabled\n");
+			KLog::dbg("I8042", "Mouse successfully enabled");
 			_inst->_mouse = new MouseDevice();
 		} else {
-			printf("[I8042] Error enabling mouse\n");
+			KLog::err("I8042", "Error enabling mouse");
 			_inst->_mouse = nullptr;
 		}
 	}
@@ -136,13 +137,13 @@ void I8042::handle_irq() {
 
 	if((status & I8042_STATUS_WHICH_BUFFER) == I8042_KEYBOARD_BUFFER) {
 		if(!_keyboard) {
-			printf("[I8042] Received keyboard buffer data, but no keyboard device is present!\n");
+			KLog::warn("I8042", "Received keyboard buffer data, but no keyboard device is present!");
 			return;
 		}
 		_keyboard->handle_byte(byte);
 	} else {
 		if(!_mouse) {
-			printf("[I8042] Received mouse buffer data, but no mouse device is present!\n");
+			KLog::warn("I8042", "Received mouse buffer data, but no mouse device is present!");
 			return;
 		}
 		_mouse->handle_byte(byte);
@@ -161,7 +162,7 @@ uint8_t I8042::controller_command_read(uint8_t command) {
 		if(IO::inb(I8042_STATUS) & I8042_STATUS_OUTPUT_FULL)
 			return IO::inb(I8042_BUFFER);
 	}
-	printf("[I8042] Controller read timed out...\n");
+	KLog::warn("I8042", "Controller read timed out...");
 	return 0;
 }
 
@@ -194,7 +195,7 @@ void I8042::wait_write() {
 		if(!(IO::inb(I8042_STATUS) & I8042_STATUS_INPUT_FULL))
 			return;
 	}
-	printf("[I8042] Write timed out...\n");
+	KLog::warn("I8042", "Write timed out...");
 }
 
 uint8_t I8042::read(I8042::DeviceType type) {
@@ -211,5 +212,5 @@ void I8042::wait_read(DeviceType type) {
 		if((status & I8042_STATUS_OUTPUT_FULL) && ((status & I8042_STATUS_WHICH_BUFFER) == buf))
 			return;
 	}
-	printf("[I8042] Read timed out...\n");
+	KLog::warn("I8042", "Read timed out...");
 }

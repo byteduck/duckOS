@@ -24,6 +24,7 @@
 #include <kernel/IO.h>
 #include <kernel/kstd/cstring.h>
 #include <kernel/tasking/Thread.h>
+#include <kernel/kstd/KLog.h>
 
 PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio) {
 	PCI::Address addr = {0,0,0};
@@ -48,9 +49,9 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 
 	//Detect bus mastering capability
 	if(PCI::read_byte(addr, PCI_PROG_IF) & 0x80u) {
-		printf("[PATA] IDE controller capable of bus mastering\n");
+		KLog::dbg("PATA", "IDE controller capable of bus mastering");
 	} else {
-		printf("[PATA] IDE controller not capable of bus mastering, using PIO\n");
+		KLog::dbg("PATA", "IDE controller not capable of bus mastering, using PIO");
 		_use_pio = true;
 		use_pio = true;
 	}
@@ -113,7 +114,7 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 		IO::outb(_bus_master_base + ATA_BM_STATUS, IO::inb(_bus_master_base + ATA_BM_STATUS) | 0x4u);
 	}
 
-	printf("[PATA] Setup disk %s using %s (%d blocks)\n", _model_number, _use_pio ? "PIO" : "DMA", _max_addressable_block);
+	KLog::info("PATA", "Setup disk %s using %s (%d blocks)", _model_number, _use_pio ? "PIO" : "DMA", _max_addressable_block);
 }
 
 PATADevice::~PATADevice() {
@@ -168,7 +169,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *bu
 	uninstall_irq();
 
 	if(_post_irq_status & ATA_STATUS_ERR) {
-		printf("[PATA] DMA read fail with status 0x%x and busmaster status 0x%x\n", _post_irq_status, _post_irq_bm_status);
+		KLog::err("PATA", "DMA read fail with status 0x%x and busmaster status 0x%x", _post_irq_status, _post_irq_bm_status);
 		return -EIO;
 	}
 
@@ -215,7 +216,7 @@ Result PATADevice::write_sectors_dma(size_t lba, uint8_t num_sectors, const uint
 	uninstall_irq();
 
 	if(_post_irq_status & ATA_STATUS_ERR) {
-		printf("[PATA] DMA write fail with status 0x%x and busmaster status 0x%x\n", _post_irq_status, _post_irq_bm_status);
+		KLog::err("PATA", "DMA write fail with status 0x%x and busmaster status 0x%x", _post_irq_status, _post_irq_bm_status);
 		return -EIO;
 	}
 

@@ -22,6 +22,7 @@
 #include "Ext2BlockGroup.h"
 #include "Ext2Filesystem.h"
 #include <kernel/filesystem/DirectoryEntry.h>
+#include <kernel/kstd/KLog.h>
 
 Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id) {
 	//Get the block group
@@ -52,7 +53,8 @@ Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw &raw, kstd::
 		entries.push_back(DirectoryEntry(i, TYPE_DIR, "."));
 		entries.push_back(DirectoryEntry(parent, TYPE_DIR, "..")); //Parent increases their hardlink count in add_entry
 		Result res = write_directory_entries(entries);
-		if(res.is_error()) printf("WARNING: Error %d writing new ext2 directory inode's entries to disk\n", res.code());
+		if(res.is_error())
+			KLog::err("ext2", "Error %d writing new ext2 directory inode's entries to disk", res.code());
 	}
 	write_to_disk();
 }
@@ -351,7 +353,7 @@ ResultRet<kstd::shared_ptr<Inode>> Ext2Inode::create_entry(const kstd::string& n
 	if(entry_result.is_error()) {
 		auto free_or_err = ext2fs().free_inode(*inode_or_err.value());
 		if(free_or_err.is_error()) {
-			printf("WARNING: Error freeing inode %d after entry creation error! (%d)\n", inode_or_err.value()->id, free_or_err.code());
+			KLog::err("ext2", "Error freeing inode %d after entry creation error! (%d)\n", inode_or_err.value()->id, free_or_err.code());
 		}
 		return entry_result;
 	}
@@ -389,7 +391,7 @@ Result Ext2Inode::remove_entry(const kstd::string &name) {
 	if(!found) return -ENOENT;
 	auto child_or_err = ext2fs().get_inode(entries[entry_index].id);
 	if(child_or_err.is_error()){
-		printf("WARNING: Orphaned directory entry in inode %d\n", id);
+		KLog::warn("ext2", "Orphaned directory entry in inode %d", id);
 		return child_or_err.code();
 	}
 
@@ -627,7 +629,7 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 	} else raw.d_pointer = 0;
 
 	if(num_blocks() > 12 + ext2fs().block_pointers_per_block * ext2fs().block_pointers_per_block) {
-		printf("WARNING: Writing triply-indirect blocks to disk isn't supported yet!\n");
+		KLog::err("ext2", "Writing triply-indirect blocks to disk isn't supported yet!");
 		//TODO: Triply indirect blocks
 	} else raw.t_pointer = 0;
 

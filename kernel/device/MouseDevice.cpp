@@ -23,6 +23,7 @@
 #include "MouseDevice.h"
 #include "I8042.h"
 #include <kernel/kstd/cstring.h>
+#include <kernel/kstd/KLog.h>
 
 MouseDevice* MouseDevice::instance;
 
@@ -32,7 +33,7 @@ MouseDevice *MouseDevice::inst() {
 
 MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128), IRQHandler(12)  {
 	instance = this;
-	printf("[I8042/Mouse] Initializing mouse...\n");
+	KLog::dbg("I8042/Mouse", "Initializing mouse...");
 
 	//Get the device ID
 	I8042::write(I8042::MOUSE, MOUSE_GET_DEVICE_ID);
@@ -67,10 +68,10 @@ MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128), IRQHandle
 
 	if(id == MOUSE_INTELLIMOUSE_ID) {
 		has_scroll_wheel = true;
-		printf("[I8042/Mouse] Mouse has wheel.\n");
+		KLog::dbg("I8042/Mouse", "Mouse has wheel.");
 	}
 
-	printf("[I8042/Mouse] Mouse initialized!\n");
+	KLog::dbg("I8042/Mouse", "Mouse initialized!");
 }
 
 ssize_t MouseDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
@@ -155,5 +156,5 @@ void MouseDevice::handle_packet() {
 
 	LOCK(lock);
 	if(!event_buffer.push_back({x, y, z, (uint8_t) (packet_data[0] & 0x7u)}))
-		printf("[I8042/Mouse] Event buffer full!\n");
+		KLog::warn("I8042/Mouse", "Event buffer full!");
 }

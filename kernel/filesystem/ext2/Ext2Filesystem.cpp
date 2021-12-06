@@ -22,6 +22,7 @@
 #include "Ext2BlockGroup.h"
 #include <kernel/filesystem/FileDescriptor.h>
 #include <kernel/kstd/cstring.h>
+#include <kernel/kstd/KLog.h>
 
 Ext2Filesystem::Ext2Filesystem(const kstd::shared_ptr<FileDescriptor>& file) : FileBasedFilesystem(file) {
 	_fsid = EXT2_FSID;
@@ -86,7 +87,7 @@ ResultRet<kstd::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mod
 	}
 
 	if(bg == -1){
-		printf("WARNING: Couldn't allocate a new inode! (no free inodes)\n");
+		KLog::err("ext2", "Couldn't allocate a new inode! (no free inodes)");
 		ext2lock.release();
 		return -ENOSPC;
 	}
@@ -97,7 +98,7 @@ ResultRet<kstd::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mod
 	Result rb_res = read_block(group.inode_bitmap_block, inode_bitmap);
 	if(rb_res.is_error()) {
 		delete[] inode_bitmap;
-		printf("WARNING: I/O error reading inode bitmap block for block group %d!\n", bg);
+		KLog::err("ext2", "I/O error reading inode bitmap block for block group %d!", bg);
 		ext2lock.release();
 		return rb_res;
 	}
@@ -120,7 +121,7 @@ ResultRet<kstd::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mod
 	if(inode_index == 0) {
 		group.free_inodes = 0;
 		group.write();
-		printf("WARNING: Free inode count inconsistency in block group %d!\n", bg);
+		KLog::warn("ext2", "Free inode count inconsistency in block group %d!", bg);
 		ext2lock.release();
 		return -ENOSPC;
 	}
@@ -169,7 +170,7 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	Result res = read_block(bg->inode_bitmap_block, block_buf);
 	if(res.is_error()) {
 		delete[] block_buf;
-		printf("WARNING: Error while reading bitmap for block group %d!\n", ino.block_group());
+		KLog::err("ext2", "Error while reading bitmap for block group %d!", ino.block_group());
 		ext2lock.release();
 		return res;
 	}
@@ -178,7 +179,7 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	res = write_block(bg->inode_bitmap_block, block_buf);
 	if(res.is_error()) {
 		delete[] block_buf;
-		printf("WARNING: Error while writing bitmap for block group %d!\n", ino.block_group());
+		KLog::err("ext2", "Error while writing bitmap for block group %d!", ino.block_group());
 		ext2lock.release();
 		return res;
 	}
@@ -256,7 +257,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 	Result res = read_block(group->block_bitmap_block, block_buf);
 	if(res.is_error()) {
 		delete[] block_buf;
-		printf("WARNING: Error %d reading block bitmap for group %d\n", res.code(), group->num);
+		KLog::err("ext2", "Error %d reading block bitmap for group %d", res.code(), group->num);
 		return res.code();
 	}
 
@@ -277,7 +278,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 	}
 
 	if(num_allocated != num_blocks) {
-		printf("WARNING: Free block count in block group %d was incorrect!\n", group->num);
+		KLog::warn("ext2", "Free block count in block group %d was incorrect!", group->num);
 		group->free_blocks = 0;
 	}
 
@@ -286,7 +287,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 	res = write_block(group->block_bitmap_block, block_buf);
 	delete[] block_buf;
 	if(res.is_error()) {
-		printf("WARNING: Error writing block bitmap for block group %d!\n", group->num);
+		KLog::err("ext2", "Error writing block bitmap for block group %d!", group->num);
 		return res.code();
 	}
 
@@ -296,7 +297,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_blocks, bool zero_out) {
 	LOCK(ext2lock);
 	if(num_blocks == 0) {
-		printf("WARNING: Tried to allocate zero ext2 blocks!\n");
+		KLog::warn("ext2", "Tried to allocate zero ext2 blocks!");
 		return -EINVAL;
 	}
 
@@ -307,7 +308,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_b
 	for(uint32_t bgi = 0; bgi < num_block_groups; bgi++) {
 		Ext2BlockGroup *bg = get_block_group(bgi);
 		if (!bg) {
-			printf("WARNING: Error getting block group %d!\n", bgi);
+			KLog::err("ext2", "Error getting block group %d!", bgi);
 			break;
 		}
 		if (bg->free_blocks >= num_blocks) {
@@ -359,14 +360,14 @@ void Ext2Filesystem::free_block(uint32_t block) {
 	LOCK(ext2lock);
 
 	if(block == 0) {
-		printf("WARNING: Tried to free ext2 block 0!\n");
+		KLog::warn("ext2", "Tried to free ext2 block 0!");
 		return;
 	}
 
 	uint32_t group_index = (block - 1) / superblock.blocks_per_group;
 	Ext2BlockGroup* bg = get_block_group(group_index);
 	if(!bg) {
-		printf("WARNING: Error getting block group %d!\n", group_index);
+		KLog::err("ext2", "Error getting block group %d!", group_index);
 		return;
 	}
 

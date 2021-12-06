@@ -28,6 +28,7 @@
 #include "KernelLogDevice.h"
 #include "I8042.h"
 #include <kernel/kstd/unix_types.h>
+#include <kernel/kstd/KLog.h>
 
 kstd::vector<kstd::shared_ptr<Device>> Device::_devices;
 SpinLock Device::_lock;
@@ -46,9 +47,9 @@ Device::Device(unsigned major, unsigned minor): _major(major), _minor(minor) {
 	auto res = get_device(_major, _minor);
 	if (res.is_error() && res.code() == -ENODEV) {
 		_devices.push_back(kstd::shared_ptr<Device>(this));
-		printf("[Device] Device %d,%d registered\n", _major, _minor);
+		KLog::dbg("Device", "Device %d,%d registered", _major, _minor);
 	} else {
-		printf("[Device] Tried to register already-registered device %d,%d!\n", _major, _minor);
+		KLog::warn("Device", "Tried to register already-registered device %d,%d!", _major, _minor);
 	}
 }
 
@@ -93,7 +94,7 @@ void Device::remove_device(unsigned major, unsigned minor) {
 		if(_devices[i]){
 			if(_devices[i]->_major == major && _devices[i]->_minor == minor){
 				_devices.erase(i);
-				printf("[Device] Device %d,%d deregistered\n", major, minor);
+				KLog::dbg("Device", "Device %d,%d deregistered", major, minor);
 			}
 		}
 	}

@@ -22,6 +22,7 @@
 #include "KeyboardDevice.h"
 #include "I8042.h"
 #include <kernel/kstd/cstring.h>
+#include <kernel/kstd/KLog.h>
 
 //KeyEvent
 
@@ -132,5 +133,5 @@ void KeyboardDevice::set_key_state(uint8_t scancode, bool pressed) {
 	_e0_flag = false;
 	LOCK(_lock);
 	if(!_event_buffer.push_back(event))
-		printf("[I8042/Keyboard] Event buffer full!\n");
+		KLog::warn("I8042/Keyboard", "Event buffer full!");
 }

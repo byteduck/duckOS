@@ -17,30 +17,16 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef STDIO_H
-#define STDIO_H
+#ifndef DUCKOS_KLOG_H
+#define DUCKOS_KLOG_H
 
-#include <kernel/kstd/kstddef.h>
-
-#ifdef DEBUG
-#define ASSERT(cond) \
-if(!(cond)) { \
-  PANIC("Assertion failed:", __FILE__ " at line " STR(__LINE__)); \
+namespace KLog {
+	void dbg(const char* component, const char* fmt, ...);
+	void info(const char* component, const char* fmt, ...);
+	void success(const char* component, const char* fmt, ...);
+	void warn(const char* component, const char* fmt, ...);
+	void err(const char* component, const char* fmt, ...);
+	void crit(const char* component, const char* fmt, ...);
 }
-#else
-#define ASSERT(cond) \
-if(!(cond)) { \
-  printf("[kernel] CRITICAL: Assertion failed: %s\n", __FILE__ " at line " STR(__LINE__)); \
-}
-#endif
 
-void putch(char c);
-void serial_putch(char c);
-void vprintf(const char* fmt, va_list list);
-void printf(const char* fmt, ...);
-void print(const char* str);
-[[noreturn]] void PANIC(const char *error, const char *msg, ...);
-void clearScreen();
-void setup_tty();
-
-#endif
+#endif //DUCKOS_KLOG_H

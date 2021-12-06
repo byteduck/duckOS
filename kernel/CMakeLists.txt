@@ -112,14 +112,13 @@ SET(KERNEL_SRCS
         IO.cpp
         KernelMapper.cpp
         device/KernelLogDevice.cpp
-        device/DiskDevice.cpp)
-
-SET(COMMON_SRCS
-        kstd/cstring.cpp
+        device/DiskDevice.cpp
+		kstd/KLog.cpp
+		kstd/cstring.cpp
         kstd/kstdlib.cpp
         kstd/string.cpp)
 
-ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS} ${COMMON_SRCS})
+ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS})
 TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL)
 
 SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/kernel.ld)

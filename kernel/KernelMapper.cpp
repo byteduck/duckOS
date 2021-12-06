@@ -23,18 +23,19 @@
 #include <kernel/kstd/cstring.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/MemoryManager.h>
+#include <kernel/kstd/KLog.h>
 
 kstd::vector<KernelMapper::Symbol>* symbols = nullptr;
 size_t lowest_addr = 0xFFFFFFFF;
 size_t highest_addr = 0x0;
 
 void KernelMapper::load_map() {
-	printf("[KernelMapper] Loading map...\n");
+	KLog::dbg("KernelMapper", "Loading map...");
 
 	//Open the map
 	auto res = VFS::inst().open("/boot/kernel.map", O_RDONLY, 0, User::root(), VFS::inst().root_ref());
 	if(res.is_error()) {
-		printf("[KernelMapper] Failed to load symbols from /boot/kernel.map\n");
+		KLog::err("KernelMapper", "Failed to load symbols from /boot/kernel.map");
 		return;
 	}
 
@@ -80,7 +81,7 @@ void KernelMapper::load_map() {
 	delete[] filebuf;
 	symbols->shrink_to_fit();
 
-	printf("[KernelMapper] Map loaded with %d symbols between 0x%x and 0x%x\n", symbols->size(), lowest_addr, highest_addr);
+	KLog::dbg("KernelMapper", "Map loaded with %d symbols between 0x%x and 0x%x", symbols->size(), lowest_addr, highest_addr);
 }
 
 KernelMapper::Symbol* KernelMapper::get_symbol(size_t location) {

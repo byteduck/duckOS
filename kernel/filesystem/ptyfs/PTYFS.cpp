@@ -20,6 +20,7 @@
 #include "PTYFS.h"
 #include <kernel/terminal/PTYDevice.h>
 #include <kernel/terminal/PTYControllerDevice.h>
+#include <kernel/kstd/KLog.h>
 #include "PTYFSInode.h"
 
 PTYFS* _inst = nullptr;
@@ -46,7 +47,7 @@ void PTYFS::remove_pty(const kstd::shared_ptr<PTYDevice>& pty) {
 			return;
 		}
 	}
-	printf("PTYFS: WARNING: Failed to remove PTY %d!\n", pty->id());
+	KLog::err("ptyfs", "Failed to remove PTY %d!", pty->id());
 }
 
 char* PTYFS::name() {

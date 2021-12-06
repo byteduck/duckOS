@@ -18,7 +18,7 @@
 */
 
 #include <kernel/memory/PageDirectory.h>
-#include <kernel/kstd/kstdio.h>
+#include <kernel/kstd/KLog.h>
 #include "CommandLine.h"
 
 CommandLine* CommandLine::_inst;
@@ -29,14 +29,14 @@ CommandLine::CommandLine(const struct multiboot_info& header) {
 	if(header.flags & MULTIBOOT_INFO_CMDLINE) {
 		char* str = (char*) PageDirectory::k_mmap(header.cmdline, 1024, true);
 		if(!str) {
-			printf("[kinit] cmdline couldn't be mmap-ed!\n");
+			KLog::warn("CommandLine", "cmdline couldn't be mmap-ed!");
 			return;
 		}
 
 		cmdline = str;
 		PageDirectory::k_munmap(str);
 
-		printf("[kinit] Command line options: '%s'\n", cmdline.c_str());
+		KLog::info("CommandLine", "Command line options: '%s'", cmdline.c_str());
 
 		kstd::string cmd = cmdline;
 		kstd::string part = "";

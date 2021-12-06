@@ -30,6 +30,7 @@
 #include <kernel/tasking/Thread.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/Atomic.h>
+#include <kernel/kstd/KLog.h>
 
 size_t usable_bytes_ram = 0;
 size_t total_bytes_ram = 0;
@@ -192,7 +193,7 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 	while(mmap_offset < header->mmap_length) {
 		if(mmap_entry->addr_high || mmap_entry->len_high) {
 			//If the entry is in extended memory, ignore it
-			printf("[kinit] Ignoring memory region above 4GiB (0x%x%x)\n",
+			KLog::dbg("MemoryManager", "Ignoring memory region above 4GiB (0x%x%x)",
 					mmap_entry->addr_high, mmap_entry->addr_low);
 		} else {
 			//Otherwise, round up the address of the entry to a page boundary and round the size down to a page boundary
@@ -210,10 +211,10 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 				if(region.reserved) reserved_bytes_ram += region.size;
 				if(mmap_entry->type == MULTIBOOT_MEMORY_BADRAM) bad_bytes_ram += region.size;
 				num_multiboot_memory_regions++;
-				printf("[kinit] Adding memory region from 0x%x -> 0x%x (%s, %s)\n", region.start, region.start + (region.size - 1), region.used ? "Used" : "Unused", region.reserved ? "Reserved" : "Unreserved");
+				KLog::dbg("MemoryManager", "Adding memory region from 0x%x -> 0x%x (%s, %s)", region.start, region.start + (region.size - 1), region.used ? "Used" : "Unused", region.reserved ? "Reserved" : "Unreserved");
 			} else {
 				//Otherwise, ignore it
-				printf("[kinit] Ignoring too-small memory region at 0x%x\n", mmap_entry->addr_low);
+				KLog::dbg("MemoryManager", "Ignoring too-small memory region at 0x%x", mmap_entry->addr_low);
 			}
 		}
 		mmap_offset += mmap_entry->size + sizeof(mmap_entry->size);

@@ -26,6 +26,7 @@
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/Stack.h>
+#include <kernel/kstd/KLog.h>
 
 Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
 	//Create the kernel stack
@@ -259,7 +260,7 @@ bool Thread::call_signal_handler(int signal) {
 	//Allocate a userspace stack
 	_sighandler_ustack_region = _process->_page_directory->allocate_region(THREAD_STACK_SIZE, true);
 	if(!_sighandler_ustack_region.virt) {
-		printf("FATAL: Failed to allocate sighandler user stack for pid %d!\n", _process->pid());
+		KLog::crit("Thread", "Failed to allocate sighandler user stack for pid %d!", _process->pid());
 		_process->kill(SIGKILL);
 		return false;
 	}
@@ -267,7 +268,7 @@ bool Thread::call_signal_handler(int signal) {
 	//Allocate a kernel stack
 	_sighandler_kstack_region = PageDirectory::k_alloc_region(THREAD_KERNEL_STACK_SIZE);
 	if(!_sighandler_kstack_region.virt) {
-		printf("FATAL: Failed to allocate sighandler kernel stack for pid %d!\n", _process->pid());
+		KLog::crit("Thread", "Failed to allocate sighandler kernel stack for pid %d!", _process->pid());
 		_process->kill(SIGKILL);
 		return false;
 	}

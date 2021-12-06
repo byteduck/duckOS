@@ -23,6 +23,7 @@
 #include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/filesystem/FileDescriptor.h>
 #include <kernel/memory/PageDirectory.h>
+#include <kernel/kstd/KLog.h>
 
 bool ELF::is_valid_elf_header(elf32_header* header) {
 	return header->magic == ELF_MAGIC;
@@ -124,7 +125,7 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segm
 			if(!vmem_region) {
 				//If we failed to allocate the program vmem region, free the tmp region
 				MemoryManager::inst().pmem_map().free_region(tmp_region.phys);
-				printf("FATAL: Failed to allocate a vmem region in load_elf!\n");
+				KLog::crit("ELF", "Failed to allocate a vmem region in load_elf!");
 				return -ENOMEM;
 			}
 

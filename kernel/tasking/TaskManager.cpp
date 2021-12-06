@@ -27,6 +27,7 @@
 #include "Process.h"
 #include "Thread.h"
 #include <kernel/memory/PageDirectory.h>
+#include <kernel/kstd/KLog.h>
 
 TSS TaskManager::tss;
 SpinLock TaskManager::lock;
@@ -134,6 +135,8 @@ pid_t TaskManager::get_new_pid(){
 }
 
 void TaskManager::init(){
+	KLog::dbg("TaskManager", "Initializing tasking...");
+
 	lock = SpinLock();
 
 	thread_queue = new kstd::queue<kstd::shared_ptr<Thread>>();
@@ -181,15 +184,15 @@ int TaskManager::add_process(Process* proc){
 void TaskManager::queue_thread(const kstd::shared_ptr<Thread>& thread) {
 	TaskManager::Disabler disabler;
 	if(!thread) {
-		printf("[TaskManager] WARN: Tried queueing null thread!\n");
+		KLog::warn("TaskManager", "Tried queueing null thread!");
 		return;
 	}
 	if(thread == kidle_process->main_thread()) {
-		printf("[TaskManager] WARN: Tried queuing kidle thread!\n");
+		KLog::warn("TaskManager", "Tried queuing kidle thread!");
 		return;
 	}
 	if(thread->state() != Thread::ALIVE) {
-		printf("[TaskManager] WARN: Tried queuing blocked thread!\n");
+		KLog::warn("TaskManager", "Tried queuing blocked thread!");
 		return;
 	}
 	thread_queue->push_back(thread);

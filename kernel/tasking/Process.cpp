@@ -37,6 +37,7 @@
 #include "JoinBlocker.h"
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/kstd/cstring.h>
+#include <kernel/kstd/KLog.h>
 
 Process* Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::shared_ptr<LinkedInode>(nullptr));
@@ -275,7 +276,7 @@ bool Process::handle_pending_signal() {
 
 		//Print signal if unhandled and fatal
 		if(severity == Signal::FATAL && !signal_actions[signal].action) {
-			printf("PID %d exiting with signal %s in thread %d\n", _pid, Signal::signal_names[signal], _last_active_thread);
+			KLog::warn("Process", "PID %d exiting with fatal signal %s in thread %d\n", _pid, Signal::signal_names[signal], _last_active_thread);
 #ifdef DEBUG
 			printf("Stack trace:\n");
 			KernelMapper::print_stacktrace();

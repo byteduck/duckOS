@@ -43,6 +43,7 @@
 #include <kernel/KernelMapper.h>
 #include <kernel/tasking/ProcessArgs.h>
 #include <kernel/filesystem/LinkedInode.h>
+#include <kernel/kstd/KLog.h>
 
 uint8_t boot_disk;
 
@@ -61,7 +62,7 @@ uint8_t __mem_manager_storage[sizeof(MemoryManager)] __attribute__((aligned(4096
 
 int kmain(uint32_t mbootptr){
 	clearScreen();
-	printf("[kinit] Starting duckOS...\n");
+	KLog::info("kinit", "Starting duckOS...");
 
 	new (__mem_manager_storage) MemoryManager;
 
@@ -90,23 +91,23 @@ int kmain(uint32_t mbootptr){
 
 	clearScreen();
 #ifdef DEBUG
-	printf("[kinit] Debug mode is enabled.\n");
+	KLog::info("kinit", "Debug mode is enabled.");
 #endif
-	printf("[kinit] First stage complete.\n[kinit] Initializing tasking...\n");
-
+	KLog::dbg("kinit", "First stage complete.");
+	
 	TaskManager::init();
 	ASSERT(false); //We should never get here
 	return 0;
 }
 
 void kmain_late(){
-	printf("[kinit] Tasking initialized.\n[kinit] Initializing TTY...\n");
+	KLog::dbg("kinit", "Tasking initialized.");
 
 	auto* tty0 = new VirtualTTY(4, 0);
 	tty0->set_active();
 	setup_tty();
 
-	printf("[kinit] TTY initialized.\n[kinit] Initializing disk...\n");
+	KLog::dbg("kinit", "Initializing disk...");
 
 	//Setup the disk (Assumes we're using primary master drive
 	auto disk = kstd::shared_ptr<PATADevice>(PATADevice::find(
@@ -115,7 +116,7 @@ void kmain_late(){
 					CommandLine::inst().has_option("use_pio") //Use PIO if the command line option is present
 				));
 	if(!disk) {
-		printf("[kinit] Couldn't find IDE controller! Hanging...\n");
+		KLog::crit("kinit", "Couldn't find IDE controller! Hanging...");
 		while(1);
 	}
 
@@ -131,10 +132,8 @@ void kmain_late(){
 	part_descriptor->set_options(O_RDWR);
 
 	//Check if the filesystem is ext2
-	if(Ext2Filesystem::probe(*part_descriptor)){
-		printf("[kinit] Partition is ext2 ");
-	}else{
-		printf("[kinit] Partition is not ext2! Hanging.\n");
+	if(!Ext2Filesystem::probe(*part_descriptor)) {
+		KLog::crit("kinit", "Partition is not ext2! Hanging.");
 		while(true);
 	}
 
@@ -142,18 +141,21 @@ void kmain_late(){
 	auto* ext2fs = new Ext2Filesystem(part_descriptor);
 	ext2fs->init();
 	if(ext2fs->superblock.version_major < 1){
-		printf("[kinit] Unsupported ext2 version %d.%d. Must be at least 1. Hanging.", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
+		KLog::crit("kinit", "Unsupported ext2 version %d.%d. Must be at least 1. Hanging.", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
 		while(true);
 	}
-	printf("%d.%d\n", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
+
+	KLog::dbg("kinit", "Partition is ext2 %d.%d", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
+
 	if(ext2fs->superblock.inode_size != 128){
-		printf("[kinit] Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time. Hanging.", ext2fs->superblock.inode_size);
+		KLog::crit("kinit", "Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time. Hanging.", ext2fs->superblock.inode_size);
+		while(1);
 	}
 
 	//Setup the virtual filesystem and mount the ext2 filesystem as root
 	auto* vfs = new VFS();
 	if(!vfs->mount_root(ext2fs)) {
-		printf("[kinit] Failed to mount root. Hanging.");
+		KLog::crit("kinit", "Failed to mount root. Hanging.");
 		while(true);
 	}
 
@@ -161,49 +163,49 @@ void kmain_late(){
 	auto root_user = User::root();
 	auto proc_or_err = VFS::inst().resolve_path("/proc", VFS::inst().root_ref(), root_user);
 	if(proc_or_err.is_error()) {
-		printf("[kinit] Failed to mount proc: %d\n", proc_or_err.code());
+		KLog::crit("kinit", "Failed to mount proc: %d", proc_or_err.code());
 		while(true);
 	}
 
 	auto* procfs = new ProcFS();
 	auto res = VFS::inst().mount(procfs, proc_or_err.value());
 	if(res.is_error()) {
-		printf("[kinit] Failed to mount proc: %d\n", res.code());
+		KLog::crit("kinit", "Failed to mount proc: %d", res.code());
 		while(true);
 	}
 
 	//Mount SocketFS
 	auto sock_or_err = VFS::inst().resolve_path("/sock", VFS::inst().root_ref(), root_user);
 	if(sock_or_err.is_error()) {
-		printf("[kinit] Failed to mount sock: %d\n", sock_or_err.code());
+		KLog::crit("kinit", "Failed to mount sock: %d", sock_or_err.code());
 		while(true);
 	}
 
 	auto* socketfs = new SocketFS();
 	res = VFS::inst().mount(socketfs, sock_or_err.value());
 	if(res.is_error()) {
-		printf("[kinit] Failed to mount sock: %d\n", res.code());
+		KLog::crit("kinit", "Failed to mount sock: %d", res.code());
 		while(true);
 	}
 
 	//Mount PTYFS
 	auto pts_or_err = VFS::inst().resolve_path("/dev/pts", VFS::inst().root_ref(), root_user);
 	if(pts_or_err.is_error()) {
-		printf("[kinit] Failed to mount pts: %d\n", pts_or_err.code());
+		KLog::crit("kinit", "Failed to mount pts: %d", pts_or_err.code());
 		while(true);
 	}
 
 	auto* ptyfs = new PTYFS();
 	res = VFS::inst().mount(ptyfs, pts_or_err.value());
 	if(res.is_error()) {
-		printf("[kinit] Failed to mount pts: %d\n", res.code());
+		KLog::crit("kinit", "Failed to mount pts: %d", res.code());
 		while(true);
 	}
 
 	//Load the kernel symbols
 	KernelMapper::load_map();
 
-	printf("[kinit] Done!\n");
+	KLog::dbg("kinit", "Starting init...");
 
 	//Replace kinit with init
 	auto* init_args = new ProcessArgs(VFS::inst().root_ref());
@@ -221,7 +223,7 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 	//Check boot disk
 	if(header->flags & MULTIBOOT_INFO_BOOTDEV) {
 		boot_disk = (header->boot_device & 0xF0000000u) >> 28u;
-		printf("[kinit] BIOS boot disk: 0x%x\n", boot_disk);
+		KLog::dbg("kinit", "BIOS boot disk: 0x%x", boot_disk);
 	} else {
 		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have boot device info. Cannot boot.");
 	}
