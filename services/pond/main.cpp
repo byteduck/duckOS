@@ -22,15 +22,12 @@
 #include "Server.h"
 #include "Window.h"
 #include "FontManager.h"
-#include <libduck/KLog.h>
+#include <libduck/Log.h>
 #include <string.h>
 #include <poll.h>
 #include <unistd.h>
 
 int main(int argc, char** argv, char** envp) {
-	KLog::init("Pond");
-	KLog::logf("Starting...\n");
-
 	auto* display = new Display;
 	auto* server = new Server;
 	auto* main_window = new Window(display);
@@ -47,15 +44,13 @@ int main(int argc, char** argv, char** envp) {
 	polls[2].events = POLLIN;
 
 	if(!fork()) {
-		dup2(fileno(KLog::klog_file()), STDOUT_FILENO);
-		dup2(fileno(KLog::klog_file()), STDERR_FILENO);
 		char* argv[] = {NULL};
 		char* envp[] = {NULL};
 		execve("/bin/sandbar", argv, envp);
 		exit(-1);
 	}
 
-	KLog::logf("Started!\n");
+	Log::success("Pond started!");
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"

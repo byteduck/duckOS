@@ -26,13 +26,14 @@
 #include "BusServer.h"
 #include "Function.hpp"
 #include "Message.hpp"
+#include <libduck/Log.h>
 
 using namespace River;
 
 ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(const std::string& socket_name, bool nonblock) {
 	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR | O_CLOEXEC | (nonblock ? O_NONBLOCK : 0));
 	if(fd < 0) {
-		fprintf(stderr, "[River] Failed to open socket %s for bus connection: %s\n", socket_name.c_str(), strerror(errno));
+		Log::err("[River] Failed to open socket ", socket_name, " for bus connection: ", strerror(errno));
 		return Result(errno);
 	}
 	return std::make_shared<BusConnection>(fd, CUSTOM);
@@ -42,12 +43,12 @@ ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(BusConnection::
 	if(type == SESSION || type == SYSTEM) {
 		int fd = open("/sock/river", O_RDWR | O_CLOEXEC | (nonblock ? O_NONBLOCK : 0));
 		if (fd < 0) {
-			fprintf(stderr, "[River] Failed to open socket for system bus connection: %s\n", strerror(errno));
+			Log::err("[River] Failed to open socket for system bus connection: ", strerror(errno));
 			return Result(errno);
 		}
 		return std::make_shared<BusConnection>(fd, type);
 	} else {
-		fprintf(stderr, "Cannot open custom BusConnection without specifying a socket name!\n");
+		Log::err("[River] Cannot open custom BusConnection without specifying a socket name!");
 		return Result(EINVAL);
 	}
 }
@@ -63,7 +64,7 @@ ResultRet<std::shared_ptr<Endpoint>> BusConnection::register_endpoint(const std:
 	send_packet({REGISTER_ENDPOINT, name});
 	auto packet = await_packet(REGISTER_ENDPOINT, name);
 	if(packet.error) {
-		fprintf(stderr, "[River] Error registering endpoint %s: %s\n", name.c_str(), error_str(packet.error));
+		Log::err("[River] Error registering endpoint ", name, ": ", error_str(packet.error));
 		return Result(packet.error);
 	}
 	auto ret = std::make_shared<Endpoint>(shared_from_this(), name, Endpoint::HOST);
@@ -77,7 +78,7 @@ ResultRet<std::shared_ptr<Endpoint>> BusConnection::get_endpoint(const std::stri
 	send_packet({GET_ENDPOINT, name});
 	auto packet = await_packet(GET_ENDPOINT, name);
 	if(packet.error) {
-		fprintf(stderr, "[River] Error getting endpoint %s: %s\n", name.c_str(), error_str(packet.error));
+		Log::err("[River] Error getting endpoint ", name, ": ", error_str(packet.error));
 		return Result(packet.error);
 	}
 	auto ret = std::make_shared<Endpoint>(shared_from_this(), name, Endpoint::PROXY);
@@ -120,7 +121,7 @@ void BusConnection::read_and_handle_packets(bool block) {
 				break;
 
 			default:
-				fprintf(stderr, "[River] Unhandled packet type %d!\n", pkt.type);
+				Log::err("[River] Unhandled packet type ", pkt.type);
 		}
 
 		_packet_queue.pop_front();
@@ -156,14 +157,14 @@ RiverPacket BusConnection::await_packet(PacketType type, const std::string& endp
 
 void BusConnection::handle_function_call(const RiverPacket& packet) {
 	if(!_endpoints[packet.endpoint]) {
-		fprintf(stderr, "[River] Got function call for unknown endpoint %s!\n", packet.endpoint.c_str());
+		Log::warn("[River] Got function call for unknown endpoint ", packet.endpoint);
 		return;
 	}
 
 	auto& endpoint = _endpoints[packet.endpoint];
 	auto func = endpoint->get_ifunction(packet.path);
 	if(!func) {
-		fprintf(stderr, "[River] Tried handling unknown function %s:%s!\n", packet.endpoint.c_str(), packet.path.c_str());
+		Log::warn("[River] Got call for unknown function ", packet.endpoint, ":", packet.path);
 		return;
 	}
 
@@ -172,14 +173,14 @@ void BusConnection::handle_function_call(const RiverPacket& packet) {
 
 void BusConnection::handle_message(const RiverPacket& packet) {
 	if(!_endpoints[packet.endpoint]) {
-		fprintf(stderr, "[River] Got message for unknown endpoint %s!\n", packet.endpoint.c_str());
+		Log::warn("[River] Got message for unknown endooint ", packet.endpoint);
 		return;
 	}
 
 	auto& endpoint = _endpoints[packet.endpoint];
 	auto message = endpoint->get_imessage(packet.path);
 	if(!message) {
-		fprintf(stderr, "[River] Tried handling unknown message %s:%s!\n", packet.endpoint.c_str(), packet.path.c_str());
+		Log::warn("[River] Got unknown message ", packet.endpoint, ":", packet.path);
 		return;
 	}
 
@@ -188,7 +189,7 @@ void BusConnection::handle_message(const RiverPacket& packet) {
 
 void BusConnection::handle_client_connected(const RiverPacket& packet) {
 	if(!_endpoints[packet.endpoint]) {
-		fprintf(stderr, "[River] Got client connected message for unknown endpoint %s!\n", packet.endpoint.c_str());
+		Log::warn("[River] Got client connected message for unknown endpoint ", packet.endpoint);
 		return;
 	}
 
@@ -199,7 +200,7 @@ void BusConnection::handle_client_connected(const RiverPacket& packet) {
 
 void BusConnection::handle_client_disconnected(const RiverPacket& packet) {
 	if(!_endpoints[packet.endpoint]) {
-		fprintf(stderr, "[River] Got client disconnected message for unknown endpoint %s!\n", packet.endpoint.c_str());
+		Log::warn("[River] Got client disconnected message for unknown endpoint ", packet.endpoint);
 		return;
 	}
 

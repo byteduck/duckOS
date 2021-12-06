@@ -21,7 +21,7 @@
 #include <cstdio>
 #include "Display.h"
 #include <libgraphics/Image.h>
-#include <libduck/KLog.h>
+#include <libduck/Log.h>
 #include <memory.h>
 #include <libpond/Window.h>
 
@@ -353,7 +353,7 @@ void Window::set_hint(int hint, int value) {
 			set_resizable(value);
 			break;
 		default:
-			KLog::logf("Unknown window hint %d!\n", hint);
+			Log::warn("Unknown window hint ", hint);
 	}
 }
 

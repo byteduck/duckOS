@@ -31,6 +31,7 @@ public:
 
 	//KernelLogDevice
 	static KernelLogDevice& inst();
+
 private:
 	static KernelLogDevice* _inst;
 };

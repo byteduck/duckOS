@@ -18,6 +18,8 @@
 */
 
 #include "packet.h"
+#include <libduck/Log.h>
+
 using namespace River;
 
 const char* River::error_str(int error) {
@@ -73,7 +75,7 @@ ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
 
 		//Check if the packet is at least the size of the RawPacket header
 		if(raw_socketfs_packet->length < sizeof(RawPacket)) {
-			fprintf(stderr, "[River] WARN: Foreign packet received from %x\n", raw_socketfs_packet->sender);
+			Log::err(stderr, "[River] WARN: Foreign packet received from %x\n", raw_socketfs_packet->sender);
 			free(raw_socketfs_packet);
 			return Result(PACKET_ERR);
 		}
@@ -82,7 +84,7 @@ ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
 
 		//Check if the RawPacket magic checks out
 		if(raw_packet->__river_magic != LIBRIVER_PACKET_MAGIC) {
-			fprintf(stderr, "[River] WARN: RawPacket with invalid magic received from %x\n", raw_socketfs_packet->sender);
+			Log::warn("[River] RawPacket with invalid magic received from ", std::hex, raw_socketfs_packet->sender);
 			free(raw_socketfs_packet);
 			return Result(PACKET_ERR);
 		}
@@ -93,8 +95,8 @@ ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
 				raw_packet->data_length > SOCKETFS_MAX_BUFFER_SIZE ||
 				raw_packet->path_length > SOCKETFS_MAX_BUFFER_SIZE ||
 				raw_packet->path_length < 1
-				) {
-			fprintf(stderr, "[River] WARN: Malformed packet received from %x\n", raw_socketfs_packet->sender);
+		) {
+			Log::warn("[River] Malformed packet received from ", std::hex, raw_socketfs_packet->sender);
 			free(raw_socketfs_packet);
 			return Result(PACKET_ERR);
 		}
@@ -157,7 +159,7 @@ void River::send_packet(int fd, sockid_t recipient, const RiverPacket& packet) {
 		memcpy(raw_packet->data + full_name.length() + 1, packet.data.data(), packet.data.size());
 
 	if(::write_packet(fd, recipient, sizeof(RawPacket) + n_bytes, raw_packet))
-		fprintf(stderr, "[River] Error writing packet: %s\n", strerror(errno));
+		Log::err("[River] Error writing packet: ", strerror(errno));
 
 	free(raw_packet);
 }

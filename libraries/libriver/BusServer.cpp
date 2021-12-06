@@ -25,6 +25,7 @@
 #include "packet.h"
 #include "Endpoint.h"
 #include "BusConnection.h"
+#include <libduck/Log.h>
 #include <sys/thread.h>
 
 using namespace River;
@@ -32,7 +33,7 @@ using namespace River;
 ResultRet<BusServer*> BusServer::create(const std::string& socket_name) {
 	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK | O_CLOEXEC);
 	if(fd < 0) {
-		fprintf(stderr, "[River] Failed to create socket %s for bus connection: %s\n", socket_name.c_str(), strerror(errno));
+		Log::err("[River] Failed to create socket ", socket_name, " for server: ", strerror(errno));
 		return Result(errno);
 	}
 	return new BusServer(fd, CUSTOM);
@@ -42,12 +43,12 @@ ResultRet<BusServer*> BusServer::create(BusServer::ServerType type) {
 	if(type == SESSION || type == SYSTEM) {
 		int fd = open("/sock/river", O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK | O_CLOEXEC);
 		if (fd < 0) {
-			fprintf(stderr, "[River] Failed to create socket for system bus connection: %s\n", strerror(errno));
+			Log::err("[River] Failed to create socket for system server: ", strerror(errno));
 			return Result(errno);
 		}
 		return new BusServer(fd, type);
 	} else {
-		fprintf(stderr, "Cannot open custom BusConnection without specifying a socket name!\n");
+		Log::err("Cannot open custom BusConnection without specifying a socket name!");
 		return Result(EINVAL);
 	}
 }
@@ -179,7 +180,7 @@ void BusServer::client_connected(const RiverPacket& packet) {
 void BusServer::client_disconnected(const RiverPacket& packet) {
 	auto client_it = _clients.find(packet.__socketfs_from_id);
 	if(client_it == _clients.end()) {
-		fprintf(stderr, "[River] Warning: Unknown client %x disconnected!\n", packet.__socketfs_from_id);
+		Log::warn("[River] Unknown client ", std::hex, packet.__socketfs_from_id, " disconnected!");
 		return;
 	}
 
@@ -228,7 +229,7 @@ void BusServer::register_endpoint(const RiverPacket& packet) {
 	}
 
 	_endpoints[packet.endpoint] = std::make_unique<ServerEndpoint>(ServerEndpoint{packet.endpoint, packet.__socketfs_from_id});
-	printf("[River] Registering endpoint %s\n", packet.endpoint.c_str());
+	Log::dbg("[River] Registering endpoint ", packet.endpoint);
 
 	auto& client = _clients[packet.__socketfs_from_id];
 	if(client) {
@@ -291,7 +292,6 @@ void BusServer::register_function(const RiverPacket& packet) {
 	}
 
 	endpoint->functions[packet.path] = std::make_unique<ServerFunction>(ServerFunction {packet.path});
-	printf("[River] Registering function %s:%s\n", endpoint->name.c_str(), packet.path.c_str());
 
 	send_packet(packet.__socketfs_from_id, {
 			packet.type,
@@ -364,7 +364,6 @@ void BusServer::register_message(const RiverPacket& packet) {
 	}
 
 	endpoint->messages[packet.path] = std::make_unique<ServerMessage>(ServerMessage {packet.path});
-	printf("[River] Registering message %s:%s\n", endpoint->name.c_str(), packet.path.c_str());
 
 	send_packet(packet.__socketfs_from_id, {
 			packet.type,

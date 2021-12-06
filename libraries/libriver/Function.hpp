@@ -62,7 +62,7 @@ namespace River {
 
 		RetT operator()(ParamTs... args) const {
 			if(!_endpoint) {
-				fprintf(stderr, "[River] WARN: Tried calling uninitialized function %s!\n", _path.c_str());
+				Log::err("[River] Tried calling uninitialized function ", _path);
 				return RetT();
 			}
 
@@ -83,8 +83,7 @@ namespace River {
 				if constexpr(!std::is_void<RetT>()) {
 					auto pkt = _endpoint->bus()->await_packet(FUNCTION_RETURN, _endpoint->name(), _path);
 					if(pkt.error) {
-						fprintf(stderr, "[River] Remote function call %s:%s failed: %s\n", _endpoint->name().c_str(), _path.c_str(),
-								error_str(pkt.error));
+						Log::err("[River] Remote function call ", _endpoint, ":", _path, " failed: ", error_str(pkt.error));
 						if constexpr(!std::is_void<RetT>())
 							return RetT();
 					}

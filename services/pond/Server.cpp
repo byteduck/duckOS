@@ -18,7 +18,7 @@
 */
 
 #include "Server.h"
-#include <libduck/KLog.h>
+#include <libduck/Log.h>
 #include <fcntl.h>
 #include <cstdlib>
 #include <sys/socketfs.h>
@@ -32,67 +32,63 @@ using namespace Pond;
 auto __funcres_##name = _endpoint->register_function<ret_t, arg_t>((#name), [&] (sockid_t id, arg_t pkt) -> ret_t { \
 	auto& client = clients[id]; \
 	if(!client) { \
-		KLog::logf("Function %s called by unregistered client %d!\n", #name, id); \
+		Log::warn("Function ", #name, " called by unregistered client ", id); \
 		return ret_t(); \
 	} \
 	return client->client_func(pkt); \
 }); \
 if(__funcres_##name.is_error()) { \
-	KLog::logf("Couldn't register function %s: %s\n", error_str(__funcres_##name.code())); \
+	Log::crit("Couldn't register function ", #name, ": ", error_str(__funcres_##name.code())); \
 	exit(__funcres_##name.code()); \
 }
 
 #define REGISTER_MSG(name, arg) \
 auto __msgres_##name = _endpoint->register_message<arg>(#name); \
 if(__msgres_##name.is_error()) { \
-	KLog::logf("Couldn't register message %s: %s\n", error_str(__msgres_##name.code())); \
+	Log::crit("Couldn't register message ", #name, ": ", error_str(__msgres_##name.code())); \
 	exit(__msgres_##name.code()); \
 }
 
 Server::Server() {
-	KLog::logf("Creating bus server...\n");
 	auto server_res = BusServer::create("pond");
 	if(server_res.is_error()) {
-		KLog::logf("Couldn't create BusServer: %s\n", River::error_str(server_res.code()));
+		Log::crit("Couldn't create BusServer: ", River::error_str(server_res.code()));
 		exit(server_res.code());
 	}
 	_server = server_res.value();
 	_server->spawn_thread();
 
-	KLog::logf("Connecting to bus...\n");
 	auto conn_res = BusConnection::connect("pond", true);
 	if(conn_res.is_error()) {
-		KLog::logf("Couldn't create BusConnection: %s\n", River::error_str(conn_res.code()));
+		Log::crit("Couldn't create BusConnection: ", River::error_str(conn_res.code()));
 		exit(conn_res.code());
 	}
 	_connection = conn_res.value();
 
-	KLog::logf("Creating endpoint...\n");
 	auto end_res = _connection->register_endpoint("pond_server");
 	if(end_res.is_error()) {
-		KLog::logf("Couldn't register endpoint: %s\n", River::error_str(end_res.code()));
+		Log::crit("Couldn't register endpoint: ", River::error_str(end_res.code()));
 		exit(end_res.code());
 	}
 	_endpoint = end_res.value();
 	_server->set_allow_new_endpoints(false);
 
 	_endpoint->on_client_connect = [this](sockid_t id, pid_t pid) {
-		KLog::logf("New client connected: %x\n", id);
+		Log::info("New client connected: ", std::hex, id);
 		this->clients[id] = new Client(this, id, pid);
 	};
 
 	_endpoint->on_client_disconnect = [this](sockid_t id, pid_t pid) {
 		auto client = clients[id];
 		if(client) {
-			KLog::logf("Client %x disconnected\n", id);
+			Log::info("Client ", std::hex, id, " disconnected");
 			delete client;
 			clients.erase(id);
 		} else
-			KLog::logf("Unknown client %x disconnected\n", id);
+			Log::warn("Unknown client ", std::hex, id, " disconnected");
 	};
 
 	/** Functions (client --> server) **/
-	KLog::logf("Registering functions...\n");
 	REGISTER_FUNC(open_window, WindowOpenedPkt, OpenWindowPkt, open_window);
 	REGISTER_FUNC(destroy_window, void, WindowDestroyPkt, destroy_window);
 	REGISTER_FUNC(move_window, void, WindowMovePkt, move_window);
@@ -106,7 +102,6 @@ Server::Server() {
 	REGISTER_FUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt, get_display_info);
 
 	/** Messages (server --> client) **/
-	KLog::logf("Registering messages...\n");
 	REGISTER_MSG(window_moved, WindowMovePkt);
 	REGISTER_MSG(window_resized, WindowResizedPkt);
 	REGISTER_MSG(window_destroyed, WindowDestroyPkt);

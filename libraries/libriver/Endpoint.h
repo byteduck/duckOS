@@ -24,6 +24,7 @@
 #include <functional>
 #include <optional>
 #include "BusConnection.h"
+#include <libduck/Log.h>
 
 namespace River {
 	class IFunction;
@@ -60,7 +61,7 @@ namespace River {
 
 			auto packet = _bus->await_packet(REGISTER_FUNCTION, _name, stringname);
 			if(packet.error) {
-				fprintf(stderr, "[River] Couldn't register function %s:%s: %s\n", _name.c_str(), path.c_str(), error_str(packet.error));
+				Log::err("[River] Couldn't register function ", _name, ":", path, ": ", error_str(packet.error));
 				return Result(packet.error);
 			}
 
@@ -84,7 +85,7 @@ namespace River {
 
 			auto packet = _bus->await_packet(River::GET_FUNCTION, _name, stringname);
 			if(packet.error) {
-				fprintf(stderr, "[River] Error getting function %s:%s: %s\n", _name.c_str(), path.c_str(), error_str(packet.error));
+				Log::err("[River] Couldn't get function ", _name, ":", path, ": ", error_str(packet.error));
 				return Result(packet.error);
 			}
 
@@ -108,7 +109,7 @@ namespace River {
 
 			auto packet = _bus->await_packet(River::REGISTER_MESSAGE, _name, stringname);
 			if(packet.error) {
-				fprintf(stderr, "[River] Error registering message %s:%s: %s\n", _name.c_str(), path.c_str(), error_str(packet.error));
+				Log::err("[River] Couldn't register message ", _name, ":", path, ": ", error_str(packet.error));
 				return Result(packet.error);
 			}
 
@@ -122,7 +123,7 @@ namespace River {
 			auto stringname = Message<T>::stringname_of(path);
 			auto msg = _messages[stringname];
 			if(!msg) {
-				fprintf(stderr, "[River] Tried sending nonexistent message %s:%s!\n", _name.c_str(), path.c_str());
+				Log::err("[River] Couldn't send unregistered message ", _name, ":", path);
 				return MESSAGE_DOES_NOT_EXIST;
 			}
 			std::dynamic_pointer_cast<Message<T>>(msg)->send(recipient, data);
@@ -144,7 +145,7 @@ namespace River {
 
 			auto packet = _bus->await_packet(River::GET_MESSAGE, _name, stringname);
 			if(packet.error) {
-				fprintf(stderr, "[River] Error getting message %s:%s: %s\n", _name.c_str(), path.c_str(), error_str(packet.error));
+				Log::err("[River] Couldn't get message ", _name, ":", path, ": ", error_str(packet.error));
 				return Result(packet.error);
 			}
 

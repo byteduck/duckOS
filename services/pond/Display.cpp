@@ -21,7 +21,7 @@
 #include "FontManager.h"
 #include <libgraphics/Image.h>
 #include <libgraphics/png.h>
-#include <libduck/KLog.h>
+#include <libduck/Log.h>
 #include <unistd.h>
 #include <cstdio>
 #include <sys/ioctl.h>
@@ -69,7 +69,7 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 		_can_flip_buffer = false;
 
 	_framebuffer = {buffer, _dimensions.width, _dimensions.height};
-	KLog::logf("Display opened and mapped (%d x %d).\n", _dimensions.width, _dimensions.height);
+	Log::info("Display opened and mapped (", _dimensions.width, " x ", _dimensions.height, ")");
 
 	if((_keyboard_fd = open("/dev/input/keyboard", O_RDONLY | O_CLOEXEC)) < 0)
 		perror("Failed to open keyboard");
@@ -103,7 +103,7 @@ void Display::set_root_window(Window* window) {
 
 	_wallpaper = load_png_from_file(wallpaper);
 	if(!_wallpaper) {
-		KLog::logf("Failed to load wallpaper.\n");
+		Log::warn("Failed to load wallpaper.");
 		return;
 	}
 	fclose(wallpaper);

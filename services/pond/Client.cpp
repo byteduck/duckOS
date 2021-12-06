@@ -21,7 +21,7 @@
 #include "Display.h"
 #include "Server.h"
 #include "FontManager.h"
-#include <libduck/KLog.h>
+#include <libduck/Log.h>
 #include <libpond/packet.h>
 
 using namespace Pond;
@@ -29,7 +29,7 @@ using namespace Pond;
 #define SEND_MESSAGE(name, data) { \
 auto __msgsend_res = server->endpoint()->send_message(name, id, data); \
 if(__msgsend_res.is_error()) { \
-	KLog::logf("Failed to send message %s to client %d: %s", name, id, River::error_str(__msgsend_res.code())); \
+	Log::err("Failed to send message ", name, " to client ", id, ": ", River::error_str(__msgsend_res.code())); \
 }} \
 
 Client::Client(Server* server, sockid_t id, pid_t pid): server(server), id(id), pid(pid) {

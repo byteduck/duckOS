@@ -18,6 +18,7 @@
 */
 
 #include "KernelLogDevice.h"
+#include <kernel/tasking/TaskManager.h>
 
 KernelLogDevice* KernelLogDevice::_inst = nullptr;
 
@@ -33,8 +34,29 @@ KernelLogDevice& KernelLogDevice::inst() {
 }
 
 ssize_t KernelLogDevice::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+	static const char* log_colors[] = {"", "\033[97;41m", "\033[91m", "\033[93m", "\033[92m", "\033[94m", "\033[90m"};
+	static const char* log_names[] = {"?", "CRITICAL", "ERROR", "WARN", "SUCCESS", "INFO", "DEBUG"};
+
 	auto ret = count;
-	while(count--)
-		putch(*(buffer++));
+
+	if(count < 1)
+		return 0; //We expect at least one character - the log level.
+	
+	count--;
+	int log_level = *(buffer++);
+	if(log_level > 6)
+		log_level = 6;
+
+	auto* cur_proc = TaskManager::current_process();
+	printf("%s%s(%d) [%s] ", log_colors[log_level], cur_proc->name().c_str(), cur_proc->pid(), log_names[log_level]);
+
+	while(count--) {
+		//If the last character is a newline, ignore it. We're going to print that ourselves.
+		if(count || *buffer != '\n')
+			putch(*(buffer++));
+	}
+
+	printf("\033[39;49m\n");
+
 	return ret;
 }

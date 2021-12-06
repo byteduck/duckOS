@@ -30,6 +30,8 @@
 
 // The init system for duckOS.
 
+#include <libduck/Log.h>
+
 int main(int argc, char** argv, char** envp) {
 	if(getpid() != 1) {
 		printf("pid != 1. Exiting.\n");
@@ -37,12 +39,12 @@ int main(int argc, char** argv, char** envp) {
 	}
 
 	setsid();
-	printf("[init] Welcome to duckOS!\n");
+	Log::success("Welcome to duckOS!");
 
 	//Read config file
 	auto cfg_res = Duck::Config::read_from("/etc/init.conf");
 	if(cfg_res.is_error()) {
-		fprintf(stderr, "[init] Failed to read /etc/init.conf: %s\n", strerror(errno));
+		Log::crit("Failed to read /etc/init.conf: ", strerror(errno));
 		exit(errno);
 	}
 	auto& cfg = cfg_res.value();
@@ -70,8 +72,7 @@ int main(int argc, char** argv, char** envp) {
 		//Execute the command
 		execve(c_args[0], (char* const*) c_args, env);
 
-		printf("[init] Failed to execute %s: %s\n", exec.c_str(), strerror(errno));
-		exit(errno);
+		Log::err("Failed to execute ", exec, ": ", strerror(errno));
 	}
 
 	//Wait for all child processes
@@ -80,7 +81,7 @@ int main(int argc, char** argv, char** envp) {
 		if(pid < 0 && errno == ECHILD) break; //All child processes exited
 	}
 
-	printf("[init] All child processes exited.\n");
+	Log::info("All child processes exited. Goodbye!");
 
 	return 0;
 }
