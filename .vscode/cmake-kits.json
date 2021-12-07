@@ -1,0 +1,6 @@
+[
+	{
+		"name": "i686-pc-duckOS",
+		"toolchainFile": "toolchain/CMakeToolchain.txt"
+	}
+]
