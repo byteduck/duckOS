@@ -26,8 +26,7 @@
 #include <fstream>
 #include <libsys/Memory.h>
 #include <libsys/CPU.h>
-#include "ProcessListScrollable.h"
-#include <libui/widget/ScrollView.h>
+#include "ProcessListWidget.h"
 
 #define UPDATE_FREQ 1000
 
@@ -37,7 +36,7 @@ UI::ProgressBar::Ptr mem_bar;
 UI::ProgressBar::Ptr cpu_bar;
 UI::Label::Ptr mem_label;
 UI::Label::Ptr cpu_label;
-ProcessListScrollable::Ptr proc_list;
+ProcessListWidget::Ptr proc_list;
 
 std::ifstream mem_stream;
 std::ifstream cpu_stream;
@@ -115,10 +114,8 @@ int main(int argc, char** argv, char** envp) {
 	cpu_layout->add_child(cpu_bar);
 	cpu_layout->add_child(cpu_label);
 
-	proc_list = ProcessListScrollable::make();
-	auto scrollview = UI::ScrollView::make();
-	scrollview->set_scrollable(proc_list);
-	layout->add_child(scrollview);
+	proc_list = ProcessListWidget::make();
+	layout->add_child(proc_list);
 
 	//Show window
 	update();

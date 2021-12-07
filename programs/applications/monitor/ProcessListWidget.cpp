@@ -17,12 +17,12 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "ProcessListScrollable.h"
+#include "ProcessListWidget.h"
 #include <libui/widget/layout/BoxLayout.h>
 #include <libui/widget/Image.h>
 #include <libui/widget/Label.h>
 
-void ProcessListScrollable::update() {
+void ProcessListWidget::update() {
 	auto old_procs = _processes;
 	_processes.resize(0);
 	auto procs = Sys::Process::get_all();
@@ -36,7 +36,7 @@ void ProcessListScrollable::update() {
 	update_data();
 }
 
-UI::Widget::Ptr ProcessListScrollable::create_entry(int index) {
+UI::Widget::Ptr ProcessListWidget::create_entry(int index) {
 	auto& proc = _processes[index];
 	auto app_info = proc.app_info();
 	auto layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL);
@@ -54,13 +54,13 @@ UI::Widget::Ptr ProcessListScrollable::create_entry(int index) {
 	return layout;
 }
 
-Dimensions ProcessListScrollable::preferred_item_dimensions() {
+Dimensions ProcessListWidget::preferred_item_dimensions() {
 	return { 150, 20 };
 }
 
-int ProcessListScrollable::num_items() {
+int ProcessListWidget::num_items() {
 	return _processes.size();
 }
 
-ProcessListScrollable::ProcessListScrollable() {
+ProcessListWidget::ProcessListWidget() {
 }

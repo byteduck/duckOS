@@ -17,29 +17,26 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "ListScrollable.h"
+#include "ListView.h"
 
 using namespace UI;
 
-void ListScrollable::calculate_layout() {
-}
-
-void ListScrollable::on_layout_change(const Rect& old_rect) {
+void ListView::calculate_layout() {
 	do_update(true);
 }
 
-void ListScrollable::on_scroll(Point scroll) {
+void ListView::on_scroll(Point scroll) {
 	do_update(false);
 }
 
-Dimensions ListScrollable::scrollable_area() {
+Dimensions ListView::scrollable_area() {
 	//If the item dimensions haven't been calculated, calculate them
 	if(_item_dims.width == -1)
 		_item_dims = preferred_item_dimensions();
 	return {_item_dims.width, _item_dims.height * num_items()};
 }
 
-void ListScrollable::update_item(int index) {
+void ListView::update_item(int index) {
 	//If we haven't rendered the list for the first time yet, just return
 	if(_item_dims.width == -1)
 		return;
@@ -57,11 +54,11 @@ void ListScrollable::update_item(int index) {
 	_items[index] = setup_entry(index);
 }
 
-void ListScrollable::update_data() {
+void ListView::update_data() {
 	do_update(false);
 }
 
-void ListScrollable::do_update(bool dimensions_changed) {
+void ListView::do_update(bool dimensions_changed) {
 	_item_dims = {current_size().width, preferred_item_dimensions().height};
 
 	int first = scroll_position().y / _item_dims.height;
@@ -101,7 +98,7 @@ void ListScrollable::do_update(bool dimensions_changed) {
 	}
 }
 
-Widget::Ptr ListScrollable::setup_entry(int index) {
+Widget::Ptr ListView::setup_entry(int index) {
 	auto widget = create_entry(index);
 	add_child(widget);
 	widget->set_layout_bounds({
@@ -111,6 +108,6 @@ Widget::Ptr ListScrollable::setup_entry(int index) {
 	return widget;
 }
 
-ListScrollable::ListScrollable() {
+ListView::ListView() {
 	set_uses_alpha(true);
 }

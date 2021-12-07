@@ -17,23 +17,30 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "Scrollable.h"
+#ifndef DUCKOS_LIBUI_CONTAINERVIEW_H
+#define DUCKOS_LIBUI_CONTAINERVIEW_H
+
 #include "ScrollView.h"
 
-std::shared_ptr<UI::ScrollView> UI::Scrollable::scroll_view() {
-	return _scroll_view;
+namespace UI {
+	class ContainerView : public ScrollView {
+	public:
+		WIDGET_DEF(ContainerView)
+
+		//ScrollView
+		void on_scroll(Point new_position) override;
+		Dimensions scrollable_area() override;
+		void set_contents(Widget::ArgPtr contents);
+
+		//Widget
+		void calculate_layout() override;
+		Dimensions preferred_size() override;
+
+	private:
+		explicit ContainerView();
+
+		Widget::Ptr _contents = nullptr;
+	};
 }
 
-void UI::Scrollable::set_scrollview(const UI::ScrollView::Ptr& view) {
-	_scroll_view = view;
-}
-
-Point UI::Scrollable::scroll_position() {
-	if(!scroll_view())
-		return {0, 0};
-	return scroll_view()->scroll_position();
-}
-
-bool UI::Scrollable::needs_layout_on_child_change() {
-	return false;
-}
+#endif //DUCKOS_LIBUI_CONTAINERVIEW_H

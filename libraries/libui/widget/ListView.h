@@ -17,33 +17,32 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_LISTSCROLLABLE_H
-#define DUCKOS_LIBUI_LISTSCROLLABLE_H
+#ifndef DUCKOS_LIBUI_LISTVIEW_H
+#define DUCKOS_LIBUI_LISTVIEW_H
 
-#include "Scrollable.h"
+#include "ScrollView.h"
 
 namespace UI {
-	class ListScrollable: public Scrollable {
+	class ListView: public ScrollView {
 	public:
-		VIRTUAL_WIDGET_DEF(ListScrollable)
+		VIRTUAL_WIDGET_DEF(ListView)
 
 	protected:
 		//Widget
 		void calculate_layout() override;
-		void on_layout_change(const Rect& old_rect) override;
 
-		//Scrollable
+		//ScrollView
 		void on_scroll(Point scroll_position) override;
 		Dimensions scrollable_area() override;
 
-		//ListScrollable
+		//ListView
 		virtual Widget::Ptr create_entry(int index) = 0;
 		virtual Dimensions preferred_item_dimensions() = 0;
 		virtual int num_items() = 0;
 		void update_item(int index);
 		void update_data();
 
-		ListScrollable();
+		ListView();
 
 	private:
 		void do_update(bool dimensions_changed);
@@ -56,4 +55,4 @@ namespace UI {
 	};
 }
 
-#endif //DUCKOS_LIBUI_LISTSCROLLABLE_H
+#endif //DUCKOS_LIBUI_LISTVIEW_H

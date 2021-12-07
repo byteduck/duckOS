@@ -17,24 +17,24 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "ScrollContainer.h"
+#include "ContainerView.h"
 
 using namespace UI;
 
-ScrollContainer::ScrollContainer() {
+ContainerView::ContainerView() {
 	set_uses_alpha(true);
 }
 
-void ScrollContainer::on_scroll(Point new_position) {
+void ContainerView::on_scroll(Point new_position) {
 	if(_contents)
 		_contents->set_position_nolayout(new_position * -1);
 }
 
-Dimensions ScrollContainer::scrollable_area() {
+Dimensions ContainerView::scrollable_area() {
 	return _contents->preferred_size();
 }
 
-void ScrollContainer::set_contents(const std::shared_ptr<Widget>& contents) {
+void ContainerView::set_contents(const std::shared_ptr<Widget>& contents) {
 	if(_contents)
 		return;
 	_contents = contents;
@@ -42,15 +42,21 @@ void ScrollContainer::set_contents(const std::shared_ptr<Widget>& contents) {
 	update_layout();
 }
 
-void ScrollContainer::calculate_layout() {
+void ContainerView::calculate_layout() {
 	if(_contents) {
+		auto usable_area = content_area();
 		auto size = _contents->preferred_size();
 		if(_contents->sizing_mode() == FILL)
-			size.width = current_size().width;
-		_contents->set_layout_bounds({0, -scroll_view()->scroll_position().y, size.width, size.height});
+			size.width = usable_area.width;
+		_contents->set_layout_bounds({
+			-scroll_position().x + usable_area.x,
+			-scroll_position().y + usable_area.y,
+			size.width,
+			size.height
+		});
 	}
 }
 
-Dimensions ScrollContainer::preferred_size() {
+Dimensions ContainerView::preferred_size() {
 	return _contents->preferred_size();
 }

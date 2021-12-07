@@ -21,7 +21,6 @@
 #define DUCKOS_LIBUI_SCROLLVIEW_H
 
 #include "Widget.h"
-#include "Scrollable.h"
 
 #define LIBUI_SCROLLVIEW_MAX_PREFERRED_WIDTH 300
 #define LIBUI_SCROLLVIEW_MAX_PREFERRED_HEIGHT 200
@@ -29,28 +28,28 @@
 namespace UI {
 	class ScrollView: public Widget {
 	public:
-		WIDGET_DEF(ScrollView)
+		VIRTUAL_WIDGET_DEF(ScrollView)
 
 		//ScrollView
-		void set_scrollable(Scrollable::ArgPtr contents);
-		void set_contents(Widget::ArgPtr contents);
+		virtual void on_scroll(Point new_position) = 0;
+		virtual Dimensions scrollable_area() = 0;
 		void scroll(int pixels);
 		Point scroll_position();
+		Rect content_area();
 
 		//Widget
-		void calculate_layout() override;
-		void on_child_added(const std::shared_ptr<Widget>& child) override;
 		Dimensions preferred_size() override;
 		void do_repaint(const UI::DrawContext& ctx) override;
 		bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 		bool on_mouse_scroll(Pond::MouseScrollEvent evt) override;
 		bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 		void on_layout_change(const Rect& old_rect) override;
+		virtual bool needs_layout_on_child_change() override;
+
+	protected:
+		ScrollView();
 
 	private:
-		explicit ScrollView();
-
-		Scrollable::Ptr _scrollable = nullptr;
 		Point _scroll_position = {0, 0};
 		Rect scrollbar_area;
 		Rect handle_area;

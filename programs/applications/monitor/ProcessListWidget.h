@@ -17,15 +17,15 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PROCESSLISTSCROLLABLE_H
-#define DUCKOS_PROCESSLISTSCROLLABLE_H
+#ifndef DUCKOS_PROCESSLISTWIDGET_H
+#define DUCKOS_PROCESSLISTWIDGET_H
 
-#include <libui/widget/ListScrollable.h>
+#include <libui/widget/ListView.h>
 #include <libsys/Process.h>
 
-class ProcessListScrollable: public UI::ListScrollable {
+class ProcessListWidget: public UI::ListView {
 public:
-	WIDGET_DEF(ProcessListScrollable);
+	WIDGET_DEF(ProcessListWidget);
 	void update();
 
 protected:
@@ -34,8 +34,8 @@ protected:
 	int num_items() override;
 
 private:
-	ProcessListScrollable();
+	ProcessListWidget();
 	std::vector<Sys::Process> _processes;
 };
 
-#endif //DUCKOS_PROCESSLISTSCROLLABLE_H
+#endif //DUCKOS_PROCESSLISTWIDGET_H
