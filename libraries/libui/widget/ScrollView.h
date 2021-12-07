@@ -33,7 +33,8 @@ namespace UI {
 		//ScrollView
 		virtual void on_scroll(Point new_position) = 0;
 		virtual Dimensions scrollable_area() = 0;
-		void scroll(int pixels);
+		void scroll(Point scroll_amount);
+		void scroll_to(Point position);
 		Point scroll_position();
 		Rect content_area();
 

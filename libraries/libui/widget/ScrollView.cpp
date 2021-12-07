@@ -27,9 +27,13 @@ ScrollView::ScrollView() {
 	set_sizing_mode(FILL);
 }
 
-void ScrollView::scroll(int pixels) {
+void ScrollView::scroll(Point scroll_amount) {
+	scroll_to(_scroll_position + scroll_amount);
+}
+
+void ScrollView::scroll_to(Point position) {
 	Dimensions size = current_size();
-	_scroll_position.y += pixels;
+	_scroll_position = position;
 	double scroll_percent = (double)_scroll_position.y / (double)(scrollable_area().height - size.height);
 	if(scroll_percent < 0) {
 		_scroll_position.y = 0;
@@ -88,7 +92,7 @@ bool ScrollView::on_mouse_move(Pond::MouseMoveEvent evt) {
 }
 
 bool ScrollView::on_mouse_scroll(Pond::MouseScrollEvent evt) {
-	scroll(evt.scroll * 20);
+	scroll({0, evt.scroll * 20});
 	return true;
 }
 

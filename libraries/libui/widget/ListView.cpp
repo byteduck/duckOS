@@ -55,6 +55,11 @@ void ListView::update_item(int index) {
 }
 
 void ListView::update_data() {
+	for(auto& item_pair : _items) {
+		if(item_pair.second)
+			remove_child(item_pair.second);
+	}
+	_items.clear();
 	do_update(false);
 }
 
