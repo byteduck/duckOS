@@ -37,6 +37,7 @@ The code for these can be found in [programs](/programs)
 - System Monitor (/apps/monitor.app): A basic system monitor showing memory and CPU utilization.
 - 4 In a Row (/apps/4inarow.app): A basic four-in-a-row game. Play with two players or against the computer.
 - Sandbar (/bin/sandbar): A basic "taskbar" that displays a row of buttons at the bottom of the screen to launch applications.
+- Files (/apps/files.app): A rudimentary file explorer application.
  
 ### CLI Programs
 
