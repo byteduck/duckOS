@@ -39,6 +39,7 @@ using namespace UI;
 CalculatorWidget::CalculatorWidget(): BoxLayout(VERTICAL) {
 	display = Label::make("0");
 	display->set_alignment(UI::CENTER, UI::END);
+	display->set_font(UI::pond_context->get_font("gohu-14"));
 	display->set_padding({8, 8});
 	add_child(display);
 
@@ -108,6 +109,7 @@ void CalculatorWidget::do_op(const std::string& op) {
 		num = 0;
 		prev_num = 0;
 		cur_op = "";
+		hit_dec = false;
 		disp_num(num);
 		return;
 	} else if(op == "ce") {
