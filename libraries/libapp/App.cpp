@@ -92,6 +92,19 @@ std::filesystem::path Info::resource_path(const std::filesystem::path& path) con
 	return _base_path / path;
 }
 
+std::shared_ptr<const Gfx::Image> Info::resource_image(const std::filesystem::path& path) {
+	auto it = _images.find(path);
+	if(it == _images.end()) {
+		auto* img = Gfx::load_png(resource_path(path));
+		if(img)
+			_images[path.string()] = std::shared_ptr<Gfx::Image>(img);
+		else
+			return std::shared_ptr<Gfx::Image>(nullptr);
+	}
+	
+	return _images[path.string()];
+}
+
 std::vector<Info> App::get_all_apps() {
 	std::vector<Info> ret;
 	for(const auto& ent : std::filesystem::directory_iterator(LIBAPP_BASEPATH)) {

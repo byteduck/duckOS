@@ -26,6 +26,7 @@
 #include <libduck/Result.hpp>
 #include <memory>
 #include <filesystem>
+#include <map>
 
 #define LIBAPP_BASEPATH "/apps"
 #define LIBAPP_MISSING_ICON "/usr/share/icons/16x16/missing_icon.png"
@@ -45,7 +46,9 @@ namespace App {
 		const std::string exec() const;
 		bool exists() const;
 		std::filesystem::path base_path() const;
+
 		std::filesystem::path resource_path(const std::filesystem::path& path) const;
+		std::shared_ptr<const Gfx::Image> resource_image(const std::filesystem::path& path);
 
 	private:
 		bool _exists = false;
@@ -53,6 +56,7 @@ namespace App {
 		std::string _name;
 		std::string _exec;
 		std::shared_ptr<Gfx::Image> _icon = nullptr;
+		std::map<std::string, std::shared_ptr<Gfx::Image>> _images;
 	};
 
 
