@@ -58,7 +58,7 @@ void UI::DrawContext::fill_gradient_h(Rect rect, Color color_a, Color color_b) c
 
 void UI::DrawContext::draw_text(const char* str, Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color) const {
 	Point text_pos = rect.position();
-	auto dims =  Dimensions { Theme::font()->size_of(str).width, Theme::font()->bounding_box().height };
+	auto dims =  Dimensions { font->size_of(str).width, font->bounding_box().height };
 	switch(h_align) {
 		case BEGINNING:
 			break;
