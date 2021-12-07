@@ -33,7 +33,7 @@ Dimensions ListView::scrollable_area() {
 	//If the item dimensions haven't been calculated, calculate them
 	if(_item_dims.width == -1)
 		_item_dims = preferred_item_dimensions();
-	return {_item_dims.width, _item_dims.height * num_items()};
+	return {_item_dims.width, _item_dims.height * ((num_items() + _num_per_row - 1) / _num_per_row)};
 }
 
 void ListView::update_item(int index) {
@@ -59,10 +59,21 @@ void ListView::update_data() {
 }
 
 void ListView::do_update(bool dimensions_changed) {
-	_item_dims = {current_size().width, preferred_item_dimensions().height};
+	auto preferred_dims = preferred_item_dimensions();
+	_item_dims = {
+		_layout == VERTICAL ? current_size().width : preferred_dims.width,
+		preferred_dims.height
+	};
 
 	int first = scroll_position().y / _item_dims.height;
 	int last = (scroll_position().y + current_size().height) / _item_dims.height;
+
+	if(_layout == GRID) {
+		_num_per_row = current_size().width / _item_dims.width;
+		first *= _num_per_row;
+		last = last * _num_per_row + _num_per_row - 1;
+	}
+
 	int num = num_items();
 	if(first < 0)
 		first = 0;
@@ -88,26 +99,30 @@ void ListView::do_update(bool dimensions_changed) {
 
 	//Create new items and move items around
 	for(int i = first; i <= last; i++) {
-		auto pos = Point {0, i * _item_dims.height} - scroll_position();
+		auto rect = item_rect(i);
 		if(!_items[i])
 			_items[i] = setup_entry(i);
 		else if(dimensions_changed)
-			_items[i]->set_layout_bounds({pos, _item_dims});
+			_items[i]->set_layout_bounds(rect);
 		else
-			_items[i]->set_position_nolayout(pos);
+			_items[i]->set_position_nolayout(rect.position());
 	}
 }
 
 Widget::Ptr ListView::setup_entry(int index) {
 	auto widget = create_entry(index);
 	add_child(widget);
-	widget->set_layout_bounds({
-		Point {0, index * _item_dims.height} - scroll_position(),
-		_item_dims
-	});
+	widget->set_layout_bounds(item_rect(index));
 	return widget;
 }
 
-ListView::ListView() {
+Rect ListView::item_rect(int index) {
+	return {
+		Point {(index % _num_per_row) * _item_dims.width, (index / _num_per_row) * _item_dims.height} - scroll_position(),
+		_item_dims
+	};
+}
+
+ListView::ListView(ListView::Layout layout): _layout(layout) {
 	set_uses_alpha(true);
 }

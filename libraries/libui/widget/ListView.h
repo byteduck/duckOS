@@ -27,6 +27,11 @@ namespace UI {
 	public:
 		VIRTUAL_WIDGET_DEF(ListView)
 
+		enum Layout {
+			VERTICAL,
+			GRID
+		};
+
 	protected:
 		//Widget
 		void calculate_layout() override;
@@ -42,16 +47,19 @@ namespace UI {
 		void update_item(int index);
 		void update_data();
 
-		ListView();
+		ListView(Layout layout = VERTICAL);
 
 	private:
 		void do_update(bool dimensions_changed);
 		Widget::Ptr setup_entry(int index);
+		Rect item_rect(int index);
 
 		std::map<int, Widget::Ptr> _items;
 		int _prev_first_visible = 0;
 		int _prev_last_visible = 0;
 		Dimensions _item_dims = {-1, -1};
+		int _num_per_row = 1;
+		Layout _layout;
 	};
 }
 
