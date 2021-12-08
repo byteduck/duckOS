@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_MULTIBOOTVGADEVICE_H
-#define DUCKOS_MULTIBOOTVGADEVICE_H
+#pragma once
 
 #include "VGADevice.h"
 #include <kernel/tasking/SpinLock.h>
@@ -55,4 +54,3 @@ private:
 };
 
 
-#endif //DUCKOS_MULTIBOOTVGADEVICE_H

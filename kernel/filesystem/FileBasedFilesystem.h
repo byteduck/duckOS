@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_FILEBASEDFILESYSTEM_H
-#define DUCKOS_FILEBASEDFILESYSTEM_H
+#pragma once
 
 #include "Filesystem.h"
 #include <kernel/time/Time.h>
@@ -67,4 +66,3 @@ private:
 };
 
 
-#endif //DUCKOS_FILEBASEDFILESYSTEM_H

@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_RESULT_HPP
-#define DUCKOS_RESULT_HPP
+#pragma once
 
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/kstd/kstdio.h>
@@ -53,4 +52,3 @@ private:
 	Result _result;
 };
 
-#endif //DUCKOS_RESULT_HPP

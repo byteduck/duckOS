@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBRIVER_RIVER_H
-#define DUCKOS_LIBRIVER_RIVER_H
+#pragma once
 
 #include "BusConnection.h"
 #include "BusServer.h"
@@ -27,4 +26,3 @@
 #include "Message.hpp"
 #include "packet.h"
 
-#endif //DUCKOS_LIBRIVER_RIVER_H

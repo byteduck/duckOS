@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_SLEEPBLOCKER_H
-#define DUCKOS_SLEEPBLOCKER_H
+#pragma once
 
 #include "Blocker.h"
 #include <kernel/kstd/kstddef.h>
@@ -41,4 +40,3 @@ private:
 };
 
 
-#endif //DUCKOS_SLEEPBLOCKER_H

@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_H
-#define DUCKOS_H
+#pragma once
 
 #include <vector>
 #include <unordered_map>
@@ -249,4 +248,3 @@ public:
 
 std::string find_library(char* library_name);
 
-#endif //DUCKOS_H

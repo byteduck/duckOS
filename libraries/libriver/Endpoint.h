@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBRIVER_ENDPOINT_H
-#define DUCKOS_LIBRIVER_ENDPOINT_H
+#pragma once
 
 #include <string>
 #include <functional>
@@ -172,4 +171,3 @@ namespace River {
 	};
 }
 
-#endif //DUCKOS_LIBRIVER_ENDPOINT_H

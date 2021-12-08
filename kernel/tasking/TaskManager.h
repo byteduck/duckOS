@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef TASKING_H
-#define TASKING_H
+#pragma once
 
 #include <kernel/kstd/vector.hpp>
 #include <kernel/kstd/shared_ptr.hpp>
@@ -79,4 +78,3 @@ namespace TaskManager {
 	};
 };
 
-#endif

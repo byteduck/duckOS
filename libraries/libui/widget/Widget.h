@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_WIDGET_H
-#define DUCKOS_WIDGET_H
+#pragma once
 
 #include <libpond/Window.h>
 #include <vector>
@@ -334,4 +333,3 @@ namespace UI {
 	};
 }
 
-#endif //DUCKOS_WIDGET_H

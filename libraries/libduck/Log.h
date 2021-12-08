@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBDUCK_LOG_H
-#define DUCKOS_LIBDUCK_LOG_H
+#pragma once
 
 #include <fstream>
 #include <iostream>
@@ -70,5 +69,3 @@ public:
 private:
 	static std::ofstream kstream;
 };
-
-#endif //DUCKOS_LIBDUCK_LOG_H

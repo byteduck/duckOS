@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LOCK_H
-#define DUCKOS_LOCK_H
+#pragma once
 
 class Lock {
 public:
@@ -38,4 +37,3 @@ private:
 #define LOCK(lock) ScopedLocker __locker((lock))
 #define LOCK_N(lock, name) ScopedLocker name((lock))
 
-#endif //DUCKOS_LOCK_H

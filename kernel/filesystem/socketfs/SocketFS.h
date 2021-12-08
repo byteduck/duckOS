@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_SOCKETFS_H
-#define DUCKOS_SOCKETFS_H
+#pragma once
 
 #include <kernel/filesystem/Filesystem.h>
 #include "socketfs_defines.h"
@@ -69,4 +68,3 @@ protected:
 };
 
 
-#endif //DUCKOS_SOCKETFS_H

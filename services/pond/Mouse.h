@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_MOUSE_H
-#define DUCKOS_MOUSE_H
+#pragma once
 
 #include <cstdint>
 #include <fcntl.h>
@@ -53,4 +52,3 @@ private:
 };
 
 
-#endif //DUCKOS_MOUSE_H

@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_CMOS_H
-#define DUCKOS_CMOS_H
+#pragma once
 
 #include <kernel/kstd/kstddef.h>
 
@@ -32,4 +31,3 @@ public:
 };
 
 
-#endif //DUCKOS_CMOS_H

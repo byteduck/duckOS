@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_THEME_H
-#define DUCKOS_LIBUI_THEME_H
+#pragma once
 
 #include <map>
 #include <string>
@@ -96,4 +95,3 @@ namespace UI {
 }
 
 
-#endif //DUCKOS_LIBUI_THEME_H

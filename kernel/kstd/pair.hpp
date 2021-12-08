@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PAIR_HPP
-#define DUCKOS_PAIR_HPP
+#pragma once
 
 namespace kstd {
 	template<typename A, typename B>
@@ -28,5 +27,3 @@ namespace kstd {
 		B second;
 	};
 }
-
-#endif //DUCKOS_PAIR_HPP

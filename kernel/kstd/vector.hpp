@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_VECTOR_HPP
-#define DUCKOS_VECTOR_HPP
+#pragma once
 
 #include "kstdlib.h"
 #include "kstddef.h"
@@ -191,4 +190,3 @@ namespace kstd {
 }
 
 
-#endif //DUCKOS_VECTOR_HPP

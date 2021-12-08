@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_TIMEMANAGER_H
-#define DUCKOS_TIMEMANAGER_H
+#pragma once
 
 #include <kernel/kstd/unix_types.h>
 #include "TimeKeeper.h"
@@ -49,4 +48,3 @@ private:
 };
 
 
-#endif //DUCKOS_TIMEMANAGER_H

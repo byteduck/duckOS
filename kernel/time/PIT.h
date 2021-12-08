@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef PIT_H
-#define PIT_H
+#pragma once
 
 #define PIT_COUNTER0 0x40
 #define PIT_COUNTER1 0x41
@@ -47,5 +46,3 @@ public:
 private:
 	static void write(uint16_t data, uint8_t counter);
 };
-
-#endif

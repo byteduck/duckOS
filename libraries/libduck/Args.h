@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBDUCK_ARGS_H
-#define DUCKOS_LIBDUCK_ARGS_H
+#pragma once
 
 #include <string>
 #include <optional>
@@ -143,4 +142,3 @@ namespace Duck {
 }
 
 
-#endif //DUCKOS_LIBDUCK_ARGS_H

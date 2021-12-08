@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PAGEDIRECTORY_H
-#define DUCKOS_PAGEDIRECTORY_H
+#pragma once
 
 #include <kernel/kstd/unix_types.h>
 #include "MemoryMap.h"
@@ -405,4 +404,3 @@ private:
 	kstd::vector<MemoryRegion*> _attached_shm_regions;
 };
 
-#endif //DUCKOS_PAGEDIRECTORY_H

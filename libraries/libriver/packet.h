@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBRIVER_PACKET_H
-#define DUCKOS_LIBRIVER_PACKET_H
+#pragma once
 
 #include <vector>
 #include <string>
@@ -111,4 +110,3 @@ namespace River {
 	void send_packet(int fd, sockid_t recipient, const RiverPacket& packet);
 }
 
-#endif //DUCKOS_LIBRIVER_PACKET_H

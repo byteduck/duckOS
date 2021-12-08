@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PCI_H
-#define DUCKOS_PCI_H
+#pragma once
 
 #include <kernel/kstd/kstddef.h>
 
@@ -162,4 +161,3 @@ namespace PCI {
 };
 
 
-#endif //DUCKOS_PCI_H

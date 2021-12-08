@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_DSH_SHELL_H
-#define DUCKOS_DSH_SHELL_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -46,4 +45,3 @@ private:
 	bool should_exit = false;
 };
 
-#endif //DUCKOS_DSH_SHELL_H

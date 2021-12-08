@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBSYS_MEMORY_H
-#define DUCKOS_LIBSYS_MEMORY_H
+#pragma once
 
 #include <sys/types.h>
 #include <iostream>
@@ -77,4 +76,3 @@ namespace Sys::Mem {
 	ResultRet<Info> get_info(std::istream& file);
 	ResultRet<Info> get_info();
 }
-#endif //DUCKOS_LIBSYS_MEMORY_H

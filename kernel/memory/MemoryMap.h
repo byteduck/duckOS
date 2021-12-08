@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_MEMORYMAP_H
-#define DUCKOS_MEMORYMAP_H
+#pragma once
 
 
 #include <kernel/kstd/types.h>
@@ -118,4 +117,3 @@ private:
 };
 
 
-#endif //DUCKOS_MEMORYMAP_H

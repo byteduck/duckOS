@@ -2,8 +2,7 @@
 // Created by aaron on 11/4/2021.
 //
 
-#ifndef DUCKOS_LIBUI_IMAGE_H
-#define DUCKOS_LIBUI_IMAGE_H
+#pragma once
 
 #include "Widget.h"
 
@@ -36,4 +35,3 @@ namespace UI {
 	};
 }
 
-#endif //DUCKOS_LIBUI_IMAGE_H

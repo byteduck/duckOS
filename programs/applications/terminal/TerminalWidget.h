@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_TERMINALWIDGET_H
-#define DUCKOS_TERMINALWIDGET_H
+#pragma once
 
 #include <libui/libui.h>
 #include <libterm/Terminal.h>
@@ -83,4 +82,3 @@ private:
 };
 
 
-#endif //DUCKOS_TERMINALWIDGET_H

@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBPOND_PACKET_H
-#define DUCKOS_LIBPOND_PACKET_H
+#pragma once
 
 #include <cstdint>
 #include <libgraphics/geometry.h>
@@ -139,4 +138,3 @@ namespace Pond {
 
 
 
-#endif //DUCKOS_PACKET_H

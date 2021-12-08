@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_UTILITY_H
-#define DUCKOS_UTILITY_H
+#pragma once
 
 #include <kernel/kstd/type_traits.h>
 
@@ -36,4 +35,3 @@ namespace kstd {
 	}
 }
 
-#endif //DUCKOS_UTILITY_H

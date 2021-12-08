@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_WINDOW_H
-#define DUCKOS_WINDOW_H
+#pragma once
 
 #include <vector>
 #include <libgraphics/geometry.h>
@@ -259,4 +258,3 @@ private:
 };
 
 
-#endif //DUCKOS_WINDOW_H

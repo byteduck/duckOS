@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_FILE_H
-#define DUCKOS_FILE_H
+#pragma once
 
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/Result.hpp>
@@ -47,4 +46,3 @@ protected:
 };
 
 
-#endif //DUCKOS_FILE_H

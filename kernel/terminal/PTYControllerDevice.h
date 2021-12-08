@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PTYCONTROLLERDEVICE_H
-#define DUCKOS_PTYCONTROLLERDEVICE_H
+#pragma once
 
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/kstd/circular_queue.hpp>
@@ -52,4 +51,3 @@ private:
 };
 
 
-#endif //DUCKOS_PTYCONTROLLERDEVICE_H

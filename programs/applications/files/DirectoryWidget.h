@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_FILES_DIRECTORYWIDGET_H
-#define DUCKOS_FILES_DIRECTORYWIDGET_H
+#pragma once
 
 #include <libui/widget/ListView.h>
 #include <filesystem>
@@ -43,5 +42,3 @@ private:
 	std::vector<std::filesystem::directory_entry> entries;
 	bool inited = false;
 };
-
-#endif //DUCKOS_FILES_DIRECTORYWIDGET_H

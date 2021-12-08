@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_KEYBOARDDEVICE_H
-#define DUCKOS_KEYBOARDDEVICE_H
+#pragma once
 
 #include "CharacterDevice.h"
 #include <kernel/keyboard.h>
@@ -72,4 +71,3 @@ private:
 };
 
 
-#endif //DUCKOS_KEYBOARDDEVICE_H

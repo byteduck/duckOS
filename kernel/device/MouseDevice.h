@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_MOUSEDEVICE_H
-#define DUCKOS_MOUSEDEVICE_H
+#pragma once
 
 #include <kernel/interrupt/IRQHandler.h>
 #include <kernel/device/CharacterDevice.h>
@@ -84,4 +83,3 @@ private:
 };
 
 
-#endif //DUCKOS_MOUSEDEVICE_H

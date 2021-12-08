@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_PROCFSINODE_H
-#define DUCKOS_PROCFSINODE_H
+#pragma once
 
 #include <kernel/filesystem/Inode.h>
 #include "ProcFSInodeType.h"
@@ -58,4 +57,3 @@ private:
 };
 
 
-#endif //DUCKOS_PROCFSINODE_H

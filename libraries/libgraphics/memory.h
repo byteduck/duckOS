@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBGRAPHICS_MEMORY_H
-#define DUCKOS_LIBGRAPHICS_MEMORY_H
+#pragma once
 
 inline void* memcpy_uint32(uint32_t* d, uint32_t* s, size_t n) {
 	void* od = d;
@@ -26,4 +25,3 @@ inline void* memcpy_uint32(uint32_t* d, uint32_t* s, size_t n) {
 	return od;
 }
 
-#endif //DUCKOS_LIBGRAPHICS_MEMORY_H

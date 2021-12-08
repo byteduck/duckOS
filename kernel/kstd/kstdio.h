@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef STDIO_H
-#define STDIO_H
+#pragma once
 
 #include <kernel/kstd/kstddef.h>
 
@@ -42,5 +41,3 @@ void print(const char* str);
 [[noreturn]] void PANIC(const char *error, const char *msg, ...);
 void clearScreen();
 void setup_tty();
-
-#endif

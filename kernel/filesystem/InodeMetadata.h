@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_INODEMETADATA_H
-#define DUCKOS_INODEMETADATA_H
+#pragma once
 
 #include <kernel/kstd/unix_types.h>
 
@@ -93,4 +92,3 @@ public:
 };
 
 
-#endif //DUCKOS_INODEMETADATA_H

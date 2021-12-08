@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef EXT2_H
-#define EXT2_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -124,5 +123,3 @@ typedef struct __attribute__((packed)) ext2_directory {
 	uint8_t name_length;
 	uint8_t type;
 } ext2_directory;
-
-#endif

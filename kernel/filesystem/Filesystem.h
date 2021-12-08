@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef VFS_H
-#define VFS_H
+#pragma once
 
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/kstd/unix_types.h>
@@ -38,5 +37,3 @@ protected:
 	uint8_t _fsid;
 	ino_t _root_inode_id;
 };
-
-#endif

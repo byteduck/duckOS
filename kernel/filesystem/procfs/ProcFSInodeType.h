@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_PROCFSINODETYPE_H
-#define DUCKOS_PROCFSINODETYPE_H
+#pragma once
 
 enum ProcFSInodeType {
 	Null = 0,
@@ -38,4 +37,3 @@ enum ProcFSInodeType {
 	ProcStatus
 };
 
-#endif //DUCKOS_PROCFSINODETYPE_H

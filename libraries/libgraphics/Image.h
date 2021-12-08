@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBGRAPHICS_IMAGE_H
-#define DUCKOS_LIBGRAPHICS_IMAGE_H
+#pragma once
 
 #include "Framebuffer.h"
 
@@ -37,4 +36,3 @@ namespace Gfx {
 	};
 }
 
-#endif //DUCKOS_LIBGRAPHICS_IMAGE_H

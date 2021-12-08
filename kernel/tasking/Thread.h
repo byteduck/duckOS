@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_THREAD_H
-#define DUCKOS_THREAD_H
+#pragma once
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/unix_types.h>
@@ -108,4 +107,3 @@ private:
 	LinkedMemoryRegion _sighandler_kstack_region;
 };
 
-#endif //DUCKOS_THREAD_H

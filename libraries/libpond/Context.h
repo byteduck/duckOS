@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBPOND_PCONTEXT_H
-#define DUCKOS_LIBPOND_PCONTEXT_H
+#pragma once
 
 #include <sys/types.h>
 #include <sys/socketfs.h>
@@ -128,4 +127,3 @@ namespace Pond {
 	};
 }
 
-#endif //DUCKOS_LIBPOND_PCONTEXT_H

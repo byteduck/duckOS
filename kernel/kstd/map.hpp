@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_MAP_HPP
-#define DUCKOS_MAP_HPP
+#pragma once
 
 #include "utility.h"
 #include "pair.hpp"
@@ -129,5 +128,3 @@ namespace kstd {
 		leaf* _root = nullptr;
 	};
 }
-
-#endif //DUCKOS_MAP_HPP

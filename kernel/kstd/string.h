@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_STRING_H
-#define DUCKOS_STRING_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -58,4 +57,3 @@ namespace kstd {
 	};
 }
 
-#endif //DUCKOS_STRING_H

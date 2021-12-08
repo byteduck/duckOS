@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_POLLBLOCKER_H
-#define DUCKOS_POLLBLOCKER_H
+#pragma once
 
 #include <kernel/kstd/vector.hpp>
 #include "Blocker.h"
@@ -56,4 +55,3 @@ private:
 };
 
 
-#endif //DUCKOS_POLLBLOCKER_H

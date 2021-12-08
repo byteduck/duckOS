@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBDUCK_SPINLOCK_H
-#define DUCKOS_LIBDUCK_SPINLOCK_H
+#pragma once
 
 #include <sys/types.h>
 #include <atomic>
@@ -46,4 +45,3 @@ namespace Duck {
 	};
 }
 
-#endif //DUCKOS_LIBDUCK_SPINLOCK_H

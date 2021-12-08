@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_BLOCKER_H
-#define DUCKOS_BLOCKER_H
+#pragma once
 
 class Process;
 class Blocker {
@@ -37,4 +36,3 @@ private:
 	bool _interrupted = false;
 };
 
-#endif //DUCKOS_BLOCKER_H

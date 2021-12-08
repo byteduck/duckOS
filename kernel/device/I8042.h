@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_I8042_H
-#define DUCKOS_I8042_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -103,4 +102,3 @@ private:
 };
 
 
-#endif //DUCKOS_I8042_H

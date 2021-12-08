@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBPOND_PWINDOW_H
-#define DUCKOS_LIBPOND_PWINDOW_H
+#pragma once
 
 #include <sys/types.h>
 #include <libgraphics/graphics.h>
@@ -195,4 +194,3 @@ namespace Pond {
 	};
 }
 
-#endif //DUCKOS_LIBPOND_PWINDOW_H

@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef GDT_H
-#define GDT_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -68,5 +67,3 @@ namespace Memory {
 	extern "C" void load_gdt();
 	extern "C" void gdt_flush();
 }
-
-#endif

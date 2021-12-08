@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_KLOG_H
-#define DUCKOS_KLOG_H
+#pragma once
 
 namespace KLog {
 	void dbg(const char* component, const char* fmt, ...);
@@ -28,5 +27,3 @@ namespace KLog {
 	void err(const char* component, const char* fmt, ...);
 	void crit(const char* component, const char* fmt, ...);
 }
-
-#endif //DUCKOS_KLOG_H

@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_KSTDLIB_H
-#define DUCKOS_KSTDLIB_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 #include <kernel/memory/kliballoc.h>
@@ -41,4 +40,3 @@ uint8_t parse_hex_char(char c);
 char *itoa(int i, char *p, int base);
 void to_upper(char *str);
 
-#endif //DUCKOS_KSTDLIB_H

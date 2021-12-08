@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_EXT2FILESYSTEM_H
-#define DUCKOS_EXT2FILESYSTEM_H
+#pragma once
 
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/filesystem/FileBasedFilesystem.h>
@@ -88,4 +87,3 @@ private:
 	Ext2BlockGroup** block_groups = nullptr;
 };
 
-#endif //DUCKOS_EXT2FILESYSTEM_H

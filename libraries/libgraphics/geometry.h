@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBGRAPHICS_GEOMETRY_H
-#define DUCKOS_LIBGRAPHICS_GEOMETRY_H
+#pragma once
 
 #include <algorithm>
 
@@ -241,4 +240,3 @@ inline bool Point::in(const Rect& rect) const {
 		y >= rect.y && y <= rect.y + rect.height;
 }
 
-#endif //DUCKOS_LIBGRAPHICS_GEOMETRY_H

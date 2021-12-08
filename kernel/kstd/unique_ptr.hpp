@@ -1,5 +1,4 @@
-#ifndef DUCKOS_UNIQUE_PTR_HPP
-#define DUCKOS_UNIQUE_PTR_HPP
+#pragma once
 
 /**
  * @file  unique_ptr.hpp
@@ -188,4 +187,3 @@ namespace kstd {
 }
 
 
-#endif //DUCKOS_UNIQUE_PTR_HPP

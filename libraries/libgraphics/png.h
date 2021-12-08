@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_GRAPHICS_PNG_H
-#define DUCKOS_GRAPHICS_PNG_H
+#pragma once
 
 #include "graphics.h"
 #include "Image.h"
@@ -35,5 +34,3 @@ namespace Gfx {
 }
 
 __DECL_END
-
-#endif //DUCKOS_GRAPHICS_PNG_H

@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_BOOLEANBLOCKER_H
-#define DUCKOS_BOOLEANBLOCKER_H
+#pragma once
 
 #include "Blocker.h"
 
@@ -33,4 +32,3 @@ private:
 };
 
 
-#endif //DUCKOS_BOOLEANBLOCKER_H

@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_TYPE_TRAITS_H
-#define DUCKOS_TYPE_TRAITS_H
+#pragma once
 
 namespace kstd {
 	template< class T > struct remove_reference      {typedef T type;};
@@ -26,4 +25,3 @@ namespace kstd {
 	template< class T > struct remove_reference<T&&> {typedef T type;};
 }
 
-#endif //DUCKOS_TYPE_TRAITS_H

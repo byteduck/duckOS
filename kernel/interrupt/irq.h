@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef IRQ_H
-#define IRQ_H
+#pragma once
 
 #define PIC1 0x20
 #define PIC2 0xA0
@@ -56,5 +55,3 @@ namespace Interrupt {
 	void send_eoi(int irq_number);
 	int current_interrupt();
 }
-
-#endif

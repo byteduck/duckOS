@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_DEVICE_H
-#define DUCKOS_DEVICE_H
+#pragma once
 
 #include <kernel/filesystem/File.h>
 #include <kernel/kstd/vector.hpp>
@@ -51,4 +50,3 @@ private:
 	unsigned _minor = 0;
 };
 
-#endif //DUCKOS_DEVICE_H

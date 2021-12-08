@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_JOINBLOCKER_H
-#define DUCKOS_JOINBLOCKER_H
+#pragma once
 
 
 #include "Blocker.h"
@@ -39,4 +38,3 @@ private:
 };
 
 
-#endif //DUCKOS_JOINBLOCKER_H

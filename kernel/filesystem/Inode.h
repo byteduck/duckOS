@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_INODE_H
-#define DUCKOS_INODE_H
+#pragma once
 
 #include <kernel/kstd/unix_types.h>
 #include <kernel/kstd/shared_ptr.hpp>
@@ -68,4 +67,3 @@ protected:
 };
 
 
-#endif //DUCKOS_INODE_H

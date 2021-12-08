@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBGRAPHICS_GRAPHICS_H
-#define DUCKOS_LIBGRAPHICS_GRAPHICS_H
+#pragma once
 
 #include <sys/types.h>
 #include "geometry.h"
@@ -46,4 +45,3 @@ typedef uint32_t Color;
 
 __DECL_END
 
-#endif //DUCKOS_LIBGRAPHICS_GRAPHICS_H

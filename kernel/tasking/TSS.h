@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef TSS_H
-#define TSS_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -68,5 +67,3 @@ typedef struct TSS {
 	uint16_t iopb_low;
 	uint16_t iobp;
 } __attribute__((packed)) TSS;
-
-#endif

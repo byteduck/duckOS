@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_WAITBLOCKER_H
-#define DUCKOS_WAITBLOCKER_H
+#pragma once
 
 #include "Blocker.h"
 #include <kernel/kstd/unix_types.h>
@@ -42,4 +41,3 @@ private:
 	kstd::shared_ptr<Thread> _thread;
 };
 
-#endif //DUCKOS_WAITBLOCKER_H

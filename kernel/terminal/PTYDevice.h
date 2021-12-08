@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PTYDEVICE_H
-#define DUCKOS_PTYDEVICE_H
+#pragma once
 
 #include "TTYDevice.h"
 #include <kernel/kstd/string.h>
@@ -51,4 +50,3 @@ private:
 };
 
 
-#endif //DUCKOS_PTYDEVICE_H

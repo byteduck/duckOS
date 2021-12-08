@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_IO_H
-#define DUCKOS_IO_H
+#pragma once
 
 #include <kernel/kstd/unix_types.h>
 
@@ -37,4 +36,3 @@ namespace IO {
 };
 
 
-#endif //DUCKOS_IO_H

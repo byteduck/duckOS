@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_RTC_H
-#define DUCKOS_RTC_H
+#pragma once
 
 //Converts binary coded decimal (bcd) to normal numbers
 #include <kernel/kstd/unix_types.h>
@@ -71,4 +70,3 @@ private:
 	int _frequency = 0;
 };
 
-#endif //DUCKOS_RTC_H

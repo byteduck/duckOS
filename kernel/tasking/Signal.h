@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_SIGNAL_H
-#define DUCKOS_SIGNAL_H
+#pragma once
 
 #define SIGNAL_RETURN_FAKE_ADDR 0xFFFFB00F
 
@@ -57,18 +56,16 @@
 
 #ifdef DUCKOS_KERNEL
 
-	namespace Signal {
-		class SigAction {
-		public:
-			void (*action)(int) = nullptr;
-			int flags = 0;
-		};
+namespace Signal {
+    class SigAction {
+    public:
+        void (*action)(int) = nullptr;
+        int flags = 0;
+    };
 
-		enum SignalSeverity { NOKILL, KILL, FATAL };
-		extern const char* signal_names[];
-		extern SignalSeverity signal_severities[];
-	}
+    enum SignalSeverity { NOKILL, KILL, FATAL };
+    extern const char* signal_names[];
+    extern SignalSeverity signal_severities[];
+}
 
 #endif
-
-#endif //DUCKOS_SIGNAL_H

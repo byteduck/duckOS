@@ -18,8 +18,7 @@
 	Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBC_MATH_H
-#define DUCKOS_LIBC_MATH_H
+#pragma once
 
 #include <sys/cdefs.h>
 
@@ -230,4 +229,3 @@ long double fmal(long double x, long double y,long double z);
 
 __DECL_END
 
-#endif //DUCKOS_LIBC_MATH_H

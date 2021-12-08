@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_CSTRING_H
-#define DUCKOS_CSTRING_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -36,4 +35,3 @@ void strcpy(char *dest, const char *src);
 
 #endif
 
-#endif //DUCKOS_CSTRING_H

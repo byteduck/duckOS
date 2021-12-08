@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_PIPE_H
-#define DUCKOS_PIPE_H
+#pragma once
 
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/filesystem/File.h>
@@ -53,4 +52,3 @@ private:
 };
 
 
-#endif //DUCKOS_PIPE_H

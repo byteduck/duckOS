@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PROCESS_H
-#define DUCKOS_PROCESS_H
+#pragma once
 
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/kstd/queue.hpp>
@@ -201,4 +200,3 @@ private:
 };
 
 
-#endif //DUCKOS_PROCESS_H

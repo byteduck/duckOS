@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_H
-#define DUCKOS_LIBUI_H
+#pragma once
 
 #include <libpond/pond.h>
 #include <libpond/Event.h>
@@ -52,4 +51,3 @@ namespace UI {
 	void __deregister_window(int id);
 }
 
-#endif //DUCKOS_LIBUI_H

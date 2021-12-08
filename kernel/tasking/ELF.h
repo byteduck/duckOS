@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef ELF_H
-#define ELF_H
+#pragma once
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/kstdio.h>
@@ -144,5 +143,3 @@ namespace ELF {
 	 */
 	 ResultRet<ElfInfo> read_info(const kstd::shared_ptr<FileDescriptor>& fd, User& user, kstd::string interpreter = kstd::string());
 }
-
-#endif

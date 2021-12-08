@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_TERMINAL_TERMINAL_H
-#define DUCKOS_TERMINAL_TERMINAL_H
+#pragma once
 
 #include "types.h"
 #include "Listener.h"
@@ -74,4 +73,3 @@ namespace Term {
 	};
 }
 
-#endif //DUCKOS_TERMINAL_TERMINAL_H

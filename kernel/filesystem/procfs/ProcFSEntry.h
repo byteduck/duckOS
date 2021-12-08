@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_PROCFSENTRY_H
-#define DUCKOS_PROCFSENTRY_H
+#pragma once
 
 #include "ProcFSInodeType.h"
 #include <kernel/kstd/unix_types.h>
@@ -37,4 +36,3 @@ public:
 };
 
 
-#endif //DUCKOS_PROCFSENTRY_H

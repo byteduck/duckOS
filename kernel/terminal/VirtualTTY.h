@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_VIRTUALTTY_H
-#define DUCKOS_VIRTUALTTY_H
+#pragma once
 
 #include "TTYDevice.h"
 #include <libterm/Terminal.h>
@@ -69,4 +68,3 @@ private:
 };
 
 
-#endif //DUCKOS_VIRTUALTTY_H

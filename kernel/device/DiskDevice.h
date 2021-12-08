@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_DISKDEVICE_H
-#define DUCKOS_DISKDEVICE_H
+#pragma once
 
 #include <kernel/time/Time.h>
 #include <kernel/memory/LinkedMemoryRegion.h>
@@ -67,4 +66,3 @@ private:
 	static size_t _used_cache_memory;
 };
 
-#endif //DUCKOS_DISKDEVICE_H

@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_USER_H
-#define DUCKOS_USER_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 #include <kernel/kstd/vector.hpp>
@@ -58,4 +57,3 @@ public:
 };
 
 
-#endif //DUCKOS_USER_H

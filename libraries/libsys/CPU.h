@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBSYS_CPU_H
-#define DUCKOS_LIBSYS_CPU_H
+#pragma once
 
 #include <libduck/Result.hpp>
 #include <istream>
@@ -33,4 +32,3 @@ namespace Sys::CPU {
 	ResultRet<Info> get_info();
 }
 
-#endif //DUCKOS_LIBSYS_CPU_H

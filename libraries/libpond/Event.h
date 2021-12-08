@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBPOND_EVENT_H
-#define DUCKOS_LIBPOND_EVENT_H
+#pragma once
 
 #include "Window.h"
 #include <sys/socketfs.h>
@@ -122,4 +121,3 @@ namespace Pond {
 		FontResponseEvent font_response;
 	};
 }
-#endif //DUCKOS_LIBPOND_EVENT_H

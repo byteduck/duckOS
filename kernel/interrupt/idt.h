@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef IDT_H
-#define IDT_H
+#pragma once
 
 namespace Interrupt {
 	struct IDTEntry {
@@ -40,5 +39,3 @@ namespace Interrupt {
 
 	void register_idt();
 }
-
-#endif

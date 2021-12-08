@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_TERMINAL_TYPES_H
-#define DUCKOS_TERMINAL_TYPES_H
+#pragma once
 
 #ifdef DUCKOS_KERNEL
 #include <kernel/kstd/types.h>
@@ -82,4 +81,3 @@ namespace Term {
 	};
 }
 
-#endif //DUCKOS_TERMINAL_TYPES_H

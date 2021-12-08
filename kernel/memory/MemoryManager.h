@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef PAGING_H
-#define PAGING_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 #include <kernel/kstd/shared_ptr.hpp>
@@ -185,5 +184,3 @@ void liballoc_unlock();
 void* liballoc_alloc(int);
 void liballoc_afteralloc(void* ptr_alloced);
 void liballoc_free(void*,int);
-
-#endif

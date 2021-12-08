@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef KEYBOARD_H
-#define KEYBOARD_H
+#pragma once
 
 #define KBD_PORT_DATA
 #define KBD_PORT_STATUS 0x64
@@ -51,5 +50,3 @@
 
 extern char kbd_us_shift_map[256];
 extern char kbd_us_map[256];
-
-#endif

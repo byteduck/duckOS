@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_NULLDEVICE_H
-#define DUCKOS_NULLDEVICE_H
+#pragma once
 
 #include "CharacterDevice.h"
 
@@ -30,4 +29,3 @@ public:
 };
 
 
-#endif //DUCKOS_NULLDEVICE_H

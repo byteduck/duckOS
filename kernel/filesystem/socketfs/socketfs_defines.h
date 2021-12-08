@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_SOCKETFS_DEFINES_H
-#define DUCKOS_SOCKETFS_DEFINES_H
+#pragma once
 
 #define SOCKETFS_MAX_BUFFER_SIZE 16384
 #define SOCKETFS_TYPE_MSG 0
@@ -29,4 +28,3 @@
 
 typedef unsigned int sockid_t;
 
-#endif //DUCKOS_SOCKETFS_DEFINES_H

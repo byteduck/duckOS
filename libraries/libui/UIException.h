@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_UIEXCEPTION_H
-#define DUCKOS_LIBUI_UIEXCEPTION_H
+#pragma once
 
 #include <string>
 #include <stdexcept>
@@ -31,4 +30,3 @@ namespace UI {
 }
 
 
-#endif //DUCKOS_LIBUI_UIEXCEPTION_H

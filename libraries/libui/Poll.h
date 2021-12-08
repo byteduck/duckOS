@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_POLL_H
-#define DUCKOS_LIBUI_POLL_H
+#pragma once
 
 #include <functional>
 
@@ -31,4 +30,3 @@ namespace UI {
 	};
 }
 
-#endif //DUCKOS_LIBUI_POLL_H

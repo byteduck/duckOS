@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBDUCK_RESULT_HPP
-#define DUCKOS_LIBDUCK_RESULT_HPP
+#pragma once
 
 #include <cassert>
 #include <optional>
@@ -64,5 +63,3 @@ private:
 	std::optional<T> _ret;
 	Result _result;
 };
-
-#endif //DUCKOS_LIBDUCK_RESULT_HPP

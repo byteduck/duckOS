@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBRIVER_BUSSERVER_H
-#define DUCKOS_LIBRIVER_BUSSERVER_H
+#pragma once
 
 #include <string>
 #include <libduck/Result.hpp>
@@ -99,4 +98,3 @@ namespace River {
 
 
 
-#endif //DUCKOS_LIBRIVER_BUSSERVER_H

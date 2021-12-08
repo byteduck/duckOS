@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_TYPES_H
-#define DUCKOS_TYPES_H
+#pragma once
 
 #define NULL 0
 
@@ -47,4 +46,3 @@ typedef  signed  long long int int64_t;
 typedef uint32_t size_t;
 typedef int32_t ssize_t;
 
-#endif //DUCKOS_TYPES_H

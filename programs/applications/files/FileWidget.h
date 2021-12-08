@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_FILES_FILEWIDGET_H
-#define DUCKOS_FILES_FILEWIDGET_H
+#pragma once
 
 #include <libui/widget/layout/BoxLayout.h>
 #include <filesystem>
@@ -37,5 +36,3 @@ private:
 	std::filesystem::directory_entry entry;
 	DirectoryWidget::Ptr dir_widget;
 };
-
-#endif //DUCKOS_FILES_FILEWIDGET_H

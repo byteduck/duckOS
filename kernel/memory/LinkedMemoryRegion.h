@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LINKEDMEMORYREGION_H
-#define DUCKOS_LINKEDMEMORYREGION_H
+#pragma once
 
 #include "MemoryRegion.h"
 
@@ -31,4 +30,3 @@ public:
 };
 
 
-#endif //DUCKOS_LINKEDMEMORYREGION_H

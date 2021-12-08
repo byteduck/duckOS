@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef SYSCALL_H
-#define SYSCALL_H
+#pragma once
 
 #define SYS_EXIT 1
 #define SYS_FORK 2
@@ -107,5 +106,3 @@ struct readlinkat_args {
 	char* buf;
 	size_t bufsize;
 };
-
-#endif

@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LINE_H
-#define DUCKOS_LINE_H
+#pragma once
 
 #include "types.h"
 
@@ -41,4 +40,3 @@ namespace Term {
 }
 
 
-#endif //DUCKOS_LINE_H

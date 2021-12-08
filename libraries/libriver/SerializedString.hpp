@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBRIVER_SAFESTRING_H
-#define DUCKOS_LIBRIVER_SAFESTRING_H
+#pragma once
 
 #include <cstring>
 #include <string>
@@ -42,4 +41,3 @@ public:
 	}
 };
 
-#endif //DUCKOS_LIBRIVER_SAFESTRING_H

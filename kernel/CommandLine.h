@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_COMMANDLINE_H
-#define DUCKOS_COMMANDLINE_H
+#pragma once
 
 #include <kernel/multiboot.h>
 #include <kernel/kstd/string.h>
@@ -46,4 +45,3 @@ private:
 };
 
 
-#endif //DUCKOS_COMMANDLINE_H

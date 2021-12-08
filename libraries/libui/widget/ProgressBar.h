@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_PROGRESSBAR_H
-#define DUCKOS_LIBUI_PROGRESSBAR_H
+#pragma once
 
 #include "Widget.h"
 
@@ -44,4 +43,3 @@ namespace UI {
 	};
 }
 
-#endif //DUCKOS_LIBUI_PROGRESSBAR_H

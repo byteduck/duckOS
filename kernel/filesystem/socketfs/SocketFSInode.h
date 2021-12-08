@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_SOCKETFSINODE_H
-#define DUCKOS_SOCKETFSINODE_H
+#pragma once
 
 #include "SocketFS.h"
 #include "SocketFSClient.h"
@@ -71,4 +70,3 @@ private:
 };
 
 
-#endif //DUCKOS_SOCKETFSINODE_H

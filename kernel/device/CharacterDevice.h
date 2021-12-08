@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_CHARACTERDEVICE_H
-#define DUCKOS_CHARACTERDEVICE_H
+#pragma once
 
 #include "Device.h"
 
@@ -29,4 +28,3 @@ public:
 };
 
 
-#endif //DUCKOS_CHARACTERDEVICE_H

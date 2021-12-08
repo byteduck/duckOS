@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBGRAPHICS_FONT_H
-#define DUCKOS_LIBGRAPHICS_FONT_H
+#pragma once
 
 #include <stddef.h>
 #include <cstdint>
@@ -87,4 +86,3 @@ namespace Gfx {
 	};
 }
 
-#endif //DUCKOS_LIBGRAPHICS_FONT_H

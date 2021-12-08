@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBUI_DRAWCONTEXT_H
-#define DUCKOS_LIBUI_DRAWCONTEXT_H
+#pragma once
 
 #include "Theme.h"
 #include <libgraphics/Image.h>
@@ -72,4 +71,3 @@ namespace UI {
 	};
 }
 
-#endif //DUCKOS_LIBUI_DRAWCONTEXT_H

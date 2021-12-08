@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_VGADEVICE_H
-#define DUCKOS_VGADEVICE_H
+#pragma once
 
 #define IO_VIDEO_MAP	0x8001
 #define IO_VIDEO_WIDTH	0x8002
@@ -48,6 +47,4 @@ private:
 	static VGADevice* _inst;
 };
 
-#endif //DUCKOS_KERNEL
-
-#endif //DUCKOS_VGADEVICE_H
+#endif

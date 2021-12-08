@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_VFS_H
-#define DUCKOS_VFS_H
+#pragma once
 
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/kstd/unix_types.h>
@@ -81,4 +80,3 @@ private:
 };
 
 
-#endif //DUCKOS_VFS_H

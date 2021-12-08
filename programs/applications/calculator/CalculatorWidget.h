@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_CALCULATOR_CALCULATORWIDGET_H
-#define DUCKOS_CALCULATOR_CALCULATORWIDGET_H
+#pragma once
 
 #include <libui/widget/layout/BoxLayout.h>
 #include <libui/widget/layout/GridLayout.h>
@@ -48,4 +47,3 @@ private:
 	double dec_multiplier = 0.1;
 };
 
-#endif //DUCKOS_CALCULATOR_CALCULATORWIDGET_H

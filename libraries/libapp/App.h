@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBAPP_APP_H
-#define DUCKOS_LIBAPP_APP_H
+#pragma once
 
 #include <vector>
 #include <string>
@@ -63,4 +62,3 @@ namespace App {
 	std::vector<Info> get_all_apps();
 }
 
-#endif //DUCKOS_LIBAPP_APP_H

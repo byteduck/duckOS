@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef _LIBALLOC_H
-#define _LIBALLOC_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -55,9 +54,4 @@ extern void     PREFIX(free)(void *);					///< The standard function.
 
 #ifdef __cplusplus
 }
-#endif
-
-
-/** @} */
-
 #endif

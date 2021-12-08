@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PAGETABLE_H
-#define DUCKOS_PAGETABLE_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -66,4 +65,3 @@ private:
 	bool _alloced_table = false;
 };
 
-#endif //DUCKOS_PAGETABLE_H

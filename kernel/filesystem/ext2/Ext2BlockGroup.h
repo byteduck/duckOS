@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_EXT2BLOCKGROUP_H
-#define DUCKOS_EXT2BLOCKGROUP_H
+#pragma once
 
 #include <kernel/kstd/unix_types.h>
 
@@ -40,4 +39,3 @@ public:
 };
 
 
-#endif //DUCKOS_EXT2BLOCKGROUP_H

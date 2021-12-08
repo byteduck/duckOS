@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef ISR_H
-#define ISR_H
+#pragma once
 
 #include <kernel/kstd/kstddef.h>
 
@@ -62,5 +61,3 @@ namespace Interrupt {
 }
 
 void print_regs(struct Registers *r);
-
-#endif

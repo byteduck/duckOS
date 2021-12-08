@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PTYFS_H
-#define DUCKOS_PTYFS_H
+#pragma once
 
 #include <kernel/filesystem/Filesystem.h>
 #include <kernel/tasking/SpinLock.h>
@@ -49,4 +48,3 @@ private:
 };
 
 
-#endif //DUCKOS_PTYFS_H

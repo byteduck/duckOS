@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_TIME_H
-#define DUCKOS_TIME_H
+#pragma once
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/unix_types.h>
@@ -47,4 +46,3 @@ private:
 	long _usec;
 };
 
-#endif //DUCKOS_TIME_H

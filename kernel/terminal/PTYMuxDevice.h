@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PTYMUXDEVICE_H
-#define DUCKOS_PTYMUXDEVICE_H
+#pragma once
 
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/tasking/SpinLock.h>
@@ -39,4 +38,3 @@ private:
 };
 
 
-#endif //DUCKOS_PTYMUXDEVICE_H

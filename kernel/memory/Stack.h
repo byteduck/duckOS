@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_STACK_H
-#define DUCKOS_STACK_H
+#pragma once
 
 #include "LinkedMemoryRegion.h"
 #include <kernel/kstd/cstring.h>
@@ -106,4 +105,3 @@ private:
 	int*& _stackptrint;
 };
 
-#endif //DUCKOS_STACK_H

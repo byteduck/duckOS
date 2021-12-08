@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBGRAPHICS_FRAMEBUFFER_H
-#define DUCKOS_LIBGRAPHICS_FRAMEBUFFER_H
+#pragma once
 
 #include <sys/types.h>
 #include "geometry.h"
@@ -142,4 +141,3 @@ namespace Gfx {
 }
 
 
-#endif //DUCKOS_LIBGRAPHICS_FRAMEBUFFER_H

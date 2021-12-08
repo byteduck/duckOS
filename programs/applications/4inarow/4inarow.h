@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_4INAROW_MAIN_H
-#define DUCKOS_4INAROW_MAIN_H
+#pragma once
 
 #define ROWS 6
 #define COLUMNS 7
@@ -42,4 +41,3 @@ int computer_pick_move(Board board, int player);
 bool add_piece(Board board, int move, int player);
 bool check_win(Board board);
 
-#endif //DUCKOS_4INAROW_MAIN_H

@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_SPINLOCK_H
-#define DUCKOS_SPINLOCK_H
+#pragma once
 
 #include "Lock.h"
 #include "BooleanBlocker.h"
@@ -39,4 +38,3 @@ private:
 	kstd::shared_ptr<Thread> _holding_thread;
 };
 
-#endif //DUCKOS_SPINLOCK_H

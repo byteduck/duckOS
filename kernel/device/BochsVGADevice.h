@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_BOCHSVGADEVICE_H
-#define DUCKOS_BOCHSVGADEVICE_H
+#pragma once
 
 #include "VGADevice.h"
 #include <kernel/pci/PCI.h>
@@ -88,4 +87,3 @@ private:
 };
 
 
-#endif //DUCKOS_BOCHSVGADEVICE_H

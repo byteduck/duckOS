@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_ATA_H
-#define DUCKOS_ATA_H
+#pragma once
 
 //Commands
 #define ATA_READ_PIO          0x20
@@ -232,4 +231,3 @@ typedef struct __attribute__((packed)) ATAIdentity {
 	uint8_t checksum;
 } Identity;
 
-#endif //DUCKOS_ATA_H

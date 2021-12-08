@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBSYS_PROCESS_H
-#define DUCKOS_LIBSYS_PROCESS_H
+#pragma once
 
 #include <sys/types.h>
 #include "Memory.h"
@@ -68,4 +67,3 @@ namespace Sys {
 	};
 }
 
-#endif //DUCKOS_LIBSYS_PROCESS_H

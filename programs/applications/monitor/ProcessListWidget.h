@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PROCESSLISTWIDGET_H
-#define DUCKOS_PROCESSLISTWIDGET_H
+#pragma once
 
 #include <libui/widget/ListView.h>
 #include <libsys/Process.h>
@@ -38,4 +37,3 @@ private:
 	std::vector<Sys::Process> _processes;
 };
 
-#endif //DUCKOS_PROCESSLISTWIDGET_H

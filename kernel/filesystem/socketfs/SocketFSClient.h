@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_SOCKETFSCLIENT_H
-#define DUCKOS_SOCKETFSCLIENT_H
+#pragma once
 
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/kstd/queue.hpp>
@@ -52,4 +51,3 @@ public:
 	SpinLock _lock;
 };
 
-#endif //DUCKOS_SOCKETFSCLIENT_H

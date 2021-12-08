@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_PATADEVICE_H
-#define DUCKOS_PATADEVICE_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 #include <kernel/kstd/kstdlib.h>
@@ -93,4 +92,3 @@ private:
 };
 
 
-#endif //DUCKOS_PATADEVICE_H

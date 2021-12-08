@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_KERNELLOGDEVICE_H
-#define DUCKOS_KERNELLOGDEVICE_H
+#pragma once
 
 #include "CharacterDevice.h"
 
@@ -37,4 +36,3 @@ private:
 };
 
 
-#endif //DUCKOS_KERNELLOGDEVICE_H

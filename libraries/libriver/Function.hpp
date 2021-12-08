@@ -26,8 +26,7 @@
 #include <cstring>
 #include "BusConnection.h"
 
-#ifndef DUCKOS_LIBRIVER_FUNCTION_H
-#define DUCKOS_LIBRIVER_FUNCTION_H
+#pragma once
 
 namespace River {
 
@@ -144,4 +143,3 @@ namespace River {
 	};
 }
 
-#endif //DUCKOS_LIBRIVER_FUNCTION_H

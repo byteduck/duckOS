@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_PTYFSINODE_H
-#define DUCKOS_PTYFSINODE_H
+#pragma once
 
 #include <kernel/filesystem/Inode.h>
 #include <kernel/filesystem/DirectoryEntry.h>
@@ -62,4 +61,3 @@ private:
 };
 
 
-#endif //DUCKOS_PTYFSINODE_H

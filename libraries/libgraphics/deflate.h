@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_DEFLATE_H
-#define DUCKOS_DEFLATE_H
+#pragma once
 
 #include <stdio.h>
 #include <stdint.h>
@@ -45,4 +44,3 @@ int decompress(DEFLATE* def);
 
 __DECL_END
 
-#endif //DUCKOS_DEFLATE_H

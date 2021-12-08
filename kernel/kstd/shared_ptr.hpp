@@ -1,5 +1,4 @@
-#ifndef DUCKOS_SHARED_PTR_HPP
-#define DUCKOS_SHARED_PTR_HPP
+#pragma once
 
 /**
  * @file  shared_ptr.hpp
@@ -281,4 +280,3 @@ namespace kstd{
 	}
 }
 
-#endif //DUCKOS_SHARED_PTR_HPP

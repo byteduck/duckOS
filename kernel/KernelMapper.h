@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_KERNELMAPPER_H
-#define DUCKOS_KERNELMAPPER_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -34,4 +33,3 @@ public:
 	static void print_stacktrace();
 };
 
-#endif //DUCKOS_KERNELMAPPER_H

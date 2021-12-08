@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_4INAROW_GAMEWIDGET_H
-#define DUCKOS_4INAROW_GAMEWIDGET_H
+#pragma once
 
 #include "4inarow.h"
 #include <libui/widget/Widget.h>
@@ -57,4 +56,3 @@ private:
 	bool was_win = false;
 };
 
-#endif //DUCKOS_4INAROW_GAMEWIDGET_H

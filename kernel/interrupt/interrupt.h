@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_INTERRUPT_H
-#define DUCKOS_INTERRUPT_H
+#pragma once
 
 #include <kernel/IO.h>
 
@@ -51,4 +50,3 @@ namespace Interrupt {
 	};
 }
 
-#endif //DUCKOS_INTERRUPT_H

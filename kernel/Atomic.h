@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_KERNEL_ATOMIC_H
-#define DUCKOS_KERNEL_ATOMIC_H
+#pragma once
 
 
 class Atomic {
@@ -42,4 +41,3 @@ public:
 };
 
 
-#endif //DUCKOS_KERNEL_ATOMIC_H

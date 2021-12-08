@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_QUEUE_HPP
-#define DUCKOS_QUEUE_HPP
+#pragma once
 
 #include "types.h"
 #include "utility.h"
@@ -187,4 +186,3 @@ namespace kstd {
 	};
 }
 
-#endif //DUCKOS_QUEUE_HPP

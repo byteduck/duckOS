@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_CIRCULAR_QUEUE_HPP
-#define DUCKOS_CIRCULAR_QUEUE_HPP
+#pragma once
 
 #include "types.h"
 #include "utility.h"
@@ -154,5 +153,3 @@ namespace kstd {
 		size_t _back = 0;
 	};
 }
-
-#endif //DUCKOS_CIRCULAR_QUEUE_HPP

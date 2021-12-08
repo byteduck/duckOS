@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_INODEFILE_H
-#define DUCKOS_INODEFILE_H
+#pragma once
 
 #include "File.h"
 
@@ -42,4 +41,3 @@ private:
 };
 
 
-#endif //DUCKOS_INODEFILE_H

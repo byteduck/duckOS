@@ -17,12 +17,10 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBPOND_POND_H
-#define DUCKOS_LIBPOND_POND_H
+#pragma once
 
 #include "Context.h"
 #include "Event.h"
 #include "Window.h"
 #include "Cursor.h"
 
-#endif //DUCKOS_LIBPOND_POND_H

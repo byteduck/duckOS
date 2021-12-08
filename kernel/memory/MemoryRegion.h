@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_MEMORYREGION_H
-#define DUCKOS_MEMORYREGION_H
+#pragma once
 
 #include <kernel/kstd/unix_types.h>
 #include <kernel/tasking/SpinLock.h>
@@ -109,4 +108,3 @@ public:
 };
 
 
-#endif //DUCKOS_MEMORYREGION_H

@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_TTYDEVICE_H
-#define DUCKOS_TTYDEVICE_H
+#pragma once
 
 #include <kernel/kstd/circular_queue.hpp>
 #include <kernel/device/CharacterDevice.h>
@@ -57,4 +56,3 @@ private:
 	bool erase();
 };
 
-#endif //DUCKOS_TTYDEVICE_H

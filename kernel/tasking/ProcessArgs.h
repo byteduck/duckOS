@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_PROCESSARGS_H
-#define DUCKOS_PROCESSARGS_H
+#pragma once
 
 #include <kernel/kstd/vector.hpp>
 #include <kernel/kstd/shared_ptr.hpp>
@@ -38,4 +37,3 @@ public:
 };
 
 
-#endif //DUCKOS_PROCESSARGS_H

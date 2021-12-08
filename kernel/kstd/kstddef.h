@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef COMMON_H
-#define COMMON_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -38,5 +37,3 @@ void *operator new[](size_t size);
 void *operator new[](size_t size, void* ptr);
 void operator delete(void *p);
 void operator delete[](void *p);
-
-#endif

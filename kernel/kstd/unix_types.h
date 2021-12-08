@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_UNIX_TYPES_H
-#define DUCKOS_UNIX_TYPES_H
+#pragma once
 
 #include "types.h"
 
@@ -314,4 +313,3 @@ struct winsize {
 #define TCOFLUSH	1
 #define TCIOFLUSH	2
 
-#endif //DUCKOS_UNIX_TYPES_H

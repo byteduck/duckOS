@@ -21,8 +21,7 @@
  * Credit to https://wiki.osdev.org/C%2B%2B#Global_objects
  */
 
-#ifndef _ICXXABI_H
-#define _ICXXABI_H
+#pragma once
 
 #define ATEXIT_MAX_FUNCS	128
 
@@ -48,6 +47,4 @@ void __cxa_finalize(void *f);
 
 #ifdef __cplusplus
 };
-#endif
-
 #endif

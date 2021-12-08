@@ -2,8 +2,7 @@
 // Created by aaron on 5/22/21.
 //
 
-#ifndef DUCKOS_LIBPOND_CURSOR_H
-#define DUCKOS_LIBPOND_CURSOR_H
+#pragma once
 
 namespace Pond {
 	enum CursorType {
@@ -15,4 +14,3 @@ namespace Pond {
 	};
 };
 
-#endif //DUCKOS_LIBPOND_CURSOR_H

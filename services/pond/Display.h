@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_DISPLAY_H
-#define DUCKOS_DISPLAY_H
+#pragma once
 
 #include <cstdint>
 #include <libgraphics/graphics.h>
@@ -169,4 +168,3 @@ private:
 };
 
 
-#endif //DUCKOS_DISPLAY_H

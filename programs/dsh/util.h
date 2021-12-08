@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_DSH_UTIL_H
-#define DUCKOS_DSH_UTIL_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -42,4 +41,3 @@ inline std::string& trim(std::string& str) {
 	return ltrim(rtrim(str));
 }
 
-#endif //DUCKOS_DSH_UTIL_H

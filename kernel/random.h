@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_RANDOM_H
-#define DUCKOS_RANDOM_H
+#pragma once
 
 #include <kernel/kstd/types.h>
 
@@ -26,4 +25,3 @@ int rand();
 void srand(unsigned int seed);
 void get_random_bytes(uint8_t* buffer, size_t count);
 
-#endif //DUCKOS_RANDOM_H

@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_CLIENT_H
-#define DUCKOS_CLIENT_H
+#pragma once
 
 #include <sys/types.h>
 #include <map>
@@ -64,4 +63,3 @@ private:
 };
 
 
-#endif //DUCKOS_CLIENT_H

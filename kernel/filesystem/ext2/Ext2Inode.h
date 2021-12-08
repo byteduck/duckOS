@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_EXT2INODE_H
-#define DUCKOS_EXT2INODE_H
+#pragma once
 
 #include <kernel/filesystem/Inode.h>
 #include <kernel/kstd/vector.hpp>
@@ -100,4 +99,3 @@ private:
 	bool _dirty = false;
 };
 
-#endif //DUCKOS_EXT2INODE_H

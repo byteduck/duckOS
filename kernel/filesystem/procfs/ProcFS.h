@@ -17,8 +17,7 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_PROCFS_H
-#define DUCKOS_PROCFS_H
+#pragma once
 
 #include <kernel/filesystem/Filesystem.h>
 #include "ProcFSInodeType.h"
@@ -58,4 +57,3 @@ private:
 };
 
 
-#endif //DUCKOS_PROCFS_H
