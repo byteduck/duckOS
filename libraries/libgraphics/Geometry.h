@@ -36,20 +36,44 @@ namespace Gfx {
 			return {x + other.x , y + other.y};
 		}
 
+		inline Point& operator+=(const Point& other) {
+			*this = *this + other;
+			return *this;
+		}
+
 		inline Point operator-(const Point& other) const {
 			return {x - other.x, y - other.y};
 		}
 
-		inline Point operator*(const int& scalar) const {
+		inline Point& operator-=(const Point& other) {
+			*this = *this - other;
+			return *this;
+		}
+
+		inline Point operator*(int scalar) const {
 			return {x * scalar, y * scalar};
 		}
 
-		inline Point operator/(const int& scalar) const {
+		inline Point& operator*=(int scalar) {
+			*this = *this * scalar;
+			return *this;
+		}
+
+		inline Point operator/(int scalar) const {
 			return {x / scalar, y / scalar};
+		}
+
+		inline Point& operator/=(int scalar) {
+			*this = *this / scalar;
+			return *this;
 		}
 
 		inline bool operator==(const Point& other) const {
 			return other.x == x && other.y == y;
+		}
+
+		inline bool operator!=(const Point& other) const {
+			return other.x != x || other.y != y;
 		}
 	};
 
@@ -62,16 +86,36 @@ namespace Gfx {
 			return {width + other.width, height + other.height};
 		}
 
+		inline Dimensions& operator+=(const Dimensions& other) {
+			*this = *this + other;
+			return *this;
+		}
+
 		inline Dimensions operator-(const Dimensions& other) const {
 			return {width - other.width, height - other.height};
+		}
+
+		inline Dimensions& operator-=(const Dimensions& other) {
+			*this = *this - other;
+			return *this;
 		}
 
 		inline Dimensions operator*(int scalar) const {
 			return {width * scalar, height * scalar};
 		}
 
+		inline Dimensions& operator*=(int scalar) {
+			*this = *this * scalar;
+			return *this;
+		}
+
 		inline Dimensions operator/(int scalar) const {
 			return {width / scalar, height / scalar};
+		}
+		
+		inline Dimensions& operator/=(int scalar) {
+			*this = *this / scalar;
+			return *this;
 		}
 
 		inline bool operator==(const Dimensions& other) const {
