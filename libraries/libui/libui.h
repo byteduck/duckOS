@@ -21,7 +21,7 @@
 
 #include <libpond/pond.h>
 #include <libpond/Event.h>
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 #include "libui/widget/Widget.h"
 #include "Window.h"
 #include "Poll.h"

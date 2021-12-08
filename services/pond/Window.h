@@ -20,8 +20,8 @@
 #pragma once
 
 #include <vector>
-#include <libgraphics/geometry.h>
-#include <libgraphics/graphics.h>
+#include <libgraphics/Geometry.h>
+#include <libgraphics/Graphics.h>
 #include "Client.h"
 #include <libgraphics/Image.h>
 #include <sys/mem.h>

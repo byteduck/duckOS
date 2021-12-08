@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/types.h>
-#include "geometry.h"
+#include "Geometry.h"
 
 #define IMGSIZE(width, height) (sizeof(uint32_t) * (width) * (height))
 #define IMGPIXEL(img, x, y) (img).data[(x) + (y) * (img).width]

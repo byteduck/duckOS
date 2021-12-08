@@ -1,2 +1,2 @@
-SET(SOURCES Framebuffer.cpp font.cpp geometry.cpp graphics.cpp Image.cpp png.cpp deflate.cpp)
+SET(SOURCES Framebuffer.cpp Font.cpp Geometry.cpp Graphics.cpp Image.cpp PNG.cpp Deflate.cpp)
 MAKE_LIBRARY(libgraphics)

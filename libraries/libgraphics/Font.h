@@ -23,8 +23,8 @@
 #include <cstdint>
 #include <sys/mem.h>
 #include <map>
-#include "graphics.h"
-#include "geometry.h"
+#include "Graphics.h"
+#include "Geometry.h"
 
 namespace Gfx {
 	struct FontGlyph {

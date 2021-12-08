@@ -18,7 +18,7 @@
 */
 
 #include "TerminalWidget.h"
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 #include <unistd.h>
 #include <csignal>
 #include <sys/ioctl.h>

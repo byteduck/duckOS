@@ -17,7 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 #include <libui/libui.h>
 #include "TerminalWidget.h"
 

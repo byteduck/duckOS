@@ -21,7 +21,7 @@
 #include "Window.h"
 #include <cstdio>
 #include <sys/mem.h>
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 #include <utility>
 #include <libriver/river.h>
 

@@ -21,7 +21,7 @@
 
 #include <map>
 #include <string>
-#include <libgraphics/graphics.h>
+#include <libgraphics/Graphics.h>
 #include <libgraphics/Image.h>
 
 #define LIBUI_THEME_DEFAULT "default"

@@ -20,7 +20,7 @@
 #include "Button.h"
 #include "libui/libui.h"
 #include "libui/Theme.h"
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 
 using namespace UI;
 

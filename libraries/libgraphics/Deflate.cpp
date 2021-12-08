@@ -17,7 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "deflate.h"
+#include "Deflate.h"
 #include <stdlib.h>
 
 unsigned int read_bits(DEFLATE* def, size_t num_bits) {

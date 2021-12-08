@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 #include <map>
 #include <string>
 

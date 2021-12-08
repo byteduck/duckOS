@@ -18,10 +18,10 @@
 */
 
 #include "Framebuffer.h"
-#include "graphics.h"
-#include "font.h"
-#include "memory.h"
-#include "geometry.h"
+#include "Graphics.h"
+#include "Font.h"
+#include "Memory.h"
+#include "Geometry.h"
 
 using namespace Gfx;
 

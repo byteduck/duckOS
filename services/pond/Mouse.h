@@ -22,7 +22,7 @@
 #include <cstdint>
 #include <fcntl.h>
 #include <cstdio>
-#include "libgraphics/geometry.h"
+#include <libgraphics/Geometry.h>
 #include "Window.h"
 #include <libgraphics/Image.h>
 #include <sys/input.h>

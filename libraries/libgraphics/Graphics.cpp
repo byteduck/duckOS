@@ -18,6 +18,6 @@
 */
 
 #include <string.h>
-#include "graphics.h"
-#include "font.h"
-#include "memory.h"
+#include "Graphics.h"
+#include "Font.h"
+#include "Memory.h"

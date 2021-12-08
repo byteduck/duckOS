@@ -18,7 +18,7 @@
 */
 
 #include "Checkbox.h"
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 
 #include <utility>
 

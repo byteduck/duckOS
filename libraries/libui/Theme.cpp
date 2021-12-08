@@ -18,7 +18,7 @@
 */
 
 #include "Theme.h"
-#include <libgraphics/png.h>
+#include <libgraphics/PNG.h>
 #include <string.h>
 #include "libui.h"
 #include <libgraphics/Image.h>

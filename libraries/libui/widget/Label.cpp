@@ -18,7 +18,7 @@
 */
 
 #include "Label.h"
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 
 using namespace UI;
 using namespace Gfx;

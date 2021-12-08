@@ -17,7 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "geometry.h"
+#include "Geometry.h"
 
 bool Gfx::Point::near_border(const Rect& rect, int border_size) const {
 	Rect border_rect = {

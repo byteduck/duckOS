@@ -20,8 +20,8 @@
 #pragma once
 
 #include <cstdint>
-#include <libgraphics/graphics.h>
-#include <libgraphics/geometry.h>
+#include <libgraphics/Graphics.h>
+#include <libgraphics/Geometry.h>
 #include "Window.h"
 #include "Mouse.h"
 #include <libgraphics/Image.h>

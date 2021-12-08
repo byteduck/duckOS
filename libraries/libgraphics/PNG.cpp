@@ -17,9 +17,9 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "png.h"
+#include "PNG.h"
 #include <memory.h>
-#include "deflate.h"
+#include "Deflate.h"
 #include "Framebuffer.h"
 
 #define abs(a) ((a) < 0 ? -(a) : (a))

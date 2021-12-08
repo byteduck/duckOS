@@ -20,7 +20,7 @@
 #pragma once
 
 #include <cstdint>
-#include <libgraphics/geometry.h>
+#include <libgraphics/Geometry.h>
 #include <libriver/SerializedString.hpp>
 
 namespace Pond {

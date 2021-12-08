@@ -18,7 +18,7 @@
 */
 
 #include "GameWidget.h"
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 #include <libui/libui.h>
 
 GameWidget::GameWidget() {

@@ -19,7 +19,7 @@
 
 #include "DrawContext.h"
 #include <libgraphics/Image.h>
-#include <libgraphics/font.h>
+#include <libgraphics/Font.h>
 
 using namespace Gfx;
 

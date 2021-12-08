@@ -20,7 +20,7 @@
 #pragma once
 
 #include "libui/widget/Widget.h"
-#include <libgraphics/geometry.h>
+#include <libgraphics/Geometry.h>
 #include <libpond/Window.h>
 #include <string>
 #include <functional>

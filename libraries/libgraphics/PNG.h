@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include "graphics.h"
+#include "Graphics.h"
 #include "Image.h"
-#include "deflate.h"
+#include "Deflate.h"
 
 #include <string>
 #include <cstdio>

@@ -20,7 +20,7 @@
 #include "Display.h"
 #include "FontManager.h"
 #include <libgraphics/Image.h>
-#include <libgraphics/png.h>
+#include <libgraphics/PNG.h>
 #include <libduck/Log.h>
 #include <unistd.h>
 #include <cstdio>
@@ -28,7 +28,7 @@
 #include <kernel/device/VGADevice.h>
 #include <cstring>
 #include <sys/input.h>
-#include <libgraphics/memory.h>
+#include <libgraphics/Memory.h>
 
 using namespace Gfx;
 using Duck::Log;

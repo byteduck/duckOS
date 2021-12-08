@@ -21,7 +21,7 @@
 #include "Mouse.h"
 #include "Display.h"
 #include <libgraphics/Image.h>
-#include <libgraphics/png.h>
+#include <libgraphics/PNG.h>
 
 using namespace Gfx;
 

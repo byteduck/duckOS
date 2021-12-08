@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/types.h>
-#include <libgraphics/graphics.h>
+#include <libgraphics/Graphics.h>
 #include "Context.h"
 #include <libgraphics/Image.h>
 #include <sys/mem.h>

@@ -17,8 +17,8 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "font.h"
-#include "geometry.h"
+#include "Font.h"
+#include "Geometry.h"
 #include <cstdio>
 #include <cstring>
 #include <climits>

@@ -18,7 +18,7 @@
 */
 
 #include "Image.h"
-#include "memory.h"
+#include "Memory.h"
 
 using namespace Gfx;
 

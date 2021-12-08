@@ -21,7 +21,7 @@
 
 #include "Theme.h"
 #include <libgraphics/Image.h>
-#include <libgraphics/graphics.h>
+#include <libgraphics/Graphics.h>
 
 namespace UI {
 	enum TextAlignment {

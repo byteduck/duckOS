@@ -21,7 +21,7 @@
 
 #include "4inarow.h"
 #include <libui/widget/Widget.h>
-#include <libgraphics/graphics.h>
+#include <libgraphics/Graphics.h>
 
 #define CELL_SIZE 28
 #define CELL_COLOR UI::Theme::bg()

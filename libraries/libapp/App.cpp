@@ -18,7 +18,7 @@
 */
 
 #include "App.h"
-#include <libgraphics/png.h>
+#include <libgraphics/PNG.h>
 #include <libduck/Config.h>
 #include <unistd.h>
 
