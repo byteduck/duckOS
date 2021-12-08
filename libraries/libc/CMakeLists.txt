@@ -51,13 +51,12 @@ TARGET_LINK_DIRECTORIES(libc_static PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_LINK_LIBRARIES(libc_static crt0 gcc stdc++ supc++)
 ADD_CUSTOM_COMMAND(TARGET libc_static COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:libc_static> ${CMAKE_INSTALL_PREFIX}/lib/libc.a)
 
+# Add headers target
+ADD_CUSTOM_TARGET(libc_headers
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_INSTALL_PREFIX}/usr/include
+    COMMAND rsync -au --include '*/' --include='*.h' --include="*.hpp" --exclude='*' ${CMAKE_SOURCE_DIR}/libraries/libc/* ${CMAKE_INSTALL_PREFIX}/usr/include
+)
+
 # Combine libc_dyn and libc_static
 ADD_CUSTOM_TARGET(libc)
-ADD_DEPENDENCIES(libc libc_dyn libc_static)
-
-# Install headers
-FILE(GLOB_RECURSE LIBHEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
-foreach(HEADER ${LIBHEADERS})
-    GET_FILENAME_COMPONENT(SUBDIRECTORY ${HEADER} DIRECTORY)
-    INSTALL(FILES ${HEADER} DESTINATION usr/include/${SUBDIRECTORY})
-endforeach()
+ADD_DEPENDENCIES(libc libc_headers libc_dyn libc_static)

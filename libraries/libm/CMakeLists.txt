@@ -16,7 +16,7 @@ ADD_CUSTOM_COMMAND(TARGET libm_static COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_
 
 # Combine libc_dyn and libc_static
 ADD_CUSTOM_TARGET(libm)
-ADD_DEPENDENCIES(libm libm_dyn libm_static)
+ADD_DEPENDENCIES(libm libc libm_dyn libm_static)
 
 # Install headers
 FILE(GLOB_RECURSE LIBHEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
