@@ -61,6 +61,7 @@ void ListView::update_data() {
 	}
 	_items.clear();
 	do_update(false);
+	recalculate_scrollbar();
 }
 
 void ListView::do_update(bool dimensions_changed) {

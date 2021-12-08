@@ -36,6 +36,7 @@ namespace UI {
 		void scroll_to(Gfx::Point position);
 		Gfx::Point scroll_position();
 		Gfx::Rect content_area();
+		void recalculate_scrollbar();
 
 		//Widget
 		Gfx::Dimensions preferred_size() override;

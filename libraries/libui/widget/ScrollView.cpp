@@ -55,6 +55,41 @@ Gfx::Rect ScrollView::content_area() {
 	return {0, 0, current_size().width - 15, current_size().height};
 }
 
+void ScrollView::recalculate_scrollbar() {
+	Gfx::Dimensions size = current_size();
+
+	//Area for scrollbar and handle
+	scrollbar_area = {size.width - 12, 0, 12, size.height};
+	handle_area = scrollbar_area;
+	Gfx::Dimensions scroll_area = scrollable_area();
+	Gfx::Point old_scroll_position = _scroll_position;
+
+	//Calculate the height of the scrollbar handle
+	handle_area.height = (int)(((double) scrollbar_area.height / (double) scroll_area.height) * scrollbar_area.height);
+	if(handle_area.height < 10)
+		handle_area.height = 10;
+	else if(handle_area.height > scrollbar_area.height)
+		handle_area.height = scrollbar_area.height;
+
+	//Calculate the position of the scrollbar handle
+	double scroll_percent = 0;
+	if(scroll_area.height != size.height) {
+		scroll_percent = (double)_scroll_position.y / (double)(scroll_area.height - size.height);
+		if(scroll_percent < 0) {
+			//These conditions may happen if the view was resized
+			_scroll_position.y = 0;
+			scroll_percent = 0;
+		} else if(scroll_percent > 1) {
+			_scroll_position.y = scroll_area.height - size.height;
+			scroll_percent = 1;
+		}
+	}
+	handle_area.y = (int)(scroll_percent * (scrollbar_area.height - handle_area.height));
+
+	if(old_scroll_position != _scroll_position)
+		on_scroll(_scroll_position);
+}
+
 Gfx::Dimensions ScrollView::preferred_size() {
 	Gfx::Dimensions size = scrollable_area();
 	if(size.width > LIBUI_SCROLLVIEW_MAX_PREFERRED_WIDTH)
@@ -113,35 +148,7 @@ bool ScrollView::on_mouse_button(Pond::MouseButtonEvent evt) {
 }
 
 void ScrollView::on_layout_change(const Gfx::Rect& old_rect) {
-	Gfx::Dimensions size = current_size();
-
-	//Area for scrollbar and handle
-	scrollbar_area = {size.width - 12, 0, 12, size.height};
-	handle_area = scrollbar_area;
-	Gfx::Dimensions scroll_area = scrollable_area();
-
-	//Calculate the height of the scrollbar handle
-	handle_area.height = (int)(((double) scrollbar_area.height / (double) scroll_area.height) * scrollbar_area.height);
-	if(handle_area.height < 10)
-		handle_area.height = 10;
-	else if(handle_area.height > scrollbar_area.height)
-		handle_area.height = scrollbar_area.height;
-
-	//Calculate the position of the scrollbar handle
-	double scroll_percent = 0;
-	if(scroll_area.height != size.height) {
-		scroll_percent = (double)_scroll_position.y / (double)(scroll_area.height - size.height);
-		if(scroll_percent < 0) {
-			//These conditions may happen if the view was resized
-			_scroll_position.y = 0;
-			scroll_percent = 0;
-		} else if(scroll_percent > 1) {
-			_scroll_position.y = scroll_area.height - size.height;
-			scroll_percent = 1;
-		}
-	}
-	handle_area.y = (int)(scroll_percent * (scrollbar_area.height - handle_area.height));
-	on_scroll(_scroll_position);
+	recalculate_scrollbar();
 }
 
 bool ScrollView::needs_layout_on_child_change() {
