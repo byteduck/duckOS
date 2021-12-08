@@ -353,7 +353,7 @@ void Window::set_hint(int hint, int value) {
 			set_resizable(value);
 			break;
 		default:
-			Log::warn("Unknown window hint ", hint);
+			Duck::Log::warn("Unknown window hint ", hint);
 	}
 }
 

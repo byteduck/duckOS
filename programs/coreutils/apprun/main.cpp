@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
 	args.add_flag(background, "b", "background", "Forks before executing the app, i.e. runs the app in the background.");
 	args.parse(argc, argv);
 
-	ResultRet<App::Info> res = Result::FAILURE;
+	Duck::ResultRet<App::Info> res = Duck::Result::FAILURE;
 	if(app_name.find('/') != std::string::npos)
 		res = App::Info::from_app_directory(app_name);
 	else

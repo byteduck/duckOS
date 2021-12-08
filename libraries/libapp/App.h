@@ -22,7 +22,7 @@
 #include <vector>
 #include <string>
 #include <libgraphics/Image.h>
-#include <libduck/Result.hpp>
+#include <libduck/Result.h>
 #include <memory>
 #include <filesystem>
 #include <map>
@@ -33,9 +33,9 @@
 namespace App {
 	class Info {
 	public:
-		static ResultRet<Info> from_app_directory(const std::filesystem::path& app_directory);
-		static ResultRet<Info> from_app_name(const std::string& app_name);
-		static ResultRet<Info> from_current_app();
+		static Duck::ResultRet<Info> from_app_directory(const std::filesystem::path& app_directory);
+		static Duck::ResultRet<Info> from_app_name(const std::string& app_name);
+		static Duck::ResultRet<Info> from_current_app();
 
 		Info() = default;
 		Info(std::filesystem::path app_directory, std::string name, std::string exec);

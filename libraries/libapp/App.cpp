@@ -23,6 +23,7 @@
 #include <unistd.h>
 
 using namespace App;
+using Duck::Result, Duck::ResultRet;
 
 ResultRet<Info> Info::from_app_directory(const std::filesystem::path& app_directory) {
 	auto config_res = Duck::Config::read_from(app_directory / "app.conf");

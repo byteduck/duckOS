@@ -22,7 +22,7 @@
 #include <string>
 #include <map>
 #include <fstream>
-#include "Result.hpp"
+#include "Result.h"
 
 namespace Duck {
 	class Config {

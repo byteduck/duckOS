@@ -32,6 +32,8 @@
 
 #include <libduck/Log.h>
 
+using Duck::Log, Duck::Config;
+
 int main(int argc, char** argv, char** envp) {
 	if(getpid() != 1) {
 		printf("pid != 1. Exiting.\n");
@@ -42,7 +44,7 @@ int main(int argc, char** argv, char** envp) {
 	Log::success("Welcome to duckOS!");
 
 	//Read config file
-	auto cfg_res = Duck::Config::read_from("/etc/init.conf");
+	auto cfg_res = Config::read_from("/etc/init.conf");
 	if(cfg_res.is_error()) {
 		Log::crit("Failed to read /etc/init.conf: ", strerror(errno));
 		exit(errno);

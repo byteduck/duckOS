@@ -20,7 +20,7 @@
 #pragma once
 
 #include <string>
-#include <libduck/Result.hpp>
+#include <libduck/Result.h>
 #include <map>
 #include <memory>
 #include <sys/types.h>
@@ -39,8 +39,8 @@ namespace River {
 			CUSTOM
 		};
 
-		static ResultRet<BusServer*> create(const std::string& socket_name);
-		static ResultRet<BusServer*> create(ServerType type);
+		static Duck::ResultRet<BusServer*> create(const std::string& socket_name);
+		static Duck::ResultRet<BusServer*> create(ServerType type);
 
 		void read_and_handle_packets(bool block);
 		tid_t spawn_thread();

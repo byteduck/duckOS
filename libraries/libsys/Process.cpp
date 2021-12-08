@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 using namespace Sys;
+using Duck::Result, Duck::ResultRet;
 
 std::map<pid_t, Process> Process::get_all() {
 	std::map<pid_t, Process> ret;

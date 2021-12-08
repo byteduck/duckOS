@@ -21,6 +21,7 @@
 #include <libduck/Log.h>
 
 using namespace River;
+using Duck::Result, Duck::ResultRet, Duck::Log;
 
 const char* River::error_str(int error) {
 	switch(error) {
@@ -46,7 +47,7 @@ const char* River::error_str(int error) {
 	}
 }
 
-ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
+Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
 	if(block) {
 		struct pollfd pfd = {fd, POLLIN, 0};
 		poll(&pfd, 1, -1);

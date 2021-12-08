@@ -46,7 +46,7 @@ namespace River {
 		Endpoint(std::shared_ptr<BusConnection> bus, const std::string& name, ConnectionType type);
 
 		template<typename RetT, typename... ParamTs>
-		ResultRet<Function<RetT, ParamTs...>> register_function(const std::string& path, typename type_identity<std::function<RetT(sockid_t, ParamTs...)>>::type callback) {
+		Duck::ResultRet<Function<RetT, ParamTs...>> register_function(const std::string& path, typename type_identity<std::function<RetT(sockid_t, ParamTs...)>>::type callback) {
 			auto stringname = Function<RetT, ParamTs...>::stringname_of(path);
 
 			if(_functions[stringname])
@@ -60,8 +60,8 @@ namespace River {
 
 			auto packet = _bus->await_packet(REGISTER_FUNCTION, _name, stringname);
 			if(packet.error) {
-				Log::err("[River] Couldn't register function ", _name, ":", path, ": ", error_str(packet.error));
-				return Result(packet.error);
+				Duck::Log::err("[River] Couldn't register function ", _name, ":", path, ": ", error_str(packet.error));
+				return Duck::Result(packet.error);
 			}
 
 			auto ret = std::make_shared<Function<RetT, ParamTs...>>(path, shared_from_this(), callback);
@@ -70,7 +70,7 @@ namespace River {
 		}
 
 		template<typename RetT, typename... ParamTs>
-		ResultRet<Function<RetT, ParamTs...>> get_function(const std::string& path) {
+		Duck::ResultRet<Function<RetT, ParamTs...>> get_function(const std::string& path) {
 			auto stringname = Function<RetT, ParamTs...>::stringname_of(path);
 
 			if(_functions[stringname])
@@ -84,8 +84,8 @@ namespace River {
 
 			auto packet = _bus->await_packet(River::GET_FUNCTION, _name, stringname);
 			if(packet.error) {
-				Log::err("[River] Couldn't get function ", _name, ":", path, ": ", error_str(packet.error));
-				return Result(packet.error);
+				Duck::Log::err("[River] Couldn't get function ", _name, ":", path, ": ", error_str(packet.error));
+				return Duck::Result(packet.error);
 			}
 
 			auto ret = std::make_shared<Function<RetT, ParamTs...>>(path, shared_from_this());
@@ -94,7 +94,7 @@ namespace River {
 		}
 
 		template<typename T>
-		ResultRet<Message<T>> register_message(const std::string& path) {
+		Duck::ResultRet<Message<T>> register_message(const std::string& path) {
 			auto stringname = Message<T>::stringname_of(path);
 
 			if(_messages[stringname])
@@ -108,8 +108,8 @@ namespace River {
 
 			auto packet = _bus->await_packet(River::REGISTER_MESSAGE, _name, stringname);
 			if(packet.error) {
-				Log::err("[River] Couldn't register message ", _name, ":", path, ": ", error_str(packet.error));
-				return Result(packet.error);
+				Duck::Log::err("[River] Couldn't register message ", _name, ":", path, ": ", error_str(packet.error));
+				return Duck::Result(packet.error);
 			}
 
 			auto ret = std::make_shared<Message<T>>(path, shared_from_this());
@@ -118,11 +118,11 @@ namespace River {
 		}
 
 		template<typename T>
-		Result send_message(const std::string& path, sockid_t recipient, const T& data) {
+		Duck::Result send_message(const std::string& path, sockid_t recipient, const T& data) {
 			auto stringname = Message<T>::stringname_of(path);
 			auto msg = _messages[stringname];
 			if(!msg) {
-				Log::err("[River] Couldn't send unregistered message ", _name, ":", path);
+				Duck::Log::err("[River] Couldn't send unregistered message ", _name, ":", path);
 				return MESSAGE_DOES_NOT_EXIST;
 			}
 			std::dynamic_pointer_cast<Message<T>>(msg)->send(recipient, data);
@@ -130,11 +130,11 @@ namespace River {
 		}
 
 		template<typename T>
-		Result set_message_handler(const std::string& path, typename type_identity<std::function<void(T)>>::type callback) {
+		Duck::Result set_message_handler(const std::string& path, typename type_identity<std::function<void(T)>>::type callback) {
 			auto stringname = Message<T>::stringname_of(path);
 
 			if(_messages[stringname])
-				return Result(MESSAGE_HANDLER_ALREADY_SET);
+				return Duck::Result(MESSAGE_HANDLER_ALREADY_SET);
 
 			_bus->send_packet({
 				GET_MESSAGE,
@@ -144,13 +144,13 @@ namespace River {
 
 			auto packet = _bus->await_packet(River::GET_MESSAGE, _name, stringname);
 			if(packet.error) {
-				Log::err("[River] Couldn't get message ", _name, ":", path, ": ", error_str(packet.error));
-				return Result(packet.error);
+				Duck::Log::err("[River] Couldn't get message ", _name, ":", path, ": ", error_str(packet.error));
+				return Duck::Result(packet.error);
 			}
 
 			auto ret = std::make_shared<Message<T>>(path, shared_from_this(), callback);
 			_messages[stringname] = ret;
-			return Result(SUCCESS);
+			return Duck::Result(SUCCESS);
 		}
 
 		std::shared_ptr<IFunction> get_ifunction(const std::string& path);

@@ -29,6 +29,7 @@
 #include <libduck/Log.h>
 
 using namespace River;
+using Duck::Result, Duck::ResultRet, Duck::Log;
 
 ResultRet<std::shared_ptr<BusConnection>> BusConnection::connect(const std::string& socket_name, bool nonblock) {
 	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR | O_CLOEXEC | (nonblock ? O_NONBLOCK : 0));

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <string>
-#include <libduck/Result.hpp>
+#include <libduck/Result.h>
 #include <deque>
 #include <map>
 #include <memory>
@@ -39,14 +39,14 @@ namespace River {
 			CUSTOM
 		};
 
-		static ResultRet<std::shared_ptr<BusConnection>> connect(const std::string& socket_name, bool nonblock = false);
-		static ResultRet<std::shared_ptr<BusConnection>> connect(BusType type, bool nonblock = false);
+		static Duck::ResultRet<std::shared_ptr<BusConnection>> connect(const std::string& socket_name, bool nonblock = false);
+		static Duck::ResultRet<std::shared_ptr<BusConnection>> connect(BusType type, bool nonblock = false);
 		explicit BusConnection(int fd, BusType type): _fd(fd), _type(type) {}
 		explicit BusConnection(BusServer* server): _server(server) {}
 		~BusConnection();
 
-		ResultRet<std::shared_ptr<Endpoint>> register_endpoint(const std::string& name);
-		ResultRet<std::shared_ptr<Endpoint>> get_endpoint(const std::string& name);
+		Duck::ResultRet<std::shared_ptr<Endpoint>> register_endpoint(const std::string& name);
+		Duck::ResultRet<std::shared_ptr<Endpoint>> get_endpoint(const std::string& name);
 
 		void send_packet(const RiverPacket& packet);
 		void read_all_packets(bool block);

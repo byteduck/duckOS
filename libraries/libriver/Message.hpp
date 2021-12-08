@@ -52,7 +52,7 @@ namespace River {
 
 		void send(sockid_t recipient, const T& data) const {
 			if(!_endpoint) {
-				Log::err("[River] Tried sending uninitialized message ", _path);
+				Duck::Log::err("[River] Tried sending uninitialized message ", _path);
 				return;
 			}
 
@@ -71,7 +71,7 @@ namespace River {
 				//Send the message packet
 				_endpoint->bus()->send_packet(packet);
 			} else {
-				Log::err(stderr, "[River] Tried sending message through proxy endpoint");
+				Duck::Log::err(stderr, "[River] Tried sending message through proxy endpoint");
 			}
 		}
 
@@ -82,12 +82,12 @@ namespace River {
 
 		virtual void set_callback(std::function<void(T)> callback) {
 			if(!_endpoint) {
-				Log::err("[River] Tried setting callback for uninitialized message!");
+				Duck::Log::err("[River] Tried setting callback for uninitialized message!");
 				return;
 			}
 
 			if(_endpoint->type() == Endpoint::HOST) {
-				Log::err("[River] Tried setting callback for message on host!");
+				Duck::Log::err("[River] Tried setting callback for message on host!");
 				return;
 			}
 

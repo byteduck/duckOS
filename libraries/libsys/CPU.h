@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <libduck/Result.hpp>
+#include <libduck/Result.h>
 #include <istream>
 
 namespace Sys::CPU {
@@ -28,7 +28,7 @@ namespace Sys::CPU {
 		double utilization;
 	};
 
-	ResultRet<Info> get_info(std::istream& file);
-	ResultRet<Info> get_info();
+	Duck::ResultRet<Info> get_info(std::istream& file);
+	Duck::ResultRet<Info> get_info();
 }
 

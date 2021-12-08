@@ -21,7 +21,7 @@
 
 #include <vector>
 #include <string>
-#include <libduck/Result.hpp>
+#include <libduck/Result.h>
 #include <sys/socketfs.h>
 #include <poll.h>
 #include <cstring>
@@ -106,7 +106,7 @@ namespace River {
 		SOCKETFS_MESSAGE,
 	};
 
-	ResultRet<RiverPacket> receive_packet(int fd, bool block);
+	Duck::ResultRet<RiverPacket> receive_packet(int fd, bool block);
 	void send_packet(int fd, sockid_t recipient, const RiverPacket& packet);
 }
 

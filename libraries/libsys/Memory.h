@@ -21,7 +21,7 @@
 
 #include <sys/types.h>
 #include <iostream>
-#include <libduck/Result.hpp>
+#include <libduck/Result.h>
 
 namespace Sys::Mem {
 	class Amount {
@@ -73,6 +73,6 @@ namespace Sys::Mem {
 		}
 	};
 
-	ResultRet<Info> get_info(std::istream& file);
-	ResultRet<Info> get_info();
+	Duck::ResultRet<Info> get_info(std::istream& file);
+	Duck::ResultRet<Info> get_info();
 }

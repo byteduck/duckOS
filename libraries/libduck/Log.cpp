@@ -19,4 +19,4 @@
 
 #include "Log.h"
 
-std::ofstream Log::kstream("/dev/klog");
+std::ofstream Duck::Log::kstream("/dev/klog");

@@ -31,6 +31,7 @@
 #include <libgraphics/memory.h>
 
 using namespace Gfx;
+using Duck::Log;
 
 Display* Display::_inst = nullptr;
 

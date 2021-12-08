@@ -29,6 +29,7 @@
 #include <sys/thread.h>
 
 using namespace River;
+using Duck::Result, Duck::ResultRet, Duck::Log;
 
 ResultRet<BusServer*> BusServer::create(const std::string& socket_name) {
 	int fd = open(("/sock/" + socket_name).c_str(), O_RDWR | O_CREAT | O_EXCL | O_NONBLOCK | O_CLOEXEC);

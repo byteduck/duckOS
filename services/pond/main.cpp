@@ -50,7 +50,7 @@ int main(int argc, char** argv, char** envp) {
 		exit(-1);
 	}
 
-	Log::success("Pond started!");
+	Duck::Log::success("Pond started!");
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "EndlessLoop"

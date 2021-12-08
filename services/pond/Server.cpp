@@ -27,6 +27,7 @@
 
 using namespace River;
 using namespace Pond;
+using Duck::Log;
 
 #define REGISTER_FUNC(name, ret_t, arg_t, client_func) \
 auto __funcres_##name = _endpoint->register_function<ret_t, arg_t>((#name), [&] (sockid_t id, arg_t pkt) -> ret_t { \

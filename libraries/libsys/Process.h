@@ -35,8 +35,8 @@ namespace Sys {
 		};
 
 		static std::map<pid_t, Process> get_all();
-		static ResultRet<Process> get(pid_t pid);
-		static ResultRet<Process> self();
+		static Duck::ResultRet<Process> get(pid_t pid);
+		static Duck::ResultRet<Process> self();
 
 		const std::string& name() const { return _name; }
 		std::string exe() const;
@@ -50,9 +50,9 @@ namespace Sys {
 		Mem::Amount virtual_mem() const { return _virtual_mem; }
 		Mem::Amount shared_mem() const { return _shared_mem; }
 
-		ResultRet<App::Info> app_info() const;
+		Duck::ResultRet<App::Info> app_info() const;
 
-		Result update();
+		Duck::Result update();
 
 	private:
 		std::string _name;

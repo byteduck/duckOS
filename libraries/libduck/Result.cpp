@@ -17,7 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "Result.hpp"
+#include "Result.h"
 
-const Result Result::SUCCESS = {0};
-const Result Result::FAILURE = {-1};
+const Duck::Result Duck::Result::SUCCESS = {0};
+const Duck::Result Duck::Result::FAILURE = {-1};

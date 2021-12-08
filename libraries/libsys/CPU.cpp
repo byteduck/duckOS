@@ -22,6 +22,7 @@
 #include <libduck/Config.h>
 
 using namespace Sys;
+using Duck::Result, Duck::ResultRet;
 
 ResultRet<CPU::Info> CPU::get_info(std::istream& file) {
 	file.clear(file.goodbit);

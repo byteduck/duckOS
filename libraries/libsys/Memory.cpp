@@ -22,6 +22,7 @@
 #include <iostream>
 
 using namespace Sys;
+using Duck::Result, Duck::ResultRet;
 
 ResultRet<Mem::Info> Mem::get_info(std::istream& file) {
 	file.clear(file.goodbit);

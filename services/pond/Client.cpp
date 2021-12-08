@@ -25,6 +25,7 @@
 #include <libpond/packet.h>
 
 using namespace Pond;
+using Duck::Log;
 
 #define SEND_MESSAGE(name, data) { \
 auto __msgsend_res = server->endpoint()->send_message(name, id, data); \
