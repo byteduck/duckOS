@@ -35,7 +35,7 @@ class Display {
 public:
 	Display();
 
-	Rect dimensions();
+	Gfx::Rect dimensions();
 	Gfx::Framebuffer& framebuffer();
 	void clear(uint32_t color);
 
@@ -71,9 +71,9 @@ public:
 
 	/**
 	 * Marks a portion of the display to be redrawn
-	 * @param Rect the absolute rect to be redrawn
+	 * @param Gfx::Rect the absolute rect to be redrawn
 	 */
-	void invalidate(const Rect& rect);
+	void invalidate(const Gfx::Rect& rect);
 
 	/**
 	 * Repaints the needed areas of the screen to the hidden screen buffer.
@@ -135,26 +135,26 @@ private:
 	/**
 	 * Figures out which direction the window should be resized based on mouse position.
 	 */
-	ResizeMode get_resize_mode(Rect window, Point mouse);
+	ResizeMode get_resize_mode(Gfx::Rect window, Gfx::Point mouse);
 
 	/**
 	 * Calculates the new rect of the window being resized.
 	 */
-	Rect calculate_resize_rect();
+	Gfx::Rect calculate_resize_rect();
 
 	int framebuffer_fd = 0; ///The file descriptor of the framebuffer.
 	Gfx::Framebuffer _framebuffer; ///The framebuffer framebuffer.
 	Gfx::Image* _wallpaper = nullptr; ///The framebuffer representing the wallpaper.
-	Rect _dimensions; ///The dimensions of the display.
-	std::vector<Rect> invalid_areas; ///The invalidated areas that need to be redrawn.
+	Gfx::Rect _dimensions; ///The dimensions of the display.
+	std::vector<Gfx::Rect> invalid_areas; ///The invalidated areas that need to be redrawn.
 	std::vector<Window*> _windows; ///The windows on the display.
 	Mouse* _mouse_window = nullptr; ///The window representing the mouse cursor.
 	Window* _prev_mouse_window = nullptr; ///The previous window that the mouse cursor was in.
 	Window* _drag_window = nullptr; ///The current window being dragged.
 	Window* _mousedown_window = nullptr; ///The window receiving mouse events because it was clicked.
 	Window* _resize_window = nullptr; ///The window being resized.
-	Point _resize_begin_point; ///The point the mouse was at when the window began resizing.
-	Rect _resize_rect; ///The rect representing the new size of the resized window.
+	Gfx::Point _resize_begin_point; ///The point the mouse was at when the window began resizing.
+	Gfx::Rect _resize_rect; ///The rect representing the new size of the resized window.
 	ResizeMode _resize_mode = NONE; ///The current resize mode.
 	Window* _root_window = nullptr; ///The root window of the display.
 	timeval paint_time = {0, 0}; ///The last time that the display was painted.
@@ -162,7 +162,7 @@ private:
 	int _keyboard_fd; ///The file descriptor of the keyboard.
 	Window* _focused_window = nullptr; ///The currently focused window.
 	bool _can_flip_buffer = false; ///Whether or not the display buffer can be flipped.
-	Rect _invalid_buffer_area = {-1, -1, -1, -1}; ///The invalid area of the display buffer that needs to be redrawn next flip
+	Gfx::Rect _invalid_buffer_area = {-1, -1, -1, -1}; ///The invalid area of the display buffer that needs to be redrawn next flip
 
 	static Display* _inst; ///The main instance of the display.
 };

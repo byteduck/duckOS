@@ -30,29 +30,29 @@ namespace UI {
 		VIRTUAL_WIDGET_DEF(ScrollView)
 
 		//ScrollView
-		virtual void on_scroll(Point new_position) = 0;
-		virtual Dimensions scrollable_area() = 0;
-		void scroll(Point scroll_amount);
-		void scroll_to(Point position);
-		Point scroll_position();
-		Rect content_area();
+		virtual void on_scroll(Gfx::Point new_position) = 0;
+		virtual Gfx::Dimensions scrollable_area() = 0;
+		void scroll(Gfx::Point scroll_amount);
+		void scroll_to(Gfx::Point position);
+		Gfx::Point scroll_position();
+		Gfx::Rect content_area();
 
 		//Widget
-		Dimensions preferred_size() override;
+		Gfx::Dimensions preferred_size() override;
 		void do_repaint(const UI::DrawContext& ctx) override;
 		bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 		bool on_mouse_scroll(Pond::MouseScrollEvent evt) override;
 		bool on_mouse_button(Pond::MouseButtonEvent evt) override;
-		void on_layout_change(const Rect& old_rect) override;
+		void on_layout_change(const Gfx::Rect& old_rect) override;
 		virtual bool needs_layout_on_child_change() override;
 
 	protected:
 		ScrollView();
 
 	private:
-		Point _scroll_position = {0, 0};
-		Rect scrollbar_area;
-		Rect handle_area;
+		Gfx::Point _scroll_position = {0, 0};
+		Gfx::Rect scrollbar_area;
+		Gfx::Rect handle_area;
 		bool dragging_scrollbar = false;
 	};
 }

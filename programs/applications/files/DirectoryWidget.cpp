@@ -46,7 +46,7 @@ Widget::Ptr DirectoryWidget::create_entry(int index) {
 	return FileWidget::make(entry, self());
 }
 
-Dimensions DirectoryWidget::preferred_item_dimensions() {
+Gfx::Dimensions DirectoryWidget::preferred_item_dimensions() {
 	return { 64, 64 };
 }
 

@@ -25,12 +25,12 @@ ContainerView::ContainerView() {
 	set_uses_alpha(true);
 }
 
-void ContainerView::on_scroll(Point new_position) {
+void ContainerView::on_scroll(Gfx::Point new_position) {
 	if(_contents)
 		_contents->set_position_nolayout(new_position * -1);
 }
 
-Dimensions ContainerView::scrollable_area() {
+Gfx::Dimensions ContainerView::scrollable_area() {
 	return _contents->preferred_size();
 }
 
@@ -57,6 +57,6 @@ void ContainerView::calculate_layout() {
 	}
 }
 
-Dimensions ContainerView::preferred_size() {
+Gfx::Dimensions ContainerView::preferred_size() {
 	return _contents->preferred_size();
 }

@@ -27,12 +27,12 @@ ScrollView::ScrollView() {
 	set_sizing_mode(FILL);
 }
 
-void ScrollView::scroll(Point scroll_amount) {
+void ScrollView::scroll(Gfx::Point scroll_amount) {
 	scroll_to(_scroll_position + scroll_amount);
 }
 
-void ScrollView::scroll_to(Point position) {
-	Dimensions size = current_size();
+void ScrollView::scroll_to(Gfx::Point position) {
+	Gfx::Dimensions size = current_size();
 	_scroll_position = position;
 	double scroll_percent = (double)_scroll_position.y / (double)(scrollable_area().height - size.height);
 	if(scroll_percent < 0) {
@@ -47,21 +47,21 @@ void ScrollView::scroll_to(Point position) {
 	repaint();
 }
 
-Point ScrollView::scroll_position() {
+Gfx::Point ScrollView::scroll_position() {
 	return _scroll_position;
 }
 
-Rect ScrollView::content_area() {
+Gfx::Rect ScrollView::content_area() {
 	return {0, 0, current_size().width - 15, current_size().height};
 }
 
-Dimensions ScrollView::preferred_size() {
-	Dimensions size = scrollable_area();
+Gfx::Dimensions ScrollView::preferred_size() {
+	Gfx::Dimensions size = scrollable_area();
 	if(size.width > LIBUI_SCROLLVIEW_MAX_PREFERRED_WIDTH)
 		size.width = LIBUI_SCROLLVIEW_MAX_PREFERRED_WIDTH;
 	if(size.height > LIBUI_SCROLLVIEW_MAX_PREFERRED_HEIGHT - 15)
 		size.height = LIBUI_SCROLLVIEW_MAX_PREFERRED_HEIGHT - 15;
-	return size + Dimensions{15, 0};
+	return size + Gfx::Dimensions{15, 0};
 }
 
 void ScrollView::do_repaint(const DrawContext& ctx) {
@@ -112,13 +112,13 @@ bool ScrollView::on_mouse_button(Pond::MouseButtonEvent evt) {
 	return false;
 }
 
-void ScrollView::on_layout_change(const Rect& old_rect) {
-	Dimensions size = current_size();
+void ScrollView::on_layout_change(const Gfx::Rect& old_rect) {
+	Gfx::Dimensions size = current_size();
 
 	//Area for scrollbar and handle
 	scrollbar_area = {size.width - 12, 0, 12, size.height};
 	handle_area = scrollbar_area;
-	Dimensions scroll_area = scrollable_area();
+	Gfx::Dimensions scroll_area = scrollable_area();
 
 	//Calculate the height of the scrollbar handle
 	handle_area.height = (int)(((double) scrollbar_area.height / (double) scroll_area.height) * scrollbar_area.height);

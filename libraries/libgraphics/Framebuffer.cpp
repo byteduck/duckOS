@@ -21,6 +21,7 @@
 #include "graphics.h"
 #include "font.h"
 #include "memory.h"
+#include "geometry.h"
 
 using namespace Gfx;
 

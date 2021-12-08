@@ -56,13 +56,13 @@ namespace Pond {
 		 * If given a position with negative coordinates, the entire window will be redrawn.
 		 * @param area The area to invalidate.
 		 */
-		void invalidate_area(Rect area);
+		void invalidate_area(Gfx::Rect area);
 
 		/**
 		 * Resizes a window.
 		 * @param dims The new dimensions of the window.
 		 */
-		void resize(Dimensions dims);
+		void resize(Gfx::Dimensions dims);
 
 		/**
 		 * Resizes a window.
@@ -75,7 +75,7 @@ namespace Pond {
 		 * Sets the position of a window.
 		 * @param pos The new position of the window.
 		 */
-		void set_position(Point pos);
+		void set_position(Gfx::Point pos);
 
 		/**
 		 * Sets the position of a window.
@@ -88,19 +88,19 @@ namespace Pond {
 		 * Gets the position of the window.
 		 * @return The position of the window.
 		 */
-		Point position() const;
+		Gfx::Point position() const;
 
 		/**
 		 * Gets the dimensions of the window.
 		 * @return The dimensions of the window.
 		 */
-		Dimensions dimensions() const;
+		Gfx::Dimensions dimensions() const;
 
 		/**
 		 * Gets the rect defining the window.
 		 * @return The rect defining the window.
 		 */
-		Rect rect() const;
+		Gfx::Rect rect() const;
 
 		/**
 		 * Sets the title of the window.
@@ -171,12 +171,12 @@ namespace Pond {
 		 * Gets the current position of the mouse in the window.
 		 * @return The current position of the mouse in the window.
 		 */
-		Point mouse_pos() const;
+		Gfx::Point mouse_pos() const;
 
 	private:
 		friend class Context;
 
-		Window(int id, Rect rect, struct shm shm, Context* ctx);
+		Window(int id, Gfx::Rect rect, struct shm shm, Context* ctx);
 
 		/**
 		 * Flips the framebuffer.
@@ -184,9 +184,9 @@ namespace Pond {
 		void flip_buffer();
 
 		int _id = -1; ///< The ID of the window.
-		Rect _rect; ///< The rect of the window.
+		Gfx::Rect _rect; ///< The rect of the window.
 		struct shm _shm; ///< The shared memory object for the window's framebuffer.
-		Point _mouse_pos = {-1, -1}; ///< The position of the mouse inside the window.
+		Gfx::Point _mouse_pos = {-1, -1}; ///< The position of the mouse inside the window.
 		unsigned int _mouse_buttons = 0; ///< A bitfield containing the last-known pressed mouse buttons inside the window.
 		bool _hidden = true; ///< Whether or not the window is hidden.
 		Context* _context = nullptr; ///< The context associated with the window.

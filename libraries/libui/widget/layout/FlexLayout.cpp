@@ -24,7 +24,7 @@ UI::FlexLayout::FlexLayout(UI::FlexLayout::Direction direction): direction(direc
 	set_sizing_mode(UI::FILL);
 }
 
-Dimensions UI::FlexLayout::preferred_size() {
+Gfx::Dimensions UI::FlexLayout::preferred_size() {
 	int max_main_dim = 0;
 	int max_other_dim = 0;
 	for(auto& child : children) {
@@ -45,13 +45,13 @@ Dimensions UI::FlexLayout::preferred_size() {
 	int size = max_main_dim * (int) children.size();
 
 	if(direction == HORIZONTAL)
-		return Dimensions {size, max_other_dim};
+		return Gfx::Dimensions {size, max_other_dim};
 	else
-		return Dimensions {max_other_dim, size};
+		return Gfx::Dimensions {max_other_dim, size};
 }
 
 void UI::FlexLayout::calculate_layout() {
-	Dimensions size = current_size();
+	Gfx::Dimensions size = current_size();
 	for(int i = 0; i < children.size(); i++) {
 		if(direction == VERTICAL) {
 			int cell_size = size.height / (int) children.size();

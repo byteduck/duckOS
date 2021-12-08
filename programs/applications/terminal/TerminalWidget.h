@@ -29,10 +29,10 @@ public:
 	~TerminalWidget();
 
 	//Widget
-	Dimensions preferred_size() override;
+	Gfx::Dimensions preferred_size() override;
 	void do_repaint(const UI::DrawContext& ctx) override;
 	bool on_keyboard(Pond::KeyEvent evt) override;
-	void on_layout_change(const Rect& old_rect) override;
+	void on_layout_change(const Gfx::Rect& old_rect) override;
 
 	void handle_term_events();
 	void run(const char* command);

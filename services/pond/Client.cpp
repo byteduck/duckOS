@@ -53,7 +53,7 @@ Client::~Client() {
 	}
 }
 
-void Client::mouse_moved(Window* window, Point delta, Point relative_pos, Point absolute_pos) {
+void Client::mouse_moved(Window* window, Gfx::Point delta, Gfx::Point relative_pos, Gfx::Point absolute_pos) {
 	SEND_MESSAGE("mouse_moved", (MouseMovePkt {window->id(), delta, relative_pos, absolute_pos}));
 }
 

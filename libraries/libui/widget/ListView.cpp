@@ -25,11 +25,11 @@ void ListView::calculate_layout() {
 	do_update(true);
 }
 
-void ListView::on_scroll(Point scroll) {
+void ListView::on_scroll(Gfx::Point scroll) {
 	do_update(false);
 }
 
-Dimensions ListView::scrollable_area() {
+Gfx::Dimensions ListView::scrollable_area() {
 	//If the item dimensions haven't been calculated, calculate them
 	if(_item_dims.width == -1)
 		_item_dims = preferred_item_dimensions();
@@ -121,9 +121,9 @@ Widget::Ptr ListView::setup_entry(int index) {
 	return widget;
 }
 
-Rect ListView::item_rect(int index) {
+Gfx::Rect ListView::item_rect(int index) {
 	return {
-		Point {(index % _num_per_row) * _item_dims.width, (index / _num_per_row) * _item_dims.height} - scroll_position(),
+		Gfx::Point {(index % _num_per_row) * _item_dims.width, (index / _num_per_row) * _item_dims.height} - scroll_position(),
 		_item_dims
 	};
 }

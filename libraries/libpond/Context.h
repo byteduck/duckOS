@@ -68,7 +68,7 @@ namespace Pond {
 		 * @param hidden Whether the window should be hidden.
 		 * @return A PWindow object or NULL if the creation failed.
 		 */
-		Window* create_window(Window* parent, Rect rect, bool hidden);
+		Window* create_window(Window* parent, Gfx::Rect rect, bool hidden);
 
 		/**
 		 * Gets a font from the Pond server.
@@ -88,7 +88,7 @@ namespace Pond {
 		 * Gets the dimensions of the display.
 		 * @return The dimensions of the display.
 		 */
-		Dimensions get_display_dimensions();
+		Gfx::Dimensions get_display_dimensions();
 
 	private:
 		friend class Window;

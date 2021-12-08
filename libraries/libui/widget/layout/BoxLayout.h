@@ -34,7 +34,7 @@ namespace UI {
 		void set_spacing(int new_spacing);
 
 		//Widget
-		virtual Dimensions preferred_size() override;
+		virtual Gfx::Dimensions preferred_size() override;
 		void calculate_layout() override;
 
 	protected:

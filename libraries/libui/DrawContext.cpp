@@ -39,11 +39,11 @@ const Framebuffer& UI::DrawContext::framebuffer() const {
 	return *fb;
 }
 
-void UI::DrawContext::fill(Rect rect, Color color) const {
+void UI::DrawContext::fill(Gfx::Rect rect, Color color) const {
 	fb->fill(rect, color);
 }
 
-void UI::DrawContext::fill_gradient_h(Rect rect, Color color_a, Color color_b) const {
+void UI::DrawContext::fill_gradient_h(Gfx::Rect rect, Color color_a, Color color_b) const {
 	for(int x = 0; x < rect.width; x++) {
 		double pct = (double)x / rect.width;
 		double oneminus = 1.0 - pct;
@@ -56,9 +56,9 @@ void UI::DrawContext::fill_gradient_h(Rect rect, Color color_a, Color color_b) c
 	}
 }
 
-void UI::DrawContext::draw_text(const char* str, Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color) const {
-	Point text_pos = rect.position();
-	auto dims =  Dimensions { font->size_of(str).width, font->bounding_box().height };
+void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color) const {
+	Gfx::Point text_pos = rect.position();
+	auto dims =  Gfx::Dimensions { font->size_of(str).width, font->bounding_box().height };
 	switch(h_align) {
 		case BEGINNING:
 			break;
@@ -82,35 +82,35 @@ void UI::DrawContext::draw_text(const char* str, Rect rect, TextAlignment h_alig
 	fb->draw_text(str, text_pos, font, color);
 }
 
-void UI::DrawContext::draw_text(const char* str, Point point, Font* font, Color color) const {
+void UI::DrawContext::draw_text(const char* str, Gfx::Point point, Font* font, Color color) const {
 	fb->draw_text(str, point, font, color);
 }
 
-void UI::DrawContext::draw_text(const char* str, Point point, Color color) const {
+void UI::DrawContext::draw_text(const char* str, Gfx::Point point, Color color) const {
 	fb->draw_text(str, point, Theme::font(), color);
 }
 
-void UI::DrawContext::draw_glyph(Font* font, uint32_t codepoint, Point pos, Color color) const {
+void UI::DrawContext::draw_glyph(Font* font, uint32_t codepoint, Gfx::Point pos, Color color) const {
 	fb->draw_glyph(font, codepoint, pos, color);
 }
 
-void UI::DrawContext::draw_image(const Framebuffer& img, Point pos) const {
+void UI::DrawContext::draw_image(const Framebuffer& img, Gfx::Point pos) const {
 	fb->draw_image(img, pos);
 }
 
-void UI::DrawContext::draw_image(const std::string& name, Point pos) const {
+void UI::DrawContext::draw_image(const std::string& name, Gfx::Point pos) const {
 	fb->draw_image(Theme::image(name), pos);
 }
 
-void UI::DrawContext::draw_image(const Framebuffer& img, Rect img_area, Point pos) const {
+void UI::DrawContext::draw_image(const Framebuffer& img, Gfx::Rect img_area, Gfx::Point pos) const {
 	fb->draw_image(img, img_area, pos);
 }
 
-void UI::DrawContext::draw_image(const std::string& name, Rect img_area, Point pos) const {
+void UI::DrawContext::draw_image(const std::string& name, Gfx::Rect img_area, Gfx::Point pos) const {
 	fb->draw_image(Theme::image(name), img_area, pos);
 }
 
-void UI::DrawContext::draw_inset_rect(Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const {
+void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const {
 	//Background
 	fb->fill({rect.x, rect.y, rect.width, rect.height}, bg);
 
@@ -125,15 +125,15 @@ void UI::DrawContext::draw_inset_rect(Rect rect, Color bg, Color shadow_1, Color
 	fb->fill({rect.x + rect.width - 1, rect.y + 1, 1, rect.height - 1}, highlight);
 }
 
-void UI::DrawContext::draw_inset_rect(Rect rect, Color bg) const {
+void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Color bg) const {
 	draw_inset_rect(rect, bg, Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
 }
 
-void UI::DrawContext::draw_inset_rect(Rect rect) const {
+void UI::DrawContext::draw_inset_rect(Gfx::Rect rect) const {
 	draw_inset_rect(rect, Theme::bg(), Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
 }
 
-void UI::DrawContext::draw_outset_rect(Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const {
+void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const {
 	//Background
 	fb->fill({rect.x, rect.y, rect.width, rect.height}, bg);
 
@@ -148,15 +148,15 @@ void UI::DrawContext::draw_outset_rect(Rect rect, Color bg, Color shadow_1, Colo
 	fb->fill({rect.x, rect.y + 1, 1, rect.height - 2}, highlight);
 }
 
-void UI::DrawContext::draw_outset_rect(Rect rect, Color bg) const {
+void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Color bg) const {
 	draw_outset_rect(rect, bg, Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
 }
 
-void UI::DrawContext::draw_outset_rect(Rect rect) const {
+void UI::DrawContext::draw_outset_rect(Gfx::Rect rect) const {
 	draw_outset_rect(rect, Theme::bg(), Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
 }
 
-void UI::DrawContext::draw_button_base(Rect button, bool pressed) const {
+void UI::DrawContext::draw_button_base(Gfx::Rect button, bool pressed) const {
 	if(pressed) {
 		draw_inset_rect(button, Theme::button());
 	} else {
@@ -164,25 +164,25 @@ void UI::DrawContext::draw_button_base(Rect button, bool pressed) const {
 	}
 }
 
-void UI::DrawContext::draw_button(Rect rect, const std::string& text, bool pressed) const {
+void UI::DrawContext::draw_button(Gfx::Rect rect, const std::string& text, bool pressed) const {
 	draw_button_base(rect, pressed);
 	int padding = Theme::button_padding() / 2 - (Theme::button_padding() % 2 == 1 ? 2 : 1 ) + (pressed ? 1 : 0);
-	auto dims =  Dimensions { Theme::font()->size_of(text.c_str()).width, Theme::font()->bounding_box().height };
-	Point text_pos = {rect.width / 2 - dims.width / 2 + padding, rect.height / 2 - dims.height / 2 + padding};
+	auto dims =  Gfx::Dimensions { Theme::font()->size_of(text.c_str()).width, Theme::font()->bounding_box().height };
+	Gfx::Point text_pos = {rect.width / 2 - dims.width / 2 + padding, rect.height / 2 - dims.height / 2 + padding};
 	fb->draw_text(text.c_str(), text_pos, Theme::font(), Theme::button_text());
 }
 
-void UI::DrawContext::draw_button(Rect rect, const Framebuffer& img, bool pressed) const {
+void UI::DrawContext::draw_button(Gfx::Rect rect, const Framebuffer& img, bool pressed) const {
 	draw_button_base(rect, pressed);
-	fb->draw_image(img, rect.position() + Point {rect.dimensions().width / 2, rect.dimensions().height / 2} - Point {img.width / 2, img.height / 2});
+	fb->draw_image(img, rect.position() + Gfx::Point {rect.dimensions().width / 2, rect.dimensions().height / 2} - Gfx::Point {img.width / 2, img.height / 2});
 }
 
-void UI::DrawContext::draw_vertical_scrollbar(Rect area, Rect handle_area, bool enabled) const {
+void UI::DrawContext::draw_vertical_scrollbar(Gfx::Rect area, Gfx::Rect handle_area, bool enabled) const {
 	fb->fill(area, UI::Theme::color("scrollbar-bg"));
 	draw_outset_rect(handle_area, enabled ? UI::Theme::color("scrollbar-handle") : UI::Theme::color("scrollbar-handle-disabled"));
 }
 
-void UI::DrawContext::draw_progressbar(Rect area, double progress) const {
+void UI::DrawContext::draw_progressbar(Gfx::Rect area, double progress) const {
 	draw_inset_rect(area);
 	fb->fill({
 		area.x + 2,

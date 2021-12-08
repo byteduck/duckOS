@@ -70,26 +70,26 @@ void Label::set_font(Font *font) {
 	update_layout();
 }
 
-Dimensions Label::padding() {
+Gfx::Dimensions Label::padding() {
 	return _padding;
 }
 
-void Label::set_padding(const Dimensions& padding) {
+void Label::set_padding(const Gfx::Dimensions& padding) {
 	_padding = padding;
 	update_layout();
 }
 
-Dimensions Label::preferred_size() {
-	Dimensions ret = _font->size_of(_label.c_str());
+Gfx::Dimensions Label::preferred_size() {
+	Gfx::Dimensions ret = _font->size_of(_label.c_str());
 	ret.width += _padding.width * 2;
 	ret.height += _padding.height * 2;
 	return ret;
 }
 
 void Label::do_repaint(const DrawContext& ctx) {
-	Dimensions size = current_size();
+	Gfx::Dimensions size = current_size();
 	ctx.fill({0, 0, ctx.width(), ctx.height()}, RGBA(0,0,0,0));
-	Rect text_rect = {
+	Gfx::Rect text_rect = {
 			_padding.width,
 			_padding.height,
 			size.width - _padding.width * 2,

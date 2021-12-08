@@ -79,15 +79,15 @@ void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 	}
 }
 
-Dimensions Button::preferred_size() {
+Gfx::Dimensions Button::preferred_size() {
 	if(_is_image_button) {
-		auto dims = Dimensions {_image.width, _image.height};
+		auto dims = Gfx::Dimensions {_image.width, _image.height};
 		int padding = 4;
 		dims.width += padding;
 		dims.height += padding;
 		return dims;
 	} else {
-		auto dims = Dimensions{Theme::font()->size_of(_label.c_str()).width, Theme::font()->bounding_box().height};
+		auto dims = Gfx::Dimensions{Theme::font()->size_of(_label.c_str()).width, Theme::font()->bounding_box().height};
 		int padding = Theme::button_padding() * 2;
 		dims.width += padding;
 		dims.height += padding;

@@ -29,7 +29,7 @@ public:
 
 	//ListView
 	UI::Widget::Ptr create_entry(int index) override;
-	Dimensions preferred_item_dimensions() override;
+	Gfx::Dimensions preferred_item_dimensions() override;
 	int num_items() override;
 
 	//DirectoryWidget

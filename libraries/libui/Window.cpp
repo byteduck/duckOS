@@ -34,7 +34,7 @@ std::shared_ptr<Window> Window::create() {
 	return ret;
 }
 
-void Window::resize(Dimensions dims) {
+void Window::resize(Gfx::Dimensions dims) {
 	if(_decorated) {
 		_window->resize({
 			UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2 + dims.width,
@@ -47,29 +47,29 @@ void Window::resize(Dimensions dims) {
 	repaint();
 }
 
-Dimensions Window::dimensions() {
+Gfx::Dimensions Window::dimensions() {
 	return _window->dimensions();
 }
 
-Rect Window::contents_rect() {
+Gfx::Rect Window::contents_rect() {
 	if(_decorated) {
-		Rect ret = _window->rect();
+		Gfx::Rect ret = _window->rect();
 		ret.width -= UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2;
 		ret.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3;
 		ret.x = UI_WINDOW_PADDING + UI_WINDOW_BORDER_SIZE;
 		ret.y = UI_WINDOW_PADDING * 2 + UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT;
 		return ret;
 	} else {
-		Dimensions dims = _window->dimensions();
+		Gfx::Dimensions dims = _window->dimensions();
 		return {0, 0, dims.width, dims.height};
 	}
 }
 
-void Window::set_position(Point pos) {
+void Window::set_position(Gfx::Point pos) {
 	_window->set_position(pos);
 }
 
-Point Window::position() {
+Gfx::Point Window::position() {
 	return _window->position();
 }
 
@@ -126,7 +126,7 @@ void Window::repaint_now() {
 		ctx.draw_outset_rect({0, 0, ctx.width(), ctx.height()}, color);
 
 		//Title bar
-		Rect titlebar_rect = {
+		Gfx::Rect titlebar_rect = {
 				UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
 				UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
 				ctx.width() - UI_WINDOW_BORDER_SIZE * 2 - UI_WINDOW_PADDING * 2,
@@ -140,13 +140,13 @@ void Window::repaint_now() {
 		int title_xpos = 4;
 		if(UI::app_info().exists()) {
 			auto& icon = UI::app_info().icon();
-			ctx.draw_image(icon, titlebar_rect.position() + Point {2, titlebar_rect.height / 2 - icon.height / 2});
+			ctx.draw_image(icon, titlebar_rect.position() + Gfx::Point {2, titlebar_rect.height / 2 - icon.height / 2});
 			title_xpos += 2 + icon.width;
 		}
 
 		//Title bar text
 		int font_height = Theme::font()->bounding_box().height;
-		Point title_pos = titlebar_rect.position() + Point{title_xpos, titlebar_rect.height / 2 - font_height / 2};
+		Gfx::Point title_pos = titlebar_rect.position() + Gfx::Point{title_xpos, titlebar_rect.height / 2 - font_height / 2};
 		ctx.draw_text(_title.c_str(), title_pos, Theme::window_title());
 
 		//Buttons
@@ -181,7 +181,7 @@ void Window::hide() {
 }
 
 void Window::resize_to_contents() {
-	Dimensions contents_size = _contents->preferred_size();
+	Gfx::Dimensions contents_size = _contents->preferred_size();
 	resize(contents_size);
 }
 
@@ -198,7 +198,7 @@ void Window::set_decorated(bool decorated) {
 	_window->set_uses_alpha(_decorated ? _uses_alpha : true);
 
 	//Adjust the rect of the window to keep the contents in the same position
-	Rect new_rect = _window->rect();
+	Gfx::Rect new_rect = _window->rect();
 	if(decorated) {
 		new_rect.x -= UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING;
 		new_rect.y -= UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2;
@@ -290,7 +290,7 @@ void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 	}
 }
 
-void Window::on_resize(const Rect& old_rect) {
+void Window::on_resize(const Gfx::Rect& old_rect) {
 	calculate_layout();
 }
 
@@ -298,8 +298,8 @@ void Window::calculate_layout() {
 	if(!_contents)
 		return;
 
-	Rect new_rect = _contents->_rect;
-	Rect bounds = contents_rect();
+	Gfx::Rect new_rect = _contents->_rect;
+	Gfx::Rect bounds = contents_rect();
 
 	switch(_contents->_sizing_mode) {
 		case FILL:
@@ -334,7 +334,7 @@ void Window::blit_widget(Widget::ArgPtr widget) {
 		return;
 
 	widget->repaint_now();
-	Point widget_pos = widget->_absolute_rect.position() + widget->_visible_rect.position();
+	Gfx::Point widget_pos = widget->_absolute_rect.position() + widget->_visible_rect.position();
 	if(widget->_uses_alpha)
 		_window->framebuffer().copy_blitting(widget->_image, widget->_visible_rect, widget_pos);
 	else

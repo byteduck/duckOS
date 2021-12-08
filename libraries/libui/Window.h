@@ -38,11 +38,11 @@ namespace UI {
 		static Window::Ptr create();
 
 		///Getters and setters
-		void resize(Dimensions dims);
-		Dimensions dimensions();
-		Rect contents_rect();
-		void set_position(Point pos);
-		Point position();
+		void resize(Gfx::Dimensions dims);
+		Gfx::Dimensions dimensions();
+		Gfx::Rect contents_rect();
+		void set_position(Gfx::Point pos);
+		Gfx::Point position();
 		void set_contents(const std::shared_ptr<Widget>& contents);
 		std::shared_ptr<Widget> contents();
 		void set_title(const std::string& title);
@@ -70,7 +70,7 @@ namespace UI {
 		void on_mouse_button(Pond::MouseButtonEvent evt);
 		void on_mouse_scroll(Pond::MouseScrollEvent evt);
 		void on_mouse_leave(Pond::MouseLeaveEvent evt);
-		void on_resize(const Rect& old_rect);
+		void on_resize(const Gfx::Rect& old_rect);
 
 		//UI
 		void calculate_layout();
@@ -88,8 +88,8 @@ namespace UI {
 		Widget::Ptr _focused_widget;
 		std::vector<Widget::Ptr> _widgets;
 		std::string _title;
-		Point _mouse;
-		Point _abs_mouse;
+		Gfx::Point _mouse;
+		Gfx::Point _abs_mouse;
 		bool _decorated = true;
 		bool _uses_alpha = false;
 		bool _resizable = false;
@@ -98,7 +98,7 @@ namespace UI {
 		struct TitleButton {
 			std::string image;
 			bool pressed = false;
-			Rect area = {0,0,0,0};
+			Gfx::Rect area = {0,0,0,0};
 		};
 		TitleButton _close_button = {"win-close"};
 

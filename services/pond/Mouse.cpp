@@ -53,11 +53,11 @@ bool Mouse::update() {
 	int num_events = (int) nread / sizeof(MouseEvent);
 
 	for(int i = 0; i < num_events; i++) {
-		Point new_pos = rect().position();
+		Gfx::Point new_pos = rect().position();
 		new_pos.x += events[i].x;
 		new_pos.y -= events[i].y;
 		new_pos = new_pos.constrain(parent()->rect());
-		Point delta_pos = new_pos - rect().position();
+		Gfx::Point delta_pos = new_pos - rect().position();
 		set_position(new_pos);
 		_mouse_buttons = events[i].buttons;
 		Display::inst().create_mouse_events(delta_pos.x, delta_pos.y, events[i].z, _mouse_buttons);

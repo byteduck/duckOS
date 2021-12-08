@@ -19,7 +19,7 @@
 
 #include "geometry.h"
 
-bool Point::near_border(const Rect& rect, int border_size) const {
+bool Gfx::Point::near_border(const Rect& rect, int border_size) const {
 	Rect border_rect = {
 			rect.x - border_size,
 			rect.y - border_size,
@@ -37,7 +37,7 @@ bool Point::near_border(const Rect& rect, int border_size) const {
 	return in(border_rect) && !in(inner_rect);
 }
 
-Point Point::constrain(const Rect& rect) const {
+Gfx::Point Gfx::Point::constrain(const Rect& rect) const {
 		Point ret = {x, y};
 		if(ret.x < rect.x)
 			ret.x = rect.x;

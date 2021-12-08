@@ -39,7 +39,7 @@ public:
 	void show_hint();
 
 	//Widget
-	Dimensions preferred_size() override;
+	Gfx::Dimensions preferred_size() override;
 	void do_repaint(const UI::DrawContext& framebuffer) override;
 	bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 	bool on_mouse_button(Pond::MouseButtonEvent evt) override;
@@ -49,8 +49,8 @@ private:
 
 	Board board;
 	int current_player = 1;
-	Point hovered_cell = {-1, -1};
-	Point hint_cell = {-1, -1};
+	Gfx::Point hovered_cell = {-1, -1};
+	Gfx::Point hint_cell = {-1, -1};
 	bool player2_computer = false;
 	std::string status = "Player 1 choose";
 	bool was_win = false;

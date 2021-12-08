@@ -25,7 +25,7 @@ namespace UI {
 
 		//Widget
 		void do_repaint(const UI::DrawContext& ctx) override;
-		Dimensions preferred_size() override;
+		Gfx::Dimensions preferred_size() override;
 
 	private:
 		explicit Image(const Gfx::Image& image, ScalingMode mode = CENTER);

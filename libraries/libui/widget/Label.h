@@ -36,11 +36,11 @@ namespace UI {
 		void set_alignment(TextAlignment vertical, TextAlignment horizontal);
 		Gfx::Font* font();
 		void set_font(Gfx::Font* font);
-		Dimensions padding();
-		void set_padding(const Dimensions& padding);
+		Gfx::Dimensions padding();
+		void set_padding(const Gfx::Dimensions& padding);
 
 		//Widget
-		virtual Dimensions preferred_size() override;
+		virtual Gfx::Dimensions preferred_size() override;
 
 	private:
 		explicit Label(const std::string& label);
@@ -53,7 +53,7 @@ namespace UI {
 		TextAlignment _v_alignment = CENTER;
 		TextAlignment _h_alignment = CENTER;
 		Gfx::Font* _font;
-		Dimensions _padding = {0, 0};
+		Gfx::Dimensions _padding = {0, 0};
 	};
 }
 

@@ -24,7 +24,7 @@
 using namespace Pond;
 using namespace Gfx;
 
-Window::Window(int id, Rect rect, struct shm shm, Context* ctx): _id(id), _rect(rect), _context(ctx), _shm(shm) {}
+Window::Window(int id, Gfx::Rect rect, struct shm shm, Context* ctx): _id(id), _rect(rect), _context(ctx), _shm(shm) {}
 
 Window::~Window() = default;
 
@@ -37,12 +37,12 @@ void Window::invalidate() {
 	_context->__river_invalidate_window({_id, {-1, -1, -1, -1}, _flipped});
 }
 
-void Window::invalidate_area(Rect area) {
+void Window::invalidate_area(Gfx::Rect area) {
 	flip_buffer();
 	_context->__river_invalidate_window({_id, area, _flipped});
 }
 
-void Window::resize(Dimensions dims) {
+void Window::resize(Gfx::Dimensions dims) {
 	auto resp = _context->__river_resize_window({_id, dims});
 	Event evt;
 	_context->handle_window_resized(resp, evt);
@@ -54,7 +54,7 @@ void Window::resize(int width, int height) {
 	resize({width, height});
 }
 
-void Window::set_position(Point pos) {
+void Window::set_position(Gfx::Point pos) {
 	_context->__river_move_window({_id, pos});
 	_rect.x = pos.x;
 	_rect.y = pos.y;
@@ -64,15 +64,15 @@ void Window::set_position(int x, int y) {
 	set_position({x, y});
 }
 
-Point Window::position() const {
+Gfx::Point Window::position() const {
 	return _rect.position();
 }
 
-Dimensions Window::dimensions() const {
+Gfx::Dimensions Window::dimensions() const {
 	return _rect.dimensions();
 }
 
-Rect Window::rect() const {
+Gfx::Rect Window::rect() const {
 	return _rect;
 }
 
@@ -121,7 +121,7 @@ unsigned int Window::mouse_buttons() const {
 	return _mouse_buttons;
 }
 
-Point Window::mouse_pos() const {
+Gfx::Point Window::mouse_pos() const {
 	return _mouse_pos;
 }
 

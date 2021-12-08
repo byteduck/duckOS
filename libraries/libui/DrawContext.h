@@ -38,33 +38,33 @@ namespace UI {
 		const Gfx::Framebuffer& framebuffer() const;
 
 		///Drawing
-		void fill(Rect rect, Color color) const;
-		void fill_gradient_h(Rect rect, Color color_a, Color color_b) const;
+		void fill(Gfx::Rect rect, Color color) const;
+		void fill_gradient_h(Gfx::Rect rect, Color color_a, Color color_b) const;
 
-		void draw_text(const char* str, Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Color color) const;
-		void draw_text(const char* str, Point pos, Gfx::Font* font, Color color) const;
-		void draw_text(const char* str, Point pos, Color color) const;
-		void draw_glyph(Gfx::Font* font, uint32_t codepoint, Point pos, Color color) const;
-		void draw_image(const Gfx::Framebuffer& img, Point pos) const;
-		void draw_image(const std::string& name, Point pos) const;
-		void draw_image(const Gfx::Framebuffer& img, Rect img_area, Point pos) const;
-		void draw_image(const std::string& name, Rect img_area, Point pos) const;
+		void draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Color color) const;
+		void draw_text(const char* str, Gfx::Point pos, Gfx::Font* font, Color color) const;
+		void draw_text(const char* str, Gfx::Point pos, Color color) const;
+		void draw_glyph(Gfx::Font* font, uint32_t codepoint, Gfx::Point pos, Color color) const;
+		void draw_image(const Gfx::Framebuffer& img, Gfx::Point pos) const;
+		void draw_image(const std::string& name, Gfx::Point pos) const;
+		void draw_image(const Gfx::Framebuffer& img, Gfx::Rect img_area, Gfx::Point pos) const;
+		void draw_image(const std::string& name, Gfx::Rect img_area, Gfx::Point pos) const;
 
-		void draw_inset_rect(Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const;
-		void draw_inset_rect(Rect rect, Color bg) const;
-		void draw_inset_rect(Rect rect) const;
+		void draw_inset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const;
+		void draw_inset_rect(Gfx::Rect rect, Color bg) const;
+		void draw_inset_rect(Gfx::Rect rect) const;
 
-		void draw_outset_rect(Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const;
-		void draw_outset_rect(Rect rect, Color bg) const;
-		void draw_outset_rect(Rect rect) const;
+		void draw_outset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const;
+		void draw_outset_rect(Gfx::Rect rect, Color bg) const;
+		void draw_outset_rect(Gfx::Rect rect) const;
 
-		void draw_button_base(Rect button, bool pressed) const;
-		void draw_button(Rect button, const std::string& text, bool pressed) const;
-		void draw_button(Rect button, const Gfx::Framebuffer& img, bool pressed) const;
+		void draw_button_base(Gfx::Rect button, bool pressed) const;
+		void draw_button(Gfx::Rect button, const std::string& text, bool pressed) const;
+		void draw_button(Gfx::Rect button, const Gfx::Framebuffer& img, bool pressed) const;
 
-		void draw_vertical_scrollbar(Rect area, Rect handle_area, bool enabled) const;
+		void draw_vertical_scrollbar(Gfx::Rect area, Gfx::Rect handle_area, bool enabled) const;
 
-		void draw_progressbar(Rect area, double progress) const;
+		void draw_progressbar(Gfx::Rect area, double progress) const;
 
 	private:
 		const Gfx::Framebuffer* fb;

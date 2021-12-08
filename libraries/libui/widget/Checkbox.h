@@ -37,7 +37,7 @@ namespace UI {
 
 		//Widget
 		virtual bool on_mouse_button(Pond::MouseButtonEvent evt) override;
-		virtual Dimensions preferred_size() override;
+		virtual Gfx::Dimensions preferred_size() override;
 
 		std::function<void(bool)> on_change = nullptr;
 	private:

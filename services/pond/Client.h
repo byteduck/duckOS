@@ -33,7 +33,7 @@ public:
 	Client(Server* server, sockid_t id, pid_t pid);
 	~Client();
 
-	void mouse_moved(Window* window, Point delta, Point relative_pos, Point absolute_pos);
+	void mouse_moved(Window* window, Gfx::Point delta, Gfx::Point relative_pos, Gfx::Point absolute_pos);
 	void mouse_buttons_changed(Window* window, uint8_t new_buttons);
 	void mouse_scrolled(Window* window, int scroll);
 	void mouse_left(Window* window);

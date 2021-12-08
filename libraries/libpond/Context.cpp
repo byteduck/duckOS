@@ -124,7 +124,7 @@ Event Context::next_event(int type) {
 	}
 }
 
-Window* Context::create_window(Window* parent, Rect rect, bool hidden) {
+Window* Context::create_window(Window* parent, Gfx::Rect rect, bool hidden) {
 	auto resp = __river_open_window(OpenWindowPkt {parent ? parent->id() : 0, hidden, rect});
 	Event evt;
 	handle_window_opened(resp, evt);
@@ -310,6 +310,6 @@ void Context::handle_font_response(const FontResponsePkt& pkt, Event& event) {
 	event.font_response.font = Font::load_from_shm(fontshm);
 }
 
-Dimensions Context::get_display_dimensions() {
+Gfx::Dimensions Context::get_display_dimensions() {
 	return __river_get_display_info({}).dimensions;
 }

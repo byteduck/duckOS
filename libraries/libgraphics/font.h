@@ -24,6 +24,7 @@
 #include <sys/mem.h>
 #include <map>
 #include "graphics.h"
+#include "geometry.h"
 
 namespace Gfx {
 	struct FontGlyph {

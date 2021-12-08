@@ -59,13 +59,13 @@ namespace UI {
 		 * Returns the preferred size of the widget (which may not be its current size).
 		 * @return The preferred size of the widget.
 		 */
-		virtual Dimensions preferred_size();
+		virtual Gfx::Dimensions preferred_size();
 
 		/**
 		 * Returns the current size of the widget (may not be its preferred size).
 		 * @return The current size of the widget.
 		 */
-		Dimensions current_size();
+		Gfx::Dimensions current_size();
 
 		/**
 		 * Returns the positioning mode of the widget.
@@ -171,19 +171,19 @@ namespace UI {
 		 * The behavior of this depends on the positioning mode of the widget and the parent's layout specifications.
 		 * @param position The new position of the widget.
 		 */
-		void set_position(const Point& position);
+		void set_position(const Gfx::Point& position);
 
 		/**
 		 * Sets the position of the widget without recalculating layouts.
 		 * @param position The new position of the widget.
 		 */
-		void set_position_nolayout(const Point& position);
+		void set_position_nolayout(const Gfx::Point& position);
 
 		/**
 		 * Gets the position of the widget.
 		 * @return The position of the widget.
 		 */
-		 Point position();
+		 Gfx::Point position();
 
 		 /**
 		  * Hides the widget.
@@ -199,7 +199,7 @@ namespace UI {
 		* Sets the bounds for the widget. (called during a layout update)
 		* @param new_bounds The new bounds of the widget.
 		*/
-		void set_layout_bounds(Rect new_bounds);
+		void set_layout_bounds(Gfx::Rect new_bounds);
 
 		/**
 		 * Whether or not the widget needs a layout update when a child is added or removed.
@@ -264,7 +264,7 @@ namespace UI {
 		 * This function is called whenever the widget's position or size are changed.
 		 * @param old_rect The old rect of the widget.
 		 */
-		virtual void on_layout_change(const Rect& old_rect);
+		virtual void on_layout_change(const Gfx::Rect& old_rect);
 
 		/**
 		 * Sets whether the widget should use alpha blending or not.
@@ -282,7 +282,7 @@ namespace UI {
 		 * Gets the last-reported position of the mouse in the widget.
 		 * @return The position of the mouse in the widget.
 		 */
-		Point mouse_position();
+		Gfx::Point mouse_position();
 
 		/**
 		 * Gets the last-reported pressed mouse buttons within the widget.
@@ -315,11 +315,11 @@ namespace UI {
 		Widget* _parent = nullptr;
 		Window* _parent_window = nullptr;
 		Window* _root_window = nullptr;
-		Rect _rect = {0, 0, 0, 0};
-		Rect _absolute_rect = {0, 0, 0, 0};
-		Rect _visible_rect = {0, 0, 0, 0};
-		Point _absolute_position = {0, 0};
-		Point _mouse_pos = {0, 0};
+		Gfx::Rect _rect = {0, 0, 0, 0};
+		Gfx::Rect _absolute_rect = {0, 0, 0, 0};
+		Gfx::Rect _visible_rect = {0, 0, 0, 0};
+		Gfx::Point _absolute_position = {0, 0};
+		Gfx::Point _mouse_pos = {0, 0};
 		unsigned int _mouse_buttons = 0;
 		bool _initialized_size = false;
 		bool _uses_alpha = false;

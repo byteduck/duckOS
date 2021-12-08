@@ -54,7 +54,7 @@ UI::Widget::Ptr ProcessListWidget::create_entry(int index) {
 	return layout;
 }
 
-Dimensions ProcessListWidget::preferred_item_dimensions() {
+Gfx::Dimensions ProcessListWidget::preferred_item_dimensions() {
 	return { 150, 20 };
 }
 

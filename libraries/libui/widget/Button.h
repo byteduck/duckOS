@@ -38,7 +38,7 @@ namespace UI {
 		//Widget
 		virtual bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 		virtual void on_mouse_leave(Pond::MouseLeaveEvent evt) override;
-		virtual Dimensions preferred_size() override;
+		virtual Gfx::Dimensions preferred_size() override;
 
 		std::function<void()> on_pressed = nullptr;
 		std::function<void()> on_released = nullptr;

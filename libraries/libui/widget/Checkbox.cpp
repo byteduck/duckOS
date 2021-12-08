@@ -62,7 +62,7 @@ bool UI::Checkbox::on_mouse_button(Pond::MouseButtonEvent evt) {
 	return false;
 }
 
-Dimensions UI::Checkbox::preferred_size() {
+Gfx::Dimensions UI::Checkbox::preferred_size() {
 	return {14 + Theme::font()->size_of(_label.c_str()).width, 12};
 }
 

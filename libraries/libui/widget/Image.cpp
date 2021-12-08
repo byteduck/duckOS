@@ -62,6 +62,6 @@ void Image::do_repaint(const DrawContext& ctx) {
 	}
 }
 
-Dimensions Image::preferred_size() {
+Gfx::Dimensions Image::preferred_size() {
 	return {_image.width, _image.height};
 }

@@ -18,6 +18,7 @@
 */
 
 #include "font.h"
+#include "geometry.h"
 #include <cstdio>
 #include <cstring>
 #include <climits>

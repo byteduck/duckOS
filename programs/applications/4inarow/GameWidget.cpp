@@ -48,7 +48,7 @@ void GameWidget::show_hint() {
 	repaint();
 }
 
-Dimensions GameWidget::preferred_size() {
+Gfx::Dimensions GameWidget::preferred_size() {
 	return {COLUMNS * CELL_SIZE + 4, ROWS * CELL_SIZE + 17};
 }
 
@@ -58,7 +58,7 @@ void GameWidget::do_repaint(const UI::DrawContext& ctx) {
 	for(int row = 0; row < ROWS; row++) {
 		for(int col = 0; col < COLUMNS; col++) {
 			uint32_t color;
-			if(!was_win && (hovered_cell == Point {col, row} || hint_cell == Point {col, row})) {
+			if(!was_win && (hovered_cell == Gfx::Point {col, row} || hint_cell == Gfx::Point {col, row})) {
 				color = current_player == 1 ? HOVER1_COLOR : HOVER2_COLOR;
 			} else {
 				switch(board[row][col]) {

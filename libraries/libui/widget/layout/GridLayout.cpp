@@ -22,13 +22,13 @@
 
 using namespace UI;
 
-GridLayout::GridLayout(const Dimensions& num_cells): _num_cells(num_cells) {
+GridLayout::GridLayout(const Gfx::Dimensions& num_cells): _num_cells(num_cells) {
 	set_sizing_mode(FILL);
 	set_uses_alpha(true);
 }
 
 void GridLayout::calculate_layout() {
-	Dimensions num_cells = calculate_num_cells();
+	Gfx::Dimensions num_cells = calculate_num_cells();
 	int col_size = current_size().width / num_cells.width;
 	int row_size = current_size().height / num_cells.height;
 	int col = 0, row = 0;
@@ -47,17 +47,17 @@ void GridLayout::calculate_layout() {
 	}
 }
 
-void GridLayout::set_cells(const Dimensions& cells) {
+void GridLayout::set_cells(const Gfx::Dimensions& cells) {
 	_num_cells = cells;
 	update_layout();
 }
 
-Dimensions GridLayout::cells() {
+Gfx::Dimensions GridLayout::cells() {
 	return _num_cells;
 }
 
-Dimensions GridLayout::preferred_size() {
-	Dimensions max_dims = {1, 1};
+Gfx::Dimensions GridLayout::preferred_size() {
+	Gfx::Dimensions max_dims = {1, 1};
 	for(auto& child : children) {
 		auto sz = child->preferred_size();
 		if(sz.width > max_dims.width)
@@ -66,17 +66,17 @@ Dimensions GridLayout::preferred_size() {
 			max_dims.height = sz.height;
 	}
 
-	Dimensions actual_num_cells = calculate_num_cells();
+	Gfx::Dimensions actual_num_cells = calculate_num_cells();
 	return {max_dims.width * actual_num_cells.width, max_dims.height * actual_num_cells.height};
 }
 
-Dimensions GridLayout::calculate_num_cells() {
+Gfx::Dimensions GridLayout::calculate_num_cells() {
 	if(_num_cells.width == 0 && _num_cells.height == 0) {
 		if(!parent_window() && !parent())
 			return {1, 1};
-		Dimensions parent_dims = parent_window() ? parent_window()->contents_rect().dimensions() : parent()->current_size();
+		Gfx::Dimensions parent_dims = parent_window() ? parent_window()->contents_rect().dimensions() : parent()->current_size();
 
-		Dimensions max_dims = {1, 1};
+		Gfx::Dimensions max_dims = {1, 1};
 		for(auto& child : children) {
 			auto sz = child->preferred_size();
 			if(sz.width > max_dims.width)
@@ -94,7 +94,7 @@ Dimensions GridLayout::calculate_num_cells() {
 		};
 	}
 
-	Dimensions actual_num_cells = _num_cells;
+	Gfx::Dimensions actual_num_cells = _num_cells;
 	if(_num_cells.width == 0)
 		actual_num_cells.width = ((int) children.size() + _num_cells.height - 1) / _num_cells.height;
 	if(_num_cells.height == 0)

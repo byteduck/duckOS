@@ -26,18 +26,18 @@ namespace UI {
 	public:
 		WIDGET_DEF(GridLayout)
 
-		void set_cells(const Dimensions& cell_size);
-		Dimensions cells();
+		void set_cells(const Gfx::Dimensions& cell_size);
+		Gfx::Dimensions cells();
 
 		//Widget
 		void calculate_layout() override;
-		Dimensions preferred_size() override;
+		Gfx::Dimensions preferred_size() override;
 
 	private:
-		explicit GridLayout(const Dimensions& num_cells);
+		explicit GridLayout(const Gfx::Dimensions& num_cells);
 
-		Dimensions calculate_num_cells();
-		Dimensions _num_cells;
+		Gfx::Dimensions calculate_num_cells();
+		Gfx::Dimensions _num_cells;
 	};
 }
 

@@ -25,7 +25,7 @@ UI::BoxLayout::BoxLayout(Direction direction, int spacing): direction(direction)
 	set_sizing_mode(UI::FILL);
 }
 
-Dimensions UI::BoxLayout::preferred_size() {
+Gfx::Dimensions UI::BoxLayout::preferred_size() {
 	int max_dim = 0;
 	int current_pos = 0;
 	for(auto& child : children) {
@@ -42,7 +42,7 @@ Dimensions UI::BoxLayout::preferred_size() {
 	}
 	if(current_pos >= spacing)
 		current_pos -= spacing;
-	return direction == HORIZONTAL ? Dimensions {current_pos, max_dim} : Dimensions {max_dim, current_pos};
+	return direction == HORIZONTAL ? Gfx::Dimensions {current_pos, max_dim} : Gfx::Dimensions {max_dim, current_pos};
 }
 
 void UI::BoxLayout::set_spacing(int new_spacing) {
@@ -53,7 +53,7 @@ void UI::BoxLayout::set_spacing(int new_spacing) {
 void UI::BoxLayout::calculate_layout() {
 	int pos = 0;
 	int i = 0;
-	Dimensions size = current_size();
+	Gfx::Dimensions size = current_size();
 	for(auto child : children) {
 		auto preferred_size = child->preferred_size();
 

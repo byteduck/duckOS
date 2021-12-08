@@ -29,7 +29,7 @@ using namespace Gfx;
 
 int Window::current_id = 0;
 
-Window::Window(Window* parent, const Rect& rect, bool hidden): _parent(parent), _rect(rect), _display(parent->_display), _id(++current_id), _hidden(hidden) {
+Window::Window(Window* parent, const Gfx::Rect& rect, bool hidden): _parent(parent), _rect(rect), _display(parent->_display), _id(++current_id), _hidden(hidden) {
 	if(_rect.width < 1)
 		_rect.width = 1;
 	if(_rect.height < 1)
@@ -121,22 +121,22 @@ Display* Window::display() const {
 	return _display;
 }
 
-Rect Window::rect() const {
+Gfx::Rect Window::rect() const {
 	return _rect;
 }
 
-Rect Window::absolute_rect() const {
+Gfx::Rect Window::absolute_rect() const {
 	return _absolute_rect;
 }
 
-Rect Window::visible_absolute_rect() const {
+Gfx::Rect Window::visible_absolute_rect() const {
 	return _visible_absolute_rect;
 }
 
-void Window::set_dimensions(const Dimensions& new_dims, bool notify_client) {
+void Window::set_dimensions(const Gfx::Dimensions& new_dims, bool notify_client) {
 	if(new_dims.width == _rect.dimensions().width && new_dims.height == _rect.dimensions().height)
 		return;
-	Dimensions dims = new_dims;
+	Gfx::Dimensions dims = new_dims;
 	if(dims.width < 1)
 		dims.width = 1;
 	if(dims.height < 1)
@@ -150,7 +150,7 @@ void Window::set_dimensions(const Dimensions& new_dims, bool notify_client) {
 		_client->window_resized(this);
 }
 
-void Window::set_position(const Point& position, bool notify_client) {
+void Window::set_position(const Gfx::Point& position, bool notify_client) {
 	invalidate();
 	_rect = {position.x, position.y, _rect.width, _rect.height};
 	recalculate_rects();
@@ -159,7 +159,7 @@ void Window::set_position(const Point& position, bool notify_client) {
 		_client->window_moved(this);
 }
 
-void Window::set_rect(const Rect& rect, bool notify_client) {
+void Window::set_rect(const Gfx::Rect& rect, bool notify_client) {
 	invalidate();
 	_rect = rect;
 	if(_rect.width < 1)
@@ -178,7 +178,7 @@ void Window::invalidate() {
 		_display->invalidate(_visible_absolute_rect);
 }
 
-void Window::invalidate(const Rect& area) {
+void Window::invalidate(const Gfx::Rect& area) {
 	if(hidden())
 		return;
 	if(_parent)
@@ -197,7 +197,7 @@ void Window::focus() {
 	_display->focus(this);
 }
 
-void Window::mouse_moved(Point delta, Point relative_pos, Point absolute_pos) {
+void Window::mouse_moved(Gfx::Point delta, Gfx::Point relative_pos, Gfx::Point absolute_pos) {
 	_mouse_position = relative_pos;
 	if(_client)
 		_client->mouse_moved(this, delta, relative_pos, absolute_pos);
@@ -277,7 +277,7 @@ void Window::handle_keyboard_event(const KeyboardEvent& event) {
 		_parent->handle_keyboard_event(event);
 }
 
-Rect Window::calculate_absolute_rect(const Rect& rect) {
+Gfx::Rect Window::calculate_absolute_rect(const Gfx::Rect& rect) {
 	if(_parent)
 		return _parent->calculate_absolute_rect(rect.transform(_parent->_rect.position()));
 	else

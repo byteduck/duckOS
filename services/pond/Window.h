@@ -43,7 +43,7 @@ class Display;
 class Client;
 class Window {
 public:
-	Window(Window* parent, const Rect& rect, bool hidden);
+	Window(Window* parent, const Gfx::Rect& rect, bool hidden);
 	explicit Window(Display* display);
 	~Window();
 
@@ -59,33 +59,33 @@ public:
 	/**
 	 * The rect of the window relative to its parent.
 	 */
-	Rect rect() const;
+	Gfx::Rect rect() const;
 
 	/**
 	 * The rect of the window relative to the entire screen.
 	 */
-	Rect absolute_rect() const;
+	Gfx::Rect absolute_rect() const;
 
 	/**
 	 * The rect of the window's visible contents (ie area not clipped from parent window) in absolute coordinates
 	 */
-	Rect visible_absolute_rect() const;
+	Gfx::Rect visible_absolute_rect() const;
 
 	/**
 	 * Sets the rect of the window to the rect given, constrained to fit inside the parent.
 	 * The framebuffer will most likely change!
 	 */
-	void set_dimensions(const Dimensions& dimensions, bool notify_client = true);
+	void set_dimensions(const Gfx::Dimensions& dimensions, bool notify_client = true);
 
 	/**
 	 * Sets the position of the window relative to its parent constrained to stay inside the parent.
 	 */
-	void set_position(const Point& position, bool notify_client = true);
+	void set_position(const Gfx::Point& position, bool notify_client = true);
 
 	/**
 	 * Resizes the window with the given mouse movement and resize mode.
 	 */
-	void set_rect(const Rect& rect, bool notify_client = true);
+	void set_rect(const Gfx::Rect& rect, bool notify_client = true);
 
 	/**
 	 * Marks the entire window to be redrawn.
@@ -96,7 +96,7 @@ public:
 	 * Marks a portion of the window to be redrawn
 	 * @param area The area to redraw relative to the position of the window.
 	 */
-	void invalidate(const Rect& area);
+	void invalidate(const Gfx::Rect& area);
 
 	/**
 	 * Moves the window to the front of the display's z-order.
@@ -122,7 +122,7 @@ public:
 	 * @param delta_x The amount of change in the x axis.
 	 * @param delta_y The amount of change in the y axis.
 	 */
-	virtual void mouse_moved(Point delta, Point relative_pos, Point absolute_pos);
+	virtual void mouse_moved(Gfx::Point delta, Gfx::Point relative_pos, Gfx::Point absolute_pos);
 
 	/**
 	 * Called to tell the window that the mouse's button states changed.
@@ -221,7 +221,7 @@ public:
 	  * @param rect The rect to calculate the absolute screen rect of.
 	  * @return The absolute screen-position rect.
 	  */
-	 Rect calculate_absolute_rect(const Rect& rect);
+	 Gfx::Rect calculate_absolute_rect(const Gfx::Rect& rect);
 
 	 /**
 	  * Sets whether or not the framebuffer is flipped.
@@ -236,16 +236,16 @@ private:
 
 	Gfx::Framebuffer _framebuffer = {nullptr, 0, 0};
 	shm _framebuffer_shm;
-	Rect _rect;
-	Rect _absolute_rect;
-	Rect _visible_absolute_rect;
+	Gfx::Rect _rect;
+	Gfx::Rect _absolute_rect;
+	Gfx::Rect _visible_absolute_rect;
 	Window* _parent;
 	Display* _display;
 	std::vector<Window*> _children;
 	Client* _client = nullptr;
 	int _id;
 	uint8_t _mouse_buttons;
-	Point _mouse_position;
+	Gfx::Point _mouse_position;
 	bool _global_mouse = false;
 	bool _draggable = false;
 	bool _resizable = false;

@@ -25,14 +25,14 @@ using namespace UI;
 Widget::~Widget() {
 }
 
-Dimensions Widget::preferred_size() {
+Gfx::Dimensions Widget::preferred_size() {
     if(children.size())
 	    return children[0]->preferred_size();
     else
         return {1, 1};
 }
 
-Dimensions Widget::current_size() {
+Gfx::Dimensions Widget::current_size() {
 	if(!_initialized_size) {
 		_rect.set_dimensions(preferred_size());
 		_initialized_size = true;
@@ -135,17 +135,17 @@ bool Widget::remove_child(const std::shared_ptr<Widget>& child) {
 	return true;
 }
 
-void Widget::set_position(const Point& position) {
+void Widget::set_position(const Gfx::Point& position) {
 	_absolute_position = position;
 	update_layout();
 }
 
-void Widget::set_position_nolayout(const Point& position) {
+void Widget::set_position_nolayout(const Gfx::Point& position) {
 	_rect.set_position(position);
 	recalculate_rects();
 }
 
-Point Widget::position() {
+Gfx::Point Widget::position() {
 	return _absolute_position;
 }
 
@@ -157,11 +157,11 @@ void Widget::show() {
 	_hidden = false;
 }
 
-void Widget::set_layout_bounds(Rect new_bounds) {
-	Rect old_rect = _rect;
+void Widget::set_layout_bounds(Gfx::Rect new_bounds) {
+	Gfx::Rect old_rect = _rect;
 	_rect = new_bounds;
 	_initialized_size = true;
-	if(Dimensions{_image.width, _image.height} != _rect.dimensions())
+	if(Gfx::Dimensions{_image.width, _image.height} != _rect.dimensions())
 		_image = {new_bounds.width, new_bounds.height};
 	recalculate_rects();
 	calculate_layout();
@@ -228,7 +228,7 @@ void Widget::on_child_removed(const std::shared_ptr<Widget>& child) {
 
 }
 
-void Widget::on_layout_change(const Rect& old_rect) {
+void Widget::on_layout_change(const Gfx::Rect& old_rect) {
 
 }
 
@@ -242,7 +242,7 @@ void Widget::set_global_mouse(bool global_mouse) {
 	_global_mouse = global_mouse;
 }
 
-Point Widget::mouse_position() {
+Gfx::Point Widget::mouse_position() {
 	return _mouse_pos;
 }
 
@@ -252,7 +252,7 @@ unsigned int Widget::mouse_buttons() {
 
 void Widget::calculate_layout() {
 	for(auto& child : children) {
-		Rect child_rect = child->_rect;
+		Gfx::Rect child_rect = child->_rect;
 
 		switch(child->_sizing_mode) {
 			case FILL:

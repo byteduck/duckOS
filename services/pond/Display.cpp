@@ -78,7 +78,7 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 	gettimeofday(&paint_time, NULL);
 }
 
-Rect Display::dimensions() {
+Gfx::Rect Display::dimensions() {
 	return _dimensions;
 }
 
@@ -147,7 +147,7 @@ void Display::remove_window(Window* window) {
 	}
 }
 
-void Display::invalidate(const Rect& rect) {
+void Display::invalidate(const Gfx::Rect& rect) {
 	if(!rect.empty())
 		invalid_areas.push_back(rect);
 }
@@ -210,11 +210,11 @@ void Display::repaint() {
 			if(window == _mouse_window || window->hidden())
 				continue;
 
-			Rect window_vabs = window->visible_absolute_rect();
+			Gfx::Rect window_vabs = window->visible_absolute_rect();
 			if(window_vabs.collides(area)) {
 				//If it does, redraw the intersection of the window in question and the invalid area
-				Rect window_abs = window->absolute_rect();
-				Rect overlap_abs = area.overlapping_area(window_vabs);
+				Gfx::Rect window_abs = window->absolute_rect();
+				Gfx::Rect overlap_abs = area.overlapping_area(window_vabs);
 				auto transformed_overlap = overlap_abs.transform({-window_abs.x, -window_abs.y});
 				if(window->uses_alpha())
 					fb.copy_blitting(window->framebuffer(), transformed_overlap, overlap_abs.position());
@@ -297,8 +297,8 @@ void Display::focus(Window* window) {
 void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t buttons) {
 	static uint8_t prev_mouse_buttons = 0;
 
-	Point mouse = _mouse_window->absolute_rect().position();
-	Point delta = {delta_x, delta_y};
+	Gfx::Point mouse = _mouse_window->absolute_rect().position();
+	Gfx::Point delta = {delta_x, delta_y};
 
 	//Drag or stop dragging the current draggable window, if any
 	if(_drag_window) {
@@ -424,9 +424,9 @@ void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t 
 
 	// If the mouse was previously in a different window, update the mouse position in that window
 	if(event_window != _prev_mouse_window && _prev_mouse_window != nullptr && !_prev_mouse_window->gets_global_mouse()) {
-		Dimensions window_dims = _prev_mouse_window->rect().dimensions();
+		Gfx::Dimensions window_dims = _prev_mouse_window->rect().dimensions();
 		//Constrain the mouse position in the window to the window's rect
-		Point new_mouse_pos = (mouse - _prev_mouse_window->absolute_rect().position()).constrain({0, 0, window_dims.width, window_dims.height});
+		Gfx::Point new_mouse_pos = (mouse - _prev_mouse_window->absolute_rect().position()).constrain({0, 0, window_dims.width, window_dims.height});
 		_prev_mouse_window->mouse_moved(delta, new_mouse_pos, new_mouse_pos + _prev_mouse_window->absolute_rect().position());
 		_prev_mouse_window->set_mouse_buttons(_mouse_window->mouse_buttons());
 		_prev_mouse_window->mouse_left();
@@ -474,7 +474,7 @@ Display& Display::inst() {
 	return *_inst;
 }
 
-ResizeMode Display::get_resize_mode(Rect window, Point mouse) {
+ResizeMode Display::get_resize_mode(Gfx::Rect window, Gfx::Point mouse) {
 	if(mouse.in({window.x - WINDOW_RESIZE_BORDER, window.y - WINDOW_RESIZE_BORDER, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
 		return NORTHWEST;
 	if(mouse.in({window.x + window.width - WINDOW_RESIZE_BORDER * 2, window.y - WINDOW_RESIZE_BORDER, WINDOW_RESIZE_BORDER * 3, WINDOW_RESIZE_BORDER * 3}))
@@ -495,13 +495,13 @@ ResizeMode Display::get_resize_mode(Rect window, Point mouse) {
 	return NONE; //Shouldn't happen?
 }
 
-Rect Display::calculate_resize_rect() {
+Gfx::Rect Display::calculate_resize_rect() {
 	if(!_resize_window)
 		return {0, 0, 0, 0};
 
-	Point new_pos = _resize_window->rect().position();
-	Dimensions new_dims = _resize_window->rect().dimensions();
-	Point mouse_delta = _mouse_window->rect().position() - _resize_begin_point;
+	Gfx::Point new_pos = _resize_window->rect().position();
+	Gfx::Dimensions new_dims = _resize_window->rect().dimensions();
+	Gfx::Point mouse_delta = _mouse_window->rect().position() - _resize_begin_point;
 	switch(_resize_mode) {
 		case NORTH:
 			new_pos.y += mouse_delta.y;

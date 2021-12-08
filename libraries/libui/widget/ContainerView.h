@@ -27,13 +27,13 @@ namespace UI {
 		WIDGET_DEF(ContainerView)
 
 		//ScrollView
-		void on_scroll(Point new_position) override;
-		Dimensions scrollable_area() override;
+		void on_scroll(Gfx::Point new_position) override;
+		Gfx::Dimensions scrollable_area() override;
 		void set_contents(Widget::ArgPtr contents);
 
 		//Widget
 		void calculate_layout() override;
-		Dimensions preferred_size() override;
+		Gfx::Dimensions preferred_size() override;
 
 	private:
 		explicit ContainerView();

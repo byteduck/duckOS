@@ -32,7 +32,7 @@ namespace UI {
 		};
 
 		//Widget
-		virtual Dimensions preferred_size() override;
+		virtual Gfx::Dimensions preferred_size() override;
 		virtual void calculate_layout() override;
 
 	protected:

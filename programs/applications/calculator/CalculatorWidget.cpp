@@ -43,7 +43,7 @@ CalculatorWidget::CalculatorWidget(): BoxLayout(VERTICAL) {
 	display->set_padding({8, 8});
 	add_child(display);
 
-	button_grid = GridLayout::make(Dimensions {4, 0});
+	button_grid = GridLayout::make(Gfx::Dimensions {4, 0});
 	add_child(button_grid);
 
 	OP_BUTTON(del, DEL)

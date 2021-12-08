@@ -70,7 +70,7 @@ TerminalWidget::~TerminalWidget() {
 		perror("kill");
 }
 
-Dimensions TerminalWidget::preferred_size() {
+Gfx::Dimensions TerminalWidget::preferred_size() {
 	return {404, 304};
 }
 
@@ -84,7 +84,7 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 		for(int x = 0; x < dims.cols; x++) {
 			for(int y = 0; y < dims.lines; y++) {
 				auto character = term->get_character({x, y});
-				Point pos = {(int) x * font->bounding_box().width + 2, (int) y * font->size() + 2};
+				Gfx::Point pos = {(int) x * font->bounding_box().width + 2, (int) y * font->size() + 2};
 				ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[character.attr.bg]);
 				ctx.draw_glyph(font, character.codepoint, pos, color_palette[character.attr.fg]);
 			}
@@ -94,7 +94,7 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 		switch(evt.type) {
 			case TerminalEvent::CHARACTER: {
 				auto& data = evt.data.character;
-				Point pos = {(int) data.pos.col * font->bounding_box().width + 2, (int) data.pos.line * font->size() + 2};
+				Gfx::Point pos = {(int) data.pos.col * font->bounding_box().width + 2, (int) data.pos.line * font->size() + 2};
 				ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[data.character.attr.bg]);
 				ctx.draw_glyph(font, data.character.codepoint, pos, color_palette[data.character.attr.fg]);
 				break;
@@ -134,8 +134,8 @@ bool TerminalWidget::on_keyboard(Pond::KeyEvent event) {
 	return true;
 }
 
-void TerminalWidget::on_layout_change(const Rect& old_rect) {
-	Dimensions dims = current_size();
+void TerminalWidget::on_layout_change(const Gfx::Rect& old_rect) {
+	Gfx::Dimensions dims = current_size();
 	needs_full_repaint = true;
 	term->set_dimensions({
 		(dims.width - 4) / font->bounding_box().width,

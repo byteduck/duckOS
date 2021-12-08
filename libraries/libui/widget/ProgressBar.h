@@ -31,7 +31,7 @@ namespace UI {
 		void set_progress(double progress);
 
 		//Widget
-		Dimensions preferred_size() override;
+		Gfx::Dimensions preferred_size() override;
 
 	private:
 		//ProgressBar

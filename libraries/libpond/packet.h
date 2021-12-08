@@ -27,13 +27,13 @@ namespace Pond {
 	struct OpenWindowPkt {
 		int parent;
 		bool hidden;
-		Rect rect;
+		Gfx::Rect rect;
 	};
 
 	struct WindowOpenedPkt {
 		int window_id;
 		int shm_id;
-		Rect rect;
+		Gfx::Rect rect;
 	};
 
 	struct WindowDestroyPkt {
@@ -43,31 +43,31 @@ namespace Pond {
 
 	struct WindowMovePkt {
 		int window_id;
-		Point pos;
+		Gfx::Point pos;
 	};
 
 	struct WindowResizePkt {
 		int window_id;
-		Dimensions dims;
+		Gfx::Dimensions dims;
 	};
 
 	struct WindowResizedPkt {
 		int window_id;
 		int shm_id;
-		Rect rect;
+		Gfx::Rect rect;
 	};
 
 	struct WindowInvalidatePkt {
 		int window_id;
-		Rect area;
+		Gfx::Rect area;
 		bool flipped;
 	};
 
 	struct MouseMovePkt {
 		int window_id;
-		Point delta;
-		Point relative;
-		Point absolute;
+		Gfx::Point delta;
+		Gfx::Point relative;
+		Gfx::Point absolute;
 	};
 
 	struct MouseButtonPkt {
@@ -125,7 +125,7 @@ namespace Pond {
 	};
 
 	struct DisplayInfoPkt {
-		Dimensions dimensions;
+		Gfx::Dimensions dimensions;
 	};
 }
 

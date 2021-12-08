@@ -37,7 +37,7 @@ void UI::ProgressBar::set_progress(double progress) {
 	repaint();
 }
 
-Dimensions UI::ProgressBar::preferred_size() {
+Gfx::Dimensions UI::ProgressBar::preferred_size() {
 	return {80, Theme::progress_bar_height()};
 }
 
