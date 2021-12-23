@@ -20,7 +20,7 @@ if [ -z "$DUCKOS_QEMU_ACCEL" ]; then
 		DUCKOS_QEMU_ACCEL="-accel whpx,kernel-irqchip=off -accel tcg"
 	else
 		if [ "$USE_KVM" -ne "0" ]; then
-			DUCKOS_QEMU_ACCEL="-use-kvm"
+			DUCKOS_QEMU_ACCEL="-enable-kvm"
 		else
 			DUCKOS_QEMU_ACCEL=""
 		fi

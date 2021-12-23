@@ -106,7 +106,11 @@ if [ ! "$USE_EXISTING" ]; then
     warn "IMPORTANT: GRUB command line tools are not present on macOS. GRUB will not be installed."
   else
     msg "Installing grub..."
-    grub-install --boot-directory=mnt/boot --target=i386-pc --modules="ext2 part_msdos" "${dev}" || fail "Couldn't install grub."
+    GRUB_COMMAND="grub2-install"
+    if ! type "$GRUB_COMMAND" > /dev/null; then
+        GRUB_COMMAND="grub-install"
+    fi
+    "$GRUB_COMMAND" --boot-directory=mnt/boot --target=i386-pc --modules="ext2 part_msdos" "${dev}" || fail "Couldn't install grub."
     cp "${SOURCE_DIR}/scripts/grub.cfg" mnt/boot/grub || fail "Couldn't copy grub.cfg."
   fi
 fi
