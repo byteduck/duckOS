@@ -20,13 +20,14 @@
 // A program that lists the contents of a directory.
 
 #include <cstdio>
-#include <filesystem>
 #include <libduck/Args.h>
+#include <libduck/Path.h>
 #include <unistd.h>
 
 std::string dir_name = ".";
 bool no_color = false;
 bool colorize = false;
+bool show_all = false;
 
 const char* REG_FORMAT = "\033[39m";
 const char* DIR_FORMAT = "\033[36m";
@@ -39,33 +40,35 @@ int main(int argc, char **argv, char **env) {
 	args.add_positional(dir_name, false, "DIR", "The directory to list.");
 	args.add_named(no_color, "n", "no-color", "Do not colorize the output.");
 	args.add_named(colorize, std::nullopt, "color", "Colorize the output.");
+	args.add_named(show_all, "a", "all", "Show entries starting with \".\".");
 	args.parse(argc, argv);
 
 	if(!isatty(STDOUT_FILENO))
 		no_color = true;
 
-	std::filesystem::directory_iterator dir_iterator;
-	try {
-		dir_iterator = std::filesystem::directory_iterator {dir_name};
-	} catch(...) {
-		perror("ls");
-		exit(errno);
+	auto dirs_res = Duck::Path(dir_name).get_directory_entries();
+	if(dirs_res.is_error()) {
+		fprintf(stderr, "ls: cannot access %s: %s\n", dir_name.c_str(), dirs_res.strerror());
+		return dirs_res.code();
 	}
 
-	for(auto& entry : dir_iterator) {
+	for(auto& entry : dirs_res.value()) {
 		const char* color = "";
 		if(!no_color || colorize) {
 			color = REG_FORMAT;
-			if(entry.is_directory())
+			if(entry.type() == Duck::DirectoryEntry::DIRECTORY)
 				color = DIR_FORMAT;
-			else if(entry.is_block_file())
+			else if(entry.type() == Duck::DirectoryEntry::BLOCKDEVICE)
 				color = BLK_FORMAT;
-			else if(entry.is_character_file())
+			else if(entry.type() == Duck::DirectoryEntry::CHARDEVICE)
 				color = CHR_FORMAT;
-			else if(entry.is_symlink())
+			else if(entry.type() == Duck::DirectoryEntry::SYMLINK)
 				color = LNK_FORMAT;
 		}
-		printf("%s%s\n", color, entry.path().filename().c_str());
+
+		auto entry_name = std::string(entry.name());
+		if(entry_name[0] != '.' || show_all)
+			printf("%s%s\n", color, entry_name.c_str());
 	}
 
 	return 0;
