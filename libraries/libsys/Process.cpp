@@ -18,19 +18,24 @@
 */
 
 #include "Process.h"
-#include <filesystem>
+#include <libduck/Filesystem.h>
 #include <fstream>
 #include <libduck/Config.h>
 #include <unistd.h>
 
 using namespace Sys;
-using Duck::Result, Duck::ResultRet;
+using Duck::Result, Duck::ResultRet, Duck::Path;
 
 std::map<pid_t, Process> Process::get_all() {
 	std::map<pid_t, Process> ret;
-	for(const auto& ent : std::filesystem::directory_iterator("/proc/")) {
-		if(ent.is_directory() && std::isdigit(ent.path().filename().string()[0])) {
-			pid_t pid = std::stoi(ent.path().filename());
+
+	auto ent_res = Path("/proc/").get_directory_entries();
+	if(ent_res.is_error())
+		return ret; //This should not happen
+
+	for(const auto& ent : ent_res.value()) {
+		if(ent.is_directory() && std::isdigit(ent.name()[0])) {
+			pid_t pid = std::stoi(std::string(ent.name()));
 			auto proc_res = get(pid);
 			if(proc_res.has_value())
 				ret[pid] = proc_res.value();
@@ -75,7 +80,7 @@ std::string Process::exe() const {
 }
 
 ResultRet<App::Info> Process::app_info() const {
-	return App::Info::from_app_directory(std::filesystem::path(exe()).parent_path());
+	return App::Info::from_app_directory(Path(exe()).parent());
 }
 
 Result Process::update() {
