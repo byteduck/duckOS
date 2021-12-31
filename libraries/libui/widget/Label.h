@@ -28,7 +28,7 @@ namespace UI {
 
 		//Label
 		std::string label();
-		void set_label(const std::string& new_label);
+		void set_label(const std::string_view& new_label);
 		Color color();
 		void set_color(Color new_color);
 		TextAlignment vertical_alignment();
@@ -43,7 +43,7 @@ namespace UI {
 		virtual Gfx::Dimensions preferred_size() override;
 
 	private:
-		explicit Label(const std::string& label);
+		explicit Label(const std::string_view& label);
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
