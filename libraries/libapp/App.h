@@ -24,7 +24,7 @@
 #include <libgraphics/Image.h>
 #include <libduck/Result.h>
 #include <memory>
-#include <filesystem>
+#include <libduck/Path.h>
 #include <map>
 
 #define LIBAPP_BASEPATH "/apps"
@@ -33,25 +33,25 @@
 namespace App {
 	class Info {
 	public:
-		static Duck::ResultRet<Info> from_app_directory(const std::filesystem::path& app_directory);
+		static Duck::ResultRet<Info> from_app_directory(const Duck::Path& app_directory);
 		static Duck::ResultRet<Info> from_app_name(const std::string& app_name);
 		static Duck::ResultRet<Info> from_current_app();
 
 		Info() = default;
-		Info(std::filesystem::path app_directory, std::string name, std::string exec);
+		Info(Duck::Path app_directory, std::string name, std::string exec);
 
 		const Gfx::Image& icon();
 		const std::string& name() const;
 		const std::string exec() const;
 		bool exists() const;
-		std::filesystem::path base_path() const;
+		Duck::Path base_path() const;
 
-		std::filesystem::path resource_path(const std::filesystem::path& path) const;
-		std::shared_ptr<const Gfx::Image> resource_image(const std::filesystem::path& path);
+		Duck::Path resource_path(const Duck::Path& path) const;
+		std::shared_ptr<const Gfx::Image> resource_image(const Duck::Path& path);
 
 	private:
 		bool _exists = false;
-		std::filesystem::path _base_path;
+		Duck::Path _base_path;
 		std::string _name;
 		std::string _exec;
 		std::shared_ptr<Gfx::Image> _icon = nullptr;

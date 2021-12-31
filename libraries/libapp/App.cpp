@@ -23,9 +23,9 @@
 #include <unistd.h>
 
 using namespace App;
-using Duck::Result, Duck::ResultRet;
+using Duck::Result, Duck::ResultRet, Duck::Path;
 
-ResultRet<Info> Info::from_app_directory(const std::filesystem::path& app_directory) {
+ResultRet<Info> Info::from_app_directory(const Path& app_directory) {
 	auto config_res = Duck::Config::read_from(app_directory / "app.conf");
 	if(config_res.is_error())
 		return config_res.result();
@@ -44,19 +44,19 @@ ResultRet<Info> Info::from_app_directory(const std::filesystem::path& app_direct
 }
 
 ResultRet<Info> Info::from_app_name(const std::string& app_name) {
-	return from_app_directory(std::filesystem::path(LIBAPP_BASEPATH) / (app_name + ".app"));
+	return from_app_directory(Path(LIBAPP_BASEPATH) / (app_name + ".app"));
 }
 
 ResultRet<Info> Info::from_current_app() {
 	char exe_path[512];
 	if(!readlink("/proc/$$/exe", exe_path, 512)) {
-		return from_app_directory(std::filesystem::path(exe_path).parent_path());
+		return from_app_directory(Path(exe_path).parent());
 	} else {
 		return Result(errno);
 	}
 }
 
-Info::Info(std::filesystem::path base_path, std::string name, std::string exec):
+Info::Info(Path base_path, std::string name, std::string exec):
 	_exists(true), _base_path(std::move(base_path)), _name(std::move(name)), _exec(std::move(exec)) {}
 
 const Gfx::Image& Info::icon() {
@@ -85,15 +85,15 @@ bool Info::exists() const {
 	return _exists;
 }
 
-std::filesystem::path Info::base_path() const {
+Path Info::base_path() const {
 	return _base_path;
 }
 
-std::filesystem::path Info::resource_path(const std::filesystem::path& path) const {
+Path Info::resource_path(const Path& path) const {
 	return _base_path / path;
 }
 
-std::shared_ptr<const Gfx::Image> Info::resource_image(const std::filesystem::path& path) {
+std::shared_ptr<const Gfx::Image> Info::resource_image(const Path& path) {
 	auto it = _images.find(path);
 	if(it == _images.end()) {
 		auto* img = Gfx::load_png(resource_path(path));
@@ -108,9 +108,12 @@ std::shared_ptr<const Gfx::Image> Info::resource_image(const std::filesystem::pa
 
 std::vector<Info> App::get_all_apps() {
 	std::vector<Info> ret;
-	for(const auto& ent : std::filesystem::directory_iterator(LIBAPP_BASEPATH)) {
+	auto ent_res = Path(LIBAPP_BASEPATH).get_directory_entries();
+	if(ent_res.is_error())
+		return ret;
+	for(const auto& ent : ent_res.value()) {
 		if(ent.is_directory()) {
-			if(ent.path().extension() == ".app") {
+			if(ent.path().extension() == "app") {
 				auto app_res = Info::from_app_directory(ent.path());
 				if(!app_res.is_error())
 					ret.push_back(app_res.value());
