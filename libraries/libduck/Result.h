@@ -21,47 +21,43 @@
 
 #include <cassert>
 #include <optional>
+#include <cstring>
 
 namespace Duck {
 	class Result {
 	public:
-		Result(int code): _code(code) {}
+		Result(int code): m_code(code) {}
 
-		bool is_success() const {
-			return _code == 0;
-		}
-
-		bool is_error() const {
-			return _code;
-		}
-
-		int code() const {
-			return _code;
-		}
+		bool is_success() const { return m_code == 0; }
+		bool is_error() const { return m_code; }
+		int code() const { return m_code; }
+		const char* strerror() const { return ::strerror(m_code); }
+		operator int() const { return m_code; }
 
 		static const Result SUCCESS;
 		static const Result FAILURE;
 
 	private:
-		int _code;
+		int m_code;
 	};
 
 	template<typename T>
 	class ResultRet {
 	public:
-		ResultRet(Result error): _ret(std::nullopt), _result(error) {};
-		ResultRet(std::optional<T> ret): _ret(std::move(ret)), _result(0) {};
-		ResultRet(T ret): _ret(std::move(ret)), _result(0) {};
-		bool is_error() const {return _result.is_error();}
-		bool has_value() const {return _ret.has_value();}
-		int code() const {return _result.code();}
-		Result result() const {return _result;}
-		T& value() {
-			assert(_ret.has_value());
-			return _ret.value();
-		};
+		ResultRet(Result error): m_ret(std::nullopt), m_result(error) {};
+		ResultRet(std::optional<T> ret): m_ret(std::move(ret)), m_result(0) {};
+		ResultRet(T ret): m_ret(std::move(ret)), m_result(0) {};
+
+		bool is_error() const { return m_result.is_error(); }
+		bool has_value() const { return m_ret.has_value(); }
+		int code() const { return m_result.code(); }
+		Result result() const { return m_result; }
+		const char* strerror() const { return m_result.strerror(); }
+		T& value() { return m_ret.value(); };
+		operator T&() { return m_ret.value(); }
+
 	private:
-		std::optional<T> _ret;
-		Result _result;
+		std::optional<T> m_ret;
+		Result m_result;
 	};
 }
