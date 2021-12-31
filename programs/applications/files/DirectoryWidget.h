@@ -20,8 +20,8 @@
 #pragma once
 
 #include <libui/widget/ListView.h>
-#include <filesystem>
 #include <vector>
+#include <libduck/DirectoryEntry.h>
 
 class DirectoryWidget: public UI::ListView {
 public:
@@ -33,12 +33,12 @@ public:
 	int num_items() override;
 
 	//DirectoryWidget
-	void set_directory(const std::filesystem::path& path);
+	void set_directory(const Duck::Path& path);
 
 private:
-	DirectoryWidget(const std::filesystem::path& path);
+	DirectoryWidget(const Duck::Path& path);
 
-	std::filesystem::path path;
-	std::vector<std::filesystem::directory_entry> entries;
+	Duck::Path path;
+	std::vector<Duck::DirectoryEntry> entries;
 	bool inited = false;
 };

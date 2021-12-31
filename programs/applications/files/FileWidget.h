@@ -20,7 +20,6 @@
 #pragma once
 
 #include <libui/widget/layout/BoxLayout.h>
-#include <filesystem>
 #include "DirectoryWidget.h"
 
 class FileWidget: public UI::BoxLayout {
@@ -31,8 +30,8 @@ protected:
 	bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 
 private:
-	FileWidget(const std::filesystem::directory_entry& dir_entry, DirectoryWidget::ArgPtr dir_widget);
+	FileWidget(const Duck::DirectoryEntry& dir_entry, DirectoryWidget::ArgPtr dir_widget);
 
-	std::filesystem::directory_entry entry;
+	Duck::DirectoryEntry entry;
 	DirectoryWidget::Ptr dir_widget;
 };

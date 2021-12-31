@@ -26,7 +26,7 @@
 
 using namespace UI;
 
-DirectoryWidget::DirectoryWidget(const std::filesystem::path& path): ListView(GRID) {
+DirectoryWidget::DirectoryWidget(const Duck::Path& path): ListView(GRID) {
 	set_directory(path);
 	inited = true;
 }
@@ -35,7 +35,7 @@ Widget::Ptr DirectoryWidget::create_entry(int index) {
 	if(!index) {
 		auto btn = UI::Button::make("<---");
 		btn->on_released = [&] {
-			set_directory(path.parent_path());
+			set_directory(path.parent());
 			return true;
 		};
 		return btn;
@@ -54,17 +54,15 @@ int DirectoryWidget::num_items() {
 	return entries.size() + 1;
 }
 
-void DirectoryWidget::set_directory(const std::filesystem::path& new_path) {
-	std::filesystem::directory_iterator dir_iterator;
-	std::error_code code;
-	dir_iterator = std::filesystem::directory_iterator { new_path, code };
-	if(code)
+void DirectoryWidget::set_directory(const Duck::Path& new_path) {
+	auto dirs_res = Duck::Path(new_path).get_directory_entries();
+	if(dirs_res.is_error())
 		return;
 
 	path = new_path;
 	entries.clear();
 
-	for(auto& entry : dir_iterator)
+	for(auto& entry : dirs_res.value())
 		entries.push_back(entry);
 
 	if(inited) {
