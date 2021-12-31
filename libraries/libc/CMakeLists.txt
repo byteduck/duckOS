@@ -31,16 +31,24 @@ SET(SOURCES
 SET(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-nostdlib -Wall")
 SET(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-nostdlib -Wall -fno-exceptions -fno-rtti")
 
+# Install crti.o
+ADD_LIBRARY(crti STATIC crti.S)
+ADD_CUSTOM_COMMAND(TARGET crti COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:crti> ${CMAKE_INSTALL_PREFIX}/lib/crti.o)
+
+# Install crtn.o
+ADD_LIBRARY(crtn STATIC crtn.S)
+ADD_CUSTOM_COMMAND(TARGET crtn COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:crtn> ${CMAKE_INSTALL_PREFIX}/lib/crtn.o)
+
 # Install crt0.o
 ADD_LIBRARY(crt0 STATIC crt0.c)
 ADD_CUSTOM_COMMAND(TARGET crt0 COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_OBJECTS:crt0> ${CMAKE_INSTALL_PREFIX}/lib/crt0.o)
 
 # Make dynamic libc
-ADD_LIBRARY(libc_dyn ${SOURCES})
+ADD_LIBRARY(libc_dyn SHARED ${SOURCES})
 SET_TARGET_PROPERTIES(libc_dyn PROPERTIES PREFIX "")
 set_target_properties(libc_dyn PROPERTIES OUTPUT_NAME libc)
 TARGET_LINK_DIRECTORIES(libc_dyn PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES(libc_dyn crt0 gcc stdc++ supc++)
+TARGET_LINK_LIBRARIES(libc_dyn crti crt0 gcc stdc++ supc++ crtn)
 ADD_CUSTOM_COMMAND(TARGET libc_dyn COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:libc_dyn> ${CMAKE_INSTALL_PREFIX}/lib/libc.so)
 
 # Make static libc
@@ -48,7 +56,7 @@ ADD_LIBRARY(libc_static STATIC ${SOURCES})
 SET_TARGET_PROPERTIES(libc_static PROPERTIES PREFIX "")
 set_target_properties(libc_static PROPERTIES OUTPUT_NAME libc)
 TARGET_LINK_DIRECTORIES(libc_static PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES(libc_static crt0 gcc stdc++ supc++)
+TARGET_LINK_LIBRARIES(libc_static crti crt0 gcc stdc++ supc++ crtn)
 ADD_CUSTOM_COMMAND(TARGET libc_static COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:libc_static> ${CMAKE_INSTALL_PREFIX}/lib/libc.a)
 
 # Add headers target
