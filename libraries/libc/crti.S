@@ -17,12 +17,18 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-.global _init
 .section .init
+.align 4
+.global _init
+.type _init, @function
 _init:
-	push %ebp
+	pushl %ebp
+	movl %esp, %ebp
 
-.global _fini
 .section .fini
+.align 4
+.global _fini
+.type _fini, @function
 _fini:
-	push %ebp
+	pushl %ebp
+	movl %esp, %ebp

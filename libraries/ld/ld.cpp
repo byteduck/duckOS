@@ -26,12 +26,16 @@
 #include <cstdlib>
 #include <map>
 #include <sys/mem.h>
+#include <libduck/Log.h>
+
+using Duck::Log;
 
 std::unordered_map<std::string, uintptr_t> global_symbols;
 std::unordered_map<std::string, uintptr_t> symbols;
 std::map<std::string, Object*> objects;
 size_t current_brk = 0;
 bool debug = false;
+Object* executable;
 
 int main(int argc, char** argv, char** envp) {
 	if(argc < 2) {
@@ -39,7 +43,7 @@ int main(int argc, char** argv, char** envp) {
 		return -1;
 	}
 
-	auto* executable = new Object();
+	executable = new Object();
 	objects[std::string(argv[1])] = executable;
 
 	//Open the executable
@@ -70,35 +74,36 @@ int main(int argc, char** argv, char** envp) {
 		rev_it++;
 	}
 
+	//Call __init_stdio for libc.so before any other initializer
+	if(symbols["__init_stdio"] != 0) {
+		((void(*)()) symbols["__init_stdio"])();
+	}
+
 	//Call the initializer methods for the libraries and executable
 	rev_it = objects.rbegin();
 	while(rev_it != objects.rend()) {
 		auto* object = rev_it->second;
+
+		if(object->init_func) {
+			if(debug)
+				Log::dbg("Calling init @ 0x", std::hex, (size_t) object->init_func - object->memloc, " for ", object->name);
+			object->init_func();
+		}
+
 		if(object->init_array) {
 			for(size_t i = 0; i < object->init_array_size; i++) {
 				if(debug)
-					printf("Calling initializer %lx() for %s\n", (size_t) object->init_array[i], object->name.c_str());
+					Log::dbg("Calling initializer @ 0x", std::hex, (size_t) object->init_array[i] - object->memloc, " for ", object->name);
 				object->init_array[i]();
 			}
 		}
-		rev_it++;
-	}
 
-	//Call main initializers for the libraries and executable
-	rev_it = objects.rbegin();
-	while(rev_it != objects.rend()) {
-		auto* object = rev_it->second;
-		if(object->init_func) {
-			if(debug)
-				printf("Calling main initializer %lx() for %s\n", (size_t) object->init_func, object->name.c_str());
-			object->init_func();
-		}
 		rev_it++;
 	}
 
 	//Finally, jump to the executable's entry point!
 	if(debug)
-		printf("Calling entry point 0x%lx()...\n", (size_t) executable->header.e_entry);
+		Log::dbg("Calling entry point 0x", std::hex, executable->header.e_entry);
 	auto main = reinterpret_cast<main_t>(executable->header.e_entry);
 	main(argc - 2, argv + 2, envp);
 
@@ -113,19 +118,19 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 
 	//Read the header
 	if(read_header() < 0) {
-		fprintf(stderr, "Failed to read header of %s: %s\n", name_cstr, strerror(errno));
+		Log::err("Failed to read header of ", name_cstr, ": ", strerror(errno));
 		return -1;
 	}
 
 	//Read the program headers
 	if(read_pheaders() < 0) {
-		fprintf(stderr, "Failed to read segment headers of %s: %s\n", name_cstr, strerror(errno));
+		Log::err("Failed to read segment headers of ", name_cstr, ": ", strerror(errno));
 		return -1;
 	}
 
 	//Calculate the object size
 	if(calculate_memsz() < 0) {
-		fprintf(stderr, "Failed to calculate size of %s\n", name_cstr);
+		Log::err("Failed to calculate size of ", name_cstr);
 		errno = ENOEXEC;
 		return -1;
 	}
@@ -136,7 +141,7 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 		size_t alloc_start = (calculated_base / PAGE_SIZE) * PAGE_SIZE;
 		size_t alloc_size = ((memsz + (calculated_base - alloc_start) + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
 		if (memacquire((void*) alloc_start, alloc_size) < (void*) nullptr) {
-			fprintf(stderr, "Failed to allocate memory for %s: %s\n", name_cstr, strerror(errno));
+			Log::err("Failed to allocate memory for ", name_cstr, ": ", strerror(errno));
 			return -1;
 		}
 		current_brk = alloc_start + alloc_size;
@@ -144,7 +149,7 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 		memloc = current_brk;
 		size_t alloc_size = ((memsz + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
 		if (memacquire((void*) current_brk, alloc_size) < (void*) nullptr) {
-			fprintf(stderr, "Failed to allocate memory for %s: %s\n", name_cstr, strerror(errno));
+			Log::err("Failed to allocate memory for ", name_cstr, ": ", strerror(errno));
 			return -1;
 		}
 		current_brk += alloc_size;
@@ -152,25 +157,25 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 
 	//Load the object
 	if(load_sections() < 0) {
-		fprintf(stderr, "Failed to load %s into memory: %s\n", name_cstr, strerror(errno));
+		Log::err("Failed to load ", name_cstr, " into memory: ", strerror(errno));
 		return -1;
 	}
 
 	//Read the dynamic table and figure out the required libraries
 	if(read_dynamic_table() < 0) {
-		fprintf(stderr, "Failed to read dynamic table of %s: %s\n", name_cstr, strerror(errno));
+		Log::err("Failed to read dynamic table of ", name_cstr, ": ", strerror(errno));
 		return -1;
 	}
 
 	//Read the shared header table
 	if(read_sheaders() < 0) {
-		fprintf(stderr, "Failed to read shared headers of %s: %s\n", name_cstr, strerror(errno));
+		Log::err("Failed to read sheaders of ", name_cstr, ": ", strerror(errno));
 		return -1;
 	}
 
 	//Read the copy relocations of the main executable
 	if(is_main_executable && read_copy_relocations() < 0) {
-		fprintf(stderr, "Failed to read copy relocations of %s: %s\n", name_cstr, strerror(errno));
+		Log::err("Failed to read copy relocations of ", name_cstr, ": ", strerror(errno));
 		return -1;
 	}
 
@@ -179,13 +184,13 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 		//Open the library
 		auto* library = Object::open_library(library_name);
 		if(library == nullptr) {
-			fprintf(stderr, "Failed to open required library %s: %s\n", library_name, strerror(errno));
+			Log::err("Failed to open required library ", library_name, ": ", strerror(errno));
 			return -1;
 		}
 
 		//Load the library
 		if(library->load(library_name, false) < 0) {
-			fprintf(stderr, "Failed to load required library %s: %s\n", library_name, strerror(errno));
+			Log::err("Failed to load required library ", library_name, ": ", strerror(errno));
 		}
 	}
 
@@ -407,6 +412,9 @@ int Object::relocate() {
 				uint8_t rel_type = ELF32_R_TYPE(rel.r_info);
 				uint32_t rel_symbol = ELF32_R_SYM(rel.r_info);
 
+				if(rel_type == R_386_NONE)
+					continue;
+
 				auto& symbol = symbol_table[rel_symbol];
 				uintptr_t symbol_loc = memloc + symbol.st_value;
 				char* symbol_name = (char *)((uintptr_t) string_table + symbol.st_name);
@@ -417,7 +425,7 @@ int Object::relocate() {
 						auto map_it = symbols.find(symbol_name);
 						if(map_it == symbols.end()) {
 							if(debug)
-								printf("Symbol not found for %s: %s\n", name.c_str(), symbol_name);
+								Log::warn("Symbol ", symbol_name, " not found for ", name);
 							symbol_loc = 0x0;
 						} else {
 							symbol_loc = map_it->second;
@@ -429,17 +437,11 @@ int Object::relocate() {
 				if(rel_type == R_386_GLOB_DAT) {
 					if(symbol_name) {
 						auto map_it = global_symbols.find(symbol_name);
-						if(map_it == symbols.end()) {
-							if(debug)
-								printf("Global symbol not found for %s: %s\n", name.c_str(), symbol_name);
-						} else {
+						if(map_it != symbols.end()) {
 							symbol_loc = map_it->second;
 						}
 					}
 				}
-
-				if(debug)
-					printf("Relocating %s for %s...\n", symbol_name, name.c_str());
 
 				//Perform the actual relocation
 				auto* reloc_loc = (void*) (memloc + rel.r_offset);
@@ -471,7 +473,7 @@ int Object::relocate() {
 
 					default:
 						if(debug)
-							printf("Unknown relocation type %d\n", rel_type);
+							Log::warn("Unknown relocation type ", (int) rel_type, " for ",  (int) rel_symbol);
 						break;
 				}
 			}

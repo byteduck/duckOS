@@ -27,15 +27,22 @@ int main(int, char**, char**);
 extern void (*__init_array_start[])(int, char**, char**);
 extern void (*__init_array_end[])(int, char**, char**);
 
+int __duckos_did_init = 0;
+__attribute__((constructor)) void __on_init() {
+    __duckos_did_init = 1;
+}
+
 int _start(int argc, char* argv[], char* env[]) {
 	environ = env;
 
-	__init_stdio();
-	//_init(); //TODO: Figure out why this causes a segfault...
-
-	size_t ninit = __init_array_end - __init_array_start;
-	for (size_t i = 0; i < ninit; i++)
-		(*__init_array_start[i])(argc, argv, env);
+    //We don't want to call the init array twice; the dynamic loader does this
+    if(!__duckos_did_init) {
+        __init_stdio();
+        size_t ninit = __init_array_end - __init_array_start;
+        for (size_t i = 0; i < ninit; i++) {
+            (*__init_array_start[i])(argc, argv, env);
+        }
+    }
 
 	int ret = main(argc, argv, env);
 	exit(ret);
