@@ -617,7 +617,13 @@ int fseek(FILE* stream, long int offset, int whence) {
 	fflush(stream);
 	stream->eof = 0;
 	stream->ungetc = -1;
-	return lseek(stream->fd, offset, whence);
+	off_t res = lseek(stream->fd, offset, whence);
+	if(res) {
+		stream->err = errno;
+		return -1;
+	} else {
+		return 0;
+	}
 }
 
 int fsetpos(FILE* stream, const fpos_t* pos) {
