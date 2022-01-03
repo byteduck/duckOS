@@ -1,2 +1,13 @@
-SET(SOURCES Args.cpp Config.cpp DirectoryEntry.cpp Log.cpp Path.cpp Result.cpp SpinLock.cpp )
+SET(SOURCES
+        Args.cpp
+        Config.cpp
+        DirectoryEntry.cpp
+        File.cpp
+        Log.cpp
+        Path.cpp
+        Result.cpp
+        SpinLock.cpp
+        stream/BasicStream.cpp
+        stream/Filestream.cpp
+        stream/StreamOperators.cpp)
 MAKE_LIBRARY(libduck)
