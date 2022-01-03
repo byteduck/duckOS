@@ -17,9 +17,9 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <cstring>
 #include "Config.h"
-#include <libduck/StringUtils.h>
+#include "StringUtils.h"
+#include "FileStream.h"
 
 using namespace Duck;
 

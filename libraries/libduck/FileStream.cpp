@@ -17,9 +17,13 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "Filestream.h"
+#include "FileStream.h"
 
 using namespace Duck;
+
+[[maybe_unused]] FileInputStream FileStream::std_in(File::std_in);
+[[maybe_unused]] FileOutputStream FileStream::std_out(File::std_out);
+[[maybe_unused]] FileOutputStream FileStream::std_err(File::std_err);
 
 FileStream::FileStream(): m_file(nullptr) {}
 FileStream::FileStream(const File& file): m_file(file) {}

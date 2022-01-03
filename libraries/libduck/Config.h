@@ -22,6 +22,7 @@
 #include <map>
 #include "Result.h"
 #include "Stream.h"
+#include "Path.h"
 
 namespace Duck {
 	class Config {

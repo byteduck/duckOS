@@ -19,6 +19,7 @@
 
 #include "CPU.h"
 #include <libduck/Config.h>
+#include <libduck/FileStream.h>
 
 using namespace Sys;
 using Duck::Result, Duck::ResultRet;

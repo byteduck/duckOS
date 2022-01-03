@@ -21,11 +21,11 @@
 #include <libui/widget/ProgressBar.h>
 #include <libui/widget/Label.h>
 #include <libui/widget/layout/BoxLayout.h>
-#include <cstring>
 #include <sys/time.h>
 #include <libsys/Memory.h>
 #include <libsys/CPU.h>
 #include "ProcessListWidget.h"
+#include <libduck/FileStream.h>
 
 #define UPDATE_FREQ 1000
 

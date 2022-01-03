@@ -19,10 +19,13 @@
 
 #pragma once
 
-#include "BasicStream.h"
-#include "../File.h"
+#include "Stream.h"
+#include "File.h"
 
 namespace Duck {
+	class FileInputStream;
+	class FileOutputStream;
+
 	class FileStream {
 	public:
 		FileStream();
@@ -34,6 +37,9 @@ namespace Duck {
 		void set_file(const File& file) { m_file = file; }
 		Result open(const Path& path);
 		[[nodiscard]] bool is_open() const { return m_file.c_file(); }
+
+		[[maybe_unused]] static FileInputStream std_in;
+		[[maybe_unused]] static FileOutputStream std_out, std_err;
 
 	protected:
 		[[nodiscard]] virtual const char* open_mode() const = 0;

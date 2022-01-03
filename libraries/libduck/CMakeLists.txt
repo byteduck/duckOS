@@ -7,7 +7,6 @@ SET(SOURCES
         Path.cpp
         Result.cpp
         SpinLock.cpp
-        stream/BasicStream.cpp
-        stream/Filestream.cpp
-        stream/StreamOperators.cpp)
+        Stream.cpp
+        FileStream.cpp)
 MAKE_LIBRARY(libduck)

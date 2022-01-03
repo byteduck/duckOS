@@ -17,8 +17,26 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "StreamOperators.h"
+#include "Stream.h"
+#include "FileStream.h"
 
+using namespace Duck;
+
+[[maybe_unused]] InputStream& Stream::std_in = FileStream::std_in;
+[[maybe_unused]] OutputStream& Stream::std_out = FileStream::std_out;
+[[maybe_unused]] OutputStream& Stream::std_err = FileStream::std_err;
+
+[[nodiscard]] Result Stream::status(){
+	auto ret = m_err;
+	m_err = 0;
+	return ret;
+}
+
+
+
+/*
+ * Stream operators
+ */
 namespace Duck {
 	/*
 	 * InputStream stuff
