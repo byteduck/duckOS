@@ -26,12 +26,13 @@ using namespace Duck;
 [[maybe_unused]] OutputStream& Stream::std_out = FileStream::std_out;
 [[maybe_unused]] OutputStream& Stream::std_err = FileStream::std_err;
 
+Stream::~Stream() = default;
+
 [[nodiscard]] Result Stream::status(){
 	auto ret = m_err;
 	m_err = 0;
 	return ret;
 }
-
 
 
 /*

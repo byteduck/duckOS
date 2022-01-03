@@ -28,7 +28,7 @@ namespace Duck {
 
 	class Stream {
 	public:
-		virtual ~Stream() = default;
+		virtual ~Stream();
 
 		[[nodiscard]] Result status();
 
@@ -43,12 +43,15 @@ namespace Duck {
 	class InputStream: public Stream {
 	public:
 		virtual size_t read(void* buffer, size_t n) = 0;
-
 		[[nodiscard]] virtual bool eof() const = 0;
 		virtual Result seek(long offset, Whence whence) = 0;
-
 		void set_delimeter(char delimeter) { m_delimeter = delimeter; }
 		[[nodiscard]] char delimeter() const { return m_delimeter; }
+		char getchar() {
+			char ret;
+			read(&ret, 1);
+			return ret;
+		}
 
 	private:
 		char m_delimeter = '\n';
@@ -58,6 +61,7 @@ namespace Duck {
 	public:
 		virtual size_t write(const void* buffer, size_t n) = 0;
 		virtual Result seek(long offset, Whence whence) = 0;
+		bool putchar(char chr) { return write(&chr, 1); }
 	};
 
 	/*
