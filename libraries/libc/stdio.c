@@ -618,7 +618,7 @@ int fseek(FILE* stream, long int offset, int whence) {
 	stream->eof = 0;
 	stream->ungetc = -1;
 	off_t res = lseek(stream->fd, offset, whence);
-	if(res) {
+	if(res == -1) {
 		stream->err = errno;
 		return -1;
 	} else {
