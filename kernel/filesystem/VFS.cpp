@@ -325,7 +325,7 @@ Result VFS::mkdir(kstd::string path, mode_t mode, const User& user, const kstd::
 
 	//Check that the parent is a directory and we have write permissions on it
 	if(!parent->inode()->metadata().is_directory()) return -ENOTDIR;
-	if(parent->inode()->metadata().can_write(user)) return -EACCES;
+	if(!parent->inode()->metadata().can_write(user)) return -EACCES;
 
 	//Make the directory
 	mode |= (unsigned) MODE_DIRECTORY;
