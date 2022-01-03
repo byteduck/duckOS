@@ -17,18 +17,14 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <fstream>
 #include "CPU.h"
 #include <libduck/Config.h>
 
 using namespace Sys;
 using Duck::Result, Duck::ResultRet;
 
-ResultRet<CPU::Info> CPU::get_info(std::istream& file) {
-	file.clear(file.goodbit);
-	file.seekg(0);
-	if(file.fail())
-		return Result::FAILURE;
+ResultRet<CPU::Info> CPU::get_info(Duck::InputStream& file) {
+	file.seek(0, Duck::SET);
 
 	auto cfg_res = Duck::Config::read_from(file);
 	if(cfg_res.is_error())
@@ -42,8 +38,10 @@ ResultRet<CPU::Info> CPU::get_info(std::istream& file) {
 }
 
 ResultRet<CPU::Info> CPU::get_info() {
-	std::ifstream cpu_file("/proc/cpuinfo");
-	if(cpu_file.fail())
-		return Result::FAILURE;
-	return get_info(cpu_file);
+	auto cpu_file = Duck::File::open("/proc/cpuinfo", "r");
+	if(cpu_file.is_error())
+		return cpu_file.result();
+
+	auto cpu_stream = Duck::FileInputStream(cpu_file.value());
+	return get_info(cpu_stream);
 }

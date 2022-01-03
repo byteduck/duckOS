@@ -20,7 +20,7 @@
 #pragma once
 
 #include <sys/types.h>
-#include <iostream>
+#include <libduck/Stream.h>
 #include <libduck/Result.h>
 
 namespace Sys::Mem {
@@ -73,6 +73,6 @@ namespace Sys::Mem {
 		}
 	};
 
-	Duck::ResultRet<Info> get_info(std::istream& file);
+	Duck::ResultRet<Info> get_info(Duck::InputStream& file);
 	Duck::ResultRet<Info> get_info();
 }

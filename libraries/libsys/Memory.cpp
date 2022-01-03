@@ -19,16 +19,12 @@
 
 #include "Memory.h"
 #include <libduck/Config.h>
-#include <iostream>
 
 using namespace Sys;
 using Duck::Result, Duck::ResultRet;
 
-ResultRet<Mem::Info> Mem::get_info(std::istream& file) {
-	file.clear(file.goodbit);
-	file.seekg(0);
-	if(file.fail())
-		return Result::FAILURE;
+ResultRet<Mem::Info> Mem::get_info(Duck::InputStream& file) {
+	file.seek(0, Duck::SET);
 
 	auto cfg_res = Duck::Config::read_from(file);
 	if(cfg_res.is_error())
@@ -49,10 +45,12 @@ ResultRet<Mem::Info> Mem::get_info(std::istream& file) {
 }
 
 ResultRet<Mem::Info> Mem::get_info() {
-	std::ifstream mem_info("/proc/meminfo");
-	if(mem_info.fail())
-		return Result(Result::FAILURE);
-	return get_info(mem_info);
+	auto mem_file = Duck::File::open("/proc/meminfo", "r");
+	if(mem_file.is_error())
+		return mem_file.result();
+
+	Duck::FileInputStream mem_stream(mem_file);
+	return get_info(mem_stream);
 }
 
 #define GiB 1073742000

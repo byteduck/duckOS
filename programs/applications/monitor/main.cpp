@@ -23,7 +23,6 @@
 #include <libui/widget/layout/BoxLayout.h>
 #include <cstring>
 #include <sys/time.h>
-#include <fstream>
 #include <libsys/Memory.h>
 #include <libsys/CPU.h>
 #include "ProcessListWidget.h"
@@ -38,8 +37,8 @@ UI::Label::Ptr mem_label;
 UI::Label::Ptr cpu_label;
 ProcessListWidget::Ptr proc_list;
 
-std::ifstream mem_stream;
-std::ifstream cpu_stream;
+Duck::FileInputStream mem_stream;
+Duck::FileInputStream cpu_stream;
 
 CPU::Info cpu_info;
 Mem::Info mem_info;
@@ -76,16 +75,16 @@ void update() {
 
 int main(int argc, char** argv, char** envp) {
 	//Open meminfo and cpuinfo
-	mem_stream.open("/proc/meminfo");
-	if(mem_stream.fail()) {
+	auto res = mem_stream.open("/proc/meminfo");
+	if(res.is_error()) {
 		perror("Failed to open meminfo");
-		return EXIT_FAILURE;
+		return res.code();
 	}
 
-	cpu_stream.open("/proc/cpuinfo");
-	if(cpu_stream.fail()) {
+	res = cpu_stream.open("/proc/cpuinfo");
+	if(res.is_error()) {
 		perror("Failed to open cpuinfo");
-		return EXIT_FAILURE;
+		return res.code();
 	}
 
 	//Init libUI

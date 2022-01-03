@@ -19,7 +19,6 @@
 
 #include "Process.h"
 #include <libduck/Filesystem.h>
-#include <fstream>
 #include <libduck/Config.h>
 #include <unistd.h>
 
