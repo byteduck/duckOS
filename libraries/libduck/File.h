@@ -23,6 +23,7 @@
 #include "Path.h"
 #include <cstdio>
 #include <unistd.h>
+#include <memory>
 #include "bits/IOBits.h"
 
 namespace Duck {
@@ -31,27 +32,57 @@ namespace Duck {
 		static ResultRet<File> open(const Duck::Path& path, const char* mode);
 
 		File(): File(nullptr) {}
-		explicit File(FILE* file);
+		explicit File(FILE* file, bool close_on_destroy = false);
 
 		ResultRet<size_t> read(void* buffer, size_t n);
 		ResultRet<size_t> write(const void* buffer, size_t n);
 
-		Result seek(long offset, Whence whence) { return fseek(m_cfile, offset, whence) ? Result(ferror(m_cfile)) : Result::SUCCESS; }
-		Result rewind() { return seek(0, SET); }
-		off_t tell() { return ftell(m_cfile); }
-		[[nodiscard]] bool eof() const { return feof(m_cfile); }
-		Result flush() { return fflush(m_cfile) ? Result(ferror(m_cfile)) : Result::SUCCESS; }
+		Result seek(long offset, Whence whence);
+		Result rewind();
+		off_t tell();
+		[[nodiscard]] bool eof() const;
+		Result flush();
+		void close();
 
-		[[nodiscard]] int fd() const { return m_fd; }
-		[[nodiscard]] FILE* c_file() const { return m_cfile; }
-		[[nodiscard]] bool is_tty() const { return isatty(m_fd); }
+		[[nodiscard]] int fd() const;
+		[[nodiscard]] FILE* c_file() const;
+		[[nodiscard]] bool is_tty() const;
+		[[nodiscard]] bool is_open() const;
+
+		void set_close_on_destroy(bool close);
 
 		[[maybe_unused]] static File std_in;
 		[[maybe_unused]] static File std_out;
 		[[maybe_unused]] static File std_err;
 
 	private:
-		FILE* m_cfile;
-		int m_fd;
+		class FileRef {
+		public:
+			FileRef(FILE* cfile, bool close_on_desroy):
+				cfile(cfile), close_on_destroy(close_on_desroy), fd(cfile ? fileno(cfile) : -1) {}
+
+			~FileRef() {
+				if(close_on_destroy)
+					close();
+			}
+
+			void close() {
+				if(cfile) {
+					fclose(cfile);
+					cfile = nullptr;
+					fd = -1;
+				}
+			}
+
+			[[nodiscard]] bool is_open() const {
+				return cfile;
+			}
+
+			FILE* cfile = nullptr;
+			bool close_on_destroy = true;
+			int fd;
+		};
+
+		std::shared_ptr<FileRef> m_fileref;
 	};
 }
