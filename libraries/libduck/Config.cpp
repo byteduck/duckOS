@@ -18,7 +18,6 @@
 */
 
 #include <cstring>
-#include <iostream>
 #include "Config.h"
 #include <libduck/StringUtils.h>
 
@@ -40,14 +39,16 @@ std::map<std::string, std::string>& Config::defaults() {
 	return _values[""];
 }
 
-ResultRet<Config> Config::read_from(const std::string& filename) {
-	std::ifstream file(filename);
-	if(file.fail())
-		return Result(Result::FAILURE);
-	return read_from(file);
+ResultRet<Config> Config::read_from(const Path& filename) {
+	auto file_res = File::open(filename, "r");
+	if(file_res.is_error())
+		return file_res.result();
+
+	FileInputStream stream(file_res.value());
+	return read_from(stream);
 }
 
-ResultRet<Config> Config::read_from(std::istream& stream) {
+ResultRet<Config> Config::read_from(InputStream& stream) {
 	Config ret;
 	auto res = read_from(stream, ret);
 	if(res.is_error())
@@ -55,13 +56,16 @@ ResultRet<Config> Config::read_from(std::istream& stream) {
 	return ret;
 }
 
-Result Config::read_from(std::istream& stream, Config& config) {
-	if(stream.fail())
-		return Result::FAILURE;
-
+Result Config::read_from(InputStream& stream, Config& config) {
+	stream.set_delimeter('\n');
 	std::string curr_header = "";
 	std::string line;
-	while(std::getline(stream, line)) {
+	while(true) {
+		if(stream.eof())
+			break;
+
+		stream >> line;
+
 		trim(line);
 		if(line[0] == '[' && line[line.length() - 1] == ']') {
 			curr_header = line.substr(1, line.length() - 2);

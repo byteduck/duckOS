@@ -19,10 +19,9 @@
 
 #pragma once
 
-#include <string>
 #include <map>
-#include <fstream>
 #include "Result.h"
+#include "Stream.h"
 
 namespace Duck {
 	class Config {
@@ -32,13 +31,13 @@ namespace Duck {
 		std::map<std::string, std::string>& defaults();
 		bool has_section(const std::string& name);
 
-		static ResultRet<Config> read_from(const std::string& filename);
-		static ResultRet<Config> read_from(std::istream& stream);
+		static ResultRet<Config> read_from(const Path& filename);
+		static ResultRet<Config> read_from(InputStream& stream);
 
 	private:
 		Config() = default;
 
-		static Result read_from(std::istream& stream, Config& config);
+		static Result read_from(InputStream& stream, Config& config);
 
 		std::map<std::string, std::map<std::string, std::string>> _values;
 	};
