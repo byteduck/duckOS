@@ -3,10 +3,11 @@ SET(SOURCES
         Config.cpp
         DirectoryEntry.cpp
         File.cpp
+        FileStream.cpp
         Log.cpp
         Path.cpp
         Result.cpp
         SpinLock.cpp
         Stream.cpp
-        FileStream.cpp)
+        StringStream.cpp)
 MAKE_LIBRARY(libduck)
