@@ -1,3 +1,0 @@
-SET(SOURCES main.cpp)
-MAKE_PROGRAM(cat)
-TARGET_LINK_LIBRARIES(cat libduck)

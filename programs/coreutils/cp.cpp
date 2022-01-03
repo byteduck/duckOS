@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
 	errno = 0;
 
 	ssize_t nread;
-	char* buf = malloc(1024);
+	auto* buf = (char*) malloc(1024);
 	while((nread = read(from_fd, buf, 1024))) {
 		ssize_t nwrote;
 		nwrote = write(to_fd, buf, nread);

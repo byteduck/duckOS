@@ -1,2 +1,0 @@
-SET(SOURCES main.c)
-MAKE_PROGRAM(chown)
