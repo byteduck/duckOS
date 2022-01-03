@@ -61,10 +61,6 @@ Path::Path(std::string string): m_is_absolute(string[0] == '/') {
 	rebuild_parts();
 }
 
-Path::operator std::string_view() const {
-	return m_path;
-}
-
 Path::operator std::string() const {
 	return m_path;
 }
@@ -100,7 +96,7 @@ void Path::rebuild_parts() {
 		if(part.empty())
 			continue;
 		
-		m_parts.push_back(part);
+		m_parts.push_back(std::string(part));
 	} while(end != std::string_view::npos);
 
 	if(m_parts.empty())

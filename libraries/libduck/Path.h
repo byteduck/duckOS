@@ -21,7 +21,6 @@
 
 #include <string>
 #include <vector>
-#include <string_view>
 #include "Result.h"
 
 namespace Duck {
@@ -34,15 +33,13 @@ namespace Duck {
 
 		//Path
 		[[nodiscard]] bool is_absolute() const { return m_is_absolute; }
-		[[nodiscard]] std::string_view basename() const { return m_parts.back(); }
-		[[nodiscard]] std::string_view filename() const { return m_filename; }
-		[[nodiscard]] std::string_view string_view() const { return m_path; }
-		[[nodiscard]] std::string string() const { return m_path; }
-		[[nodiscard]] std::string_view extension() const { return m_extension; }
+		[[nodiscard]] const std::string& basename() const { return m_parts.back(); }
+		[[nodiscard]] const std::string& filename() const { return m_filename; }
+		[[nodiscard]] const std::string& string() const { return m_path; }
+		[[nodiscard]] const std::string& extension() const { return m_extension; }
 		[[nodiscard]] Path parent() const { return operator/(".."); }
 
 		//Conversion and operators
-		operator std::string_view() const;
 		operator std::string() const;
 		Path operator/(const Path& other) const { return std::move(Path(string() + "/" + other.string())); }
 		Path operator/(const std::string& other) const { return operator/(Path(other)); }
@@ -54,9 +51,9 @@ namespace Duck {
 	private:
 		void rebuild_parts();
 
-		std::vector<std::string_view> m_parts;
-		std::string_view m_extension = "";
-		std::string_view m_filename = "";
+		std::vector<std::string> m_parts;
+		std::string m_extension = "";
+		std::string m_filename = "";
 		std::string m_path = "";
 		bool m_is_absolute = false;
 	};
