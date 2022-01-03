@@ -9,5 +9,6 @@ SET(SOURCES
         Result.cpp
         SpinLock.cpp
         Stream.cpp
+        FormatStream.cpp
         StringStream.cpp)
 MAKE_LIBRARY(libduck)
