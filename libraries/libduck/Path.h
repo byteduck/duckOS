@@ -33,13 +33,13 @@ namespace Duck {
 		Path(std::string string);
 
 		//Path
-		bool is_absolute() const { return m_is_absolute; }
-		std::string_view basename() const { return m_parts.back(); }
-		std::string_view filename() const { return m_filename; }
-		std::string_view string_view() const { return m_path; }
-		std::string string() const { return m_path; }
-		std::string_view extension() const { return m_extension; }
-		Path parent() const { return operator/(".."); }
+		[[nodiscard]] bool is_absolute() const { return m_is_absolute; }
+		[[nodiscard]] std::string_view basename() const { return m_parts.back(); }
+		[[nodiscard]] std::string_view filename() const { return m_filename; }
+		[[nodiscard]] std::string_view string_view() const { return m_path; }
+		[[nodiscard]] std::string string() const { return m_path; }
+		[[nodiscard]] std::string_view extension() const { return m_extension; }
+		[[nodiscard]] Path parent() const { return operator/(".."); }
 
 		//Conversion and operators
 		operator std::string_view() const;
@@ -49,7 +49,7 @@ namespace Duck {
 		Path operator/(const char* other) const { return operator/(Path(other)); }
 
 		//Directory iteration
-		ResultRet<std::vector<DirectoryEntry>> get_directory_entries() const;
+		[[nodiscard]] ResultRet<std::vector<DirectoryEntry>> get_directory_entries() const;
 
 	private:
 		void rebuild_parts();

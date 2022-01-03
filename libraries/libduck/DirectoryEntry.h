@@ -40,18 +40,18 @@ namespace Duck {
 
 		DirectoryEntry(const Path& parent_path, const dirent* entry);
 
-		std::string_view name() const { return m_name; }
-		Type type() const { return m_type; }
-		ino_t inode() const { return m_inode; }
-		const Path& path() const { return m_path; }
+		[[nodiscard]] std::string_view name() const { return m_name; }
+		[[nodiscard]] Type type() const { return m_type; }
+		[[nodiscard]] ino_t inode() const { return m_inode; }
+		[[nodiscard]] const Path& path() const { return m_path; }
 
-		bool is_regular() const { return m_type == REGULAR; }
-		bool is_directory() const { return m_type == DIRECTORY; }
-		bool is_chardev() const { return m_type == CHARDEVICE; }
-		bool is_blockdev() const { return m_type == BLOCKDEVICE; }
-		bool is_fifo() const { return m_type == FIFO; }
-		bool is_socket() const { return m_type == SOCKET; }
-		bool is_symlink() const { return m_type == SYMLINK; }
+		[[nodiscard]] bool is_regular() const { return m_type == REGULAR; }
+		[[nodiscard]] bool is_directory() const { return m_type == DIRECTORY; }
+		[[nodiscard]] bool is_chardev() const { return m_type == CHARDEVICE; }
+		[[nodiscard]] bool is_blockdev() const { return m_type == BLOCKDEVICE; }
+		[[nodiscard]] bool is_fifo() const { return m_type == FIFO; }
+		[[nodiscard]] bool is_socket() const { return m_type == SOCKET; }
+		[[nodiscard]] bool is_symlink() const { return m_type == SYMLINK; }
 
 	private:
 		ino_t m_inode;
