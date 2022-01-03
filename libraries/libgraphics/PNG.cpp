@@ -356,6 +356,7 @@ Image* Gfx::load_png_from_file(FILE* file) {
 			def->write = png_write;
 			def->read = png_read;
 			decompress(def);
+			delete def;
 		} else if(png.chunk_type == CHUNK_IEND) {
 			break;
 		} else {
