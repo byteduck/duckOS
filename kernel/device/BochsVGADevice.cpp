@@ -33,6 +33,7 @@ BochsVGADevice *BochsVGADevice::create() {
 	auto* ret = new BochsVGADevice();
 	if(!ret->detect()) {
 		delete ret;
+		remove_device(29, 0);
 		return nullptr;
 	}
 	return ret;
