@@ -107,10 +107,12 @@ if [ ! "$USE_EXISTING" ]; then
   else
     msg "Installing grub..."
     GRUB_COMMAND="grub2-install"
+    GRUB_EXTRAARGS="--force"
     if ! type "$GRUB_COMMAND" > /dev/null; then
         GRUB_COMMAND="grub-install"
+        GRUB_EXTRAARGS=""
     fi
-    "$GRUB_COMMAND" --boot-directory=mnt/boot --target=i386-pc --modules="ext2 part_msdos" "${dev}" || fail "Couldn't install grub."
+    "$GRUB_COMMAND" --boot-directory=mnt/boot --target=i386-pc --modules="ext2 part_msdos" "${dev}" "$GRUB_EXTRAARGS" || fail "Couldn't install grub."
     cp "${SOURCE_DIR}/scripts/grub.cfg" mnt/boot/grub || fail "Couldn't copy grub.cfg."
   fi
 fi
