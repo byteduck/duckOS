@@ -63,9 +63,17 @@ TerminalWidget::TerminalWidget() {
 		handle_term_events();
 	};
 	UI::add_poll(pty_poll);
+
+	//Set up interval for blinking
+	blink_interval = UI::set_interval([&] {
+		blink_on = !blink_on;
+		repaint();
+	}, 500);
+
 }
 
 TerminalWidget::~TerminalWidget() {
+	UI::remove_interval(blink_interval);
 	if(kill(proc_pid, SIGTERM) < 0)
 		perror("kill");
 }
@@ -77,6 +85,8 @@ Gfx::Dimensions TerminalWidget::preferred_size() {
 void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 	if(!term)
 		return;
+
+	//If we need a full repaint, do so
 	if(needs_full_repaint) {
 		needs_full_repaint = false;
 		auto dims = term->get_dimensions();
@@ -90,6 +100,8 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 			}
 		}
 	}
+
+	//Go through pending events and paint them
 	for(auto evt : events) {
 		switch(evt.type) {
 			case TerminalEvent::CHARACTER: {
@@ -125,6 +137,17 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 		}
 	}
 	events.clear();
+
+	//Then, draw the blinking cursor
+	auto cursor = term->get_cursor();
+	Gfx::Point pos = {(int) cursor.col * font->bounding_box().width + 2, (int) cursor.line * font->size() + 2};
+	if(blink_on) {
+		ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, RGB(200, 200, 200));
+	} else {
+		auto character = term->get_character(cursor);
+		ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[character.attr.bg]);
+		ctx.draw_glyph(font, character.codepoint, pos, color_palette[character.attr.fg]);
+	}
 }
 
 bool TerminalWidget::on_keyboard(Pond::KeyEvent event) {
@@ -211,8 +234,8 @@ void TerminalWidget::on_character_change(const Term::Position& position, const T
 	events.push_back({TerminalEvent::CHARACTER, {.character = {position, character}}});
 }
 
-void TerminalWidget::on_cursor_change(const Term::Position& position) {
-	//TODO
+void TerminalWidget::on_cursor_change(const Term::Position& old_position) {
+	events.push_back({TerminalEvent::CHARACTER, {.character = {old_position, term->get_character(old_position)}}});
 }
 
 void TerminalWidget::on_backspace(const Term::Position& position) {
@@ -233,6 +256,8 @@ void TerminalWidget::on_clear_line(int line) {
 }
 
 void TerminalWidget::on_scroll(int lines) {
+	//Redraw the cursor character, as we don't want to include it in the scroll
+	events.push_back({TerminalEvent::CHARACTER, {.character = {term->get_cursor(), term->get_character(term->get_cursor())}}});
 	events.push_back({TerminalEvent::SCROLL, {.scroll = {term->get_current_attribute(), lines}}});
 }
 

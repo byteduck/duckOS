@@ -55,6 +55,8 @@ private:
 	int pty_fd = -1;
 	pid_t proc_pid = -1;
 	bool needs_full_repaint = false;
+	int blink_interval = -1;
+	bool blink_on = false;
 
 	struct TerminalEvent {
 		enum type {CHARACTER, CLEAR, CLEAR_LINE, SCROLL} type;
@@ -78,7 +80,6 @@ private:
 	};
 
 	std::vector<TerminalEvent> events;
-
 };
 
 
