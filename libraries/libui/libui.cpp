@@ -22,7 +22,9 @@
 #include "UIException.h"
 #include <poll.h>
 #include <map>
+#include <utility>
 #include <libduck/Config.h>
+#include <climits>
 
 using namespace UI;
 
@@ -30,6 +32,8 @@ Pond::Context* UI::pond_context = nullptr;
 std::vector<pollfd> pollfds;
 std::map<int, Poll> polls;
 std::map<int, std::shared_ptr<Window>> windows;
+int cur_timeout = 1;
+std::map<int, Timeout> timeouts;
 int num_windows = 0;
 bool should_exit = false;
 App::Info _app_info;
@@ -132,7 +136,32 @@ void handle_pond_events() {
 void UI::run() {
 	try {
 		while (!should_exit) {
-			update(-1);
+			//Trigger needed timers
+			auto timeout_it = timeouts.begin();
+			while(timeout_it != timeouts.end()) {
+				if(timeout_it->second.ready()) {
+					timeout_it->second.call();
+					if(!timeout_it->second.is_interval) {
+						timeout_it = timeouts.erase(timeout_it);
+						continue;
+					} else {
+						timeouts[timeout_it->first].calculate_trigger_time();
+					}
+				}
+				timeout_it++;
+			}
+
+			long shortest_timeout = LONG_MAX;
+			bool have_timeout = false;
+			for(auto& timeout : timeouts) {
+				long millis = timeout.second.millis_until_ready();
+				if(millis > 0 && millis < shortest_timeout) {
+					shortest_timeout = millis;
+					have_timeout = true;
+				}
+			}
+
+			update(have_timeout ? shortest_timeout : -1);
 		}
 	} catch(const UI::UIException& e) {
 		fprintf(stderr, "UIException in UI loop: %s\n", e.what());
@@ -161,6 +190,24 @@ void UI::update(int timeout) {
 
 bool UI::ready_to_exit() {
 	return should_exit;
+}
+
+int UI::set_timeout(std::function<void()> func, int interval) {
+	timeouts[cur_timeout] = {interval, std::move(func), false};
+	return cur_timeout++;
+}
+
+int UI::set_interval(std::function<void()> func, int interval) {
+	timeouts[cur_timeout] = {interval, std::move(func), true};
+	return cur_timeout++;
+}
+
+void UI::remove_timeout(int id) {
+	timeouts.erase(id);
+}
+
+void UI::remove_interval(int id) {
+	timeouts.erase(id);
 }
 
 bool UI::set_app_name(const std::string& app_name) {
