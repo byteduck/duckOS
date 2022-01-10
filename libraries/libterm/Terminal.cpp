@@ -39,7 +39,6 @@ listener(listener)
 	screen.resize(dimensions.lines);
 	for(int y = 0; y < dimensions.lines; y++)
 		screen[y].resize(dimensions.cols);
-	set_cursor({0, 0});
 }
 
 void Terminal::set_dimensions(const Term::Size& new_size) {
@@ -71,8 +70,10 @@ Term::Size Terminal::get_dimensions() {
 }
 
 void Terminal::set_cursor(const Term::Position& position) {
+	auto old_pos = cursor_position;
 	cursor_position = position;
-	listener.on_cursor_change(position);
+	if(old_pos.col >= 0 && old_pos.col < dimensions.cols && old_pos.line >= 0 && old_pos.line < dimensions.lines)
+		listener.on_cursor_change(old_pos);
 }
 
 Term::Position Terminal::get_cursor() {
@@ -80,12 +81,14 @@ Term::Position Terminal::get_cursor() {
 }
 
 void Terminal::backspace() {
-	if(cursor_position.col == 0) {
-		cursor_position.col = dimensions.cols;
-		if(cursor_position.line)
-			cursor_position.line--;
+	auto new_pos = cursor_position;
+	if(new_pos.col == 0) {
+		new_pos.col = dimensions.cols;
+		if(new_pos.line)
+			new_pos.line--;
 	}
-	cursor_position.col--;
+	new_pos.col--;
+	set_cursor(new_pos);
 	listener.on_backspace(cursor_position);
 }
 
@@ -162,22 +165,24 @@ void Terminal::write_codepoint(uint32_t codepoint) {
 		return;
 	}
 
+	auto new_cursor_pos = cursor_position;
+
 	switch(codepoint) {
 		case '\n':
-			cursor_position.line++;
+			new_cursor_pos.line++;
 		case '\r':
-			cursor_position.col = 0;
+			new_cursor_pos.col = 0;
 			break;
 		case '\b':
 			backspace();
-			break;
+			return;
 		case '\t': {
-			int next_mult = cursor_position.col + (8 - cursor_position.col % 8);
+			int next_mult = new_cursor_pos.col + (8 - new_cursor_pos.col % 8);
 			if(next_mult >= dimensions.cols) {
-				cursor_position.line++;
-				cursor_position.col = 0;
+				new_cursor_pos.line++;
+				new_cursor_pos.col = 0;
 			} else {
-				cursor_position.col = next_mult;
+				new_cursor_pos.col = next_mult;
 			}
 			break;
 		}
@@ -186,22 +191,23 @@ void Terminal::write_codepoint(uint32_t codepoint) {
 			escape_status = Beginning;
 			return;
 		default:
-			set_character(cursor_position, {codepoint, current_attribute});
-			cursor_position.col++;
+			set_character(new_cursor_pos, {codepoint, current_attribute});
+			new_cursor_pos.col++;
 			break;
 	}
 
-	if(cursor_position.col == dimensions.cols) {
-		cursor_position.line++;
-		cursor_position.col = 0;
+	if(new_cursor_pos.col == dimensions.cols) {
+		new_cursor_pos.line++;
+		new_cursor_pos.col = 0;
 	}
 
-	if(cursor_position.line >= dimensions.lines) {
-		scroll(cursor_position.line + 1 - dimensions.lines);
-		cursor_position.line = dimensions.lines - 1;
+	if(new_cursor_pos.line >= dimensions.lines) {
+		scroll(new_cursor_pos.line + 1 - dimensions.lines);
+		new_cursor_pos.line = dimensions.lines - 1;
 	}
 
-	listener.on_cursor_change(cursor_position);
+	if(new_cursor_pos.col != cursor_position.col || new_cursor_pos.line != cursor_position.line)
+		set_cursor(new_cursor_pos);
 }
 
 void Terminal::write_chars(const char* buffer, size_t length) {

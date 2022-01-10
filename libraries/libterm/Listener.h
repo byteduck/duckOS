@@ -25,7 +25,7 @@ namespace Term {
 	class Listener {
 	public:
 		virtual void on_character_change(const Position& position, const Character& character) = 0;
-		virtual void on_cursor_change(const Position& position) = 0;
+		virtual void on_cursor_change(const Position& old_position) = 0;
 		virtual void on_backspace(const Position& position) = 0;
 		virtual void on_clear() = 0;
 		virtual void on_clear_line(int line) = 0;
