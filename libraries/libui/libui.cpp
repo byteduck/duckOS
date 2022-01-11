@@ -32,8 +32,8 @@ Pond::Context* UI::pond_context = nullptr;
 std::vector<pollfd> pollfds;
 std::map<int, Poll> polls;
 std::map<int, std::shared_ptr<Window>> windows;
-int cur_timeout = 1;
-std::map<int, Timeout> timeouts;
+int cur_timeout = 0;
+std::map<int, Timer*> timers;
 int num_windows = 0;
 bool should_exit = false;
 App::Info _app_info;
@@ -137,30 +137,44 @@ void UI::run() {
 	try {
 		while (!should_exit) {
 			//Trigger needed timers
-			auto timeout_it = timeouts.begin();
-			while(timeout_it != timeouts.end()) {
-				if(timeout_it->second.ready()) {
-					timeout_it->second.call();
-					if(!timeout_it->second.is_interval) {
-						timeout_it = timeouts.erase(timeout_it);
-						continue;
-					} else {
-						timeouts[timeout_it->first].calculate_trigger_time();
-					}
-				}
-				timeout_it++;
-			}
-
 			long shortest_timeout = LONG_MAX;
 			bool have_timeout = false;
-			for(auto& timeout : timeouts) {
-				long millis = timeout.second.millis_until_ready();
+			auto timer_it = timers.begin();
+			while(timer_it != timers.end()) {
+				auto* timer = timer_it->second;
+
+				//If the timer in question isn't enabled, skip it
+				if(!timer->enabled())
+					continue;
+
+				long millis = timer->millis_until_ready();
+
+				//First, check if the timer is ready to fire
+				if(millis <= 0) {
+					//Call the timer
+					timer->call()();
+					if(!timer->is_interval()) {
+						//Delete the timer if it's just a one-time timer (ie setTimeout)
+						timer_it = timers.erase(timer_it);
+						delete timer;
+						continue;
+					} else {
+						//Reschedule the timer if it's an interval
+						timers[timer_it->first]->calculate_trigger_time();
+						millis = timer_it->second->delay();
+					}
+				}
+
+				//Then, determine if this timer is the next one that will fire
 				if(millis > 0 && millis < shortest_timeout) {
 					shortest_timeout = millis;
 					have_timeout = true;
 				}
+
+				timer_it++;
 			}
 
+			//Update with a timeout of -1 (infinite), or until the next timer is ready to fire
 			update(have_timeout ? shortest_timeout : -1);
 		}
 	} catch(const UI::UIException& e) {
@@ -192,22 +206,19 @@ bool UI::ready_to_exit() {
 	return should_exit;
 }
 
-int UI::set_timeout(std::function<void()> func, int interval) {
-	timeouts[cur_timeout] = {interval, std::move(func), false};
-	return cur_timeout++;
+void UI::set_timeout(std::function<void()> func, int interval) {
+	int id = ++cur_timeout;
+	timers[id] = new Timer {id, interval, std::move(func), false};
 }
 
-int UI::set_interval(std::function<void()> func, int interval) {
-	timeouts[cur_timeout] = {interval, std::move(func), true};
-	return cur_timeout++;
+Ptr<Timer> UI::set_interval(std::function<void()> func, int interval) {
+	auto timer = new Timer {++cur_timeout, interval, std::move(func), true};
+	timers[cur_timeout] = timer;
+	return Ptr<Timer> { timer };
 }
 
-void UI::remove_timeout(int id) {
-	timeouts.erase(id);
-}
-
-void UI::remove_interval(int id) {
-	timeouts.erase(id);
+void UI::remove_timer(int id) {
+	timers.erase(id);
 }
 
 bool UI::set_app_name(const std::string& app_name) {

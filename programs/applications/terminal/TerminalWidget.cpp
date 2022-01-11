@@ -65,15 +65,13 @@ TerminalWidget::TerminalWidget() {
 	UI::add_poll(pty_poll);
 
 	//Set up interval for blinking
-	blink_interval = UI::set_interval([&] {
+	blink_timer = UI::set_interval([&] {
 		blink_on = !blink_on;
 		repaint();
 	}, 500);
-
 }
 
 TerminalWidget::~TerminalWidget() {
-	UI::remove_interval(blink_interval);
 	if(kill(proc_pid, SIGTERM) < 0)
 		perror("kill");
 }

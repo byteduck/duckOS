@@ -3,6 +3,7 @@ SET(SOURCES
         Theme.cpp
         Window.cpp
         DrawContext.cpp
+        Timer.cpp
         UIException.cpp
 
         widget/Widget.cpp
