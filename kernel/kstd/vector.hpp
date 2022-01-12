@@ -43,10 +43,10 @@ namespace kstd {
 				new (&_storage[i]) T(other._storage[i]);
 		}
 
-		vector(vector<T>&& other): _capacity(other._capacity), _size(other._size) {
-			_storage = (T*) kcalloc(_size, sizeof(T));
-			for(size_t i = 0; i < _size; i++)
-				new (&_storage[i]) T(kstd::move(other._storage[i]));
+		vector(vector<T>&& other) noexcept : _capacity(other._capacity), _size(other._size), _storage(other._storage) {
+			other._storage = nullptr;
+			other._size = 0;
+			other._capacity = 0;
 		}
 
 		~vector(){
@@ -161,9 +161,11 @@ namespace kstd {
 				kfree(_storage);
 				_size = other._size;
 				_capacity = other._capacity;
-				_storage = (T*) kcalloc(_capacity, sizeof(T));
-				for (size_t i = 0; i < _size; i++)
-					new (&_storage[i]) T(kstd::move(other._storage[i]));
+				_storage = other._storage;
+
+				other._storage = nullptr;
+				other._size = 0;
+				other._capacity = 0;
 			}
 			return *this;
 		}
