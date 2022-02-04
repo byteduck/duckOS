@@ -36,6 +36,7 @@ mkdir -p "$FS_DIR"/dev/input
 mknod "$FS_DIR"/dev/input/keyboard c 13 0
 mknod "$FS_DIR"/dev/input/mouse c 13 1
 mknod "$FS_DIR"/dev/ptmx c 5 2
+mknod "$FS_DIR"/dev/snd0 c 69 2
 mkdir -p "$FS_DIR"/dev/pts
 msg "Setting up directories..."
 chmod -R g+rX,o+rX "$FS_DIR"/

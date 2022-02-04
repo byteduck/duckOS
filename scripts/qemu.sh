@@ -56,6 +56,7 @@ DUCKOS_QEMU_ARGS="
 	-drive file=$DUCKOS_IMAGE,cache=directsync,format=raw,id=disk,if=ide
 	-m 512M
 	-serial stdio
+	-device ac97
 	$DUCKOS_QEMU_DISPLAY
 	$DUCKOS_QEMU_ACCEL"
 

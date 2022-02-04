@@ -18,6 +18,7 @@
 */
 
 #include "kmain.h"
+#include "kernel/device/AC97Device.h"
 #include <kernel/kstd/kstdio.h>
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/memory/gdt.h>
@@ -204,6 +205,9 @@ void kmain_late(){
 
 	//Load the kernel symbols
 	KernelMapper::load_map();
+
+	//Try initializing the sound card
+	auto dev = AC97Device::detect();
 
 	KLog::dbg("kinit", "Starting init...");
 
