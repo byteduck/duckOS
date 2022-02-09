@@ -69,6 +69,15 @@ namespace River {
 			return *ret;
 		}
 
+		template<typename RetT, typename... ParamTs, typename FuncT, typename ClassT>
+		Duck::Result bind_function(const std::string& path, FuncT func, ClassT* obj) {
+			auto ret = register_function<RetT, ParamTs...>(path, [=](auto&&... args) {
+				return (obj->*func)(std::forward<decltype(args)>(args)...);
+			});
+
+			return ret.result();
+		}
+
 		template<typename RetT, typename... ParamTs>
 		Duck::ResultRet<Function<RetT, ParamTs...>> get_function(const std::string& path) {
 			auto stringname = Function<RetT, ParamTs...>::stringname_of(path);
