@@ -8,6 +8,7 @@ SET(SOURCES
         Log.cpp
         Path.cpp
         Result.cpp
+        SharedBuffer.cpp
         SpinLock.cpp
         Stream.cpp
         StringStream.cpp
