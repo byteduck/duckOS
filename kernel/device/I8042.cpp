@@ -96,6 +96,9 @@ bool I8042::init() {
 		}
 	}
 
+	//Write the updated config
+	write_config(config);
+
 	//Reset the devices
 	if(keyboard_available) {
 		if(reset_device(KEYBOARD)) {
@@ -108,7 +111,7 @@ bool I8042::init() {
 	}
 
 	if(mouse_available) {
-		if(reset_device(MOUSE)) {
+		if (reset_device(MOUSE)) {
 			KLog::dbg("I8042", "Mouse successfully enabled");
 			_inst->_mouse = new MouseDevice();
 		} else {
@@ -116,9 +119,6 @@ bool I8042::init() {
 			_inst->_mouse = nullptr;
 		}
 	}
-
-	//Write the updated config
-	write_config(config);
 
 	return true;
 }
