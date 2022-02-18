@@ -31,6 +31,7 @@
 // The init system for duckOS.
 
 #include <libduck/Log.h>
+#include "Service.h"
 
 using Duck::Log, Duck::Config;
 
@@ -43,38 +44,13 @@ int main(int argc, char** argv, char** envp) {
 	setsid();
 	Log::success("Welcome to duckOS!");
 
-	//Read config file
-	auto cfg_res = Config::read_from("/etc/init.conf");
-	if(cfg_res.is_error()) {
-		Log::crit("Failed to read /etc/init.conf: ", strerror(errno));
-		exit(errno);
-	}
-	auto& cfg = cfg_res.value();
+	//Load services
+	auto services = Service::get_all_services();
 
-	std::string exec = cfg["init"]["exec"];
-	std::stringstream exec_stream(exec);
-
-	//Execute the program given by the exec key in the config
-	pid_t pid = fork();
-	if(pid == 0) {
-		//Split arguments from exec command
-		std::vector<std::string> args;
-		std::string arg;
-		while(std::getline(exec_stream, arg, ' '))
-			args.push_back(arg);
-
-		//Convert c++ string vector into cstring array
-		const char* c_args[args.size() + 1];
-		for(auto i = 0; i < args.size(); i++)
-			c_args[i] = args[i].c_str();
-		c_args[args.size()] = NULL;
-
-		char* env[] = {NULL};
-
-		//Execute the command
-		execve(c_args[0], (char* const*) c_args, env);
-
-		Log::err("Failed to execute ", exec, ": ", strerror(errno));
+	//Start boot services
+	for(auto& service : services) {
+		if(service.after() == "boot")
+			service.execute();
 	}
 
 	//Wait for all child processes
