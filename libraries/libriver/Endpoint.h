@@ -102,6 +102,24 @@ namespace River {
 			return *ret;
 		}
 
+		template<typename RetT, typename... ParamTs>
+		Duck::Result get_function(const std::string& path, Function<RetT, ParamTs...>& storage) {
+			auto res = get_function<RetT, ParamTs...>(path);
+			if(res.is_error())
+				return res.result();
+			storage = res.value();
+			return Duck::Result::SUCCESS;
+		}
+
+		template<typename RetT, typename... ParamTs>
+		Duck::Result get_function(Function<RetT, ParamTs...>& storage) {
+			auto res = get_function<RetT, ParamTs...>(storage.path());
+			if(res.is_error())
+				return res.result();
+			storage = res.value();
+			return Duck::Result::SUCCESS;
+		}
+
 		template<typename T>
 		Duck::ResultRet<Message<T>> register_message(const std::string& path) {
 			auto stringname = Message<T>::stringname_of(path);
