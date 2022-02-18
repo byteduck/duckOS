@@ -34,6 +34,7 @@ using namespace Sys;
 UI::ProgressBar::Ptr mem_bar;
 UI::ProgressBar::Ptr cpu_bar;
 UI::Label::Ptr mem_label;
+UI::Label::Ptr cache_label;
 UI::Label::Ptr cpu_label;
 ProcessListWidget::Ptr proc_list;
 
@@ -66,6 +67,7 @@ void update() {
 	mem_bar->set_progress(mem_info.used_frac());
 	std::string mem_string = "Memory: " + mem_info.used.readable() + " / " + mem_info.usable.readable() + " used";
 	mem_label->set_label(mem_string);
+	cache_label->set_label("Disk cache: " + mem_info.kernel_disk_cache.readable());
 
 	cpu_bar->set_progress(cpu_info.utilization / 100.0);
 	cpu_label->set_label("CPU: " + std::to_string(cpu_info.utilization) + "%");
@@ -98,6 +100,7 @@ int main(int argc, char** argv, char** envp) {
 	mem_bar = UI::ProgressBar::make();
 	cpu_bar = UI::ProgressBar::make();
 	mem_label = UI::Label::make("Memory");
+	cache_label = UI::Label::make("Disk Cache");
 	cpu_label = UI::Label::make("CPU");
 
 	//Make layout
@@ -107,6 +110,7 @@ int main(int argc, char** argv, char** envp) {
 	layout->add_child(mem_layout);
 	mem_layout->add_child(mem_bar);
 	mem_layout->add_child(mem_label);
+	mem_layout->add_child(cache_label);
 
 	auto cpu_layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL);
 	layout->add_child(cpu_layout);
