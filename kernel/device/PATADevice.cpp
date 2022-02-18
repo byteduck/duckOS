@@ -284,12 +284,12 @@ void PATADevice::access_drive(uint8_t command, uint32_t lba, uint8_t num_sectors
 
 	wait_ready();
 
-	//Send command
-	IO::outb(_io_base + ATA_COMMAND, command);
-
 	//Install IRQ
 	asm volatile("cli");
 	reinstall_irq();
+
+	//Send command
+	IO::outb(_io_base + ATA_COMMAND, command);
 }
 
 Result PATADevice::read_uncached_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
