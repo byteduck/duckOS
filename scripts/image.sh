@@ -113,7 +113,13 @@ if [ ! "$USE_EXISTING" ]; then
         GRUB_EXTRAARGS=""
     fi
     "$GRUB_COMMAND" --boot-directory=mnt/boot --target=i386-pc --modules="ext2 part_msdos" "${dev}" $GRUB_EXTRAARGS || fail "Couldn't install grub."
-    cp "${SOURCE_DIR}/scripts/grub.cfg" mnt/boot/grub || fail "Couldn't copy grub.cfg."
+    if [[ -d "mnt/boot/grub2" ]]; then
+        cp "${SOURCE_DIR}/scripts/grub.cfg" mnt/boot/grub2/grub.cfg || fail "Couldn't copy grub.cfg."
+    elif [[ -d "mnt/boot/grub" ]]; then
+        cp "${SOURCE_DIR}/scripts/grub.cfg" mnt/boot/grub/grub.cfg || fail "Couldn't copy grub.cfg."
+    else
+        fail "Couldn't find GRUB installation directory."
+    fi
   fi
 fi
 
