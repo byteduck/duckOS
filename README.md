@@ -25,8 +25,9 @@ A hobby UNIX-like OS with a graphical window manager for x86 computers.
 
 The code for these can be found in [services](services/).
 
-- init (/bin/init): The init system for duckOS.
-- pond (/bin/pond): The (very-WIP) window manager / compositor for duckOS.
+- Init (/bin/init): The init system for duckOS.
+- Pond (/bin/pond): The window manager / compositor for duckOS.
+- Quack (/bin/quack): The sound server for duckOS.
 
 ### GUI Programs
 
@@ -78,6 +79,7 @@ Programs that take arguments will provide you with the correct usage when you ru
 - [libriver](/libraries/libriver): An IPC library not dissimilar to D-Bus, which provides a framework for remote function calls and data passing.
 - [libapp](/libraries/libapp): A library providing methods to retrieve information about installed and running applications.
 - [libsys](/libraries/libsys): Provides higher-level C++ abstractions for retrieving system information, namely from procFS.
+- [libsound](/libraries/libsound): Provides a framework for audio applications and interfacing with the sound server, Quack.
 
 ### Ports
 
@@ -97,7 +99,6 @@ Ports will only compile if their corresponding submodule is downloaded with `git
 - Cut down on memory usage by sharing memory for various commonly used items (libraries, icons, configuration, etc)
 - Better support for real hardware
 - Network support
-- Sound support
 - More s t a b i l i t y and s p e e d
 - Multiprocessor (multicore) support
 - An in-house heap implementation
