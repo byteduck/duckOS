@@ -25,24 +25,20 @@
 #include <libsys/Memory.h>
 #include <libsys/CPU.h>
 #include "ProcessListWidget.h"
+#include "MemoryUsageWidget.h"
 #include <libduck/FileStream.h>
 
 #define UPDATE_FREQ 1000
 
 using namespace Sys;
 
-UI::ProgressBar::Ptr mem_bar;
 UI::ProgressBar::Ptr cpu_bar;
-UI::Label::Ptr mem_label;
-UI::Label::Ptr cache_label;
-UI::Label::Ptr cpu_label;
+MemoryUsageWidget::Ptr mem_widget;
 ProcessListWidget::Ptr proc_list;
 
-Duck::FileInputStream mem_stream;
 Duck::FileInputStream cpu_stream;
 
 CPU::Info cpu_info;
-Mem::Info mem_info;
 
 void update() {
 	static timeval last_update = {0, 0};
@@ -59,31 +55,18 @@ void update() {
 	if(!cpu_res.is_error())
 		cpu_info = cpu_res.value();
 
-	auto mem_res = Mem::get_info(mem_stream);
-	if(!mem_res.is_error())
-		mem_info = mem_res.value();
-
-	//Update widgets
-	mem_bar->set_progress(mem_info.used_frac());
-	std::string mem_string = "Memory: " + mem_info.used.readable() + " / " + mem_info.usable.readable() + " used";
-	mem_label->set_label(mem_string);
-	cache_label->set_label("Disk cache: " + mem_info.kernel_disk_cache.readable());
+	mem_widget->update();
 
 	cpu_bar->set_progress(cpu_info.utilization / 100.0);
-	cpu_label->set_label("CPU: " + std::to_string(cpu_info.utilization) + "%");
+	cpu_bar->set_label("CPU: " + std::to_string(cpu_info.utilization) + "%");
 
 	proc_list->update();
 }
 
 int main(int argc, char** argv, char** envp) {
-	//Open meminfo and cpuinfo
-	auto res = mem_stream.open("/proc/meminfo");
-	if(res.is_error()) {
-		perror("Failed to open meminfo");
-		return res.code();
-	}
+	//Open cpuinfo
 
-	res = cpu_stream.open("/proc/cpuinfo");
+	auto res = cpu_stream.open("/proc/cpuinfo");
 	if(res.is_error()) {
 		perror("Failed to open cpuinfo");
 		return res.code();
@@ -97,25 +80,13 @@ int main(int argc, char** argv, char** envp) {
 	window->set_title("System Monitor");
 
 	//Make widgets
-	mem_bar = UI::ProgressBar::make();
+	mem_widget = MemoryUsageWidget::make();
 	cpu_bar = UI::ProgressBar::make();
-	mem_label = UI::Label::make("Memory");
-	cache_label = UI::Label::make("Disk Cache");
-	cpu_label = UI::Label::make("CPU");
 
 	//Make layout
 	auto layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 10);
-
-	auto mem_layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL);
-	layout->add_child(mem_layout);
-	mem_layout->add_child(mem_bar);
-	mem_layout->add_child(mem_label);
-	mem_layout->add_child(cache_label);
-
-	auto cpu_layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL);
-	layout->add_child(cpu_layout);
-	cpu_layout->add_child(cpu_bar);
-	cpu_layout->add_child(cpu_label);
+	layout->add_child(mem_widget);
+	layout->add_child(cpu_bar);
 
 	proc_list = ProcessListWidget::make();
 	layout->add_child(proc_list);
