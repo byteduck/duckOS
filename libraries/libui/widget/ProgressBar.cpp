@@ -18,12 +18,13 @@
 */
 
 #include "ProgressBar.h"
+#include <libgraphics/Font.h>
 
 UI::ProgressBar::ProgressBar() {
 
 }
 
-double UI::ProgressBar::progress() {
+double UI::ProgressBar::progress() const {
 	return _progress;
 }
 
@@ -37,10 +38,21 @@ void UI::ProgressBar::set_progress(double progress) {
 	repaint();
 }
 
+const std::string& UI::ProgressBar::label() {
+	return _label;
+}
+
+void UI::ProgressBar::set_label(std::string text) {
+	_label = std::move(text);
+	repaint();
+}
+
 Gfx::Dimensions UI::ProgressBar::preferred_size() {
-	return {80, Theme::progress_bar_height()};
+	int width = std::max(80, Theme::font()->size_of(_label.c_str()).width + 20);
+	return {width, Theme::progress_bar_height()};
 }
 
 void UI::ProgressBar::do_repaint(const UI::DrawContext& ctx) {
 	ctx.draw_progressbar({0, 0, ctx.width(), ctx.height()}, _progress);
+	ctx.draw_text(_label.c_str(), {0, 0, ctx.width(), ctx.height()}, CENTER, CENTER, Theme::font(), Theme::fg());
 }

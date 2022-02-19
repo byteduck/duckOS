@@ -27,8 +27,10 @@ namespace UI {
 		WIDGET_DEF(ProgressBar)
 
 		//ProgressBar
-		double progress();
+		double progress() const;
 		void set_progress(double progress);
+		const std::string& label();
+		void set_label(std::string text);
 
 		//Widget
 		Gfx::Dimensions preferred_size() override;
@@ -37,6 +39,7 @@ namespace UI {
 		//ProgressBar
 		explicit ProgressBar();
 		double _progress = 0;
+		std::string _label = "";
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
