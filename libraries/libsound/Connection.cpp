@@ -35,7 +35,18 @@ Duck::ResultRet<std::shared_ptr<Connection>> Connection::create() {
 	return std::shared_ptr<Connection>(new Connection(endpoint_res.value()));
 }
 
-void Connection::queue_samples(const SampleBuffer& buffer) {
+void Connection::queue_samples(const SampleBuffer& passed_buffer) {
+	//If we have to resample, do so
+	SampleBuffer buffer = passed_buffer;
+	if(buffer.sample_rate() != m_server_samplerate) {
+		auto resamp_res = buffer.resample(m_server_samplerate);
+		if(resamp_res.is_error()) {
+			Duck::Log::err("Couldn't resample queued buffer: ", resamp_res.message());
+			return;
+		}
+		buffer = resamp_res.value();
+	}
+
 	buffer.shared_buffer().allow(m_server_pid, true, false);
 	while(!server_queue_samples(buffer.shared_buffer().id(), buffer.num_samples()))
 		usleep(100);
