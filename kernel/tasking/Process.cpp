@@ -246,7 +246,7 @@ void Process::free_resources() {
 	_page_directory.reset();
 	for(int i = 0; i < _threads.size(); i++)
 		if(_threads[i])
-			_threads[i]->reap();
+			ASSERT(_threads[i]->state() == Thread::DEAD);
 	_threads.resize(0);
 	_file_descriptors.resize(0);
 }
@@ -269,7 +269,6 @@ bool Process::handle_pending_signal() {
 		return false;
 
 	int signal = pending_signals.front();
-	pending_signals.pop_front();
 
 	if(signal >= 0 && signal <= 32) {
 		Signal::SignalSeverity severity = Signal::signal_severities[signal];
@@ -284,23 +283,17 @@ bool Process::handle_pending_signal() {
 		}
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
-			//If the signal has no handler and is KILL or FATAL, then kill the process
-			auto parent = TaskManager::process_for_pid(_ppid);
-			if(!parent.is_error() && parent.value() != this)
-				parent.value()->kill(SIGCHLD);
-			_state = ZOMBIE;
+			//If the signal has no handler and is KILL or FATAL, then kill all threads
 			for(int i = 0; i < _threads.size(); i++)
-				if(_threads[i])
-					_threads[i]->reap();
-			TaskManager::reparent_orphans(this);
+				_threads[i]->kill();
 		} else if(signal_actions[signal].action) {
 			//We have a signal handler for this. If the process is blocked but can be interrupted, do so.
-			if(!main_thread()->call_signal_handler(signal)) {
-				pending_signals.push_back(signal);
+			if(!main_thread()->call_signal_handler(signal))
 				return false;
-			}
 		}
 	}
+
+	pending_signals.pop_front();
 	return true;
 }
 
@@ -1112,4 +1105,20 @@ int Process::sys_threadexit(void* return_value) {
 	TaskManager::yield();
 	ASSERT(false);
 	return -1;
+}
+
+void Process::alert_thread_died() {
+	//Check if all the threads are dead. If they are, we are ready to die.
+	bool any_alive = false;
+	for(size_t i = 0; i < threads().size(); i++)
+		if(_threads[i] && _threads[i]->state() != Thread::DEAD)
+			any_alive = true;
+
+	if(!any_alive) {
+		auto parent = TaskManager::process_for_pid(_ppid);
+		if (!parent.is_error() && parent.value() != this)
+			parent.value()->kill(SIGCHLD);
+		_state = ZOMBIE;
+		TaskManager::reparent_orphans(this);
+	}
 }

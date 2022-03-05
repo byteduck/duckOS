@@ -44,8 +44,11 @@ ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size
 	LOCK(_input_lock);
 
 	//Block until there's something to read
-	while(!_buffer_blocker.is_ready())
+	while(!_buffer_blocker.is_ready()) {
 		TaskManager::current_thread()->block(_buffer_blocker);
+		if(_buffer_blocker.was_interrupted())
+			return -EINTR;
+	}
 
 	size_t nread = 0;
 

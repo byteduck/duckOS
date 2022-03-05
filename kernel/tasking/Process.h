@@ -162,6 +162,8 @@ private:
 	Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
 
+	void alert_thread_died();
+
 	//Identifying info and state
 	kstd::string _name = "";
 	kstd::string _exe = "";

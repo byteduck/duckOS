@@ -21,7 +21,7 @@
 #include "Process.h"
 
 bool Blocker::can_be_interrupted() {
-	return false;
+	return true;
 }
 
 void Blocker::interrupt() {

@@ -176,9 +176,39 @@ void* Thread::return_value() {
 	return _return_value;
 }
 
+void Thread::kill() {
+	if(is_blocked()) {
+		if (_blocker->can_be_interrupted())
+			_blocker->interrupt();
+		else
+			KLog::warn("Thread", "Could not interrupt %s(pid: %d, tid: %d) while killing...", _process->name().c_str(), _process->pid(), _tid);
+	}
+
+	if(_in_syscall)
+		_should_die = true;
+	else
+		reap();
+}
+
+void Thread::enter_syscall() {
+	_in_syscall = true;
+}
+
+void Thread::leave_syscall() {
+	_in_syscall = false;
+	if(_should_die)
+		reap();
+}
+
 void Thread::block(Blocker& blocker) {
 	ASSERT(_state == ALIVE);
 	ASSERT(!_blocker);
+
+	if(_should_die && blocker.can_be_interrupted()) {
+		blocker.interrupt();
+		return;
+	}
+
 	TaskManager::enabled() = false;
 	_state = BLOCKED;
 	_blocker = &blocker;
@@ -199,7 +229,7 @@ bool Thread::is_blocked() {
 }
 
 bool Thread::should_unblock() {
-	return _blocker && _blocker->is_ready();
+	return _blocker && (_blocker->is_ready() || _blocker->was_interrupted());
 }
 
 Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, void** retp) {
@@ -245,7 +275,6 @@ bool Thread::call_signal_handler(int signal) {
 	if(is_blocked()) {
 		if(_blocker->can_be_interrupted()) {
 			_blocker->interrupt();
-			unblock();
 		} else {
 			return false;
 		}
@@ -326,6 +355,10 @@ bool& Thread::in_signal_handler() {
 	return _in_signal;
 }
 
+bool& Thread::in_syscall() {
+	return _in_syscall;
+}
+
 bool& Thread::just_finished_signal() {
 	return _just_finished_signal;
 }
@@ -351,8 +384,11 @@ void Thread::handle_pagefault(Registers* regs) {
 	}
 
 	//Otherwise, try CoW and kill the process if it doesn't work
-	if(!_process->_page_directory->try_cow(err_pos))
+	if(!_process->_page_directory->try_cow(err_pos)) {
+		if(in_syscall())
+			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred during a syscall (pid: %d, tid: %d).", _process->pid(), _tid);
 		_process->kill(SIGSEGV);
+	}
 }
 
 void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Registers& regs) {
@@ -394,5 +430,9 @@ void Thread::exit(void* return_value) {
 }
 
 void Thread::reap() {
+	ASSERT(_state != DEAD);
 	_state = DEAD;
+	_process->alert_thread_died();
+	if(TaskManager::current_thread().get() == this)
+		TaskManager::yield();
 }

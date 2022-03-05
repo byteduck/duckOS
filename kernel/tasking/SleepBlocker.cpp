@@ -27,10 +27,6 @@ bool SleepBlocker::is_ready() {
 	return Time::now() >= _end_time;
 }
 
-bool SleepBlocker::can_be_interrupted() {
-	return true;
-}
-
 Time SleepBlocker::end_time() {
 	return _end_time;
 }

@@ -83,7 +83,7 @@ private:
 	LinkedMemoryRegion _prdt_region;
 
 	//Interrupt stuff
-	BooleanBlocker _blocker;
+	UninterruptibleBooleanBlocker _blocker;
 	uint8_t _post_irq_status, _post_irq_bm_status;
 	volatile bool _got_irq = false;
 

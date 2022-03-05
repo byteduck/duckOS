@@ -27,8 +27,13 @@ public:
 	~BooleanBlocker() = default;
 	bool is_ready() override;
 	void set_ready(bool value);
+
 private:
 	volatile bool ready = false;
 };
 
+class UninterruptibleBooleanBlocker: public BooleanBlocker {
+public:
+	bool can_be_interrupted() override { return false; }
+};
 

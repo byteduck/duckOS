@@ -48,7 +48,3 @@ bool PollBlocker::is_ready() {
 
 	return false;
 }
-
-bool PollBlocker::can_be_interrupted() {
-	return true;
-}

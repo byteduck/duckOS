@@ -29,7 +29,6 @@ public:
 
 	///Blocker
 	bool is_ready() override;
-	bool can_be_interrupted() override;
 
 	///SleepBlocker
 	Time end_time();
