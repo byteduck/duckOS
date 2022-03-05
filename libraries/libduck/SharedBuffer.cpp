@@ -39,7 +39,7 @@ SharedBuffer::SharedBuffer(shm shm_info): m_shm(std::shared_ptr<ShmRef>(new ShmR
 
 }
 
-ResultRet<SharedBuffer> SharedBuffer::copy() {
+ResultRet<SharedBuffer> SharedBuffer::copy() const {
 	auto cpy_res = create(m_shm->shm_info.size);
 	if(cpy_res.is_error())
 		return cpy_res.result();

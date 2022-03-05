@@ -25,15 +25,23 @@
 namespace Sound {
 	class SampleBuffer {
 	public:
+		static Duck::ResultRet<SampleBuffer> create(size_t sample_rate, size_t num_samples);
 		explicit SampleBuffer(Duck::SharedBuffer buffer, size_t sample_rate, size_t num_samples);
 
 		void set_samples(Duck::SharedBuffer buffer, uint32_t sample_rate, uint32_t num_samples);
-		Duck::Result resample(uint32_t sample_rate);
+		[[nodiscard]] Duck::ResultRet<SampleBuffer> resample(uint32_t sample_rate) const;
+		void set_sample_rate(uint32_t sample_rate); //Does NOT resample
+		void set_num_samples(uint32_t num_samples); //Does NOT resize buffer
 
 		[[nodiscard]] Duck::SharedBuffer shared_buffer() const;
 		[[nodiscard]] Sample* samples() const;
 		[[nodiscard]] uint32_t sample_rate() const;
 		[[nodiscard]] size_t num_samples() const;
+		[[nodiscard]] size_t sample_capacity() const;
+
+		[[nodiscard]] Duck::ResultRet<SampleBuffer> copy() const;
+
+		Sample& operator[](size_t index) const;
 
 	private:
 		Duck::SharedBuffer m_buffer;

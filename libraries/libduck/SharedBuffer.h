@@ -31,7 +31,7 @@ namespace Duck {
 
 		explicit SharedBuffer(struct shm shm_info);
 
-		ResultRet<SharedBuffer> copy();
+		[[nodiscard]] ResultRet<SharedBuffer> copy() const;
 		int allow(int pid, bool read = true, bool write = true);
 		[[nodiscard]] void* ptr() const;
 		[[nodiscard]] size_t size() const;

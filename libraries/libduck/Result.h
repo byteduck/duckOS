@@ -27,11 +27,15 @@ namespace Duck {
 	class Result {
 	public:
 		Result(int code): m_code(code) {}
+		Result(int code, std::string message): m_code(code), m_message(std::move(message)) {}
+		Result(std::string message): m_code(FAILURE.m_code), m_message(std::move(message)) {}
 
 		[[nodiscard]] bool is_success() const { return m_code == 0; }
 		[[nodiscard]] bool is_error() const { return m_code; }
 		[[nodiscard]] int code() const { return m_code; }
-		[[nodiscard]] const char* strerror() const { return ::strerror(m_code); }
+		[[nodiscard]] const char* strerror() const { return has_message() ? m_message.c_str() : ::strerror(errno); }
+		[[nodiscard]] bool has_message() const { return !m_message.empty(); }
+		[[nodiscard]] std::string message() const { return has_message() ? m_message.c_str() : ::strerror(errno); }
 		operator int() const { return m_code; }
 
 		static const Result SUCCESS;
@@ -39,6 +43,8 @@ namespace Duck {
 
 	private:
 		int m_code;
+		std::string m_message;
+
 	};
 
 	template<typename T>
@@ -53,6 +59,8 @@ namespace Duck {
 		[[nodiscard]] int code() const { return m_result.code(); }
 		[[nodiscard]] Result result() const { return m_result; }
 		[[nodiscard]] const char* strerror() const { return m_result.strerror(); }
+		[[nodiscard]] std::string message() const { return m_result.message(); }
+		[[nodiscard]] bool has_message() const { return m_result.has_message(); }
 		[[nodiscard]] T& value() { return m_ret.value(); };
 		operator T&() { return m_ret.value(); }
 
