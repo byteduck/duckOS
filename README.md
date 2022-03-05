@@ -7,6 +7,10 @@ A hobby UNIX-like OS with a graphical window manager for x86 computers.
 ![Kernel](https://github.com/byteduck/duckOS/workflows/Kernel/badge.svg)
 ![duckOS](https://github.com/byteduck/duckOS/workflows/duckOS/badge.svg)
 
+### Try duckOS in your browser!
+Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can now try a (slow) version of duckOS in your browser! [Try it here!](https://sonin.me/duckOS)
+
+### Screenshots
 ![Screenshot](docs/screenshot-2021-09-11.png)
 
 ### What's working
@@ -63,6 +67,7 @@ The code for these can be found in [programs](programs/).
 - dsh (/bin/dsh): A basic userspace shell with support for pipes (`|`) and redirections (`>`/`>>`).
   - There is only support for one redirection at a time right now.
 - apprun (/bin/apprun): A utility to run applications from the command line.
+- play (/bin/play): Plays audio files.
 
 Programs that take arguments will provide you with the correct usage when you run them without arguments.
 
