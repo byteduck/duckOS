@@ -111,6 +111,12 @@ bool File::is_open() const {
 	return m_fileref->is_open();
 }
 
+struct stat File::stat() const {
+	struct stat ret;
+	fstat(m_fileref->fd, &ret);
+	return ret;
+}
+
 void File::set_close_on_destroy(bool close) {
 	m_fileref->close_on_destroy = close;
 }

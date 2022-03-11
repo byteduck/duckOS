@@ -48,6 +48,7 @@ namespace Duck {
 		[[nodiscard]] FILE* c_file() const;
 		[[nodiscard]] bool is_tty() const;
 		[[nodiscard]] bool is_open() const;
+		[[nodiscard]] struct stat stat() const;
 
 		void set_close_on_destroy(bool close);
 
