@@ -1,0 +1,33 @@
+/*
+    This file is part of duckOS.
+    
+    duckOS is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    
+    duckOS is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    
+    You should have received a copy of the GNU General Public License
+    along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
+    
+    Copyright (c) Byteduck 2016-2022. All rights reserved.
+*/
+
+#pragma once
+
+#include "Device.h"
+
+class ScreenDevice: public Device {
+public:
+	ScreenDevice() = default;
+	~ScreenDevice() override = default;
+
+	uint16_t read(uint8_t addr, bool is_short) override;
+	void write(uint8_t addr, uint16_t val, bool is_short) override;
+};
+
+
