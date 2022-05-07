@@ -8,7 +8,7 @@ A hobby UNIX-like OS with a graphical window manager for x86 computers.
 ![duckOS](https://github.com/byteduck/duckOS/workflows/duckOS/badge.svg)
 
 ### Try duckOS in your browser!
-Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can now try a (slow) version of duckOS in your browser! [Try it here!](https://sonin.me/duckOS)
+Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can now try a (slow) version of duckOS in your browser! [Try it here!](https://aaron.sonin.me/duckOS)
 
 ### Screenshots
 ![Screenshot](docs/screenshot-2021-09-11.png)
