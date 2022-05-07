@@ -21,6 +21,7 @@
 
 #include "packet.h"
 #include "Endpoint.h"
+#include "serialization_utils.h"
 #include <type_traits>
 
 namespace River {
@@ -32,7 +33,7 @@ namespace River {
 
 	template<typename T>
 	class Message: public IMessage {
-		static_assert(std::is_pod<T>(), "Message type must be a plain-old datatype!");
+		static_assert(is_valid_param_type<T>(), "Message type must be a plain-old datatype!");
 
 	public:
 		Message(const std::string& path): _path(path), _endpoint(nullptr), _callback(nullptr) {}
@@ -65,8 +66,8 @@ namespace River {
 				packet.recipient = recipient;
 
 				//Serialize message data
-				packet.data.resize(sizeof(T));
-				memcpy(packet.data.data(), &data, sizeof(T));
+				packet.data.resize(buffer_size(data));
+				serialize(packet.data.data(), data);
 
 				//Send the message packet
 				_endpoint->bus()->send_packet(packet);
@@ -97,10 +98,10 @@ namespace River {
 		void handle_message(const RiverPacket& packet) const override {
 			if(!_callback)
 				return;
+			//if(packet.data.size() != sizeof(T)) TODO Size check
+			//	return;
 			T ret;
-			if(packet.data.size() != sizeof(T))
-				return;
-			memcpy(&ret, packet.data.data(), sizeof(T));
+			deserialize(packet.data.data(), ret);
 			_callback(ret);
 		}
 

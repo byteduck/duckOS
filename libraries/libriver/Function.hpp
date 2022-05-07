@@ -25,6 +25,7 @@
 #include "packet.h"
 #include <cstring>
 #include "BusConnection.h"
+#include "serialization_utils.h"
 
 #pragma once
 
@@ -38,8 +39,8 @@ namespace River {
 
 	template<typename RetT, typename... ParamTs>
 	class Function: public IFunction {
-		static_assert(std::is_pod<RetT>() || std::is_void<RetT>(), "Function return type must be a plain-old datatype or void!");
-		static_assert((std::is_pod<ParamTs>() && ...), "Function arguments must be plain-old datatypes!");
+		static_assert(is_valid_return_type<RetT>(), "Function return type must be a plain-old datatype, vector, or void!");
+		static_assert((is_valid_param_type<ParamTs>() && ...), "Function arguments must be plain-old datatypes or vectors!");
 
 	public:
 		Function(const std::string& path): _path(path), _endpoint(nullptr), _callback(nullptr) {}
@@ -73,9 +74,8 @@ namespace River {
 				};
 
 				//Serialize function call data (tuple {arg1, arg2, arg3...})
-				std::tuple<ParamTs...> data_tuple = {args...};
-				packet.data.resize(sizeof(data_tuple));
-				memcpy(packet.data.data(), &data_tuple, sizeof(data_tuple));
+				packet.data.resize(buffer_size(args...));
+				serialize(packet.data.data(), args...);
 
 				//Send the function call packet and await a reply (if the function has a non-void return type)
 				_endpoint->bus()->send_packet(packet);
@@ -90,7 +90,7 @@ namespace River {
 					//Deserialize and return the return value
 					RetT ret;
 					if(pkt.data.size() == sizeof(RetT))
-						memcpy(&ret, pkt.data.data(), sizeof(RetT));
+						deserialize(pkt.data.data(), ret);
 					return ret;
 				}
 			} else {
@@ -103,8 +103,8 @@ namespace River {
 		}
 
 		void remote_call(const RiverPacket& packet) override {
-			//Make sure the data is the correct size
-			if(packet.data.size() != sizeof(std::tuple<ParamTs...>)) {
+			//TODO Make sure the data is the correct size
+			/*if(packet.data.size() != buffer_size(ParamTs)) {
 				_endpoint->bus()->send_packet({
 					FUNCTION_RETURN,
 					packet.endpoint,
@@ -112,11 +112,11 @@ namespace River {
 					MALFORMED_DATA,
 					packet.sender
 				});
-			}
+			}*/
 
 			//Deserialize the parameters
 			std::tuple<ParamTs...> data_tuple;
-			memcpy(&data_tuple, packet.data.data(), sizeof(data_tuple));
+			deserialize(packet.data.data(), std::get<ParamTs>(data_tuple)...);
 
 			//Call the function
 			if constexpr(!std::is_void<RetT>()) {
@@ -128,8 +128,8 @@ namespace River {
 				};
 				resp.recipient = packet.sender;
 				RetT ret = _callback(packet.sender, std::get<ParamTs>(data_tuple)...);
-				resp.data.resize(sizeof(RetT));
-				memcpy(resp.data.data(), &ret, sizeof(RetT));
+				resp.data.resize(buffer_size(ret));
+				serialize(resp.data.data(), ret);
 				_endpoint->bus()->send_packet(resp);
 			} else {
 				_callback(packet.sender, std::get<ParamTs>(data_tuple)...);
