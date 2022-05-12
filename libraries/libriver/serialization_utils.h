@@ -35,6 +35,10 @@ namespace River {
 	template<typename T>
 	struct is_valid_return_type : std::integral_constant<bool, is_valid_param_type<T>() || std::is_void<T>()> {};
 
+	constexpr size_t buffer_size() {
+		return 0; //Base case
+	}
+
 	/**
 	 * Calculates the size (in bytes) of the buffer needed to serialize the given parameters.
 	 */
@@ -48,8 +52,9 @@ namespace River {
 			return sizeof(ParamT) + buffer_size(rest...);
 	}
 
-	constexpr size_t buffer_size() {
-		return 0; //Base case
+	constexpr uint8_t* serialize(uint8_t* buf) {
+		//base case
+		return buf;
 	}
 
 	/**
@@ -77,7 +82,7 @@ namespace River {
 		return serialize(buf, rest...);
 	}
 
-	constexpr uint8_t* serialize(uint8_t* buf) {
+	constexpr const uint8_t* deserialize(const uint8_t* buf) {
 		//base case
 		return buf;
 	}
@@ -105,10 +110,5 @@ namespace River {
 		}
 
 		return deserialize(buf, rest...);
-	}
-
-	constexpr const uint8_t* deserialize(const uint8_t* buf) {
-		//base case
-		return buf;
 	}
 }
