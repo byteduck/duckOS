@@ -64,12 +64,12 @@ bool Uxn::step() {
 	}
 
 	if(debug)
-		Duck::Log::dbg("[", std::hex, m_pc - 1, "] ", opcode_names[operation.opcode], operation.shrt ? "2" : "", operation.keep ? "k" : "", operation.ret ? "r" : "");
+		Duck::Log::dbgf("[{x}] {}{}{}{}", m_pc - 1, opcode_names[operation.opcode], operation.shrt ? "2" : "", operation.keep ? "k" : "", operation.ret ? "r" : "");
 
 	auto push8 = [&] (Stack& stack, uint8_t val) {
 		stack.mem[stack.ptr++] = val;
 		if(debug)
-			Duck::Log::dbg("PUSH8 ", std::hex, (int) val);
+			Duck::Log::dbgf("PUSH8 {x}", (int) val);
 	};
 
 	auto push16 = [&] (Stack& stack, uint16_t val) {
@@ -77,7 +77,7 @@ bool Uxn::step() {
 		stack.mem[stack.ptr + 1] = (uint8_t) val;
 		stack.ptr += 2;
 		if(debug)
-			Duck::Log::dbg("PUSH16 ", std::hex, val);
+			Duck::Log::dbg("PUSH16 {x}", val);
 	};
 
 	auto push = [&] (Stack& stack, uint16_t val) {
@@ -90,14 +90,14 @@ bool Uxn::step() {
 	auto pop8 = [&] () -> uint8_t {
 		src_ptr--;
 		if(debug)
-			Duck::Log::dbg("POP8 ", std::hex, (int) src.mem[src_ptr]);
+			Duck::Log::dbgf("POP8 {x}", (int) src.mem[src_ptr]);
 		return src.mem[src_ptr];
 	};
 
 	auto pop16 = [&] () -> uint16_t {
 		src_ptr -= 2;
 		if(debug)
-			Duck::Log::dbg("POP16 ", std::hex, ((uint16_t) src.mem[src_ptr] << 8) + src.mem[src_ptr + 1]);
+			Duck::Log::dbgf("POP16 {x}", ((uint16_t) src.mem[src_ptr] << 8) + src.mem[src_ptr + 1]);
 		return ((uint16_t) src.mem[src_ptr] << 8) + src.mem[src_ptr + 1];
 	};
 
@@ -111,11 +111,11 @@ bool Uxn::step() {
 	auto peek = [&] (uint16_t addr) -> uint16_t {
 		if(operation.shrt) {
 			if(debug)
-				Duck::Log::dbg("PEEK16 ", std::hex, addr, "=", std::hex, ((uint16_t) m_memory[addr] << 8) + m_memory[addr + 1]);
+				Duck::Log::dbgf("PEEK16 {x} = {x}", addr, ((uint16_t) m_memory[addr] << 8) + m_memory[addr + 1]);
 			return ((uint16_t) m_memory[addr] << 8) + m_memory[addr + 1];
 		} else {
 			if(debug)
-				Duck::Log::dbg("PEEK8 ", std::hex, addr, "=", std::hex, (int) m_memory[addr]);
+				Duck::Log::dbgf("PEEK8 {x} = {x}", addr, (int) m_memory[addr]);
 			return m_memory[addr];
 		}
 	};
@@ -125,22 +125,22 @@ bool Uxn::step() {
 			m_memory[addr] = (uint8_t) (val >> 8);
 			m_memory[addr + 1] = (uint8_t) val;
 			if(debug)
-				Duck::Log::dbg("POKE16 ", std::hex, addr, "=", std::hex, val);
+				Duck::Log::dbgf("POKE16 {x} = {x}", addr, val);
 		} else {
 			m_memory[addr] = (uint8_t) val;
 			if(debug)
-				Duck::Log::dbg("POKE8 ", std::hex, addr, "=", std::hex, val);
+				Duck::Log::dbgf("POKE8 {x} = {x}", addr, val);
 		}
 	};
 
 	auto jmp = [&] (uint16_t val) {
 		if(operation.shrt) {
 			if(debug)
-				Duck::Log::dbg("JMP ", std::hex, val);
+				Duck::Log::dbgf("JMP {x}", val);
 			m_pc = val;
 		} else {
 			if(debug)
-				Duck::Log::dbg("JMP REL ", (int) val);
+				Duck::Log::dbgf("JMP REL {x}", (int) val);
 			m_pc += (int8_t) val;
 		}
 	};

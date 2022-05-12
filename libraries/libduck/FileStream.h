@@ -51,7 +51,7 @@ namespace Duck {
 	public:
 		FileInputStream(): FileStream() {};
 		explicit FileInputStream(const File& file): FileStream(file) {}
-		explicit FileInputStream(const Path& path): FileStream(path) {}
+		explicit FileInputStream(const Path& path): FileStream() {open(path);}
 
 		//InputStream
 		size_t read(void* buffer, size_t n) override;
@@ -67,7 +67,10 @@ namespace Duck {
 	public:
 		FileOutputStream(): FileStream() {}
 		explicit FileOutputStream(const File& file): FileStream(file) {}
-		explicit FileOutputStream(const Path& path): FileStream(path) {}
+		explicit FileOutputStream(const Path& path): FileStream() {
+			open(path);
+			setvbuf(m_file.c_file(), NULL, _IOLBF, BUFSIZ);
+		}
 
 		//OutputStream
 		size_t write(const void* buffer, size_t n) override;

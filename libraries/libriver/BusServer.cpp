@@ -181,7 +181,7 @@ void BusServer::client_connected(const RiverPacket& packet) {
 void BusServer::client_disconnected(const RiverPacket& packet) {
 	auto client_it = _clients.find(packet.__socketfs_from_id);
 	if(client_it == _clients.end()) {
-		Log::warn("[River] Unknown client ", std::hex, packet.__socketfs_from_id, " disconnected!");
+		Log::warnf("[River] Unknown client {x} disconnected!",packet.__socketfs_from_id);
 		return;
 	}
 

@@ -75,18 +75,18 @@ Server::Server() {
 	_server->set_allow_new_endpoints(false);
 
 	_endpoint->on_client_connect = [this](sockid_t id, pid_t pid) {
-		Log::info("New client connected: ", std::hex, id);
+		Log::infof("New client connected: {x}", id);
 		this->clients[id] = new Client(this, id, pid);
 	};
 
 	_endpoint->on_client_disconnect = [this](sockid_t id, pid_t pid) {
 		auto client = clients[id];
 		if(client) {
-			Log::info("Client ", std::hex, id, " disconnected");
+			Log::infof("Client {x} disconnected", id);
 			delete client;
 			clients.erase(id);
 		} else
-			Log::warn("Unknown client ", std::hex, id, " disconnected");
+			Log::warnf("Unknown client {x} disconnected", id);
 	};
 
 	/** Functions (client --> server) **/

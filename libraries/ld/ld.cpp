@@ -86,14 +86,14 @@ int main(int argc, char** argv, char** envp) {
 
 		if(object->init_func) {
 			if(debug)
-				Log::dbg("Calling init @ 0x", std::hex, (size_t) object->init_func - object->memloc, " for ", object->name);
+				Log::dbgf("Calling init @ {#x} for {}", (size_t) object->init_func - object->memloc, object->name);
 			object->init_func();
 		}
 
 		if(object->init_array) {
 			for(size_t i = 0; i < object->init_array_size; i++) {
 				if(debug)
-					Log::dbg("Calling initializer @ 0x", std::hex, (size_t) object->init_array[i] - object->memloc, " for ", object->name);
+					Log::dbgf("Calling initializer @ {#x} for {}", (size_t) object->init_array[i] - object->memloc, object->name);
 				object->init_array[i]();
 			}
 		}
@@ -103,7 +103,7 @@ int main(int argc, char** argv, char** envp) {
 
 	//Finally, jump to the executable's entry point!
 	if(debug)
-		Log::dbg("Calling entry point 0x", std::hex, executable->header.e_entry);
+		Log::dbg("Calling entry point {#x}", executable->header.e_entry);
 	auto main = reinterpret_cast<main_t>(executable->header.e_entry);
 	main(argc - 2, argv + 2, envp);
 

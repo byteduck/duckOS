@@ -72,7 +72,7 @@ namespace River {
 				//Send the message packet
 				_endpoint->bus()->send_packet(packet);
 			} else {
-				Duck::Log::err(stderr, "[River] Tried sending message through proxy endpoint");
+				Duck::Log::err("[River] Tried sending message through proxy endpoint");
 			}
 		}
 

@@ -76,7 +76,7 @@ Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
 
 		//Check if the packet is at least the size of the RawPacket header
 		if(raw_socketfs_packet->length < sizeof(RawPacket)) {
-			Log::err(stderr, "[River] WARN: Foreign packet received from %x\n", raw_socketfs_packet->sender);
+			Log::errf("[River] WARN: Foreign packet received from {x}", raw_socketfs_packet->sender);
 			free(raw_socketfs_packet);
 			return Result(PACKET_ERR);
 		}
@@ -85,7 +85,7 @@ Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
 
 		//Check if the RawPacket magic checks out
 		if(raw_packet->__river_magic != LIBRIVER_PACKET_MAGIC) {
-			Log::warn("[River] RawPacket with invalid magic received from ", std::hex, raw_socketfs_packet->sender);
+			Log::warnf("[River] RawPacket with invalid magic received from {x}", raw_socketfs_packet->sender);
 			free(raw_socketfs_packet);
 			return Result(PACKET_ERR);
 		}
@@ -97,7 +97,7 @@ Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
 				raw_packet->path_length > SOCKETFS_MAX_BUFFER_SIZE ||
 				raw_packet->path_length < 1
 		) {
-			Log::warn("[River] Malformed packet received from ", std::hex, raw_socketfs_packet->sender);
+			Log::warnf("[River] Malformed packet received from {x}",raw_socketfs_packet->sender);
 			free(raw_socketfs_packet);
 			return Result(PACKET_ERR);
 		}
