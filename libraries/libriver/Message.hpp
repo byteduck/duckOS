@@ -66,8 +66,14 @@ namespace River {
 				packet.recipient = recipient;
 
 				//Serialize message data
-				packet.data.resize(buffer_size(data));
-				serialize(packet.data.data(), data);
+				packet.data_length = buffer_size(data);
+				auto buffer_res = Duck::SharedBuffer::create(packet.data_length);
+				if(buffer_res.is_error()) {
+					Duck::Log::errf("[River] Couldn't allocate buffer for message: {}", buffer_res.result());
+					return;
+				}
+				packet.data = buffer_res.value();
+				serialize((uint8_t*) packet.data.value().ptr(), data);
 
 				//Send the message packet
 				_endpoint->bus()->send_packet(packet);
@@ -98,10 +104,10 @@ namespace River {
 		void handle_message(const RiverPacket& packet) const override {
 			if(!_callback)
 				return;
-			//if(packet.data.size() != sizeof(T)) TODO Size check
-			//	return;
+			if(!packet.data.has_value())
+				return;
 			T ret;
-			deserialize(packet.data.data(), ret);
+			deserialize((uint8_t*) packet.data.value().ptr(), ret);
 			_callback(ret);
 		}
 

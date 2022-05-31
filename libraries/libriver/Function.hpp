@@ -74,23 +74,28 @@ namespace River {
 				};
 
 				//Serialize function call data (tuple {arg1, arg2, arg3...})
-				packet.data.resize(buffer_size(args...));
-				serialize(packet.data.data(), args...);
+				packet.data_length = buffer_size(args...);
+				auto buffer_res = Duck::SharedBuffer::create(packet.data_length);
+				if(buffer_res.is_error()) {
+					Duck::Log::errf("[River] Couldn't allocate buffer for function call: {}", buffer_res.result());
+					return RetT();
+				}
+				packet.data = buffer_res.value();
+				serialize((uint8_t*) packet.data.value().ptr(), args...);
 
 				//Send the function call packet and await a reply (if the function has a non-void return type)
 				_endpoint->bus()->send_packet(packet);
 				if constexpr(!std::is_void<RetT>()) {
 					auto pkt = _endpoint->bus()->await_packet(FUNCTION_RETURN, _endpoint->name(), _path);
-					if(pkt.error) {
+					if(pkt.error || !pkt.data.has_value()) {
 						Duck::Log::err("[River] Remote function call ", pkt.endpoint, ":", pkt.path, " failed: ", error_str(pkt.error));
 						if constexpr(!std::is_void<RetT>())
 							return RetT();
 					}
 
-					//Deserialize and return the return value
+					//Deserialize and return the return value TODO: Check size
 					RetT ret;
-					if(pkt.data.size() == sizeof(RetT))
-						deserialize(pkt.data.data(), ret);
+					deserialize((uint8_t*) pkt.data.value().ptr(), ret);
 					return ret;
 				}
 			} else {
@@ -104,7 +109,7 @@ namespace River {
 
 		void remote_call(const RiverPacket& packet) override {
 			//TODO Make sure the data is the correct size
-			/*if(packet.data.size() != buffer_size(ParamTs)) {
+			if(/*packet.data.size() != buffer_size(ParamTs)*/ !packet.data.has_value()) {
 				_endpoint->bus()->send_packet({
 					FUNCTION_RETURN,
 					packet.endpoint,
@@ -112,11 +117,11 @@ namespace River {
 					MALFORMED_DATA,
 					packet.sender
 				});
-			}*/
+			}
 
 			//Deserialize the parameters
 			std::tuple<ParamTs...> data_tuple;
-			deserialize(packet.data.data(), std::get<ParamTs>(data_tuple)...);
+			deserialize((uint8_t*) packet.data.value().ptr(), std::get<ParamTs>(data_tuple)...);
 
 			//Call the function
 			if constexpr(!std::is_void<RetT>()) {
@@ -128,8 +133,13 @@ namespace River {
 				};
 				resp.recipient = packet.sender;
 				RetT ret = _callback(packet.sender, std::get<ParamTs>(data_tuple)...);
-				resp.data.resize(buffer_size(ret));
-				serialize(resp.data.data(), ret);
+				auto buffer_res = Duck::SharedBuffer::create(buffer_size(ret));
+				if(buffer_res.is_error()) {
+					Duck::Log::errf("[River] Couldn't allocate buffer for function return: {}", buffer_res.result());
+					return;
+				}
+				resp.data = buffer_res.value();
+				serialize((uint8_t*) resp.data.value().ptr(), ret);
 				_endpoint->bus()->send_packet(resp);
 			} else {
 				_callback(packet.sender, std::get<ParamTs>(data_tuple)...);

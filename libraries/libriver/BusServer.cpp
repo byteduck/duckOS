@@ -61,7 +61,7 @@ void BusServer::read_and_handle_packets(bool block) {
 	}
 
 	ResultRet<RiverPacket> pkt_res(0);
-	while((pkt_res = receive_packet(_fd, false)).code() != NO_PACKET) {
+	while((pkt_res = receive_packet(_fd, false, false)).code() != NO_PACKET) {
 		if(pkt_res.is_error())
 			continue;
 		auto packet = pkt_res.value();
@@ -69,53 +69,53 @@ void BusServer::read_and_handle_packets(bool block) {
 		switch(packet.type) {
 			case SOCKETFS_CLIENT_CONNECTED:
 				client_connected(packet);
-				return;
+				break;
 
 			case SOCKETFS_CLIENT_DISCONNECTED:
 				client_disconnected(packet);
-				return;
+				break;
 
 			case REGISTER_ENDPOINT:
 				register_endpoint(packet);
-				return;
+				break;
 
 			case GET_ENDPOINT:
 				get_endpoint(packet);
-				return;
+				break;
 
 			case REGISTER_FUNCTION:
 				register_function(packet);
-				return;
+				break;
 
 			case GET_FUNCTION:
 				get_function(packet);
-				return;
+				break;
 
 			case FUNCTION_CALL:
 				call_function(packet);
-				return;
+				break;
 
 			case FUNCTION_RETURN:
 				function_return(packet);
-				return;
+				break;
 
 			case REGISTER_MESSAGE:
 				register_message(packet);
-				return;
+				break;
 
 			case GET_MESSAGE:
 				get_message(packet);
-				return;
+				break;
 
 			case SEND_MESSAGE:
 				send_message(packet);
-				return;
+				break;
 
 			default:
 				packet.error = MALFORMED_DATA;
-				packet.data.clear();
+				packet.data.reset();
 				send_packet(packet.__socketfs_from_id, packet);
-				return;
+				break;
 		}
 	}
 }

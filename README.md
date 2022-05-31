@@ -7,6 +7,8 @@ A hobby UNIX-like OS with a graphical window manager for x86 computers.
 ![Kernel](https://github.com/byteduck/duckOS/workflows/Kernel/badge.svg)
 ![duckOS](https://github.com/byteduck/duckOS/workflows/duckOS/badge.svg)
 
+**NOTE:** There is currently a memory leak with the implementation of shared memory and IPC. Next time I have time to work on this, I will just be tearing down the entire shared memory system and rebuilding it from the ground up.
+
 ### Try duckOS in your browser!
 Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can now try a (slow) version of duckOS in your browser! [Try it here!](https://aaron.sonin.me/duckOS)
 

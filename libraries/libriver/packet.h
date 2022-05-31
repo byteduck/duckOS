@@ -25,6 +25,7 @@
 #include <sys/socketfs.h>
 #include <poll.h>
 #include <cstring>
+#include "libduck/SharedBuffer.h"
 
 #define LIBRIVER_PACKET_MAGIC 0xBEEF420
 #define LIBRIVER_MAX_TARGET_NAME_LEN 1024
@@ -76,7 +77,8 @@ namespace River {
 		size_t data_length;
 		ErrorType error;
 		sockid_t id;
-		uint8_t data[];
+		int shm_id;
+		char path[];
 	};
 
 	struct RiverPacket {
@@ -96,7 +98,9 @@ namespace River {
 		};
 		sockid_t __socketfs_from_id;
 		pid_t __socketfs_from_pid;
-		std::vector<uint8_t> data;
+		size_t data_length = 0;
+		std::optional<Duck::SharedBuffer> data;
+		std::optional<int> data_shm_id;
 	};
 
 	enum PacketReadResult {
@@ -106,7 +110,7 @@ namespace River {
 		SOCKETFS_MESSAGE,
 	};
 
-	Duck::ResultRet<RiverPacket> receive_packet(int fd, bool block);
+	Duck::ResultRet<RiverPacket> receive_packet(int fd, bool block, bool attach_region);
 	void send_packet(int fd, sockid_t recipient, const RiverPacket& packet);
 }
 
