@@ -119,7 +119,7 @@ namespace kstd {
 			return ret->data.second;
 		}
 
-		const kstd::vector<leaf*> leaves() {
+		const kstd::vector<leaf*>& leaves() {
 			return _leaves;
 		}
 
