@@ -209,7 +209,10 @@ kstd::shared_ptr<Thread> TaskManager::next_thread() {
 	if(thread_queue->empty()) {
 		if(cur_thread->state() == Thread::ALIVE)
 			return cur_thread;
-		else
+		else if(kidle_process->main_thread()->state() != Thread::ALIVE) {
+			PANIC("KTHREAD_DEADLOCK",
+				  "The kernel thread is blocked, and no other thread is available to switch to.");
+		} else
 			return kidle_process->main_thread();
 	}
 
@@ -377,7 +380,8 @@ void TaskManager::preempt(){
 
 	//Switch tasks.
 	preempting = false;
-	ASSERT(cur_thread->state() == Thread::ALIVE);
+	if(cur_thread->state() != Thread::ALIVE)
+		PANIC("INVALID_CONTEXT_SWITCH", "Tried to switch to thread %d of PID %d in state %d", cur_thread->tid(), cur_thread->process()->pid(), cur_thread->state());
 	if(should_preempt) {
 		if(old_thread != kidle_process->main_thread() && old_thread->state() == Thread::ALIVE)
 			queue_thread(old_thread);

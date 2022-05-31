@@ -201,7 +201,8 @@ void Thread::leave_syscall() {
 }
 
 void Thread::block(Blocker& blocker) {
-	ASSERT(_state == ALIVE);
+	if(_state != ALIVE)
+		PANIC("INVALID_BLOCK", "Tried to block thread %d of PID %d in state %d", _tid, _process->pid(), _state);
 	ASSERT(!_blocker);
 
 	if(_should_die && blocker.can_be_interrupted()) {
@@ -275,6 +276,7 @@ bool Thread::call_signal_handler(int signal) {
 	if(is_blocked()) {
 		if(_blocker->can_be_interrupted()) {
 			_blocker->interrupt();
+			unblock();
 		} else {
 			return false;
 		}
@@ -385,8 +387,8 @@ void Thread::handle_pagefault(Registers* regs) {
 
 	//Otherwise, try CoW and kill the process if it doesn't work
 	if(!_process->_page_directory->try_cow(err_pos)) {
-		if(in_syscall())
-			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred during a syscall (pid: %d, tid: %d).", _process->pid(), _tid);
+		if(regs->eip > HIGHER_HALF)
+			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d).", _process->pid(), _tid);
 		_process->kill(SIGSEGV);
 	}
 }
