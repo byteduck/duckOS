@@ -41,7 +41,7 @@ MemoryRegion::MemoryRegion(const MemoryRegion& region):
 	shm_owner(region.shm_owner)
 {
 	if(region.shm_allowed) {
-		shm_allowed = new kstd::vector<ShmPermissions>(*region.shm_allowed);
+		shm_allowed = new kstd::map<int, ShmPermissions>(*region.shm_allowed);
 	}
 }
 

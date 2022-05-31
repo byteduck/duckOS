@@ -37,6 +37,7 @@ namespace ELF {struct elf32_header;};
 
 #define SHM_READ 0x1u
 #define SHM_WRITE 0x2u
+#define SHM_SHARE 0x4u
 
 class Process {
 public:

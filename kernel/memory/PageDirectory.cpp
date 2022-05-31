@@ -356,6 +356,7 @@ PageDirectory::~PageDirectory() {
 		if(table)
 			delete table;
 
+	//Free memory
 	MemoryRegion* cur = _vmem_map.first_region();
 	while(cur) {
 		if(cur->used && cur->related){
@@ -369,6 +370,10 @@ PageDirectory::~PageDirectory() {
 		}
 		cur = cur->next;
 	}
+
+	//Free pending shm regions, if any
+	for(int i = 0; i < _pending_shm_regions.size(); i++)
+		_pending_shm_regions[i]->shm_deref();
 }
 
 PageDirectory::Entry *PageDirectory::entries() {
@@ -648,6 +653,11 @@ bool PageDirectory::munmap(void* virtaddr) {
 SpinLock shm_id_lock;
 int cur_shm_id = 1;
 
+/*
+ * TODO: Burn down the entire shared memory system and replace it with something more sensible
+ * Perhaps something like this: https://wiki.minix3.org/doku.php?id=developersguide:memorygrants
+ */
+
 ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, size_t mem_size, pid_t pid) {
 	LOCK(_lock);
 
@@ -674,9 +684,10 @@ ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, 
 	region.virt->shm_id = region.phys->shm_id;
 	region.phys->shm_refs = 1;
 	region.phys->shm_owner = pid;
-	region.phys->shm_allowed = new kstd::vector<MemoryRegion::ShmPermissions>();
-	region.phys->shm_allowed->push_back({pid, true});
+	region.phys->shm_allowed = new kstd::map<pid_t, MemoryRegion::ShmPermissions>();
+	region.phys->shm_allowed->insert({pid, {true, true}});
 
+	//Add it to the attached shm regions
 	_attached_shm_regions.push_back(region.virt);
 
 	_used_shmem += region.virt->size;
@@ -686,51 +697,39 @@ ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, 
 ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t vaddr, pid_t pid) {
 	LOCK(_lock);
 
-	//Shared memory IDs are just the location of the physcal region divided by page size, so find the region
-	auto* pmem_region = MemoryManager::inst().pmem_map().find_shared_region(id);
+	//Check if we've already attached the region
+	for(auto i = 0; i < _attached_shm_regions.size(); i++)
+		if(_attached_shm_regions[i]->shm_id == id) {
+			return LinkedMemoryRegion(_attached_shm_regions[i], _attached_shm_regions[i]->related);
+		}
+
+	//See if we have the region in our pending regions
+	MemoryRegion* pmem_region = nullptr;
+	for(int i = 0; i < _pending_shm_regions.size(); i++) {
+		if(_pending_shm_regions[i]->shm_id == id) {
+			pmem_region = _pending_shm_regions[i];
+			_pending_shm_regions.erase(i);
+			break;
+		}
+	}
 	if(!pmem_region || !pmem_region->shm_allowed) //If it doesn't exist or isn't a shared memory region, return ENOENT
 		return -ENOENT;
 
-	//Make sure we have permissions
-	bool has_perms = false;
-	bool write = false;
-	pmem_region->lock.acquire();
-	for(size_t i = 0; i < pmem_region->shm_allowed->size(); i++) {
-		auto& perm = pmem_region->shm_allowed->at(i);
-		if(perm.pid == pid) {
-			has_perms = true;
-			write = perm.write;
-			break;
-		}
-	}
-	pmem_region->lock.release();
-
-	//If we don't have permissions, return ENOENT (We don't use EACCES, because that would reveal that there *is* a region with that ID)
-	if(!has_perms)
+	//Double check our permissions
+	LOCK_N(pmem_region->lock, __pmem_lock);
+	if(!pmem_region->shm_allowed->contains(pid))
 		return -ENOENT;
+	bool write = (*pmem_region->shm_allowed)[pid].write;
 
-	//Then, allocate a vmem region for it, if we haven't already attached it
-	bool already_attached = false;
+	//Then, allocate a vmem region for it
 	MemoryRegion* vmem_region = nullptr;
-
-	//Check if we've already attached the region
-	for(auto i = 0; i < _attached_shm_regions.size(); i++) {
-		if(_attached_shm_regions[i]->is_shm && _attached_shm_regions[i]->shm_id == id) {
-			vmem_region = _attached_shm_regions[i];
-			already_attached = true;
-			break;
-		}
-	}
-
-	if(!vmem_region) {
-		size_t vaddr_pagealigned = (vaddr / PAGE_SIZE) * PAGE_SIZE;
-		if(vaddr) {
-			//Allocate the region at the specified address
-			vmem_region = _vmem_map.allocate_region(vaddr_pagealigned, pmem_region->size);
-		} else {
-			//Allocate a new region
-			vmem_region = _vmem_map.allocate_region(pmem_region->size);
-		}
+	size_t vaddr_pagealigned = (vaddr / PAGE_SIZE) * PAGE_SIZE;
+	if(vaddr) {
+		//Allocate the region at the specified address
+		vmem_region = _vmem_map.allocate_region(vaddr_pagealigned, pmem_region->size);
+	} else {
+		//Allocate a new region
+		vmem_region = _vmem_map.allocate_region(pmem_region->size);
 	}
 
 	//If we failed to allocate the virtual region, error out
@@ -740,16 +739,13 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 	vmem_region->is_shm = true;
 	vmem_region->shm_id = id;
 
-	//Finally, map the region and increase the reference count
+	//Finally, map the region
 	vmem_region->related = pmem_region;
 	LinkedMemoryRegion linked_region(pmem_region, vmem_region);
 	map_region(linked_region, write);
-	pmem_region->shm_ref();
 	_used_pmem += pmem_region->size;
 	_used_shmem += pmem_region->size;
-
-	if(!already_attached)
-		_attached_shm_regions.push_back(vmem_region);
+	_attached_shm_regions.push_back(vmem_region);
 
 	return linked_region;
 }
@@ -757,10 +753,19 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 Result PageDirectory::detach_shared_region(int id) {
 	LOCK(_lock);
 
-	//Find the virtual region in question and if it doesn't exist, return ENOENT
+	//Find the virtual region in question and if it doesn't exist, see if it's in the pending regions
 	MemoryRegion* vreg = _vmem_map.find_shared_region(id);
-	if(!vreg)
+	if(!vreg) {
+		//We may want to detach it if it's in the pending regions - for example, we're passing it to another process but not using it
+		for(int i = 0; i < _pending_shm_regions.size(); i++) {
+			if(_pending_shm_regions[i]->shm_id == id) {
+				_pending_shm_regions[i]->shm_deref();
+				_pending_shm_regions.erase(i);
+				return SUCCESS;
+			}
+		}
 		return -ENOENT;
+	}
 
 	//Decrease mem usage
 	_used_pmem -= vreg->size;
@@ -786,27 +791,47 @@ Result PageDirectory::detach_shared_region(int id) {
 	return SUCCESS;
 }
 
-Result PageDirectory::allow_shared_region(int id, pid_t called_pid, pid_t pid, bool write) {
+Result PageDirectory::allow_shared_region(int id, pid_t called_pid, pid_t pid, bool write, bool share) {
 	LOCK(_lock);
 
-	//Find the virtual region in question and if it doesn't exist, return ENOENT
-	MemoryRegion* vreg = _vmem_map.find_shared_region(id);
-	if(!vreg)
-		return -ENOENT;
+	//Find the physical region in question and if it doesn't exist, return EINVAL
+	//We could have permission to share it but have not attached it yet, so we search all of pmem
+	MemoryRegion* preg = MemoryManager::inst().pmem_map().find_shared_region(id);
+	if(!preg)
+		return -EINVAL;
 
-	//If we're not the owner, return EPERM
-	if(vreg->related->shm_owner != called_pid)
+	//If we don't have share permissions, or we're trying to share with permissions we don't have, return EPERM
+	if(!preg->shm_allowed->contains(called_pid))
+		return -EPERM;
+	auto our_perms = (*preg->shm_allowed)[called_pid];
+	if(!our_perms.share || (!our_perms.write && write))
 		return -EPERM;
 
-	//Make sure we don't already have perms
-	LOCK_N(vreg->related->lock, __related_lock);
-	for(size_t i = 0; i < vreg->related->shm_allowed->size(); i++) {
-		if(vreg->related->shm_allowed->at(i).pid == pid)
-			return -EEXIST;
+	//Make sure the process we want exists
+	auto proc_res = TaskManager::process_for_pid(pid);
+	if(proc_res.is_error())
+		return -ENOENT;
+	auto proc = proc_res.value();
+
+	//Update the permissions, increase references, and add to process's pending shm regions
+	LOCK_N(proc->page_directory()->_lock, __proc_pd_lock);
+	preg->shm_allowed->insert({pid, {write, share}});
+
+	//Only increase shm reference count if it's not already in the pending regions
+	bool has_region = false;
+	auto& proc_pending = proc->page_directory()->_pending_shm_regions;
+	for(int i = 0; i < proc_pending.size(); i++) {
+		if(proc_pending[i] == preg) {
+			has_region = true;
+			break;
+		}
 	}
 
-	//Update the permissions and return success
-	vreg->related->shm_allowed->push_back({pid, write});
+	if(!has_region) {
+		proc_pending.push_back(preg);
+		preg->shm_ref();
+	}
+
 	return SUCCESS;
 }
 
@@ -884,32 +909,23 @@ void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new
 				shm_region->shm_ref();
 
 				//Figure out the permission
-				bool found_perms = false;
-				bool write = false;
-				for(size_t i = 0; i < shm_region->shm_allowed->size(); i++) {
-					auto* p = &shm_region->shm_allowed->at(i);
-					if(p->pid == parent_pid) {
-						found_perms = true;
-						write = p->write;
-						break;
-					}
-				}
-
-				//Couldn't find the permissions entry for the parent process... Don't map.
-				if(!found_perms) {
+				if(!shm_region->shm_allowed->contains(parent_pid)) {
 					printf("Permissions of shared memory region at 0x%x set up incorrectly!", shm_region->start);
 					_vmem_map.free_region(new_region);
 					parent_region = parent_region->next;
+					shm_region->lock.release();
 					continue;
 				}
 
 				//Add a permissions entry to the region and map it
-				shm_region->shm_allowed->push_back({new_pid, write});
+				auto perms = (*shm_region->shm_allowed)[parent_pid];
+				shm_region->shm_allowed->insert({new_pid, perms});
 				new_region->related = shm_region;
 				new_region->is_shm = true;
 				new_region->shm_id = shm_region->shm_id;
-				map_region(LinkedMemoryRegion(shm_region, new_region), write);
+				map_region(LinkedMemoryRegion(shm_region, new_region), perms.write);
 				shm_region->lock.release();
+				_attached_shm_regions.push_back(new_region);
 			} else if(parent_region->reserved) {
 				//This is reserved memory (AKA memory-mapped hardware or something), so don't map it to the child
 				_vmem_map.free_region(new_region);

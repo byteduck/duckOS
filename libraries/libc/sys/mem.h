@@ -27,6 +27,7 @@
 
 #define SHM_READ 0x1u
 #define SHM_WRITE 0x2u
+#define SHM_SHARE 0x4u
 
 __DECL_BEGIN
 
@@ -81,7 +82,7 @@ int shmdetach(int id);
  * Allows another process access to a shared memory segment with certain permissions. CANNOT be used to revoke permissions.
  * @param id The ID of the shared memory segment to allow access to.
  * @param pid The pid of the process to allow.
- * @param perms The permissions to allow. (SHM_READ and SHM_WRITE)
+ * @param perms The permissions to allow. (SHM_READ, SHM_WRITE, and SHM_SHARE)
  * @return
  */
 int shmallow(int id, pid_t pid, int perms);

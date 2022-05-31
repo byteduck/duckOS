@@ -21,6 +21,7 @@
 
 #include <kernel/kstd/unix_types.h>
 #include <kernel/tasking/SpinLock.h>
+#include "kernel/kstd/map.hpp"
 
 namespace kstd {
 	template<typename T> class vector;
@@ -29,8 +30,8 @@ namespace kstd {
 class MemoryRegion {
 public:
 	struct ShmPermissions {
-		pid_t pid;
 		bool write;
+		bool share;
 	};
 
 	MemoryRegion() = default;
@@ -104,7 +105,7 @@ public:
 	pid_t shm_owner = -1;
 
 	//If applicable, this will be a list of processes with access to the shared region. Otherwise, it will be nullptr.
-	kstd::vector<ShmPermissions>* shm_allowed = nullptr;
+	kstd::map<pid_t, ShmPermissions>* shm_allowed = nullptr;
 };
 
 

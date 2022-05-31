@@ -1009,7 +1009,7 @@ int Process::sys_shmallow(int id, pid_t pid, int perms) {
 	if(TaskManager::process_for_pid(pid).is_error())
 		return -EINVAL;
 
-	return _page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE).code();
+	return _page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE, perms & SHM_SHARE).code();
 }
 
 int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {

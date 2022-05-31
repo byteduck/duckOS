@@ -273,10 +273,11 @@ public:
 	 * @param id The ID of the shared memory region to allow the process access to. Must be mapped in this page directory.
 	 * @param called_pid The pid of the process requesting to add access. Will return -EPERM if not the owner of the region.
 	 * @param pid The pid of the process to allow access to.
-	 * @param write Whether to allow write access.
+	 * @param write Whether to allow write access. (The proccess will only be able to share with write access if it has write access itself)
+	 * @param share Whether to allow sharing.
 	 * @return 0 if successful, -ENOENT if it doesn't exist, -EPERM if not the owner of the region, -EEXIST if the process was already given certain permissions.
 	 */
-	Result allow_shared_region(int id, pid_t called_pid, pid_t pid, bool write);
+	Result allow_shared_region(int id, pid_t called_pid, pid_t pid, bool write, bool share);
 
 	/**
 	 * @return A pointer to the page directory's vmem map.
@@ -402,5 +403,8 @@ private:
 	SpinLock _lock;
 	//A list of attached shared memory region ids.
 	kstd::vector<MemoryRegion*> _attached_shm_regions;
+
+	//A list of pending shared memory region ids.
+	kstd::vector<MemoryRegion*> _pending_shm_regions;
 };
 
