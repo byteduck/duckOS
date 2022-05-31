@@ -31,8 +31,8 @@ class InodeMetadata;
 class Inode;
 class FileDescriptor {
 public:
-	explicit FileDescriptor(const kstd::shared_ptr<File>& file);
-	FileDescriptor(FileDescriptor& other);
+	explicit FileDescriptor(const kstd::shared_ptr<File>& file, Process* owner = nullptr);
+	FileDescriptor(FileDescriptor& other, Process* new_owner = nullptr);
 	~FileDescriptor();
 
 	void set_options(int options);
@@ -45,8 +45,9 @@ public:
 	InodeMetadata metadata();
 	kstd::shared_ptr<File> file();
 	void open();
-	Process* owner() const;
+	pid_t owner() const;
 	void set_owner(Process* owner);
+	void set_owner(pid_t owner);
 	void set_path(const kstd::string& path);
 	kstd::string path();
 	void set_id(int id);
@@ -67,7 +68,7 @@ public:
 private:
 	kstd::shared_ptr<File> _file;
 	kstd::shared_ptr<Inode> _inode;
-	Process* _owner;
+	pid_t _owner = -1;
 	kstd::string _path = "";
 	int _id = -1;
 

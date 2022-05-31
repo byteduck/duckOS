@@ -60,7 +60,7 @@ public:
 	kstd::string name;
 
 private:
-	static Result write_packet(SocketFSClient& recipient, int type, sockid_t sender, size_t size, const void* buffer, bool nonblock);
+	static Result write_packet(SocketFSClient& recipient, int type, sockid_t sender, size_t size, int shm_id, int shm_perms, const void* buffer, bool nonblock);
 
 	kstd::vector<SocketFSClient> clients;
 	SocketFSClient host;

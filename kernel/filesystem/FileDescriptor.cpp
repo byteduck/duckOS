@@ -29,7 +29,7 @@
 #include <kernel/terminal/PTYControllerDevice.h>
 #include <kernel/tasking/Process.h>
 
-FileDescriptor::FileDescriptor(const kstd::shared_ptr<File>& file): _file(file) {
+FileDescriptor::FileDescriptor(const kstd::shared_ptr<File>& file, Process* owner): _file(file), _owner(owner ? owner->pid() : -1) {
 	if(file->is_inode())
 		_inode = kstd::static_pointer_cast<InodeFile>(file)->inode();
 
@@ -42,7 +42,7 @@ FileDescriptor::FileDescriptor(const kstd::shared_ptr<File>& file): _file(file) 
 		((PTYDevice*) _file.get())->ref_inc();
 }
 
-FileDescriptor::FileDescriptor(FileDescriptor& other) {
+FileDescriptor::FileDescriptor(FileDescriptor& other, Process* new_owner) {
 	_file = other._file;
 	_is_fifo_writer = other._is_fifo_writer;
 	_append = other._append;
@@ -52,7 +52,7 @@ FileDescriptor::FileDescriptor(FileDescriptor& other) {
 	_writable = other._writable;
 	_seek = other._seek;
 	_options = other._options;
-	_owner = other._owner;
+	_owner = new_owner ? new_owner->pid() : other._owner;
 	_path = other._path;
 	_id = other._id;
 
@@ -167,11 +167,15 @@ void FileDescriptor::open() {
 	_file->open(*this, _options);
 }
 
-Process* FileDescriptor::owner() const {
+pid_t FileDescriptor::owner() const {
 	return _owner;
 }
 
 void FileDescriptor::set_owner(Process* owner) {
+	_owner = owner->pid();
+}
+
+void FileDescriptor::set_owner(pid_t owner) {
 	_owner = owner;
 }
 

@@ -44,11 +44,13 @@ struct socketfs_packet* read_packet(int fd) {
 	return ret;
 }
 
-int write_packet_of_type(int fd, int type, sockid_t id, size_t length, void* data) {
+int write_packet_of_type(int fd, int type, sockid_t id, int shm_id, int shm_perms, size_t length, void* data) {
 	struct socketfs_packet* packet = malloc(sizeof(struct socketfs_packet) + length);
 	packet->type = SOCKETFS_TYPE_MSG;
 	packet->recipient = id;
 	packet->length = length;
+	packet->shm_id = shm_id;
+	packet->shm_perms = shm_perms;
 	memcpy(packet->data, data, length);
 	int ret = write(fd, packet, length);
 	free(packet);

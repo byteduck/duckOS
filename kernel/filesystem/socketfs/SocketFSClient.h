@@ -27,7 +27,7 @@
 class Process;
 class SocketFSClient {
 public:
-	explicit SocketFSClient(sockid_t id): id(id), data_queue(kstd::make_shared<kstd::queue<uint8_t>>()) {}
+	explicit SocketFSClient(sockid_t id, pid_t pid): id(id), pid(pid), data_queue(kstd::make_shared<kstd::queue<uint8_t>>()) {}
 
 	explicit operator bool() const {
 		return id;
@@ -46,6 +46,7 @@ public:
 	}
 
 	sockid_t id;
+	pid_t pid;
 	kstd::shared_ptr<kstd::queue<uint8_t>> data_queue;
 	BooleanBlocker _blocker;
 	SpinLock _lock;

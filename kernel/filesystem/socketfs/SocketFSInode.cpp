@@ -18,6 +18,7 @@
 */
 
 #include "SocketFSInode.h"
+#include "kernel/KernelMapper.h"
 #include <kernel/filesystem/FileDescriptor.h>
 #include <kernel/tasking/Thread.h>
 #include <kernel/tasking/TaskManager.h>
@@ -26,7 +27,7 @@
 #include <kernel/kstd/KLog.h>
 
 SocketFSInode::SocketFSInode(SocketFS& fs, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
-Inode(fs, id), fs(fs), id(id), name(name), host(0)
+Inode(fs, id), fs(fs), id(id), name(name), host(0, TaskManager::current_process()->pid())
 {
 	if(id == 1) { //We're the root inode
 		_metadata.mode = MODE_DIRECTORY;
@@ -182,8 +183,11 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 	if(is_broadcast && sender == &host) {
 		//If it's a broadcast, send it to all clients
 		for(size_t i = 0; i < clients.size(); i++) {
+			//Share shm with client if we need to
+			if(packet->shm_id)
+				TaskManager::current_process()->sys_shmallow(packet->shm_id, clients[i].pid, packet->shm_perms);
 			//We don't care about errors here, we should just continue sending it to the rest of the clients
-			write_packet(clients[i], SOCKETFS_TYPE_MSG, sender->id, packet->length, packet->data, fd->nonblock());
+			write_packet(clients[i], SOCKETFS_TYPE_MSG, sender->id, packet->length, packet->shm_id, packet->shm_perms, packet->data, fd->nonblock());
 		}
 		return SUCCESS;
 	} else if(sender == &host) {
@@ -204,8 +208,15 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 	if(!recipient)
 		return -EINVAL; //No such recipient
 
+	//Share shm with recipient if we need to
+	if(packet->shm_id) {
+		int shm_res = TaskManager::current_process()->sys_shmallow(packet->shm_id, recipient->pid, packet->shm_perms);
+		if (shm_res != SUCCESS)
+			return shm_res;
+	}
+
 	//Finally, write the packet to the correct queue
-	auto res = write_packet(*recipient, SOCKETFS_TYPE_MSG, sender->id, packet->length, packet->data, fd->nonblock());
+	auto res = write_packet(*recipient, SOCKETFS_TYPE_MSG, sender->id, packet->length, packet->shm_id, packet->shm_perms, packet->data, fd->nonblock());
 	return res.code();
 }
 
@@ -270,12 +281,13 @@ void SocketFSInode::open(FileDescriptor& fd, int options) {
 	//If nobody has taken ownership of this socket, make this file descriptor the owner
 	if(!host && (options & O_CREAT)) {
 		host.id = client_hash;
+		host.pid = TaskManager::current_process()->pid();
 		return;
 	}
 
 	//Add the client and send the connect message to the host
-	clients.push_back(SocketFSClient(client_hash));
-	write_packet(host, SOCKETFS_TYPE_MSG_CONNECT, client_hash, 0, nullptr, true);
+	clients.push_back(SocketFSClient(client_hash, fd.owner()));
+	write_packet(host, SOCKETFS_TYPE_MSG_CONNECT, client_hash, 0, 0, 0, nullptr, true);
 }
 
 void SocketFSInode::close(FileDescriptor& fd) {
@@ -299,7 +311,7 @@ void SocketFSInode::close(FileDescriptor& fd) {
 
 	for(size_t i = 0; i < clients.size(); i++) {
 		if(clients[i] == client_hash) {
-			write_packet(host, SOCKETFS_TYPE_MSG_DISCONNECT, client_hash, 0, nullptr, true);
+			write_packet(host, SOCKETFS_TYPE_MSG_DISCONNECT, client_hash, 0, 0, 0, nullptr, true);
 			clients.erase(i);
 			break;
 		}
@@ -320,7 +332,7 @@ bool SocketFSInode::can_read(const FileDescriptor& fd) {
 	return false;
 }
 
-Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t sender, size_t length, const void* buffer, bool nonblock) {
+Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t sender, size_t length, int shm_id, int shm_perms, const void* buffer, bool nonblock) {
 	//If there's room in the buffer, block (if O_NONBLOCK isn't set)
 	while(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE) {
 		if(!nonblock) {
@@ -335,7 +347,7 @@ Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t se
 	LOCK(client._lock);
 
 	//Write the packet header
-	SocketFSPacket packet_header = {type, sender, TaskManager::current_process()->pid(), length};
+	SocketFSPacket packet_header = {type, sender, TaskManager::current_process()->pid(), length, shm_id, shm_perms};
 	auto* data = (const uint8_t*) &packet_header;
 	for(size_t i = 0; i < sizeof(SocketFSPacket); i++)
 		client.data_queue->push_back(*data++);

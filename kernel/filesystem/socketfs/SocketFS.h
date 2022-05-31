@@ -40,6 +40,8 @@ struct SocketFSPacket {
 		pid_t disconnected_pid;
 	};
 	size_t length;
+	int shm_id;
+	int shm_perms;
 	uint8_t data[];
 };
 

@@ -37,6 +37,8 @@ struct socketfs_packet {
 		pid_t disconnected_pid;
 	};
 	size_t length;
+	int shm_id;
+	int shm_perms;
 	uint8_t data[];
 };
 
@@ -48,14 +50,22 @@ __DECL_BEGIN
 
 struct socketfs_packet* read_packet(int fd);
 
-int write_packet_of_type(int fd, int type, sockid_t id, size_t length, void* data);
+int write_packet_of_type(int fd, int type, sockid_t id, int shm_id, int shm_perms, size_t length, void* data);
 
 inline int write_packet(int fd, sockid_t id, size_t length, void* data) {
-	return write_packet_of_type(fd, SOCKETFS_TYPE_MSG, id, length, data);
+	return write_packet_of_type(fd, SOCKETFS_TYPE_MSG, id, 0, 0, length, data);
+}
+
+inline int write_shm_packet(int fd, sockid_t id, int shm_id, int shm_perms, size_t length, void* data) {
+	return write_packet_of_type(fd, SOCKETFS_TYPE_MSG, id, shm_id, shm_perms, length, data);
 }
 
 inline int write_packet_to_host(int fd, size_t length, void* data) {
-	return write_packet_of_type(fd, SOCKETFS_TYPE_MSG, SOCKETFS_RECIPIENT_HOST, length, data);
+	return write_packet_of_type(fd, SOCKETFS_TYPE_MSG, SOCKETFS_RECIPIENT_HOST, 0, 0, length, data);
+}
+
+inline int write_shm_packet_to_host(int fd, int shm_id, int shm_perms, size_t length, void* data) {
+	return write_packet_of_type(fd, SOCKETFS_TYPE_MSG, SOCKETFS_RECIPIENT_HOST, shm_id, shm_perms, length, data);
 }
 
 __DECL_END

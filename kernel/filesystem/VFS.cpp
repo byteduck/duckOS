@@ -27,6 +27,7 @@
 #include <kernel/device/Device.h>
 #include <kernel/User.h>
 #include "InodeFile.h"
+#include "kernel/tasking/TaskManager.h"
 
 VFS* VFS::instance;
 
@@ -173,7 +174,7 @@ ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::open(const kstd::string& path, 
 	if(meta.is_device()) {
 		auto dev_res = Device::get_device(meta.dev_major, meta.dev_minor);
 		if(dev_res.is_error()) return dev_res.code();
-		auto ret = kstd::make_shared<FileDescriptor>(dev_res.value());
+		auto ret = kstd::make_shared<FileDescriptor>(dev_res.value(), TaskManager::current_process());
 		ret->set_options(options);
 		return ret;
 	}
@@ -181,7 +182,7 @@ ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::open(const kstd::string& path, 
 	//Make the InodeFile and FileDescriptor
 	if(options & O_TRUNC) inode->inode()->truncate(0);
 	auto file = kstd::make_shared<InodeFile>(inode->inode());
-	auto ret = kstd::make_shared<FileDescriptor>(file);
+	auto ret = kstd::make_shared<FileDescriptor>(file, TaskManager::current_process());
 	ret->set_options(options);
 	ret->open();
 
@@ -202,7 +203,7 @@ ResultRet<kstd::shared_ptr<FileDescriptor>> VFS::create(const kstd::string& path
 
 	//Return a file descriptor to the new file
 	auto file = kstd::make_shared<InodeFile>(child_or_err.value());
-	auto ret = kstd::make_shared<FileDescriptor>(file);
+	auto ret = kstd::make_shared<FileDescriptor>(file, TaskManager::current_process());
 	ret->set_options(options);
 	ret->open();
 
