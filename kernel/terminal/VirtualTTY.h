@@ -32,6 +32,7 @@ public:
 	bool active();
 	void clear();
 	void set_graphical(bool graphical);
+	Term::Terminal* get_terminal();
 
 protected:
 	static void register_tty(size_t id, VirtualTTY* device);

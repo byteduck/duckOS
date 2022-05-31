@@ -67,6 +67,10 @@ void VirtualTTY::set_graphical(bool graphical) {
 	_graphical = graphical;
 }
 
+Term::Terminal* VirtualTTY::get_terminal() {
+	return terminal;
+}
+
 int VirtualTTY::ioctl(unsigned int request, void* argp) {
 	switch(request) {
 		case TIOSGFX:

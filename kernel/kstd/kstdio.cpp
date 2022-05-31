@@ -32,9 +32,12 @@
 kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
 kstd::shared_ptr<VirtualTTY> tty(nullptr);
 bool use_tty = false;
+bool panicking = false;
 
 void putch(char c){
-	if(tty && use_tty)
+	if(panicking)
+		tty->get_terminal()->write_char(c);
+	else if(tty && use_tty)
 		tty_desc->write((uint8_t*) &c, 1);
 	serial_putch(c);
 }
@@ -62,7 +65,9 @@ void serial_putch(char c) {
 }
 
 void print(const char* str){
-	if(tty && use_tty)
+	if(panicking)
+		tty->get_terminal()->write_chars(str, strlen(str));
+	else if(tty && use_tty)
 		tty_desc->write((uint8_t*) str, strlen(str));
 	while(*str)
 		serial_putch(*(str++));
@@ -135,7 +140,7 @@ bool panicked = false;
 	asm volatile("cli");
 	TaskManager::enabled() = false;
 
-	use_tty = true;
+	panicking = true;
 	tty->set_graphical(false);
 	printf("\033[41;97m\033[2J"); //Red BG, bright white FG
 	print("Good job, you crashed it.\nHere are the details, since you probably need them.\nTry not to mess it up again.\n\n");
