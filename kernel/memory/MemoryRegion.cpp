@@ -81,6 +81,7 @@ void MemoryRegion::shm_deref() {
 	lock.acquire();
 	shm_refs--;
 	if(!shm_refs) {
+		PageDirectory::deregister_shared_region(this);
 		lock.release();
 		MemoryManager::inst().pmem_map().free_region(this);
 		return;

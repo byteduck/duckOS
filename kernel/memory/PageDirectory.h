@@ -24,6 +24,7 @@
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/Result.hpp>
 #include <kernel/kstd/vector.hpp>
+#include <kernel/kstd/map.hpp>
 
 class PageTable;
 class LinkedMemoryRegion;
@@ -280,6 +281,13 @@ public:
 	Result allow_shared_region(int id, pid_t called_pid, pid_t pid, bool write, bool share);
 
 	/**
+	 * Deregisters a shared region.
+	 * @param region The region to deregister.
+	 * @return Whether or not the edregistration was successful.
+	 */
+	static void deregister_shared_region(MemoryRegion* region);
+
+	/**
 	 * @return A pointer to the page directory's vmem map.
 	 */
 	MemoryMap& vmem_map();
@@ -404,7 +412,12 @@ private:
 	//A list of attached shared memory region ids.
 	kstd::vector<MemoryRegion*> _attached_shm_regions;
 
-	//A list of pending shared memory region ids.
-	kstd::vector<MemoryRegion*> _pending_shm_regions;
+	///STATIC VARIABLES
+	// A map containing shared memory regions.
+	static kstd::map<int, MemoryRegion*> m_shared_regions;
+	// An incrementing counter for memory region IDs.
+	static int m_shared_id_counter;
+	// The lock for managing shared memory regions.
+	static SpinLock m_shared_region_lock;
 };
 
