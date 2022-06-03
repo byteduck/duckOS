@@ -39,8 +39,8 @@ namespace River {
 
 	template<typename RetT, typename... ParamTs>
 	class Function: public IFunction {
-		static_assert(Duck::Serialization::is_serializable_return_type<RetT>(), "Function return type must be a plain-old datatype, vector, or void!");
-		static_assert((Duck::Serialization::is_serializable_type<ParamTs>() && ...), "Function arguments must be plain-old datatypes or vectors!");
+		static_assert(Duck::Serialization::is_serializable_return_type<RetT>(), "Function return type must be serializable!");
+		static_assert((Duck::Serialization::is_serializable_type<ParamTs>() && ...), "Function arguments must be serializable!");
 
 	public:
 		Function(const std::string& path): _path(path), _endpoint(nullptr), _callback(nullptr) {}

@@ -33,7 +33,7 @@ namespace River {
 
 	template<typename T>
 	class Message: public IMessage {
-		static_assert(Duck::Serialization::is_serializable_type<T>(), "Message type must be a plain-old datatype!");
+		static_assert(Duck::Serialization::is_serializable_type<T>(), "Message type must be serializable!");
 
 	public:
 		Message(const std::string& path): _path(path), _endpoint(nullptr), _callback(nullptr) {}

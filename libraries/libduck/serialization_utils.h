@@ -23,6 +23,17 @@
 #include "Log.h"
 #include "ByteBuffer.h"
 
+#define MAKE_SERIALIZABLE(...) \
+	size_t serialized_size() const { \
+		return Duck::Serialization::buffer_size(__VA_ARGS__); \
+	} \
+	uint8_t* serialize(uint8_t* buf) const { \
+		return Duck::Serialization::serialize(buf, __VA_ARGS__); \
+	} \
+	const uint8_t* deserialize(const uint8_t* buf) { \
+		return Duck::Serialization::deserialize(buf, __VA_ARGS__); \
+	}
+
 namespace Duck {
 	class Serializable;
 }
@@ -34,13 +45,24 @@ namespace Duck::Serialization {
 	template<typename T>
 	struct is_vector<std::vector<T>> : std::integral_constant<bool, true> {};
 
+	template<typename T, typename Enabled = void>
+	struct is_serializable_struct : std::integral_constant<bool, false> {};
+
+	template<typename T>
+	struct is_serializable_struct<T, std::enable_if_t<
+			std::is_member_function_pointer_v<decltype(&T::serialized_size)> &&
+			std::is_member_function_pointer_v<decltype(&T::serialize)> &&
+			std::is_member_function_pointer_v<decltype(&T::deserialize)>
+		>> : std::integral_constant<bool, true> {};
+
 	template<typename T>
 	struct is_serializable_type : std::integral_constant<bool,
 				std::is_pod<T>() ||
 				is_vector<T>() ||
 				std::is_same<T, std::string>() ||
 				std::is_same<T, Duck::ByteBuffer>() ||
-				std::is_base_of<Duck::Serializable, T>()
+				std::is_base_of<Duck::Serializable, T>() ||
+				is_serializable_struct<T>()
 			> {};
 
 	template<typename T>
