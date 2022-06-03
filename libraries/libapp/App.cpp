@@ -106,6 +106,51 @@ std::shared_ptr<const Gfx::Image> Info::resource_image(const Path& path) {
 	return _images[path.string()];
 }
 
+size_t Info::serialized_size() const {
+	/*
+	 * Structure:
+	 * char* name
+	 * char* path
+	 * bool has_icon
+	 * Gfx::Image icon
+	 */
+	return _name.size() + 1 + _base_path.string().size() + 1 + sizeof(bool) + (_icon ? _icon->serialized_size() : 0);
+}
+
+size_t Info::serialize(void* buf) const {
+	auto* obuf = (uint8_t*) buf;
+
+	strcpy((char*) buf, _name.data());
+	buf = (char*) buf + _name.size() + 1;
+
+	auto base_path_str = _base_path.string();
+	strcpy((char*) buf, base_path_str.data());
+	buf = (char*) buf + base_path_str.size() + 1;
+
+	*((bool*) buf) = _icon.operator bool();
+	buf = (bool*) buf + 1;
+
+	if(_icon)
+		buf = (uint8_t*) buf + _icon->serialize(buf);
+
+	return (uint8_t*) buf - obuf;
+}
+
+size_t Info::deserialize(const void* buf) {
+	auto* obuf = (uint8_t*) buf;
+
+	_name = (char*) buf;
+	buf = (char*) buf + _name.size() + 1;
+
+	_base_path = (char*) buf;
+	buf = (char*) buf + _base_path.string().size() + 1;
+
+	if(*((bool*) buf))
+		_icon->deserialize((bool*) buf + 1);
+
+	return (uint8_t*) buf - obuf + 1;
+}
+
 std::vector<Info> App::get_all_apps() {
 	std::vector<Info> ret;
 	auto ent_res = Path(LIBAPP_BASEPATH).get_directory_entries();

@@ -31,7 +31,7 @@
 #define LIBAPP_MISSING_ICON "/usr/share/icons/16x16/missing_icon.png"
 
 namespace App {
-	class Info {
+	class Info: public Duck::Serializable {
 	public:
 		static Duck::ResultRet<Info> from_app_directory(const Duck::Path& app_directory);
 		static Duck::ResultRet<Info> from_app_name(const std::string& app_name);
@@ -40,14 +40,19 @@ namespace App {
 		Info() = default;
 		Info(Duck::Path app_directory, std::string name, std::string exec);
 
-		const Gfx::Image& icon();
-		const std::string& name() const;
-		const std::string exec() const;
-		bool exists() const;
-		Duck::Path base_path() const;
+		[[nodiscard]] const Gfx::Image& icon();
+		[[nodiscard]] const std::string& name() const;
+		[[nodiscard]] const std::string exec() const;
+		[[nodiscard]] bool exists() const;
+		[[nodiscard]] Duck::Path base_path() const;
 
-		Duck::Path resource_path(const Duck::Path& path) const;
-		std::shared_ptr<const Gfx::Image> resource_image(const Duck::Path& path);
+		[[nodiscard]] Duck::Path resource_path(const Duck::Path& path) const;
+		[[nodiscard]] std::shared_ptr<const Gfx::Image> resource_image(const Duck::Path& path);
+
+		///Serializable
+		size_t serialized_size() const override;
+		size_t serialize(void* buf) const override;
+		size_t deserialize(const void* buf) override;
 
 	private:
 		bool _exists = false;
