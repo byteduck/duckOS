@@ -20,13 +20,31 @@
 #pragma once
 
 #include <cstddef>
+#include "serialization_utils.h"
 
 namespace Duck {
 	class Serializable {
 	public:
 		virtual ~Serializable() = default;
+
+		/**
+		 * Gets the serialized size of the object.
+		 * @return The serialized size, in bytes, of the object.
+		 */
 		virtual size_t serialized_size() const = 0;
-		virtual size_t serialize(void* buf) const = 0;
-		virtual size_t deserialize(const void* buf) = 0;
+
+		/**
+		 * Serializes the object.
+		 * @param buf The buffer to serialize into.
+		 * @return The new buffer pointer (ie a pointer to right after the serialized object)
+		 */
+		virtual uint8_t* serialize(uint8_t* buf) const = 0;
+
+		/**
+		 * Deserializes the object.
+		 * @param buf The buffer to deserialize from.
+		 * @return The new buffer pointer (ie a pointer to right after the serialized object)
+		 */
+		virtual const uint8_t* deserialize(const uint8_t* buf) = 0;
 	};
 }

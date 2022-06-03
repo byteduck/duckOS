@@ -20,11 +20,14 @@
 #pragma once
 
 #include <vector>
-#include <libduck/Log.h>
-#include <libduck/ByteBuffer.h>
-#include <libduck/Serializable.h>
+#include "Log.h"
+#include "ByteBuffer.h"
 
-namespace River {
+namespace Duck {
+	class Serializable;
+}
+
+namespace Duck::Serialization {
 	template<typename>
 	struct is_vector : std::integral_constant<bool, false> {};
 
@@ -32,7 +35,7 @@ namespace River {
 	struct is_vector<std::vector<T>> : std::integral_constant<bool, true> {};
 
 	template<typename T>
-	struct is_valid_param_type : std::integral_constant<bool,
+	struct is_serializable_type : std::integral_constant<bool,
 				std::is_pod<T>() ||
 				is_vector<T>() ||
 				std::is_same<T, std::string>() ||
@@ -41,7 +44,7 @@ namespace River {
 			> {};
 
 	template<typename T>
-	struct is_valid_return_type : std::integral_constant<bool, is_valid_param_type<T>() || std::is_void<T>()> {};
+	struct is_serializable_return_type : std::integral_constant<bool, is_serializable_type<T>() || std::is_void<T>()> {};
 
 	constexpr size_t buffer_size() {
 		return 0; //Base case
@@ -92,7 +95,7 @@ namespace River {
 			memcpy((char*) buf, first.template data<void>(), first.size());
 			buf += first.size();
 		} else if constexpr(std::is_base_of<Duck::Serializable, ParamT>()) {
-			buf += first.serialize(buf);
+			buf = first.serialize(buf);
 		} else {
 			*((ParamT*) buf) = first;
 			buf += sizeof(ParamT);
@@ -127,7 +130,7 @@ namespace River {
 			buf += sizeof(size_t);
 			first = Duck::ByteBuffer::copy(buf, size);
 		} else if constexpr(std::is_base_of<Duck::Serializable, ParamT>()) {
-			buf += first.deserialize(buf);
+			buf = first.deserialize(buf);
 		} else {
 			//If it's not a vector, just push the data
 			first = *((ParamT*) buf);

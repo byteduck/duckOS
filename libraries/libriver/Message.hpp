@@ -21,7 +21,7 @@
 
 #include "packet.h"
 #include "Endpoint.h"
-#include "serialization_utils.h"
+#include "libduck/serialization_utils.h"
 #include <type_traits>
 
 namespace River {
@@ -33,7 +33,7 @@ namespace River {
 
 	template<typename T>
 	class Message: public IMessage {
-		static_assert(is_valid_param_type<T>(), "Message type must be a plain-old datatype!");
+		static_assert(Duck::Serialization::is_serializable_type<T>(), "Message type must be a plain-old datatype!");
 
 	public:
 		Message(const std::string& path): _path(path), _endpoint(nullptr), _callback(nullptr) {}
@@ -66,8 +66,8 @@ namespace River {
 				packet.recipient = recipient;
 
 				//Serialize message data
-				packet.data.resize(buffer_size(data));
-				serialize(packet.data.data(), data);
+				packet.data.resize(Duck::Serialization::buffer_size(data));
+				Duck::Serialization::serialize(packet.data.data(), data);
 
 				//Send the message packet
 				_endpoint->bus()->send_packet(packet);
@@ -101,7 +101,7 @@ namespace River {
 			//if(packet.data.size() != sizeof(T)) TODO Size check
 			//	return;
 			T ret;
-			deserialize(packet.data.data(), ret);
+			Duck::Serialization::deserialize(packet.data.data(), ret);
 			_callback(ret);
 		}
 

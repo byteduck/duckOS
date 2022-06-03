@@ -107,48 +107,30 @@ std::shared_ptr<const Gfx::Image> Info::resource_image(const Path& path) {
 }
 
 size_t Info::serialized_size() const {
-	/*
-	 * Structure:
-	 * char* name
-	 * char* path
-	 * bool has_icon
-	 * Gfx::Image icon
-	 */
-	return _name.size() + 1 + _base_path.string().size() + 1 + sizeof(bool) + (_icon ? _icon->serialized_size() : 0);
-}
-
-size_t Info::serialize(void* buf) const {
-	auto* obuf = (uint8_t*) buf;
-
-	strcpy((char*) buf, _name.data());
-	buf = (char*) buf + _name.size() + 1;
-
-	auto base_path_str = _base_path.string();
-	strcpy((char*) buf, base_path_str.data());
-	buf = (char*) buf + base_path_str.size() + 1;
-
-	*((bool*) buf) = _icon.operator bool();
-	buf = (bool*) buf + 1;
-
+	bool has_icon;
 	if(_icon)
-		buf = (uint8_t*) buf + _icon->serialize(buf);
-
-	return (uint8_t*) buf - obuf;
+		return Duck::Serialization::buffer_size(_name, _base_path.string(), has_icon, *_icon);
+	else
+		return Duck::Serialization::buffer_size(_name, _base_path.string(), has_icon);
 }
 
-size_t Info::deserialize(const void* buf) {
-	auto* obuf = (uint8_t*) buf;
+uint8_t* Info::serialize(uint8_t* buf) const {
+	buf = Duck::Serialization::serialize(buf, _name, _base_path.string(), _icon.operator bool());
+	if(_icon)
+		buf = Duck::Serialization::serialize(buf, *_icon);
+	return buf;
+}
 
-	_name = (char*) buf;
-	buf = (char*) buf + _name.size() + 1;
-
-	_base_path = (char*) buf;
-	buf = (char*) buf + _base_path.string().size() + 1;
-
-	if(*((bool*) buf))
-		_icon->deserialize((bool*) buf + 1);
-
-	return (uint8_t*) buf - obuf + 1;
+const uint8_t* Info::deserialize(const uint8_t* buf) {
+	std::string base_path;
+	bool has_icon;
+	buf = Duck::Serialization::deserialize(buf, _name, base_path, has_icon);
+	_base_path = base_path;
+	if(has_icon) {
+		_icon = std::make_shared<Gfx::Image>();
+		buf = Duck::Serialization::deserialize(buf, *_icon);
+	}
+	return buf;
 }
 
 std::vector<Info> App::get_all_apps() {
