@@ -134,7 +134,7 @@ int BusConnection::file_descriptor() {
 }
 
 PacketReadResult BusConnection::read_packet(bool block) {
-	auto pkt_res = River::receive_packet(_fd, block, true);
+	auto pkt_res = River::receive_packet(_fd, block);
 	if(pkt_res.is_error())
 		return static_cast<PacketReadResult>(pkt_res.code());
 	_packet_queue.push_back(pkt_res.value());

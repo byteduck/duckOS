@@ -47,7 +47,7 @@ const char* River::error_str(int error) {
 	}
 }
 
-Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block, bool attach_region)  {
+Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
 	if(block) {
 		struct pollfd pfd = {fd, POLLIN, 0};
 		poll(&pfd, 1, -1);
@@ -92,7 +92,8 @@ Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block, bool atta
 
 		//Make sure the data and path lengths specified in the RawPacket are valid
 		if(
-				raw_packet->path_length != raw_socketfs_packet->length - sizeof(RawPacket) ||
+				raw_packet->data_length + raw_packet->path_length != raw_socketfs_packet->length - sizeof(RawPacket) ||
+				raw_packet->data_length > SOCKETFS_MAX_BUFFER_SIZE ||
 				raw_packet->path_length > SOCKETFS_MAX_BUFFER_SIZE ||
 				raw_packet->path_length < 1
 		) {
@@ -109,29 +110,19 @@ Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block, bool atta
 			raw_packet->error,
 			raw_packet->id,
 			raw_socketfs_packet->sender,
-			raw_socketfs_packet->sender_pid,
-			raw_packet->data_length
+			raw_socketfs_packet->sender_pid
 		};
 
 		//Get the target from the RawPacket
 		auto* target_cstr = new char[raw_packet->path_length];
-		strncpy(target_cstr, (const char*) raw_packet->path, raw_packet->path_length);
+		strncpy(target_cstr, (const char*) raw_packet->data, raw_packet->path_length);
 		std::string target = target_cstr;
 		delete[] target_cstr;
 
-		//Attach the data buffer if we need to
-		if(attach_region && raw_packet->shm_id) {
-			auto buffer_res = Duck::SharedBuffer::attach(raw_packet->shm_id);
-			if (buffer_res.is_error()) {
-				Log::warnf("[River] Could not attach buffer {} received from {x}: {}", raw_packet->shm_id,
-						   raw_socketfs_packet->sender, buffer_res.result().message());
-				free(raw_socketfs_packet);
-				return buffer_res.result();
-			}
-			packet.data = buffer_res.value();
-		} else if (raw_packet->shm_id && !attach_region) {
-			//If we don't want to attach it yet, put the shm id in the packet instead
-			packet.data_shm_id = raw_packet->shm_id;
+		//Get the data from the RawPacket
+		if(raw_packet->data_length) {
+			packet.data.resize(raw_packet->data_length);
+			memcpy(packet.data.data(), raw_packet->data + raw_packet->path_length, raw_packet->data_length);
 		}
 
 		//Free the socketFS packet
@@ -154,27 +145,22 @@ Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block, bool atta
 
 void River::send_packet(int fd, sockid_t recipient, const RiverPacket& packet) {
 	auto full_name = packet.endpoint + ":" + packet.path;
-	size_t n_bytes = full_name.length() + 1;
+	size_t n_bytes = full_name.length() + 1 + packet.data.size();
 
 	auto* raw_packet = (RawPacket*) malloc(sizeof(RawPacket) + n_bytes);
 	raw_packet->__river_magic = LIBRIVER_PACKET_MAGIC;
 	raw_packet->type = packet.type;
 	raw_packet->error = packet.error;
-	raw_packet->data_length = packet.data_length;
+	raw_packet->data_length = packet.data.size();
 	raw_packet->path_length = full_name.length() + 1;
 	raw_packet->id = packet.recipient;
 
-	if(packet.data.has_value())
-		raw_packet->shm_id = packet.data.value().id();
-	else if(packet.data_shm_id.has_value())
-		raw_packet->shm_id = packet.data_shm_id.value();
-	else
-		raw_packet->shm_id = 0;
+	memcpy(raw_packet->data, full_name.c_str(), full_name.length() + 1);
+	if(!packet.data.empty())
+		memcpy(raw_packet->data + full_name.length() + 1, packet.data.data(), packet.data.size());
 
-	memcpy(raw_packet->path, full_name.c_str(), full_name.length() + 1);
-
-	if(::write_shm_packet(fd, recipient, raw_packet->shm_id, SHM_READ | SHM_SHARE, sizeof(RawPacket) + n_bytes, raw_packet))
-		Log::errf("[River] Error writing packet for {}: {} ({} bytes, {} shm id {} has data)", packet.path, strerror(errno), packet.data_length, raw_packet->shm_id, packet.data_shm_id.has_value());
+	if(::write_packet(fd, recipient, sizeof(RawPacket) + n_bytes, raw_packet))
+		Log::err("[River] Error writing packet: ", strerror(errno));
 
 	free(raw_packet);
 }
