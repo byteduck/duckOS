@@ -23,6 +23,7 @@
 #include <map>
 #include <sys/socketfs.h>
 #include "Window.h"
+#include <libapp/App.h>
 #include <sys/input.h>
 #include <libpond/packet.h>
 
@@ -53,6 +54,8 @@ public:
 	void set_hint(Pond::SetHintPkt& packet);
 	void bring_to_front(Pond::WindowToFrontPkt& packet);
 	Pond::DisplayInfoPkt get_display_info(Pond::GetDisplayInfoPkt &pkt);
+	void set_app_info(App::Info& info);
+	const App::Info& get_app_info();
 
 private:
 	Server* server;
@@ -60,6 +63,7 @@ private:
 	pid_t pid;
 	std::map<int, Window*> windows;
 	bool disconnected = false;
+	App::Info app_info;
 };
 
 

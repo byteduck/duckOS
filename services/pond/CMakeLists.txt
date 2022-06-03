@@ -8,4 +8,4 @@ SET(SOURCES
         Server.cpp)
 
 MAKE_PROGRAM(pond)
-TARGET_LINK_LIBRARIES(pond libgraphics libduck libriver)
+TARGET_LINK_LIBRARIES(pond libgraphics libduck libriver libapp)

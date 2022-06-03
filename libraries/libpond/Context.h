@@ -26,6 +26,7 @@
 #include "Window.h"
 #include "Event.h"
 #include "packet.h"
+#include "libapp/App.h"
 #include <deque>
 #include <memory>
 #include <libriver/river.h>
@@ -90,6 +91,11 @@ namespace Pond {
 		 */
 		Gfx::Dimensions get_display_dimensions();
 
+		/**
+		 * Sets the app info associated with the running app.
+		 */
+		void set_app_info(App::Info& info);
+
 	private:
 		friend class Window;
 		explicit Context(std::shared_ptr<River::Endpoint> endpoint);
@@ -124,6 +130,7 @@ namespace Pond {
 		PONDFUNC(set_hint, void, SetHintPkt);
 		PONDFUNC(window_to_front, void, WindowToFrontPkt);
 		PONDFUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt);
+		PONDFUNC(set_app_info, void, App::Info);
 	};
 }
 

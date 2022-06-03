@@ -45,8 +45,10 @@ void UI::init(char** argv, char** envp) {
 	pollfds.clear();
 
 	auto app_res = App::Info::from_current_app();
-	if(app_res.has_value())
+	if(app_res.has_value()) {
 		_app_info = app_res.value();
+		pond_context->set_app_info(_app_info);
+	}
 
 	Poll pond_poll = {pond_context->connection_fd()};
 	pond_poll.on_ready_to_read = handle_pond_events;
@@ -223,8 +225,10 @@ void UI::remove_timer(int id) {
 
 bool UI::set_app_name(const std::string& app_name) {
 	auto app_res = App::Info::from_app_name(app_name);
-	if(!app_res.is_error())
+	if(!app_res.is_error()) {
 		_app_info = app_res.value();
+		pond_context->set_app_info(_app_info);
+	}
 	return !app_res.is_error();
 }
 

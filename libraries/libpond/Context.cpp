@@ -84,6 +84,7 @@ Context::Context(std::shared_ptr<Endpoint> endpt): endpoint(std::move(endpt)) {
 	GET_FUNC(set_hint, void, SetHintPkt, set_hint);
 	GET_FUNC(window_to_front, void, WindowToFrontPkt, window_to_front);
 	GET_FUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt, get_display_info);
+	GET_FUNC(set_app_info, void, App::Info, set_app_info);
 }
 
 void Context::read_events(bool block) {
@@ -312,4 +313,8 @@ void Context::handle_font_response(const FontResponsePkt& pkt, Event& event) {
 
 Gfx::Dimensions Context::get_display_dimensions() {
 	return __river_get_display_info({}).dimensions;
+}
+
+void Context::set_app_info(App::Info& info) {
+	__river_set_app_info(info);
 }

@@ -194,3 +194,11 @@ void Client::bring_to_front(WindowToFrontPkt& params) {
 Pond::DisplayInfoPkt Client::get_display_info(Pond::GetDisplayInfoPkt& pkt) {
 	return {Display::inst().dimensions().dimensions()};
 }
+
+void Client::set_app_info(App::Info& info) {
+	app_info = info;
+}
+
+const App::Info& Client::get_app_info() {
+	return app_info;
+}

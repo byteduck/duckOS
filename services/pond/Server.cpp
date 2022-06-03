@@ -101,6 +101,7 @@ Server::Server() {
 	REGISTER_FUNC(set_hint, void, SetHintPkt, set_hint);
 	REGISTER_FUNC(window_to_front, void, WindowToFrontPkt, bring_to_front);
 	REGISTER_FUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt, get_display_info);
+	REGISTER_FUNC(set_app_info, void, App::Info, set_app_info);
 
 	/** Messages (server --> client) **/
 	REGISTER_MSG(window_moved, WindowMovePkt);
