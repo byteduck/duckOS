@@ -21,6 +21,7 @@
 
 #include <sys/types.h>
 #include "Geometry.h"
+#include <libduck/Serializable.h>
 
 #define IMGSIZE(width, height) (sizeof(uint32_t) * (width) * (height))
 #define IMGPIXEL(img, x, y) (img).data[(x) + (y) * (img).width]
@@ -28,7 +29,7 @@
 
 namespace Gfx {
 	class Font;
-	class Framebuffer {
+	class Framebuffer: public Duck::Serializable {
 	public:
 		Framebuffer();
 		Framebuffer(uint32_t* buffer, int width, int height);
@@ -137,6 +138,11 @@ namespace Gfx {
 		 * Returns a pointer to the Image buffer at a certain position. Returns NULL if outside the constraints.
 		 */
 		uint32_t* at(const Point& position) const;
+
+		/// Serializable
+		size_t serialized_size() const override;
+		size_t serialize(void* buf) const override;
+		size_t deserialize(const void* buf) override;
 	};
 }
 

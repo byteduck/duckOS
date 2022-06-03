@@ -270,3 +270,35 @@ uint32_t* Framebuffer::at(const Point& position) const {
 
 	return &data[position.x + position.y * width];
 }
+
+struct FramebufferSerialization {
+	int width;
+	int height;
+	uint32_t data[];
+};
+
+size_t Framebuffer::serialized_size() const {
+	return sizeof(FramebufferSerialization) + width * height * sizeof(uint32_t);
+}
+
+size_t Framebuffer::serialize(void* buf) const {
+	auto* serialization = (FramebufferSerialization*) buf;
+	serialization->width = data ? width : 0;
+	serialization->height = data ? height : 0;
+	if(data && width && height)
+		memcpy_uint32(serialization->data, data, width * height);
+	return serialized_size();
+}
+
+size_t Framebuffer::deserialize(const void* buf) {
+	auto* obuf = (uint8_t*) buf;
+	delete data;
+	auto* serialization = (FramebufferSerialization*) buf;
+	width = serialization->width;
+	height = serialization->height;
+	if(width && height) {
+		data = new uint32_t[width * height];
+		memcpy_uint32(data, serialization->data, width * height);
+	}
+	return serialized_size();
+}
