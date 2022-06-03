@@ -60,9 +60,9 @@ void UI::BoxLayout::calculate_layout() {
 		//If the last child's sizing mode is fill, then resize it to fit the rest of the space
 		if(i == children.size() - 1 && child->sizing_mode() == FILL) {
 			if(direction == VERTICAL)
-				child->set_layout_bounds({0, pos, size.width, size.height - pos});
+				child->set_layout_bounds({0, pos, size.width, std::max(size.height - pos, 0)});
 			else
-				child->set_layout_bounds({pos, 0, size.width - pos, size.height});
+				child->set_layout_bounds({pos, 0, std::max(size.width - pos, 0), size.height});
 		} else {
 			if(direction == VERTICAL)
 				child->set_layout_bounds({0, pos, size.width, preferred_size.height});

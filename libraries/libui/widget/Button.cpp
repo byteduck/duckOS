@@ -20,47 +20,52 @@
 #include "Button.h"
 #include "libui/libui.h"
 #include "libui/Theme.h"
+#include "Image.h"
+#include "Label.h"
 #include <libgraphics/Font.h>
 
 using namespace UI;
 
-Button::Button(std::string label): _label(std::move(label)), _is_image_button(false) {
-
+Button::Button(std::string label): m_label(UI::Label::make(label)), m_contents(m_label) {
+	add_child(m_label);
 }
 
-Button::Button(Gfx::Image image): _image(std::move(image)), _is_image_button(true) {
-
+Button::Button(Gfx::Image image): m_contents(UI::Image::make(image)) {
+	add_child(m_contents);
 }
 
-const std::string& Button::label() {
-	return _label;
+Button::Button(Widget::ArgPtr contents): m_contents(contents) {
+	add_child(m_contents);
+}
+
+[[nodiscard]] std::string Button::label() {
+	if(m_label)
+		return m_label->label();
+	else
+		return "";
 }
 
 void Button::set_label(std::string new_label) {
-	_is_image_button = false;
-	_label = std::move(new_label);
-	repaint();
-}
-
-const Gfx::Image& Button::image() {
-	return _image;
-}
-
-void Button::set_image(Gfx::Image new_image) {
-	_is_image_button = true;
-	_image = std::move(new_image);
+	if(m_label)
+		m_label->set_label(new_label);
+	else {
+		remove_child(m_contents);
+		m_label = UI::Label::make(new_label);
+		m_contents = m_label;
+		add_child(m_label);
+	}
 	repaint();
 }
 
 bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
-		_pressed = true;
+		m_pressed = true;
 		if(on_pressed)
 			on_pressed();
 		repaint();
 		return true;
 	} else if((evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1)) {
-		_pressed = false;
+		m_pressed = false;
 		if(on_released)
 			on_released();
 		repaint();
@@ -71,8 +76,8 @@ bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 }
 
 void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
-	if(_pressed) {
-		_pressed = false;
+	if(m_pressed) {
+		m_pressed = false;
 		if(on_released)
 			on_released();
 		repaint();
@@ -80,24 +85,17 @@ void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 }
 
 Gfx::Dimensions Button::preferred_size() {
-	if(_is_image_button) {
-		auto dims = Gfx::Dimensions {_image.width, _image.height};
-		int padding = 4;
-		dims.width += padding;
-		dims.height += padding;
-		return dims;
-	} else {
-		auto dims = Gfx::Dimensions{Theme::font()->size_of(_label.c_str()).width, Theme::font()->bounding_box().height};
-		int padding = Theme::button_padding() * 2;
-		dims.width += padding;
-		dims.height += padding;
-		return dims;
-	}
+	return m_contents->preferred_size() + Gfx::Dimensions {m_padding * 2, m_padding * 2};
+}
+
+void Button::calculate_layout() {
+	auto size = current_size();
+	auto dims = size - Gfx::Dimensions {m_padding * 2, m_padding * 2};
+	dims.width = std::max(dims.width, 0);
+	dims.height = std::max(dims.height, 0);
+	m_contents->set_layout_bounds(Gfx::Rect{{m_padding, m_padding}, dims});
 }
 
 void Button::do_repaint(const DrawContext& ctx) {
-	if(_is_image_button)
-		ctx.draw_button({0, 0, ctx.width(), ctx.height()}, _image, _pressed);
-	else
-		ctx.draw_button({0, 0, ctx.width(), ctx.height()}, _label, _pressed);
+	ctx.draw_button_base({0, 0, ctx.width(), ctx.height()}, m_pressed);
 }

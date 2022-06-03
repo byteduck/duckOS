@@ -19,7 +19,8 @@
 
 #pragma once
 
-#include "Widget.h"
+#include "layout/BoxLayout.h"
+#include "Label.h"
 #include <string>
 #include <functional>
 
@@ -29,30 +30,30 @@ namespace UI {
 		WIDGET_DEF(Button)
 
 		//Button
-		const std::string& label();
+		[[nodiscard]] std::string label();
 		void set_label(std::string new_label);
-		const Gfx::Image& image();
-		void set_image(Gfx::Image new_image);
 
 
 		//Widget
 		virtual bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 		virtual void on_mouse_leave(Pond::MouseLeaveEvent evt) override;
 		virtual Gfx::Dimensions preferred_size() override;
+		virtual void calculate_layout() override;
 
 		std::function<void()> on_pressed = nullptr;
 		std::function<void()> on_released = nullptr;
 	private:
 		explicit Button(std::string label);
 		explicit Button(Gfx::Image image);
+		explicit Button(UI::Widget::ArgPtr contents);
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
 
-		std::string _label;
-		Gfx::Image _image;
-		bool _pressed = false;
-		bool _is_image_button = false;
+		UI::Label::Ptr m_label;
+		UI::Widget::Ptr m_contents;
+		bool m_pressed = false;
+		int m_padding = 4;
 	};
 }
 

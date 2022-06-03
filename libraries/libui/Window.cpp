@@ -43,7 +43,8 @@ void Window::resize(Gfx::Dimensions dims) {
 	} else {
 		_window->resize({dims.width, dims.height});
 	}
-	_contents->update_layout();
+	if(_contents)
+		_contents->update_layout();
 	repaint();
 }
 
@@ -215,7 +216,8 @@ void Window::set_decorated(bool decorated) {
 	repaint();
 
 	//Update contents positioning
-	_contents->update_layout();
+	if(_contents)
+		_contents->update_layout();
 }
 
 Pond::Window* Window::pond_window() {

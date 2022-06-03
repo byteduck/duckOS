@@ -158,6 +158,12 @@ void Widget::show() {
 }
 
 void Widget::set_layout_bounds(Gfx::Rect new_bounds) {
+	if(new_bounds.width < 0 || new_bounds.height < 0) {
+		Duck::Log::warnf("[UI] Widget dimensions {}x{} invalid!", new_bounds.width, new_bounds.height);
+		new_bounds.width = std::max(new_bounds.width, 0);
+		new_bounds.height = std::max(new_bounds.height, 0);
+	}
+
 	Gfx::Rect old_rect = _rect;
 	_rect = new_bounds;
 	_initialized_size = true;
