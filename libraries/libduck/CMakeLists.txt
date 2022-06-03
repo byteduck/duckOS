@@ -1,5 +1,6 @@
 SET(SOURCES
         Args.cpp
+        ByteBuffer.cpp
         Config.cpp
         DirectoryEntry.cpp
         File.cpp
@@ -8,6 +9,7 @@ SET(SOURCES
         Log.cpp
         Path.cpp
         Result.cpp
+        Serializable.cpp
         SharedBuffer.cpp
         SpinLock.cpp
         Stream.cpp
