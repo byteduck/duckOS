@@ -37,7 +37,9 @@ ResultRet<Info> Info::from_app_directory(const Path& app_directory) {
 		auto has_exec = app_config.find("exec") != app_config.end();
 		if(!has_name || !has_exec)
 			return Result(EINVAL);
-		return Info(app_directory, app_config["name"],  app_config["exec"]);
+		auto info = Info(app_directory, app_config["name"],  app_config["exec"]);
+		info._hidden = app_config["hidden"] == "true";
+		return info;
 	}
 
 	return Result(EINVAL);
@@ -85,6 +87,10 @@ bool Info::exists() const {
 	return _exists;
 }
 
+bool Info::hidden() const {
+	return _hidden;
+}
+
 Path Info::base_path() const {
 	return _base_path;
 }
@@ -109,13 +115,13 @@ std::shared_ptr<const Gfx::Image> Info::resource_image(const Path& path) {
 size_t Info::serialized_size() const {
 	bool has_icon;
 	if(_icon)
-		return Duck::Serialization::buffer_size(_name, _base_path.string(), has_icon, *_icon);
+		return Duck::Serialization::buffer_size(_name, _base_path.string(), _hidden, has_icon, *_icon);
 	else
-		return Duck::Serialization::buffer_size(_name, _base_path.string(), has_icon);
+		return Duck::Serialization::buffer_size(_name, _base_path.string(), _hidden, has_icon);
 }
 
 uint8_t* Info::serialize(uint8_t* buf) const {
-	buf = Duck::Serialization::serialize(buf, _name, _base_path.string(), _icon.operator bool());
+	buf = Duck::Serialization::serialize(buf, _name, _base_path.string(), _hidden, _icon.operator bool());
 	if(_icon)
 		buf = Duck::Serialization::serialize(buf, *_icon);
 	return buf;
@@ -124,7 +130,7 @@ uint8_t* Info::serialize(uint8_t* buf) const {
 const uint8_t* Info::deserialize(const uint8_t* buf) {
 	std::string base_path;
 	bool has_icon;
-	buf = Duck::Serialization::deserialize(buf, _name, base_path, has_icon);
+	buf = Duck::Serialization::deserialize(buf, _name, base_path, _hidden, has_icon);
 	_base_path = base_path;
 	if(has_icon) {
 		_icon = std::make_shared<Gfx::Image>();

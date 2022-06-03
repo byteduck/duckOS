@@ -44,6 +44,7 @@ namespace App {
 		[[nodiscard]] const std::string& name() const;
 		[[nodiscard]] const std::string exec() const;
 		[[nodiscard]] bool exists() const;
+		[[nodiscard]] bool hidden() const;
 		[[nodiscard]] Duck::Path base_path() const;
 
 		[[nodiscard]] Duck::Path resource_path(const Duck::Path& path) const;
@@ -59,6 +60,7 @@ namespace App {
 		Duck::Path _base_path;
 		std::string _name;
 		std::string _exec;
+		bool _hidden = false;
 		std::shared_ptr<Gfx::Image> _icon = nullptr;
 		std::map<std::string, std::shared_ptr<Gfx::Image>> _images;
 	};
