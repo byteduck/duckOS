@@ -23,6 +23,7 @@
 #include "Blocker.h"
 #include "TaskManager.h"
 #include "JoinBlocker.h"
+#include "kernel/KernelMapper.h"
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/Stack.h>
@@ -184,31 +185,36 @@ void Thread::kill() {
 			KLog::warn("Thread", "Could not interrupt %s(pid: %d, tid: %d) while killing...", _process->name().c_str(), _process->pid(), _tid);
 	}
 
-	if(_in_syscall)
-		_should_die = true;
+	if(_in_critical)
+		_waiting_to_die = true;
 	else
 		reap();
 }
 
-void Thread::enter_syscall() {
-	_in_syscall = true;
+bool Thread::waiting_to_die() {
+	return _waiting_to_die;
 }
 
-void Thread::leave_syscall() {
-	_in_syscall = false;
-	if(_should_die)
+bool Thread::can_be_run() {
+	return _state == ALIVE && !_waiting_to_die;
+}
+
+void Thread::enter_critical() {
+	_in_critical++;
+}
+
+void Thread::leave_critical() {
+	_in_critical--;
+	if(_waiting_to_die && !_in_critical) {
+		_waiting_to_die = false;
 		reap();
+	}
 }
 
 void Thread::block(Blocker& blocker) {
-	if(_state != ALIVE)
+	if(_state != ALIVE || _waiting_to_die)
 		PANIC("INVALID_BLOCK", "Tried to block thread %d of PID %d in state %d", _tid, _process->pid(), _state);
 	ASSERT(!_blocker);
-
-	if(_should_die && blocker.can_be_interrupted()) {
-		blocker.interrupt();
-		return;
-	}
 
 	TaskManager::enabled() = false;
 	_state = BLOCKED;
@@ -357,8 +363,8 @@ bool& Thread::in_signal_handler() {
 	return _in_signal;
 }
 
-bool& Thread::in_syscall() {
-	return _in_syscall;
+bool Thread::in_critical() {
+	return _in_critical;
 }
 
 bool& Thread::just_finished_signal() {

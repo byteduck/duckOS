@@ -54,11 +54,12 @@ public:
 	bool is_kernel_mode();
 	void* return_value();
 	void kill();
-	bool should_die();
+	bool waiting_to_die();
+	bool can_be_run();
 
-	//Syscalls
-	void enter_syscall();
-	void leave_syscall();
+	//Critical
+	void enter_critical();
+	void leave_critical();
 
 	//Blocking and Joining
 	void block(Blocker& blocker);
@@ -70,7 +71,7 @@ public:
 	//Signals
 	bool call_signal_handler(int sig);
 	bool& in_signal_handler();
-	bool& in_syscall();
+	bool in_critical();
 	bool& ready_to_handle_signal();
 	bool& just_finished_signal();
 	void* signal_stack_top();
@@ -94,8 +95,8 @@ private:
 	tid_t _tid;
 	State _state = ALIVE;
 	void* _return_value = nullptr;
-	bool _in_syscall = false;
-	bool _should_die = false;
+	int _in_critical = 0;
+	bool _waiting_to_die = false;
 
 	//Stack
 	LinkedMemoryRegion _kernel_stack_region;

@@ -27,15 +27,16 @@
 #include <kernel/tasking/Signal.h>
 
 void syscall_handler(Registers& regs){
-	TaskManager::current_thread()->enter_syscall();
+	TaskManager::current_thread()->enter_critical();
 	regs.eax = handle_syscall(regs, regs.eax, regs.ebx, regs.ecx, regs.edx);
-	TaskManager::current_thread()->leave_syscall();
+	TaskManager::current_thread()->leave_critical();
 }
 
 int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
 	auto cur_proc = TaskManager::current_thread()->process();
 	switch(call) {
 		case SYS_EXIT:
+			TaskManager::current_thread()->leave_critical();
 			cur_proc->sys_exit(arg1);
 			return 0;
 		case SYS_FORK:

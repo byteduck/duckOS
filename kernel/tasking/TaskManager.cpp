@@ -203,17 +203,18 @@ void TaskManager::notify_current(uint32_t sig){
 }
 
 kstd::shared_ptr<Thread> TaskManager::next_thread() {
-	while(!thread_queue->empty() && thread_queue->front()->state() != Thread::ALIVE)
+	while(!thread_queue->empty() && !thread_queue->front()->can_be_run())
 		thread_queue->pop_front();
 
 	if(thread_queue->empty()) {
-		if(cur_thread->state() == Thread::ALIVE)
+		if(cur_thread->can_be_run()) {
 			return cur_thread;
-		else if(kidle_process->main_thread()->state() != Thread::ALIVE) {
+		} else if(kidle_process->main_thread()->state() != Thread::ALIVE) {
 			PANIC("KTHREAD_DEADLOCK",
 				  "The kernel thread is blocked, and no other thread is available to switch to.");
-		} else
+		} else {
 			return kidle_process->main_thread();
+		}
 	}
 
 	return thread_queue->pop_front();
@@ -258,6 +259,8 @@ void TaskManager::do_yield_async() {
 void TaskManager::preempt(){
 	if(!tasking_enabled) return;
 
+	cur_thread->enter_critical();
+
 	static bool prev_alive = false; // Whether or not there was an alive process last preemption
 	bool any_alive = false;
 
@@ -287,7 +290,7 @@ void TaskManager::preempt(){
 	 * Only update process/thread states if the thread we're switching from isn't already blocked, as doing so may
 	 * try to block the thread again (ie acquiring the liballoc lock)
 	 */
-	if(cur_thread->state() == Thread::ALIVE) {
+	if(cur_thread->can_be_run()) {
 		LOCK(lock);
 		//Handle pending signals, cleanup dead processes, and release zombie processes' resources
 		for(int i = 0; i < processes->size(); i++) {
@@ -380,11 +383,13 @@ void TaskManager::preempt(){
 
 	//Switch tasks.
 	preempting = false;
-	if(cur_thread->state() != Thread::ALIVE)
+	if(!cur_thread->can_be_run())
 		PANIC("INVALID_CONTEXT_SWITCH", "Tried to switch to thread %d of PID %d in state %d", cur_thread->tid(), cur_thread->process()->pid(), cur_thread->state());
 	if(should_preempt) {
-		if(old_thread != kidle_process->main_thread() && old_thread->state() == Thread::ALIVE)
+		if(old_thread != kidle_process->main_thread() && old_thread->can_be_run())
 			queue_thread(old_thread);
+
+		old_thread->leave_critical();
 
 		//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
 		old_thread = kstd::shared_ptr<Thread>(nullptr);
@@ -392,6 +397,8 @@ void TaskManager::preempt(){
 		asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
 		preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());
 		asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
+	} else {
+		old_thread->leave_critical();
 	}
 }
 #pragma GCC pop_options
