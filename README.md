@@ -1,6 +1,8 @@
 # duckOS
 ### A hobby operating system
 
+## IMPORTANT: This project is on a brief summer hiatus due to my internship at a major fruit-based technology company. Thank you for your patience! :)
+
 A hobby UNIX-like OS with a graphical window manager for x86 computers.
 
 ![Toolchain](https://github.com/byteduck/duckOS/workflows/Toolchain/badge.svg)
