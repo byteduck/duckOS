@@ -92,7 +92,7 @@ Programs that take arguments will provide you with the correct usage when you ru
 
 Ports will only compile if their corresponding submodule is downloaded with `git submodule init` and `git submodule update`.
 
-- [DOOM](ports/doom): A little buggy at the moment, but playable. With the current multitasking and window manager implementation, it can be a little slow.
+- [DOOM](https://github.com/byteduck/duckos-doom): A little buggy at the moment, but playable. With the current multitasking and window manager implementation, it can be a little slow.
 
 ### Known Issues / Limitations
 - Framebuffer scrolling is slow on real hardware. I'm not focusing on fixing this right now until I start working on a window manager.
