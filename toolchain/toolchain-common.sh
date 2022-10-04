@@ -13,13 +13,15 @@ NUM_JOBS=$(( $(nproc) / 2 ))
 
 source "$DIR/../scripts/duckos.sh"
 
+GNU_MIRROR="https://mirrors.ocf.berkeley.edu/gnu"
+
 BINUTILS_VERSION="2.34"
 BINUTILS_FILE="binutils-$BINUTILS_VERSION"
-BINUTILS_URL="https://ftp.gnu.org/gnu/binutils/$BINUTILS_FILE.tar.gz"
+BINUTILS_URL="$GNU_MIRROR/binutils/$BINUTILS_FILE.tar.gz"
 
 GCC_VERSION="9.3.0"
 GCC_FILE="gcc-$GCC_VERSION"
-GCC_URL="https://ftp.gnu.org/gnu/gcc/gcc-$GCC_VERSION/$GCC_FILE.tar.gz"
+GCC_URL="$GNU_MIRROR/gcc/gcc-$GCC_VERSION/$GCC_FILE.tar.gz"
 
 SYS_NAME="$(uname -s)"
 INSTALL_BIN="install"
