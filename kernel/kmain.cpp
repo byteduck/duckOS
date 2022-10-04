@@ -43,8 +43,8 @@
 #include <kernel/filesystem/socketfs/SocketFS.h>
 #include <kernel/KernelMapper.h>
 #include <kernel/tasking/ProcessArgs.h>
-#include <kernel/filesystem/LinkedInode.h>
 #include <kernel/kstd/KLog.h>
+#include <kernel/tests/KernelTest.h>
 
 uint8_t boot_disk;
 
@@ -208,6 +208,12 @@ void kmain_late(){
 
 	//Try initializing the sound card
 	auto dev = AC97Device::detect();
+
+	//If we're running tests, do so
+	if(CommandLine::inst().get_option_value("kernel-tests") == "true") {
+		KernelTestRegistry::inst().run_tests();
+		while(true);
+	}
 
 	KLog::dbg("kinit", "Starting init...");
 

@@ -48,11 +48,14 @@ elif "$DUCKOS_QEMU" --display help | grep -iq cocoa; then
 	DUCKOS_QEMU_DISPLAY="--display cocoa"
 fi
 
+if [ -z "$DUCKOS_KERNEL_ARGS" ]; then
+  DUCKOS_KERNEL_ARGS="$@"
+fi
+
 # Run!
 DUCKOS_QEMU_ARGS="
 	-s
 	-kernel kernel/duckk32
-	-append \"\"
 	-drive file=$DUCKOS_IMAGE,cache=directsync,format=raw,id=disk,if=ide
 	-m 512M
 	-serial stdio
@@ -60,4 +63,4 @@ DUCKOS_QEMU_ARGS="
 	$DUCKOS_QEMU_DISPLAY
 	$DUCKOS_QEMU_ACCEL"
 
-"$DUCKOS_QEMU" $DUCKOS_QEMU_ARGS
+"$DUCKOS_QEMU" $DUCKOS_QEMU_ARGS -append "$DUCKOS_KERNEL_ARGS"

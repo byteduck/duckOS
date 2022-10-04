@@ -117,7 +117,9 @@ SET(KERNEL_SRCS
 		kstd/cstring.cpp
         kstd/kstdlib.cpp
         kstd/string.cpp
-        device/AC97Device.cpp)
+        device/AC97Device.cpp
+        tests/KernelTest.cpp
+        tests/kstd/TestMap.cpp)
 
 ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS})
 TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL)

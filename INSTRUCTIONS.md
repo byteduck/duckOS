@@ -51,3 +51,8 @@ To build something from the `edit` directory, pass the `edited-[thing]` to the `
 2. Run `make image` to make the disk image.
 4. Run `make qemu` to run qemu with the image you just made.
 5. Enjoy!
+
+## Running kernel unit tests
+To run kernel unit tests, run `make install` and `make image` as usual, and then use `make tests` to run tests. Instead of running init, the kernel will run unit tests after booting.
+
+Alternatively, supply the `kernel-tests` kernel argument to run tests.
