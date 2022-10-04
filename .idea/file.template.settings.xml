@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ExportableFileTemplateSettings">
+    <internal_templates>
+      <template name="C Header File.h" reformat="true" live-template-enabled="true" enabled="true" />
+      <template name="C Source File.c" reformat="true" live-template-enabled="true" enabled="true" />
+      <template name="C++ Class Header.h" reformat="true" live-template-enabled="true" enabled="true" />
+    </internal_templates>
+  </component>
+</project>
