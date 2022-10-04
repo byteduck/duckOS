@@ -26,7 +26,7 @@
 - macOS: `brew install coreutils e2fsprogs qemu bash gcc@11 cmake genext2fs nasm rsync`
   - You must also install [macFUSE](https://osxfuse.github.io) and `fuse-ext2`
     - A working, precompiled version of `fuse-ext2` is available [here](https://github.com/gpz500/fuse-ext2/releases)
-
+  - If you are on an Apple Silicon Mac, you may need to set the `CPATH=/opt/homebrew/include` and `LIBRARY_PATH=/opt/homebrew/lib` environment variables to get the toolchain to build.
 ## Building the toolchain
 1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site.)
 2. Make a cup of coffee or tea and wait. It will take a while to compile.
