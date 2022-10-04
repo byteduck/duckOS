@@ -143,7 +143,7 @@ bool panicked = false;
 	panicking = true;
 	tty->set_graphical(false);
 	printf("\033[41;97m\033[2J"); //Red BG, bright white FG
-	print("Good job, you crashed it.\nHere are the details, since you probably need them.\nTry not to mess it up again.\n\n");
+	print("Kernel panic!\n\nIf this occurs many times, then don't be afraid to report it on the\nGitHub repository.\n\n\nHere are the details, since you probably need them.\n");
 	printf("%s\n", error);
 
 	va_list list;
