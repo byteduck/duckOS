@@ -54,9 +54,9 @@ Result DiskDevice::write_blocks(uint32_t start_block, uint32_t count, const uint
 }
 
 DiskDevice::~DiskDevice() {
-	for(auto i = 0; i < _cache_regions.leaves().size(); i++)
-		if(_cache_regions.leaves()[i])
-			delete _cache_regions.leaves()[i];
+	// for(auto i = 0; i < _cache_regions.leaves().size(); i++)
+// 		if(_cache_regions.leaves()[i])
+// 			delete _cache_regions.leaves()[i];
 }
 
 size_t DiskDevice::used_cache_memory() {
