@@ -28,7 +28,6 @@
 class DiskDevice: public BlockDevice {
 public:
 	DiskDevice(unsigned major, unsigned minor): BlockDevice(major, minor) {}
-	~DiskDevice();
 
 	Result read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override final;
 	Result write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override final;
@@ -60,7 +59,7 @@ private:
 	inline size_t block_cache_region_start(size_t block) { return block - (block % blocks_per_cache_region()); }
 
 	//TODO: Free cache regions when low on memory
-	kstd::map<size_t, BlockCacheRegion*> _cache_regions;
+	kstd::map<size_t, kstd::shared_ptr<BlockCacheRegion>> _cache_regions;
 	SpinLock _cache_lock;
 
 	static size_t _used_cache_memory;

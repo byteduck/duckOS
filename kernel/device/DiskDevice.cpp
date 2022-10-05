@@ -53,12 +53,6 @@ Result DiskDevice::write_blocks(uint32_t start_block, uint32_t count, const uint
 	return write_uncached_blocks(start_block, count, buffer);
 }
 
-DiskDevice::~DiskDevice() {
-	for(auto i = 0; i < _cache_regions.leaves().size(); i++)
-		if(_cache_regions.leaves()[i])
-			delete _cache_regions.leaves()[i];
-}
-
 size_t DiskDevice::used_cache_memory() {
 	return _used_cache_memory;
 }
@@ -67,17 +61,17 @@ DiskDevice::BlockCacheRegion* DiskDevice::get_cache_region(size_t block) {
 	//See if we already have the block
 	auto& reg = _cache_regions[block_cache_region_start(block)];
 	if(reg)
-		return reg;
+		return reg.get();
 
 	//Create a new cache region
-	reg = new BlockCacheRegion(block_cache_region_start(block), block_size());
+	reg = kstd::make_shared<BlockCacheRegion>(block_cache_region_start(block), block_size());
 	_used_cache_memory += PAGE_SIZE;
 
 	//Read the blocks into it
 	read_uncached_blocks(reg->start_block, blocks_per_cache_region(), (uint8_t*) reg->region.virt->start);
 
 	//Return the requested region
-	return reg;
+	return reg.get();
 }
 
 DiskDevice::BlockCacheRegion::BlockCacheRegion(size_t start_block, size_t block_size):

@@ -21,42 +21,86 @@
 
 #include "utility.h"
 #include "pair.hpp"
-#include "vector.hpp"
 
 namespace kstd {
 	template<typename Key, typename Val>
 	class map {
 	public:
-		class leaf {
+		class Node;
+	
+		struct NodePair {
+			Node* parent;
+			Node* child;
+		};
+	
+		class Node {
 		public:
-			leaf(const pair<Key, Val>& data): data(data) {}
+			Node(const pair<Key, Val>& data): data(data) {}
 
 			pair<Key, Val> data;
-			leaf* left = nullptr;
-			leaf* right = nullptr;
-			bool exists = true;
+			Node* left = nullptr;
+			Node* right = nullptr;
+			
+			NodePair predecessor() {
+				if(!left) {
+					return {nullptr, nullptr};
+				}
+				auto* prev_node = this;
+				auto* cur_node = left;
+				while(cur_node->right) {
+					prev_node = cur_node;
+					cur_node = cur_node->right;
+				}
+				return {prev_node, cur_node};
+			}
+			
+			NodePair successor() {
+				if(!right) {
+					return {nullptr, nullptr};
+				}
+				auto* prev_node = this;
+				auto* cur_node = right;
+				while(cur_node->left) {
+					prev_node = cur_node;
+					cur_node = cur_node->left;
+				}
+				return {prev_node, cur_node};
+			}
+			
+			void delete_children() {
+				if(left) {
+					left->delete_children();
+					delete left;
+				}
+				if(right) {
+					right->delete_children();
+					delete right;
+				}
+			}
+		
 		};
 
 		map() = default;
 		~map() {
-			for(size_t i = 0; i < _leaves.size(); i++) {
-				delete _leaves[i];
+			if(m_root) {
+				m_root->delete_children();
+				delete m_root;
 			}
 		}
 
-		leaf* find_leaf(const Key& key) const {
-			if(!_root) {
+		Node* find_node(const Key& key) const {
+			if(!m_root) {
 				return nullptr;
 			}
 
-			auto* cur_leaf = _root;
-			while(cur_leaf) {
-				if(cur_leaf->data.first == key) {
-					return cur_leaf;
-				} else if(key < cur_leaf->data.first) {
-					cur_leaf = cur_leaf->left;
+			auto* cur_node = m_root;
+			while(cur_node) {
+				if(cur_node->data.first == key) {
+					return cur_node;
+				} else if(key < cur_node->data.first) {
+					cur_node = cur_node->left;
 				} else {
-					cur_leaf = cur_leaf->right;
+					cur_node = cur_node->right;
 				}
 			}
 
@@ -64,67 +108,123 @@ namespace kstd {
 		}
 
 		bool contains(const Key& key) const {
-			auto* leaf = find_leaf(key);
-			return leaf && leaf->exists;
+			return find_node(key);
 		}
 
-		leaf* insert(const pair<Key, Val>& elem) {
-			//TODO: Balance on insertion
-			if(!_root) {
-				_root = new leaf(elem);
-				_leaves.push_back(_root);
-				return _root;
+		Node* insert(const pair<Key, Val>& elem) {
+			// TODO: Balance on insertion
+			if(!m_root) {
+				m_root = new Node(elem);
+				m_size++;
+				return m_root;
 			}
 
-			auto* cur_leaf = _root;
+			auto* cur_node = m_root;
 			while(true) {
-				if(!cur_leaf->exists) {
-					cur_leaf->exists = true;
-					cur_leaf->data = elem;
-					return cur_leaf;
-				} else if(cur_leaf->data.first == elem.first) {
+				if(cur_node->data.first == elem.first) {
 					return nullptr;
-				} else if(elem.first < cur_leaf->data.first) {
-					if(cur_leaf->left) {
-						cur_leaf = cur_leaf->left;
+				} else if(elem.first < cur_node->data.first) {
+					if(cur_node->left) {
+						cur_node = cur_node->left;
 					} else {
-						cur_leaf->left = new leaf(elem);
-						_leaves.push_back(cur_leaf->left);
-						return cur_leaf->left;
+						cur_node->left = new Node(elem);
+						m_size++;
+						return cur_node->left;
 					}
 				} else {
-					if(cur_leaf->right) {
-						cur_leaf = cur_leaf->right;
+					if(cur_node->right) {
+						cur_node = cur_node->right;
 					} else {
-						cur_leaf->right = new leaf(elem);
-						_leaves.push_back(cur_leaf->right);
-						return cur_leaf->right;
+						cur_node->right = new Node(elem);
+						m_size++;
+						return cur_node->right;
 					}
 				}
 			}
 		}
 
 		void erase(const Key& key) {
-			auto* leaf = find_leaf(key);
-			if(!leaf || !leaf->exists)
+			// TODO: Balance on erase
+			if(!m_root)
 				return;
-			leaf->data.second = Val();
-			leaf->exists = false;
+
+			Node* prev_node = nullptr;
+			auto* cur_node = m_root;
+			while(cur_node) {
+				if(cur_node->data.first == key) {
+					m_size--;
+					if(!cur_node->left && !cur_node->right) {
+						// If the node doesn't have children, just remove it
+						if(prev_node && prev_node->left == cur_node) {
+							prev_node->left = nullptr;
+						} else if(prev_node) {
+							prev_node->right = nullptr;
+						} else {
+							m_root = nullptr;
+						}
+						delete cur_node;
+					} else if(cur_node == m_root || cur_node == prev_node->right) {
+						// If we're deleting the root or a node that's the right child, replace it with the successor
+						auto successor_pair = cur_node->successor();
+						if(successor_pair.child) {
+							cur_node->data = successor_pair.child->data;
+							if(successor_pair.parent == cur_node)
+								successor_pair.parent->right = successor_pair.child->right;
+							else
+								successor_pair.parent->left = successor_pair.child->right;
+							delete successor_pair.child;
+						} else {
+							// We don't have a successor - just replace the node with the left child.
+							cur_node->data = cur_node->left->data;
+							cur_node->right = cur_node->left->right;
+							auto* old_left = cur_node->left;
+							cur_node->left = cur_node->left->left;
+							delete old_left;
+						}
+					} else {
+						// If we're deleting the root or a node that's the left child, replace it with the predecessor
+						auto predecessor_pair = cur_node->predecessor();
+						if(predecessor_pair.child) {
+							cur_node->data = predecessor_pair.child->data;
+							if(predecessor_pair.parent == cur_node)
+								predecessor_pair.parent->left = predecessor_pair.child->left;
+							else
+								predecessor_pair.parent->right = predecessor_pair.child->left;
+							delete predecessor_pair.child;
+						} else {
+							// We don't have a predecessor - just replace the node with the right child.
+							cur_node->data = cur_node->right->data;
+							cur_node->left = cur_node->right->left;
+							auto* old_right = cur_node->right;
+							cur_node->right = cur_node->right->right;
+							delete old_right;
+						}
+					}
+					
+					break;
+				}
+				
+				prev_node = cur_node;
+				if(key < cur_node->data.first)
+					cur_node = cur_node->left;
+				else
+					cur_node = cur_node->right;
+			}
 		}
 
 		Val& operator[](const Key& key) {
-			auto* ret = find_leaf(key);
-			if(!ret || !ret->exists)
+			auto* ret = find_node(key);
+			if(!ret)
 				return insert({key, Val()})->data.second;
 			return ret->data.second;
 		}
-
-		const kstd::vector<leaf*>& leaves() {
-			return _leaves;
+		
+		size_t size() {
+			return m_size;
 		}
 
 	private:
-		kstd::vector<leaf*> _leaves;
-		leaf* _root = nullptr;
+		Node* m_root = nullptr;
+		size_t m_size = 0;
 	};
 }

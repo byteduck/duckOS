@@ -704,7 +704,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 	//Find the shared region
 	LOCK_N(m_shared_region_lock, __shmemlock);
 	MemoryRegion* pmem_region = nullptr;
-	auto* reg = m_shared_regions.find_leaf(id);
+	auto* reg = m_shared_regions.find_node(id);
 	if(reg)
 		pmem_region = reg->data.second;
 
@@ -785,7 +785,7 @@ Result PageDirectory::allow_shared_region(int id, pid_t called_pid, pid_t pid, b
 
 	//Find the physical region in question and if it doesn't exist, return EINVAL
 	//We could have permission to share it but have not attached it yet, so we search all of pmem
-	auto* preg = m_shared_regions.find_leaf(id);
+	auto* preg = m_shared_regions.find_node(id);
 	if(!preg)
 		return -EINVAL;
 	auto* phys = preg->data.second;
