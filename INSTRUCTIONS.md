@@ -23,9 +23,9 @@
 - Ubuntu/Debian: `apt install build-essential cmake bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo qemu-system-i386 qemu-utils nasm gawk grub2-common grub-pc rsync`
 - Arch: `pacman -S base-devel cmake gmp libmpc mpfr qemu qemu-arch-extra nasm grub rsync texinfo`
 - Fedora: `dnf install @development-tools grub2-tools-extra cmake gmp-devel mpfr-devel libmpc-devel qemu qemu-system-x86 nasm rsync texinfo` and `dnf group install "C Development Tools and Libraries"`
-- macOS: `brew install coreutils e2fsprogs qemu bash gcc@11 cmake genext2fs nasm rsync`
+- macOS: Install Xcode and launch it to install the developer tools. Then, run `brew install coreutils e2fsprogs qemu bash gcc@11 cmake genext2fs nasm rsync`
   - You must also install [macFUSE](https://osxfuse.github.io) and `fuse-ext2`
-    - A working, precompiled version of `fuse-ext2` is available [here](https://github.com/gpz500/fuse-ext2/releases)
+    - The latest version of FUSE-ext2 can be built by running `toolchain/build-ext2-fuse.sh`. Alternatively, an older binary version is available [here](https://github.com/gpz500/fuse-ext2/releases)
   - If you are on an Apple Silicon Mac, you may need to set the `CPATH=/opt/homebrew/include` and `LIBRARY_PATH=/opt/homebrew/lib` environment variables to get the toolchain to build.
 ## Building the toolchain
 1. Open the `toolchain` directory in your terminal and run `build-toolchain.sh`. (You will need an internet connection as it downloads the needed binutils/gcc releases from the GNU ftp site.)
