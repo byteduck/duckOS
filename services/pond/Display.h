@@ -49,15 +49,15 @@ public:
 	 */
 	Window* root_window();
 
-    /**
-     * Gets the wallpaper for the display.
-     */
-    void get_wallpaper();
+	/**
+	 * Gets the wallpaper for the display.
+	 */
+	void get_wallpaper();
 
-    /**
-     * Loads the config.
-     */
-    void load_config(std::map<std::string, std::string>& config);
+	/**
+	 * Loads the config.
+	 */
+	void load_config(std::map<std::string, std::string>& config);
 
 	/**
 	 * Sets the mouse window of the display.
@@ -140,7 +140,7 @@ public:
 
 	static Display& inst();
 
-    std::string _wallpaper_location; ///The location of the wallpaper.
+	std::string _wallpaper_location; ///The location of the wallpaper.
 
 
 private:
