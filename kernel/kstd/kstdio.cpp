@@ -143,7 +143,7 @@ bool panicked = false;
 	panicking = true;
 	tty->set_graphical(false);
 	printf("\033[41;97m\033[2J"); //Red BG, bright white FG
-	print("Whoops! Something terrible happened.\nIf you weren't expecting this, feel free to open an issue on GitHub to report it.\nHere are the details:\n");
+	print("Whoops! Something terrible happened.\nIf you weren't expecting this, please open an issue on GitHub to report it.\nHere are the details:\n");
 	printf("%s\n", error);
 
 	va_list list;
