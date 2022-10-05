@@ -34,7 +34,7 @@ IMAGE_NAME="duckOS.img"
 IMAGE_EXTRASIZE="100000"
 
 if [ "$SYSTEM" = "Darwin" ]; then
-    export PATH="/usr/local/opt/e2fsprogs/bin:/usr/local/opt/e2fsprogs/sbin:$PATH"
+    export PATH="/usr/local/opt/e2fsprogs/bin:/usr/local/opt/e2fsprogs/sbin:/opt/homebrew/opt/e2fsprogs/bin:/opt/homebrew/opt/e2fsprogs/sbin:$PATH"
     DU_COMMAND="gdu"
 fi
 
