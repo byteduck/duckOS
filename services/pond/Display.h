@@ -1,20 +1,20 @@
 /*
-    This file is part of duckOS.
+	This file is part of duckOS.
 
-    duckOS is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	duckOS is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    duckOS is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	duckOS is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
+	You should have received a copy of the GNU General Public License
+	along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
 
-    Copyright (c) Byteduck 2016-2021. All rights reserved.
+	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
 #pragma once
@@ -30,64 +30,60 @@
 #define WINDOW_RESIZE_BORDER 4
 
 class Window;
-
 class Mouse;
-
 class Display {
 public:
 	Display();
 
 	Gfx::Rect dimensions();
-
-	Gfx::Framebuffer &framebuffer();
-
+	Gfx::Framebuffer& framebuffer();
 	void clear(uint32_t color);
 
 	/**
 	 * Sets the root window of the display. Its framebuffer will be used to buffer draws.
 	 */
-	void set_root_window(Window *window);
+	void set_root_window(Window* window);
 
 	/**
 	 * Gets the root window of the display.
 	 */
-	Window *root_window();
+	Window* root_window();
 
-	/**
-	 * Gets the wallpaper for the display.
-	 */
-	void get_wallpaper();
+    /**
+     * Gets the wallpaper for the display.
+     */
+    void get_wallpaper();
 
-	/**
-	 * Loads the config.
-	 */
-	void load_config(std::map<std::string, std::string> &config);
+    /**
+     * Loads the config.
+     */
+    void load_config(std::map<std::string, std::string>& config);
 
 	/**
 	 * Sets the mouse window of the display.
 	 */
-	void set_mouse_window(Mouse *window);
+	void set_mouse_window(Mouse* window);
 
 	/**
 	 * Returns the mouse window of the display.
 	 */
-	Mouse *mouse_window();
+	Mouse* mouse_window();
 
 	/**
 	 * Adds a window to the display.
 	 */
-	void add_window(Window *window);
+	void add_window(Window* window);
 
 	/**
 	 * Removes a window (if it exists) from the display.
 	 */
-	void remove_window(Window *window);
+	void remove_window(Window* window);
 
 	/**
 	 * Marks a portion of the display to be redrawn
 	 * @param Gfx::Rect the absolute rect to be redrawn
 	 */
-	void invalidate(const Gfx::Rect &rect);
+	void invalidate(const Gfx::Rect& rect);
 
 	/**
 	 * Repaints the needed areas of the screen to the hidden screen buffer.
@@ -108,12 +104,12 @@ public:
 	/**
 	 * Moves a window to the front.
 	 */
-	void move_to_front(Window *window);
+	void move_to_front(Window* window);
 
 	/**
 	 * Focuses a window so that it will receive keyboard events.
 	 */
-	void focus(Window *window);
+	void focus(Window* window);
 
 	/**
 	 * Sends mouse events to the appropriate window(s). To be called after the mouse moves.
@@ -140,11 +136,11 @@ public:
 	 * Called when a window is hidden.
 	 * @param window The window that was hidden.
 	 */
-	void window_hidden(Window *window);
+	void window_hidden(Window* window);
 
-	static Display &inst();
+	static Display& inst();
 
-	std::string _wallpaper_location; ///The location of the wallpaper.
+    std::string _wallpaper_location; ///The location of the wallpaper.
 
 
 private:
@@ -160,27 +156,26 @@ private:
 
 	int framebuffer_fd = 0; ///The file descriptor of the framebuffer.
 	Gfx::Framebuffer _framebuffer; ///The framebuffer framebuffer.
-	Gfx::Image *_wallpaper = nullptr; ///The framebuffer representing the wallpaper.
+	Gfx::Image* _wallpaper = nullptr; ///The framebuffer representing the wallpaper.
 	Gfx::Rect _dimensions; ///The dimensions of the display.
 	std::vector<Gfx::Rect> invalid_areas; ///The invalidated areas that need to be redrawn.
-	std::vector<Window *> _windows; ///The windows on the display.
-	Mouse *_mouse_window = nullptr; ///The window representing the mouse cursor.
-	Window *_prev_mouse_window = nullptr; ///The previous window that the mouse cursor was in.
-	Window *_drag_window = nullptr; ///The current window being dragged.
-	Window *_mousedown_window = nullptr; ///The window receiving mouse events because it was clicked.
-	Window *_resize_window = nullptr; ///The window being resized.
+	std::vector<Window*> _windows; ///The windows on the display.
+	Mouse* _mouse_window = nullptr; ///The window representing the mouse cursor.
+	Window* _prev_mouse_window = nullptr; ///The previous window that the mouse cursor was in.
+	Window* _drag_window = nullptr; ///The current window being dragged.
+	Window* _mousedown_window = nullptr; ///The window receiving mouse events because it was clicked.
+	Window* _resize_window = nullptr; ///The window being resized.
 	Gfx::Point _resize_begin_point; ///The point the mouse was at when the window began resizing.
 	Gfx::Rect _resize_rect; ///The rect representing the new size of the resized window.
 	ResizeMode _resize_mode = NONE; ///The current resize mode.
-	Window *_root_window = nullptr; ///The root window of the display.
+	Window* _root_window = nullptr; ///The root window of the display.
 	timeval paint_time = {0, 0}; ///The last time that the display was painted.
 	bool display_buffer_dirty = true; ///Whether or not the buffer is dirty and needs to be flipped.
 	int _keyboard_fd; ///The file descriptor of the keyboard.
-	Window *_focused_window = nullptr; ///The currently focused window.
+	Window* _focused_window = nullptr; ///The currently focused window.
 	bool _can_flip_buffer = false; ///Whether or not the display buffer can be flipped.
-	Gfx::Rect _invalid_buffer_area = {-1, -1, -1,
-									  -1}; ///The invalid area of the display buffer that needs to be redrawn next flip
+	Gfx::Rect _invalid_buffer_area = {-1, -1, -1, -1}; ///The invalid area of the display buffer that needs to be redrawn next flip
 
-	static Display *_inst; ///The main instance of the display.
+	static Display* _inst; ///The main instance of the display.
 };
 
