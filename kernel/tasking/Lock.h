@@ -24,6 +24,21 @@ public:
 	virtual bool locked() = 0;
 	virtual void acquire() = 0;
 	virtual void release() = 0;
+
+	template<typename R, typename F>
+	R synced(F&& lambda) {
+		acquire();
+		R ret = lambda();
+		release();
+		return ret;
+	}
+
+	template<typename F>
+	void synced(F&& lambda) {
+		acquire();
+		lambda();
+		release();
+	}
 };
 
 class ScopedLocker {
