@@ -38,6 +38,7 @@
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/kstd/cstring.h>
 #include <kernel/kstd/KLog.h>
+#include "kernel/memory/SafePointer.h"
 
 Process* Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::shared_ptr<LinkedInode>(nullptr));
@@ -402,36 +403,29 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 	return -1;
 }
 
-int Process::sys_execve(char *filename, char **argv, char **envp) {
-	check_ptr(filename);
-	check_ptr(argv);
-	check_ptr(envp);
+int Process::sys_execve(UserspacePointer<char> filename, UserspacePointer<char*> argv, UserspacePointer<char*> envp) {
 	auto* args = new ProcessArgs(_cwd);
 	if(argv) {
 		int i = 0;
-		while(argv[i]) {
-			check_ptr(argv[i]);
-			args->argv.push_back(argv[i]);
+		while(argv.get(i)) {
+			args->argv.push_back(UserspacePointer<char>(argv.get(i)).str());
 			i++;
 		}
 	}
-	return exec(filename, args);
+	return exec(filename.str(), args);
 }
 
-int Process::sys_execvp(char *filename, char **argv) {
-	check_ptr(filename);
-	check_ptr(argv);
+int Process::sys_execvp(UserspacePointer<char> filename, UserspacePointer<char*> argv) {
 	auto* args = new ProcessArgs(_cwd);
 	if(argv) {
 		int i = 0;
-		while(argv[i]) {
-			check_ptr(argv[i]);
-			args->argv.push_back(argv[i]);
+		while(argv.get(i)) {
+			args->argv.push_back(UserspacePointer<char>(argv.get(i)).str());
 			i++;
 		}
 	}
 
-	kstd::string filename_str(filename);
+	auto filename_str= filename.str();
 
 	if(filename_str.find('/') == -1) {
 		filename_str = kstd::string("/bin/") + filename_str;
@@ -439,16 +433,15 @@ int Process::sys_execvp(char *filename, char **argv) {
 	return exec(filename_str, args);
 }
 
-int Process::sys_open(char *filename, int options, int mode) {
-	check_ptr(filename);
-	kstd::string path = filename;
+int Process::sys_open(UserspacePointer<char> filename, int options, int mode) {
+	kstd::string path = filename.str();
 	mode &= 04777; //We just want the permission bits
 	auto fd_or_err = VFS::inst().open(path, options, mode & (~_umask), _user, _cwd);
 	if(fd_or_err.is_error())
 		return fd_or_err.code();
 	_file_descriptors.push_back(fd_or_err.value());
 	fd_or_err.value()->set_owner(_self_ptr);
-	fd_or_err.value()->set_path(filename);
+	fd_or_err.value()->set_path(path);
 	fd_or_err.value()->set_id((int) _file_descriptors.size() - 1);
 	return (int)_file_descriptors.size() - 1;
 }
@@ -460,9 +453,8 @@ int Process::sys_close(int file) {
 	return 0;
 }
 
-int Process::sys_chdir(char *path) {
-	check_ptr(path);
-	kstd::string strpath = path;
+int Process::sys_chdir(UserspacePointer<char> path) {
+	kstd::string strpath = path.str();
 	auto inode_or_error = VFS::inst().resolve_path(strpath, _cwd, _user);
 	if(inode_or_error.is_error())
 		return inode_or_error.code();
@@ -472,18 +464,16 @@ int Process::sys_chdir(char *path) {
 	return SUCCESS;
 }
 
-int Process::sys_getcwd(char *buf, size_t length) {
-	check_ptr(buf);
+int Process::sys_getcwd(UserspacePointer<char> buf, size_t length) {
 	if(_cwd->name().length() > length)
 		return -ENAMETOOLONG;
 	kstd::string path = _cwd->get_full_path();
-	memcpy(buf, path.c_str(), min(length, path.length()));
-	buf[path.length()] = '\0';
+	buf.memcpy(path.c_str(), min(length, path.length()));
+	buf.set(path.length(), '\0');
 	return 0;
 }
 
-int Process::sys_readdir(int file, char *buf, size_t len) {
-	check_ptr(buf);
+int Process::sys_readdir(int file, char* buf, size_t len) {
 	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
 		return -EBADF;
 	return _file_descriptors[file]->read_dir_entries(buf, len);
@@ -1012,14 +1002,12 @@ int Process::sys_shmallow(int id, pid_t pid, int perms) {
 	return _page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE, perms & SHM_SHARE).code();
 }
 
-int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {
-	check_ptr(pollfd);
-
+int Process::sys_poll(UserspacePointer<pollfd> pollfd, nfds_t nfd, int timeout) {
 	//Build the list of PollBlocker::PollFDs
 	kstd::vector<PollBlocker::PollFD> polls;
 	polls.reserve(nfd);
 	for(nfds_t i = 0; i < nfd; i++) {
-		auto& poll = pollfd[i];
+		auto poll = pollfd.get(i);
 		//Make sure the fd is valid. If not, set revents to POLLINVAL
 		if(poll.fd < 0 || poll.fd >= (int) _file_descriptors.size() || !_file_descriptors[poll.fd]) {
 			poll.revents = POLLINVAL;
@@ -1027,6 +1015,7 @@ int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {
 			poll.revents = 0;
 			polls.push_back({poll.fd, _file_descriptors[poll.fd], poll.events});
 		}
+		pollfd.set(i, poll);
 	}
 
 	//Block
@@ -1035,9 +1024,10 @@ int Process::sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout) {
 
 	//Set appropriate revent
 	for(nfds_t i = 0; i < nfd; i++) {
-		auto& poll = pollfd[i];
+		auto poll = pollfd.get(i);
 		if(poll.fd == blocker.polled) {
 			poll.revents = blocker.polled_revent;
+			pollfd.set(i, poll);
 			break;
 		}
 	}

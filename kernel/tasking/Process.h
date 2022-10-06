@@ -35,6 +35,9 @@ class LinkedInode;
 
 namespace ELF {struct elf32_header;};
 
+template<typename T>
+class UserspacePointer;
+
 #define SHM_READ 0x1u
 #define SHM_WRITE 0x2u
 #define SHM_SHARE 0x4u
@@ -92,12 +95,12 @@ public:
 	ssize_t sys_write(int fd, uint8_t* buf, size_t count);
 	pid_t sys_fork(Registers& regs);
 	int exec(const kstd::string& filename, ProcessArgs* args);
-	int sys_execve(char *filename, char **argv, char **envp);
-	int sys_execvp(char *filename, char **argv);
-	int sys_open(char *filename, int options, int mode);
+	int sys_execve(UserspacePointer<char> filename, UserspacePointer<char*> argv, UserspacePointer<char*> envp);
+	int sys_execvp(UserspacePointer<char> filename, UserspacePointer<char*> argv);
+	int sys_open(UserspacePointer<char> filename, int options, int mode);
 	int sys_close(int file);
-	int sys_chdir(char *path);
-	int sys_getcwd(char *buf, size_t length);
+	int sys_chdir(UserspacePointer<char> path);
+	int sys_getcwd(UserspacePointer<char> buf, size_t length);
 	int sys_readdir(int file, char* buf, size_t len);
 	int sys_fstat(int file, char* buf);
 	int sys_stat(char* file, char* buf);
@@ -150,7 +153,7 @@ public:
 	int sys_shmattach(int id, void* addr, struct shm* s);
 	int sys_shmdetach(int id);
 	int sys_shmallow(int id, pid_t pid, int perms);
-	int sys_poll(struct pollfd* pollfd, nfds_t nfd, int timeout);
+	int sys_poll(UserspacePointer<pollfd> pollfd, nfds_t nfd, int timeout);
 	int sys_ptsname(int fd, char* buf, size_t bufsize);
 	int sys_sleep(timespec* time, timespec* remainder);
 	int sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg);
