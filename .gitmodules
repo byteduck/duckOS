@@ -3,6 +3,9 @@
 	url = https://github.com/byteduck/duckos-doom
 [submodule "doom"]
 	url = git@github.com:byteduck/duckos-doom
+[submodule "qt1"]
+	path = qt1
+	url = https://github.com/PF94/qt1
 [submodule "ports/qt1"]
 	path = ports/qt1
 	url = https://github.com/PF94/qt1
