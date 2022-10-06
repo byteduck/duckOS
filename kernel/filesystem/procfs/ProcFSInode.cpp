@@ -84,7 +84,7 @@ ino_t ProcFSInode::find_id(const kstd::string& name) {
 	return -ENOENT;
 }
 
-ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) {
+ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) {
 	if(_metadata.is_directory()) return -EISDIR;
 	switch(type) {
 		case Root:
@@ -95,7 +95,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 			auto str = CommandLine::inst().get_cmdline() + "\n";
 			if(start + length > str.length())
 				length = str.length() - start;
-			memcpy(buffer, str.c_str() + start, length);
+			buffer.write((unsigned char*) str.c_str() + start, length);
 			return length;
 		}
 
@@ -134,7 +134,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 
 			if(start + length > str.length())
 				length = str.length() - start;
-			memcpy(buffer, str.c_str() + start, length);
+			buffer.write((unsigned char*) str.c_str() + start, length);
 			return length;
 		}
 
@@ -146,7 +146,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 
 			if(start + length > str.length())
 				length = str.length() - start;
-			memcpy(buffer, str.c_str() + start, length);
+			buffer.write((unsigned char*) str.c_str() + start, length);
 			return length;
 		}
 
@@ -174,7 +174,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 
 			if(start + length > str.length())
 				length = str.length() - start;
-			memcpy(buffer, str.c_str() + start, length);
+			buffer.write((unsigned char*) str.c_str() + start, length);
 			return length;
 		}
 
@@ -227,7 +227,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDesc
 
 			if(start + length > str.length())
 				length = str.length() - start;
-			memcpy(buffer, str.c_str() + start, length);
+			buffer.write((unsigned char*) str.c_str() + start, length);
 			return length;
 		}
 
@@ -259,17 +259,17 @@ ResultRet<kstd::shared_ptr<LinkedInode>> ProcFSInode::resolve_link(const kstd::s
 	return VFS::inst().resolve_path(loc, base, user, parent_storage, options, recursion_level);
 }
 
-ssize_t ProcFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) {
+ssize_t ProcFSInode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) {
 	if(!_metadata.is_directory()) return -ENOTDIR;
 	LOCK(procfs.lock);
 
 	if(start == 0) {
 		DirectoryEntry ent(id, TYPE_DIR, ".");
-		memcpy(buffer, &ent, sizeof(DirectoryEntry));
+		buffer.set(ent);
 		return PROCFS_CDIR_ENTRY_SIZE;
 	} else if(start == PROCFS_CDIR_ENTRY_SIZE) {
 		DirectoryEntry ent(parent, TYPE_DIR, "..");
-		memcpy(buffer, &ent, sizeof(DirectoryEntry));
+		buffer.set(ent);
 		return PROCFS_PDIR_ENTRY_SIZE;
 	}
 
@@ -278,7 +278,7 @@ ssize_t ProcFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDe
 		auto& e = procfs.entries[i];
 		if(e.parent == id) {
 			if(cur_index >= start) {
-				memcpy(buffer, &e.dir_entry, sizeof(DirectoryEntry));
+				buffer.set(e.dir_entry);
 				return e.dir_entry.entry_length();
 			}
 			cur_index += e.dir_entry.entry_length();
@@ -287,7 +287,7 @@ ssize_t ProcFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDe
 	return 0;
 }
 
-ssize_t ProcFSInode::write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) {
+ssize_t ProcFSInode::write(size_t start, size_t length, SafePointer<uint8_t> buf, FileDescriptor* fd) {
 	return -EIO;
 }
 

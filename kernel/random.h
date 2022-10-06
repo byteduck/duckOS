@@ -20,8 +20,9 @@
 #pragma once
 
 #include <kernel/kstd/types.h>
+#include <kernel/memory/SafePointer.h>
 
 int rand();
 void srand(unsigned int seed);
-void get_random_bytes(uint8_t* buffer, size_t count);
+void get_random_bytes(SafePointer<uint8_t> buffer, size_t count);
 

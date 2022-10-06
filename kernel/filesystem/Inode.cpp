@@ -43,7 +43,7 @@ ResultRet<kstd::shared_ptr<LinkedInode>> Inode::resolve_link(const kstd::shared_
 	ASSERT(metadata().is_symlink());
 
 	auto* buf = new uint8_t[metadata().size + 1];
-	auto res = read(0, metadata().size, buf, nullptr);
+	auto res = read(0, metadata().size, KernelPointer<uint8_t>(buf), nullptr);
 	buf[metadata().size] = '\0';
 
 	if(res != metadata().size) {

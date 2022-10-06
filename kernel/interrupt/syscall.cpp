@@ -53,9 +53,9 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_CLOSE:
 			return cur_proc->sys_close((int)arg1);
 		case SYS_FSTAT:
-			return cur_proc->sys_fstat((int)arg1, (char*)arg2);
+			return cur_proc->sys_fstat((int)arg1, (struct stat*)arg2);
 		case SYS_STAT:
-			return cur_proc->sys_stat((char*)arg1, (char*)arg2);
+			return cur_proc->sys_stat((char*)arg1, (struct stat*)arg2);
 		case SYS_LSEEK:
 			return cur_proc->sys_lseek((int)arg1, (off_t)arg2, (int)arg3);
 		case SYS_GETPID:
@@ -71,7 +71,7 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_EXECVP:
 			return cur_proc->sys_execvp((char*)arg1, (char**)arg2);
 		case SYS_GETTIMEOFDAY:
-			return cur_proc->sys_gettimeofday((struct timespec*)arg1, (void*)arg2);
+			return cur_proc->sys_gettimeofday((struct timespec*)arg1, (void**)arg2);
 		case SYS_SIGACTION:
 			return cur_proc->sys_sigaction((int)arg1, (struct sigaction*)arg2, (struct sigaction*)arg3);
 		case SYS_KILL:
@@ -99,7 +99,7 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_ISATTY:
 			return cur_proc->sys_isatty((int)arg1);
 		case SYS_LSTAT:
-			return cur_proc->sys_lstat((char*)arg1, (char*)arg2);
+			return cur_proc->sys_lstat((char*)arg1, (struct stat*)arg2);
 		case SYS_SYMLINK:
 			return cur_proc->sys_symlink((char*)arg1, (char*)arg2);
 		case SYS_SYMLINKAT:
@@ -135,7 +135,7 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_GETEGID:
 			return cur_proc->sys_getegid();
 		case SYS_SETGROUPS:
-			return cur_proc->sys_setgroups((size_t)arg1, (const gid_t*)arg2);
+			return cur_proc->sys_setgroups((size_t)arg1, (gid_t*)arg2);
 		case SYS_GETGROUPS:
 			return cur_proc->sys_getgroups((int)arg1, (gid_t*)arg2);
 		case SYS_UMASK:
@@ -155,7 +155,7 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_MEMRELEASE:
 			return cur_proc->sys_memrelease((void*) arg1, (size_t) arg2);
 		case SYS_IOCTL:
-			return cur_proc->sys_ioctl((int)arg1, (unsigned) arg2, (void*) arg3);
+			return cur_proc->sys_ioctl((int)arg1, (unsigned) arg2, (void**) arg3);
 		case SYS_GETPPID:
 			return cur_proc->ppid();
 		case SYS_SHMCREATE:

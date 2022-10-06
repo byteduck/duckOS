@@ -45,7 +45,7 @@ void Pipe::remove_writer() {
 	}
 }
 
-ssize_t Pipe::read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) {
+ssize_t Pipe::read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	if(!_writers && _queue.empty()) return 0;
 	if(!_blocker.is_ready())
 		TaskManager::current_thread()->block(_blocker);
@@ -53,13 +53,13 @@ ssize_t Pipe::read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t co
 	if(count > _queue.size())
 		count = _queue.size();
 	for(size_t i = 0; i < count; i++)
-		buffer[i] = _queue.pop_front();
+		buffer.set(i, _queue.pop_front());
 	if(_queue.empty() && _writers)
 		_blocker.set_ready(false);
 	return count;
 }
 
-ssize_t Pipe::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+ssize_t Pipe::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	//TODO: Block writes bigger than available space
 	if(_readers == 0) {
 		TaskManager::current_process()->kill(SIGPIPE);
@@ -71,7 +71,7 @@ ssize_t Pipe::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, si
 	size_t nwrote = 0;
 	bool flag = true;
 	while(nwrote < count && flag) {
-		flag = _queue.push_back(buffer[nwrote]);
+		flag = _queue.push_back(buffer.get(nwrote));
 		nwrote++;
 	}
 

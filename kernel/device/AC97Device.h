@@ -99,8 +99,8 @@ public:
 	static ResultRet<kstd::shared_ptr<AC97Device>> detect();
 
 	//File
-	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
-	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
+	ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
+	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 
 	//IRQHandler
 	void handle_irq(Registers* regs) override;

@@ -313,8 +313,8 @@ PageDirectory* Process::page_directory() {
  * SYSCALLS *
  ************/
 
-void Process::check_ptr(const void *ptr) {
-	if((size_t) ptr >= HIGHER_HALF || !_page_directory->is_mapped((size_t) ptr)) {
+void Process::check_ptr(const void *ptr, bool write) {
+	if((size_t) ptr >= HIGHER_HALF || !_page_directory->is_mapped((size_t) ptr, write)) {
 		kill(SIGSEGV);
 	}
 }
@@ -324,18 +324,16 @@ void Process::sys_exit(int status) {
 	kill(SIGKILL);
 }
 
-ssize_t Process::sys_read(int fd, uint8_t *buf, size_t count) {
-	check_ptr(buf);
+ssize_t Process::sys_read(int fd, UserspacePointer<uint8_t> buf, size_t count) {
 	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd])
 		return -EBADF;
 	return _file_descriptors[fd]->read(buf, count);
 }
 
-ssize_t Process::sys_write(int fd, uint8_t *buf, size_t count) {
-	check_ptr(buf);
+ssize_t Process::sys_write(int fd, UserspacePointer<uint8_t> buffer, size_t count) {
 	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd])
 		return -EBADF;
-	ssize_t ret = _file_descriptors[fd]->write(buf, count);
+	ssize_t ret = _file_descriptors[fd]->write(buffer, count);
 	return ret;
 }
 
@@ -468,43 +466,45 @@ int Process::sys_getcwd(UserspacePointer<char> buf, size_t length) {
 	if(_cwd->name().length() > length)
 		return -ENAMETOOLONG;
 	kstd::string path = _cwd->get_full_path();
-	buf.memcpy(path.c_str(), min(length, path.length()));
+	buf.write(path.c_str(), min(length, path.length()));
 	buf.set(path.length(), '\0');
 	return 0;
 }
 
-int Process::sys_readdir(int file, char* buf, size_t len) {
+int Process::sys_readdir(int file, UserspacePointer<char> buf, size_t len) {
 	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
 		return -EBADF;
 	return _file_descriptors[file]->read_dir_entries(buf, len);
 }
 
-int Process::sys_fstat(int file, char *buf) {
+int Process::sys_fstat(int file, UserspacePointer<struct stat> buf) {
 	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
 		return -EBADF;
-	_file_descriptors[file]->metadata().stat((struct stat*)buf);
+	buf.checked<void>(true, 0, 1, [=]() {
+		_file_descriptors[file]->metadata().stat(buf.raw());
+	});
 	return 0;
 }
 
-int Process::sys_stat(char *file, char *buf) {
-	check_ptr(file);
-	check_ptr(buf);
-	kstd::string path(file);
+int Process::sys_stat(UserspacePointer<char> file, UserspacePointer<struct stat> buf) {
+	kstd::string path = file.str();
 	auto inode_or_err = VFS::inst().resolve_path(path, _cwd, _user);
 	if(inode_or_err.is_error())
 		return inode_or_err.code();
-	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
+	buf.checked<void>(true, 0, 1, [&]() {
+		inode_or_err.value()->inode()->metadata().stat(buf.raw());
+	});
 	return 0;
 }
 
-int Process::sys_lstat(char *file, char *buf) {
-	check_ptr(file);
-	check_ptr(buf);
-	kstd::string path(file);
+int Process::sys_lstat(UserspacePointer<char> file, UserspacePointer<struct stat> buf) {
+	kstd::string path = file.str();
 	auto inode_or_err = VFS::inst().resolve_path(path, _cwd, _user, nullptr, O_INTERNAL_RETLINK);
 	if(inode_or_err.is_error())
 		return inode_or_err.code();
-	inode_or_err.value()->inode()->metadata().stat((struct stat*)buf);
+	buf.checked<void>(true, 0, 1, [&]() {
+		inode_or_err.value()->inode()->metadata().stat(buf.raw());
+	});
 	return 0;
 }
 
@@ -514,41 +514,36 @@ int Process::sys_lseek(int file, off_t off, int whence) {
 	return _file_descriptors[file]->seek(off, whence);
 }
 
-int Process::sys_waitpid(pid_t pid, int* status, int flags) {
+int Process::sys_waitpid(pid_t pid, UserspacePointer<int> status, int flags) {
 	//TODO: Flags
-	if(status)
-		check_ptr(status);
 	WaitBlocker blocker(TaskManager::current_thread(), pid);
 	TaskManager::current_thread()->block(blocker);
 	if(blocker.error())
 		return blocker.error();
 	if(status)
-		*status = blocker.exit_status();
+		status.set(blocker.exit_status());
 	return blocker.waited_pid();
 }
 
-int Process::sys_gettimeofday(timespec *t, void *z) {
-	check_ptr(t);
-	check_ptr(z);
-	*t = Time::now().to_timespec();
+int Process::sys_gettimeofday(UserspacePointer<timespec> t, UserspacePointer<void*> z) {
+	t.set(Time::now().to_timespec());
 	return 0;
 }
 
-int Process::sys_sigaction(int sig, sigaction_t *new_action, sigaction_t *old_action) {
-	check_ptr(new_action);
-	check_ptr(old_action);
-	check_ptr((void*) new_action->sa_sigaction);
+int Process::sys_sigaction(int sig, UserspacePointer<sigaction> new_action, UserspacePointer<sigaction> old_action) {
 	if(sig == SIGSTOP || sig == SIGKILL || sig < 1 || sig >= 32)
 		return -EINVAL;
 	{
 		//We don't want this interrupted or else we'd have a problem if it's needed before it's done
 		Interrupt::Disabler disabler;
 		if(old_action) {
-			memcpy(&old_action->sa_sigaction, &signal_actions[sig].action, sizeof(Signal::SigAction::action));
-			memcpy(&old_action->sa_flags, &signal_actions[sig].flags, sizeof(Signal::SigAction::flags));
+			auto old = old_action.get();
+			memcpy(&old.sa_sigaction, &signal_actions[sig].action, sizeof(Signal::SigAction::action));
+			memcpy(&old.sa_flags, &signal_actions[sig].flags, sizeof(Signal::SigAction::flags));
+			old_action.set(old);
 		}
-		signal_actions[sig].action = new_action->sa_sigaction;
-		signal_actions[sig].flags = new_action->sa_flags;
+		signal_actions[sig].action = new_action.get().sa_sigaction;
+		signal_actions[sig].flags = new_action.get().sa_flags;
 	}
 	return 0;
 }
@@ -600,58 +595,45 @@ int Process::sys_kill(pid_t pid, int sig) {
 	return 0;
 }
 
-int Process::sys_unlink(char* name) {
-	check_ptr(name);
-	kstd::string path(name);
-	auto ret = VFS::inst().unlink(path, _user, _cwd);
+int Process::sys_unlink(UserspacePointer<char> name) {
+	auto ret = VFS::inst().unlink(name.str(), _user, _cwd);
 	if(ret.is_error())
 		return ret.code();
 	return 0;
 }
 
-int Process::sys_link(char* oldpath, char* newpath) {
-	check_ptr(oldpath);
-	check_ptr(newpath);
-	kstd::string oldpath_str(oldpath);
-	kstd::string newpath_str(newpath);
-	return VFS::inst().link(oldpath_str, newpath_str, _user, _cwd).code();
+int Process::sys_link(UserspacePointer<char> oldpath, UserspacePointer<char> newpath) {
+	return VFS::inst().link(oldpath.str(), newpath.str(), _user, _cwd).code();
 }
 
-int Process::sys_rmdir(char* name) {
-	check_ptr(name);
-	kstd::string path(name);
-	auto ret = VFS::inst().rmdir(path, _user, _cwd);
+int Process::sys_rmdir(UserspacePointer<char> name) {
+	auto ret = VFS::inst().rmdir(name.str(), _user, _cwd);
 	if(ret.is_error())
 		return ret.code();
 	return 0;
 }
 
-int Process::sys_mkdir(char *path, mode_t mode) {
-	check_ptr(path);
-	kstd::string strpath(path);
+int Process::sys_mkdir(UserspacePointer<char> path, mode_t mode) {
 	mode &= 04777; //We just want the permission bits
-	auto ret = VFS::inst().mkdir(strpath, mode, _user, _cwd);
+	auto ret = VFS::inst().mkdir(path.str(), mode, _user, _cwd);
 	if(ret.is_error())
 		return ret.code();
 	return 0;
 }
 
-int Process::sys_mkdirat(int file, char *path, mode_t mode) {
+int Process::sys_mkdirat(int file, UserspacePointer<char> path, mode_t mode) {
 	return -1;
 }
 
-int Process::sys_truncate(char* path, off_t length) {
-	check_ptr(path);
-	kstd::string strpath(path);
-	return VFS::inst().truncate(strpath, length, _user, _cwd).code();
+int Process::sys_truncate(UserspacePointer<char> path, off_t length) {
+	return VFS::inst().truncate(path.str(), length, _user, _cwd).code();
 }
 
 int Process::sys_ftruncate(int file, off_t length) {
 	return -1;
 }
 
-int Process::sys_pipe(int filedes[2], int options) {
-	check_ptr(filedes);
+int Process::sys_pipe(UserspacePointer<int> filedes, int options) {
 	options &= (O_CLOEXEC | O_NONBLOCK);
 
 	//Make the pipe
@@ -666,7 +648,7 @@ int Process::sys_pipe(int filedes[2], int options) {
 	pipe_read_fd->set_fifo_reader();
 	_file_descriptors.push_back(pipe_read_fd);
 	pipe_read_fd->set_id((int) _file_descriptors.size() - 1);
-	filedes[0] = (int) _file_descriptors.size() - 1;
+	filedes.set(0, (int) _file_descriptors.size() - 1);
 
 	//Make the write FD
 	auto pipe_write_fd = kstd::make_shared<FileDescriptor>(pipe);
@@ -675,7 +657,7 @@ int Process::sys_pipe(int filedes[2], int options) {
 	pipe_write_fd->set_fifo_writer();
 	_file_descriptors.push_back(pipe_write_fd);
 	pipe_write_fd->set_id((int) _file_descriptors.size() - 1);
-	filedes[1] = (int) _file_descriptors.size() - 1;
+	filedes.set(1, (int) _file_descriptors.size() - 1);
 
 	return SUCCESS;
 }
@@ -710,39 +692,31 @@ int Process::sys_isatty(int file) {
 	return _file_descriptors[file]->file()->is_tty() ? 1 : -ENOTTY;
 }
 
-int Process::sys_symlink(char* file, char* linkname) {
-	check_ptr(file);
-	check_ptr(linkname);
-	kstd::string file_str(file);
-	kstd::string linkname_str(linkname);
-	return VFS::inst().symlink(file_str, linkname_str, _user, _cwd).code();
+int Process::sys_symlink(UserspacePointer<char> file, UserspacePointer<char> linkname) {
+	return VFS::inst().symlink(file.str(), linkname.str(), _user, _cwd).code();
 }
 
-int Process::sys_symlinkat(char* file, int dirfd, char* linkname) {
+int Process::sys_symlinkat(UserspacePointer<char> file, int dirfd, UserspacePointer<char> linkname) {
 	return -1;
 }
 
-int Process::sys_readlink(char* file, char* buf, size_t bufsize) {
+int Process::sys_readlink(UserspacePointer<char> file, UserspacePointer<char> buf, size_t bufsize) {
 	if(bufsize < 0)
 		return -EINVAL;
-	check_ptr(file);
-	check_ptr(buf);
-	kstd::string file_str(file);
 
 	ssize_t ret;
-	auto ret_perhaps = VFS::inst().readlink(file_str, _user, _cwd, ret);
+	auto ret_perhaps = VFS::inst().readlink(file.str(), _user, _cwd, ret);
 	if(ret_perhaps.is_error())
 		return ret_perhaps.code();
 
 	auto& link_value = ret_perhaps.value();
-	memcpy(buf, link_value.c_str(), min(link_value.length(), bufsize - 1));
-	buf[min(bufsize - 1, link_value.length())] = '\0';
+	buf.write(link_value.c_str(), min(link_value.length(), bufsize - 1));
+	buf.set(min(bufsize - 1, link_value.length()), '\0');
 
 	return SUCCESS;
 }
 
-int Process::sys_readlinkat(struct readlinkat_args* args) {
-	check_ptr(args);
+int Process::sys_readlinkat(UserspacePointer<readlinkat_args> args) {
 	return -1;
 }
 
@@ -867,8 +841,7 @@ gid_t Process::sys_getegid() {
 	return _user.egid;
 }
 
-int Process::sys_setgroups(size_t count, const gid_t* gids) {
-	check_ptr(gids);
+int Process::sys_setgroups(size_t count, UserspacePointer<gid_t> gids) {
 	if(count < 0)
 		return -EINVAL;
 	if(!_user.can_setgid())
@@ -880,18 +853,18 @@ int Process::sys_setgroups(size_t count, const gid_t* gids) {
 	}
 
 	_user.groups.resize(count);
-	for(size_t i = 0; i < count; i++) _user.groups[i] = gids[i];
+	for(size_t i = 0; i < count; i++) _user.groups[i] = gids.get(i);
 	return SUCCESS;
 }
 
-int Process::sys_getgroups(int count, gid_t* gids) {
+int Process::sys_getgroups(int count, UserspacePointer<gid_t> gids) {
 	if(count < 0)
 		return -EINVAL;
 	if(count == 0)
 		return _user.groups.size();
 	if(count <  _user.groups.size())
 		return -EINVAL;
-	for(size_t i = 0; i <  _user.groups.size(); i++) gids[i] = _user.groups[i];
+	for(size_t i = 0; i <  _user.groups.size(); i++) gids.set(i, _user.groups[i]);
 	return SUCCESS;
 }
 
@@ -901,34 +874,27 @@ mode_t Process::sys_umask(mode_t new_mask) {
 	return ret;
 }
 
-int Process::sys_chmod(char* file, mode_t mode) {
-	check_ptr(file);
-	kstd::string filestr(file);
-	return VFS::inst().chmod(filestr, mode, _user, _cwd).code();
+int Process::sys_chmod(UserspacePointer<char> file, mode_t mode) {
+	return VFS::inst().chmod(file.str(), mode, _user, _cwd).code();
 }
 
 int Process::sys_fchmod(int fd, mode_t mode) {
 	return -1;
 }
 
-int Process::sys_chown(char* file, uid_t uid, gid_t gid) {
-	check_ptr(file);
-	kstd::string filestr(file);
-	return VFS::inst().chown(filestr, uid, gid, _user, _cwd).code();
+int Process::sys_chown(UserspacePointer<char> file, uid_t uid, gid_t gid) {
+	return VFS::inst().chown(file.str(), uid, gid, _user, _cwd).code();
 }
 
 int Process::sys_fchown(int fd, uid_t uid, gid_t gid) {
 	return -1;
 }
 
-int Process::sys_lchown(char* file, uid_t uid, gid_t gid) {
-	check_ptr(file);
-	kstd::string filestr(file);
-	return VFS::inst().chown(filestr, uid, gid, _user, _cwd, O_NOFOLLOW).code();
+int Process::sys_lchown(UserspacePointer<char> file, uid_t uid, gid_t gid) {
+	return VFS::inst().chown(file.str(), uid, gid, _user, _cwd, O_NOFOLLOW).code();
 }
 
-int Process::sys_ioctl(int fd, unsigned request, void* argp) {
-	check_ptr(argp);
+int Process::sys_ioctl(int fd, unsigned request, UserspacePointer<void*> argp) {
 	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd])
 		return -EBADF;
 	return _file_descriptors[fd]->ioctl(request, argp);
@@ -956,32 +922,32 @@ int Process::sys_memrelease(void* addr, size_t size) const {
 	return SUCCESS;
 }
 
-int Process::sys_shmcreate(void* addr, size_t size, struct shm* s) {
-	check_ptr(s);
-
+int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm> s) {
 	auto res = _page_directory->create_shared_region((size_t) addr, size, _pid);
 	if(res.is_error())
 		return res.code();
 
 	auto reg = res.value();
-	s->size = reg.virt->size;
-	s->ptr = (void*) reg.virt->start;
-	s->id = reg.virt->shm_id;
+	shm ret;
+	ret.size = reg.virt->size;
+	ret.ptr = (void*) reg.virt->start;
+	ret.id = reg.virt->shm_id;
+	s.set(ret);
 
 	return SUCCESS;
 }
 
-int Process::sys_shmattach(int id, void* addr, struct shm* s) {
-	check_ptr(s);
-
+int Process::sys_shmattach(int id, void* addr, UserspacePointer<struct shm> s) {
 	auto res = _page_directory->attach_shared_region(id, (size_t) addr, _pid);
 	if(res.is_error())
 		return res.code();
 
 	auto reg = res.value();
-	s->size = reg.virt->size;
-	s->ptr = (void*) reg.virt->start;
-	s->id = reg.phys->shm_id;
+	shm ret;
+	ret.size = reg.virt->size;
+	ret.ptr = (void*) reg.virt->start;
+	ret.id = reg.phys->shm_id;
+	s.set(ret);
 
 	return SUCCESS;
 }
@@ -1035,8 +1001,7 @@ int Process::sys_poll(UserspacePointer<pollfd> pollfd, nfds_t nfd, int timeout) 
 	return SUCCESS;
 }
 
-int Process::sys_ptsname(int fd, char* buf, size_t bufsize) {
-	check_ptr(buf);
+int Process::sys_ptsname(int fd, UserspacePointer<char> buf, size_t bufsize) {
 	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd])
 		return -EBADF;
 	auto file = _file_descriptors[fd];
@@ -1051,21 +1016,18 @@ int Process::sys_ptsname(int fd, char* buf, size_t bufsize) {
 		return -ERANGE;
 
 	//Copy the name into the buffer and return success
-	strcpy(buf, name.c_str());
+	buf.write(name.c_str(), name.length() + 1);
 	return SUCCESS;
 }
 
-int Process::sys_sleep(timespec* time, timespec* remainder) {
-	check_ptr(time);
-	check_ptr(remainder);
-	auto blocker = SleepBlocker(Time(*time));
+int Process::sys_sleep(UserspacePointer<timespec> time, UserspacePointer<timespec> remainder) {
+	auto blocker = SleepBlocker(Time(time.get()));
 	TaskManager::current_thread()->block(blocker);
-	*remainder = blocker.time_left().to_timespec();
+	remainder.set(blocker.time_left().to_timespec());
 	return blocker.was_interrupted() ? -EINTR : SUCCESS;
 }
 
 int Process::sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg) {
-	check_ptr((void*) entry_func);
 	auto thread = kstd::make_shared<Thread>(_self_ptr, _cur_tid++, entry_func, thread_func, arg);
 	_threads.push_back(thread);
 	TaskManager::queue_thread(thread);
@@ -1076,9 +1038,7 @@ int Process::sys_gettid() {
 	return TaskManager::current_thread()->tid();
 }
 
-int Process::sys_threadjoin(tid_t tid, void** retp) {
-	if(retp)
-		check_ptr(retp);
+int Process::sys_threadjoin(tid_t tid, UserspacePointer<void*> retp) {
 	auto cur_thread = TaskManager::current_thread();
 	if(tid > _threads.size() || !_threads[tid - 1])
 		return -ESRCH;

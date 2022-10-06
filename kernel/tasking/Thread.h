@@ -32,6 +32,7 @@
 class Process;
 class Blocker;
 class ProcessArgs;
+template<typename T> class UserspacePointer;
 class Thread {
 public:
 	enum State {
@@ -66,7 +67,7 @@ public:
 	void unblock();
 	bool is_blocked();
 	bool should_unblock();
-	Result join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, void** retp);
+	Result join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, UserspacePointer<void*> retp);
 
 	//Signals
 	bool call_signal_handler(int sig);

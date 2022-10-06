@@ -45,7 +45,7 @@ ResultRet<ELF::elf32_header*> ELF::read_header(FileDescriptor& fd) {
 	auto res = fd.seek(0, SEEK_SET);
 	if(res < 0) return res;
 
-	res = fd.read((uint8_t*)header, sizeof(ELF::elf32_header));
+	res = fd.read(KernelPointer<ELF::elf32_header>(header), sizeof(ELF::elf32_header));
 	if(res < 0) return res;
 
 
@@ -68,7 +68,7 @@ ResultRet<kstd::vector<ELF::elf32_segment_header>> ELF::read_program_headers(Fil
 
 	//Create the segment header vector and read the headers into it
 	kstd::vector<elf32_segment_header> program_headers(num_pheaders);
-	res = fd.read((uint8_t*)program_headers.storage(), pheader_size * num_pheaders);
+	res = fd.read(KernelPointer<elf32_segment_header>(program_headers.storage()), pheader_size * num_pheaders);
 	if(res <= 0) {
 		if(res < 0) return res;
 		else return -EIO;
@@ -87,7 +87,7 @@ ResultRet<kstd::string> ELF::read_interp(FileDescriptor& fd, kstd::vector<elf32_
 
 			//Read the interpreter
 			auto* interp = new char[header.p_filesz];
-			res = fd.read((uint8_t*) interp, header.p_filesz);
+			res = fd.read(KernelPointer<char>(interp), header.p_filesz);
 			if(res <= 0) {
 				if(res < 0) return res;
 				else return -EIO;
@@ -118,7 +118,7 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segm
 
 			//Read the section into the region
 			fd.seek(header.p_offset, SEEK_SET);
-			fd.read((uint8_t*) tmp_region.virt->start + (header.p_vaddr - loadloc_pagealigned), header.p_filesz);
+			fd.read(KernelPointer<uint8_t>((uint8_t*) tmp_region.virt->start + (header.p_vaddr - loadloc_pagealigned)), header.p_filesz);
 
 			//Allocate a program vmem region
 			MemoryRegion* vmem_region = page_directory->vmem_map().allocate_region(loadloc_pagealigned, loadsize_pagealigned);

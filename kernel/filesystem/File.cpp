@@ -52,20 +52,20 @@ bool File::is_fifo() {
 	return false;
 }
 
-ssize_t File::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+ssize_t File::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	return 0;
 }
 
-ssize_t File::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+ssize_t File::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	return 0;
 }
 
 
-ssize_t File::read_dir_entry(FileDescriptor &fd, size_t offset, DirectoryEntry *buffer) {
+ssize_t File::read_dir_entry(FileDescriptor &fd, size_t offset, SafePointer<DirectoryEntry> buffer) {
 	return 0;
 }
 
-int File::ioctl(unsigned request, void* argp) {
+int File::ioctl(unsigned request, SafePointer<void*> argp) {
 	return -ENOTTY;
 }
 

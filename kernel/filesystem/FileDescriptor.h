@@ -24,6 +24,7 @@
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/kstd/unix_types.h>
 #include "File.h"
+#include <kernel/memory/SafePointer.h>
 
 class DirectoryEntry;
 class Device;
@@ -54,12 +55,12 @@ public:
 	int id();
 
 	int seek(off_t offset, int whence);
-	ssize_t read(uint8_t* buffer, size_t count);
-	ssize_t read_dir_entry(DirectoryEntry *buffer);
-	ssize_t read_dir_entries(char *buffer, size_t len);
-	ssize_t write(const uint8_t* buffer, size_t count);
+	ssize_t read(SafePointer<uint8_t> buffer, size_t count);
+	ssize_t read_dir_entry(SafePointer<DirectoryEntry> buffer);
+	ssize_t read_dir_entries(SafePointer<char> buffer, size_t len);
+	ssize_t write(SafePointer<uint8_t> buffer, size_t count);
 	size_t offset() const;
-	int ioctl(unsigned request, void* argp);
+	int ioctl(unsigned request, SafePointer<void*> argp);
 
 	void set_fifo_reader();
 	void set_fifo_writer();

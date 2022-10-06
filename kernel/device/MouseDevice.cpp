@@ -74,21 +74,20 @@ MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128), IRQHandle
 	KLog::dbg("I8042/Mouse", "Mouse initialized!");
 }
 
-ssize_t MouseDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+ssize_t MouseDevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	LOCK(lock);
 	size_t ret = 0;
 	while(ret < count) {
 		if(event_buffer.empty()) break;
 		if((count - ret) < sizeof(MouseEvent)) break;
 		auto evt = event_buffer.pop_front();
-		memcpy(buffer, &evt, sizeof(MouseEvent));
+		buffer.write((uint8_t*) &evt, ret, sizeof(MouseEvent));
 		ret += sizeof(MouseEvent);
-		buffer += sizeof(MouseEvent);
 	}
 	return ret;
 }
 
-ssize_t MouseDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+ssize_t MouseDevice::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	return 0;
 }
 

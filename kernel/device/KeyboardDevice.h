@@ -45,8 +45,8 @@ public:
 	KeyboardDevice();
 
 	//File
-	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
-	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
+	ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
+	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 	bool can_read(const FileDescriptor& fd) override;
 	bool can_write(const FileDescriptor& fd) override;
 

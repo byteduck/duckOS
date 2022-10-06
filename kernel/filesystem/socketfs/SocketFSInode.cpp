@@ -71,7 +71,7 @@ ino_t SocketFSInode::find_id(const kstd::string& find_name) {
 	return -ENOENT;
 }
 
-ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) {
+ssize_t SocketFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) {
 	if(!is_open)
 		return -ENOENT;
 	if(!fd)
@@ -105,7 +105,7 @@ ssize_t SocketFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDe
 	//Read into the buffer from the queue
 	auto& queue = reader->data_queue;
 	for(size_t i = 0; i < length; i++) {
-		*buffer++ = queue->front();
+		buffer.set(i, queue->front());
 		queue->pop_front();
 	}
 
@@ -118,17 +118,17 @@ ResultRet<kstd::shared_ptr<LinkedInode>> SocketFSInode::resolve_link(const kstd:
 	return -ENOLINK;
 }
 
-ssize_t SocketFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) {
+ssize_t SocketFSInode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) {
 	if(id != 1)
 		return -ENOTDIR;
 
 	if(start == 0) {
 		DirectoryEntry ent(id, TYPE_DIR, ".");
-		memcpy(buffer, &ent, sizeof(DirectoryEntry));
+		buffer.set(ent);
 		return SOCKETFS_CDIR_ENTRY_SIZE;
 	} else if(start == SOCKETFS_CDIR_ENTRY_SIZE) {
 		DirectoryEntry ent(0, TYPE_DIR, "..");
-		memcpy(buffer, &ent, sizeof(DirectoryEntry));
+		buffer.set(ent);
 		return SOCKETFS_PDIR_ENTRY_SIZE;
 	}
 
@@ -139,7 +139,7 @@ ssize_t SocketFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, File
 		auto& e = fs.sockets[i];
 		if(e->is_open) {
 			if(cur_index >= start) {
-				memcpy(buffer, &e->dir_entry, sizeof(DirectoryEntry));
+				buffer.set(e->dir_entry);
 				return e->dir_entry.entry_length();
 			}
 			cur_index += e->dir_entry.entry_length();
@@ -149,18 +149,19 @@ ssize_t SocketFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, File
 	return 0;
 }
 
-ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) {
+ssize_t SocketFSInode::write(size_t start, size_t length, SafePointer<uint8_t> buf, FileDescriptor* fd) {
 	if(!is_open)
 		return -EIO;
 	if(!fd)
 		return -EINVAL;
 
 	LOCK(lock);
-	auto* packet = (const SocketFSPacket*) buf;
+	auto packet = SafePointer<SocketFSPacket>(buf).get();
+	auto packet_data = SafePointer<uint8_t>(buf.raw() + sizeof(SocketFSPacket), buf.is_user());
 
 	SocketFSClient* recipient = nullptr;
 	SocketFSClient* sender = nullptr;
-	bool is_broadcast = packet->type == SOCKETFS_TYPE_BROADCAST;
+	bool is_broadcast = packet.type == SOCKETFS_TYPE_BROADCAST;
 
 	//Find the client that the packet is coming from
 	auto client_hash = SocketFS::client_hash(fd);
@@ -184,23 +185,23 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 		//If it's a broadcast, send it to all clients
 		for(size_t i = 0; i < clients.size(); i++) {
 			//Share shm with client if we need to
-			if(packet->shm_id)
-				TaskManager::current_process()->sys_shmallow(packet->shm_id, clients[i].pid, packet->shm_perms);
+			if(packet.shm_id)
+				TaskManager::current_process()->sys_shmallow(packet.shm_id, clients[i].pid, packet.shm_perms);
 			//We don't care about errors here, we should just continue sending it to the rest of the clients
-			write_packet(clients[i], SOCKETFS_TYPE_MSG, sender->id, packet->length, packet->shm_id, packet->shm_perms, packet->data, fd->nonblock());
+			write_packet(clients[i], SOCKETFS_TYPE_MSG, sender->id, packet.length, packet.shm_id, packet.shm_perms, packet_data, fd->nonblock());
 		}
 		return SUCCESS;
 	} else if(sender == &host) {
 		//Find the client this packet has to go to
 		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i] == packet->recipient) {
+			if(clients[i] == packet.recipient) {
 				recipient = &clients[i];
 				break;
 			}
 		}
 	} else if(sender != &host) {
 		//Clients can only send packets to the host
-		if(packet->recipient != SOCKETFS_RECIPIENT_HOST)
+		if(packet.recipient != SOCKETFS_RECIPIENT_HOST)
 			return -EINVAL;
 		recipient = &host;
 	}
@@ -209,14 +210,14 @@ ssize_t SocketFSInode::write(size_t start, size_t length, const uint8_t* buf, Fi
 		return -EINVAL; //No such recipient
 
 	//Share shm with recipient if we need to
-	if(packet->shm_id) {
-		int shm_res = TaskManager::current_process()->sys_shmallow(packet->shm_id, recipient->pid, packet->shm_perms);
+	if(packet.shm_id) {
+		int shm_res = TaskManager::current_process()->sys_shmallow(packet.shm_id, recipient->pid, packet.shm_perms);
 		if (shm_res != SUCCESS)
 			return shm_res;
 	}
 
 	//Finally, write the packet to the correct queue
-	auto res = write_packet(*recipient, SOCKETFS_TYPE_MSG, sender->id, packet->length, packet->shm_id, packet->shm_perms, packet->data, fd->nonblock());
+	auto res = write_packet(*recipient, SOCKETFS_TYPE_MSG, sender->id, packet.length, packet.shm_id, packet.shm_perms, packet_data, fd->nonblock());
 	return res.code();
 }
 
@@ -287,7 +288,7 @@ void SocketFSInode::open(FileDescriptor& fd, int options) {
 
 	//Add the client and send the connect message to the host
 	clients.push_back(SocketFSClient(client_hash, fd.owner()));
-	write_packet(host, SOCKETFS_TYPE_MSG_CONNECT, client_hash, 0, 0, 0, nullptr, true);
+	write_packet(host, SOCKETFS_TYPE_MSG_CONNECT, client_hash, 0, 0, 0, KernelPointer<uint8_t>(nullptr), true);
 }
 
 void SocketFSInode::close(FileDescriptor& fd) {
@@ -311,7 +312,7 @@ void SocketFSInode::close(FileDescriptor& fd) {
 
 	for(size_t i = 0; i < clients.size(); i++) {
 		if(clients[i] == client_hash) {
-			write_packet(host, SOCKETFS_TYPE_MSG_DISCONNECT, client_hash, 0, 0, 0, nullptr, true);
+			write_packet(host, SOCKETFS_TYPE_MSG_DISCONNECT, client_hash, 0, 0, 0, KernelPointer<uint8_t>(nullptr), true);
 			clients.erase(i);
 			break;
 		}
@@ -332,7 +333,7 @@ bool SocketFSInode::can_read(const FileDescriptor& fd) {
 	return false;
 }
 
-Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t sender, size_t length, int shm_id, int shm_perms, const void* buffer, bool nonblock) {
+Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t sender, size_t length, int shm_id, int shm_perms, SafePointer<uint8_t> buffer, bool nonblock) {
 	//If there's room in the buffer, block (if O_NONBLOCK isn't set)
 	while(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE) {
 		if(!nonblock) {
@@ -353,9 +354,8 @@ Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t se
 		client.data_queue->push_back(*data++);
 
 	//Write the packet body
-	data = (uint8_t*) buffer;
 	for(size_t i = 0; i < length; i++)
-		client.data_queue->push_back(*data++);
+		client.data_queue->push_back(buffer.get(i));
 
 	return SUCCESS;
 }

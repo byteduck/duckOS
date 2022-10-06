@@ -28,13 +28,13 @@ public:
 
 	bool is_inode() override;
 	kstd::shared_ptr<Inode> inode();
-	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
-	ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, DirectoryEntry* buffer) override;
-	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
+	ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
+	ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, SafePointer<DirectoryEntry> buffer) override;
+	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 	void open(FileDescriptor& fd, int options) override;
 	void close(FileDescriptor& fd) override;
-	virtual bool can_read(const FileDescriptor& fd);
-	virtual bool can_write(const FileDescriptor& fd);
+	virtual bool can_read(const FileDescriptor& fd) override;
+	virtual bool can_write(const FileDescriptor& fd) override;
 
 private:
 	kstd::shared_ptr<Inode> _inode;

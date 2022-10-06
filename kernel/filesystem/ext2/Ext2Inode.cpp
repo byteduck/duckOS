@@ -117,7 +117,7 @@ void Ext2Inode::free_all_blocks() {
 	ext2fs().free_blocks(pointer_blocks);
 }
 
-ssize_t Ext2Inode::read(size_t start, size_t length, uint8_t* buf, FileDescriptor* fd) {
+ssize_t Ext2Inode::read(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) {
 	if(_metadata.is_device()) return 0;
 	if(_metadata.size == 0) return 0;
 	if(start > _metadata.size) return 0;
@@ -129,7 +129,7 @@ ssize_t Ext2Inode::read(size_t start, size_t length, uint8_t* buf, FileDescripto
 	//Symlinks less than 60 characters use the block pointers to store their data
 	if (_metadata.is_symlink() && _metadata.size < 60) {
 		ssize_t actual_length = min(_metadata.size - start, length);
-		memcpy(buf, ((uint8_t*)raw.block_pointers) + start, (size_t) actual_length);
+		buffer.write(((uint8_t*)raw.block_pointers) + start, (size_t) actual_length);
 		return actual_length;
 	}
 
@@ -146,18 +146,18 @@ ssize_t Ext2Inode::read(size_t start, size_t length, uint8_t* buf, FileDescripto
 		ext2fs().read_block(get_block_pointer(block_index), block_buf);
 		if(block_index == first_block) {
 			if(length < ext2fs().block_size() - first_block_start) {
-				memcpy(buf, block_buf + first_block_start, length);
+				buffer.write(block_buf + first_block_start, length);
 				bytes_left = 0;
 			} else {
-				memcpy(buf, block_buf + first_block_start, ext2fs().block_size() - first_block_start);
+				buffer.write(block_buf + first_block_start, ext2fs().block_size() - first_block_start);
 				bytes_left -= ext2fs().block_size() - first_block_start;
 			}
 		} else {
 			if(bytes_left < ext2fs().block_size()) {
-				memcpy(buf + (length - bytes_left), block_buf, bytes_left);
+				buffer.write(block_buf, length - bytes_left, bytes_left);
 				bytes_left = 0;
 			} else {
-				memcpy(buf + (length - bytes_left), block_buf, ext2fs().block_size());
+				buffer.write( block_buf, length - bytes_left, ext2fs().block_size());
 				bytes_left -= ext2fs().block_size();
 			}
 		}
@@ -167,7 +167,7 @@ ssize_t Ext2Inode::read(size_t start, size_t length, uint8_t* buf, FileDescripto
 	return length;
 }
 
-ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) {
+ssize_t Ext2Inode::write(size_t start, size_t length, SafePointer<uint8_t> buf, FileDescriptor* fd) {
 	if(_metadata.is_device()) return 0;
 	if(length == 0) return 0;
 	if(!exists()) return -ENOENT; //Inode was deleted
@@ -176,7 +176,7 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t* buf, FileDe
 
 	//If it's a symlink and less than 60 characters, use the block pointers to store the link
 	if(_metadata.is_symlink() && max(_metadata.size, start + length) < 60) {
-		memcpy(((uint8_t*)raw.block_pointers) + start, buf, length);
+		buf.read(((uint8_t*)raw.block_pointers) + start, length);
 		if(start + length > _metadata.size) _metadata.size = start + length;
 		write_inode_entry();
 		return length;
@@ -206,18 +206,18 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t* buf, FileDe
 		//Copy the appropriate portion of the buffer into the appropriate portion of the block buffer
 		if(block_index == first_block) {
 			if(length < ext2fs().block_size() - first_block_start) {
-				memcpy(block_buf + first_block_start, buf, length);
+				buf.read(block_buf + first_block_start, length);
 				bytes_left = 0;
 			} else {
-				memcpy(block_buf + first_block_start, buf, ext2fs().block_size() - first_block_start);
+				buf.read(block_buf + first_block_start, ext2fs().block_size() - first_block_start);
 				bytes_left -= ext2fs().block_size() - first_block_start;
 			}
 		} else {
 			if(bytes_left < ext2fs().block_size()) {
-				memcpy(block_buf, buf + (length - bytes_left), bytes_left);
+				buf.read(block_buf, length - bytes_left, bytes_left);
 				bytes_left = 0;
 			} else {
-				memcpy(block_buf, buf + (length - bytes_left), ext2fs().block_size());
+				buf.read(block_buf, length - bytes_left, ext2fs().block_size());
 				bytes_left -= ext2fs().block_size();
 			}
 		}
@@ -232,13 +232,13 @@ ssize_t Ext2Inode::write(size_t start, size_t length, const uint8_t* buf, FileDe
 	return length;
 }
 
-ssize_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) {
+ssize_t Ext2Inode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) {
 	LOCK(lock);
 
 	auto* buf = new uint8_t[ext2fs().block_size()];
 	size_t block = start / ext2fs().block_size();
 	size_t start_in_block = start % ext2fs().block_size();
-	if(read(block * ext2fs().block_size(), ext2fs().block_size(), buf, fd) == 0) {
+	if(read(block * ext2fs().block_size(), ext2fs().block_size(), KernelPointer<uint8_t>(buf), fd) == 0) {
 		delete[] buf;
 		return 0;
 	}
@@ -252,10 +252,13 @@ ssize_t Ext2Inode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDesc
 		return 0;
 	}
 
-	buffer->name_length = name_length;
-	buffer->id = dir->inode;
-	buffer->type = dir->type;
-	memcpy(buffer->name, &dir->type+1, name_length);
+	DirectoryEntry result;
+	result.name_length = name_length;
+	result.id = dir->inode;
+	result.type = dir->type;
+	buffer.set(result);
+	SafePointer<uint8_t> name_ptr((uint8_t*) buffer.raw()->name, buffer.is_user());
+	name_ptr.write(&dir->type+1, name_length);
 
 	delete[] buf;
 	return dir->size;
@@ -299,7 +302,7 @@ Result Ext2Inode::add_entry(const kstd::string &name, Inode &inode) {
 	size_t offset = 0;
 	ssize_t nread;
 	auto* buf = new DirectoryEntry;
-	while((nread = read_dir_entry(offset, buf, nullptr))) {
+	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(buf), nullptr))) {
 		offset += nread;
 		buf->name[buf->name_length] = '\0';
 		if(name == buf->name) {
@@ -375,7 +378,7 @@ Result Ext2Inode::remove_entry(const kstd::string &name) {
 	bool found = false;
 	size_t i = 0;
 	auto* buf = new DirectoryEntry;
-	while((nread = read_dir_entry(offset, buf, nullptr))) {
+	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(buf), nullptr))) {
 		offset += nread;
 		buf->name[buf->name_length] = '\0';
 		if(name == buf->name) {
@@ -777,7 +780,7 @@ Result Ext2Inode::try_remove_dir() {
 	size_t offset = 0;
 	size_t num_entries = 0;
 	kstd::vector<DirectoryEntry> entries;
-	while((nread = read_dir_entry(offset, buf, nullptr))) {
+	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(buf), nullptr))) {
 		if(num_entries >= 2) {
 			delete buf;
 			return -ENOTEMPTY;

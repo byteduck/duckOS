@@ -28,18 +28,18 @@ VGADevice::VGADevice(): BlockDevice(29, 0) {
 	_inst = this;
 }
 
-int VGADevice::ioctl(unsigned request, void* argp) {
+int VGADevice::ioctl(unsigned request, SafePointer<void*> argp) {
 	auto proc = TaskManager::current_thread()->process();
-	proc->check_ptr(argp);
+
 	switch(request) {
 		case IO_VIDEO_WIDTH:
-			*((int*) argp) = get_display_width();
+			SafePointer<int>(argp).set(get_display_width());
 			return 0;
 		case IO_VIDEO_HEIGHT:
-			*((int*) argp) = get_display_height();
+			SafePointer<int>(argp).set(get_display_height());
 			return 0;
 		case IO_VIDEO_MAP:
-			*((void**) argp) = map_framebuffer(proc);
+			argp.set(map_framebuffer(proc));
 			return 0;
 		default:
 			return -EINVAL;

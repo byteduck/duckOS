@@ -19,27 +19,10 @@
 
 #pragma once
 
-class Lock {
-public:
-	virtual bool locked() = 0;
-	virtual void acquire() = 0;
-	virtual void release() = 0;
+#define LOCK(lock) ScopedLocker __locker((lock))
+#define LOCK_N(lock, name) ScopedLocker name((lock))
 
-	template<typename R, typename F>
-	R synced(F&& lambda) {
-		acquire();
-		R ret = lambda();
-		release();
-		return ret;
-	}
-
-	template<typename F>
-	void synced(F&& lambda) {
-		acquire();
-		lambda();
-		release();
-	}
-};
+class Lock;
 
 class ScopedLocker {
 public:
@@ -49,6 +32,16 @@ private:
 	Lock& _lock;
 };
 
-#define LOCK(lock) ScopedLocker __locker((lock))
-#define LOCK_N(lock, name) ScopedLocker name((lock))
+class Lock {
+public:
+	virtual bool locked() = 0;
+	virtual void acquire() = 0;
+	virtual void release() = 0;
+
+	template<typename R, typename F>
+	R synced(F&& lambda) {
+		LOCK(*this);
+		return lambda();
+	}
+};
 

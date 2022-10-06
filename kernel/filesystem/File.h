@@ -21,6 +21,7 @@
 
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/Result.hpp>
+#include <kernel/memory/SafePointer.h>
 
 class FileDescriptor;
 class DirectoryEntry;
@@ -28,15 +29,15 @@ class File {
 public:
 	virtual ~File();
 	virtual bool is_inode();
-	virtual ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count);
-	virtual ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count);
-	virtual ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, DirectoryEntry* buffer);
+	virtual ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count);
+	virtual ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count);
+	virtual ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, SafePointer<DirectoryEntry> buffer);
 	virtual bool is_tty();
 	virtual bool is_pty_controller();
 	virtual bool is_pty_mux();
 	virtual bool is_pty();
 	virtual bool is_fifo();
-	virtual int ioctl(unsigned request, void* argp);
+	virtual int ioctl(unsigned request, SafePointer<void*> argp);
 	virtual void open(FileDescriptor& fd, int options);
 	virtual void close(FileDescriptor& fd);
 	virtual bool can_read(const FileDescriptor& fd);

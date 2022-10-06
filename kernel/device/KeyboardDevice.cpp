@@ -38,23 +38,25 @@ KeyboardDevice::KeyboardDevice(): CharacterDevice(13, 0), IRQHandler(1), _event_
 	_instance = this;
 }
 
-ssize_t KeyboardDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+ssize_t KeyboardDevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	LOCK(_lock);
 	size_t ret = 0;
+	SafePointer<KeyEvent> key_buffer = buffer;
+	int event_idx = 0;
 	while(ret < count) {
 		if(_event_buffer.empty())
 			break;
 		if((count - ret) < sizeof(KeyEvent))
 			break;
 		auto evt = _event_buffer.pop_front();
-		memcpy(buffer, &evt, sizeof(KeyEvent));
+		key_buffer.set(event_idx, evt);
 		ret += sizeof(KeyEvent);
-		buffer += sizeof(KeyEvent);
+		event_idx++;
 	}
 	return ret;
 }
 
-ssize_t KeyboardDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+ssize_t KeyboardDevice::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	return 0;
 }
 

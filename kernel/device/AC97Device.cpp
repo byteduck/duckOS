@@ -75,11 +75,11 @@ AC97Device::~AC97Device() {
 	PageDirectory::k_free_region(m_output_buffer_descriptor_region);
 }
 
-ssize_t AC97Device::read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) {
+ssize_t AC97Device::read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	return -ENOENT;
 }
 
-ssize_t AC97Device::write(FileDescriptor& fd, size_t, const uint8_t* buffer, size_t count) {
+ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffer, size_t count) {
 	//Write buffer by buffer
 	size_t n_written = 0;
 	while(count) {
@@ -108,8 +108,7 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, const uint8_t* buffer, siz
 		//Copy as much data as is applicable to the current output buffer
 		auto* output_buffer = (uint32_t*)(m_output_buffer_region.virt->start + PAGE_SIZE * m_current_output_buffer_page);
 		size_t num_bytes = min(count, PAGE_SIZE);
-		memcpy(output_buffer, buffer, num_bytes);
-		buffer += num_bytes;
+		buffer.read((uint8_t*) output_buffer, n_written, num_bytes);
 		count -= num_bytes;
 		n_written += num_bytes;
 

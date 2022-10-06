@@ -68,12 +68,12 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 	return true;
 }
 
-ssize_t MultibootVGADevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+ssize_t MultibootVGADevice::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	LOCK(_lock);
 	if(!double_buffer || !framebuffer) return -ENOSPC;
 	if(offset + count > framebuffer_size()) return -ENOSPC;
-	memcpy(((uint8_t*)double_buffer + offset), buffer, count);
-	memcpy(((uint8_t*)framebuffer + offset), buffer, count);
+	buffer.read(((uint8_t*)double_buffer + offset), count);
+	buffer.read(((uint8_t*)framebuffer + offset), count);
 	return count;
 }
 

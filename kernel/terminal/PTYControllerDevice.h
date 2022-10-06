@@ -30,12 +30,12 @@ public:
 	explicit PTYControllerDevice(unsigned int id);
 
 	//File
-	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
-	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
+	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
+	ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 	bool is_pty_controller() override;
 	bool can_read(const FileDescriptor& fd) override;
 	bool can_write(const FileDescriptor& fd) override;
-	virtual int ioctl(unsigned request, void* argp) override;
+	virtual int ioctl(unsigned request, SafePointer<void*> argp) override;
 
 	size_t putchars(const uint8_t* buffer, size_t count);
 	void notify_pty_closed();

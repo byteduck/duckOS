@@ -71,7 +71,7 @@ Term::Terminal* VirtualTTY::get_terminal() {
 	return terminal;
 }
 
-int VirtualTTY::ioctl(unsigned int request, void* argp) {
+int VirtualTTY::ioctl(unsigned int request, SafePointer<void*> argp) {
 	switch(request) {
 		case TIOSGFX:
 			_graphical = true;

@@ -53,7 +53,7 @@ void Ext2Filesystem::init() {
 bool Ext2Filesystem::probe(FileDescriptor& file){
 	file.seek(512 * 2, SEEK_SET); //Supercluster begins at partition sector + 2
 	auto buf = new uint8_t[512];
-	file.read(buf, 512);
+	file.read(KernelPointer<uint8_t>(buf), 512);
 	delete[] buf;
 	return ((ext2_superblock *)buf)->signature == EXT2_SIGNATURE;
 }

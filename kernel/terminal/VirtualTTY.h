@@ -45,7 +45,7 @@ private:
 	Term::Terminal* terminal = nullptr;
 
 	//File
-	int ioctl(unsigned request, void* argp) override;
+	int ioctl(unsigned request, SafePointer<void*> argp) override;
 
 	//KeyboardHandler
 	void handle_key(KeyEvent) override;
@@ -62,7 +62,7 @@ private:
 	void on_clear_line(int line) override;
 	void on_scroll(int lines) override;
 	void on_resize(const Term::Size& old_size, const Term::Size& new_size) override;
-	void emit(const uint8_t* data, size_t size);
+	void emit(const uint8_t* data, size_t size) override;
 
 	bool _active = false;
 	bool _graphical = false;

@@ -97,11 +97,11 @@ size_t BochsVGADevice::framebuffer_size() {
 	return display_height * display_width * sizeof(uint32_t);
 }
 
-ssize_t BochsVGADevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+ssize_t BochsVGADevice::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	LOCK(_lock);
 	if(!framebuffer) return -ENOSPC;
 	if(offset + count > framebuffer_size()) return -ENOSPC;
-	memcpy(((uint8_t*)framebuffer + offset), buffer, count);
+	buffer.read(((uint8_t*)framebuffer + offset), count);
 	return count;
 }
 
@@ -142,12 +142,12 @@ void* BochsVGADevice::map_framebuffer(Process* proc) {
 	return ret;
 }
 
-int BochsVGADevice::ioctl(unsigned int request, void* argp) {
+int BochsVGADevice::ioctl(unsigned int request, SafePointer<void*> argp) {
 	switch(request) {
 		case IO_VIDEO_OFFSET:
-			if((int)argp < 0 || (int)argp > display_height)
+			if((int)argp.raw() < 0 || (int)argp.raw() > display_height)
 				return -EINVAL;
-			write_register(VBE_DISPI_INDEX_Y_OFFSET, (int)argp);
+			write_register(VBE_DISPI_INDEX_Y_OFFSET, (int)argp.raw());
 			return SUCCESS;
 		default:
 			return VGADevice::ioctl(request, argp);

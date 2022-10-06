@@ -31,6 +31,6 @@ void srand(unsigned int seed) {
 	next = seed;
 }
 
-void get_random_bytes(uint8_t* buffer, size_t count) {
-	for(auto i = 0; i < count; i++) buffer[i] = rand();
+void get_random_bytes(SafePointer<uint8_t> buffer, size_t count) {
+	for(auto i = 0; i < count; i++) buffer.set(i, rand());
 }

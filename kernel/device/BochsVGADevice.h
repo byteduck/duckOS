@@ -56,7 +56,7 @@ class BochsVGADevice: public VGADevice {
 public:
 	static BochsVGADevice* create();
 
-	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
+	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 	void set_pixel(size_t x, size_t y, uint32_t value) override;
 
 	uint32_t* get_framebuffer();
@@ -75,7 +75,7 @@ private:
 	size_t framebuffer_size();
 	bool set_resolution(uint16_t width, uint16_t height);
 
-	virtual int ioctl(unsigned request, void* argp) override;
+	virtual int ioctl(unsigned request, SafePointer<void*> argp) override;
 
 	PCI::Address address = {0,0,0};
 	uint32_t framebuffer_paddr = 0;

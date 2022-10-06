@@ -34,7 +34,7 @@ KernelLogDevice& KernelLogDevice::inst() {
 	return *_inst;
 }
 
-ssize_t KernelLogDevice::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+ssize_t KernelLogDevice::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	static const char* log_colors[] = {"", "\033[97;41m", "\033[91m", "\033[93m", "\033[92m", "\033[94m", "\033[90m"};
 	static const char* log_names[] = {"?", "CRITICAL", "ERROR", "WARN", "SUCCESS", "INFO", "DEBUG"};
 
@@ -45,12 +45,13 @@ ssize_t KernelLogDevice::write(FileDescriptor& fd, size_t offset, const uint8_t*
 	#endif
 
 	auto ret = count;
+	int off = 0;
 
 	if(count < 1)
 		return 0; //We expect at least one character - the log level.
 	
 	count--;
-	int log_level = *(buffer++);
+	int log_level = buffer.get(off++);
 	if(log_level > 6)
 		log_level = 6;
 
@@ -61,8 +62,8 @@ ssize_t KernelLogDevice::write(FileDescriptor& fd, size_t offset, const uint8_t*
 
 		while(count--) {
 			//If the last character is a newline, ignore it. We're going to print that ourselves.
-			if(count || *buffer != '\n')
-				putch(*(buffer++));
+			if(count || buffer.get(off) != '\n')
+				putch(buffer.get(off++));
 		}
 
 		printf("\033[39;49m\n");

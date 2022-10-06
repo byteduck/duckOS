@@ -25,12 +25,12 @@ ZeroDevice::ZeroDevice(): CharacterDevice(1, 5) {
 
 }
 
-ssize_t ZeroDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+ssize_t ZeroDevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	size_t read = min(count, 512);
-	memset(buffer, 0, read);
+	buffer.memset(0, 0, read);
 	return read;
 }
 
-ssize_t ZeroDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
+ssize_t ZeroDevice::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	return count;
 }

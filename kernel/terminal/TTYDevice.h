@@ -31,11 +31,11 @@ public:
 	TTYDevice(unsigned major, unsigned minor);
 
 	//Device
-	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
-	ssize_t read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) override;
+	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
+	ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 	bool can_read(const FileDescriptor& fd) override;
 	bool can_write(const FileDescriptor& fd) override;
-	virtual int ioctl(unsigned request, void* argp) override;
+	virtual int ioctl(unsigned request, SafePointer<void*> argp) override;
 
 	bool is_tty() override;
 	void emit(uint8_t c);

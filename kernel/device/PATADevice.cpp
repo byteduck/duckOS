@@ -345,7 +345,7 @@ size_t PATADevice::block_size() {
 
 #include <kernel/filesystem/FileDescriptor.h>
 
-ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	size_t first_block = offset / block_size();
 	size_t first_block_start = offset % block_size();
 	size_t bytes_left = count;
@@ -365,21 +365,21 @@ ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, siz
 
 		if(block == first_block) {
 			if(count < block_size() - first_block_start) {
-				memcpy(buffer, block_buf + first_block_start, count);
+				buffer.write(block_buf + first_block_start, count);
 				nread += count;
 				bytes_left = 0;
 			} else {
-				memcpy(buffer, block_buf + first_block_start, block_size() - first_block_start);
+				buffer.write(block_buf + first_block_start, block_size() - first_block_start);
 				nread += block_size() - first_block_start;
 				bytes_left -= block_size() - first_block_start;
 			}
 		} else {
 			if(bytes_left < block_size()) {
-				memcpy(buffer + (count - bytes_left), block_buf, bytes_left);
+				buffer.write(block_buf, count - bytes_left, bytes_left);
 				nread += bytes_left;
 				bytes_left = 0;
 			} else {
-				memcpy(buffer + (count - bytes_left), block_buf, block_size());
+				buffer.write(block_buf, count - bytes_left, block_size());
 				nread += block_size();
 				bytes_left -= block_size();
 			}
@@ -391,7 +391,7 @@ ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, siz
 	return nread;
 }
 
-ssize_t PATADevice::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+ssize_t PATADevice::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	size_t first_block = offset / block_size();
 	size_t last_block = (offset + count) / block_size();
 	size_t first_block_start = offset % block_size();
@@ -413,18 +413,18 @@ ssize_t PATADevice::write(FileDescriptor& fd, size_t offset, const uint8_t* buff
 		//Copy the appropriate portion of the buffer into the appropriate portion of the block buffer
 		if(block == first_block) {
 			if(count < block_size() - first_block_start) {
-				memcpy(block_buf + first_block_start, buffer, count);
+				buffer.read(block_buf + first_block_start, count);
 				bytes_left = 0;
 			} else {
-				memcpy(block_buf + first_block_start, buffer, block_size() - first_block_start);
+				buffer.read(block_buf + first_block_start, block_size() - first_block_start);
 				bytes_left -= block_size() - first_block_start;
 			}
 		} else {
 			if(bytes_left < block_size()) {
-				memcpy(block_buf, buffer + (count - bytes_left), bytes_left);
+				buffer.read(block_buf, count - bytes_left, bytes_left);
 				bytes_left = 0;
 			} else {
-				memcpy(block_buf, buffer + (count - bytes_left), block_size());
+				buffer.read(block_buf, count - bytes_left, block_size());
 				bytes_left -= block_size();
 			}
 		}

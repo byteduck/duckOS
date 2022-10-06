@@ -42,7 +42,7 @@ public:
 	virtual void* map_framebuffer(Process* proc) = 0;
 
 	//File
-	virtual int ioctl(unsigned request, void* argp) override;
+	virtual int ioctl(unsigned request, SafePointer<void*> argp) override;
 private:
 	static VGADevice* _inst;
 };

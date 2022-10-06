@@ -23,11 +23,13 @@
 #include "Blocker.h"
 #include "TaskManager.h"
 #include "JoinBlocker.h"
-#include "kernel/KernelMapper.h"
+#include <kernel/KernelMapper.h>
+#include <kernel/interrupt/isr.h>
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/Stack.h>
 #include <kernel/kstd/KLog.h>
+#include <kernel/memory/SafePointer.h>
 
 Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
 	//Create the kernel stack
@@ -239,7 +241,7 @@ bool Thread::should_unblock() {
 	return _blocker && (_blocker->is_ready() || _blocker->was_interrupted());
 }
 
-Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, void** retp) {
+Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, UserspacePointer<void*> retp) {
 	//See if we're trying to join ourself
 	if(other.get() == this)
 		return -EDEADLK;
@@ -268,7 +270,7 @@ Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared
 		//Reap the joined thread and set the return status
 		other->reap();
 		if(retp)
-			*retp = other->return_value();
+			retp.set(other->return_value());
 
 		//Unset the joined thread
 		LOCK(_join_lock);
@@ -393,8 +395,9 @@ void Thread::handle_pagefault(Registers* regs) {
 
 	//Otherwise, try CoW and kill the process if it doesn't work
 	if(!_process->_page_directory->try_cow(err_pos)) {
-		if(regs->eip > HIGHER_HALF)
-			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d).", _process->pid(), _tid);
+		if(regs->eip > HIGHER_HALF) {
+			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x).", _process->pid(), _tid, err_pos);
+		}
 		_process->kill(SIGSEGV);
 	}
 }

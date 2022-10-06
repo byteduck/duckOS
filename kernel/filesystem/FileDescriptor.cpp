@@ -195,7 +195,7 @@ int FileDescriptor::id() {
 	return _id;
 }
 
-ssize_t FileDescriptor::read(uint8_t *buffer, size_t count) {
+ssize_t FileDescriptor::read(SafePointer<uint8_t> buffer, size_t count) {
 	if(!_readable) return -EBADF;
 	LOCK(lock);
 	if(_seek + count < 0) return -EOVERFLOW;
@@ -208,33 +208,32 @@ size_t FileDescriptor::offset() const {
 	return _seek;
 }
 
-ssize_t FileDescriptor::read_dir_entry(DirectoryEntry* buffer) {
+ssize_t FileDescriptor::read_dir_entry(SafePointer<DirectoryEntry> buffer) {
 	if(!_readable) return -EBADF;
 	LOCK(lock);
 	if(!metadata().is_directory()) return -ENOTDIR;
 	ssize_t nbytes = _file->read_dir_entry(*this, offset(), buffer);
 	if(nbytes > 0) {
 		if(_can_seek) _seek += nbytes;
-		return sizeof(DirectoryEntry) + buffer->name_length;
+		return sizeof(DirectoryEntry) + buffer.get().name_length;
 	}
 	return nbytes;
 }
 
-ssize_t FileDescriptor::read_dir_entries(char* buffer, size_t len) {
+ssize_t FileDescriptor::read_dir_entries(SafePointer<char> buffer, size_t len) {
 	if(!_readable) return -EBADF;
 	LOCK(lock);
 	if(!metadata().is_directory()) return -ENOTDIR;
 	ssize_t nbytes = 0;
 	auto* dirbuf = new DirectoryEntry;
 	while(true) {
-		ssize_t read = _file->read_dir_entry(*this, offset(), dirbuf);
+		ssize_t read = _file->read_dir_entry(*this, offset(), KernelPointer<DirectoryEntry>(dirbuf));
 		if(read > 0) {
 			if(_can_seek) _seek += read;
 			if(read + nbytes > len) break;
 			size_t entry_len = dirbuf->entry_length();
-			memcpy(buffer, dirbuf, entry_len);
+			buffer.write((const char*) dirbuf, nbytes, entry_len);
 			nbytes += entry_len;
-			buffer += entry_len;
 		} else if(read == 0) {
 			break; //Nothing left to read
 		} else {
@@ -246,7 +245,7 @@ ssize_t FileDescriptor::read_dir_entries(char* buffer, size_t len) {
 	return nbytes;
 }
 
-ssize_t FileDescriptor::write(const uint8_t *buffer, size_t count) {
+ssize_t FileDescriptor::write(SafePointer<uint8_t> buffer, size_t count) {
 	if(!_writable) return -EBADF;
 	LOCK(lock);
 	if(_append && _can_seek && metadata().exists()) _seek = metadata().size;
@@ -256,7 +255,7 @@ ssize_t FileDescriptor::write(const uint8_t *buffer, size_t count) {
 	return ret;
 }
 
-int FileDescriptor::ioctl(unsigned request, void* argp) {
+int FileDescriptor::ioctl(unsigned request, SafePointer<void*> argp) {
 	return _file->ioctl(request, argp);
 }
 

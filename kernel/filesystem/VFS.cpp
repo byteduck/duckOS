@@ -48,7 +48,6 @@ bool VFS::mount_root(Filesystem* fs) {
 	auto root_inode_or_err = fs->get_inode(root_inode_id);
 	if(root_inode_or_err.is_error()) return false;
 	auto root_inode = root_inode_or_err.value();
-
 	if(!root_inode->metadata().is_directory()) {
 		return false;
 	}
@@ -269,7 +268,7 @@ Result VFS::symlink(const kstd::string& file, const kstd::string& link_name, con
 	if(symlink_res.is_error()) return symlink_res.code();
 
 	//Write the symlink data
-	ssize_t nwritten = symlink_res.value()->write(0, file.length(), (uint8_t*) file.c_str(), nullptr);
+	ssize_t nwritten = symlink_res.value()->write(0, file.length(), KernelPointer<char>(file.c_str()), nullptr);
 	if(nwritten != file.length()) {
 		if(nwritten < 0) return nwritten;
 		return -EIO;

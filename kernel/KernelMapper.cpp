@@ -44,7 +44,7 @@ void KernelMapper::load_map() {
 	ASSERT(fd->file()->is_inode());
 	size_t file_size = fd->metadata().size;
 	auto* filebuf = new uint8_t[file_size];
-	fd->read(filebuf, file_size);
+	fd->read(KernelPointer<uint8_t>(filebuf), file_size);
 
 	symbols = new kstd::vector<Symbol>();
 

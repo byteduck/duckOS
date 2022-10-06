@@ -38,7 +38,7 @@ void putch(char c){
 	if(panicking)
 		tty->get_terminal()->write_char(c);
 	else if(tty && use_tty)
-		tty_desc->write((uint8_t*) &c, 1);
+		tty_desc->write(KernelPointer<uint8_t>((uint8_t*) &c), 1);
 	serial_putch(c);
 }
 
@@ -68,7 +68,7 @@ void print(const char* str){
 	if(panicking)
 		tty->get_terminal()->write_chars(str, strlen(str));
 	else if(tty && use_tty)
-		tty_desc->write((uint8_t*) str, strlen(str));
+		tty_desc->write(KernelPointer<uint8_t>((uint8_t*) str), strlen(str));
 	while(*str)
 		serial_putch(*(str++));
 }

@@ -36,13 +36,14 @@ TTYDevice::TTYDevice(unsigned int major, unsigned int minor): CharacterDevice(ma
 	_winsize.ws_col = 80;
 }
 
-ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, const uint8_t *buffer, size_t count) {
-	return tty_write(buffer, count);
+ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
+	return buffer.checked<ssize_t>(false, 0, count, [=]() {
+		return tty_write(buffer.raw(), count);
+	});
 }
 
-ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size_t count) {
+ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	LOCK(_input_lock);
-
 	//Block until there's something to read
 	while(!_buffer_blocker.is_ready()) {
 		TaskManager::current_thread()->block(_buffer_blocker);
@@ -60,14 +61,14 @@ ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size
 			if(c == '\n' || c == _termios.c_cc[VEOL]) {
 				//We got a newline, decrease the number of lines available and stop reading
 				_lines--;
-				buffer[nread++] = c;
+				buffer.set(nread++, c);
 				break;
 			} else if(c == '\0') {
 				//EOF, decrease lines available
 				_lines--;
 				break;
 			}
-			buffer[nread] = c;
+			buffer.set(nread, c);
 		}
 
 		//If we read all the lines or the buffer is empty, set the buffer blocker to not ready
@@ -75,7 +76,7 @@ ssize_t TTYDevice::read(FileDescriptor &fd, size_t offset, uint8_t *buffer, size
 	} else {
 		//Non-canonical mode
 		while(count--) {
-			*buffer++ = _input_buffer.pop_front();
+			buffer.set(nread, _input_buffer.pop_front());
 			nread++;
 		}
 
@@ -148,10 +149,10 @@ bool TTYDevice::can_write(const FileDescriptor& fd) {
 	return true;
 }
 
-int TTYDevice::ioctl(unsigned int request, void* argp) {
+int TTYDevice::ioctl(unsigned int request, SafePointer<void*> argp) {
 	auto cur_proc = TaskManager::current_process();
-	auto* termios_arg = (termios*)argp;
-	auto* winsize_arg = (winsize*)argp;
+	auto termios_arg = SafePointer<termios>(argp);
+	auto winsize_arg = SafePointer<winsize>(argp);
 	switch(request) {
 		case TIOCSCTTY:
 			cur_proc->set_tty(shared_ptr());
@@ -162,7 +163,7 @@ int TTYDevice::ioctl(unsigned int request, void* argp) {
 		case TIOCGPGRP:
 			return _pgid;
 		case TIOCSPGRP: {
-			auto pgid = (pid_t) argp;
+			auto pgid = (pid_t) argp.raw();
 			if(pgid <= 0)
 				return -EINVAL;
 			auto proc = TaskManager::process_for_pgid(pgid);
@@ -174,18 +175,18 @@ int TTYDevice::ioctl(unsigned int request, void* argp) {
 			return SUCCESS;
 		}
 		case TCGETS:
-			*termios_arg = _termios;
+			termios_arg.set(_termios);
 			return SUCCESS;
 		case TCSETS:
 		case TCSETSF:
 		case TCSETSW:
-			_termios = *termios_arg;
+			_termios = termios_arg.get();
 			return SUCCESS;
 		case TIOCGWINSZ:
-			*winsize_arg = _winsize;
+			winsize_arg.set(_winsize);
 			return SUCCESS;
 		case TIOCSWINSZ:
-			_winsize = *winsize_arg;
+			_winsize = winsize_arg.get();
 			if(_pgid != -1 && _pgid)
 				TaskManager::kill_pgid(_pgid, SIGWINCH);
 			return SUCCESS;

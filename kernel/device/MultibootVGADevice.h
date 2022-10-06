@@ -27,7 +27,7 @@ public:
 	static MultibootVGADevice* create(struct multiboot_info* mboot_header);
 	~MultibootVGADevice();
 
-	ssize_t write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) override;
+	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 	void set_pixel(size_t x, size_t y, uint32_t value) override;
 
 	bool is_textmode();

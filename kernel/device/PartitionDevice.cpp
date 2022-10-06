@@ -33,11 +33,11 @@ Result PartitionDevice::write_blocks(uint32_t block, uint32_t count, const uint8
 	return _parent->write_blocks(block + _offset, count, buffer);
 }
 
-ssize_t PartitionDevice::read(FileDescriptor &fd, size_t start, uint8_t *buffer, size_t count) {
+ssize_t PartitionDevice::read(FileDescriptor &fd, size_t start, SafePointer<uint8_t> buffer, size_t count) {
 	return _parent->read(fd, start + _offset, buffer, count);
 }
 
-ssize_t PartitionDevice::write(FileDescriptor& fd, size_t start, const uint8_t* buffer, size_t count) {
+ssize_t PartitionDevice::write(FileDescriptor& fd, size_t start, SafePointer<uint8_t> buffer, size_t count) {
 	return _parent->write(fd, start + _offset, buffer, count);
 }
 

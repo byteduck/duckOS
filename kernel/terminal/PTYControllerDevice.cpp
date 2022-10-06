@@ -24,22 +24,24 @@ PTYControllerDevice::PTYControllerDevice(unsigned int id): CharacterDevice(300, 
 	_pty = (new PTYDevice(id, shared_ptr()))->shared_ptr();
 }
 
-ssize_t PTYControllerDevice::write(FileDescriptor& fd, size_t offset, const uint8_t* buffer, size_t count) {
+ssize_t PTYControllerDevice::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	LOCK_N(_write_lock, write_locker);
 	LOCK_N(_ref_lock, ref_locker);
 	if(!_pty)
 		return 0;
+	int off = 0;
 	while(count--)
-		_pty->emit(*(buffer++));
+		_pty->emit(buffer.get(off++));
 	return count;
 }
 
-ssize_t PTYControllerDevice::read(FileDescriptor& fd, size_t offset, uint8_t* buffer, size_t count) {
+ssize_t PTYControllerDevice::read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	LOCK(_output_lock);
 	count = min(count, _output_buffer.size());
 	size_t count_loop = count;
+	int off = 0;
 	while(count_loop--)
-		*buffer++ = _output_buffer.pop_front();
+		buffer.set(off++, _output_buffer.pop_front());
 	return count;
 }
 
@@ -56,7 +58,7 @@ bool PTYControllerDevice::can_write(const FileDescriptor& fd) {
 	return _pty.get() != nullptr;
 }
 
-int PTYControllerDevice::ioctl(unsigned int request, void* argp) {
+int PTYControllerDevice::ioctl(unsigned int request, SafePointer<void*> argp) {
 	if(!_pty)
 		return -EIO;
 

@@ -336,9 +336,10 @@ public:
 	/**
 	 * Checks if a given virtual address is mapped to anything.
 	 * @param vaddr The virtual address to check.
+	 * @param permission Whether to check for write permission.
 	 * @return Whether or not the given virtual address is mapped.
 	 */
-	bool is_mapped(size_t vaddr);
+	bool is_mapped(size_t vaddr, bool write);
 
 	/**
 	 * Makes this page directory an identical copy of another, but with different physical memory.

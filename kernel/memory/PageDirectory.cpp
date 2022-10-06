@@ -861,20 +861,32 @@ void PageDirectory::set_entries(Entry* entries) {
 	_entries = entries;
 }
 
-bool PageDirectory::is_mapped(size_t vaddr) {
+bool PageDirectory::is_mapped(size_t vaddr, bool write) {
 	LOCK(_lock);
 	if(vaddr < HIGHER_HALF) { //Program space
 		size_t page = vaddr / PAGE_SIZE;
 		size_t directory_index = (page / 1024) % 1024;
 		if (!_entries[directory_index].data.present) return false;
 		if (!_page_tables[directory_index]) return false;
+		auto& entry = _page_tables[directory_index]->entries()[page % 1024];
+		if(!entry.data.present)
+			return false;
+		if(write) {
+			if(!entry.data.read_write) {
+				// If we need to check for write perms and the page is not writable, check for CoW
+				auto* region = _vmem_map.find_region(vaddr);
+				if(!region || !region->cow.marked_cow)
+					return false;
+			}
+		}
+		return true;
 	} else { //Kernel space
 		size_t page = (vaddr - HIGHER_HALF) / PAGE_SIZE;
 		size_t directory_index = (page / 1024) % 1024;
 		if (!kernel_entries[directory_index].data.present) return false;
+		auto& entry = kernel_page_tables[directory_index][page % 1024];;
+		return entry.data.present && (!write || entry.data.read_write);
 	}
-
-	return true;
 }
 
 void PageDirectory::fork_from(PageDirectory *parent, pid_t parent_pid, pid_t new_pid) {

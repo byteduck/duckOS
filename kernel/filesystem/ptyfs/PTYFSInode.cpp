@@ -78,22 +78,22 @@ ino_t PTYFSInode::find_id(const kstd::string& name) {
 	return 0;
 }
 
-ssize_t PTYFSInode::read(size_t start, size_t length, uint8_t* buffer, FileDescriptor* fd) {
+ssize_t PTYFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) {
 	//Hopefully we aren't haunted by a null pointer :)
 	return _pty->read(*fd, start, buffer, length);
 }
 
-ssize_t PTYFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDescriptor* fd) {
+ssize_t PTYFSInode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) {
 	if(type != ROOT)
 		return -ENOTDIR;
 
 	if(start == 0) {
 		DirectoryEntry ent(id, TYPE_DIR, ".");
-		memcpy(buffer, &ent, sizeof(DirectoryEntry));
+		buffer.set(ent);
 		return PTYFS_CDIR_ENTRY_SIZE;
 	} else if(start == PTYFS_CDIR_ENTRY_SIZE) {
 		DirectoryEntry ent(0, TYPE_DIR, "..");
-		memcpy(buffer, &ent, sizeof(DirectoryEntry));
+		buffer.set(ent);
 		return PTYFS_PDIR_ENTRY_SIZE;
 	}
 
@@ -103,7 +103,7 @@ ssize_t PTYFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDes
 	for(size_t i = 1; i < ptyfs._entries.size(); i++) {
 		auto& e = ptyfs._entries[i];
 		if(cur_index >= start) {
-			memcpy(buffer, &e->dir_entry, sizeof(DirectoryEntry));
+			buffer.set(e->dir_entry);
 			return e->dir_entry.entry_length();
 		}
 		cur_index += e->dir_entry.entry_length();
@@ -112,9 +112,9 @@ ssize_t PTYFSInode::read_dir_entry(size_t start, DirectoryEntry* buffer, FileDes
 	return 0;
 }
 
-ssize_t PTYFSInode::write(size_t start, size_t length, const uint8_t* buf, FileDescriptor* fd) {
+ssize_t PTYFSInode::write(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) {
 	//Hopefully we aren't haunted by a null pointer :)
-	return _pty->write(*fd, start, buf, length);
+	return _pty->write(*fd, start, buffer, length);
 }
 
 bool PTYFSInode::can_read(const FileDescriptor& fd) {
