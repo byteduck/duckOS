@@ -25,6 +25,7 @@
 #include <kernel/tasking/Thread.h>
 #include <kernel/tasking/Process.h>
 #include <kernel/tasking/Signal.h>
+#include "kernel/memory/SafePointer.h"
 
 void syscall_handler(Registers& regs){
 	TaskManager::current_thread()->enter_critical();
