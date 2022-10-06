@@ -380,6 +380,10 @@ size_t PageDirectory::entries_physaddr() {
 	return get_physaddr((size_t)_entries);
 }
 
+SpinLock& PageDirectory::lock() {
+	return _lock;
+}
+
 PageDirectory::Entry &PageDirectory::operator[](int index) {
 	return _entries[index];
 }

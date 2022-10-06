@@ -174,6 +174,12 @@ public:
 	size_t entries_physaddr();
 
 	/**
+	 * Gets the lock for the page directory. Hold this lock to prevent memory from being mapped or unmapped during an
+	 * operation.
+	 */
+	SpinLock& lock();
+
+	/**
 	 * @return The entry at index.
 	 */
 	Entry& operator[](int index);
