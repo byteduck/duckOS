@@ -1,3 +1,4 @@
+ADD_SUBDIRECTORY(about/)
 ADD_SUBDIRECTORY(calculator/)
 ADD_SUBDIRECTORY(terminal/)
 ADD_SUBDIRECTORY(4inarow/)
