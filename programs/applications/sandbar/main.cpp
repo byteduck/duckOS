@@ -50,6 +50,7 @@ int main(int argc, char** argv, char** envp) {
 	window->set_decorated(false);
 	window->set_position({0, 0});
 	window->set_resizable(false);
+	window->pond_window()->set_draggable(false);
 
 	//Make app list window
 	auto app_list_window = UI::Window::create();
