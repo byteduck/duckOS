@@ -48,7 +48,6 @@ int main(int argc, char** argv, char** envp) {
 	auto window = UI::Window::create();
 	window->set_title("Sandbar");
 	window->set_decorated(false);
-	window->set_position({0, 0});
 	window->set_resizable(false);
 	window->pond_window()->set_draggable(false);
 
@@ -100,12 +99,13 @@ int main(int argc, char** argv, char** envp) {
 
 	//Show the window
 	window->set_contents(layout);
-	window->resize({dims.width,window->dimensions().height});
+	window->resize({dims.width, window->dimensions().height});
+	window->set_position({0, dims.height - window->dimensions().height});
 	window->show();
 
 	//Position the app list window
 	app_list_window->resize(app_list_layout->preferred_size());
-	app_list_window->set_position({0, window->dimensions().height});
+	app_list_window->set_position({0, dims.height - app_list_window->dimensions().height - window->dimensions().height});
 
 	//Run event loop
 	UI::run();
