@@ -7,7 +7,15 @@ set(CMAKE_CXX_STANDARD 11)
 ENABLE_LANGUAGE(ASM_NASM)
 SET_SOURCE_FILES_PROPERTIES(asm/startup.s asm/tasking.s asm/int.s asm/syscall.s asm/gdt.s PROPERTIES LANGUAGE ASM_NASM)
 
-SET(CMAKE_CXX_FLAGS "-ffreestanding -Os -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
+SET(CMAKE_CXX_FLAGS "-ffreestanding -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
+
+# Build with debug symbols in debug mode
+ADD_COMPILE_OPTIONS("$<$<CONFIG:DEBUG>:-g>")
+ADD_COMPILE_OPTIONS("$<$<CONFIG:DEBUG>:-ggdb>")
+
+# Build with O2 in release mode
+ADD_COMPILE_OPTIONS("$<$<CONFIG:RELEASE>:-O2>")
+
 SET(CMAKE_CXX_FLAGS_DEBUG "-Werror")
 
 SET(CMAKE_ASM_NASM_COMPILER nasm)
