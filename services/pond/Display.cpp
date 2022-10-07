@@ -15,6 +15,7 @@
 	along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
 
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
+	Copyright (c) ChazizGRKB 2022.
 */
 
 #include "Display.h"
@@ -22,16 +23,16 @@
 #include <libgraphics/Image.h>
 #include <libgraphics/PNG.h>
 #include <libduck/Log.h>
+#include <libduck/Config.h>
 #include <unistd.h>
 #include <cstdio>
 #include <sys/ioctl.h>
 #include <kernel/device/VGADevice.h>
-#include <cstring>
 #include <sys/input.h>
 #include <libgraphics/Memory.h>
 
 using namespace Gfx;
-using Duck::Log;
+using Duck::Log, Duck::Config, Duck::ResultRet;
 
 Display* Display::_inst = nullptr;
 
@@ -93,10 +94,29 @@ void Display::clear(uint32_t color) {
 	}
 }
 
+void Display::get_wallpaper() {
+	auto cfg_wallpaper = Duck::Config::read_from("/etc/pond.conf");
+	if(!cfg_wallpaper.is_error()) {
+		auto& cfg = cfg_wallpaper.value();
+		if(cfg.has_section("desktop"))
+			Display::load_config(cfg["desktop"]);
+	} else {
+		Log::err("Pond configuration file does not exist.");
+	}
+}
+
+void Display::load_config(std::map<std::string, std::string>& config) {
+	if(!config["wallpaper"].empty()) {
+		Log::dbg("Pond wallpaper location is " + config["wallpaper"]);
+		_wallpaper_location = config["wallpaper"];
+	}
+}
+
 void Display::set_root_window(Window* window) {
 	_root_window = window;
 
-	FILE* wallpaper = fopen("/usr/share/wallpapers/duck.png", "re");
+	get_wallpaper();
+	FILE* wallpaper = fopen(_wallpaper_location.c_str(), "re");
 	if(!wallpaper) {
 		perror("Failed to open wallpaper");
 		return;
