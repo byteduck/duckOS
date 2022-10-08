@@ -52,6 +52,7 @@ public:
 	pid_t tid();
 	void* kernel_stack_top();
 	State state();
+	const char* state_name();
 	bool is_kernel_mode();
 	void* return_value();
 	void kill();

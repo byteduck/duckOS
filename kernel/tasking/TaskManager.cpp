@@ -192,7 +192,7 @@ void TaskManager::queue_thread(const kstd::shared_ptr<Thread>& thread) {
 		return;
 	}
 	if(thread->state() != Thread::ALIVE) {
-		KLog::warn("TaskManager", "Tried queuing blocked thread!");
+		KLog::warn("TaskManager", "Tried queuing %s thread!", thread->state_name());
 		return;
 	}
 	thread_queue->push_back(thread);

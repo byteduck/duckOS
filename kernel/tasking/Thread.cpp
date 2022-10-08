@@ -171,6 +171,21 @@ Thread::State Thread::state() {
 	return _state;
 }
 
+const char* Thread::state_name() {
+	switch(state()) {
+		case ALIVE:
+			return "Alive";
+		case ZOMBIE:
+			return "Zombie";
+		case DEAD:
+			return "Dead";
+		case BLOCKED:
+			return "Blocked";
+		default:
+			return "Unknown";
+	}
+}
+
 bool Thread::is_kernel_mode() {
 	return _process->is_kernel_mode();
 }
@@ -198,7 +213,7 @@ bool Thread::waiting_to_die() {
 }
 
 bool Thread::can_be_run() {
-	return _state == ALIVE && !_waiting_to_die;
+	return state() == ALIVE && !_waiting_to_die;
 }
 
 void Thread::enter_critical() {
@@ -214,8 +229,8 @@ void Thread::leave_critical() {
 }
 
 void Thread::block(Blocker& blocker) {
-	if(_state != ALIVE || _waiting_to_die)
-		PANIC("INVALID_BLOCK", "Tried to block thread %d of PID %d in state %d", _tid, _process->pid(), _state);
+	if(state() != ALIVE || _waiting_to_die)
+		PANIC("INVALID_BLOCK", "Tried to block thread %d of PID %d in state %s", _tid, _process->pid(), state_name());
 	ASSERT(!_blocker);
 
 	TaskManager::enabled() = false;
