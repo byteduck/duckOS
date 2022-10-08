@@ -93,6 +93,8 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 
 		case RootCmdLine: {
 			auto str = CommandLine::inst().get_cmdline() + "\n";
+			if(start >= str.length())
+				return 0;
 			if(start + length > str.length())
 				length = str.length() - start;
 			buffer.write((unsigned char*) str.c_str() + start, length);
@@ -132,6 +134,8 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 			str += numbuf;
 			str += "\n";
 
+			if(start >= str.length())
+				return 0;
 			if(start + length > str.length())
 				length = str.length() - start;
 			buffer.write((unsigned char*) str.c_str() + start, length);
@@ -144,6 +148,8 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 			kstd::string str = numbuf;
 			str += "\n";
 
+			if(start >= str.length())
+				return 0;
 			if(start + length > str.length())
 				length = str.length() - start;
 			buffer.write((unsigned char*) str.c_str() + start, length);
@@ -172,6 +178,8 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 				num_decimals++;
 			}
 
+			if(start >= str.length())
+				return 0;
 			if(start + length > str.length())
 				length = str.length() - start;
 			buffer.write((unsigned char*) str.c_str() + start, length);
@@ -225,6 +233,8 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 			str += numbuf;
 			str += "\n";
 
+			if(start >= str.length())
+				return 0;
 			if(start + length > str.length())
 				length = str.length() - start;
 			buffer.write((unsigned char*) str.c_str() + start, length);
