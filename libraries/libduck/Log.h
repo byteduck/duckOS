@@ -30,43 +30,37 @@ namespace Duck {
 		template<typename... ParamTs>
 		static inline void dbg(const ParamTs&... params) {
 			((kstream << "\06") << ... << params) << "\n";
-			if(std::cerr.rdbuf())
-				(std::cerr << "\033[90m[DEBUG] " << ... << params) << "\033[39;49m" << "\n";
+			(Stream::std_err << "\033[90m[DEBUG] " << ... << params) << "\033[39;49m" << "\n";
 		}
 
 		template<typename... ParamTs>
 		static inline void info(const ParamTs&... params) {
 			((kstream << "\05") << ... << params) << "\n";
-			if(std::cerr.rdbuf())
-				(std::cerr << "\033[94m[INFO] " << ... << params) << "\033[39;49m" << "\n";
+			(Stream::std_err << "\033[94m[INFO] " << ... << params) << "\033[39;49m" << "\n";
 		}
 		
 		template<typename... ParamTs>
 		static inline void success(const ParamTs&... params) {
 			((kstream << "\04") << ... << params) << "\n";
-			if(std::cerr.rdbuf())
-				(std::cerr << "\033[92m[SUCCESS] " << ... << params) << "\033[39;49m" << "\n";
+			(Stream::std_err << "\033[92m[SUCCESS] " << ... << params) << "\033[39;49m" << "\n";
 		}
 		
 		template<typename... ParamTs>
 		static inline void warn(const ParamTs&... params) {
 			((kstream << "\03") << ... << params) << "\n";
-			if(std::cerr.rdbuf())
-				(std::cerr << "\033[93m[WARN] " << ... << params) << "\033[39;49m" << "\n";
+			(Stream::std_err << "\033[93m[WARN] " << ... << params) << "\033[39;49m" << "\n";
 		}
 		
 		template<typename... ParamTs>
 		static inline void err(const ParamTs&... params) {
 			((kstream << "\02") << ... << params) << "\n";
-			if(std::cerr.rdbuf())
-				(std::cerr << "\033[91m[ERROR] " << ... << params) << "\033[39;49m" << "\n";
+			(Stream::std_err << "\033[91m[ERROR] " << ... << params) << "\033[39;49m" << "\n";
 		}
 
 		template<typename... ParamTs>
 		static inline void crit(const ParamTs&... params) {
 			((kstream << "\01") << ... << params) << "\n";
-			if(std::cerr.rdbuf())
-				(std::cerr << "\033[97;41m[CRITICAL] " << ... << params) << "\033[39;49m" << "\n";
+			(Stream::std_err << "\033[97;41m[CRITICAL] " << ... << params) << "\033[39;49m" << "\n";
 		}
 
 		template<typename... ParamTs>
