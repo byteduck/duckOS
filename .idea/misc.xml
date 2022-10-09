@@ -7,6 +7,7 @@
       <file path="$PROJECT_DIR$/src" />
     </sourceRoots>
     <excludeRoots>
+      <file path="$PROJECT_DIR$/cmake-build" />
       <file path="$PROJECT_DIR$/toolchain" />
     </excludeRoots>
   </component>
