@@ -1,0 +1,12 @@
+diff --git a/build-aux/config.sub b/build-aux/config.sub
+index a3f11f8..41d0eb9 100755
+--- a/build-aux/config.sub
++++ b/build-aux/config.sub
+@@ -1339,6 +1339,7 @@ case $os in
+ 	# Each alternative MUST end in a * to match a version number.
+ 	# sysv* is not here because it comes later, after sysvr4.
+ 	gnu* | bsd* | mach* | minix* | genix* | ultrix* | irix* \
++		   | duckos* \
+ 	     | *vms* | esix* | aix* | cnk* | sunos | sunos[34]*\
+ 	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
+ 	     | sym* | kopensolaris* | plan9* \
