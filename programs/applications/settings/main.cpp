@@ -22,9 +22,17 @@
 #include <libui/widget/Label.h>
 #include <libui/widget/Image.h>
 #include <libui/widget/Button.h>
+#include <csignal>
+#include <sys/wait.h>
 
-/* FIXME: This should be a ListView, but I can't for the love of god figure out how it works without it causing the app to close. -ChazizGRKB */
+void sigchld_handler(int sig) {
+	int dummy;
+	wait(&dummy);
+}
+
+// FIXME: This should be a ListView, but I can't for the love of god figure out how it works without it causing the app to close. -ChazizGRKB
 int main(int argc, char** argv, char** envp) {
+	signal(SIGCHLD, sigchld_handler); // Copied from Sandbar, fixes critical bug where applets remain "open" after being closed until control center is closed.
 	UI::init(argv, envp);
 	auto window = UI::Window::create();
 
@@ -37,7 +45,9 @@ int main(int argc, char** argv, char** envp) {
 		auto btn_layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL, 5);
 
 		btn_layout->add_child(UI::Image::make(app.icon()));
-		btn_layout->add_child(UI::Label::make(app.name()));
+		auto btn_label = UI::Label::make(app.name());
+		btn_label->set_alignment(UI::CENTER, UI::BEGINNING);
+		btn_layout->add_child(btn_label);
 
 		auto btn = UI::Button::make(btn_layout);
 		btn->set_sizing_mode(UI::PREFERRED);
@@ -55,9 +65,11 @@ int main(int argc, char** argv, char** envp) {
 
 	window->set_contents(settings_list);
 	window->set_resizable(true);
-	window->set_title("System settings");
+	window->set_title("Control center");
 	window->resize({500, 300});
 	window->show();
 
 	UI::run();
+
+	return 0;
 }
