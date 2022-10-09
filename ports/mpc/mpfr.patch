@@ -1,0 +1,12 @@
+diff --git a/config.sub b/config.sub
+index 1d8e98b..4f8b9bf 100755
+--- a/config.sub
++++ b/config.sub
+@@ -1364,6 +1364,7 @@ case $os in
+ 	# Each alternative MUST end in a * to match a version number.
+ 	# -sysv* is not here because it comes later, after sysvr4.
+ 	-gnu* | -bsd* | -mach* | -minix* | -genix* | -ultrix* | -irix* \
++	      | -duckos* \
+ 	      | -*vms* | -sco* | -esix* | -isc* | -aix* | -cnk* | -sunos | -sunos[34]*\
+ 	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+ 	      | -sym* | -kopensolaris* | -plan9* \

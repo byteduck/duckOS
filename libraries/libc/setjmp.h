@@ -28,8 +28,8 @@ __DECL_BEGIN
 struct __jmp_struct {}; //TODO
 typedef struct __jmp_struct jmp_buf[1];
 
-int setjmp(jmp_buf env);
-__attribute__((noreturn)) void longjmp(jmp_buf env, int val);
+inline int setjmp(jmp_buf env) { return -1; /* TODO */ }
+__attribute__((noreturn)) inline void longjmp(jmp_buf env, int val) { while(1); /* TODO */ }
 
 __DECL_END
 

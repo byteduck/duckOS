@@ -62,6 +62,18 @@ __DECL_BEGIN
 #define S_IFSOCK	0140000
 #define S_IFMT		0170000
 
+#define F_DUPFD 0
+#define F_GETFD 1
+#define F_SETFD 2
+#define F_GETFL 3
+#define F_SETFL 4
+#define F_ISTTY 5
+#define F_GETLK 6
+#define F_SETLK 7
+#define F_SETLKW 8
+
+#define FD_CLOEXEC 1
+
 int open(const char* pathname, int flags, ...);
 int openat(int dirfd, const char* pathname, int flags);
 int fcntl(int fd, int cmd, ...);

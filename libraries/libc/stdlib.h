@@ -99,6 +99,9 @@ int posix_openpt(int flags);
 char* ptsname(int fd);
 int ptsname_r(int fd, char* buf, size_t buflen);
 
+// Temporary files
+char* mktemp(char* pattern);
+
 __DECL_END
 
 #endif //DUCKOS_LIBC_STDLIB_H
