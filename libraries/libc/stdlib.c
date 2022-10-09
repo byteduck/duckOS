@@ -24,6 +24,7 @@
 #include <sys/syscall.h>
 #include <ctype.h>
 #include <limits.h>
+#include "string.h"
 
 #define MAX_ATEXIT_FUNCS 256
 
@@ -446,4 +447,24 @@ char* ptsname(int fd) {
 
 int ptsname_r(int fd, char* buf, size_t buflen) {
 	return syscall4(SYS_PTSNAME, fd, (int) buf, (int) buflen);
+}
+
+// Temporary files
+char* mktemp(char* pattern) {
+	size_t pattern_len = strlen(pattern);
+	if(pattern_len < 6) {
+		errno = EINVAL;
+		*pattern = '\0';
+		return pattern;
+	}
+
+	size_t template_start = pattern_len - 6;
+
+	const char chars[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+	do {
+		for(int i = 0; i < 6; i++)
+			pattern[template_start + i] = chars[rand() % sizeof(chars) - 1];
+	} while(access(pattern, F_OK));
+
+	return pattern;
 }

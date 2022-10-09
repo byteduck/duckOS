@@ -26,6 +26,8 @@
 
 __DECL_BEGIN
 
+#define _STDIO_H // We need this so gmp knows we have a stdio.h header :)
+
 #define FILENAME_MAX 255
 #define BUFSIZ 8192
 

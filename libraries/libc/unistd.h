@@ -41,6 +41,11 @@ __DECL_BEGIN
 #define SEEK_END 2
 #endif
 
+#define F_OK 1
+#define R_OK 2
+#define W_OK 3
+#define X_OK 4
+
 extern char** environ;
 
 pid_t fork();
@@ -102,6 +107,8 @@ int usleep(useconds_t usec);
 
 pid_t tcgetpgrp(int fd);
 int tcsetpgrp(int fd, pid_t pgid);
+
+unsigned int alarm(unsigned int seconds);
 
 void _exit(int status);
 

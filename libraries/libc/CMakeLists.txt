@@ -26,6 +26,7 @@ SET(SOURCES
         termios.c
         time.c
         unistd.c
+        utime.c
         ../libduck/SpinLock.cpp)
 
 SET(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-nostdlib -Wall")
