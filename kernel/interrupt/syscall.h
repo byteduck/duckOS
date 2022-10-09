@@ -92,6 +92,7 @@
 #define SYS_THREADJOIN 72
 #define SYS_THREADEXIT 73
 #define SYS_ISCOMPUTERON 74
+#define SYS_ACCESS 75
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

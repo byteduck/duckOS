@@ -182,6 +182,10 @@ int truncate(const char* path, off_t length) {
 	return syscall3(SYS_TRUNCATE, (int) path, (int) length);
 }
 
+int access(const char* path, int how) {
+	return syscall3(SYS_ACCESS, (int) path, (int) how);
+}
+
 int dup(int fd) {
 	return syscall2(SYS_DUP, fd);
 }
@@ -234,6 +238,10 @@ pid_t tcgetpgrp(int fd) {
 
 int tcsetpgrp(int fd, pid_t pgid) {
 	return ioctl(fd, TIOCSPGRP, pgid);
+}
+
+unsigned int alarm(unsigned int seconds) {
+	return -1; // TODO
 }
 
 void _exit(int status) {

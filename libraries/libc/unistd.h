@@ -85,6 +85,7 @@ int symlink(const char* target, const char* linkname);
 int rmdir(const char* pathname);
 int chown(const char* pathname, uid_t uid, gid_t gid);
 int truncate(const char* path, off_t length);
+int access(const char* path, int how);
 
 int dup(int fd);
 int dup2(int old_fd, int new_fd);
