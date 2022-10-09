@@ -86,3 +86,8 @@ ADD_CUSTOM_TARGET(tests
     COMMAND ${CMAKE_SOURCE_DIR}/scripts/qemu.sh kernel-tests=true
     USES_TERMINAL
 )
+
+ADD_CUSTOM_TARGET(qemu-shell
+    COMMAND ${CMAKE_SOURCE_DIR}/scripts/qemu.sh boot-terminal=true
+    USES_TERMINAL
+)

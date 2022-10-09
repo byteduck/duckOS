@@ -215,12 +215,20 @@ void kmain_late(){
 		while(true);
 	}
 
-	KLog::dbg("kinit", "Starting init...");
+	kstd::string launch_command;
+
+	if(CommandLine::inst().get_option_value("boot-terminal") == "true") {
+		KLog::dbg("kinit", "Starting dsh...");
+		launch_command = "/bin/dsh";
+	} else {
+		KLog::dbg("kinit", "Starting init...");
+		launch_command = "/bin/init";
+	}
 
 	//Replace kinit with init
 	auto* init_args = new ProcessArgs(VFS::inst().root_ref());
-	init_args->argv.push_back("/bin/init");
-	TaskManager::current_thread()->process()->exec(kstd::string("/bin/init"), init_args);
+	init_args->argv.push_back(launch_command);
+	TaskManager::current_thread()->process()->exec(launch_command, init_args);
 
 	//We shouldn't get here
 	PANIC("INIT_FAILED", "Failed to start init.");

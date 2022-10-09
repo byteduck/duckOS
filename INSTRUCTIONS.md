@@ -49,7 +49,7 @@ To build something from the `edit` directory, pass the `edited-[thing]` to the `
 ## Building and running duckOS
 1. In the `cmake-build` directory, run `make install` to build the kernel & programs.
 2. Run `make image` to make the disk image.
-4. Run `make qemu` to run qemu with the image you just made.
+4. Run `make qemu` to run qemu with the image you just made. If you want to boot to a shell, use `make qemu-console` instead.
 5. Enjoy!
 
 ## Running kernel unit tests
