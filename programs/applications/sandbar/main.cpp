@@ -60,7 +60,7 @@ int main(int argc, char** argv, char** envp) {
 	bool shown = false;
 	auto apps = App::get_all_apps();
 	for(auto& app : apps) {
-		if(app.hidden())
+		if(app.hidden() or app.is_setting())
 			continue;
 		auto btn_layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL, 4);
 		btn_layout->add_child(UI::Image::make(app.icon()));

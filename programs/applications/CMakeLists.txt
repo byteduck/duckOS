@@ -6,3 +6,7 @@ ADD_SUBDIRECTORY(monitor/)
 ADD_SUBDIRECTORY(sandbar/)
 ADD_SUBDIRECTORY(files/)
 ADD_SUBDIRECTORY(uxn/)
+ADD_SUBDIRECTORY(settings/)
+
+# oh look, setting applets!
+ADD_SUBDIRECTORY(settings_interface/)
