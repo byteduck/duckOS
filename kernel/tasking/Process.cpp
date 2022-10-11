@@ -1053,6 +1053,10 @@ int Process::sys_threadexit(void* return_value) {
 	return -1;
 }
 
+int Process::sys_access(UserspacePointer<char> pathname, int mode) {
+	return VFS::inst().access(pathname.str(), mode, _user, _cwd).code();
+}
+
 void Process::alert_thread_died() {
 	//Check if all the threads are dead. If they are, we are ready to die.
 	bool any_alive = false;

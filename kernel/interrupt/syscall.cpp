@@ -182,6 +182,8 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return cur_proc->sys_threadexit((void*) arg1);
 		case SYS_ISCOMPUTERON:
 			return true;
+		case SYS_ACCESS:
+			return cur_proc->sys_access((char*) arg1, (int) arg2);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

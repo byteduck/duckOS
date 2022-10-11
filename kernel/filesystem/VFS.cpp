@@ -420,6 +420,28 @@ ResultRet<VFS::Mount> VFS::get_mount(const kstd::shared_ptr<LinkedInode>& inode)
 	return -ENOENT;
 }
 
+Result VFS::access(kstd::string pathname, int mode, const User& user, const kstd::shared_ptr<LinkedInode>& base) {
+	#define F_OK 1
+	#define R_OK 2
+	#define W_OK 3
+	#define X_OK 4
+
+	auto res = resolve_path(pathname, base, user, nullptr, 0);
+	if(res.is_error()) return res.code();
+	auto meta = res.value()->inode()->metadata();
+
+	if(mode == F_OK)
+		return SUCCESS;
+	if((mode & R_OK) && !meta.can_read(user))
+		return EACCES;
+	if((mode & W_OK) && !meta.can_write(user))
+		return EACCES;
+	if((mode & X_OK) && !meta.can_execute(user))
+		return EACCES;
+
+	return SUCCESS;
+}
+
 
 /* * * * * * * *
  * Mount Class *

@@ -160,6 +160,7 @@ public:
 	int sys_gettid();
 	int sys_threadjoin(tid_t tid, UserspacePointer<void*> retp);
 	int sys_threadexit(void* return_value);
+	int sys_access(UserspacePointer<char> pathname, int mode);
 
 private:
 	friend class Thread;
