@@ -31,7 +31,7 @@ int main(int argc, char** argv, char** envp) {
 	auto window = UI::Window::create();
 
 	// Makes the page.
-	auto settings_page = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL, 4);
+	auto settings_page = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 4);
 
 	// Add placeholder monitor image.
 	auto screen = UI::Image::make(*UI::app_info().resource_image("monitor.png"));
@@ -43,28 +43,18 @@ int main(int argc, char** argv, char** envp) {
 	auto wallpaper_location = pond_config.value()["desktop"]["wallpaper"];
 	auto libui_theme = libui_config.value()["theme"]["name"];
 
-	// Make list of settings.
-	auto settings_list = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 4);
-
 	// Make placeholder strings for said list. File browse and dropdown menu widgetss are not implemented yet.
 	auto setting_wallpaper_string = UI::Label::make("Wallpaper: " + wallpaper_location);
 	auto setting_theme_string = UI::Label::make("Theme: " + libui_theme);
 
-	// FIXME: Actually make this properly centered. UI::PREFERRED looks weird.
-	setting_wallpaper_string->set_sizing_mode(UI::FILL);
-	setting_theme_string->set_sizing_mode(UI::FILL);
-
-	// Add the strings to the list.
-	settings_list->add_child(setting_wallpaper_string);
-	settings_list->add_child(setting_theme_string);
-
-	// Add the list to the page, it sits right next to the monitor.
-	settings_page->add_child(settings_list);
+	// Add the strings to the page.
+	settings_page->add_child(setting_wallpaper_string);
+	settings_page->add_child(setting_theme_string);
 
 	// Set the window's content to the page.
 	window->set_contents(settings_page);
 	window->set_title("Interface settings");
-	window->resize({400, 250});
+	window->resize({300, 400});
 	window->set_resizable(false);
 	window->show();
 
