@@ -27,12 +27,20 @@ __DECL_BEGIN
 #define CLOCKS_PER_SEC 1000
 #define TIME_UTC 0
 
+#define CLOCK_REALTIME 1
+#define CLOCK_MONOTONIC 2
+#define CLOCK_MONOTONIC_RAW 3
+#define CLOCK_REALTIME_COARSE 4
+#define CLOCK_MONOTONIC_COARSE 5
+
 typedef uint32_t clock_t;
+typedef int clockid_t;
 typedef int64_t time_t;
 
 struct timespec {
 	time_t tv_sec;
 	long tv_usec;
+	long tv_nsec;
 };
 
 struct tm {
@@ -57,6 +65,10 @@ char* ctime(const time_t* timer);
 struct tm* gmtime(const time_t* timer);
 struct tm* localtime(const time_t* timer);
 size_t strftime(char* s, size_t maxsize, const char* format, const struct tm* timeptr);
+int nanosleep(const struct timespec *req, struct timespec *rem);
+int clock_getres(clockid_t clk_id, struct timespec *res);
+int clock_gettime(clockid_t clk_id, struct timespec *tp);
+int clock_settime(clockid_t clk_id, const struct timespec *tp);
 
 __DECL_END
 

@@ -38,7 +38,7 @@
 //typedef	unsigned long	uintptr_t;
 
 //This lets you prefix malloc and friends
-#define PREFIX(func) func
+#define __DUCKOS_LIBALLOC_PREFIX(func) func
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,10 +49,10 @@ extern void		liballoc_unlock();
 extern void*	liballoc_alloc(int pages);
 extern void		liballoc_free(void* ptr, int pages);
 
-extern void    *PREFIX(malloc)(size_t);				///< The standard function.
-extern void    *PREFIX(realloc)(void *, size_t);		///< The standard function.
-extern void    *PREFIX(calloc)(size_t, size_t);		///< The standard function.
-extern void     PREFIX(free)(void *);					///< The standard function.
+extern void    *__DUCKOS_LIBALLOC_PREFIX(malloc)(size_t);				///< The standard function.
+extern void    *__DUCKOS_LIBALLOC_PREFIX(realloc)(void *, size_t);		///< The standard function.
+extern void    *__DUCKOS_LIBALLOC_PREFIX(calloc)(size_t, size_t);		///< The standard function.
+extern void     __DUCKOS_LIBALLOC_PREFIX(free)(void *);					///< The standard function.
 
 
 #ifdef __cplusplus

@@ -320,6 +320,22 @@ char* getenv(const char* name) {
 	return NULL;
 }
 
+int putenv(char *string) {
+	return -1; // TODO
+}
+
+int clearenv(void) {
+	return -1; // TODO
+}
+
+int setenv(const char *name, const char *value, int overwrite) {
+	return -1; // TODO
+}
+
+int unsetenv(const char *name) {
+	return -1; // TODO
+}
+
 int system(const char* string) {
 	return -1;
 }
