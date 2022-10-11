@@ -51,7 +51,7 @@ ResultRet<Info> Info::from_app_name(const std::string& app_name) {
 
 ResultRet<Info> Info::from_current_app() {
 	char exe_path[512];
-	if(!readlink("/proc/$$/exe", exe_path, 512)) {
+	if(!readlink("/proc/self/exe", exe_path, 512)) {
 		return from_app_directory(Path(exe_path).parent());
 	} else {
 		return Result(errno);
