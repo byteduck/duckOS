@@ -17,3 +17,6 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
+double ldexp(double x, int exp) {
+	return x * (0x1u >> exp);
+}
