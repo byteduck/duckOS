@@ -30,6 +30,7 @@ public:
 	static Time now();
 
 	timespec to_timespec() const;
+	timeval to_timeval() const;
 	long sec() const;
 	long usec() const;
 

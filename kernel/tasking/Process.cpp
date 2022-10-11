@@ -525,8 +525,8 @@ int Process::sys_waitpid(pid_t pid, UserspacePointer<int> status, int flags) {
 	return blocker.waited_pid();
 }
 
-int Process::sys_gettimeofday(UserspacePointer<timespec> t, UserspacePointer<void*> z) {
-	t.set(Time::now().to_timespec());
+int Process::sys_gettimeofday(UserspacePointer<timeval> t, UserspacePointer<void*> z) {
+	t.set(Time::now().to_timeval());
 	return 0;
 }
 

@@ -71,7 +71,7 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_EXECVP:
 			return cur_proc->sys_execvp((char*)arg1, (char**)arg2);
 		case SYS_GETTIMEOFDAY:
-			return cur_proc->sys_gettimeofday((struct timespec*)arg1, (void**)arg2);
+			return cur_proc->sys_gettimeofday((struct timeval*)arg1, (void**)arg2);
 		case SYS_SIGACTION:
 			return cur_proc->sys_sigaction((int)arg1, (struct sigaction*)arg2, (struct sigaction*)arg3);
 		case SYS_KILL:
