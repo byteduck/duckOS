@@ -352,8 +352,20 @@ void Window::set_hint(int hint, int value) {
 		case PWINDOW_HINT_RESIZABLE:
 			set_resizable(value);
 			break;
+		case PWINDOW_HINT_WINDOWTYPE:
+			if(value >= Pond::WindowType::DEFAULT && value <= Pond::WindowType::MENU)
+				set_type((Pond::WindowType) value);
+			break;
 		default:
 			Duck::Log::warn("Unknown window hint ", hint);
 	}
+}
+
+Pond::WindowType Window::type() {
+	return _type;
+}
+
+void Window::set_type(Pond::WindowType type) {
+	_type = type;
 }
 

@@ -202,3 +202,9 @@ void Client::set_app_info(App::Info& info) {
 const App::Info& Client::get_app_info() {
 	return app_info;
 }
+
+void Client::focus_window(Pond::WindowFocusPkt& pkt) {
+	auto* window = windows[pkt.window_id];
+	if(window)
+		window->focus();
+}

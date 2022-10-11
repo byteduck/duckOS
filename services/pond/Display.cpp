@@ -310,6 +310,9 @@ void Display::move_to_front(Window* window) {
 }
 
 void Display::focus(Window* window) {
+	// If we unfocus a menu window, destroy it
+	if(_focused_window != window && _focused_window && _focused_window->type() == Pond::MENU)
+		delete _focused_window;
 	_focused_window = window;
 }
 

@@ -131,6 +131,7 @@ namespace Pond {
 		PONDFUNC(window_to_front, void, WindowToFrontPkt);
 		PONDFUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt);
 		PONDFUNC(set_app_info, void, App::Info);
+		PONDFUNC(focus_window, void, WindowFocusPkt);
 	};
 }
 

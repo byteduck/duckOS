@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include "enums.h"
 #include <sys/types.h>
 #include <libgraphics/Graphics.h>
 #include "Context.h"
@@ -30,6 +31,7 @@
 #define PWINDOW_HINT_HIDDEN 0x3
 #define PWINDOW_HINT_USEALPHA 0x4
 #define PWINDOW_HINT_RESIZABLE 0x5
+#define PWINDOW_HINT_WINDOWTYPE 0x6
 
 /**
  * A window Object representing a window in the Pond window system.
@@ -173,6 +175,23 @@ namespace Pond {
 		 */
 		Gfx::Point mouse_pos() const;
 
+		/**
+		 * Gets the type of the window.
+		 * @return The type of the window.
+		 */
+		WindowType type() const;
+
+		/**
+		 * Sets the type of the window.
+		 * @param type The type of the window.
+		 */
+		void set_type(WindowType type);
+
+		/**
+		 * Focuses the window.
+		 */
+		void focus();
+
 	private:
 		friend class Context;
 
@@ -191,6 +210,7 @@ namespace Pond {
 		bool _hidden = true; ///< Whether or not the window is hidden.
 		Context* _context = nullptr; ///< The context associated with the window.
 		bool _flipped = false; ///< Whether or not the window's framebuffer is currently flipped.
+		WindowType _window_type = DEFAULT;
 	};
 }
 

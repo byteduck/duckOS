@@ -56,6 +56,7 @@ public:
 	Pond::DisplayInfoPkt get_display_info(Pond::GetDisplayInfoPkt &pkt);
 	void set_app_info(App::Info& info);
 	const App::Info& get_app_info();
+	void focus_window(Pond::WindowFocusPkt& pkt);
 
 private:
 	Server* server;

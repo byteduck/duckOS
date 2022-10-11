@@ -127,6 +127,10 @@ namespace Pond {
 	struct DisplayInfoPkt {
 		Gfx::Dimensions dimensions;
 	};
+
+	struct WindowFocusPkt {
+		int window_id;
+	};
 }
 
 

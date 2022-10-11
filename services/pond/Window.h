@@ -26,6 +26,7 @@
 #include <libgraphics/Image.h>
 #include <sys/mem.h>
 #include <sys/input.h>
+#include <libpond/enums.h>
 
 enum ResizeMode {
 	NONE = 0,
@@ -229,6 +230,18 @@ public:
 	  */
 	 void set_flipped(bool flipped);
 
+	 /**
+	  * Gets the type of the window.
+	  * @return The window type.
+	  */
+	 Pond::WindowType type();
+
+	 /**
+	  * Sets the type of the window.
+	  * @param type The window type to use.
+	  */
+	 void set_type(Pond::WindowType type);
+
 private:
 	friend class Mouse;
 	void alloc_framebuffer();
@@ -253,6 +266,7 @@ private:
 	bool _hidden = true;
 	bool _uses_alpha = false;
 	bool _destructing = false;
+	Pond::WindowType _type = Pond::DEFAULT;
 
 	static int current_id;
 };
