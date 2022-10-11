@@ -21,7 +21,7 @@
 
 ### Installing dependencies
 - Ubuntu/Debian: `apt install build-essential cmake bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo qemu-system-i386 qemu-utils nasm gawk grub2-common grub-pc rsync`
-- Arch: `pacman -S base-devel cmake gmp libmpc mpfr qemu qemu-arch-extra nasm grub rsync texinfo`
+- Arch: `pacman -S base-devel cmake gmp libmpc mpfr qemu qemu-arch-extra qemu-ui-gtk nasm grub rsync texinfo`
 - Fedora: `dnf install @development-tools grub2-tools-extra cmake gmp-devel mpfr-devel libmpc-devel qemu qemu-system-x86 nasm rsync texinfo` and `dnf group install "C Development Tools and Libraries"`
 - macOS: Install Xcode and launch it to install the developer tools. Then, run `brew install coreutils e2fsprogs qemu bash gcc@11 cmake genext2fs nasm rsync`
   - You must also install [macFUSE](https://osxfuse.github.io) and `fuse-ext2`
