@@ -34,13 +34,9 @@
 namespace UI {
 	class WindowDelegate;
 
-	class Window: public std::enable_shared_from_this<Window> {
+	class Window: public Duck::Object {
 	public:
-		using Ptr = std::shared_ptr<Window>;
-		using ArgPtr = const std::shared_ptr<Window>&;
-		using WeakPtr = std::weak_ptr<Window>;
-
-		static Window::Ptr create();
+		DUCK_OBJECT_DEF(Window)
 
 		///Getters and setters
 		void resize(Gfx::Dimensions dims);
@@ -92,14 +88,15 @@ namespace UI {
 		Window();
 
 	private:
-		void blit_widget(Widget::ArgPtr widget);
-		void set_focused_widget(Widget::ArgPtr widget);
+		void initialize() override;
+		void blit_widget(PtrRef<Widget> widget);
+		void set_focused_widget(PtrRef<Widget> widget);
 
 		friend class Widget;
 		Pond::Window* _window;
-		Widget::Ptr _contents;
-		Widget::Ptr _focused_widget;
-		std::vector<Widget::Ptr> _widgets;
+		Ptr<Widget> _contents;
+		Ptr<Widget> _focused_widget;
+		std::vector<Ptr<Widget>> _widgets;
 		std::string _title;
 		Gfx::Point _mouse;
 		Gfx::Point _abs_mouse;
@@ -120,7 +117,7 @@ namespace UI {
 
 	class WindowDelegate {
 	public:
-		virtual void window_focus_changed(Window::ArgPtr window, bool focused) = 0;
+		virtual void window_focus_changed(PtrRef<Window> window, bool focused) = 0;
 		virtual ~WindowDelegate() = default;
 	};
 }

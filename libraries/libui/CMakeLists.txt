@@ -25,4 +25,4 @@ SET(SOURCES
         widget/layout/GridLayout.cpp
 )
 MAKE_LIBRARY(libui)
-TARGET_LINK_LIBRARIES(libui libpond libapp)
+TARGET_LINK_LIBRARIES(libui libduck libpond libapp)

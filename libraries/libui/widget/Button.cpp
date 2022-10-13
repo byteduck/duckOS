@@ -34,7 +34,7 @@ Button::Button(Gfx::Image image): m_contents(UI::Image::make(image)) {
 	add_child(m_contents);
 }
 
-Button::Button(Widget::ArgPtr contents): m_contents(contents) {
+Button::Button(Ptr<Widget> contents): m_contents(std::move(contents)) {
 	add_child(m_contents);
 }
 

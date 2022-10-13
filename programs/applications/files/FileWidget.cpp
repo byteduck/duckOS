@@ -24,7 +24,7 @@
 
 using namespace UI;
 
-FileWidget::FileWidget(const Duck::DirectoryEntry& entry, DirectoryWidget::ArgPtr dir_widget): BoxLayout(VERTICAL), entry(entry), dir_widget(dir_widget) {
+FileWidget::FileWidget(const Duck::DirectoryEntry& entry, Ptr<DirectoryWidget> dir_widget): BoxLayout(VERTICAL), entry(entry), dir_widget(std::move(dir_widget)) {
 	auto image = UI::app_info().resource_image(entry.is_directory() ? "folder.png" : "file.png");
 	add_child(UI::Image::make(*image.get()));
 	add_child(UI::Label::make(entry.name()));

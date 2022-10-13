@@ -20,13 +20,13 @@ namespace UI {
 		virtual Gfx::Dimensions preferred_size() override;
 
 		// WindowDelegate
-		void window_focus_changed(Window::ArgPtr window, bool focused) override;
+		void window_focus_changed(PtrRef<Window> window, bool focused) override;
 
 		// MenuWidget
-		static MenuWidget::Ptr open_menu(Menu::ArgPtr menu, Gfx::Point location);
+		static Ptr<MenuWidget> open_menu(Menu::ArgPtr menu, Gfx::Point location);
 
 	private:
-		explicit MenuWidget(Menu::ArgPtr menu, Window::ArgPtr window);
+		explicit MenuWidget(Menu::ArgPtr menu, PtrRef<Window> window);
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
@@ -34,7 +34,7 @@ namespace UI {
 
 		//MenuWidget
 		void open_child_window(Menu::Ptr menu, Gfx::Rect item_rect);
-		MenuWidget::WeakPtr root_menu();
+		WeakPtr<MenuWidget> root_menu();
 		bool any_are_focused();
 		void close();
 
@@ -42,8 +42,8 @@ namespace UI {
 		MenuItem::Ptr m_hovered_item;
 		MenuItem::Ptr m_last_hovered_item;
 		MenuItem::Ptr m_expanded_item;
-		MenuWidget::WeakPtr m_parent;
-		MenuWidget::WeakPtr m_child_menu;
-		Window::WeakPtr m_window;
+		WeakPtr<MenuWidget> m_parent;
+		WeakPtr<MenuWidget> m_child_menu;
+		WeakPtr<Window> m_window;
 	};
 }

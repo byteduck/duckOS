@@ -36,7 +36,7 @@ void ProcessListWidget::update() {
 	update_data();
 }
 
-UI::Widget::Ptr ProcessListWidget::create_entry(int index) {
+UI::Ptr<UI::Widget> ProcessListWidget::create_entry(int index) {
 	auto& proc = _processes[index];
 	auto app_info = proc.app_info();
 	auto layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL);

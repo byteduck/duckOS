@@ -23,7 +23,7 @@
 int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
-	auto window = UI::Window::create();
+	auto window = UI::Window::make();
 	auto dir_widget = DirectoryWidget::make("/");
 	window->set_contents(dir_widget);
 	window->set_resizable(true);

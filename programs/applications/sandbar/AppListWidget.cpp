@@ -21,6 +21,6 @@
 #include <libui/widget/layout/BoxLayout.h>
 #include <libui/widget/Button.h>
 
-AppListWindow::AppListWindow(Gfx::Point lower_anchor, const std::function<void()>& on_close): m_window(UI::Window::create()) {
+AppListWindow::AppListWindow(Gfx::Point lower_anchor, const std::function<void()>& on_close): m_window(UI::Window::make()) {
 
 }

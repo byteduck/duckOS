@@ -28,7 +28,7 @@ int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
 	//Make window
-	auto window = UI::Window::create();
+	auto window = UI::Window::make();
 	window->set_title("4 in a row");
 
 	auto mainview = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL, 2);

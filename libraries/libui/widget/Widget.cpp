@@ -94,18 +94,18 @@ void Widget::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 std::shared_ptr<Widget> Widget::parent() {
 	if(!_parent)
 		return nullptr;
-	return _parent->shared_from_this();
+	return _parent->self();
 }
 
 std::shared_ptr<Window> Widget::parent_window() {
 	if(_parent_window)
-		return _parent_window->shared_from_this();
+		return _parent_window->self();
 	return nullptr;
 }
 
 std::shared_ptr<Window> Widget::root_window() {
 	if(_root_window)
-		return _root_window->shared_from_this();
+		return _root_window->self();
 	return nullptr;
 }
 
@@ -185,7 +185,7 @@ bool Widget::needs_layout_on_child_change() {
 
 void Widget::focus() {
 	if(_root_window)
-		_root_window->set_focused_widget(shared_from_this());
+		_root_window->set_focused_widget(self());
 }
 
 void Widget::open_menu(UI::Menu::Ptr menu) {
@@ -193,7 +193,7 @@ void Widget::open_menu(UI::Menu::Ptr menu) {
 		_root_window->open_menu(menu);
 }
 
-void Widget::set_window(Window::ArgPtr window) {
+void Widget::set_window(PtrRef<Window> window) {
 	if(_parent || _parent_window)
 		return;
 
@@ -231,11 +231,11 @@ void Widget::do_repaint(const DrawContext& framebuffer) {
 	framebuffer.fill({0, 0, framebuffer.width(), framebuffer.height()}, RGBA(0, 0, 0, 0));
 }
 
-void Widget::on_child_added(const std::shared_ptr<Widget>& child) {
+void Widget::on_child_added(PtrRef<Widget> child) {
 
 }
 
-void Widget::on_child_removed(const std::shared_ptr<Widget>& child) {
+void Widget::on_child_removed(PtrRef<Widget> child) {
 
 }
 

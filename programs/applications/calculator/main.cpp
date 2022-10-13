@@ -23,7 +23,7 @@
 int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
-	auto window = UI::Window::create();
+	auto window = UI::Window::make();
 	auto calc = CalculatorWidget::make();
 	window->set_title("Calculator");
 	window->set_contents(calc);
