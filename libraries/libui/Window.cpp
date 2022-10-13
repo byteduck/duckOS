@@ -21,6 +21,7 @@
 #include "Window.h"
 #include "libui.h"
 #include "Theme.h"
+#include "libui/widget/MenuWidget.h"
 
 using namespace UI;
 
@@ -102,6 +103,10 @@ void Window::set_resizable(bool resizable) {
 
 bool Window::resizable() {
 	return _resizable;
+}
+
+bool Window::is_focused() {
+	return _focused;
 }
 
 void Window::bring_to_front() {
@@ -296,6 +301,12 @@ void Window::on_resize(const Gfx::Rect& old_rect) {
 	calculate_layout();
 }
 
+void Window::on_focus(bool focused) {
+	_focused = focused;
+	if(delegate.lock())
+		delegate.lock()->window_focus_changed(shared_from_this(), focused);
+}
+
 void Window::calculate_layout() {
 	if(!_contents)
 		return;
@@ -344,6 +355,14 @@ void Window::blit_widget(Widget::ArgPtr widget) {
 	
 	for(auto& child : widget->children)
 		blit_widget(child);
+}
+
+void Window::open_menu(std::shared_ptr<Menu>& menu) {
+	open_menu(menu, _mouse);
+}
+
+void Window::open_menu(std::shared_ptr<Menu>& menu, Gfx::Point point) {
+	MenuWidget::open_menu(menu, point + _window->position());
 }
 
 void Window::set_focused_widget(Widget::ArgPtr widget) {

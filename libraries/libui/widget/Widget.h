@@ -22,16 +22,24 @@
 #include <libpond/Window.h>
 #include <vector>
 #include "../DrawContext.h"
+#include "libui/Menu.h"
 
 #define WIDGET_DEF(name) \
 	using Ptr = std::shared_ptr<name>; \
 	using ArgPtr = const std::shared_ptr<name>&; \
+	using WeakPtr = std::weak_ptr<name>; \
 	template<class... ArgTs> \
 	static inline std::shared_ptr<name> make(ArgTs&&... args) { \
-		return std::shared_ptr<name>(new name(args...)); \
+		auto self = std::shared_ptr<name>(new name(args...)); \
+		self->initialize(); \
+        return self; \
 	} \
 	inline std::shared_ptr<name> self() { \
 		return std::static_pointer_cast<name>(shared_from_this()); \
+	} \
+	template<typename T> \
+	inline std::shared_ptr<T> self() { \
+		return std::static_pointer_cast<T>(self()); \
 	}
 
 #define VIRTUAL_WIDGET_DEF(name) \
@@ -183,12 +191,12 @@ namespace UI {
 		 * Gets the position of the widget.
 		 * @return The position of the widget.
 		 */
-		 Gfx::Point position();
+		Gfx::Point position();
 
 		 /**
 		  * Hides the widget.
 		  */
-		 void hide();
+		void hide();
 
 		/**
 		* Shows the widget.
@@ -211,6 +219,12 @@ namespace UI {
 		 * Focuses the widget. Focused widgets will receive keyboard events.
 		 */
 		void focus();
+
+		/**
+		 * Opens a menu at the cursor location.
+		 * @param menu The menu to open.
+		 */
+		virtual void open_menu(UI::Menu::Ptr menu);
 
 	protected:
 		explicit Widget() = default;
@@ -300,6 +314,11 @@ namespace UI {
 		 */
 		void recalculate_rects();
 
+		/**
+		 * Called after the constructor to initialize the widget.
+		 */
+		virtual void initialize();
+
 		std::vector<Widget::Ptr> children;
 
 	private:
@@ -312,8 +331,11 @@ namespace UI {
 		void evt_mouse_leave(Pond::MouseLeaveEvent evt);
 		void evt_keyboard(Pond::KeyEvent evt);
 
+		// TODO: Should be weakptr
 		Widget* _parent = nullptr;
+		// TODO: Should be weakptr
 		Window* _parent_window = nullptr;
+		// TODO: Should be weakptr
 		Window* _root_window = nullptr;
 		Gfx::Rect _rect = {0, 0, 0, 0};
 		Gfx::Rect _absolute_rect = {0, 0, 0, 0};

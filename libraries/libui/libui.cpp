@@ -131,6 +131,14 @@ void handle_pond_events() {
 				}
 				break;
 			}
+
+			case PEVENT_WINDOW_FOCUS: {
+				auto& evt = event.window_focus;
+				auto window = find_window(evt.window->id());
+				if(window) {
+					window->on_focus(evt.focused);
+				}
+			}
 		}
 	}
 }

@@ -188,6 +188,11 @@ void Widget::focus() {
 		_root_window->set_focused_widget(shared_from_this());
 }
 
+void Widget::open_menu(UI::Menu::Ptr menu) {
+	if(_root_window)
+		_root_window->open_menu(menu);
+}
+
 void Widget::set_window(Window::ArgPtr window) {
 	if(_parent || _parent_window)
 		return;
@@ -301,6 +306,8 @@ void Widget::recalculate_rects() {
 	for(auto& child : children)
 		child->recalculate_rects();
 }
+
+void Widget::initialize() {}
 
 bool Widget::evt_mouse_move(Pond::MouseMoveEvent evt) {
 	auto old_mouse_pos = _mouse_pos;

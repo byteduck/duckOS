@@ -20,6 +20,7 @@
 #pragma once
 
 #include "libui/widget/Widget.h"
+#include "Menu.h"
 #include <libgraphics/Geometry.h>
 #include <libpond/Window.h>
 #include <string>
@@ -31,10 +32,14 @@
 #define UI_WINDOW_PADDING 2
 
 namespace UI {
+	class WindowDelegate;
+
 	class Window: public std::enable_shared_from_this<Window> {
 	public:
 		using Ptr = std::shared_ptr<Window>;
 		using ArgPtr = const std::shared_ptr<Window>&;
+		using WeakPtr = std::weak_ptr<Window>;
+
 		static Window::Ptr create();
 
 		///Getters and setters
@@ -49,6 +54,7 @@ namespace UI {
 		std::string title();
 		void set_resizable(bool resizable);
 		bool resizable();
+		bool is_focused();
 
 		///Window management
 		void bring_to_front();
@@ -71,9 +77,16 @@ namespace UI {
 		void on_mouse_scroll(Pond::MouseScrollEvent evt);
 		void on_mouse_leave(Pond::MouseLeaveEvent evt);
 		void on_resize(const Gfx::Rect& old_rect);
+		void on_focus(bool focused);
+
+		///Menus and stuff
+		void open_menu(UI::Menu::ArgPtr menu);
+		void open_menu(UI::Menu::ArgPtr menu, Gfx::Point point);
 
 		//UI
 		void calculate_layout();
+
+		std::weak_ptr<WindowDelegate> delegate;
 
 	protected:
 		Window();
@@ -94,6 +107,7 @@ namespace UI {
 		bool _uses_alpha = false;
 		bool _resizable = false;
 		bool _needs_repaint = false;
+		bool _focused = false;
 
 		struct TitleButton {
 			std::string image;
@@ -102,6 +116,12 @@ namespace UI {
 		};
 		TitleButton _close_button = {"win-close"};
 
+	};
+
+	class WindowDelegate {
+	public:
+		virtual void window_focus_changed(Window::ArgPtr window, bool focused) = 0;
+		virtual ~WindowDelegate() = default;
 	};
 }
 
