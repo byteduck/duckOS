@@ -7,6 +7,7 @@ SET(SOURCES
         FileStream.cpp
         FormatStream.cpp
         Log.cpp
+        Object.cpp
         Path.cpp
         Result.cpp
         Serializable.cpp
