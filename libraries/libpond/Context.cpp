@@ -73,6 +73,7 @@ Context::Context(std::shared_ptr<Endpoint> endpt): endpoint(std::move(endpt)) {
 	MSG_HANDLER(mouse_scrolled, MouseScrollPkt, PEVENT_MOUSE_SCROLL);
 	MSG_HANDLER(mouse_left, MouseLeavePkt, PEVENT_MOUSE_LEAVE);
 	MSG_HANDLER(key_event, KeyEventPkt, PEVENT_KEY);
+	MSG_HANDLER(window_focus_changed, WindowFocusPkt, PEVENT_WINDOW_FOCUS);
 
 	GET_FUNC(open_window, WindowOpenedPkt, OpenWindowPkt, open_window);
 	GET_FUNC(destroy_window, void, WindowDestroyPkt, destroy_window);
@@ -86,6 +87,7 @@ Context::Context(std::shared_ptr<Endpoint> endpt): endpoint(std::move(endpt)) {
 	GET_FUNC(window_to_front, void, WindowToFrontPkt, window_to_front);
 	GET_FUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt, get_display_info);
 	GET_FUNC(set_app_info, void, App::Info, set_app_info);
+	GET_FUNC(focus_window, void, WindowFocusPkt, focus_window);
 }
 
 void Context::read_events(bool block) {
@@ -313,6 +315,18 @@ void Context::handle_font_response(const FontResponsePkt& pkt, Event& event) {
 
 	//Load the font (if it errors out, a message should be printed and it will return nullptr)
 	event.font_response.font = Font::load_from_shm(fontshm);
+}
+
+void Context::handle_window_focus_changed(const Pond::WindowFocusPkt& pkt, Pond::Event& event) {
+	//Find the window and update the event & window
+	Window* window = windows[pkt.window_id];
+	if(window) {
+		event.window_focus.window = window;
+		event.window_focus.focused = pkt.focused;
+	} else {
+		event.type = PEVENT_UNKNOWN;
+		Log::warnf("libpond: Could not find window {} for window focus changed event!", pkt.window_id);
+	}
 }
 
 Gfx::Dimensions Context::get_display_dimensions() {

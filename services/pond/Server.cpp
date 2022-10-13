@@ -113,6 +113,7 @@ Server::Server() {
 	REGISTER_MSG(mouse_scrolled, MouseScrollPkt);
 	REGISTER_MSG(mouse_left, MouseLeavePkt);
 	REGISTER_MSG(key_event, KeyEventPkt);
+	REGISTER_MSG(window_focus_changed, WindowFocusPkt);
 }
 
 int Server::fd() {

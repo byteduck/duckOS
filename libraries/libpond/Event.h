@@ -34,6 +34,7 @@
 #define PEVENT_MOUSE_BUTTON 8
 #define PEVENT_MOUSE_LEAVE 9
 #define PEVENT_MOUSE_SCROLL 10
+#define PEVENT_WINDOW_FOCUS 11
 
 #define POND_MOUSE1 1
 #define POND_MOUSE2 2
@@ -107,6 +108,12 @@ namespace Pond {
 		Gfx::Font* font;
 	};
 
+	struct WindowFocusEvent {
+		int type; /// < Equal to PEVENT_WINDOW_FOCUS
+		Window* window; /// < The window that was focused / unfocused
+		bool focused; /// < Whether the window is focused
+	};
+
 	union Event {
 		int type; ///< The type of event that this PEvent refers to.
 		WindowCreateEvent window_create;
@@ -119,5 +126,6 @@ namespace Pond {
 		MouseLeaveEvent mouse_leave;
 		KeyEvent key;
 		FontResponseEvent font_response;
+		WindowFocusEvent window_focus;
 	};
 }

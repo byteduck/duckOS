@@ -242,6 +242,11 @@ public:
 	  */
 	 void set_type(Pond::WindowType type);
 
+	 /**
+	  * Notifies the window that its focus has changed.
+	  */
+	 void notify_focus(bool focus);
+
 private:
 	friend class Mouse;
 	void alloc_framebuffer();

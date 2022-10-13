@@ -369,3 +369,8 @@ void Window::set_type(Pond::WindowType type) {
 	_type = type;
 }
 
+void Window::notify_focus(bool focus) {
+	if(_client)
+		_client->window_focused(this, focus);
+}
+

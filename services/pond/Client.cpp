@@ -93,6 +93,10 @@ void Client::window_resized(Window *window) {
 	SEND_MESSAGE("window_resized", (WindowResizedPkt {window->id(), window->framebuffer_shm().id, window->rect()}));
 }
 
+void Client::window_focused(Window* window, bool focused) {
+	SEND_MESSAGE("window_focus_changed", (WindowFocusPkt { window->id(), focused }));
+}
+
 WindowOpenedPkt Client::open_window(OpenWindowPkt& params) {
 	Window* window;
 

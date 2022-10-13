@@ -42,6 +42,7 @@ public:
 	void window_destroyed(Window* window);
 	void window_moved(Window* window);
 	void window_resized(Window* window);
+	void window_focused(Window* window, bool focused);
 
 	Pond::WindowOpenedPkt open_window(Pond::OpenWindowPkt& packet);
 	void destroy_window(Pond::WindowDestroyPkt& packet);

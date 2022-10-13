@@ -130,6 +130,7 @@ namespace Pond {
 
 	struct WindowFocusPkt {
 		int window_id;
+		bool focused;
 	};
 }
 
