@@ -38,7 +38,9 @@ namespace Duck {
 	class Object: public std::enable_shared_from_this<Object> {
 	public:
 		DUCK_OBJECT_DEF(Object)
-		virtual void initialize();
 		virtual ~Object() = default;
+
+	private:
+		virtual void initialize();
 	};
 }
