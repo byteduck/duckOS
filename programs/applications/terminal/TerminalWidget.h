@@ -33,9 +33,11 @@ public:
 	void do_repaint(const UI::DrawContext& ctx) override;
 	bool on_keyboard(Pond::KeyEvent evt) override;
 	void on_layout_change(const Gfx::Rect& old_rect) override;
+	bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 
 	void handle_term_events();
 	void run(const char* command);
+	UI::Menu::Ptr create_menu();
 
 	//Terminal::Listener
 	void on_character_change(const Term::Position& position, const Term::Character& character) override;
