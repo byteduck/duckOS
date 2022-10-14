@@ -105,10 +105,9 @@ int main(int argc, char** argv, char** envp) {
 
 	//Finally, jump to the executable's entry point!
 	if(debug)
-		Log::dbg("Calling entry point {#x}", executable->header.e_entry);
+		Log::dbgf("Calling entry point {#x}", executable->header.e_entry);
 	auto main = reinterpret_cast<main_t>(executable->header.e_entry);
-	call_main(argc - 2, argv + 2, envp, main);
-
+	main(argc - 2, argv + 2, envp);
 	return 0;
 }
 
