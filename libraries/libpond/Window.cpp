@@ -128,3 +128,16 @@ Gfx::Point Window::mouse_pos() const {
 void Window::flip_buffer() {
 	_flipped = !_flipped;
 }
+
+WindowType Window::type() const {
+	return _window_type;
+}
+
+void Window::set_type(WindowType type) {
+	_context->__river_set_hint({_id, PWINDOW_HINT_WINDOWTYPE, (int) type});
+	_window_type = type;
+}
+
+void Window::focus() {
+	_context->__river_focus_window({_id});
+}

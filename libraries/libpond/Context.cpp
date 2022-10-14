@@ -28,6 +28,7 @@
 using namespace Pond;
 using namespace River;
 using namespace Gfx;
+using namespace Duck;
 
 #define MSG_HANDLER(name, pkt_type, event_type) \
 auto __msgres_##name = endpoint->set_message_handler<pkt_type>(#name, [&] (pkt_type pkt) { \
@@ -36,26 +37,26 @@ auto __msgres_##name = endpoint->set_message_handler<pkt_type>(#name, [&] (pkt_t
 	events.push_back(evt); \
 }); \
 if(__msgres_##name.is_error()) \
-	fprintf(stderr, "libpond: Couldn't set event handler for event %s: %s\n", #name, River::error_str(__msgres_##name.code()));
+	Log::errf("libpond: Couldn't set event handler for event {}: {}", #name, River::error_str(__msgres_##name.code()));
 
 #define GET_FUNC(name, ret_type, data_type, handler) \
 auto __funcres_##name = endpoint->get_function<ret_type, data_type>(#name); \
 if(__funcres_##name.is_error()) \
-	fprintf(stderr, "libpond: Couldn't set get function %s: %s\n", #name, River::error_str(__funcres_##name.code())); \
+	Log::errf("libpond: Couldn't get function {}: {}", #name, River::error_str(__funcres_##name.code())); \
 else \
 	__river_##handler = __funcres_##name.value();
 
 Context* Context::init() {
 	auto conn_res = BusConnection::connect("pond");
 	if(conn_res.is_error()) {
-		fprintf(stderr, "libpond: Couldn't create BusConnection: %s\n", River::error_str(conn_res.code()));
+		Log::errf("libpond: Couldn't create BusConnection: {}", River::error_str(conn_res.code()));
 		return nullptr;
 	}
 	auto connection = conn_res.value();
 
 	auto endpoint_res = connection->get_endpoint("pond_server");
 	if(endpoint_res.is_error()) {
-		fprintf(stderr, "libpond: Couldn't get endpoint: %s\n", River::error_str(conn_res.code()));
+		Log::errf("libpond: Couldn't get endpoint: {}", River::error_str(conn_res.code()));
 		return nullptr;
 	}
 
@@ -72,6 +73,7 @@ Context::Context(std::shared_ptr<Endpoint> endpt): endpoint(std::move(endpt)) {
 	MSG_HANDLER(mouse_scrolled, MouseScrollPkt, PEVENT_MOUSE_SCROLL);
 	MSG_HANDLER(mouse_left, MouseLeavePkt, PEVENT_MOUSE_LEAVE);
 	MSG_HANDLER(key_event, KeyEventPkt, PEVENT_KEY);
+	MSG_HANDLER(window_focus_changed, WindowFocusPkt, PEVENT_WINDOW_FOCUS);
 
 	GET_FUNC(open_window, WindowOpenedPkt, OpenWindowPkt, open_window);
 	GET_FUNC(destroy_window, void, WindowDestroyPkt, destroy_window);
@@ -85,6 +87,7 @@ Context::Context(std::shared_ptr<Endpoint> endpt): endpoint(std::move(endpt)) {
 	GET_FUNC(window_to_front, void, WindowToFrontPkt, window_to_front);
 	GET_FUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt, get_display_info);
 	GET_FUNC(set_app_info, void, App::Info, set_app_info);
+	GET_FUNC(focus_window, void, WindowFocusPkt, focus_window);
 }
 
 void Context::read_events(bool block) {
@@ -159,7 +162,7 @@ void Context::handle_window_opened(const WindowOpenedPkt& pkt, Event& event) {
 	//Open the shared memory for the framebuffer
 	struct shm shm;
 	if(shmattach(pkt.shm_id, NULL, &shm) < 0) {
-		perror("libpond: Failed to attach window shm");
+		Log::errf("libpond: Failed to attach window shm!");
 		event.window_create.window = NULL;
 		return;
 	}
@@ -170,6 +173,7 @@ void Context::handle_window_opened(const WindowOpenedPkt& pkt, Event& event) {
 
 	//Add the window to the map
 	windows[window->_id] = window;
+	Log::dbgf("libpond: Opened window with id {}", pkt.window_id);
 }
 
 void Context::handle_window_destroyed(const WindowDestroyPkt& pkt, Event& event) {
@@ -179,11 +183,13 @@ void Context::handle_window_destroyed(const WindowDestroyPkt& pkt, Event& event)
 	auto window_pair = windows.find(pkt.window_id);
 	if(window_pair != windows.end()) {
 		//Detach the window's shared memory
+		Log::dbgf("libpond: Destroying window with id {}", pkt.window_id);
 		if(shmdetach(pkt.shm_id) < 0)
-			fprintf(stderr, "libpond: WARNING - could not detach destroyed window shm\n");
+			Log::errf("libpond: Could not detach destroyed window shm!");
 		windows.erase(window_pair);
-	} else
-		fprintf(stderr, "libpond: Failed to find window with id %d in map for removal\n", pkt.window_id);
+	} else {
+		Log::warnf("libpond: Failed to find window with id {} in map for removal!", pkt.window_id);
+	}
 }
 
 void Context::handle_window_moved(const WindowMovePkt& pkt, Event& event) {
@@ -195,7 +201,7 @@ void Context::handle_window_moved(const WindowMovePkt& pkt, Event& event) {
 		window->_rect.set_position(pkt.pos);
 	} else {
 		event.type = PEVENT_UNKNOWN;
-		fprintf(stderr, "libpond: Could not find window for window move event!\n");
+		Log::warnf("libpond: Could not find window {} for window move event!", pkt.window_id);
 	}
 }
 
@@ -209,10 +215,10 @@ void Context::handle_window_resized(const WindowResizedPkt& pkt, Event& event) {
 		//Open the new shared memory for the framebuffer if necessary
 		if(pkt.shm_id != window->_shm.id) {
 			if(shmdetach(window->_shm.id) < 0)
-				perror("WARNING: libpond failed to detach window shm");
+				Log::errf("libpond: Failed to detach window shm on resize!");
 			struct shm shm;
 			if(shmattach(pkt.shm_id, NULL, &shm) < 0) {
-				perror("libpond failed to attach window shm");
+				Log::errf("libpond: Failed to attach window shm on resize!");
 				event.window_create.window = NULL;
 				return;
 			}
@@ -221,7 +227,7 @@ void Context::handle_window_resized(const WindowResizedPkt& pkt, Event& event) {
 		}
 	} else {
 		event.type = PEVENT_UNKNOWN;
-		fprintf(stderr, "libpond: Could not find window for window resize event!\n");
+		Log::warnf("libpond: Could not find window {} for resize event!", pkt.window_id);
 	}
 }
 
@@ -236,7 +242,7 @@ void Context::handle_mouse_moved(const MouseMovePkt& pkt, Event& event) {
 		window->_mouse_pos = pkt.relative;
 	} else {
 		event.type = PEVENT_UNKNOWN;
-		fprintf(stderr, "libpond: Could not find window for window mouse move event!\n");
+		Log::warnf("libpond: Could not find window {} for window mouse move event!", pkt.window_id);
 	}
 }
 
@@ -250,7 +256,7 @@ void Context::handle_mouse_button(const MouseButtonPkt& pkt, Event& event) {
 		window->_mouse_buttons = pkt.buttons;
 	} else {
 		event.type = PEVENT_UNKNOWN;
-		fprintf(stderr, "libpond: Could not find window for window mouse button event!\n");
+		Log::warnf("libpond: Could not find window {} for window mouse button event!", pkt.window_id);
 	}
 }
 
@@ -262,7 +268,7 @@ void Context::handle_mouse_scrolled(const MouseScrollPkt& pkt, Event& event) {
 		event.mouse_scroll.scroll = pkt.scroll;
 	} else {
 		event.type = PEVENT_UNKNOWN;
-		fprintf(stderr, "libpond: Could not find window for mouse scroll event!\n");
+		Log::warnf("libpond: Could not find window {} for mouse scroll event!", pkt.window_id);
 	}
 }
 
@@ -274,7 +280,7 @@ void Context::handle_mouse_left(const MouseLeavePkt& pkt, Event& event) {
 		event.mouse_leave.last_pos = window->_mouse_pos;
 	} else {
 		event.type = PEVENT_UNKNOWN;
-		fprintf(stderr, "libpond: Could not find window for window mouse button event!\n");
+		Log::warnf("libpond: Could not find window {} for window mouse button event!", pkt.window_id);
 	}
 }
 
@@ -289,7 +295,7 @@ void Context::handle_key_event(const KeyEventPkt& pkt, Event& event) {
 		event.key.scancode = pkt.scancode;
 	} else {
 		event.type = PEVENT_UNKNOWN;
-		fprintf(stderr, "libpond: Could not find window for window key event!\n");
+		Log::warnf("libpond: Could not find window {} for window key event!", pkt.window_id);
 	}
 }
 
@@ -302,13 +308,25 @@ void Context::handle_font_response(const FontResponsePkt& pkt, Event& event) {
 	//Try attaching the shared memory
 	shm fontshm;
 	if(shmattach(pkt.font_shm_id, nullptr, &fontshm) < 0) {
-		perror("libpond: Failed to attach font shm");
+		Log::errf("libpond: Failed to attach font shm!");
 		event.font_response.font = nullptr;
 		return;
 	}
 
 	//Load the font (if it errors out, a message should be printed and it will return nullptr)
 	event.font_response.font = Font::load_from_shm(fontshm);
+}
+
+void Context::handle_window_focus_changed(const Pond::WindowFocusPkt& pkt, Pond::Event& event) {
+	//Find the window and update the event & window
+	Window* window = windows[pkt.window_id];
+	if(window) {
+		event.window_focus.window = window;
+		event.window_focus.focused = pkt.focused;
+	} else {
+		event.type = PEVENT_UNKNOWN;
+		Log::warnf("libpond: Could not find window {} for window focus changed event!", pkt.window_id);
+	}
 }
 
 Gfx::Dimensions Context::get_display_dimensions() {

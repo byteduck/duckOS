@@ -32,7 +32,6 @@ namespace Duck {
 		void release();
 
 	private:
-		std::atomic<tid_t> holding_thread = {-1};
 		std::atomic<int> times_locked = {0};
 	};
 

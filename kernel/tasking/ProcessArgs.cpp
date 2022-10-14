@@ -34,13 +34,18 @@ void ProcessArgs::setup_stack(Stack& stack) {
 	}
 
 	//Copy pointers to all args into stack
+	stack.push32(0);
 	for(auto i = argv.size(); i > 0; i--)
 		stack.push32(argp[i - 1]);
 
 	size_t argvp = stack.real_stackptr();
 
+	//Envp
+	stack.push32(0);
+	size_t envpp = stack.real_stackptr();
+
 	//Push argc, argv, and env on to stack
-	stack.push_sizet(0); //env
+	stack.push_sizet(envpp); //env
 	stack.push_sizet(argvp); //argv
 	stack.push_int(argv.size()); //argc
 	stack.push32(0);

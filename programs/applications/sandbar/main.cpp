@@ -45,14 +45,14 @@ int main(int argc, char** argv, char** envp) {
 	auto layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL);
 
 	//Make top bar window
-	auto window = UI::Window::create();
+	auto window = UI::Window::make();
 	window->set_title("Sandbar");
 	window->set_decorated(false);
 	window->set_resizable(false);
 	window->pond_window()->set_draggable(false);
 
 	//Make app list window
-	auto app_list_window = UI::Window::create();
+	auto app_list_window = UI::Window::make();
 	auto app_list_layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL);
 	app_list_window->set_contents(app_list_layout);
 	app_list_window->set_decorated(false);

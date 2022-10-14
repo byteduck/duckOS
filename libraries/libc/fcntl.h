@@ -61,6 +61,9 @@ __DECL_BEGIN
 #define S_IFLNK		0120000
 #define S_IFSOCK	0140000
 #define S_IFMT		0170000
+#define S_IRWXU		(S_IRUSR | S_IWUSR | S_IXUSR)
+#define S_IRWXG		(S_IRGRP | S_IWGRP | S_IXGRP)
+#define S_IRWXO		(S_IROTH | S_IWOTH | S_IXOTH)
 
 #define F_DUPFD 0
 #define F_GETFD 1

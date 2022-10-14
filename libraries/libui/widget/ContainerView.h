@@ -29,7 +29,7 @@ namespace UI {
 		//ScrollView
 		void on_scroll(Gfx::Point new_position) override;
 		Gfx::Dimensions scrollable_area() override;
-		void set_contents(Widget::ArgPtr contents);
+		void set_contents(Ptr<Widget> contents);
 
 		//Widget
 		void calculate_layout() override;
@@ -38,7 +38,7 @@ namespace UI {
 	private:
 		explicit ContainerView();
 
-		Widget::Ptr _contents = nullptr;
+		Ptr<Widget> _contents = nullptr;
 	};
 }
 

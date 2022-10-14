@@ -413,6 +413,11 @@ void Thread::handle_pagefault(Registers* regs) {
 		if(regs->eip > HIGHER_HALF) {
 			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x).", _process->pid(), _tid, err_pos);
 		}
+		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, err_pos, regs->eip);
+#ifdef DEBUG
+		printf("Userspace stack trace:\n");
+		KernelMapper::print_userspace_stacktrace();
+#endif
 		_process->kill(SIGSEGV);
 	}
 }

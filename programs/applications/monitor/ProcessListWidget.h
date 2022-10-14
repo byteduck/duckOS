@@ -28,7 +28,7 @@ public:
 	void update();
 
 protected:
-	Widget::Ptr create_entry(int index) override;
+	UI::Ptr<UI::Widget> create_entry(int index) override;
 	Gfx::Dimensions preferred_item_dimensions() override;
 	int num_items() override;
 

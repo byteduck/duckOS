@@ -30,8 +30,8 @@ protected:
 	bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 
 private:
-	FileWidget(const Duck::DirectoryEntry& dir_entry, DirectoryWidget::ArgPtr dir_widget);
+	FileWidget(const Duck::DirectoryEntry& dir_entry, UI::Ptr<DirectoryWidget> dir_widget);
 
 	Duck::DirectoryEntry entry;
-	DirectoryWidget::Ptr dir_widget;
+	UI::Ptr<DirectoryWidget> dir_widget;
 };

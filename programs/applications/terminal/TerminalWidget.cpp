@@ -23,6 +23,7 @@
 #include <csignal>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <libui/widget/MenuWidget.h>
 
 static const uint32_t color_palette[] = {
 		0xFF000000,
@@ -162,6 +163,28 @@ void TerminalWidget::on_layout_change(const Gfx::Rect& old_rect) {
 		(dims.width - 4) / font->bounding_box().width,
 		(dims.height - 4) / font->size()
 	});
+}
+
+UI::Menu::Ptr TerminalWidget::create_menu() {
+	std::vector<UI::MenuItem::Ptr> items = {
+		UI::MenuItem::make("Clear", [&] {
+			term->clear();
+		}),
+		UI::MenuItem::Separator,
+		UI::MenuItem::make("Signals", UI::Menu::make({
+			 UI::MenuItem::make("Send SIGINT (^C)", [&] {
+				 term->handle_keypress(0, 'c', KBD_MOD_CTRL);
+			 })
+		}))
+	};
+	return UI::Menu::make(items);
+}
+
+bool TerminalWidget::on_mouse_button(Pond::MouseButtonEvent evt) {
+	if(!(evt.old_buttons & POND_MOUSE2) && (evt.new_buttons & POND_MOUSE2)) {
+		open_menu(create_menu());
+	}
+	return true;
 }
 
 void TerminalWidget::handle_term_events() {

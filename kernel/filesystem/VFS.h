@@ -64,6 +64,7 @@ public:
 	Result chmod(const kstd::string& path, mode_t mode, const User& user, const kstd::shared_ptr<LinkedInode>& base);
 	Result chown(const kstd::string& path, uid_t uid, gid_t gid, const User& user, const kstd::shared_ptr<LinkedInode>& base, int options = 0);
 	Result mount(Filesystem* fs, const kstd::shared_ptr<LinkedInode>& mountpoint);
+	Result access(kstd::string pathname, int mode, const User& user, const kstd::shared_ptr<LinkedInode>& base);
 
 	bool mount_root(Filesystem* fs);
 	kstd::shared_ptr<LinkedInode> root_ref();

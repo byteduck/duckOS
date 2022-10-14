@@ -31,5 +31,6 @@ public:
 	static void load_map();
 	static Symbol* get_symbol(size_t location);
 	static void print_stacktrace();
+	static void print_userspace_stacktrace();
 };
 

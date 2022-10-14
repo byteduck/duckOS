@@ -26,7 +26,7 @@ int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
 	//Make window
-	auto window = UI::Window::create();
+	auto window = UI::Window::make();
 	window->set_title("Terminal");
 
 	//Create terminal widget

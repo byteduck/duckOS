@@ -112,6 +112,7 @@ namespace Pond {
 		void handle_mouse_left(const MouseLeavePkt& pkt, Event& event);
 		void handle_key_event(const KeyEventPkt& pkt, Event& event);
 		void handle_font_response(const FontResponsePkt& pkt, Event& event);
+		void handle_window_focus_changed(const WindowFocusPkt& pkt, Event& event);
 
 		std::shared_ptr<River::Endpoint> endpoint;
 		std::map<int, Window*> windows;
@@ -131,6 +132,7 @@ namespace Pond {
 		PONDFUNC(window_to_front, void, WindowToFrontPkt);
 		PONDFUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt);
 		PONDFUNC(set_app_info, void, App::Info);
+		PONDFUNC(focus_window, void, WindowFocusPkt);
 	};
 }
 

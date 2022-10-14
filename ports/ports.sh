@@ -28,6 +28,7 @@ default_args() {
   export USE_CONFIGURE=""
   export CONFIGURE_ARGS=()
   export MAKE_ARGS=()
+  export INSTALL_ARGS=("install")
 }
 
 download_extract_patch() {
@@ -55,11 +56,10 @@ build_port() {
   export DUCKOS_PORT_NAME="$1"
   export PORT_DIR="$PORTS_DIR/$DUCKOS_PORT_NAME"
   msg "Building port $DUCKOS_PORT_NAME..."
-  pushd "$PORT_DIR"
   default_args
   source "$PORT_DIR/build.sh"
-  mkdir -p build
-  pushd build
+  mkdir -p "$PORTS_DIR/build/$DUCKOS_PORT_NAME"
+  pushd "$PORTS_DIR/build/$DUCKOS_PORT_NAME" || return 1
   if [ -n  "$DOWNLOAD_URL" ]; then
     download_extract_patch
   fi
@@ -68,11 +68,10 @@ build_port() {
     "$DOWNLOAD_FILE/configure" --host="i686-pc-duckos" "${CONFIGURE_ARGS[@]}" || return 1
   fi
   msg "Building port $DUCKOS_PORT_NAME..."
-  make -j "$NUM_JOBS" "${MAKE_ARGS[@]}" || return 1
+  make "-j$NUM_JOBS" "${MAKE_ARGS[@]}" || return 1
   msg "Installing port $DUCKOS_PORT_NAME..."
-  DESTDIR="$ROOT_DIR" make install || return 1
-  popd
-  popd
+  DESTDIR="$ROOT_DIR" make "${INSTALL_ARGS[@]}" || return 1
+  popd || return 1
   success "Built port $DUCKOS_PORT_NAME!"
 }
 

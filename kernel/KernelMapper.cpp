@@ -123,3 +123,18 @@ void KernelMapper::print_stacktrace() {
 		stk = (uint32_t*) stk[0];
 	}
 }
+
+void KernelMapper::print_userspace_stacktrace() {
+	auto* stk = (uint32_t*) __builtin_frame_address(0);
+	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
+		if(!TaskManager::current_process()->page_directory()->is_mapped((size_t) stk, false) || !stk[1])
+			break;
+		if(!TaskManager::current_process()->page_directory()->is_mapped(stk[1], false)) {
+			printf("0x%x (Unmapped)\n", stk[1]);
+			break;
+		}
+		if(stk[1] < HIGHER_HALF)
+			printf("0x%x\n", stk[1]);
+		stk = (uint32_t*) stk[0];
+	}
+}

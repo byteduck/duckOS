@@ -20,6 +20,11 @@
 #ifndef DUCKOS_LIBC_STDIO_H
 #define DUCKOS_LIBC_STDIO_H
 
+// We have to add this to get GCC to build for duckOS for some reason. May be fixed with a newer version of GCC.
+#ifdef GCC_SYSTEM_H
+#define HAVE_TERMIOS_H
+#endif
+
 #include <sys/cdefs.h>
 #include <stddef.h>
 #include <stdarg.h>

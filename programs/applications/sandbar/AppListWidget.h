@@ -26,7 +26,7 @@ public:
 	AppListWindow(Gfx::Point lower_anchor);
 
 private:
-	UI::Window::Ptr m_window;
+	UI::Ptr<Window> m_window;
 };
 
 

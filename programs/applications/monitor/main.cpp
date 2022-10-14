@@ -32,9 +32,9 @@
 
 using namespace Sys;
 
-UI::ProgressBar::Ptr cpu_bar;
-MemoryUsageWidget::Ptr mem_widget;
-ProcessListWidget::Ptr proc_list;
+UI::Ptr<UI::ProgressBar> cpu_bar;
+UI::Ptr<MemoryUsageWidget> mem_widget;
+UI::Ptr<ProcessListWidget> proc_list;
 
 Duck::FileInputStream cpu_stream;
 
@@ -76,7 +76,7 @@ int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
 	//Make window
-	auto window = UI::Window::create();
+	auto window = UI::Window::make();
 	window->set_title("System Monitor");
 
 	//Make widgets

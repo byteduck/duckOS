@@ -20,6 +20,7 @@
 #pragma once
 
 #include "libui/widget/Widget.h"
+#include "Menu.h"
 #include <libgraphics/Geometry.h>
 #include <libpond/Window.h>
 #include <string>
@@ -31,11 +32,11 @@
 #define UI_WINDOW_PADDING 2
 
 namespace UI {
-	class Window: public std::enable_shared_from_this<Window> {
+	class WindowDelegate;
+
+	class Window: public Duck::Object {
 	public:
-		using Ptr = std::shared_ptr<Window>;
-		using ArgPtr = const std::shared_ptr<Window>&;
-		static Window::Ptr create();
+		DUCK_OBJECT_DEF(Window)
 
 		///Getters and setters
 		void resize(Gfx::Dimensions dims);
@@ -49,6 +50,7 @@ namespace UI {
 		std::string title();
 		void set_resizable(bool resizable);
 		bool resizable();
+		bool is_focused();
 
 		///Window management
 		void bring_to_front();
@@ -71,22 +73,30 @@ namespace UI {
 		void on_mouse_scroll(Pond::MouseScrollEvent evt);
 		void on_mouse_leave(Pond::MouseLeaveEvent evt);
 		void on_resize(const Gfx::Rect& old_rect);
+		void on_focus(bool focused);
+
+		///Menus and stuff
+		void open_menu(UI::Menu::ArgPtr menu);
+		void open_menu(UI::Menu::ArgPtr menu, Gfx::Point point);
 
 		//UI
 		void calculate_layout();
+
+		std::weak_ptr<WindowDelegate> delegate;
 
 	protected:
 		Window();
 
 	private:
-		void blit_widget(Widget::ArgPtr widget);
-		void set_focused_widget(Widget::ArgPtr widget);
+		void initialize() override;
+		void blit_widget(PtrRef<Widget> widget);
+		void set_focused_widget(PtrRef<Widget> widget);
 
 		friend class Widget;
 		Pond::Window* _window;
-		Widget::Ptr _contents;
-		Widget::Ptr _focused_widget;
-		std::vector<Widget::Ptr> _widgets;
+		Ptr<Widget> _contents;
+		Ptr<Widget> _focused_widget;
+		std::vector<Ptr<Widget>> _widgets;
 		std::string _title;
 		Gfx::Point _mouse;
 		Gfx::Point _abs_mouse;
@@ -94,6 +104,7 @@ namespace UI {
 		bool _uses_alpha = false;
 		bool _resizable = false;
 		bool _needs_repaint = false;
+		bool _focused = false;
 
 		struct TitleButton {
 			std::string image;
@@ -102,6 +113,12 @@ namespace UI {
 		};
 		TitleButton _close_button = {"win-close"};
 
+	};
+
+	class WindowDelegate {
+	public:
+		virtual void window_focus_changed(PtrRef<Window> window, bool focused) = 0;
+		virtual ~WindowDelegate() = default;
 	};
 }
 

@@ -31,7 +31,7 @@ DirectoryWidget::DirectoryWidget(const Duck::Path& path): ListView(GRID) {
 	inited = true;
 }
 
-Widget::Ptr DirectoryWidget::create_entry(int index) {
+Ptr<Widget> DirectoryWidget::create_entry(int index) {
 	if(!index) {
 		auto btn = UI::Button::make("<---");
 		btn->on_released = [&] {

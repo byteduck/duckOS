@@ -276,11 +276,7 @@ bool Process::handle_pending_signal() {
 
 		//Print signal if unhandled and fatal
 		if(severity == Signal::FATAL && !signal_actions[signal].action) {
-			KLog::warn("Process", "PID %d exiting with fatal signal %s in thread %d\n", _pid, Signal::signal_names[signal], _last_active_thread);
-#ifdef DEBUG
-			printf("Stack trace:\n");
-			KernelMapper::print_stacktrace();
-#endif
+			KLog::warn("Process", "PID %d exiting with fatal signal %s", _pid, Signal::signal_names[signal]);
 		}
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
@@ -525,8 +521,8 @@ int Process::sys_waitpid(pid_t pid, UserspacePointer<int> status, int flags) {
 	return blocker.waited_pid();
 }
 
-int Process::sys_gettimeofday(UserspacePointer<timespec> t, UserspacePointer<void*> z) {
-	t.set(Time::now().to_timespec());
+int Process::sys_gettimeofday(UserspacePointer<timeval> t, UserspacePointer<void*> z) {
+	t.set(Time::now().to_timeval());
 	return 0;
 }
 
@@ -1055,6 +1051,10 @@ int Process::sys_threadexit(void* return_value) {
 	TaskManager::yield();
 	ASSERT(false);
 	return -1;
+}
+
+int Process::sys_access(UserspacePointer<char> pathname, int mode) {
+	return VFS::inst().access(pathname.str(), mode, _user, _cwd).code();
 }
 
 void Process::alert_thread_died() {

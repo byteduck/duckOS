@@ -273,7 +273,7 @@ static struct liballoc_major *allocate_new_page( unsigned int size )
 
 
 
-void *PREFIX(malloc)(size_t req_size)
+void *__DUCKOS_LIBALLOC_PREFIX(malloc)(size_t req_size)
 {
 	int startedBet = 0;
 	unsigned long long bestSize = 0;
@@ -303,7 +303,7 @@ void *PREFIX(malloc)(size_t req_size)
 		FLUSH();
 #endif
 		liballoc_unlock();
-		return PREFIX(malloc)(1);
+		return __DUCKOS_LIBALLOC_PREFIX(malloc)(1);
 	}
 
 
@@ -337,7 +337,7 @@ void *PREFIX(malloc)(size_t req_size)
 
 
 #ifdef LIBALLOC_DEBUG
-	printf( "liballoc: %x PREFIX(malloc)( %i ): ",
+	printf( "liballoc: %x __DUCKOS_LIBALLOC_PREFIX(malloc)( %i ): ",
 					__builtin_return_address(0),
 					size );
 	FLUSH();
@@ -611,7 +611,7 @@ void *PREFIX(malloc)(size_t req_size)
 	FLUSH();
 #endif
 #if defined LIBALLOC_DEBUG || defined INFO
-	printf( "liballoc: WARNING: PREFIX(malloc)( %i ) returning NULL.\n", size);
+	printf( "liballoc: WARNING: __DUCKOS_LIBALLOC_PREFIX(malloc)( %i ) returning NULL.\n", size);
 	liballoc_dump();
 	FLUSH();
 #endif
@@ -626,7 +626,7 @@ void *PREFIX(malloc)(size_t req_size)
 
 
 
-void PREFIX(free)(void *ptr)
+void __DUCKOS_LIBALLOC_PREFIX(free)(void *ptr)
 {
 	struct liballoc_minor *min;
 	struct liballoc_major *maj;
@@ -635,7 +635,7 @@ void PREFIX(free)(void *ptr)
 	{
 		l_warningCount += 1;
 #if defined LIBALLOC_DEBUG || defined INFO
-		printf( "liballoc: WARNING: PREFIX(free)( NULL ) called from %x\n",
+		printf( "liballoc: WARNING: __DUCKOS_LIBALLOC_PREFIX(free)( NULL ) called from %x\n",
 							__builtin_return_address(0) );
 		FLUSH();
 #endif
@@ -674,7 +674,7 @@ void PREFIX(free)(void *ptr)
 		if ( min->magic == LIBALLOC_DEAD )
 		{
 #if defined LIBALLOC_DEBUG || defined INFO
-			printf( "liballoc: ERROR: multiple PREFIX(free)() attempt on %x from %x.\n",
+			printf( "liballoc: ERROR: multiple __DUCKOS_LIBALLOC_PREFIX(free)() attempt on %x from %x.\n",
 									ptr,
 									__builtin_return_address(0) );
 			FLUSH();
@@ -683,7 +683,7 @@ void PREFIX(free)(void *ptr)
 		else
 		{
 #if defined LIBALLOC_DEBUG || defined INFO
-			printf( "liballoc: ERROR: Bad PREFIX(free)( %x ) called from %x\n",
+			printf( "liballoc: ERROR: Bad __DUCKOS_LIBALLOC_PREFIX(free)( %x ) called from %x\n",
 								ptr,
 								__builtin_return_address(0) );
 			FLUSH();
@@ -696,7 +696,7 @@ void PREFIX(free)(void *ptr)
 	}
 
 #ifdef LIBALLOC_DEBUG
-	printf( "liballoc: %x PREFIX(free)( %x ): ",
+	printf( "liballoc: %x __DUCKOS_LIBALLOC_PREFIX(free)( %x ): ",
 				__builtin_return_address( 0 ),
 				ptr );
 	FLUSH();
@@ -755,14 +755,14 @@ void PREFIX(free)(void *ptr)
 
 
 
-void* PREFIX(calloc)(size_t nobj, size_t size)
+void* __DUCKOS_LIBALLOC_PREFIX(calloc)(size_t nobj, size_t size)
 {
 	int real_size;
 	void *p;
 
 	real_size = nobj * size;
 
-	p = PREFIX(malloc)( real_size );
+	p = __DUCKOS_LIBALLOC_PREFIX(malloc)( real_size );
 
 	liballoc_memset( p, 0, real_size );
 
@@ -771,7 +771,7 @@ void* PREFIX(calloc)(size_t nobj, size_t size)
 
 
 
-void*   PREFIX(realloc)(void *p, size_t size)
+void*   __DUCKOS_LIBALLOC_PREFIX(realloc)(void *p, size_t size)
 {
 	void *ptr;
 	struct liballoc_minor *min;
@@ -780,12 +780,12 @@ void*   PREFIX(realloc)(void *p, size_t size)
 	// Honour the case of size == 0 => free old and return NULL
 	if ( size == 0 )
 	{
-		PREFIX(free)( p );
+		__DUCKOS_LIBALLOC_PREFIX(free)( p );
 		return NULL;
 	}
 
 	// In the case of a NULL pointer, return a simple malloc.
-	if ( p == NULL ) return PREFIX(malloc)( size );
+	if ( p == NULL ) return __DUCKOS_LIBALLOC_PREFIX(malloc)( size );
 
 	// Unalign the pointer if required.
 	ptr = p;
@@ -820,7 +820,7 @@ void*   PREFIX(realloc)(void *p, size_t size)
 		if ( min->magic == LIBALLOC_DEAD )
 		{
 #if defined LIBALLOC_DEBUG || defined INFO
-			printf( "liballoc: ERROR: multiple PREFIX(free)() attempt on %x from %x.\n",
+			printf( "liballoc: ERROR: multiple __DUCKOS_LIBALLOC_PREFIX(free)() attempt on %x from %x.\n",
 										ptr,
 										__builtin_return_address(0) );
 				FLUSH();
@@ -829,7 +829,7 @@ void*   PREFIX(realloc)(void *p, size_t size)
 		else
 		{
 #if defined LIBALLOC_DEBUG || defined INFO
-			printf( "liballoc: ERROR: Bad PREFIX(free)( %x ) called from %x\n",
+			printf( "liballoc: ERROR: Bad __DUCKOS_LIBALLOC_PREFIX(free)( %x ) called from %x\n",
 									ptr,
 									__builtin_return_address(0) );
 				FLUSH();
@@ -855,9 +855,9 @@ void*   PREFIX(realloc)(void *p, size_t size)
 	liballoc_unlock();
 
 	// If we got here then we're reallocating to a block bigger than us.
-	ptr = PREFIX(malloc)( size );					// We need to allocate new memory
+	ptr = __DUCKOS_LIBALLOC_PREFIX(malloc)( size );					// We need to allocate new memory
 	liballoc_memcpy( ptr, p, real_size );
-	PREFIX(free)( p );
+	__DUCKOS_LIBALLOC_PREFIX(free)( p );
 
 	return ptr;
 }

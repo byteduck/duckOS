@@ -39,7 +39,7 @@ ProcFSEntry::ProcFSEntry(ProcFSInodeType type, pid_t pid): type(type), pid(pid) 
 			break;
 
 		case RootCurProcEntry:
-			name = "$$";
+			name = "self";
 			dirent_type = TYPE_DIR;
 			parent = 1;
 			break;

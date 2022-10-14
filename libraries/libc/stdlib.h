@@ -51,6 +51,11 @@ void srand(unsigned int seed);
 
 //Environment & System
 char* getenv(const char* name);
+int putenv(char *string);
+int clearenv(void);
+int setenv(const char *name, const char *value, int overwrite);
+int unsetenv(const char *name);
+
 int system(const char* string);
 __attribute__((noreturn)) void abort();
 int atexit(void (*func)(void));

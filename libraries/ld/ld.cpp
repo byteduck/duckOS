@@ -37,6 +37,8 @@ size_t current_brk = 0;
 bool debug = false;
 Object* executable;
 
+extern "C" [[noreturn]] void call_main(int argc, char** argv, char** envp, main_t main);
+
 int main(int argc, char** argv, char** envp) {
 	if(argc < 2) {
 		fprintf(stderr, "No binary specified. Usage: ld-duckos.so BINARY\n");
@@ -103,10 +105,9 @@ int main(int argc, char** argv, char** envp) {
 
 	//Finally, jump to the executable's entry point!
 	if(debug)
-		Log::dbg("Calling entry point {#x}", executable->header.e_entry);
+		Log::dbgf("Calling entry point {#x}", executable->header.e_entry);
 	auto main = reinterpret_cast<main_t>(executable->header.e_entry);
 	main(argc - 2, argv + 2, envp);
-
 	return 0;
 }
 

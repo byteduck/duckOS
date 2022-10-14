@@ -22,21 +22,11 @@
 #include <libpond/Window.h>
 #include <vector>
 #include "../DrawContext.h"
+#include "libui/Menu.h"
+#include <libduck/Object.h>
 
-#define WIDGET_DEF(name) \
-	using Ptr = std::shared_ptr<name>; \
-	using ArgPtr = const std::shared_ptr<name>&; \
-	template<class... ArgTs> \
-	static inline std::shared_ptr<name> make(ArgTs&&... args) { \
-		return std::shared_ptr<name>(new name(args...)); \
-	} \
-	inline std::shared_ptr<name> self() { \
-		return std::static_pointer_cast<name>(shared_from_this()); \
-	}
-
-#define VIRTUAL_WIDGET_DEF(name) \
-	using Ptr = std::shared_ptr<name>; \
-	using ArgPtr = const std::shared_ptr<name>&;
+#define WIDGET_DEF(name) DUCK_OBJECT_DEF(name)
+#define VIRTUAL_WIDGET_DEF(name) DUCK_OBJECT_VIRTUAL(name)
 
 namespace UI {
 	enum SizingMode {
@@ -47,13 +37,19 @@ namespace UI {
 		AUTO, ABSOLUTE
 	};
 
-	class Window;
-	class Widget: public std::enable_shared_from_this<Widget> {
-	public:
-		using Ptr = std::shared_ptr<Widget>;
-		using ArgPtr = const std::shared_ptr<Widget>&;
+	template<typename T>
+	using Ptr = Duck::Ptr<T>;
+	template<typename T>
+	using PtrRef = Duck::PtrRef<T>;
+	template<typename T>
+	using WeakPtr = Duck::WeakPtr<T>;
 
-		~Widget();
+	class Window;
+	class Widget: public Duck::Object {
+	public:
+		DUCK_OBJECT_DEF(Widget)
+
+		~Widget() override;
 
 		/**
 		 * Returns the preferred size of the widget (which may not be its current size).
@@ -157,14 +153,14 @@ namespace UI {
 		 * Adds a child to the widget.
 		 * @param child The child to add.
 		 */
-		void add_child(Widget::ArgPtr child);
+		void add_child(PtrRef<Widget> child);
 
 		/**
 		 * Removes a child from the widget.
 		 * @param child The child to remove.
 		 * @return Whether or not the removal was successful (i.e. if the specified widget was a child of this widget)
 		 */
-		bool remove_child(Widget::ArgPtr child);
+		bool remove_child(PtrRef<Widget> child);
 
 		/**
 		 * Sets the position of the widget.
@@ -183,12 +179,12 @@ namespace UI {
 		 * Gets the position of the widget.
 		 * @return The position of the widget.
 		 */
-		 Gfx::Point position();
+		Gfx::Point position();
 
 		 /**
 		  * Hides the widget.
 		  */
-		 void hide();
+		void hide();
 
 		/**
 		* Shows the widget.
@@ -211,6 +207,12 @@ namespace UI {
 		 * Focuses the widget. Focused widgets will receive keyboard events.
 		 */
 		void focus();
+
+		/**
+		 * Opens a menu at the cursor location.
+		 * @param menu The menu to open.
+		 */
+		virtual void open_menu(UI::Menu::Ptr menu);
 
 	protected:
 		explicit Widget() = default;
@@ -252,13 +254,13 @@ namespace UI {
 		 * Called when a child is added to the widget.
 		 * @param child The child added.
 		 */
-		virtual void on_child_added(Widget::ArgPtr child);
+		virtual void on_child_added(PtrRef<Widget> child);
 
 		/**
 		 * Called when a child is removed from the widget.
 		 * @param child The child removed.
 		 */
-		virtual void on_child_removed(Widget::ArgPtr child);
+		virtual void on_child_removed(PtrRef<Widget> child);
 
 		/**
 		 * This function is called whenever the widget's position or size are changed.
@@ -300,7 +302,12 @@ namespace UI {
 		 */
 		void recalculate_rects();
 
-		std::vector<Widget::Ptr> children;
+		/**
+		 * Called after the constructor to initialize the widget.
+		 */
+		virtual void initialize();
+
+		std::vector<Ptr<Widget>> children;
 
 	private:
 		friend class Window;
@@ -312,8 +319,11 @@ namespace UI {
 		void evt_mouse_leave(Pond::MouseLeaveEvent evt);
 		void evt_keyboard(Pond::KeyEvent evt);
 
+		// TODO: Should be weakptr
 		Widget* _parent = nullptr;
+		// TODO: Should be weakptr
 		Window* _parent_window = nullptr;
+		// TODO: Should be weakptr
 		Window* _root_window = nullptr;
 		Gfx::Rect _rect = {0, 0, 0, 0};
 		Gfx::Rect _absolute_rect = {0, 0, 0, 0};

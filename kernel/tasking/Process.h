@@ -107,7 +107,7 @@ public:
 	int sys_lstat(UserspacePointer<char> file, UserspacePointer<struct stat> buf);
 	int sys_lseek(int file, off_t off, int whence);
 	int sys_waitpid(pid_t pid, UserspacePointer<int> status, int flags);
-	int sys_gettimeofday(UserspacePointer<timespec> t, UserspacePointer<void*> z);
+	int sys_gettimeofday(UserspacePointer<timeval> t, UserspacePointer<void*> z);
 	int sys_sigaction(int sig, UserspacePointer<sigaction> new_action, UserspacePointer<sigaction> old_action);
 	int sys_kill(pid_t pid, int sig);
 	int sys_unlink(UserspacePointer<char> name);
@@ -160,6 +160,7 @@ public:
 	int sys_gettid();
 	int sys_threadjoin(tid_t tid, UserspacePointer<void*> retp);
 	int sys_threadexit(void* return_value);
+	int sys_access(UserspacePointer<char> pathname, int mode);
 
 private:
 	friend class Thread;

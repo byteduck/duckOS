@@ -8,6 +8,7 @@
     </sourceRoots>
     <excludeRoots>
       <file path="$PROJECT_DIR$/cmake-build" />
+      <file path="$PROJECT_DIR$/ports/build" />
       <file path="$PROJECT_DIR$/toolchain" />
     </excludeRoots>
   </component>

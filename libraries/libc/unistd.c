@@ -30,7 +30,7 @@ pid_t fork() {
 }
 
 int execv(const char* path, char* const argv[]) {
-	return -1;
+	return syscall4(SYS_EXECVE, (int) path, (int) argv, (int) NULL);
 }
 
 int execve(const char* filename, char* const argv[], char* const envp[]) {

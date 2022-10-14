@@ -310,7 +310,14 @@ void Display::move_to_front(Window* window) {
 }
 
 void Display::focus(Window* window) {
+	if(window == _focused_window)
+		return;
+	auto old_focused = _focused_window;
 	_focused_window = window;
+	if(_focused_window)
+		_focused_window->notify_focus(true);
+	if(old_focused)
+		old_focused->notify_focus(false);
 }
 
 

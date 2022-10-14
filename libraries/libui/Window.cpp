@@ -21,6 +21,7 @@
 #include "Window.h"
 #include "libui.h"
 #include "Theme.h"
+#include "libui/widget/MenuWidget.h"
 
 using namespace UI;
 
@@ -28,10 +29,8 @@ Window::Window(): _window(pond_context->create_window(nullptr, {-1, -1, -1, -1},
 	_window->set_draggable(true);
 }
 
-std::shared_ptr<Window> Window::create() {
-	auto ret = std::shared_ptr<Window>(new Window());
-	UI::__register_window(ret, ret->_window->id());
-	return ret;
+void Window::initialize() {
+	UI::__register_window(self(), _window->id());
 }
 
 void Window::resize(Gfx::Dimensions dims) {
@@ -77,7 +76,7 @@ Gfx::Point Window::position() {
 void Window::set_contents(const std::shared_ptr<Widget>& contents) {
 	_contents = contents;
 	_focused_widget = contents;
-	_contents->set_window(shared_from_this());
+	_contents->set_window(self());
 	resize(_contents->current_size());
 }
 
@@ -102,6 +101,10 @@ void Window::set_resizable(bool resizable) {
 
 bool Window::resizable() {
 	return _resizable;
+}
+
+bool Window::is_focused() {
+	return _focused;
 }
 
 void Window::bring_to_front() {
@@ -296,6 +299,12 @@ void Window::on_resize(const Gfx::Rect& old_rect) {
 	calculate_layout();
 }
 
+void Window::on_focus(bool focused) {
+	_focused = focused;
+	if(delegate.lock())
+		delegate.lock()->window_focus_changed(self(), focused);
+}
+
 void Window::calculate_layout() {
 	if(!_contents)
 		return;
@@ -331,7 +340,7 @@ void Window::calculate_layout() {
 	_contents->set_layout_bounds(new_rect);
 }
 
-void Window::blit_widget(Widget::ArgPtr widget) {
+void Window::blit_widget(PtrRef<Widget> widget) {
 	if(widget->_hidden)
 		return;
 
@@ -346,6 +355,14 @@ void Window::blit_widget(Widget::ArgPtr widget) {
 		blit_widget(child);
 }
 
-void Window::set_focused_widget(Widget::ArgPtr widget) {
+void Window::open_menu(std::shared_ptr<Menu>& menu) {
+	open_menu(menu, _mouse);
+}
+
+void Window::open_menu(std::shared_ptr<Menu>& menu, Gfx::Point point) {
+	MenuWidget::open_menu(menu, point + _window->position());
+}
+
+void Window::set_focused_widget(PtrRef<Widget> widget) {
 	_focused_widget = widget;
 }

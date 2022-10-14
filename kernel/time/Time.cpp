@@ -37,6 +37,10 @@ timespec Time::to_timespec() const {
 	return {_sec, _usec};
 }
 
+timeval Time::to_timeval() const {
+	return {_sec, _usec};
+}
+
 long Time::sec() const {
 	return _sec;
 }

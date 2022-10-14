@@ -25,9 +25,16 @@
 typedef int pid_t;
 typedef int tid_t;
 typedef int64_t time_t;
+typedef long suseconds_t;
+typedef unsigned long useconds_t;
 struct timespec {
 	time_t tv_sec;
 	long tv_usec;
+	long tv_nsec;
+};
+struct timeval {
+	time_t      tv_sec;
+	suseconds_t tv_usec;
 };
 typedef void (*sighandler_t)(int);
 typedef unsigned long sigset_t;

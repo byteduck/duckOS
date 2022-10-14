@@ -45,13 +45,13 @@ namespace UI {
 	private:
 		explicit Button(std::string label);
 		explicit Button(Gfx::Image image);
-		explicit Button(UI::Widget::ArgPtr contents);
+		explicit Button(Ptr<Widget> contents);
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
 
-		UI::Label::Ptr m_label;
-		UI::Widget::Ptr m_contents;
+		Ptr<Label> m_label;
+		Ptr<Widget> m_contents;
 		bool m_pressed = false;
 		int m_padding = 4;
 	};
