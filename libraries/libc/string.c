@@ -133,12 +133,12 @@ int strcoll(const char* s1, const char* s2) {
 
 int strncmp(const char* s1, const char* s2, size_t n) {
 	if(!n) return 0;
-	while(n-- > 0) {
+	do {
+		if(*s1 != *s2++)
+			return *((const uint8_t*)s1) - *((const uint8_t*)--s2);
 		if(*s1++ == 0)
 			return 0;
-		if(*s1 != *s2++)
-			return *((const uint8_t*)(s1 - 1)) - *((const uint8_t*)(s2 - 1));
-	}
+	} while(n--);
 	return 0;
 }
 
@@ -154,17 +154,13 @@ void* memchr(const void* s, int c, size_t n) {
 }
 
 char* strchr(const char* s, int c) {
-	//Null terminator is included
-	if((char)c == 0)
-		return (char*) (s + strlen(s));
-
-	size_t len = strlen(s);
-	for(size_t i = 0; i < len; i++) {
-		if(s[i] == (char) c)
-			return (char*) (&s[i]);
+	for(;;) {
+		if(*s++ == (char)c)
+			return (char*) (s);
+		if(!*s)
+			return NULL;
+		s++;
 	}
-
-	return NULL;
 }
 
 size_t strcspn(const char* s1, const char* s2) {
