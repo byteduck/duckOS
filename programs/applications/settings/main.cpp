@@ -34,7 +34,7 @@ void sigchld_handler(int sig) {
 int main(int argc, char** argv, char** envp) {
 	signal(SIGCHLD, sigchld_handler); // Copied from Sandbar, fixes critical bug where applets remain "open" after being closed until control center is closed.
 	UI::init(argv, envp);
-	auto window = UI::Window::create();
+	auto window = UI::Window::make();
 
 	auto settings_list = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 3);
 

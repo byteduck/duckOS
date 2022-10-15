@@ -28,9 +28,9 @@
 int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
-	auto window = UI::Window::create();
+	auto window = UI::Window::make();
 
-	// Makes the page.
+	// Make the page.
 	auto settings_page = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 4);
 
 	// Add placeholder monitor image.
