@@ -278,10 +278,9 @@ void Display::flip_buffers() {
 		return;
 
 	if(_can_flip_buffer) {
-		ioctl(framebuffer_fd, IO_VIDEO_OFFSET, flipped ? _framebuffer.height : 0);
-		display_buffer_dirty = false;
 		auto* video_buf = &_framebuffer.data[flipped ? _framebuffer.height * _framebuffer.width : 0];
 		memcpy_uint32(video_buf, _root_window->framebuffer().data,_framebuffer.width * _framebuffer.height);
+		ioctl(framebuffer_fd, IO_VIDEO_OFFSET, flipped ? _framebuffer.height : 0);
 		flipped = !flipped;
 	} else {
 		_framebuffer.copy(_root_window->framebuffer(), _invalid_buffer_area, _invalid_buffer_area.position());
