@@ -406,6 +406,13 @@ int Process::sys_execve(UserspacePointer<char> filename, UserspacePointer<char*>
 			i++;
 		}
 	}
+	if(envp) {
+		int i = 0;
+		while(envp.get(i)) {
+			args->env.push_back(UserspacePointer<char>(envp.get(i)).str());
+			i++;
+		}
+	}
 	return exec(filename.str(), args);
 }
 

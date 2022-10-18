@@ -26,6 +26,7 @@ ProcessArgs::ProcessArgs(const kstd::shared_ptr<LinkedInode>& working_dir): work
 
 void ProcessArgs::setup_stack(Stack& stack) {
 	auto* argp = new size_t[argv.size()];
+	auto* envp = new size_t[env.size()];
 
 	//Copy contents of all args into stack
 	for(auto i = argv.size(); i > 0; i--) {
@@ -33,15 +34,22 @@ void ProcessArgs::setup_stack(Stack& stack) {
 		argp[i - 1] = stack.real_stackptr();
 	}
 
+	//Copy contents of all env into stack
+	for(auto i = env.size(); i > 0; i--) {
+		stack.push_string(env[i - 1].c_str());
+		envp[i - 1] = stack.real_stackptr();
+	}
+
 	//Copy pointers to all args into stack
 	stack.push32(0);
 	for(auto i = argv.size(); i > 0; i--)
 		stack.push32(argp[i - 1]);
-
 	size_t argvp = stack.real_stackptr();
 
-	//Envp
+	//Copy pointers to all env into stack
 	stack.push32(0);
+	for(auto i = env.size(); i > 0; i--)
+		stack.push32(envp[i - 1]);
 	size_t envpp = stack.real_stackptr();
 
 	//Push argc, argv, and env on to stack
