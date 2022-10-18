@@ -95,7 +95,7 @@ void Service::execute() const {
 		char* env[] = {NULL};
 
 		//Execute the command
-		execve(c_args[0], (char* const*) c_args, env);
+		execvpe(c_args[0], (char* const*) c_args, env);
 		Duck::Log::err("Failed to execute ", m_exec, ": ", strerror(errno));
 		exit(-1);
 	}

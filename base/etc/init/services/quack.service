@@ -1,4 +1,4 @@
 [service]
 name=Quack
-exec=/bin/quack
+exec=quack
 after=boot
