@@ -24,7 +24,8 @@
 #include <sys/syscall.h>
 #include <fcntl.h>
 #include <stdbool.h>
-#include <libc/sys/printf.h>
+#include <sys/printf.h>
+#include <sys/scanf.h>
 
 struct FILE {
 	int fd;
@@ -334,8 +335,12 @@ int fprintf(FILE* stream, const char* format, ...) {
 }
 
 int fscanf(FILE* stream, const char* format, ...) {
-	//TODO
-	return -1;
+	va_list arg;
+	int ret;
+	va_start (arg, format);
+	ret = vfscanf (stream, format, arg);
+	va_end (arg);
+	return ret;
 }
 
 int printf(const char* format, ...) {
@@ -371,7 +376,11 @@ int sprintf(char* s, const char* format, ...) {
 }
 
 int sscanf(const char* s, const char* format, ...) {
-	return -1;
+	va_list args;
+	va_start(args, format);
+	int ret = vsscanf(s, format, args);
+	va_end(args);
+	return ret;
 }
 
 int vfprintf(FILE* stream, const char* format, va_list arg) {
@@ -383,7 +392,10 @@ int vfprintf(FILE* stream, const char* format, va_list arg) {
 }
 
 int vfscanf(FILE* stream, const char* format, va_list arg) {
-	return -1;
+	char buffer[BUFSIZ];
+	if(!fgets(buffer, BUFSIZ - 1, stream))
+		return -1;
+	return vsscanf(buffer, format, arg);
 }
 
 int vprintf(const char* format, va_list arg) {
@@ -399,7 +411,7 @@ int vsprintf(char* s, const char* format, va_list arg) {
 }
 
 int vsscanf(const char* s, const char* format, va_list arg) {
-	return -1;
+	return common_scanf(s, format, arg);
 }
 
 int vasprintf(char** s, const char* format, va_list arg) {
@@ -431,7 +443,7 @@ char* fgets(char* s, int n, FILE* stream) {
 		return os;
 	}
 
-	while((c = fgetc(stream)) > 0) {
+	while((c = fgetc(stream)) >= 0) {
 		*s++ = c;
 
 		//If we've read n-1 characters, null-terminate the string and return it
@@ -448,8 +460,7 @@ char* fgets(char* s, int n, FILE* stream) {
 		}
 	}
 
-	//If we encounter an error, return the string (or null if we haven't read anything)
-	if(c == -1) {
+	if(c == EOF) {
 		stream->eof = 1;
 		return os == s ? NULL : os;
 	}

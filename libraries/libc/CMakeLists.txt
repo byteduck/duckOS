@@ -17,6 +17,7 @@ SET(SOURCES
         sys/mem.c
         sys/printf.c
         sys/liballoc.cpp
+        sys/scanf.c
         sys/socketfs.c
         sys/stat.c
         sys/status.c
