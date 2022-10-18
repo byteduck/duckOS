@@ -480,7 +480,7 @@ int getchar() {
 }
 
 int putc(int c, FILE* stream) {
-	return fputc(c, stdout);
+	return fputc(c, stream);
 }
 
 int putchar(int c) {
