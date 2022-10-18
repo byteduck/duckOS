@@ -415,7 +415,8 @@ int vsscanf(const char* s, const char* format, va_list arg) {
 }
 
 int vasprintf(char** s, const char* format, va_list arg) {
-	size_t len = strlen(format) + 100;
+	// TODO: This frequently truncates output
+	size_t len = strlen(format) + 1000;
 	*s = malloc(len);
 	return vsnprintf(*s, len, format, arg);
 }
