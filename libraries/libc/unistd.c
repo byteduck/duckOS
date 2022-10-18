@@ -22,15 +22,20 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <termios.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
 char** environ = NULL;
+char** __original_environ = NULL;
+#define DEFAULT_PATH "/usr/local/bin:/usr/bin:/bin"
 
 pid_t fork() {
 	return syscall(SYS_FORK);
 }
 
 int execv(const char* path, char* const argv[]) {
-	return syscall4(SYS_EXECVE, (int) path, (int) argv, (int) NULL);
+	return execve(path, argv, environ);
 }
 
 int execve(const char* filename, char* const argv[], char* const envp[]) {
@@ -38,11 +43,34 @@ int execve(const char* filename, char* const argv[], char* const envp[]) {
 }
 
 int execvpe(const char* filename, char* const argv[], char* const envp[]) {
+	char* path = getenv("PATH");
+	if(!path)
+		path = DEFAULT_PATH;
+	path = strdup(path);
+
+	// Try each element of path
+	char* path_elem = strtok(path, ":");
+	while(path_elem) {
+		size_t path_len = strlen(path_elem);
+		char* full_path = malloc(path_len + strlen(filename) + 2);
+		strcpy(full_path, path_elem);
+		full_path[path_len] = '/';
+		strcpy(full_path + path_len + 1, filename);
+
+		int res = execve(full_path, argv, envp);
+		free(full_path);
+		if(res && errno != ENOENT)
+			return res;
+		path_elem = strtok(NULL, ":");
+	}
+
+	free(path);
+	errno = ENOENT;
 	return -1;
 }
 
 int execvp(const char* filename, char* const argv[]) {
-	return syscall3(SYS_EXECVP, (int) filename, (int) argv);
+	return execvpe(filename, argv, environ);
 }
 
 int execl(const char* filename, const char* arg, ...) {

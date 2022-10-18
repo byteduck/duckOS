@@ -315,25 +315,141 @@ void srand(unsigned int seed) {
 	next = seed;
 }
 
+extern char** __original_environ;
+void __resize_environ(size_t new_size) {
+	// TODO: This will leak allocated environment variables that are removed
+	char** new_environ = malloc(sizeof(char*) * (new_size + 1));
+	size_t i = 0;
+	if(environ)
+		for(; i < new_size && environ[i]; i++)
+			new_environ[i] = environ[i];
+	while(i < new_size)
+		new_environ[i++] = NULL;
+	new_environ[new_size] = NULL;
+	char** old_environ = environ;
+	environ = new_environ;
+	if(old_environ != __original_environ)
+		free(old_environ);
+}
+
 //Environment & System
 char* getenv(const char* name) {
+	if(!environ)
+		return NULL;
+
+	size_t name_len = strlen(name);
+	for(int i = 0; environ[i]; i++) {
+		const char* cur_env = environ[i];
+		char* cur_start = strchr(cur_env, '=');
+		if(cur_start) {
+			size_t len = cur_start - cur_env;
+			if(name_len == len && !strncmp(cur_env, name, len))
+				return cur_start + 1;
+		}
+	}
+
 	return NULL;
 }
 
 int putenv(char *string) {
-	return -1; // TODO
+	if(!environ)
+		__resize_environ(0);
+
+	// Make sure it's in the format a=b. If not, we should unset the corresponding variable
+	char* start = strchr(string, '=');
+	if(!start)
+		unsetenv(start);
+	size_t len = start - string;
+
+	// See if we already have an environment variable with the same name. If we do, replace it
+	size_t i = 0;
+	for (; environ[i]; i++) {
+		char* cur_env = environ[i];
+		char* cur_start = strchr(cur_env, '=');
+		if(!cur_start)
+			continue;
+		size_t cur_len = cur_start - cur_env;
+		if (cur_len == len && !strncmp(string, cur_env, len)) {
+			environ[i] = string;
+			return 0;
+		}
+	}
+
+	// Otherwise, we need to add a new variable.
+	__resize_environ(i + 1);
+	environ[i] = string;
+
+	return 0;
 }
 
 int clearenv(void) {
-	return -1; // TODO
+	__resize_environ(0);
+	return 0;
 }
 
 int setenv(const char *name, const char *value, int overwrite) {
-	return -1; // TODO
+	if(!environ)
+		__resize_environ(0);
+
+	if(!overwrite && getenv(name))
+		return 0;
+
+	size_t name_len = strlen(name);
+	size_t total_len = name_len + strlen(value) + 1;
+	char* new_env = malloc(total_len + 1);
+	strcpy(new_env, name);
+	new_env[name_len] = '=';
+	strcpy(new_env + name_len + 1, value);
+
+	// See if we already have an environment variable with the same name. If we do, replace it
+	size_t i = 0;
+	for (; environ[i]; i++) {
+		char* cur_env = environ[i];
+		char* cur_start = strchr(cur_env, '=');
+		if(!cur_start)
+			continue;
+		size_t cur_len = cur_start - cur_env;
+		if (cur_len == name_len && !strncmp(name, cur_env, name_len)) {
+			environ[i] = new_env;
+			return 0;
+		}
+	}
+
+	// Otherwise, we need to add a new variable.
+	__resize_environ(i + 1);
+	environ[i] = new_env;
+
+	return 0;
 }
 
 int unsetenv(const char *name) {
-	return -1; // TODO
+	if(!environ)
+		__resize_environ(0);
+
+	size_t name_len = strlen(name);
+
+	int index = -1;
+	for (size_t i = 0; environ[i]; i++) {
+		char* cur_env = environ[i];
+		char* cur_start = strchr(cur_env, '=');
+		if(!cur_start)
+			continue;
+		size_t cur_len = cur_start - cur_env;
+		if (cur_len == name_len && !strncmp(name, cur_env, name_len)) {
+			index = i;
+			break;
+		}
+	}
+
+	if(index == -1)
+		return 0;
+
+	// Shift all the variables after the one to remove to the left
+	for(; environ[index]; index++)
+		environ[index] = environ[index + 1];
+	__resize_environ(index - 1);
+
+	return 0;
 }
 
 int system(const char* string) {

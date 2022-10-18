@@ -26,6 +26,7 @@ extern void _init();
 int main(int, char**, char**);
 extern void (*__init_array_start[])(int, char**, char**);
 extern void (*__init_array_end[])(int, char**, char**);
+extern char** __original_environ;
 
 int __duckos_did_init = 0;
 __attribute__((constructor)) void __on_init() {
@@ -34,6 +35,7 @@ __attribute__((constructor)) void __on_init() {
 
 int _start(int argc, char* argv[], char* env[]) {
 	environ = env;
+	__original_environ = env;
 
     //We don't want to call the init array twice; the dynamic loader does this
     if(!__duckos_did_init) {
