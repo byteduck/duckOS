@@ -4,6 +4,7 @@
 PORTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SOURCE_DIR="$PORTS_DIR/.."
 ROOT_DIR="$SOURCE_DIR/cmake-build/root"
+PORTS_D_DIR="$ROOT_DIR/usr/ports.d"
 PATH="$PATH:$SOURCE_DIR/toolchain/tools/bin"
 NUM_JOBS=$(( $(nproc) / 2 ))
 
@@ -20,16 +21,6 @@ export CXXFILT="i686-pc-duckos-c++filt"
 export READELF="i686-pc-duckos-readelf"
 export STRIP="$i686-pc-duckos-strip"
 export OBJCOPY="i686-pc-duckos-objcopy"
-
-default_args() {
-  export DOWNLOAD_URL=""
-  export DOWNLOAD_FILE=""
-  export PATCH_FILE=""
-  export USE_CONFIGURE=""
-  export CONFIGURE_ARGS=()
-  export MAKE_ARGS=()
-  export INSTALL_ARGS=("install")
-}
 
 download_extract_patch() {
   if [ ! -d "$DOWNLOAD_FILE" ]; then
@@ -52,15 +43,38 @@ download_extract_patch() {
   fi
 }
 
+install_dependencies() {
+  msg "Installing dependencies for $DUCKOS_PORT_NAME..."
+  for DEPENDENCY in "${DEPENDENCIES[@]}"; do
+    echo "CHECK $PORTS_D_DIR/$DEPENDENCY"
+    if [ ! -f "$PORTS_D_DIR/$DEPENDENCY" ]; then
+      ("$PORTS_DIR/ports.sh" $DEPENDENCY) || fail "Could not build dependency $DEPENDENCY!"
+    fi
+  done
+  success "Installed dependencies for $DUCKOS_PORT_NAME!"
+}
+
 build_port() {
   export DUCKOS_PORT_NAME="$1"
   export PORT_DIR="$PORTS_DIR/$DUCKOS_PORT_NAME"
   msg "Building port $DUCKOS_PORT_NAME..."
-  default_args
+  
+  # Default args
+  export DOWNLOAD_URL=""
+  export DOWNLOAD_FILE=""
+  export PATCH_FILE=""
+  export USE_CONFIGURE=""
+  export CONFIGURE_ARGS=()
+  export MAKE_ARGS=()
+  export INSTALL_ARGS=("install")
+  export DEPENDENCIES=()
   source "$PORT_DIR/build.sh"
+
+  install_dependencies
+  
   mkdir -p "$PORTS_DIR/build/$DUCKOS_PORT_NAME"
   pushd "$PORTS_DIR/build/$DUCKOS_PORT_NAME" || return 1
-  if [ -n  "$DOWNLOAD_URL" ]; then
+  if [ -n "$DOWNLOAD_URL" ]; then
     download_extract_patch
   fi
   if [ "$USE_CONFIGURE" = "true" ]; then
@@ -72,6 +86,8 @@ build_port() {
   msg "Installing port $DUCKOS_PORT_NAME..."
   DESTDIR="$ROOT_DIR" make "${INSTALL_ARGS[@]}" || return 1
   popd || return 1
+  mkdir -p "$PORTS_D_DIR"
+  touch "$PORTS_D_DIR/$DUCKOS_PORT_NAME"
   success "Built port $DUCKOS_PORT_NAME!"
 }
 

@@ -4,3 +4,4 @@ export DOWNLOAD_FILE="mpfr-4.1.0"
 export PATCH_FILE="mpfr.patch"
 export USE_CONFIGURE="true"
 export CONFIGURE_OPTIONS=("--target=i686-pc-duckos" "--with-sysroot=/")
+export DEPENDENCIES=("gmp")
