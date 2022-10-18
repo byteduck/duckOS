@@ -43,6 +43,14 @@ int execve(const char* filename, char* const argv[], char* const envp[]) {
 }
 
 int execvpe(const char* filename, char* const argv[], char* const envp[]) {
+	char cwd[512];
+	getcwd(cwd, 512);
+
+	// If the path contains a slash, ignore the path
+	if(strchr(filename, '/'))
+		execve(filename, argv, envp);
+
+	// Get the path
 	char* path = getenv("PATH");
 	if(!path)
 		path = DEFAULT_PATH;
@@ -51,12 +59,14 @@ int execvpe(const char* filename, char* const argv[], char* const envp[]) {
 	// Try each element of path
 	char* path_elem = strtok(path, ":");
 	while(path_elem) {
+		// Create a string with the full path of the executable
 		size_t path_len = strlen(path_elem);
 		char* full_path = malloc(path_len + strlen(filename) + 2);
 		strcpy(full_path, path_elem);
 		full_path[path_len] = '/';
 		strcpy(full_path + path_len + 1, filename);
 
+		// Try executing it
 		int res = execve(full_path, argv, envp);
 		free(full_path);
 		if(res && errno != ENOENT)
