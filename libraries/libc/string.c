@@ -155,7 +155,7 @@ void* memchr(const void* s, int c, size_t n) {
 
 char* strchr(const char* s, int c) {
 	for(;;) {
-		if(*s++ == (char)c)
+		if(*s == (char)c)
 			return (char*) (s);
 		if(!*s)
 			return NULL;
