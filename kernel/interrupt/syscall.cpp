@@ -68,8 +68,6 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return cur_proc->sys_getcwd((char*)arg1, (size_t)arg2);
 		case SYS_WAITPID:
 			return cur_proc->sys_waitpid((pid_t)arg1, (int*)arg2, (int)arg3);
-		case SYS_EXECVP:
-			return cur_proc->sys_execvp((char*)arg1, (char**)arg2);
 		case SYS_GETTIMEOFDAY:
 			return cur_proc->sys_gettimeofday((struct timeval*)arg1, (void**)arg2);
 		case SYS_SIGACTION:

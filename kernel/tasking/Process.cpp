@@ -409,24 +409,6 @@ int Process::sys_execve(UserspacePointer<char> filename, UserspacePointer<char*>
 	return exec(filename.str(), args);
 }
 
-int Process::sys_execvp(UserspacePointer<char> filename, UserspacePointer<char*> argv) {
-	auto* args = new ProcessArgs(_cwd);
-	if(argv) {
-		int i = 0;
-		while(argv.get(i)) {
-			args->argv.push_back(UserspacePointer<char>(argv.get(i)).str());
-			i++;
-		}
-	}
-
-	auto filename_str= filename.str();
-
-	if(filename_str.find('/') == -1) {
-		filename_str = kstd::string("/bin/") + filename_str;
-	}
-	return exec(filename_str, args);
-}
-
 int Process::sys_open(UserspacePointer<char> filename, int options, int mode) {
 	kstd::string path = filename.str();
 	mode &= 04777; //We just want the permission bits

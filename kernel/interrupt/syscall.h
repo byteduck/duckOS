@@ -41,7 +41,6 @@
 #define SYS_READDIR 21
 #define SYS_CHDIR 22
 #define SYS_GETCWD 23
-#define SYS_EXECVP 24
 #define SYS_RMDIR 25
 #define SYS_MKDIR 26
 #define SYS_MKDIRAT 27
