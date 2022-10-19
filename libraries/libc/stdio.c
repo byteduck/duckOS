@@ -354,7 +354,7 @@ int printf(const char* format, ...) {
 int scanf(const char* format, ...) {
 	va_list args;
 	va_start(args, format);
-	int ret = fscanf(stdin, format, args);
+	int ret = vfscanf(stdin, format, args);
 	va_end(args);
 	return ret;
 }
