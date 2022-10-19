@@ -43,6 +43,23 @@ download_extract_patch() {
   fi
 }
 
+git_clone_patch() {
+  if [ ! -d ".git" ]; then
+    msg "Cloning $GIT_URL"
+    git clone "$GIT_URL" .
+    if [ -n "$PATCH_FILE" ]; then
+      msg "Applying patch $PATCH_FILE..."
+      patch -p1 < "$PORT_DIR/$PATCH_FILE" > /dev/null || return 1
+      success "Cloned and patched $GIT_URL!"
+    else
+      success "Cloned $GIT_URL!"
+    fi
+    popd
+  else
+    msg "$GIT_URL already downloaded!"
+  fi
+}
+
 install_dependencies() {
   msg "Installing dependencies for $DUCKOS_PORT_NAME..."
   for DEPENDENCY in "${DEPENDENCIES[@]}"; do
@@ -61,21 +78,24 @@ build_port() {
   
   # Default args
   export DOWNLOAD_URL=""
-  export DOWNLOAD_FILE=""
+  export DOWNLOAD_FILE="$DUCKOS_PORT_NAME"
   export PATCH_FILE=""
   export USE_CONFIGURE=""
   export CONFIGURE_ARGS=()
   export MAKE_ARGS=()
   export INSTALL_ARGS=("install")
   export DEPENDENCIES=()
+  export GIT_URL=""
   source "$PORT_DIR/build.sh"
 
   install_dependencies
-  
+
   mkdir -p "$PORTS_DIR/build/$DUCKOS_PORT_NAME"
   pushd "$PORTS_DIR/build/$DUCKOS_PORT_NAME" || return 1
   if [ -n "$DOWNLOAD_URL" ]; then
     download_extract_patch
+  elif [ -n "$GIT_URL" ]; then
+    git_clone_patch
   fi
   if [ "$USE_CONFIGURE" = "true" ]; then
     msg "Configuring port $DUCKOS_PORT_NAME..."
@@ -84,7 +104,7 @@ build_port() {
   msg "Building port $DUCKOS_PORT_NAME..."
   make "-j$NUM_JOBS" "${MAKE_ARGS[@]}" || return 1
   msg "Installing port $DUCKOS_PORT_NAME..."
-  DESTDIR="$ROOT_DIR" make "${INSTALL_ARGS[@]}" || return 1
+  make DESTDIR="$ROOT_DIR" "${INSTALL_ARGS[@]}" || return 1
   popd || return 1
   mkdir -p "$PORTS_D_DIR"
   touch "$PORTS_D_DIR/$DUCKOS_PORT_NAME"

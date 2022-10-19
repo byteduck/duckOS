@@ -1,5 +1,0 @@
-[submodule "ports/doom"]
-	path = ports/doom
-	url = https://github.com/byteduck/duckos-doom
-[submodule "doom"]
-	url = git@github.com:byteduck/duckos-doom
