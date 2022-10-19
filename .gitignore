@@ -85,6 +85,9 @@ _deps
 # CMake
 cmake-build*/
 
+# Vagrant
+/.Vagrant
+
 #
 # DUCKOS-SPECIFIC
 #
