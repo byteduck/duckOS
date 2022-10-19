@@ -10,10 +10,10 @@
 #define EXPECT(ch) if((ch) != *buffer++) return num_stored;
 #define CONSUME_OPTIONAL(ch) if((ch) == *buffer) buffer++;
 #define CONSUME_SIGN \
-	if(*format == '+') { \
-		format++; \
-	} else if(*format == '-') { \
-		format++; \
+	if(*buffer == '+') { \
+		buffer++; \
+	} else if(*buffer == '-') { \
+		buffer++; \
 		sign = -1; \
 	}
 
