@@ -54,7 +54,6 @@ git_clone_patch() {
     else
       success "Cloned $GIT_URL!"
     fi
-    popd
   else
     msg "$GIT_URL already downloaded!"
   fi
