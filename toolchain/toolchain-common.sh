@@ -33,7 +33,7 @@ fi
 download-binutils () {
   if [ ! -d "$BINUTILS_FILE" ]; then
     msg "Downloading binutils $BINUTILS_VERSION..."
-    curl "$BINUTILS_URL" > "$BINUTILS_FILE.tar.gz" || exit 1
+    curl -k "$BINUTILS_URL" > "$BINUTILS_FILE.tar.gz" || exit 1
     msg "Extracting binutils..."
     tar -xzf "$BINUTILS_FILE.tar.gz" || exit 1
     rm "$BINUTILS_FILE.tar.gz"
@@ -58,7 +58,7 @@ download-binutils () {
 download-gcc () {
   if [ ! -d "$GCC_FILE" ]; then
     msg "Downloading gcc $GCC_VERSION..."
-    curl "$GCC_URL" > "$GCC_FILE.tar.gz" || exit 1
+    curl -k "$GCC_URL" > "$GCC_FILE.tar.gz" || exit 1
     msg "Extracting gcc..."
     tar -xzf "$GCC_FILE.tar.gz" || exit 1
     rm "$GCC_FILE.tar.gz"

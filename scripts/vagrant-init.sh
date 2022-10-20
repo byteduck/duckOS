@@ -1,4 +1,11 @@
+#!/bin/bash
+
 cd /vagrant
+
+# Needed for running scripts correctly.
+sudo apt-get install dos2unix -y
+find scripts/*.sh -type f -exec dos2unix {} \;
+find toolchain/*.sh -type f -exec dos2unix {} \;
 
 sudo locale-gen UTF-8
 
@@ -9,9 +16,11 @@ sudo apt install build-essential cmake bison flex libgmp3-dev libmpc-dev libmpfr
 
 export CMAKE_ASM_NASM_COMPILER=nasm
 
+export IS_VAGRANT=1
+
 cd toolchain
-chmod a+x ./build-toolchain.sh
-bash build-toolchain.sh
+chmod +x ./build-toolchain.sh
+source "build-toolchain.sh"
 
 cd ../
 mkdir -p cmake-build

@@ -1,6 +1,25 @@
 #!/bin/bash
 set -e
 
+# Some enviroments may not have 'realpath'
+if ! command -v realpath &> /dev/null
+then
+  realpath ()
+  {
+    f=$@;
+    if [ -d "$f" ]; then
+      base="";
+      dir="$f";
+    else
+      base="/$(basename "$f")";
+      dir=$(dirname "$f");
+    fi;
+    dir=$(cd "$dir" && /bin/pwd);
+    echo "$dir$base"
+  }
+fi
+
+
 source "./toolchain-common.sh"
 source "../scripts/duckos.sh"
 
