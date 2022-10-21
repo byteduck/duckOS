@@ -74,7 +74,8 @@ ResultRet<std::vector<DirectoryEntry>> Path::get_directory_entries() const {
 
 	struct dirent* entry;
 	while((entry = readdir(dir)) != NULL)
-		entries.emplace_back(*this, entry);
+		if(std::string(entry->d_name) != "." && std::string(entry->d_name) != "..")
+			entries.emplace_back(*this, entry);
 
 	closedir(dir);
 
