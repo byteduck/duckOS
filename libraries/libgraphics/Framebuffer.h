@@ -33,10 +33,18 @@ namespace Gfx {
 	public:
 		Framebuffer();
 		Framebuffer(uint32_t* buffer, int width, int height);
+		Framebuffer(int width, int height);
+		Framebuffer(Framebuffer&& other) noexcept;
+		Framebuffer(Framebuffer& other) noexcept;
+		~Framebuffer() noexcept;
+
+		Framebuffer& operator=(const Framebuffer& other);
+		Framebuffer& operator=(Framebuffer&& other) noexcept;
 
 		uint32_t* data = nullptr;
 		int width = 0;
 		int height = 0;
+		bool should_free = false;
 
 		/**
 		 * Frees the data associated with the Image.

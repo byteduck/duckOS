@@ -27,6 +27,37 @@ using namespace Gfx;
 
 Framebuffer::Framebuffer(): data(nullptr), width(0), height(0) {}
 Framebuffer::Framebuffer(uint32_t* buffer, int width, int height): data(buffer), width(width), height(height) {}
+Framebuffer::Framebuffer(int width, int height): data(new uint32_t[width * height]), width(width), height(height), should_free(true) {}
+Framebuffer::Framebuffer(Framebuffer&& other) noexcept: data(other.data), width(other.width), height(other.height), should_free(other.should_free) {
+	other.data = nullptr;
+}
+Framebuffer::Framebuffer(Framebuffer& other) noexcept: data(other.data), width(other.width), height(other.height), should_free(false) {}
+
+Framebuffer::~Framebuffer() noexcept {
+	if(should_free)
+		free();
+}
+
+Framebuffer& Framebuffer::operator=(const Framebuffer& other) {
+	if(should_free)
+		free();
+	width = other.width;
+	height = other.height;
+	data = other.data;
+	should_free = false;
+	return *this;
+}
+
+Framebuffer& Framebuffer::operator=(Framebuffer&& other) noexcept {
+	if(should_free)
+		free();
+	width = other.width;
+	height = other.height;
+	data = other.data;
+	should_free = other.should_free;
+	other.data = nullptr;
+	return *this;
+}
 
 void Framebuffer::free() {
 	if(data) {
@@ -154,6 +185,11 @@ void Framebuffer::draw_image(const Framebuffer& other, const Point& pos) const {
 }
 
 void Framebuffer::draw_image_scaled(const Framebuffer& other, const Rect& rect) const {
+	if(rect.width == other.width && rect.height == other.height) {
+		draw_image(other, rect.position());
+		return;
+	}
+
 	double scale_x = (double) rect.width / (double) other.width;
 	double scale_y = (double) rect.height / (double) other.height;
 
@@ -299,5 +335,6 @@ const uint8_t* Framebuffer::deserialize(const uint8_t* buf) {
 		data = new uint32_t[width * height];
 		memcpy_uint32(data, serialization->data, width * height);
 	}
+	should_free = true;
 	return buf + serialized_size();
 }
