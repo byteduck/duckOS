@@ -234,6 +234,36 @@ void Framebuffer::fill(Rect area, uint32_t color) const {
 	}
 }
 
+void Framebuffer::fill_gradient_h(Rect area, uint32_t color_a, uint32_t color_b) const {
+	if(color_a == color_b)
+		fill(area, color_a);
+	for(int x = 0; x < area.width; x++) {
+		double pct = (double)x / area.width;
+		double oneminus = 1.0 - pct;
+		fill({area.x + x, area.y, 1, area.height}, RGBA(
+				(uint8_t)(COLOR_R(color_a) * oneminus + COLOR_R(color_b) * pct),
+				(uint8_t)(COLOR_G(color_a) * oneminus + COLOR_G(color_b) * pct),
+				(uint8_t)(COLOR_B(color_a) * oneminus + COLOR_B(color_b) * pct),
+				(uint8_t)(COLOR_A(color_a) * oneminus + COLOR_A(color_b) * pct)
+		));
+	}
+}
+
+void Framebuffer::fill_gradient_v(Rect area, uint32_t color_a, uint32_t color_b) const {
+	if(color_a == color_b)
+		fill(area, color_a);
+	for(int y = 0; y < area.height; y++) {
+		double pct = (double)y / area.width;
+		double oneminus = 1.0 - pct;
+		fill({area.x, area.y + y, area.width, 1}, RGBA(
+				(uint8_t)(COLOR_R(color_a) * oneminus + COLOR_R(color_b) * pct),
+				(uint8_t)(COLOR_G(color_a) * oneminus + COLOR_G(color_b) * pct),
+				(uint8_t)(COLOR_B(color_a) * oneminus + COLOR_B(color_b) * pct),
+				(uint8_t)(COLOR_A(color_a) * oneminus + COLOR_A(color_b) * pct)
+		));
+	}
+}
+
 void Framebuffer::outline(Rect area, uint32_t color) const {
 	fill({area.x, area.y, area.width, 1}, color);
 	fill({area.x, area.y + area.height - 1, area.width, 1}, color);

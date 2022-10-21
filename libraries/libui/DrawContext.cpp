@@ -53,16 +53,11 @@ void UI::DrawContext::fill(Gfx::Rect rect, Color color) const {
 }
 
 void UI::DrawContext::fill_gradient_h(Gfx::Rect rect, Color color_a, Color color_b) const {
-	for(int x = 0; x < rect.width; x++) {
-		double pct = (double)x / rect.width;
-		double oneminus = 1.0 - pct;
-		fb->fill({rect.x + x, rect.y, 1, rect.height}, RGBA(
-				(uint8_t)(COLOR_R(color_a) * oneminus + COLOR_R(color_b) * pct),
-				(uint8_t)(COLOR_G(color_a) * oneminus + COLOR_G(color_b) * pct),
-				(uint8_t)(COLOR_B(color_a) * oneminus + COLOR_B(color_b) * pct),
-				(uint8_t)(COLOR_A(color_a) * oneminus + COLOR_A(color_b) * pct)
-		));
-	}
+	fb->fill_gradient_h(rect, color_a, color_b);
+}
+
+void UI::DrawContext::fill_gradient_v(Gfx::Rect rect, Color color_a, Color color_b) const {
+	fb->fill_gradient_v(rect, color_a, color_b);
 }
 
 void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color) const {

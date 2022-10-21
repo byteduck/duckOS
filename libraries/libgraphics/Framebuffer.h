@@ -111,6 +111,22 @@ namespace Gfx {
 		void fill(Rect area, uint32_t color) const;
 
 		/**
+		 * Fills an area of the Image with a horizontal gradient (left to right).
+		 * @param area The area to fill.
+		 * @param color_a The start color.
+		 * @param color_b The end color.
+		 */
+		void fill_gradient_h(Rect area, uint32_t color_a, uint32_t color_b) const;
+
+		/**
+		 * Fills an area of the Image with a vertical gradient (top to bottom).
+		 * @param area The area to fill.
+		 * @param color_a The start color.
+		 * @param color_b The end color.
+		 */
+		void fill_gradient_v(Rect area, uint32_t color_a, uint32_t color_b) const;
+
+		/**
 		 * Draws the outline of an area on the Image.
 		 * @param area The rect of the area to outline.
 		 * @param color The color to draw the outline in.

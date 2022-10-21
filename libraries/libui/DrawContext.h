@@ -42,6 +42,7 @@ namespace UI {
 		///Drawing
 		void fill(Gfx::Rect rect, Color color) const;
 		void fill_gradient_h(Gfx::Rect rect, Color color_a, Color color_b) const;
+		void fill_gradient_v(Gfx::Rect rect, Color color_a, Color color_b) const;
 
 		void draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Color color) const;
 		void draw_text(const char* str, Gfx::Point pos, Gfx::Font* font, Color color) const;
