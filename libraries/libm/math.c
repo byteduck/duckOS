@@ -20,3 +20,9 @@
 double ldexp(double x, int exp) {
 	return x * (0x1u >> exp);
 }
+
+double sqrt(double x) {
+	double result;
+	asm("fsqrt" : "=t"(result) : "0"(x));
+	return result;
+}
