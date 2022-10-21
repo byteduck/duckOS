@@ -23,6 +23,14 @@
 #include <optional>
 #include <cstring>
 
+#define TRY(expr) \
+	({ \
+        auto res = (expr); \
+        if (res.is_error()) \
+            return res.result(); \
+        res.value(); \
+    })
+
 namespace Duck {
 	class Result {
 	public:
