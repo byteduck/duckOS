@@ -30,7 +30,7 @@ Button::Button(std::string label): m_label(UI::Label::make(label)), m_contents(m
 	add_child(m_label);
 }
 
-Button::Button(Gfx::Image image): m_contents(UI::Image::make(image)) {
+Button::Button(Ptr<const Gfx::Image> image): m_contents(UI::Image::make(image)) {
 	add_child(m_contents);
 }
 

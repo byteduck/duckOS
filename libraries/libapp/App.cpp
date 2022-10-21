@@ -61,15 +61,16 @@ ResultRet<Info> Info::from_current_app() {
 Info::Info(Path base_path, std::string name, std::string exec):
 	_exists(true), _base_path(std::move(base_path)), _name(std::move(name)), _exec(std::move(exec)) {}
 
-const Gfx::Image& Info::icon() {
+Duck::Ptr<const Gfx::Image> Info::icon() {
 	if(!_icon) {
-		_icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(_base_path / "icon" / "16x16.png"));
-		if(!_icon)
-			_icon = std::shared_ptr<Gfx::Image>(Gfx::load_png(LIBAPP_MISSING_ICON));
-		if(!_icon)
-			_icon = std::make_shared<Gfx::Image>(16, 16);
+		auto icon_res = Gfx::Image::load(_base_path / "icon");
+		if(icon_res.is_error())
+			icon_res = Gfx::Image::load(LIBAPP_MISSING_ICON);
+		if(icon_res.is_error())
+			icon_res = Gfx::Image::empty({16, 16});
+		_icon = icon_res.value();
 	}
-	return *_icon;
+	return _icon;
 }
 
 const std::string& Info::name() const {
@@ -96,17 +97,20 @@ Path Info::base_path() const {
 }
 
 Path Info::resource_path(const Path& path) const {
-	return _base_path / path;
+	if(path.is_absolute())
+		return path;
+	else
+		return _base_path / path;
 }
 
 std::shared_ptr<const Gfx::Image> Info::resource_image(const Path& path) {
 	auto it = _images.find(path);
 	if(it == _images.end()) {
-		auto* img = Gfx::load_png(resource_path(path));
-		if(img)
-			_images[path.string()] = std::shared_ptr<Gfx::Image>(img);
+		auto img = Gfx::Image::load(resource_path(path));
+		if(img.has_value())
+			_images[path.string()] = img.value();
 		else
-			return std::shared_ptr<Gfx::Image>(nullptr);
+			return Gfx::Image::empty();
 	}
 	
 	return _images[path.string()];
@@ -122,8 +126,11 @@ size_t Info::serialized_size() const {
 
 uint8_t* Info::serialize(uint8_t* buf) const {
 	buf = Duck::Serialization::serialize(buf, _name, _base_path.string(), _hidden, _icon.operator bool());
-	if(_icon)
-		buf = Duck::Serialization::serialize(buf, *_icon);
+	if(_icon) {
+		Gfx::Framebuffer icon_buf(_icon->size().width, _icon->size().height);
+		_icon->draw(icon_buf, {{0, 0}, _icon->size()});
+		buf = Duck::Serialization::serialize(buf, icon_buf);
+	}
 	return buf;
 }
 
@@ -133,8 +140,9 @@ const uint8_t* Info::deserialize(const uint8_t* buf) {
 	buf = Duck::Serialization::deserialize(buf, _name, base_path, _hidden, has_icon);
 	_base_path = base_path;
 	if(has_icon) {
-		_icon = std::make_shared<Gfx::Image>();
-		buf = Duck::Serialization::deserialize(buf, *_icon);
+		auto* iconbuf = new Gfx::Framebuffer();
+		buf = Duck::Serialization::deserialize(buf, *iconbuf);
+		_icon = Gfx::Image::take(iconbuf);
 	}
 	return buf;
 }

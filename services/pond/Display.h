@@ -156,7 +156,7 @@ private:
 
 	int framebuffer_fd = 0; ///The file descriptor of the framebuffer.
 	Gfx::Framebuffer _framebuffer; ///The framebuffer framebuffer.
-	Gfx::Image* _wallpaper = nullptr; ///The framebuffer representing the wallpaper.
+	Gfx::Framebuffer* _wallpaper = nullptr; ///The framebuffer representing the wallpaper.
 	Gfx::Rect _dimensions; ///The dimensions of the display.
 	std::vector<Gfx::Rect> invalid_areas; ///The invalidated areas that need to be redrawn.
 	std::vector<Window*> _windows; ///The windows on the display.

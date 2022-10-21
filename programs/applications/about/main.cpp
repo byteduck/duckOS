@@ -39,7 +39,8 @@ int main(int argc, char** argv, char** envp) {
 	title_label->set_font(UI::pond_context->get_font("gohu-14"));
 	text_layout->add_child(title_label);
 
-	auto duck = UI::Image::make(*UI::app_info().resource_image("duck-large.png"));
+	auto img = UI::icon("/duck");
+	auto duck = UI::Image::make(img, UI::Image::FIT);
 	text_layout->add_child(duck);
 
 	auto ver_label = UI::Label::make("Version " + ver);

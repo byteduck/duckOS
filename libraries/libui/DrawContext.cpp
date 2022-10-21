@@ -22,6 +22,7 @@
 #include <libgraphics/Font.h>
 
 using namespace Gfx;
+using namespace Duck;
 
 UI::DrawContext::DrawContext(const Framebuffer& framebuffer): fb(&framebuffer) {
 
@@ -33,6 +34,14 @@ int UI::DrawContext::width() const {
 
 int UI::DrawContext::height() const {
 	return fb->height;
+}
+
+Dimensions UI::DrawContext::dimensions() const {
+	return { fb->width, fb->height };
+}
+
+Rect UI::DrawContext::rect() const {
+	return { 0, 0, fb->width, fb->height };
 }
 
 const Framebuffer& UI::DrawContext::framebuffer() const {
@@ -94,20 +103,16 @@ void UI::DrawContext::draw_glyph(Font* font, uint32_t codepoint, Gfx::Point pos,
 	fb->draw_glyph(font, codepoint, pos, color);
 }
 
-void UI::DrawContext::draw_image(const Framebuffer& img, Gfx::Point pos) const {
-	fb->draw_image(img, pos);
+void UI::DrawContext::draw_image(Ptr<const Image> img, Gfx::Point pos) const {
+	img->draw(*fb, pos);
+}
+
+void UI::DrawContext::draw_image(Ptr<const Image> img, Gfx::Rect pos) const {
+	img->draw(*fb, pos);
 }
 
 void UI::DrawContext::draw_image(const std::string& name, Gfx::Point pos) const {
-	fb->draw_image(Theme::image(name), pos);
-}
-
-void UI::DrawContext::draw_image(const Framebuffer& img, Gfx::Rect img_area, Gfx::Point pos) const {
-	fb->draw_image(img, img_area, pos);
-}
-
-void UI::DrawContext::draw_image(const std::string& name, Gfx::Rect img_area, Gfx::Point pos) const {
-	fb->draw_image(Theme::image(name), img_area, pos);
+	draw_image(Theme::image(name), pos);
 }
 
 void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const {
@@ -175,6 +180,11 @@ void UI::DrawContext::draw_button(Gfx::Rect rect, const std::string& text, bool 
 void UI::DrawContext::draw_button(Gfx::Rect rect, const Framebuffer& img, bool pressed) const {
 	draw_button_base(rect, pressed);
 	fb->draw_image(img, rect.position() + Gfx::Point {rect.dimensions().width / 2, rect.dimensions().height / 2} - Gfx::Point {img.width / 2, img.height / 2});
+}
+
+void UI::DrawContext::draw_button(Gfx::Rect rect, Duck::Ptr<const Image> img, bool pressed) const {
+	draw_button_base(rect, pressed);
+	img->draw(*fb, rect.position() + Gfx::Point {rect.dimensions().width / 2, rect.dimensions().height / 2} - Gfx::Point {img->size().width / 2, img->size().height / 2});
 }
 
 void UI::DrawContext::draw_vertical_scrollbar(Gfx::Rect area, Gfx::Rect handle_area, bool enabled) const {

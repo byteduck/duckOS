@@ -60,7 +60,7 @@ void Theme::load_config(std::map<std::string, std::string>& config) {
 		_current_theme_name = config["name"];
 }
 
-Image& Theme::image(const std::string& key) {
+Duck::Ptr<Image> Theme::image(const std::string& key) {
 	return current()->get_image(key);
 }
 
@@ -84,15 +84,9 @@ Font* Theme::font_mono() {
 	return current()->get_font_mono();
 }
 
-Theme::~Theme() {
-	delete blank_image;
-	for(auto& image : images)
-		delete image.second;
-}
-
-Image& Theme::get_image(const std::string& key) {
-	Image* ret = images[key];
-	return ret ? *ret : *blank_image;
+Ptr<Image> Theme::get_image(const std::string& key) {
+	auto ret = images[key];
+	return ret ? ret : blank_image;
 }
 
 Color Theme::get_color(const std::string& key) {
@@ -148,13 +142,10 @@ bool Theme::load() {
 		std::string value = value_cstr;
 
 		if(type == "Image" | type == "FgImage" || type == "BgImage" || type == "AccentImage") {
-			auto* imagefile = fopen((theme_location + value).c_str(), "r");
-			if(!imagefile) {
-				imagefile = fopen((default_theme_location + value).c_str(), "r");
-				if(!imagefile)
-					continue;
-			}
-			images[key] = load_png_from_file(imagefile);
+			auto image_res = Image::load(theme_location + value);
+			if(image_res.is_error())
+				continue;
+			images[key] = image_res.value();
 
 			if(type == "FgImage")
 				images[key]->multiply(colors["fg"]);
@@ -162,8 +153,6 @@ bool Theme::load() {
 				images[key]->multiply(colors["bg"]);
 			else if(type == "AccentImage")
 				images[key]->multiply(colors["accent"]);
-
-			fclose(imagefile);
 		} else if(type == "Color") {
 			if(value[0] == '#')
 				value = value.substr(1);

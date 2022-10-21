@@ -35,6 +35,8 @@ namespace UI {
 		///Properties
 		int width() const;
 		int height() const;
+		Gfx::Dimensions dimensions() const;
+		Gfx::Rect rect() const;
 		const Gfx::Framebuffer& framebuffer() const;
 
 		///Drawing
@@ -45,10 +47,9 @@ namespace UI {
 		void draw_text(const char* str, Gfx::Point pos, Gfx::Font* font, Color color) const;
 		void draw_text(const char* str, Gfx::Point pos, Color color) const;
 		void draw_glyph(Gfx::Font* font, uint32_t codepoint, Gfx::Point pos, Color color) const;
-		void draw_image(const Gfx::Framebuffer& img, Gfx::Point pos) const;
+		void draw_image(Duck::Ptr<const Gfx::Image> img, Gfx::Point pos) const;
+		void draw_image(Duck::Ptr<const Gfx::Image> img, Gfx::Rect rect) const;
 		void draw_image(const std::string& name, Gfx::Point pos) const;
-		void draw_image(const Gfx::Framebuffer& img, Gfx::Rect img_area, Gfx::Point pos) const;
-		void draw_image(const std::string& name, Gfx::Rect img_area, Gfx::Point pos) const;
 
 		void draw_inset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const;
 		void draw_inset_rect(Gfx::Rect rect, Color bg) const;
@@ -61,6 +62,7 @@ namespace UI {
 		void draw_button_base(Gfx::Rect button, bool pressed) const;
 		void draw_button(Gfx::Rect button, const std::string& text, bool pressed) const;
 		void draw_button(Gfx::Rect button, const Gfx::Framebuffer& img, bool pressed) const;
+		void draw_button(Gfx::Rect rect, Duck::Ptr<const Gfx::Image> img, bool pressed) const;
 
 		void draw_vertical_scrollbar(Gfx::Rect area, Gfx::Rect handle_area, bool enabled) const;
 

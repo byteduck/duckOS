@@ -14,12 +14,13 @@ namespace UI {
 		enum ScalingMode {
 			STRETCH,
 			CENTER,
-			FILL
+			FILL,
+			FIT
 		};
 
 		//Image
-		const Gfx::Image& image();
-		void set_image(const Gfx::Image& image);
+		Duck::Ptr<const Gfx::Image> image();
+		void set_image(Duck::Ptr<const Gfx::Image> image);
 		ScalingMode scaling_mode();
 		void set_scaling_mode(ScalingMode mode);
 
@@ -28,9 +29,10 @@ namespace UI {
 		Gfx::Dimensions preferred_size() override;
 
 	private:
-		explicit Image(const Gfx::Image& image, ScalingMode mode = CENTER);
+		explicit Image(Ptr<const Gfx::Image> image, ScalingMode mode = FIT);
+		explicit Image(std::string name, ScalingMode mode = FIT);
 
-		Gfx::Image _image;
+		Duck::Ptr<const Gfx::Image> _image;
 		ScalingMode _scaling_mode;
 	};
 }

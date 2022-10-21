@@ -68,7 +68,7 @@ bool Mouse::update() {
 
 void Mouse::set_cursor(Pond::CursorType cursor) {
 	current_type = cursor;
-	Framebuffer* cursor_image;
+	Duck::Ptr<Gfx::Image> cursor_image;
 	switch(cursor) {
 		case Pond::NORMAL:
 			cursor_image = cursor_normal;
@@ -91,23 +91,16 @@ void Mouse::set_cursor(Pond::CursorType cursor) {
 	if(!cursor_image)
 		return;
 
-	set_dimensions({cursor_image->width, cursor_image->height});
-	_framebuffer.copy({cursor_image->data, cursor_image->width, cursor_image->height}, {0,0, cursor_image->width, cursor_image->height} ,{0,0});
+	set_dimensions(cursor_image->size());
+	cursor_image->draw(_framebuffer, {0, 0});
 }
 
-void Mouse::load_cursor(Image*& storage, const std::string& filename) {
-	FILE* cursor = fopen((std::string("/usr/share/cursors/") + filename).c_str(), "re");
-	if(!cursor) {
-		perror("Failed to open cursor icon");
-		return;
+Duck::Result Mouse::load_cursor(Duck::Ptr<Gfx::Image>& storage, const std::string& filename) {
+	auto cursor_res = Image::load("/usr/share/cursors/" + filename);
+	if(cursor_res.is_error()) {
+		Duck::Log::errf("Couldn't load cursor {}: {}", filename, cursor_res.result());
+		return cursor_res.result();
 	}
-
-	Image* cursor_image = load_png_from_file(cursor);
-	fclose(cursor);
-	if(!cursor_image) {
-		perror("Failed to load cursor icon");
-		return;
-	}
-
-	storage = cursor_image;
+	storage = cursor_res.value();
+	return Duck::Result::SUCCESS;
 }

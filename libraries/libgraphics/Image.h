@@ -20,19 +20,33 @@
 #pragma once
 
 #include "Framebuffer.h"
+#include "Graphics.h"
+#include <libduck/Object.h>
+#include <map>
 
 namespace Gfx {
-	class Image: public Framebuffer {
+	class Image: public Duck::Object {
 	public:
-		Image() = default;
-		Image(int width, int height);
-		Image(const Image& other);
-		Image(Image&& other) noexcept;
-		explicit Image(const Framebuffer& other);
+		DUCK_OBJECT_DEF(Image)
 		~Image();
 
-		Image& operator=(const Image& other);
-		Image& operator=(Image&& other) noexcept;
+		static Duck::ResultRet<Duck::Ptr<Image>> load(Duck::Path path);
+		static Duck::Ptr<Image> take(Framebuffer* framebuffer);
+		static Duck::Ptr<Image> empty(Dimensions dimensions = {0, 0});
+
+		void draw(const Framebuffer& buffer, Rect rect) const;
+		void draw(const Framebuffer& buffer, Point point) const;
+		void multiply(Color color);
+
+		Dimensions size() const { return m_size; }
+		void set_size(Dimensions size) { m_size = size; }
+
+	private:
+		Image(std::map<std::pair<int, int>, Framebuffer*> framebuffers, Dimensions size);
+		void initialize() override {};
+
+		const std::map<std::pair<int, int>, Framebuffer*> m_framebuffers;
+		Dimensions m_size;
 	};
 }
 

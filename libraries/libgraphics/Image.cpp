@@ -17,54 +17,100 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
+#include <cfloat>
+#include <valarray>
 #include "Image.h"
-#include "Memory.h"
+#include "PNG.h"
 
 using namespace Gfx;
+using namespace Duck;
 
-Image::Image(int width, int height): Framebuffer(new uint32_t[width * height], width, height) {
+Image::Image(std::map<std::pair<int, int>, Framebuffer*> framebuffers, Dimensions size):
+	m_framebuffers(std::move(framebuffers)), m_size(std::move(size)) {}
 
-}
-
-Image::Image(const Image& other): Framebuffer(new uint32_t[other.width * other.height], other.width, other.height) {
-	if(other.data)
-		memcpy_uint32(data, other.data, width * height);
-}
-
-Image::Image(Image&& other) noexcept: Framebuffer(other.data, other.width, other.height) {
-	other.data = nullptr;
-}
-
-Image::Image(const Framebuffer& other): Framebuffer(new uint32_t[other.width * other.height], other.width, other.height) {
-	if(other.data)
-		memcpy_uint32(data, other.data, width * height);
-}
-
-Gfx::Image::~Image() {
-	if(data)
-		delete data;
-}
-
-Image& Image::operator=(const Image& other) {
-	if(data)
-		delete data;
-	width = other.width;
-	height = other.height;
-	if(other.data) {
-		data = new uint32_t[width * height];
-		memcpy_uint32(data, other.data, width * height);
-	} else {
-		data = nullptr;
+Image::~Image() {
+	for(auto& pair : m_framebuffers) {
+		delete pair.second;
 	}
-	return *this;
 }
 
-Image& Image::operator=(Image&& other) noexcept {
-	if(data)
-		delete data;
-	width = other.width;
-	height = other.height;
-	data = other.data;
-	other.data = nullptr;
-	return *this;
+Duck::ResultRet<Duck::Ptr<Image>> Image::load(Duck::Path path) {
+	auto dir_res = path.get_directory_entries();
+	if(!dir_res.is_error()) {
+		auto& entries = dir_res.value();
+		std::map<std::pair<int, int>, Framebuffer*> buffers;
+		Dimensions largest_size = {0, 0};
+		for(auto& entry : entries) {
+			int width, height;
+			if(sscanf(entry.path().basename().c_str(), "%dx%d", &width, &height) == 2) {
+				auto* png = load_png(entry.path());
+				if(png && png->width == width && png->height == height) {
+					if(largest_size.width * largest_size.height < width * height)
+						largest_size = {width, height};
+					buffers[{width, height}] = png;
+				}
+			}
+		}
+		if(!buffers.size())
+			return Result(ENOENT);
+		return Image::make(buffers, largest_size);
+	} else if(path.extension() == "png") {
+		auto* png = load_png(path);
+		if(!png)
+			return Result(EINVAL);
+		std::map<std::pair<int, int>, Framebuffer*> map = {{{png->width, png->height}, png}};
+		return Image::make(map, Dimensions {png->width, png->height});
+	}
+	return Result(EINVAL);
+}
+
+Ptr<Image> Image::take(Framebuffer* buffer) {
+	return Image::make(
+			std::map<std::pair<int, int>, Framebuffer*> {{{buffer->width, buffer->height}, buffer}},
+			Dimensions {buffer->width, buffer->height});
+}
+
+Ptr<Image> Image::empty(Dimensions dimensions) {
+	return Image::make(std::map<std::pair<int, int>, Framebuffer*> {}, dimensions);
+}
+
+void Image::draw(const Framebuffer& buffer, Rect rect) const {
+	// If we have no images, return
+	if(m_framebuffers.empty())
+		return;
+
+	// Find the best size to draw (closest euclidean distance to the requested size)
+	std::pair<int, int> best_size = m_framebuffers.begin()->first;
+	double best_distance = DBL_MAX;
+	for(auto& pair : m_framebuffers) {
+		auto size = pair.first;
+
+		// Exact match
+		if(size.first == rect.width && size.second == rect.height) {
+			best_size = size;
+			break;
+		}
+
+		// Calulate distance to requested size
+		auto distance = Point {size.first, size.second}.distance_to({rect.width, rect.height});
+		if(distance < best_distance) {
+			best_size = size;
+			best_distance = distance;
+		}
+	}
+
+	// Draw the image
+	buffer.draw_image_scaled(*m_framebuffers.find(best_size)->second, rect);
+}
+
+void Image::draw(const Framebuffer& buffer, Point point) const {
+	if(m_framebuffers.empty())
+		return;
+	draw(buffer, {point, m_size});
+}
+
+void Image::multiply(Color color) {
+	for(auto& framebuffer : m_framebuffers) {
+		framebuffer.second->multiply(color);
+	}
 }

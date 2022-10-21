@@ -66,7 +66,7 @@ typedef struct PNG {
 		uint8_t filter_method;
 		uint8_t interlace_method;
 	} ihdr;
-	Gfx::Image* image;
+	Gfx::Framebuffer* image;
 	FILE* file;
 	uint32_t chunk_size;
 	uint32_t chunk_type;
@@ -263,7 +263,7 @@ uint8_t png_read(void* png_void) {
 	return fgetc(png->file);
 }
 
-Image* Gfx::load_png_from_file(FILE* file) {
+Framebuffer* Gfx::load_png_from_file(FILE* file) {
 	//Read the header
 	fseek(file, 0, SEEK_SET);
 	uint8_t header[8];
@@ -331,7 +331,7 @@ Image* Gfx::load_png_from_file(FILE* file) {
 			}
 
 			//Allocate framebuffer space
-			png.image = new Image(png.ihdr.width, png.ihdr.height);
+			png.image = new Framebuffer(png.ihdr.width, png.ihdr.height);
 			//Skip unused bytes
 			for(size_t i = 13; i < png.chunk_size; i++)
 				fgetc(file);
@@ -372,7 +372,7 @@ Image* Gfx::load_png_from_file(FILE* file) {
 	return png.image;
 }
 
-Image* Gfx::load_png(const std::string& filename) {
+Framebuffer* Gfx::load_png(const std::string& filename) {
 	auto* file = fopen(filename.c_str(), "r");
 	if(!file)
 		return nullptr;

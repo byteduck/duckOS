@@ -30,10 +30,7 @@
 namespace UI {
 	class Theme {
 	public:
-		///NON-STATIC
-		~Theme();
-
-		Gfx::Image& get_image(const std::string& key);
+		Duck::Ptr<Gfx::Image> get_image(const std::string& key);
 		int get_value(const std::string& key);
 		Color get_color(const std::string& key);
 		std::string get_string(const std::string& key);
@@ -45,7 +42,7 @@ namespace UI {
 		static Theme* current();
 		static void load_config(std::map<std::string, std::string>& config);
 
-		static Gfx::Image& image(const std::string& key);
+		static Duck::Ptr<Gfx::Image> image(const std::string& key);
 		static int value(const std::string& key);
 		static Color color(const std::string& key);
 		static std::string string(const std::string& key);
@@ -83,14 +80,14 @@ namespace UI {
 		bool load();
 
 		std::string name;
-		std::map<std::string, Gfx::Image*> images;
+		std::map<std::string, Duck::Ptr<Gfx::Image>> images;
 		std::map<std::string, Color> colors;
 		std::map<std::string, int> values;
 		std::map<std::string, std::string> strings;
 
 		std::string _font = "gohu-11";
 		std::string _font_mono = "gohu-11";
-		Gfx::Image* blank_image = new Gfx::Image(1, 1);
+		Duck::Ptr<Gfx::Image> blank_image = Gfx::Image::empty();
 	};
 }
 

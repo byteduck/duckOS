@@ -44,7 +44,7 @@ namespace UI {
 		std::function<void()> on_released = nullptr;
 	private:
 		explicit Button(std::string label);
-		explicit Button(Gfx::Image image);
+		explicit Button(Ptr<const Gfx::Image> image);
 		explicit Button(Ptr<Widget> contents);
 
 		//Widget

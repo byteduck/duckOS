@@ -256,6 +256,12 @@ void UI::add_poll(const Poll& poll) {
 	pollfds.push_back(pfd);
 }
 
+Ptr<const Gfx::Image> UI::icon(Duck::Path path) {
+	if(path.is_absolute())
+		return _app_info.resource_image("/usr/share/icons" + path.string() + (path.extension().empty() ? ".icon" : ""));
+	return _app_info.resource_image(path);
+}
+
 void UI::__register_window(const std::shared_ptr<Window>& window, int id) {
 	windows[id] = window;
 	num_windows++;

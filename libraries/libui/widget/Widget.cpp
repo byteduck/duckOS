@@ -65,9 +65,9 @@ void Widget::repaint() {
 }
 
 void Widget::repaint_now() {
-	if(_dirty && _image.data) {
+	if(_dirty && _framebuffer.data) {
 		_dirty = false;
-		do_repaint(_image);
+		do_repaint(_framebuffer);
 	}
 }
 
@@ -167,8 +167,8 @@ void Widget::set_layout_bounds(Gfx::Rect new_bounds) {
 	Gfx::Rect old_rect = _rect;
 	_rect = new_bounds;
 	_initialized_size = true;
-	if(Gfx::Dimensions{_image.width, _image.height} != _rect.dimensions())
-		_image = {new_bounds.width, new_bounds.height};
+	if(Gfx::Dimensions{_framebuffer.width, _framebuffer.height} != _rect.dimensions())
+		_framebuffer = {new_bounds.width, new_bounds.height};
 	recalculate_rects();
 	calculate_layout();
 	on_layout_change(old_rect);

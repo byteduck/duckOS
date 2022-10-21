@@ -52,6 +52,8 @@ namespace UI {
 
 	void add_poll(const Poll& poll);
 
+	Ptr<const Gfx::Image> icon(Duck::Path path);
+
 	void __register_window(const std::shared_ptr<Window>& window, int id);
 	void __deregister_window(int id);
 }

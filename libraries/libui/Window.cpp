@@ -142,10 +142,14 @@ void Window::repaint_now() {
 
 		//Title bar icon
 		int title_xpos = 4;
-		if(UI::app_info().exists()) {
-			auto& icon = UI::app_info().icon();
-			ctx.draw_image(icon, titlebar_rect.position() + Gfx::Point {2, titlebar_rect.height / 2 - icon.height / 2});
-			title_xpos += 2 + icon.width;
+		if(UI::app_info().exists() && UI::app_info().icon()) {
+			auto icon = UI::app_info().icon();
+			Gfx::Rect icon_rect {
+				titlebar_rect.position() + Gfx::Point {2, titlebar_rect.height / 2 - icon->size().width / 2},
+				{16, 16}
+			};
+			ctx.draw_image(icon, icon_rect);
+			title_xpos += 2 + icon->size().width;
 		}
 
 		//Title bar text
@@ -347,9 +351,9 @@ void Window::blit_widget(PtrRef<Widget> widget) {
 	widget->repaint_now();
 	Gfx::Point widget_pos = widget->_absolute_rect.position() + widget->_visible_rect.position();
 	if(widget->_uses_alpha)
-		_window->framebuffer().copy_blitting(widget->_image, widget->_visible_rect, widget_pos);
+		_window->framebuffer().copy_blitting(widget->_framebuffer, widget->_visible_rect, widget_pos);
 	else
-		_window->framebuffer().copy(widget->_image, widget->_visible_rect, widget_pos);
+		_window->framebuffer().copy(widget->_framebuffer, widget->_visible_rect, widget_pos);
 	
 	for(auto& child : widget->children)
 		blit_widget(child);

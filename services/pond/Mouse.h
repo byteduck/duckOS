@@ -41,14 +41,14 @@ public:
 
 private:
 	int mouse_fd;
-	Gfx::Image* cursor_normal = nullptr;
-	Gfx::Image* cursor_resize_v = nullptr;
-	Gfx::Image* cursor_resize_h = nullptr;
-	Gfx::Image* cursor_resize_dr = nullptr;
-	Gfx::Image* cursor_resize_dl = nullptr;
+	Duck::Ptr<Gfx::Image> cursor_normal = nullptr;
+	Duck::Ptr<Gfx::Image> cursor_resize_v = nullptr;
+	Duck::Ptr<Gfx::Image> cursor_resize_h = nullptr;
+	Duck::Ptr<Gfx::Image> cursor_resize_dr = nullptr;
+	Duck::Ptr<Gfx::Image> cursor_resize_dl = nullptr;
 	Pond::CursorType current_type;
 
-	void load_cursor(Gfx::Image*& storage, const std::string& filename);
+	Duck::Result load_cursor(Duck::Ptr<Gfx::Image>& storage, const std::string& filename);
 };
 
 

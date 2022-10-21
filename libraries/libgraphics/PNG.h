@@ -29,8 +29,8 @@
 __DECL_BEGIN
 
 namespace Gfx {
-	Gfx::Image* load_png_from_file(FILE* file);
-	Gfx::Image* load_png(const std::string& filename);
+	Gfx::Framebuffer* load_png_from_file(FILE* file);
+	Gfx::Framebuffer* load_png(const std::string& filename);
 }
 
 __DECL_END

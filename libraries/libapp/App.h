@@ -28,7 +28,7 @@
 #include <map>
 
 #define LIBAPP_BASEPATH "/apps"
-#define LIBAPP_MISSING_ICON "/usr/share/icons/16x16/missing_icon.png"
+#define LIBAPP_MISSING_ICON "/usr/share/icons/missing_icon.icon/16x16.png"
 
 namespace App {
 	class Info: public Duck::Serializable {
@@ -40,7 +40,7 @@ namespace App {
 		Info() = default;
 		Info(Duck::Path app_directory, std::string name, std::string exec);
 
-		[[nodiscard]] const Gfx::Image& icon();
+		[[nodiscard]] Duck::Ptr<const Gfx::Image> icon();
 		[[nodiscard]] const std::string& name() const;
 		[[nodiscard]] const std::string exec() const;
 		[[nodiscard]] bool exists() const;
