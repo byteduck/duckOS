@@ -105,7 +105,7 @@ namespace Duck {
 
 		template<typename... ParamTs>
 		static inline void critf(const char* fmt, const ParamTs&... params) {
-			((kstream << "\03") % fmt % ... % params);
+			((kstream << "\01") % fmt % ... % params);
 			kstream << "\n";
 			((Stream::std_err << "\033[97;41m[CRITICAL] ") % fmt % ... % params);
 			Stream::std_err << "\033[39;49m" << "\n";
