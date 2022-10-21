@@ -94,42 +94,34 @@ void Display::clear(uint32_t color) {
 	}
 }
 
-void Display::get_wallpaper() {
-	auto cfg_wallpaper = Duck::Config::read_from("/etc/pond.conf");
-	if(!cfg_wallpaper.is_error()) {
-		auto& cfg = cfg_wallpaper.value();
-		if(cfg.has_section("desktop"))
-			Display::load_config(cfg["desktop"]);
-	} else {
-		Log::err("Pond configuration file does not exist.");
+Duck::Result Display::load_config() {
+	auto cfg = TRY(Duck::Config::read_from("/etc/pond.conf"));
+	if(cfg.has_section("desktop")) {
+		auto desktop = cfg.section("desktop");
+		if(!desktop["background"].empty()) {
+			int num = sscanf(desktop["background"].c_str(), "#%lx , #%lx", &_background_a, &_background_b);
+			if(!num) {
+				auto wallpaper_res = Gfx::Image::load(desktop["background"]);
+				if(wallpaper_res.has_value())
+					_wallpaper = wallpaper_res.value();
+			} else if(num == 1) {
+				_background_b = _background_a;
+			}
+		}
 	}
-}
-
-void Display::load_config(std::map<std::string, std::string>& config) {
-	if(!config["wallpaper"].empty()) {
-		Log::dbg("Pond wallpaper location is " + config["wallpaper"]);
-		_wallpaper_location = config["wallpaper"];
-	}
+	return Duck::Result::SUCCESS;
 }
 
 void Display::set_root_window(Window* window) {
 	_root_window = window;
-
-	get_wallpaper();
-	FILE* wallpaper = fopen(_wallpaper_location.c_str(), "re");
-	if(!wallpaper) {
-		perror("Failed to open wallpaper");
-		return;
-	}
-
-	_wallpaper = load_png_from_file(wallpaper);
-	if(!_wallpaper) {
-		Log::warn("Failed to load wallpaper.");
-		return;
-	}
-	fclose(wallpaper);
-
+	load_config();
 	_root_window->invalidate();
+	_background_framebuffer = Framebuffer(_root_window->rect().width, _root_window->rect().height);
+	auto& fb = _background_framebuffer;
+	if(_wallpaper)
+		_wallpaper->draw(fb, {0, 0, fb.width, fb.height});
+	else
+		fb.fill_gradient_v({0, 0, fb.width, fb.height}, _background_a, _background_b);
 }
 
 Window* Display::root_window() {
@@ -219,10 +211,7 @@ void Display::repaint() {
 
 	for(auto& area : invalid_areas) {
 		// Fill the invalid area with the background.
-		if(_wallpaper)
-			fb.copy_tiled(*_wallpaper, area, area.position());
-		else
-			fb.fill(area, RGB(50, 50, 50));
+		fb.copy(_background_framebuffer, area, area.position());
 
 		// See if each window overlaps the invalid area.
 		for(auto window : _windows) {

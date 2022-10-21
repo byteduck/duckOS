@@ -50,14 +50,9 @@ public:
 	Window* root_window();
 
 	/**
-	 * Gets the wallpaper for the display.
-	 */
-	void get_wallpaper();
-
-	/**
 	 * Loads the config.
 	 */
-	void load_config(std::map<std::string, std::string>& config);
+	Duck::Result load_config();
 
 	/**
 	 * Sets the mouse window of the display.
@@ -140,8 +135,6 @@ public:
 
 	static Display& inst();
 
-	std::string _wallpaper_location; ///The location of the wallpaper.
-
 
 private:
 	/**
@@ -155,8 +148,11 @@ private:
 	Gfx::Rect calculate_resize_rect();
 
 	int framebuffer_fd = 0; ///The file descriptor of the framebuffer.
-	Gfx::Framebuffer _framebuffer; ///The framebuffer framebuffer.
-	Gfx::Framebuffer* _wallpaper = nullptr; ///The framebuffer representing the wallpaper.
+	Gfx::Framebuffer _framebuffer; ///The display framebuffer.
+	Gfx::Framebuffer _background_framebuffer; ///The framebuffer for the background.
+	Duck::Ptr<Gfx::Image> _wallpaper = nullptr; ///The wallpaper image.
+	Color _background_a = RGB(0,0,0); /// The first color of the wallpaper gradient.
+	Color _background_b = RGB(0,0,0); /// The second color of the wallpaper gradient.
 	Gfx::Rect _dimensions; ///The dimensions of the display.
 	std::vector<Gfx::Rect> invalid_areas; ///The invalidated areas that need to be redrawn.
 	std::vector<Window*> _windows; ///The windows on the display.
