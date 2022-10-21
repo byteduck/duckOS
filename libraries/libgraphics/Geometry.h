@@ -20,6 +20,7 @@
 #pragma once
 
 #include <algorithm>
+#include <math.h>
 
 namespace Gfx {
 	class Rect;
@@ -74,6 +75,10 @@ namespace Gfx {
 
 		inline bool operator!=(const Point& other) const {
 			return other.x != x || other.y != y;
+		}
+
+		inline double distance_to(const Point& other) const {
+			return sqrt((other.x - x) * (other.x - x) + (other.y - y) * (other.y - y));
 		}
 	};
 
