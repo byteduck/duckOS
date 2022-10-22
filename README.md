@@ -43,6 +43,7 @@ The code for these can be found in [programs](/programs)
 - 4 In a Row (/apps/4inarow.app): A basic four-in-a-row game. Play with two players or against the computer.
 - Sandbar (/bin/sandbar): A basic "taskbar" that displays a row of buttons at the bottom of the screen to launch applications.
 - Files (/apps/files.app): A rudimentary file explorer application.
+- Viewer (apps/viewer.app): A basic image viewer.
  
 ### CLI Programs
 
@@ -90,7 +91,9 @@ Programs that take arguments will provide you with the correct usage when you ru
 
 Ports will only compile if their corresponding submodule is downloaded with `git submodule init` and `git submodule update`.
 
-- [DOOM](ports/doom): A little buggy at the moment, but playable. With the current multitasking and window manager implementation, it can be a little slow.
+- [DOOM](ports/doom)
+- [binutils](ports/binutils)
+- [gcc](ports/gcc) (WIP - not completely functional yet.)
 
 ### Known Issues / Limitations
 - Framebuffer scrolling is slow on real hardware. I'm not focusing on fixing this right now until I start working on a window manager.
