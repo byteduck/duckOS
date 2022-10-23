@@ -75,7 +75,8 @@ namespace River {
 
 				//Serialize function call data (tuple {arg1, arg2, arg3...})
 				packet.data.resize(Duck::Serialization::buffer_size(args...));
-				Duck::Serialization::serialize(packet.data.data(), args...);
+				uint8_t* call_data = packet.data.data();
+				Duck::Serialization::serialize(call_data, args...);
 
 				//Send the function call packet and await a reply (if the function has a non-void return type)
 				_endpoint->bus()->send_packet(packet);
@@ -89,8 +90,10 @@ namespace River {
 
 					//Deserialize and return the return value
 					RetT ret;
-					if(pkt.data.size() == sizeof(RetT))
-						Duck::Serialization::deserialize(pkt.data.data(), ret);
+					if(pkt.data.size() == sizeof(RetT)) {
+						const uint8_t* resp_data = pkt.data.data();
+						Duck::Serialization::deserialize(resp_data, ret);
+					}
 					return ret;
 				}
 			} else {
@@ -116,7 +119,8 @@ namespace River {
 
 			//Deserialize the parameters
 			std::tuple<ParamTs...> data_tuple;
-			Duck::Serialization::deserialize(packet.data.data(), std::get<ParamTs>(data_tuple)...);
+			const uint8_t* call_data = packet.data.data();
+			Duck::Serialization::deserialize(call_data, std::get<ParamTs>(data_tuple)...);
 
 			//Call the function
 			if constexpr(!std::is_void<RetT>()) {
@@ -129,7 +133,8 @@ namespace River {
 				resp.recipient = packet.sender;
 				RetT ret = _callback(packet.sender, std::get<ParamTs>(data_tuple)...);
 				resp.data.resize(Duck::Serialization::buffer_size(ret));
-				Duck::Serialization::serialize(resp.data.data(), ret);
+				uint8_t* resp_data = resp.data.data();
+				Duck::Serialization::serialize(resp_data, ret);
 				_endpoint->bus()->send_packet(resp);
 			} else {
 				_callback(packet.sender, std::get<ParamTs>(data_tuple)...);

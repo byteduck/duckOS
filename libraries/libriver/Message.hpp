@@ -67,7 +67,8 @@ namespace River {
 
 				//Serialize message data
 				packet.data.resize(Duck::Serialization::buffer_size(data));
-				Duck::Serialization::serialize(packet.data.data(), data);
+				uint8_t* data = packet.data.data();
+				Duck::Serialization::serialize(data, data);
 
 				//Send the message packet
 				_endpoint->bus()->send_packet(packet);
@@ -101,7 +102,8 @@ namespace River {
 			//if(packet.data.size() != sizeof(T)) TODO Size check
 			//	return;
 			T ret;
-			Duck::Serialization::deserialize(packet.data.data(), ret);
+			const uint8_t* data = packet.data.data();
+			Duck::Serialization::deserialize(data, ret);
 			_callback(ret);
 		}
 

@@ -165,8 +165,8 @@ namespace Gfx {
 
 		/// Serializable
 		size_t serialized_size() const override;
-		uint8_t* serialize(uint8_t* buf) const override;
-		const uint8_t* deserialize(const uint8_t* buf) override;
+		void serialize(uint8_t*& buf) const override;
+		void deserialize(const uint8_t*& buf) override;
 	};
 }
 

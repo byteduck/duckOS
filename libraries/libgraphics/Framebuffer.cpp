@@ -347,16 +347,16 @@ size_t Framebuffer::serialized_size() const {
 	return sizeof(FramebufferSerialization) + width * height * sizeof(uint32_t);
 }
 
-uint8_t* Framebuffer::serialize(uint8_t* buf) const {
+void Framebuffer::serialize(uint8_t*& buf) const {
 	auto* serialization = (FramebufferSerialization*) buf;
 	serialization->width = data ? width : 0;
 	serialization->height = data ? height : 0;
 	if(data && width && height)
 		memcpy_uint32(serialization->data, data, width * height);
-	return buf + serialized_size();
+	buf += serialized_size();
 }
 
-const uint8_t* Framebuffer::deserialize(const uint8_t* buf) {
+void Framebuffer::deserialize(const uint8_t*& buf) {
 	delete data;
 	auto* serialization = (FramebufferSerialization*) buf;
 	width = serialization->width;
@@ -366,5 +366,5 @@ const uint8_t* Framebuffer::deserialize(const uint8_t* buf) {
 		memcpy_uint32(data, serialization->data, width * height);
 	}
 	should_free = true;
-	return buf + serialized_size();
+	buf += serialized_size();
 }

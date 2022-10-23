@@ -36,15 +36,13 @@ namespace Duck {
 		/**
 		 * Serializes the object.
 		 * @param buf The buffer to serialize into.
-		 * @return The new buffer pointer (ie a pointer to right after the serialized object)
 		 */
-		virtual uint8_t* serialize(uint8_t* buf) const = 0;
+		virtual void serialize(uint8_t*& buf) const = 0;
 
 		/**
 		 * Deserializes the object.
 		 * @param buf The buffer to deserialize from.
-		 * @return The new buffer pointer (ie a pointer to right after the serialized object)
 		 */
-		virtual const uint8_t* deserialize(const uint8_t* buf) = 0;
+		virtual void deserialize(const uint8_t*& buf) = 0;
 	};
 }

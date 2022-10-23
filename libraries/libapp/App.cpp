@@ -125,27 +125,25 @@ size_t Info::serialized_size() const {
 		return Duck::Serialization::buffer_size(_name, _base_path.string(), _hidden, has_icon);
 }
 
-uint8_t* Info::serialize(uint8_t* buf) const {
-	buf = Duck::Serialization::serialize(buf, _name, _base_path.string(), _hidden, _icon.operator bool());
+void Info::serialize(uint8_t*& buf) const {
+	Duck::Serialization::serialize(buf, _name, _base_path.string(), _hidden, _icon.operator bool());
 	if(_icon) {
 		Gfx::Framebuffer icon_buf(_icon->size().width, _icon->size().height);
 		_icon->draw(icon_buf, {{0, 0}, _icon->size()});
-		buf = Duck::Serialization::serialize(buf, icon_buf);
+		Duck::Serialization::serialize(buf, icon_buf);
 	}
-	return buf;
 }
 
-const uint8_t* Info::deserialize(const uint8_t* buf) {
+void Info::deserialize(const uint8_t*& buf) {
 	std::string base_path;
 	bool has_icon;
-	buf = Duck::Serialization::deserialize(buf, _name, base_path, _hidden, has_icon);
+	Duck::Serialization::deserialize(buf, _name, base_path, _hidden, has_icon);
 	_base_path = base_path;
 	if(has_icon) {
 		auto* iconbuf = new Gfx::Framebuffer();
-		buf = Duck::Serialization::deserialize(buf, *iconbuf);
+		Duck::Serialization::deserialize(buf, *iconbuf);
 		_icon = Gfx::Image::take(iconbuf);
 	}
-	return buf;
 }
 
 std::vector<Info> App::get_all_apps() {

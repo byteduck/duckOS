@@ -27,10 +27,10 @@
 	size_t serialized_size() const { \
 		return Duck::Serialization::buffer_size(__VA_ARGS__); \
 	} \
-	uint8_t* serialize(uint8_t* buf) const { \
+	void serialize(uint8_t*& buf) const { \
 		return Duck::Serialization::serialize(buf, __VA_ARGS__); \
 	} \
-	const uint8_t* deserialize(const uint8_t* buf) { \
+	void deserialize(const uint8_t*& buf) { \
 		return Duck::Serialization::deserialize(buf, __VA_ARGS__); \
 	}
 
@@ -89,9 +89,8 @@ namespace Duck::Serialization {
 			return sizeof(ParamT) + buffer_size(rest...);
 	}
 
-	constexpr uint8_t* serialize(uint8_t* buf) {
+	constexpr void serialize(uint8_t*& buf) {
 		//base case
-		return buf;
 	}
 
 	/**
@@ -99,14 +98,14 @@ namespace Duck::Serialization {
 	 * buffer_size().
 	 */
 	template<typename ParamT, typename... ParamTs>
-	constexpr uint8_t* serialize(uint8_t* buf, const ParamT& first, const ParamTs&... rest) {
+	constexpr void serialize(uint8_t*& buf, const ParamT& first, const ParamTs&... rest) {
 		if constexpr(is_vector<ParamT>()) {
 			typedef typename ParamT::value_type VecT;
 			//If it's a vector, push a size_t of the size and then the data
 			*((size_t*)buf) = first.size();
 			buf += sizeof(size_t);
 			for(const VecT& item : first)
-				buf = serialize(buf, item);
+				serialize(buf, item);
 		} else if constexpr(std::is_same<ParamT, std::string>()) {
 			//If it's a string, we can just push the bytes of the string
 			strcpy((char*) buf, first.data());
@@ -117,32 +116,31 @@ namespace Duck::Serialization {
 			memcpy((char*) buf, first.template data<void>(), first.size());
 			buf += first.size();
 		} else if constexpr(std::is_base_of<Duck::Serializable, ParamT>()) {
-			buf = first.serialize(buf);
+			first.serialize(buf);
 		} else {
 			*((ParamT*) buf) = first;
 			buf += sizeof(ParamT);
 		}
 
-		return serialize(buf, rest...);
+		serialize(buf, rest...);
 	}
 
-	constexpr const uint8_t* deserialize(const uint8_t* buf) {
+	constexpr const void deserialize(const uint8_t*& buf) {
 		//base case
-		return buf;
 	}
 
 	/**
 	 * Deserializes the parameters into from byte array given.
 	 */
 	template<typename ParamT, typename... ParamTs>
-	constexpr const uint8_t* deserialize(const uint8_t* buf, ParamT& first, ParamTs&... rest) {
+	constexpr void deserialize(const uint8_t*& buf, ParamT& first, ParamTs&... rest) {
 		if constexpr(is_vector<ParamT>()) {
 			typedef typename ParamT::value_type VecT;
 			//If it's a vector, pop a size_t of the size and then the data
 			first.resize(*((size_t*)buf)); //TODO Sanity check?
 			buf += sizeof(size_t);
 			for(VecT& item : first)
-				buf = deserialize(buf, item);
+				deserialize(buf, item);
 		} else if constexpr(std::is_same<ParamT, std::string>()) {
 			//If it's a string, just copy from the buffer until we hit a null terminator
 			first = std::string((char*)buf);
@@ -152,13 +150,13 @@ namespace Duck::Serialization {
 			buf += sizeof(size_t);
 			first = Duck::ByteBuffer::copy(buf, size);
 		} else if constexpr(std::is_base_of<Duck::Serializable, ParamT>()) {
-			buf = first.deserialize(buf);
+			first.deserialize(buf);
 		} else {
 			//If it's not a vector, just push the data
 			first = *((ParamT*) buf);
 			buf += sizeof(ParamT);
 		}
 
-		return deserialize(buf, rest...);
+		deserialize(buf, rest...);
 	}
 }
