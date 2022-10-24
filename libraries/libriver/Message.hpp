@@ -67,8 +67,8 @@ namespace River {
 
 				//Serialize message data
 				packet.data.resize(Duck::Serialization::buffer_size(data));
-				uint8_t* data = packet.data.data();
-				Duck::Serialization::serialize(data, data);
+				uint8_t* buf = packet.data.data();
+				Duck::Serialization::serialize(buf, data);
 
 				//Send the message packet
 				_endpoint->bus()->send_packet(packet);
