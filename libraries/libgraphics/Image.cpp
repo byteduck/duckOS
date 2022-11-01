@@ -25,20 +25,14 @@
 using namespace Gfx;
 using namespace Duck;
 
-Image::Image(std::map<std::pair<int, int>, Framebuffer*> framebuffers, Dimensions size):
+Image::Image(std::map<std::pair<int, int>, Duck::Ptr<Framebuffer>> framebuffers, Dimensions size):
 	m_framebuffers(std::move(framebuffers)), m_size(std::move(size)) {}
-
-Image::~Image() {
-	for(auto& pair : m_framebuffers) {
-		delete pair.second;
-	}
-}
 
 Duck::ResultRet<Duck::Ptr<Image>> Image::load(Duck::Path path) {
 	auto dir_res = path.get_directory_entries();
 	if(!dir_res.is_error()) {
 		auto& entries = dir_res.value();
-		std::map<std::pair<int, int>, Framebuffer*> buffers;
+		std::map<std::pair<int, int>, Ptr<Framebuffer>> buffers;
 		Dimensions largest_size = {0, 0};
 		for(auto& entry : entries) {
 			int width, height;
@@ -47,7 +41,7 @@ Duck::ResultRet<Duck::Ptr<Image>> Image::load(Duck::Path path) {
 				if(png && png->width == width && png->height == height) {
 					if(largest_size.width * largest_size.height < width * height)
 						largest_size = {width, height};
-					buffers[{width, height}] = png;
+					buffers[{width, height}] = Ptr<Framebuffer>(png);
 				}
 			}
 		}
@@ -58,7 +52,7 @@ Duck::ResultRet<Duck::Ptr<Image>> Image::load(Duck::Path path) {
 		auto* png = load_png(path);
 		if(!png)
 			return Result(EINVAL);
-		std::map<std::pair<int, int>, Framebuffer*> map = {{{png->width, png->height}, png}};
+		std::map<std::pair<int, int>, Ptr<Framebuffer>> map = {{{png->width, png->height}, Ptr<Framebuffer>(png)}};
 		return Image::make(map, Dimensions {png->width, png->height});
 	}
 	return Result(EINVAL);
@@ -66,12 +60,16 @@ Duck::ResultRet<Duck::Ptr<Image>> Image::load(Duck::Path path) {
 
 Ptr<Image> Image::take(Framebuffer* buffer) {
 	return Image::make(
-			std::map<std::pair<int, int>, Framebuffer*> {{{buffer->width, buffer->height}, buffer}},
+			std::map<std::pair<int, int>, Ptr<Framebuffer>> {{{buffer->width, buffer->height}, Ptr<Framebuffer>(buffer)}},
 			Dimensions {buffer->width, buffer->height});
 }
 
 Ptr<Image> Image::empty(Dimensions dimensions) {
-	return Image::make(std::map<std::pair<int, int>, Framebuffer*> {}, dimensions);
+	return Image::make(std::map<std::pair<int, int>, Ptr<Framebuffer>> {}, dimensions);
+}
+
+Ptr<Image> Image::clone() const {
+	return Image::make(m_framebuffers, m_size);
 }
 
 void Image::draw(const Framebuffer& buffer, Rect rect) const {
