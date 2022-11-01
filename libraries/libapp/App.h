@@ -44,6 +44,7 @@ namespace App {
 		[[nodiscard]] Duck::Ptr<const Gfx::Image> icon();
 		[[nodiscard]] const std::string& name() const;
 		[[nodiscard]] const std::string exec() const;
+		Duck::Result run(const std::vector<std::string>& args = {}, bool fork = true) const;
 		[[nodiscard]] bool exists() const;
 		[[nodiscard]] bool hidden() const;
 		[[nodiscard]] Duck::Path base_path() const;

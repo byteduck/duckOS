@@ -168,6 +168,25 @@ bool Info::can_handle(Duck::Path path) const {
 	return _extensions.find(path.extension()) != _extensions.end();
 }
 
+Result Info::run(const std::vector<std::string>& args, bool do_fork) const {
+	if(!do_fork || !fork()) {
+		std::string exec_str = exec();
+		auto c_args = new char*[2 + args.size()];
+		c_args[0] = (char*) exec_str.c_str();
+		int i = 1;
+		for(auto& arg : args)
+			c_args[i++] = (char*) arg.c_str();
+		c_args[i] = NULL;
+		execve(exec_str.c_str(), c_args, environ);
+		if(do_fork)
+			exit(-1);
+		else
+			return Result(errno);
+	}
+
+	return Result::SUCCESS;
+}
+
 std::vector<Info> App::get_all_apps() {
 	std::vector<Info> ret;
 	auto ent_res = Path(LIBAPP_BASEPATH).get_directory_entries();
