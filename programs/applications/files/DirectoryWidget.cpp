@@ -32,7 +32,7 @@ DirectoryWidget::DirectoryWidget(const Duck::Path& path): ListView(GRID) {
 }
 
 Ptr<Widget> DirectoryWidget::create_entry(int index) {
-	if(!index) {
+	if(!index && path.string() != "/") {
 		auto btn = UI::Button::make("<---");
 		btn->on_released = [&] {
 			set_directory(path.parent());
@@ -41,7 +41,7 @@ Ptr<Widget> DirectoryWidget::create_entry(int index) {
 		return btn;
 	}
 
-	auto& entry = entries[index - 1];
+	auto& entry = entries[index - (path.string() == "/" ? 0 : 1)];
 
 	return FileWidget::make(entry, self());
 }
@@ -51,7 +51,7 @@ Gfx::Dimensions DirectoryWidget::preferred_item_dimensions() {
 }
 
 int DirectoryWidget::num_items() {
-	return entries.size() + 1;
+	return entries.size() + (path.string() == "/" ? 0 : 1);
 }
 
 void DirectoryWidget::set_directory(const Duck::Path& new_path) {

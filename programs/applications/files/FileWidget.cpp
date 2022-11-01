@@ -24,18 +24,24 @@
 
 using namespace UI;
 
-FileWidget::FileWidget(const Duck::DirectoryEntry& entry, Ptr<DirectoryWidget> dir_widget): BoxLayout(VERTICAL), entry(entry), dir_widget(std::move(dir_widget)) {
-	auto image = UI::app_info().resource_image(entry.is_directory() ? "folder.png" : "file.png");
+FileWidget::FileWidget(const Duck::DirectoryEntry& entry, Ptr<DirectoryWidget> dir_widget):
+	BoxLayout(VERTICAL), entry(entry), dir_widget(std::move(dir_widget))
+{
+	Ptr<const Gfx::Image> image;
+	auto app = App::app_for_file(entry.path());
+	if(app.has_value())
+		image = app.value().icon();
+	else
+		image = UI::app_info().resource_image(entry.is_directory() ? "folder.png" : "file.png");
+
 	add_child(UI::Image::make(image));
 	add_child(UI::Label::make(entry.name()));
 }
 
 bool FileWidget::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if((evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1)) {
-		if(entry.is_directory())
+		if(App::open(entry.path()).is_error())
 			dir_widget->set_directory(entry.path());
-		else
-			App::open(entry.path());
 		return true;
 	}
 	return false;
