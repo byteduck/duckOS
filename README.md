@@ -67,7 +67,7 @@ The code for these can be found in [programs](programs/).
 - ps (/bin/ps): Shows the currently running processes.
 - dsh (/bin/dsh): A basic userspace shell with support for pipes (`|`) and redirections (`>`/`>>`).
   - There is only support for one redirection at a time right now.
-- apprun (/bin/apprun): A utility to run applications from the command line.
+- open (/bin/open): A utility to open files and applications from the command line.
 - play (/bin/play): Plays audio files.
 
 Programs that take arguments will provide you with the correct usage when you run them without arguments.
