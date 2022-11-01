@@ -13,7 +13,7 @@ int main(int argc, char** argv, char** envp) {
 	auto image = argc >= 2 ? Gfx::Image::load(argv[1]) : Result(ENOENT);
 
 	if(image.is_error()) {
-		window->set_contents(UI::Label::make("Use the command `/apps/viewer.app/viewer <imagefile>` until a file picker is added :)"));
+		window->set_contents(UI::Label::make("Use the files app or run `open <imagefile>` until a file picker is added :)"));
 	} else {
 		window->set_contents(UI::Image::make(image.value()));
 	}
