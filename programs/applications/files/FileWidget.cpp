@@ -28,13 +28,21 @@ FileWidget::FileWidget(const Duck::DirectoryEntry& entry, Ptr<DirectoryWidget> d
 	BoxLayout(VERTICAL), entry(entry), dir_widget(std::move(dir_widget))
 {
 	Ptr<const Gfx::Image> image;
-	auto app = App::app_for_file(entry.path());
-	if(app.has_value())
-		image = app.value().icon();
-	else
-		image = UI::app_info().resource_image(entry.is_directory() ? "folder.png" : "file.png");
+	auto img_res = Gfx::Image::load(entry.path());
+	if(img_res.has_value()) {
+		image = img_res.value();
+	} else {
+		auto app = App::app_for_file(entry.path());
+		if(app.has_value())
+			image = app.value().icon();
+		else
+			image = UI::app_info().resource_image(entry.is_directory() ? "folder.png" : "file.png");
+	}
 
-	add_child(UI::Image::make(image));
+	auto ui_image = UI::Image::make(image);
+	ui_image->set_preferred_size({32, 32});
+
+	add_child(ui_image);
 	add_child(UI::Label::make(entry.name()));
 }
 
