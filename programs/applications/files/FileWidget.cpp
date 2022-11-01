@@ -34,6 +34,8 @@ bool FileWidget::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if((evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1)) {
 		if(entry.is_directory())
 			dir_widget->set_directory(entry.path());
+		else
+			App::open(entry.path());
 		return true;
 	}
 	return false;
