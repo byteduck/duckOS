@@ -39,7 +39,9 @@ TimeManager& TimeManager::inst() {
 	return *_inst;
 }
 
-long int TimeManager::uptime() {
+timespec TimeManager::uptime() {
+	if(!_inst)
+		return {0, 0};
 	return _inst->_uptime;
 }
 
@@ -57,12 +59,15 @@ void TimeManager::tick() {
 
 	if(_ticks == _keeper->frequency()) {
 		_ticks = 0;
-		_uptime++;
+		_uptime.tv_sec++;
+		_uptime.tv_usec = 0;
 		_epoch.tv_sec++;
 		_epoch.tv_usec = 0;
 	}
 
-	_epoch.tv_usec += 1000000 / _keeper->frequency();
+	long usec = 1000000 / _keeper->frequency();;
+	_epoch.tv_usec += usec;
+	_uptime.tv_usec += usec;
 }
 
 double TimeManager::percent_idle() {

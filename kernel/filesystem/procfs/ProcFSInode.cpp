@@ -144,7 +144,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 
 		case RootUptime: {
 			char numbuf[12];
-			itoa(TimeManager::uptime(), numbuf, 10);
+			itoa(TimeManager::uptime().tv_sec, numbuf, 10);
 			kstd::string str = numbuf;
 			str += "\n";
 

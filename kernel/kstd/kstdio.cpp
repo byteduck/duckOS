@@ -31,7 +31,7 @@
 
 kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
 kstd::shared_ptr<VirtualTTY> tty(nullptr);
-bool use_tty = false;
+bool use_tty = true;
 bool panicking = false;
 
 void putch(char c){

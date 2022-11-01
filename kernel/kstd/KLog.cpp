@@ -1,58 +1,60 @@
 #include "KLog.h"
 #include "kstdio.h"
+#include <kernel/time/TimeManager.h>
+
+void klog_print(const char* component, const char* color, const char* type, const char* fmt, va_list list) {
+	auto time = TimeManager::uptime();
+	char* usec_buf = "0000000";
+	for(int i = 0; i < 7; i++) {
+		usec_buf[6 - i] = (unsigned char) (time.tv_usec % 10) + '0';
+		time.tv_usec /= 10;
+	}
+
+	printf("\033[%sm[%d.%s] [%s] [%s] ", color, (int) time.tv_sec, usec_buf, component, type);
+	vprintf(fmt, list);
+	print("\033[39;49m\n");
+}
 
 void KLog::dbg(const char* component, const char* fmt, ...) {
 #ifdef DEBUG
-	printf("\033[90m[%s] [DEBUG] ", component);
 	va_list list;
 	va_start(list, fmt);
-	vprintf(fmt, list);
+	klog_print(component, "90", "DEBUG", fmt, list);
 	va_end(list);
-	print("\033[39;49m\n");
 #endif
 }
 
 void KLog::info(const char* component, const char* fmt, ...) {
-	printf("\033[94m[%s] [INFO] ", component);
 	va_list list;
 	va_start(list, fmt);
-	vprintf(fmt, list);
+	klog_print(component, "94", "INFO", fmt, list);
 	va_end(list);
-	print("\033[39;49m\n");
 }
 
 void KLog::success(const char* component, const char* fmt, ...) {
-	printf("\033[92m[%s] [SUCCESS] ", component);
 	va_list list;
 	va_start(list, fmt);
-	vprintf(fmt, list);
+	klog_print(component, "92", "SUCCESS", fmt, list);
 	va_end(list);
-	print("\033[39;49m\n");
 }
 
 void KLog::warn(const char* component, const char* fmt, ...) {
-	printf("\033[93m[%s] [WARN] ", component);
 	va_list list;
 	va_start(list, fmt);
-	vprintf(fmt, list);
+	klog_print(component, "93", "WARN", fmt, list);
 	va_end(list);
-	print("\033[39;49m\n");
 }
 
 void KLog::err(const char* component, const char* fmt, ...) {
-	printf("\033[91m[%s] [ERROR] ", component);
 	va_list list;
 	va_start(list, fmt);
-	vprintf(fmt, list);
+	klog_print(component, "91", "ERROR", fmt, list);
 	va_end(list);
-	print("\033[39;49m\n");
 }
 
 void KLog::crit(const char* component, const char* fmt, ...) {
-	printf("\033[97;41m[%s] [CRITICAL] ", component);
 	va_list list;
 	va_start(list, fmt);
-	vprintf(fmt, list);
+	klog_print(component, "97;41", "CRITICAL", fmt, list);
 	va_end(list);
-	print("\033[39;49m\n");
 }

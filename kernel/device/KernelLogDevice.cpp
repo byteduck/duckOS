@@ -20,6 +20,7 @@
 #include "KernelLogDevice.h"
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/kstd/KLog.h>
+#include <kernel/time/TimeManager.h>
 
 KernelLogDevice* KernelLogDevice::_inst = nullptr;
 
@@ -57,8 +58,15 @@ ssize_t KernelLogDevice::write(FileDescriptor& fd, size_t offset, SafePointer<ui
 
 	//Only print debug messages #ifdef DEBUG
 	if(log_level != 6 || do_debug) {
+		auto time = TimeManager::uptime();
+		char* usec_buf = "0000000";
+		for(int i = 0; i < 7; i++) {
+			usec_buf[6 - i] = (unsigned char) (time.tv_usec % 10) + '0';
+			time.tv_usec /= 10;
+		}
+
 		auto* cur_proc = TaskManager::current_process();
-		printf("%s%s(%d) [%s] ", log_colors[log_level], cur_proc->name().c_str(), cur_proc->pid(), log_names[log_level]);
+		printf("%s[%d.%s] %s(%d) [%s] ", log_colors[log_level], (int)time.tv_sec, usec_buf, cur_proc->name().c_str(), cur_proc->pid(), log_names[log_level]);
 
 		while(count--) {
 			//If the last character is a newline, ignore it. We're going to print that ourselves.
