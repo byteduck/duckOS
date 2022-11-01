@@ -70,15 +70,9 @@ int main(int argc, char** argv, char** envp) {
 		auto btn = UI::Button::make(btn_layout);
 		btn->set_sizing_mode(UI::PREFERRED);
 		btn->on_pressed = [&]{
-			if(!fork()) {
-				char* argv[] = {NULL};
-				char* envp[] = {NULL};
-				execve(app.exec().c_str(), argv, envp);
-				exit(-1);
-			} else {
-				app_list_window->hide();
-				shown = false;
-			}
+			app.run();
+			app_list_window->hide();
+			shown = false;
 		};
 		app_list_layout->add_child(btn);
 	}
