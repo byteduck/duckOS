@@ -72,7 +72,7 @@ namespace App {
 
 
 	std::vector<Info> get_all_apps();
-	std::optional<Info> app_for_file(Duck::Path file);
+	Duck::ResultRet<Info> app_for_file(Duck::Path file);
 	Duck::Result open(Duck::Path file, bool fork = true);
 }
 

@@ -204,29 +204,26 @@ std::vector<Info> App::get_all_apps() {
 	return ret;
 }
 
-std::optional<Info> App::app_for_file(Duck::Path file) {
+ResultRet<Info> App::app_for_file(Duck::Path file) {
+	// If the extension is .app, return the app
+	if(file.extension() == "app")
+		return Info::from_app_directory(file);
+
 	auto apps = get_all_apps();
 	for(auto& app : apps) {
 		if(app.can_handle(file))
 			return app;
 	}
-	return std::nullopt;
+	return Result("No app to handle file with extension " + file.extension());
 }
 
 Result App::open(Duck::Path file, bool do_fork) {
-	auto app = app_for_file(file);
-	if(!app.has_value())
-		return Result("No app to handle file with extension " + file.extension());
-	if(!do_fork || !fork()) {
-		auto exec = app->exec();
-		auto* exec_str = const_cast<char*>(exec.c_str());
-		auto* file_str = const_cast<char*>(file.string().c_str());
-		char* const app_argv[] = {exec_str, file_str, NULL};
-		execvp(app->exec().c_str(), app_argv);
-		if(do_fork)
-			exit(-1);
-		else
-			return Result(errno);
+	// If the extension is .app, open the app
+	if(file.extension() == "app") {
+		auto app = TRY(Info::from_app_directory(file));
+		return app.run({}, do_fork);
 	}
-	return Result::SUCCESS;
+
+	auto app = TRY(app_for_file(file));
+	return app.run({file.string()}, do_fork);
 }
