@@ -39,6 +39,20 @@ ResultRet<Info> Info::from_app_directory(const Path& app_directory) {
 			return Result(EINVAL);
 		auto info = Info(app_directory, app_config["name"],  app_config["exec"]);
 		info._hidden = app_config["hidden"] == "true";
+
+		// Read supported file extensions
+		if(!app_config["extensions"].empty()) {
+			Duck::StringInputStream extensions(app_config["extensions"]);
+			extensions.set_delimeter(',');
+			std::string in;
+			while(!extensions.eof()) {
+				extensions >> in;
+				in.erase(in.find_last_not_of(" \t") + 1);
+				in.erase(0, in.find_first_not_of(" \t"));
+				info._extensions.insert(in);
+			}
+		}
+
 		return info;
 	}
 
@@ -146,6 +160,14 @@ void Info::deserialize(const uint8_t*& buf) {
 	}
 }
 
+std::set<std::string> Info::extensions() const {
+	return _extensions;
+}
+
+bool Info::can_handle(Duck::Path path) const {
+	return _extensions.find(path.extension()) != _extensions.end();
+}
+
 std::vector<Info> App::get_all_apps() {
 	std::vector<Info> ret;
 	auto ent_res = Path(LIBAPP_BASEPATH).get_directory_entries();
@@ -161,4 +183,31 @@ std::vector<Info> App::get_all_apps() {
 		}
 	}
 	return ret;
+}
+
+std::optional<Info> App::app_for_file(Duck::Path file) {
+	auto apps = get_all_apps();
+	for(auto& app : apps) {
+		if(app.can_handle(file))
+			return app;
+	}
+	return std::nullopt;
+}
+
+Result App::open(Duck::Path file, bool do_fork) {
+	auto app = app_for_file(file);
+	if(!app.has_value())
+		return Result("No app to handle file with extension " + file.extension());
+	if(!do_fork || !fork()) {
+		auto exec = app->exec();
+		auto* exec_str = const_cast<char*>(exec.c_str());
+		auto* file_str = const_cast<char*>(file.string().c_str());
+		char* const app_argv[] = {exec_str, file_str, NULL};
+		execvp(app->exec().c_str(), app_argv);
+		if(do_fork)
+			exit(-1);
+		else
+			return Result(errno);
+	}
+	return Result::SUCCESS;
 }

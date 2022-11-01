@@ -26,6 +26,7 @@
 #include <memory>
 #include <libduck/Path.h>
 #include <map>
+#include <set>
 
 #define LIBAPP_BASEPATH "/apps"
 #define LIBAPP_MISSING_ICON "/usr/share/icons/missing_icon.icon/16x16.png"
@@ -46,6 +47,8 @@ namespace App {
 		[[nodiscard]] bool exists() const;
 		[[nodiscard]] bool hidden() const;
 		[[nodiscard]] Duck::Path base_path() const;
+		[[nodiscard]] std::set<std::string> extensions() const;
+		[[nodiscard]] bool can_handle(Duck::Path path) const;
 
 		[[nodiscard]] Duck::Path resource_path(const Duck::Path& path) const;
 		[[nodiscard]] std::shared_ptr<const Gfx::Image> resource_image(const Duck::Path& path);
@@ -60,6 +63,7 @@ namespace App {
 		Duck::Path _base_path;
 		std::string _name;
 		std::string _exec;
+		std::set<std::string> _extensions;
 		bool _hidden = false;
 		std::shared_ptr<Gfx::Image> _icon = nullptr;
 		std::map<std::string, std::shared_ptr<Gfx::Image>> _images;
@@ -67,5 +71,7 @@ namespace App {
 
 
 	std::vector<Info> get_all_apps();
+	std::optional<Info> app_for_file(Duck::Path file);
+	Duck::Result open(Duck::Path file, bool fork = true);
 }
 
