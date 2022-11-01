@@ -188,7 +188,9 @@ Result Info::run(const std::vector<std::string>& args, bool do_fork) const {
 }
 
 std::vector<Info> App::get_all_apps() {
-	std::vector<Info> ret;
+	static std::vector<Info> ret;
+	if(!ret.empty())
+		return ret;
 	auto ent_res = Path(LIBAPP_BASEPATH).get_directory_entries();
 	if(ent_res.is_error())
 		return ret;
