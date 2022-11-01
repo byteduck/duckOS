@@ -31,6 +31,10 @@ void Image::set_scaling_mode(ScalingMode mode) {
 	repaint();
 }
 
+void Image::set_preferred_size(Gfx::Dimensions dimensions) {
+	_preferred_size = dimensions;
+}
+
 void Image::do_repaint(const DrawContext& ctx) {
 	ctx.framebuffer().fill({0, 0, ctx.width(), ctx.height()}, RGBA(0, 0, 0, 0));
 	if(_scaling_mode == CENTER) {
@@ -65,5 +69,5 @@ void Image::do_repaint(const DrawContext& ctx) {
 }
 
 Gfx::Dimensions Image::preferred_size() {
-	return _image->size();
+	return _preferred_size.width > 0 ? _preferred_size : _image->size();
 }

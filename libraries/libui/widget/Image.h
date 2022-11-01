@@ -23,6 +23,7 @@ namespace UI {
 		void set_image(Duck::Ptr<const Gfx::Image> image);
 		ScalingMode scaling_mode();
 		void set_scaling_mode(ScalingMode mode);
+		void set_preferred_size(Gfx::Dimensions dimensions);
 
 		//Widget
 		void do_repaint(const UI::DrawContext& ctx) override;
@@ -34,6 +35,7 @@ namespace UI {
 
 		Duck::Ptr<const Gfx::Image> _image;
 		ScalingMode _scaling_mode;
+		Gfx::Dimensions _preferred_size = {0, 0};
 	};
 }
 
