@@ -58,7 +58,7 @@ namespace Duck {
 		DUCK_OBJECT_DEF(Object)
 		virtual ~Object() = default;
 
-	private:
+	protected:
 		virtual void initialize();
 	};
 }
