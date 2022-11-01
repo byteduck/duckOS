@@ -28,7 +28,7 @@ public:
 	static void init();
 	static TimeManager& inst();
 
-	static long int uptime();
+	static timespec uptime();
 	static timespec now();
 	static double percent_idle();
 
@@ -42,8 +42,8 @@ private:
 	static TimeManager* _inst;
 	TimeKeeper* _keeper = nullptr;
 	timespec _epoch = {0, 0};
+	timespec _uptime = {0, 0};
 	int _ticks = 0;
-	long int _uptime = 0;
 	kstd::circular_queue<bool> idle_ticks = kstd::circular_queue<bool>(100);
 };
 
