@@ -37,7 +37,7 @@ public:
 
 	void handle_term_events();
 	void run(const char* command);
-	UI::Menu::Ptr create_menu();
+	Duck::Ptr<UI::Menu> create_menu();
 
 	//Terminal::Listener
 	void on_character_change(const Term::Position& position, const Term::Character& character) override;

@@ -165,13 +165,13 @@ void TerminalWidget::on_layout_change(const Gfx::Rect& old_rect) {
 	});
 }
 
-UI::Menu::Ptr TerminalWidget::create_menu() {
-	std::vector<UI::MenuItem::Ptr> items = {
+Duck::Ptr<UI::Menu> TerminalWidget::create_menu() {
+	std::vector<Duck::Ptr<UI::MenuItem>> items = {
 		UI::MenuItem::make("Clear", [&] {
 			term->clear();
 		}),
 		UI::MenuItem::Separator,
-		UI::MenuItem::make("Signals", UI::Menu::make({
+		UI::MenuItem::make("Signals", nullptr, UI::Menu::make({
 			 UI::MenuItem::make("Send SIGINT (^C)", [&] {
 				 term->handle_keypress(0, 'c', KBD_MOD_CTRL);
 			 })

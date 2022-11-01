@@ -7,43 +7,66 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <libduck/Serializable.h>
+#include "libduck/Object.h"
 
 namespace UI {
 	class Menu;
 
-	class MenuItem {
+	class MenuItem: public Duck::Object, public Duck::Serializable {
 	public:
-		using Ptr = std::shared_ptr<MenuItem>;
-		using ArgPtr = std::shared_ptr<MenuItem>&;
+		DUCK_OBJECT_DEF(MenuItem)
+
 		using Action = std::function<void()>;
 
-		static const Ptr Separator;
+		static const Duck::Ptr<MenuItem> Separator;
 
-		static Ptr make(std::string title = "", Action action = nullptr);
-		static Ptr make(std::string title, std::shared_ptr<Menu> submenu);
+		// Serializable
+		size_t serialized_size() const override;
+		void serialize(uint8_t*& buf) const override;
+		void deserialize(const uint8_t*& buf) override;
 
-		std::string title;
-		Action action;
-		std::shared_ptr<Menu> submenu;
+		std::string title; ///< The title of the menu item.
+		Action action; ///< The action performed when the item is selected.
+		Duck::Ptr<Menu> submenu; ///< The submenu for this menu item.
 
 	private:
-		MenuItem(std::string title, Action action, std::shared_ptr<Menu> submenu);
+		MenuItem(std::string title = "", Action action = nullptr, Duck::Ptr<Menu> submenu = nullptr);
+		explicit MenuItem(const uint8_t*& buf);
+
+		int m_id;
 	};
 
-	class Menu {
+	class Menu: public Duck::Object, public Duck::Serializable {
 	public:
-		using Ptr = std::shared_ptr<Menu>;
-		using ArgPtr = std::shared_ptr<Menu>&;
+		DUCK_OBJECT_DEF(Menu)
 
-		static Ptr make(std::vector<MenuItem::Ptr> items = {});
+		static Duck::Ptr<Menu> make(std::vector<Duck::Ptr<MenuItem>> items = {});
 
-		void add_item(MenuItem::ArgPtr item);
-		const std::vector<MenuItem::Ptr>& items();
+		/**
+		 * Adds an item to the menu.
+		 * @param item The menu item to add.
+		 */
+		void add_item(Duck::Ptr<MenuItem> item);
+
+		/**
+		 * Gets the items in the menu.
+		 * @return A reference to the list of items in the menu.
+		 */
+		const std::vector<Duck::Ptr<MenuItem>>& items();
+
+		/**
+		 * Gets the number of items in the menu.
+		 */
 		int size();
 
-	private:
-		explicit Menu(std::vector<MenuItem::Ptr> items);
+		// Serializable
+		MAKE_SERIALIZABLE(m_items);
 
-		std::vector<MenuItem::Ptr> m_items;
+	private:
+		explicit Menu(std::vector<Duck::Ptr<MenuItem>> items);
+		explicit Menu(const uint8_t*& buf);
+
+		std::vector<Duck::Ptr<MenuItem>> m_items;
 	};
 }

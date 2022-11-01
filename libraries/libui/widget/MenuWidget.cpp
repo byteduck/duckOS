@@ -15,7 +15,7 @@
 using namespace UI;
 
 
-MenuWidget::MenuWidget(std::shared_ptr<Menu>& menu, PtrRef<Window> window): m_menu(menu), m_window(window) {}
+MenuWidget::MenuWidget(Ptr<Menu> menu, PtrRef<Window> window): m_menu(menu), m_window(window) {}
 
 void MenuWidget::initialize() {
 	auto window = m_window.lock();
@@ -24,7 +24,7 @@ void MenuWidget::initialize() {
 
 bool MenuWidget::on_mouse_move(Pond::MouseMoveEvent evt) {
 	if(evt.new_pos.y >= MENU_PADDING_Y) {
-		MenuItem::Ptr hovered_item;
+		Duck::Ptr<MenuItem> hovered_item;
 		Gfx::Rect cur_rect = {0, MENU_PADDING_Y, current_size().width, 0};
 		for(auto& item : m_menu->items()) {
 			cur_rect.height = item == MenuItem::Separator ? SEPARATOR_ITEM_HEIGHT : ITEM_HEIGHT;
@@ -85,7 +85,7 @@ Gfx::Dimensions MenuWidget::preferred_size() {
 	};
 }
 
-Ptr<MenuWidget> MenuWidget::open_menu(std::shared_ptr<Menu>& menu, Gfx::Point location) {
+Ptr<MenuWidget> MenuWidget::open_menu(Ptr<Menu> menu, Gfx::Point location) {
 	auto window = UI::Window::make();
 	window->pond_window()->set_type(Pond::MENU);
 	auto menu_widget = UI::MenuWidget::make(menu, window);
@@ -124,7 +124,7 @@ void MenuWidget::do_repaint(const DrawContext& ctx) {
 	}
 }
 
-void MenuWidget::open_child_window(Menu::Ptr item, Gfx::Rect item_rect) {
+void MenuWidget::open_child_window(Duck::Ptr<Menu> item, Gfx::Rect item_rect) {
 	if(m_child_menu.lock())
 		m_child_menu.lock()->close();
 	auto window_position = item_rect.position() + Gfx::Point {item_rect.width, -MENU_PADDING_Y} + root_window()->position();

@@ -188,7 +188,7 @@ void Widget::focus() {
 		_root_window->set_focused_widget(self());
 }
 
-void Widget::open_menu(UI::Menu::Ptr menu) {
+void Widget::open_menu(Duck::Ptr<UI::Menu> menu) {
 	if(_root_window)
 		_root_window->open_menu(menu);
 }

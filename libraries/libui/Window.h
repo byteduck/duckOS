@@ -76,8 +76,8 @@ namespace UI {
 		void on_focus(bool focused);
 
 		///Menus and stuff
-		void open_menu(UI::Menu::ArgPtr menu);
-		void open_menu(UI::Menu::ArgPtr menu, Gfx::Point point);
+		void open_menu(Duck::Ptr<UI::Menu> menu);
+		void open_menu(Duck::Ptr<UI::Menu> menu, Gfx::Point point);
 
 		//UI
 		void calculate_layout();

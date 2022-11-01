@@ -359,11 +359,11 @@ void Window::blit_widget(PtrRef<Widget> widget) {
 		blit_widget(child);
 }
 
-void Window::open_menu(std::shared_ptr<Menu>& menu) {
+void Window::open_menu(Ptr<Menu> menu) {
 	open_menu(menu, _mouse);
 }
 
-void Window::open_menu(std::shared_ptr<Menu>& menu, Gfx::Point point) {
+void Window::open_menu(Ptr<Menu> menu, Gfx::Point point) {
 	MenuWidget::open_menu(menu, point + _window->position());
 }
 

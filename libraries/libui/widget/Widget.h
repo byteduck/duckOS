@@ -212,7 +212,7 @@ namespace UI {
 		 * Opens a menu at the cursor location.
 		 * @param menu The menu to open.
 		 */
-		virtual void open_menu(UI::Menu::Ptr menu);
+		virtual void open_menu(Duck::Ptr<UI::Menu> menu);
 
 	protected:
 		explicit Widget() = default;
