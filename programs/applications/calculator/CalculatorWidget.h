@@ -35,8 +35,8 @@ private:
 	void do_op(const std::string& op);
 	void disp_num(double disp);
 
-	UI::Ptr<UI::GridLayout> button_grid;
-	UI::Ptr<UI::Label> display;
+	Duck::Ptr<UI::GridLayout> button_grid;
+	Duck::Ptr<UI::Label> display;
 
 	long double prev_num = 0;
 	long double num = 0;

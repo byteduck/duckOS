@@ -37,6 +37,7 @@ int main(int argc, char** argv, char** envp) {
 
 	auto title_label = UI::Label::make("duckOS");
 	title_label->set_font(UI::pond_context->get_font("gohu-14"));
+	title_label->set_sizing_mode(UI::PREFERRED);
 	text_layout->add_child(title_label);
 
 	auto img = UI::icon("/duck");
@@ -45,6 +46,7 @@ int main(int argc, char** argv, char** envp) {
 
 	auto ver_label = UI::Label::make("Version " + ver);
 	ver_label->set_color(RGB(150, 150, 150));
+	ver_label->set_sizing_mode(UI::PREFERRED);
 	text_layout->add_child(ver_label);
 
 	window->set_contents(text_layout);

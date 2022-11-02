@@ -57,7 +57,7 @@ private:
 	int pty_fd = -1;
 	pid_t proc_pid = -1;
 	bool needs_full_repaint = false;
-	UI::Ptr<UI::Timer> blink_timer;
+	Duck::Ptr<UI::Timer> blink_timer;
 	bool blink_on = false;
 
 	struct TerminalEvent {

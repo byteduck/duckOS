@@ -32,9 +32,9 @@
 
 using namespace Sys;
 
-UI::Ptr<UI::ProgressBar> cpu_bar;
-UI::Ptr<MemoryUsageWidget> mem_widget;
-UI::Ptr<ProcessListWidget> proc_list;
+Duck::Ptr<UI::ProgressBar> cpu_bar;
+Duck::Ptr<MemoryUsageWidget> mem_widget;
+Duck::Ptr<ProcessListWidget> proc_list;
 
 Duck::FileInputStream cpu_stream;
 
