@@ -44,6 +44,7 @@ namespace Duck {
 		Path operator/(const Path& other) const { return std::move(Path(string() + "/" + other.string())); }
 		Path operator/(const std::string& other) const { return operator/(Path(other)); }
 		Path operator/(const char* other) const { return operator/(Path(other)); }
+		bool operator==(const Path& other) const { return m_path == other.m_path; }
 
 		//Directory iteration
 		[[nodiscard]] ResultRet<std::vector<DirectoryEntry>> get_directory_entries() const;

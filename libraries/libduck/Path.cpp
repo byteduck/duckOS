@@ -39,10 +39,15 @@ Path::Path(std::string string): m_is_absolute(string[0] == '/') {
 		if(part.empty() || part == ".") {
 			//If the part is . or empty, (AKA current directory), don't add it
 			continue;
-		} else if(part == ".." && !temp_parts.empty() && temp_parts.back() != "..") {
-			//If the part is .. (AKA previous directory) and we have a previous part, remove the last part
-			temp_parts.pop_back();
-			continue;
+		} else if(part == "..") {
+			if(!temp_parts.empty() && temp_parts.back() != "..") {
+				//If the part is .. (AKA previous directory) and we have a previous part, remove the last part
+				temp_parts.pop_back();
+				continue;
+			} else if(temp_parts.empty() && m_is_absolute) {
+				//Or, if we're at the root directory, do nothing
+				continue;
+			}
 		}
 
         temp_parts.push_back(part);
