@@ -28,6 +28,10 @@ namespace UI {
 		BEGINNING, CENTER, END
 	};
 
+	enum class TruncationMode {
+		BEGINNING, CENTER, END, NONE
+	};
+
 	class DrawContext {
 	public:
 		DrawContext(const Gfx::Framebuffer& framebuffer);

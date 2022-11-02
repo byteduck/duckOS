@@ -152,13 +152,13 @@ void Window::repaint_now() {
 			title_xpos += 2 + icon->size().width;
 		}
 
+		int button_size = titlebar_rect.height - 4;
+
 		//Title bar text
-		int font_height = Theme::font()->bounding_box().height;
-		Gfx::Point title_pos = titlebar_rect.position() + Gfx::Point{title_xpos, titlebar_rect.height / 2 - font_height / 2};
-		ctx.draw_text(_title.c_str(), title_pos, Theme::window_title());
+		auto title_rect = titlebar_rect.inset(4, button_size + 4, 4, title_xpos);
+		ctx.draw_text(_title.c_str(), title_rect, BEGINNING, BEGINNING, Theme::font(), Theme::window_title());
 
 		//Buttons
-		int button_size = titlebar_rect.height - 4;
 		_close_button.area = {
 				titlebar_rect.x + titlebar_rect.width - UI_WINDOW_PADDING - button_size,
 				titlebar_rect.y + 2,
