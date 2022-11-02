@@ -14,6 +14,9 @@ SET(SOURCES
         widget/Label.cpp
         widget/ProgressBar.cpp
 
+        widget/files/FileGridView.cpp
+        widget/files/FileViewBase.cpp
+
         Menu.cpp
         widget/MenuWidget.cpp
 
