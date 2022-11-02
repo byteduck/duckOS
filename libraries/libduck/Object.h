@@ -21,7 +21,7 @@
 	inline Duck::Ptr<T> self() {									\
 		return std::static_pointer_cast<T>(self());					\
 	}                                      							\
-	inline std::string object_name() { return #name; }
+	inline virtual std::string object_name() override { return #name; }
 
 /** \see{Duck::Object} */
 #define DUCK_OBJECT_VIRTUAL(name) 									\
@@ -55,7 +55,7 @@ namespace Duck {
 	 */
 	class Object: public std::enable_shared_from_this<Object> {
 	public:
-		DUCK_OBJECT_DEF(Object)
+		inline virtual std::string object_name() { return "Object"; }
 		virtual ~Object() = default;
 
 	protected:
