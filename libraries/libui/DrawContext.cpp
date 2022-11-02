@@ -60,7 +60,7 @@ void UI::DrawContext::fill_gradient_v(Gfx::Rect rect, Color color_a, Color color
 	fb->fill_gradient_v(rect, color_a, color_b);
 }
 
-void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color) const {
+void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color, TruncationMode truncation) const {
 	// First, split up the text into lines
 	struct Line {
 		std::string text;
@@ -95,8 +95,19 @@ void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h
 		if(!rect_for_glyph(glyph).inside(rect)) {
 			// We ran out of space on the line, try line wrapping
 			finalize_line();
-			if(!rect_for_glyph(glyph).inside(rect))
+			if(!rect_for_glyph(glyph).inside(rect)) {
+				// If we need ellipsis, add them
+				if(truncation == TruncationMode::ELLIPSIS && !lines.empty()) {
+					auto& last_line = lines[lines.size() - 1];
+					while(!last_line.text.empty() && font->size_of((last_line.text + "...").c_str()).width > rect.width)
+						last_line.text.erase(last_line.text.end() - 1);
+					last_line.text += "...";
+					last_line.bounds = { font->size_of(last_line.text.c_str()).width, font->bounding_box().height };
+					if(last_line.bounds.width > rect.width)
+						lines.erase(lines.end() - 1);
+				}
 				break;
+			}
 		}
 
 		cur_line.text += *str;

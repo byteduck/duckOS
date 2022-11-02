@@ -29,7 +29,7 @@ namespace UI {
 	};
 
 	enum class TruncationMode {
-		BEGINNING, CENTER, END, NONE
+		CUT, ELLIPSIS
 	};
 
 	class DrawContext {
@@ -48,7 +48,7 @@ namespace UI {
 		void fill_gradient_h(Gfx::Rect rect, Color color_a, Color color_b) const;
 		void fill_gradient_v(Gfx::Rect rect, Color color_a, Color color_b) const;
 
-		void draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Color color) const;
+		void draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Color color, TruncationMode truncation = TruncationMode::ELLIPSIS) const;
 		void draw_text(const char* str, Gfx::Point pos, Gfx::Font* font, Color color) const;
 		void draw_text(const char* str, Gfx::Point pos, Color color) const;
 		void draw_glyph(Gfx::Font* font, uint32_t codepoint, Gfx::Point pos, Color color) const;
