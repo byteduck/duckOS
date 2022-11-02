@@ -143,53 +143,53 @@ void handle_pond_events() {
 	}
 }
 
-void UI::run() {
-	try {
-		while (!should_exit) {
-			//Trigger needed timers
-			long shortest_timeout = LONG_MAX;
-			bool have_timeout = false;
-			auto timer_it = timers.begin();
-			while(timer_it != timers.end()) {
-				auto* timer = timer_it->second;
+void UI::run_while(std::function<bool()> predicate) {
+	while (!should_exit && predicate()) {
+		//Trigger needed timers
+		long shortest_timeout = LONG_MAX;
+		bool have_timeout = false;
+		auto timer_it = timers.begin();
+		while(timer_it != timers.end()) {
+			auto* timer = timer_it->second;
 
-				//If the timer in question isn't enabled, skip it
-				if(!timer->enabled())
+			//If the timer in question isn't enabled, skip it
+			if(!timer->enabled())
+				continue;
+
+			long millis = timer->millis_until_ready();
+
+			//First, check if the timer is ready to fire
+			if(millis <= 0) {
+				//Call the timer
+				timer->call()();
+				if(!timer->is_interval()) {
+					//Delete the timer if it's just a one-time timer (ie setTimeout)
+					timer_it = timers.erase(timer_it);
+					delete timer;
 					continue;
-
-				long millis = timer->millis_until_ready();
-
-				//First, check if the timer is ready to fire
-				if(millis <= 0) {
-					//Call the timer
-					timer->call()();
-					if(!timer->is_interval()) {
-						//Delete the timer if it's just a one-time timer (ie setTimeout)
-						timer_it = timers.erase(timer_it);
-						delete timer;
-						continue;
-					} else {
-						//Reschedule the timer if it's an interval
-						timers[timer_it->first]->calculate_trigger_time();
-						millis = timer_it->second->delay();
-					}
+				} else {
+					//Reschedule the timer if it's an interval
+					timers[timer_it->first]->calculate_trigger_time();
+					millis = timer_it->second->delay();
 				}
-
-				//Then, determine if this timer is the next one that will fire
-				if(millis > 0 && millis < shortest_timeout) {
-					shortest_timeout = millis;
-					have_timeout = true;
-				}
-
-				timer_it++;
 			}
 
-			//Update with a timeout of -1 (infinite), or until the next timer is ready to fire
-			update(have_timeout ? shortest_timeout : -1);
+			//Then, determine if this timer is the next one that will fire
+			if(millis > 0 && millis < shortest_timeout) {
+				shortest_timeout = millis;
+				have_timeout = true;
+			}
+
+			timer_it++;
 		}
-	} catch(const UI::UIException& e) {
-		fprintf(stderr, "UIException in UI loop: %s\n", e.what());
+
+		//Update with a timeout of -1 (infinite), or until the next timer is ready to fire
+		update(have_timeout ? shortest_timeout : -1);
 	}
+}
+
+void UI::run() {
+	UI::run_while([] { return true; });
 }
 
 void UI::update(int timeout) {

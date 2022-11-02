@@ -35,6 +35,7 @@ namespace UI {
 
 	void init(char** argv, char** envp);
 	void run();
+	void run_while(std::function<bool()> predicate);
 	void update(int timeout);
 	bool ready_to_exit();
 

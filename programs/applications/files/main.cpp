@@ -20,7 +20,7 @@
 #include <libui/libui.h>
 #include <libui/widget/files/FileGridView.h>
 #include <libui/widget/layout/FlexLayout.h>
-#include "HeaderWidget.h"
+#include <libui/widget/files/FileNavigationBar.h>
 
 using namespace Duck;
 
@@ -57,7 +57,7 @@ protected:
 
 private:
 	Ptr<UI::FileGridView> file_grid = UI::FileGridView::make("/");
-	Ptr<HeaderWidget> header = HeaderWidget::make(file_grid);
+	Ptr<UI::FileNavigationBar> header = UI::FileNavigationBar::make(file_grid);
 };
 
 int main(int argc, char** argv, char** envp) {

@@ -6,6 +6,8 @@ SET(SOURCES
         Timer.cpp
         UIException.cpp
 
+        bits/FilePicker.cpp
+
         widget/Widget.cpp
         widget/Button.cpp
         widget/Cell.cpp
@@ -16,6 +18,7 @@ SET(SOURCES
 
         widget/files/FileGridView.cpp
         widget/files/FileViewBase.cpp
+        widget/files/FileNavigationBar.cpp
 
         Menu.cpp
         widget/MenuWidget.cpp

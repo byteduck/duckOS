@@ -1,19 +1,19 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright © 2016-2022 Byteduck */
 
-#include "HeaderWidget.h"
+#include "FileNavigationBar.h"
 #include <libui/libui.h>
 #include <libui/widget/Cell.h>
 
 using namespace UI;
 
-void HeaderWidget::fv_did_navigate(Duck::Path path) {
+void FileNavigationBar::fv_did_navigate(Duck::Path path) {
 	location_label->set_label(path.string());
 }
 
-HeaderWidget::HeaderWidget(Duck::Ptr<UI::FileViewBase> file_view): UI::FlexLayout(HORIZONTAL), file_view(file_view) {
+FileNavigationBar::FileNavigationBar(Duck::Ptr<UI::FileViewBase> file_view): UI::FlexLayout(HORIZONTAL), file_view(file_view) {
 	set_sizing_mode(UI::PREFERRED);
-	back_button = UI::Button::make(UI::icon("up.png"));
+	back_button = UI::Button::make(UI::icon("/filetypes/up.png"));
 	back_button->on_pressed = [&] {
 		this->file_view->set_directory(this->file_view->current_directory().parent());
 	};
