@@ -21,6 +21,7 @@
 
 #include <algorithm>
 #include <math.h>
+#include <libduck/Stream.h>
 
 namespace Gfx {
 	class Rect;
@@ -82,6 +83,10 @@ namespace Gfx {
 		}
 	};
 
+	inline Duck::OutputStream& operator<<(Duck::OutputStream& stream, Point point) {
+		return stream << "(x: " << point.x << ", y: " << point.y << ")";
+	}
+
 	class Dimensions {
 	public:
 		int width;
@@ -131,6 +136,10 @@ namespace Gfx {
 			return !operator==(other);
 		}
 	};
+
+	inline Duck::OutputStream& operator<<(Duck::OutputStream& stream, Dimensions dimensions) {
+		return stream << "(" << dimensions.width << "x" << dimensions.height << ")";
+	}
 
 	class Rect {
 	public:
@@ -306,6 +315,10 @@ namespace Gfx {
 			return !width && !height;
 		}
 	};
+
+	inline Duck::OutputStream& operator<<(Duck::OutputStream& stream, Rect rect) {
+		return stream << "(x: " << rect.x << ", y: " << rect.y << ", w: " << rect.width << ", h: " << rect.height << ")";
+	}
 
 	bool Point::in(const Rect& rect) const {
 		return x >= rect.x && x <= rect.x + rect.width &&
