@@ -337,7 +337,7 @@ namespace UI {
 		bool _dirty = false;
 		bool _first_layout_done = false;
 		PositioningMode _positioning_mode = AUTO;
-		SizingMode _sizing_mode = FILL;
+		SizingMode _sizing_mode = PREFERRED;
 		Gfx::Framebuffer _framebuffer;
 	};
 }

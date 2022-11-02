@@ -71,7 +71,7 @@ void UI::FlexLayout::calculate_layout() {
 	}
 
 	int fill_size = 1;
-	if(nonfill_size + total_spacing < (direction == VERTICAL ? size.height : size.width))
+	if(num_fill && nonfill_size + total_spacing < (direction == VERTICAL ? size.height : size.width))
 		fill_size = ((direction == VERTICAL ? size.height : size.width) - nonfill_size - total_spacing) / num_fill;
 
 	int cur_pos = 0;
