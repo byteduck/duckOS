@@ -8,6 +8,7 @@ SET(SOURCES
 
         widget/Widget.cpp
         widget/Button.cpp
+        widget/Cell.cpp
         widget/Checkbox.cpp
         widget/Image.cpp
         widget/Label.cpp
