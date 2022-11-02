@@ -24,30 +24,32 @@ UI::FlexLayout::FlexLayout(UI::FlexLayout::Direction direction): direction(direc
 	set_sizing_mode(UI::FILL);
 }
 
+void UI::FlexLayout::set_spacing(int spacing) {
+	m_spacing = spacing;
+	update_layout();
+}
+
 Gfx::Dimensions UI::FlexLayout::preferred_size() {
-	int max_main_dim = 0;
+	int main_dim = 0;
 	int max_other_dim = 0;
 	for(auto& child : children) {
 		auto sz = child->preferred_size();
 		if(direction == HORIZONTAL) {
-			if(sz.width > max_main_dim)
-				max_main_dim = sz.width;
-			if(sz.height > max_other_dim)
-				max_other_dim = sz.height;
+			main_dim += sz.width;
+			max_other_dim = std::max(max_other_dim, sz.height);
 		} else if(direction == VERTICAL) {
-			if(sz.height > max_main_dim)
-				max_main_dim = sz.height;
-			if(sz.width > max_other_dim)
-				max_other_dim = sz.width;
+			main_dim += sz.height;
+			max_other_dim = std::max(max_other_dim, sz.width);
 		}
 	}
 
-	int size = max_main_dim * (int) children.size();
+	if(!children.empty())
+		main_dim += (children.size() - 1) * m_spacing;
 
 	if(direction == HORIZONTAL)
-		return Gfx::Dimensions {size, max_other_dim};
+		return Gfx::Dimensions {main_dim, max_other_dim};
 	else
-		return Gfx::Dimensions {max_other_dim, size};
+		return Gfx::Dimensions {max_other_dim, main_dim};
 }
 
 void UI::FlexLayout::calculate_layout() {
@@ -55,6 +57,8 @@ void UI::FlexLayout::calculate_layout() {
 
 	int nonfill_size = 0;
 	int num_fill = 0;
+	int total_spacing = (children.size() - 1) * m_spacing;;
+
 	for(int i = 0; i < children.size(); i++) {
 		if(children[i]->sizing_mode() != FILL) {
 			if(direction == VERTICAL)
@@ -67,19 +71,19 @@ void UI::FlexLayout::calculate_layout() {
 	}
 
 	int fill_size = 1;
-	if(nonfill_size < (direction == VERTICAL ? size.height : size.width))
-		fill_size = (size.height - nonfill_size) / num_fill;
+	if(nonfill_size + total_spacing < (direction == VERTICAL ? size.height : size.width))
+		fill_size = ((direction == VERTICAL ? size.height : size.width) - nonfill_size - total_spacing) / num_fill;
 
 	int cur_pos = 0;
 	for(int i = 0; i < children.size(); i++) {
 		if(direction == VERTICAL) {
 			int cell_size = children[i]->sizing_mode() == FILL ? fill_size : children[i]->preferred_size().height;
 			children[i]->set_layout_bounds({0, cur_pos, size.width, cell_size});
-			cur_pos += cell_size;
+			cur_pos += cell_size + m_spacing;
 		} else {
 			int cell_size = children[i]->sizing_mode() == FILL ? fill_size : children[i]->preferred_size().width;
 			children[i]->set_layout_bounds({cur_pos, 0, cell_size, size.height});
-			cur_pos += cell_size;
+			cur_pos += cell_size + m_spacing;
 		}
 	}
 }

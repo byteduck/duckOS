@@ -31,15 +31,17 @@ namespace UI {
 			VERTICAL
 		};
 
-		//Widget
+		// FlexLayout
+		void set_spacing(int spacing);
+
+		// Widget
 		virtual Gfx::Dimensions preferred_size() override;
 		virtual void calculate_layout() override;
 
 	protected:
 		Direction direction;
-
-	private:
 		explicit FlexLayout(Direction direction);
+		int m_spacing = 2;
 	};
 }
 
