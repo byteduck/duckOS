@@ -46,16 +46,16 @@ Duck::ResultRet<Duck::Ptr<Image>> Image::load(Duck::Path path) {
 			}
 		}
 		if(!buffers.size())
-			return Result(ENOENT);
+			return Result("No valid images in icon");
 		return Image::make(buffers, largest_size);
 	} else if(path.extension() == "png") {
 		auto* png = load_png(path);
 		if(!png)
-			return Result(EINVAL);
+			return Result("Invalid PNG file");
 		std::map<std::pair<int, int>, Ptr<Framebuffer>> map = {{{png->width, png->height}, Ptr<Framebuffer>(png)}};
 		return Image::make(map, Dimensions {png->width, png->height});
 	}
-	return Result(EINVAL);
+	return Result("Invalid image file");
 }
 
 Ptr<Image> Image::take(Framebuffer* buffer) {
