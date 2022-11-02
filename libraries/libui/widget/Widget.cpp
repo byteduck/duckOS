@@ -32,6 +32,13 @@ Gfx::Dimensions Widget::preferred_size() {
         return {1, 1};
 }
 
+Gfx::Dimensions Widget::minimum_size() {
+	if(children.size())
+		return children[0]->minimum_size();
+	else
+		return preferred_size();
+}
+
 Gfx::Dimensions Widget::current_size() {
 	if(!_initialized_size) {
 		_rect.set_dimensions(preferred_size());

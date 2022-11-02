@@ -51,6 +51,12 @@ namespace UI {
 		virtual Gfx::Dimensions preferred_size();
 
 		/**
+		 * Returns the minimum size of the widget.
+		 * @return The minimum size of the widget.
+		 */
+		virtual Gfx::Dimensions minimum_size();
+
+		/**
 		 * Returns the current size of the widget (may not be its preferred size).
 		 * @return The current size of the widget.
 		 */
