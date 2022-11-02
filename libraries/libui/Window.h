@@ -51,6 +51,7 @@ namespace UI {
 		void set_resizable(bool resizable);
 		bool resizable();
 		bool is_focused();
+		bool is_closed();
 
 		///Window management
 		void bring_to_front();
@@ -105,6 +106,7 @@ namespace UI {
 		bool _resizable = false;
 		bool _needs_repaint = false;
 		bool _focused = false;
+		bool _closed = false;
 
 		struct TitleButton {
 			std::string image;

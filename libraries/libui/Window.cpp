@@ -107,6 +107,10 @@ bool Window::is_focused() {
 	return _focused;
 }
 
+bool Window::is_closed() {
+	return _closed;
+}
+
 void Window::bring_to_front() {
 	_window->bring_to_front();
 }
@@ -177,7 +181,9 @@ void Window::repaint_now() {
 }
 
 void Window::close() {
-	_window->destroy();
+	if(!_closed)
+		_window->destroy();
+	_closed = true;
 }
 
 void Window::show() {
