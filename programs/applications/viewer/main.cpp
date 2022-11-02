@@ -3,22 +3,33 @@
 #include <libui/libui.h>
 #include <libui/widget/Label.h>
 #include <libui/widget/Image.h>
+#include <libui/bits/FilePicker.h>
 
 using namespace Duck;
 
 int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
+	Duck::Path image_path = "/";
+	if(argc < 2) {
+		auto files = UI::FilePicker::make()->pick();
+		if(!files.empty())
+			image_path = files[0];
+		Duck::Log::dbgf("PICKED {}", files[0]);
+	} else {
+		image_path = argv[1];
+	}
+
 	auto window = UI::Window::make();
-	auto image = argc >= 2 ? Gfx::Image::load(argv[1]) : Result(ENOENT);
+	auto image = Gfx::Image::load(image_path);
 
 	if(image.is_error()) {
-		window->set_contents(UI::Label::make("Use the files app or run `open <imagefile>` until a file picker is added :)"));
+		window->set_contents(UI::Label::make(image.message()));
 	} else {
 		window->set_contents(UI::Image::make(image.value()));
 	}
 
-	window->set_title("Viewer: " + std::string(argc >= 2 ? argv[1] : "No Image"));
+	window->set_title("Viewer: " + std::string(image.has_value() ? image_path : "No Image"));
 	window->set_resizable(true);
 	window->show();
 
