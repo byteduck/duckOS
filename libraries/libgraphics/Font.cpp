@@ -256,11 +256,7 @@ FontGlyph* Font::glyph(uint32_t codepoint) {
 }
 
 Dimensions Font::size_of(const char* string) {
-	int min_y = 0;
-	int max_y = 0;
-	int min_x = 0;
-	int max_x = 0;
-	Rect bounding_box = {0, 0, 0, 0};
+	Rect bounding_box = {0, 0, 0, this->bounding_box().height};
 	Point cpos = {0, 0};
 	while(*string) {
 		auto glph = glyph(*string);
