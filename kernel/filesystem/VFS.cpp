@@ -232,7 +232,7 @@ Result VFS::link(const kstd::string& file, const kstd::string& link_name, const 
 	if(!new_file_parent) return -ENOENT;
 
 	//Check permisisons on the parent dir
-	if(new_file_parent->inode()->metadata().can_write(user)) return -EACCES;
+	if(!new_file_parent->inode()->metadata().can_write(user)) return -EACCES;
 
 	//Find the old file
 	resolv = resolve_path(file, base, user);
