@@ -13,9 +13,9 @@ int main(int argc, char** argv, char** envp) {
 	Duck::Path image_path = "/";
 	if(argc < 2) {
 		auto files = UI::FilePicker::make()->pick();
-		if(!files.empty())
-			image_path = files[0];
-		Duck::Log::dbgf("PICKED {}", files[0]);
+		if(files.empty())
+			return EXIT_SUCCESS;
+		image_path = files[0];
 	} else {
 		image_path = argv[1];
 	}
@@ -26,13 +26,16 @@ int main(int argc, char** argv, char** envp) {
 	if(image.is_error()) {
 		window->set_contents(UI::Label::make(image.message()));
 	} else {
-		window->set_contents(UI::Image::make(image.value()));
+		window->set_contents(({
+			auto img = UI::Image::make(image.value());
+			img->set_sizing_mode(UI::FILL);
+			img;
+		}));
 	}
 
 	window->set_title("Viewer: " + std::string(image.has_value() ? image_path : "No Image"));
 	window->set_resizable(true);
 	window->show();
-
 
 	auto disp_rect = Gfx::Rect {{0,0 }, UI::pond_context->get_display_dimensions()};
 	if(!disp_rect.contains({{0, 0}, window->dimensions()}))
