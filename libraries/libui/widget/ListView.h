@@ -40,7 +40,7 @@ namespace UI {
 		Gfx::Dimensions scrollable_area() override;
 
 		//ListView
-		virtual Ptr<Widget> create_entry(int index) = 0;
+		virtual Duck::Ptr<Widget> create_entry(int index) = 0;
 		virtual Gfx::Dimensions preferred_item_dimensions() = 0;
 		virtual int num_items() = 0;
 		void update_item(int index);
@@ -50,10 +50,10 @@ namespace UI {
 
 	private:
 		void do_update(bool dimensions_changed);
-		Ptr<Widget> setup_entry(int index);
+		Duck::Ptr<Widget> setup_entry(int index);
 		Gfx::Rect item_rect(int index);
 
-		std::map<int, Ptr<Widget>> _items;
+		std::map<int, Duck::Ptr<Widget>> _items;
 		int _prev_first_visible = 0;
 		int _prev_last_visible = 0;
 		Gfx::Dimensions _item_dims = {-1, -1};

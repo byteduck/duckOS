@@ -89,14 +89,14 @@ namespace UI {
 
 	private:
 		void initialize() override;
-		void blit_widget(PtrRef<Widget> widget);
-		void set_focused_widget(PtrRef<Widget> widget);
+		void blit_widget(Duck::PtrRef<Widget> widget);
+		void set_focused_widget(Duck::PtrRef<Widget> widget);
 
 		friend class Widget;
 		Pond::Window* _window;
-		Ptr<Widget> _contents;
-		Ptr<Widget> _focused_widget;
-		std::vector<Ptr<Widget>> _widgets;
+		Duck::Ptr<Widget> _contents;
+		Duck::Ptr<Widget> _focused_widget;
+		std::vector<Duck::Ptr<Widget>> _widgets;
 		std::string _title;
 		Gfx::Point _mouse;
 		Gfx::Point _abs_mouse;
@@ -117,7 +117,7 @@ namespace UI {
 
 	class WindowDelegate {
 	public:
-		virtual void window_focus_changed(PtrRef<Window> window, bool focused) = 0;
+		virtual void window_focus_changed(Duck::PtrRef<Window> window, bool focused) = 0;
 		virtual ~WindowDelegate() = default;
 	};
 }

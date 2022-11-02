@@ -44,14 +44,14 @@ namespace UI {
 		std::function<void()> on_released = nullptr;
 	private:
 		explicit Button(std::string label);
-		explicit Button(Ptr<const Gfx::Image> image);
-		explicit Button(Ptr<Widget> contents);
+		explicit Button(Duck::Ptr<const Gfx::Image> image);
+		explicit Button(Duck::Ptr<Widget> contents);
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
 
-		Ptr<Label> m_label;
-		Ptr<Widget> m_contents;
+		Duck::Ptr<Label> m_label;
+		Duck::Ptr<Widget> m_contents;
 		bool m_pressed = false;
 		int m_padding = 4;
 	};

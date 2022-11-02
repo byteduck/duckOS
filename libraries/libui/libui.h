@@ -31,11 +31,6 @@
 #include <libapp/App.h>
 
 namespace UI {
-	template<typename T>
-	using Ptr = std::shared_ptr<T>;
-	template<typename T>
-	using ArgPtr = const std::shared_ptr<T>&;
-
 	extern Pond::Context* pond_context;
 
 	void init(char** argv, char** envp);
@@ -44,7 +39,7 @@ namespace UI {
 	bool ready_to_exit();
 
 	void set_timeout(std::function<void()> func, int interval);
-	Ptr<Timer> set_interval(std::function<void()> func, int interval);
+	Duck::Ptr<Timer> set_interval(std::function<void()> func, int interval);
 	void remove_timer(int id);
 
 	bool set_app_name(const std::string& app_name);
@@ -52,7 +47,7 @@ namespace UI {
 
 	void add_poll(const Poll& poll);
 
-	Ptr<const Gfx::Image> icon(Duck::Path path);
+	Duck::Ptr<const Gfx::Image> icon(Duck::Path path);
 
 	void __register_window(const std::shared_ptr<Window>& window, int id);
 	void __deregister_window(int id);

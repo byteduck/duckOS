@@ -52,15 +52,34 @@ Gfx::Dimensions UI::FlexLayout::preferred_size() {
 
 void UI::FlexLayout::calculate_layout() {
 	Gfx::Dimensions size = current_size();
+
+	int nonfill_size = 0;
+	int num_fill = 0;
+	for(int i = 0; i < children.size(); i++) {
+		if(children[i]->sizing_mode() != FILL) {
+			if(direction == VERTICAL)
+				nonfill_size += children[i]->preferred_size().height;
+			else
+				nonfill_size += children[i]->preferred_size().width;
+		} else {
+			num_fill++;
+		}
+	}
+
+	int fill_size = 1;
+	if(nonfill_size < (direction == VERTICAL ? size.height : size.width))
+		fill_size = (size.height - nonfill_size) / num_fill;
+
+	int cur_pos = 0;
 	for(int i = 0; i < children.size(); i++) {
 		if(direction == VERTICAL) {
-			int cell_size = size.height / (int) children.size();
-			int cell_position = cell_size * i;
-			children[i]->set_layout_bounds({0, cell_position, size.width, cell_size});
+			int cell_size = children[i]->sizing_mode() == FILL ? fill_size : children[i]->preferred_size().height;
+			children[i]->set_layout_bounds({0, cur_pos, size.width, cell_size});
+			cur_pos += cell_size;
 		} else {
-			int cell_size = size.width / (int) children.size();
-			int cell_position = cell_size * i;
-			children[i]->set_layout_bounds({cell_position, 0, cell_size, size.height});
+			int cell_size = children[i]->sizing_mode() == FILL ? fill_size : children[i]->preferred_size().width;
+			children[i]->set_layout_bounds({cur_pos, 0, cell_size, size.height});
+			cur_pos += cell_size;
 		}
 	}
 }

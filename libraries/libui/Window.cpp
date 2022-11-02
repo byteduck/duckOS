@@ -344,7 +344,7 @@ void Window::calculate_layout() {
 	_contents->set_layout_bounds(new_rect);
 }
 
-void Window::blit_widget(PtrRef<Widget> widget) {
+void Window::blit_widget(Duck::PtrRef<Widget> widget) {
 	if(widget->_hidden)
 		return;
 
@@ -359,14 +359,14 @@ void Window::blit_widget(PtrRef<Widget> widget) {
 		blit_widget(child);
 }
 
-void Window::open_menu(Ptr<Menu> menu) {
+void Window::open_menu(Duck::Ptr<Menu> menu) {
 	open_menu(menu, _mouse);
 }
 
-void Window::open_menu(Ptr<Menu> menu, Gfx::Point point) {
+void Window::open_menu(Duck::Ptr<Menu> menu, Gfx::Point point) {
 	MenuWidget::open_menu(menu, point + _window->position());
 }
 
-void Window::set_focused_widget(PtrRef<Widget> widget) {
+void Window::set_focused_widget(Duck::PtrRef<Widget> widget) {
 	_focused_widget = widget;
 }

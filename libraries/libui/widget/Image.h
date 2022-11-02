@@ -30,7 +30,7 @@ namespace UI {
 		Gfx::Dimensions preferred_size() override;
 
 	private:
-		explicit Image(Ptr<const Gfx::Image> image, ScalingMode mode = FIT);
+		explicit Image(Duck::Ptr<const Gfx::Image> image, ScalingMode mode = FIT);
 		explicit Image(std::string name, ScalingMode mode = FIT);
 
 		Duck::Ptr<const Gfx::Image> _image;

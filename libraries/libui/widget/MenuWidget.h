@@ -20,13 +20,13 @@ namespace UI {
 		virtual Gfx::Dimensions preferred_size() override;
 
 		// WindowDelegate
-		void window_focus_changed(PtrRef<Window> window, bool focused) override;
+		void window_focus_changed(Duck::PtrRef<Window> window, bool focused) override;
 
 		// MenuWidget
-		static Ptr<MenuWidget> open_menu(Duck::Ptr<Menu> menu, Gfx::Point location);
+		static Duck::Ptr<MenuWidget> open_menu(Duck::Ptr<Menu> menu, Gfx::Point location);
 
 	private:
-		explicit MenuWidget(Duck::Ptr<Menu> menu, PtrRef<Window> window);
+		explicit MenuWidget(Duck::Ptr<Menu> menu, Duck::PtrRef<Window> window);
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
@@ -34,7 +34,7 @@ namespace UI {
 
 		//MenuWidget
 		void open_child_window(Duck::Ptr<Menu> menu, Gfx::Rect item_rect);
-		WeakPtr<MenuWidget> root_menu();
+		Duck::WeakPtr<MenuWidget> root_menu();
 		bool any_are_focused();
 		void close();
 
@@ -42,8 +42,8 @@ namespace UI {
 		Duck::Ptr<MenuItem> m_hovered_item;
 		Duck::Ptr<MenuItem> m_last_hovered_item;
 		Duck::Ptr<MenuItem> m_expanded_item;
-		WeakPtr<MenuWidget> m_parent;
-		WeakPtr<MenuWidget> m_child_menu;
-		WeakPtr<Window> m_window;
+		Duck::WeakPtr<MenuWidget> m_parent;
+		Duck::WeakPtr<MenuWidget> m_child_menu;
+		Duck::WeakPtr<Window> m_window;
 	};
 }

@@ -65,7 +65,7 @@ void UI::init(char** argv, char** envp) {
 }
 
 //We need to use these functions to avoid memory leaks due to adding null entries to the maps
-UI::Ptr<Window> find_window(int id) {
+Duck::Ptr<Window> find_window(int id) {
 	auto it = windows.find(id);
 	if(it == windows.end())
 		return nullptr;
@@ -221,10 +221,10 @@ void UI::set_timeout(std::function<void()> func, int interval) {
 	timers[id] = new Timer {id, interval, std::move(func), false};
 }
 
-Ptr<Timer> UI::set_interval(std::function<void()> func, int interval) {
+Duck::Ptr<Timer> UI::set_interval(std::function<void()> func, int interval) {
 	auto timer = new Timer {++cur_timeout, interval, std::move(func), true};
 	timers[cur_timeout] = timer;
-	return Ptr<Timer> { timer };
+	return Duck::Ptr<Timer> { timer };
 }
 
 void UI::remove_timer(int id) {
@@ -256,7 +256,7 @@ void UI::add_poll(const Poll& poll) {
 	pollfds.push_back(pfd);
 }
 
-Ptr<const Gfx::Image> UI::icon(Duck::Path path) {
+Duck::Ptr<const Gfx::Image> UI::icon(Duck::Path path) {
 	if(path.is_absolute())
 		return _app_info.resource_image("/usr/share/icons" + path.string() + (path.extension().empty() ? ".icon" : ""));
 	return _app_info.resource_image(path);

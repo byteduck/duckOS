@@ -6,17 +6,17 @@
 
 using namespace UI;
 
-Image::Image(Ptr<const Gfx::Image> image, Image::ScalingMode mode): _image(image), _scaling_mode(mode) {
+Image::Image(Duck::Ptr<const Gfx::Image> image, Image::ScalingMode mode): _image(image), _scaling_mode(mode) {
 	set_uses_alpha(true);
 }
 
 Image::Image(std::string name, UI::Image::ScalingMode mode) {}
 
-Ptr<const Gfx::Image> Image::image() {
+Duck::Ptr<const Gfx::Image> Image::image() {
 	return _image;
 }
 
-void Image::set_image(Ptr<const Gfx::Image> image) {
+void Image::set_image(Duck::Ptr<const Gfx::Image> image) {
 	_image = image;
 	repaint();
 	update_layout();

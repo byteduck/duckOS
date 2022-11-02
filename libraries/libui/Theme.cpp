@@ -84,7 +84,7 @@ Font* Theme::font_mono() {
 	return current()->get_font_mono();
 }
 
-Ptr<Image> Theme::get_image(const std::string& key) {
+Duck::Ptr<Image> Theme::get_image(const std::string& key) {
 	auto ret = images[key];
 	return ret ? ret : blank_image;
 }

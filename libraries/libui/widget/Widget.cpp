@@ -193,7 +193,7 @@ void Widget::open_menu(Duck::Ptr<UI::Menu> menu) {
 		_root_window->open_menu(menu);
 }
 
-void Widget::set_window(PtrRef<Window> window) {
+void Widget::set_window(Duck::PtrRef<Window> window) {
 	if(_parent || _parent_window)
 		return;
 
@@ -231,11 +231,11 @@ void Widget::do_repaint(const DrawContext& framebuffer) {
 	framebuffer.fill({0, 0, framebuffer.width(), framebuffer.height()}, RGBA(0, 0, 0, 0));
 }
 
-void Widget::on_child_added(PtrRef<Widget> child) {
+void Widget::on_child_added(Duck::PtrRef<Widget> child) {
 
 }
 
-void Widget::on_child_removed(PtrRef<Widget> child) {
+void Widget::on_child_removed(Duck::PtrRef<Widget> child) {
 
 }
 

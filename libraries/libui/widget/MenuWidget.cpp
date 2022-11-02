@@ -15,7 +15,7 @@
 using namespace UI;
 
 
-MenuWidget::MenuWidget(Ptr<Menu> menu, PtrRef<Window> window): m_menu(menu), m_window(window) {}
+MenuWidget::MenuWidget(Duck::Ptr<Menu> menu, Duck::PtrRef<Window> window): m_menu(menu), m_window(window) {}
 
 void MenuWidget::initialize() {
 	auto window = m_window.lock();
@@ -85,7 +85,7 @@ Gfx::Dimensions MenuWidget::preferred_size() {
 	};
 }
 
-Ptr<MenuWidget> MenuWidget::open_menu(Ptr<Menu> menu, Gfx::Point location) {
+Duck::Ptr<MenuWidget> MenuWidget::open_menu(Duck::Ptr<Menu> menu, Gfx::Point location) {
 	auto window = UI::Window::make();
 	window->pond_window()->set_type(Pond::MENU);
 	auto menu_widget = UI::MenuWidget::make(menu, window);
@@ -132,7 +132,7 @@ void MenuWidget::open_child_window(Duck::Ptr<Menu> item, Gfx::Rect item_rect) {
 	m_child_menu.lock()->m_parent = self();
 }
 
-WeakPtr<MenuWidget> MenuWidget::root_menu() {
+Duck::WeakPtr<MenuWidget> MenuWidget::root_menu() {
 	if(!m_parent.lock())
 		return self();
 	else

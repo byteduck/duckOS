@@ -34,7 +34,7 @@ Gfx::Dimensions ContainerView::scrollable_area() {
 	return _contents->preferred_size();
 }
 
-void ContainerView::set_contents(Ptr<Widget> contents) {
+void ContainerView::set_contents(Duck::Ptr<Widget> contents) {
 	if(_contents)
 		return;
 	_contents = std::move(contents);

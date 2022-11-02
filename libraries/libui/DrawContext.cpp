@@ -162,11 +162,11 @@ void UI::DrawContext::draw_glyph(Font* font, uint32_t codepoint, Gfx::Point pos,
 	fb->draw_glyph(font, codepoint, pos, color);
 }
 
-void UI::DrawContext::draw_image(Ptr<const Image> img, Gfx::Point pos) const {
+void UI::DrawContext::draw_image(Duck::Ptr<const Image> img, Gfx::Point pos) const {
 	img->draw(*fb, pos);
 }
 
-void UI::DrawContext::draw_image(Ptr<const Image> img, Gfx::Rect pos) const {
+void UI::DrawContext::draw_image(Duck::Ptr<const Image> img, Gfx::Rect pos) const {
 	img->draw(*fb, pos);
 }
 

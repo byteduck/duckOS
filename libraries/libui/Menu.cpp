@@ -6,9 +6,9 @@
 using namespace UI;
 using namespace Duck;
 
-const Ptr<MenuItem> MenuItem::Separator = MenuItem::make();
+const Duck::Ptr<MenuItem> MenuItem::Separator = MenuItem::make();
 
-MenuItem::MenuItem(std::string title, Action action, Ptr<Menu> submenu):
+MenuItem::MenuItem(std::string title, Action action, Duck::Ptr<Menu> submenu):
 	title(std::move(title)), action(std::move(action)), submenu(std::move(submenu))
 {
 	static int menu_id = 0;
@@ -37,17 +37,17 @@ MenuItem::MenuItem(const uint8_t*& buf) {
 	deserialize(buf);
 }
 
-Ptr<Menu> Menu::make(std::vector<Ptr<MenuItem>> items) {
-	return Ptr<Menu>(new Menu(std::move(items)));
+Duck::Ptr<Menu> Menu::make(std::vector<Duck::Ptr<MenuItem>> items) {
+	return Duck::Ptr<Menu>(new Menu(std::move(items)));
 }
 
-Menu::Menu(std::vector<Ptr<MenuItem>> items): m_items(std::move(items)) {}
+Menu::Menu(std::vector<Duck::Ptr<MenuItem>> items): m_items(std::move(items)) {}
 
-void Menu::add_item(Ptr<MenuItem> item) {
+void Menu::add_item(Duck::Ptr<MenuItem> item) {
 	m_items.push_back(item);
 }
 
-const std::vector<Ptr<MenuItem>>& Menu::items() {
+const std::vector<Duck::Ptr<MenuItem>>& Menu::items() {
 	return m_items;
 }
 

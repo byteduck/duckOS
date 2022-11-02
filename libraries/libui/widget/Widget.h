@@ -37,13 +37,6 @@ namespace UI {
 		AUTO, ABSOLUTE
 	};
 
-	template<typename T>
-	using Ptr = Duck::Ptr<T>;
-	template<typename T>
-	using PtrRef = Duck::PtrRef<T>;
-	template<typename T>
-	using WeakPtr = Duck::WeakPtr<T>;
-
 	class Window;
 	class Widget: public Duck::Object {
 	public:
@@ -153,14 +146,14 @@ namespace UI {
 		 * Adds a child to the widget.
 		 * @param child The child to add.
 		 */
-		void add_child(PtrRef<Widget> child);
+		void add_child(Duck::PtrRef<Widget> child);
 
 		/**
 		 * Removes a child from the widget.
 		 * @param child The child to remove.
 		 * @return Whether or not the removal was successful (i.e. if the specified widget was a child of this widget)
 		 */
-		bool remove_child(PtrRef<Widget> child);
+		bool remove_child(Duck::PtrRef<Widget> child);
 
 		/**
 		 * Sets the position of the widget.
@@ -254,13 +247,13 @@ namespace UI {
 		 * Called when a child is added to the widget.
 		 * @param child The child added.
 		 */
-		virtual void on_child_added(PtrRef<Widget> child);
+		virtual void on_child_added(Duck::PtrRef<Widget> child);
 
 		/**
 		 * Called when a child is removed from the widget.
 		 * @param child The child removed.
 		 */
-		virtual void on_child_removed(PtrRef<Widget> child);
+		virtual void on_child_removed(Duck::PtrRef<Widget> child);
 
 		/**
 		 * This function is called whenever the widget's position or size are changed.
@@ -307,7 +300,7 @@ namespace UI {
 		 */
 		virtual void initialize();
 
-		std::vector<Ptr<Widget>> children;
+		std::vector<Duck::Ptr<Widget>> children;
 
 	private:
 		friend class Window;

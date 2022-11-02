@@ -115,7 +115,7 @@ void ListView::do_update(bool dimensions_changed) {
 	}
 }
 
-Ptr<Widget> ListView::setup_entry(int index) {
+Duck::Ptr<Widget> ListView::setup_entry(int index) {
 	auto widget = create_entry(index);
 	add_child(widget);
 	widget->set_layout_bounds(item_rect(index));
