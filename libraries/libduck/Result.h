@@ -41,9 +41,9 @@ namespace Duck {
 		[[nodiscard]] bool is_success() const { return m_code == 0; }
 		[[nodiscard]] bool is_error() const { return m_code; }
 		[[nodiscard]] int code() const { return m_code; }
-		[[nodiscard]] const char* strerror() const { return has_message() ? m_message.c_str() : ::strerror(errno); }
+		[[nodiscard]] const char* strerror() const { return has_message() ? m_message.c_str() : ::strerror(m_code); }
 		[[nodiscard]] bool has_message() const { return !m_message.empty(); }
-		[[nodiscard]] std::string message() const { return has_message() ? m_message.c_str() : ::strerror(errno); }
+		[[nodiscard]] std::string message() const { return has_message() ? m_message.c_str() : ::strerror(m_code); }
 		operator int() const { return m_code; }
 
 		static const Result SUCCESS;
