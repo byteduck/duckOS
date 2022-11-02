@@ -42,6 +42,7 @@ int main(int argc, char** argv, char** envp) {
 
 	auto img = UI::icon("/duck");
 	auto duck = UI::Image::make(img, UI::Image::FIT);
+	duck->set_sizing_mode(UI::FILL);
 	text_layout->add_child(duck);
 
 	auto ver_label = UI::Label::make("Version " + ver);
