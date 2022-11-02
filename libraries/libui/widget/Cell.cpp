@@ -9,15 +9,20 @@ const Color Cell::default_background = 0;
 const Cell::Style Cell::default_style = Cell::Style::PLAIN;
 
 Gfx::Dimensions Cell::preferred_size() {
+	if(children.empty())
+		return {m_padding * 2, m_padding * 2};
 	return children[0]->preferred_size() + Gfx::Dimensions { m_padding * 2, m_padding * 2 };
 }
 
 Gfx::Dimensions Cell::minimum_size() {
+	if(children.empty())
+		return {0, 0};
 	return children[0]->minimum_size() + Gfx::Dimensions { m_padding * 2, m_padding * 2 };
 }
 
 void Cell::calculate_layout() {
-	children[0]->set_layout_bounds(Gfx::Rect {{0, 0}, current_size()}.inset(m_padding));
+	if(!children.empty())
+		children[0]->set_layout_bounds(Gfx::Rect {{0, 0}, current_size()}.inset(m_padding));
 }
 
 void Cell::do_repaint(const UI::DrawContext& ctx) {
@@ -37,6 +42,8 @@ void Cell::do_repaint(const UI::DrawContext& ctx) {
 Cell::Cell(Duck::Ptr<UI::Widget> child, int padding, Color background, Style style):
 	m_padding(padding), m_background(background), m_style(style)
 {
-	add_child(child);
+	set_sizing_mode(FILL);
+	if(child)
+		add_child(child);
 	set_uses_alpha(true);
 }

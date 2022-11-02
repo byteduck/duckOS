@@ -25,7 +25,7 @@ namespace UI {
 		void do_repaint(const UI::DrawContext& ctx) override;
 
 	private:
-		Cell(Duck::Ptr<UI::Widget> child, int padding = default_padding, Color background = default_background, Style style = default_style);
+		Cell(Duck::Ptr<UI::Widget> child = nullptr, int padding = default_padding, Color background = default_background, Style style = default_style);
 
 		int m_padding;
 		Color m_background;
