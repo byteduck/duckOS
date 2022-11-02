@@ -18,18 +18,50 @@
 */
 
 #include <libui/libui.h>
-#include "DirectoryWidget.h"
+#include <libui/widget/files/FileGridView.h>
+#include <libui/widget/layout/FlexLayout.h>
+#include "HeaderWidget.h"
+
+using namespace Duck;
+
+class FileManager: public Duck::Object, public UI::FileViewDelegate {
+public:
+	DUCK_OBJECT_DEF(FileManager);
+
+	void fv_did_select_files(std::vector<Duck::Path> selected) override {
+
+	}
+
+	void fv_did_double_click(Duck::DirectoryEntry entry) override {
+		App::open(entry.path());
+	}
+
+	void fv_did_navigate(Duck::Path path) override {
+		header->fv_did_navigate(path);
+	}
+
+protected:
+	void initialize() override {
+		auto main_flex = UI::FlexLayout::make(UI::FlexLayout::VERTICAL);
+		file_grid->delegate = self();
+		main_flex->add_child(header);
+		main_flex->add_child(file_grid);
+
+		auto window = UI::Window::make();
+		window->set_contents(main_flex);
+		window->set_resizable(true);
+		window->set_title("Files");
+		window->resize({300, 300});
+		window->show();
+	}
+
+private:
+	Ptr<UI::FileGridView> file_grid = UI::FileGridView::make("/");
+	Ptr<HeaderWidget> header = HeaderWidget::make(file_grid);
+};
 
 int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
-
-	auto window = UI::Window::make();
-	auto dir_widget = DirectoryWidget::make("/");
-	window->set_contents(dir_widget);
-	window->set_resizable(true);
-	window->set_title("Files");
-	window->resize({300, 300});
-	window->show();
-
+	auto fm = FileManager::make();
 	UI::run();
 }

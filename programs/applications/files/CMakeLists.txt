@@ -1,3 +1,3 @@
-SET(SOURCES main.cpp FileWidget.cpp DirectoryWidget.cpp)
+SET(SOURCES main.cpp HeaderWidget.cpp)
 MAKE_APP(files)
 TARGET_LINK_LIBRARIES(files libui)
