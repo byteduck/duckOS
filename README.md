@@ -11,7 +11,7 @@ A hobby UNIX-like OS with a graphical window manager for x86 computers.
 Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can now try a (slow) version of duckOS in your browser! [Try it here!](https://aaron.sonin.me/duckOS)
 
 ### Screenshots
-![Screenshot](docs/screenshot-2021-09-11.png)
+![Screenshot](docs/screenshot 2022-11-02.png)
 
 ### What's working
 - Booting off of the primary master IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
