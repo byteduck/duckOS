@@ -63,6 +63,11 @@ namespace UI {
 		Gfx::Dimensions current_size();
 
 		/**
+		 * Returns the current rect of the widget.
+		 */
+		Gfx::Rect current_rect();
+
+		/**
 		 * Returns the positioning mode of the widget.
 		 * @return The positioning mode of the widget.
 		 */

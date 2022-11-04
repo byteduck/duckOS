@@ -47,6 +47,14 @@ Gfx::Dimensions Widget::current_size() {
 	return _rect.dimensions();
 }
 
+Gfx::Rect Widget::current_rect() {
+	if(!_initialized_size) {
+		_rect.set_dimensions(preferred_size());
+		_initialized_size = true;
+	}
+	return _rect;
+}
+
 PositioningMode Widget::positioning_mode() {
 	return _positioning_mode;
 }
