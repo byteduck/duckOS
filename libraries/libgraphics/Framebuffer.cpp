@@ -253,7 +253,7 @@ void Framebuffer::fill_gradient_v(Rect area, uint32_t color_a, uint32_t color_b)
 	if(color_a == color_b)
 		fill(area, color_a);
 	for(int y = 0; y < area.height; y++) {
-		double pct = (double)y / area.width;
+		double pct = (double) y / area.height;
 		double oneminus = 1.0 - pct;
 		fill({area.x, area.y + y, area.width, 1}, RGBA(
 				(uint8_t)(COLOR_R(color_a) * oneminus + COLOR_R(color_b) * pct),
