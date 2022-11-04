@@ -234,6 +234,31 @@ void Framebuffer::fill(Rect area, uint32_t color) const {
 	}
 }
 
+void Framebuffer::fill_blitting(Rect area, uint32_t color) const {
+	//Make sure area is in the bounds of the framebuffer
+	area = area.overlapping_area({0, 0, width, height});
+	if(area.empty())
+		return;
+
+	unsigned int alpha = COLOR_A(color) + 1;
+	unsigned int inv_alpha = 256 - COLOR_A(color);
+	unsigned int premultiplied_r = alpha * COLOR_R(color);
+	unsigned int premultiplied_g = alpha * COLOR_G(color);
+	unsigned int premultiplied_b = alpha * COLOR_B(color);
+	unsigned int premultiplied_a = alpha * COLOR_A(color);
+
+	for(int y = 0; y < area.height; y++) {
+		for(int x = 0; x < area.width; x++) {
+			auto this_val = data[(area.x + x) + (area.y + y) * width];
+			data[(area.x + x) + (area.y + y) * width] = RGBA(
+					(uint8_t)((premultiplied_r + inv_alpha * COLOR_R(this_val)) >> 8),
+					(uint8_t)((premultiplied_g + inv_alpha * COLOR_G(this_val)) >> 8),
+					(uint8_t)((premultiplied_b + inv_alpha * COLOR_B(this_val)) >> 8),
+					(uint8_t)((premultiplied_a + inv_alpha * COLOR_A(this_val)) >> 8));
+		}
+	}
+}
+
 void Framebuffer::fill_gradient_h(Rect area, uint32_t color_a, uint32_t color_b) const {
 	if(color_a == color_b)
 		fill(area, color_a);
@@ -265,10 +290,17 @@ void Framebuffer::fill_gradient_v(Rect area, uint32_t color_a, uint32_t color_b)
 }
 
 void Framebuffer::outline(Rect area, uint32_t color) const {
-	fill({area.x, area.y, area.width, 1}, color);
-	fill({area.x, area.y + area.height - 1, area.width, 1}, color);
+	fill({area.x + 1, area.y, area.width - 2, 1}, color);
+	fill({area.x + 1, area.y + area.height - 1, area.width - 2, 1}, color);
 	fill({area.x, area.y, 1, area.height}, color);
 	fill({area.x + area.width - 1, area.y, 1, area.height}, color);
+}
+
+void Framebuffer::outline_blitting(Rect area, uint32_t color) const {
+	fill_blitting({area.x + 1, area.y, area.width - 2, 1}, color);
+	fill_blitting({area.x + 1, area.y + area.height - 1, area.width - 2, 1}, color);
+	fill_blitting({area.x, area.y, 1, area.height}, color);
+	fill_blitting({area.x + area.width - 1, area.y, 1, area.height}, color);
 }
 
 void Framebuffer::draw_text(const char* str, const Point& pos, Font* font, uint32_t color) const {

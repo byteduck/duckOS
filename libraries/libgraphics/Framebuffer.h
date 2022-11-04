@@ -111,6 +111,13 @@ namespace Gfx {
 		void fill(Rect area, uint32_t color) const;
 
 		/**
+		 * Fills an area of the Image with a color, calculating transparency.
+		 * @param area The area to fill.
+		 * @param color The color to fill the area with.
+		 */
+		void fill_blitting(Rect area, uint32_t color) const;
+
+		/**
 		 * Fills an area of the Image with a horizontal gradient (left to right).
 		 * @param area The area to fill.
 		 * @param color_a The start color.
@@ -132,6 +139,13 @@ namespace Gfx {
 		 * @param color The color to draw the outline in.
 		 */
 		void outline(Rect area, uint32_t color) const;
+
+		/**
+		 * Draws the outline of an area on the Image, calculating transparency.
+		 * @param area The rect of the area to outline.
+		 * @param color The color to draw the outline in.
+		 */
+		void outline_blitting(Rect area, uint32_t color) const;
 
 		/**
 		 * Draws text on the Image with a certain color.
