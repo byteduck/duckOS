@@ -22,14 +22,27 @@
 #include "ScrollView.h"
 
 namespace UI {
+	class ListViewDelegate {
+	public:
+		virtual Duck::Ptr<Widget> lv_create_entry(int index) = 0;
+		virtual Gfx::Dimensions lv_preferred_item_dimensions() = 0;
+		virtual int lv_num_items() = 0;
+	};
+
 	class ListView: public ScrollView {
 	public:
-		VIRTUAL_WIDGET_DEF(ListView)
+		WIDGET_DEF(ListView)
 
 		enum Layout {
 			VERTICAL,
 			GRID
 		};
+
+		Duck::WeakPtr<ListViewDelegate> delegate;
+
+		//ListView
+		void update_item(int index);
+		void update_data();
 
 	protected:
 		//Widget
@@ -39,16 +52,9 @@ namespace UI {
 		void on_scroll(Gfx::Point scroll_position) override;
 		Gfx::Dimensions scrollable_area() override;
 
-		//ListView
-		virtual Duck::Ptr<Widget> create_entry(int index) = 0;
-		virtual Gfx::Dimensions preferred_item_dimensions() = 0;
-		virtual int num_items() = 0;
-		void update_item(int index);
-		void update_data();
-
+	private:
 		ListView(Layout layout = VERTICAL);
 
-	private:
 		void do_update(bool dimensions_changed);
 		Duck::Ptr<Widget> setup_entry(int index);
 		Gfx::Rect item_rect(int index);

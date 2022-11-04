@@ -11,35 +11,28 @@
 #include "FileViewBase.h"
 
 namespace UI {
-	class FileGridView: public ListView, public FileViewBase {
+	class FileGridView: public Widget, public ListViewDelegate, public FileViewBase {
 	public:
 		WIDGET_DEF(FileGridView);
 
 		// ListView
-		Duck::Ptr<Widget> create_entry(int index) override;
-		Gfx::Dimensions preferred_item_dimensions() override;
-		int num_items() override;
+		Duck::Ptr<Widget> lv_create_entry(int index) override;
+		Gfx::Dimensions lv_preferred_item_dimensions() override;
+		int lv_num_items() override;
 
 		// FileViewBase
 		void did_set_directory(Duck::Path path) override;
 
-	protected:
+		// FileGridView
 		void clicked_entry(Duck::DirectoryEntry entry);
 
-	private:
-		class FileView: public UI::BoxLayout {
-		public:
-			WIDGET_DEF(FileView)
-		protected:
-			bool on_mouse_button(Pond::MouseButtonEvent evt) override;
-		private:
-			FileView(const Duck::DirectoryEntry& dir_entry, Duck::WeakPtr<FileGridView> dir_widget);
-			Duck::DirectoryEntry entry;
-			Duck::WeakPtr<FileGridView> dir_widget;
-		};
+	protected:
+		void initialize() override;
 
+	private:
 		FileGridView(const Duck::Path& path);
 
 		bool inited = false;
+		Duck::Ptr<ListView> list_view = UI::ListView::make(UI::ListView::GRID);
 	};
 }

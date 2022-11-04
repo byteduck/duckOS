@@ -30,10 +30,14 @@ void ListView::on_scroll(Gfx::Point scroll) {
 }
 
 Gfx::Dimensions ListView::scrollable_area() {
+	if(delegate.expired())
+		return {1, 1};
+	auto locked_delegate = this->delegate.lock();
+
 	//If the item dimensions haven't been calculated, calculate them
 	if(_item_dims.width == -1)
-		_item_dims = preferred_item_dimensions();
-	return {_item_dims.width, _item_dims.height * ((num_items() + _num_per_row - 1) / _num_per_row)};
+		_item_dims = locked_delegate->lv_preferred_item_dimensions();
+	return {_item_dims.width, _item_dims.height * ((locked_delegate->lv_num_items() + _num_per_row - 1) / _num_per_row)};
 }
 
 void ListView::update_item(int index) {
@@ -65,7 +69,11 @@ void ListView::update_data() {
 }
 
 void ListView::do_update(bool dimensions_changed) {
-	auto preferred_dims = preferred_item_dimensions();
+	if(delegate.expired())
+		return;
+	auto locked_delegate = this->delegate.lock();
+
+	auto preferred_dims = locked_delegate->lv_preferred_item_dimensions();
 	_item_dims = {
 		_layout == VERTICAL ? current_size().width - 12 : preferred_dims.width,
 		preferred_dims.height
@@ -80,7 +88,7 @@ void ListView::do_update(bool dimensions_changed) {
 		last = last * _num_per_row + _num_per_row - 1;
 	}
 
-	int num = num_items();
+	int num = locked_delegate->lv_num_items();
 	if(first < 0)
 		first = 0;
 	if(last >= num)
@@ -116,7 +124,10 @@ void ListView::do_update(bool dimensions_changed) {
 }
 
 Duck::Ptr<Widget> ListView::setup_entry(int index) {
-	auto widget = create_entry(index);
+	if(delegate.expired())
+		return nullptr;
+	auto locked_delegate = this->delegate.lock();
+	auto widget = locked_delegate->lv_create_entry(index);
 	add_child(widget);
 	widget->set_layout_bounds(item_rect(index));
 	return widget;

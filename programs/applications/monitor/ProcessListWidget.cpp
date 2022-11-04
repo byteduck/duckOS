@@ -30,13 +30,13 @@ void ProcessListWidget::update() {
 	for(auto& proc : procs) {
 		_processes.push_back(proc.second);
 		if(i >= old_procs.size() || old_procs[i].pid() != proc.second.pid())
-			update_item(i);
+			_list_view->update_item(i);
 		i++;
 	}
-	update_data();
+	_list_view->update_data();
 }
 
-Duck::Ptr<UI::Widget> ProcessListWidget::create_entry(int index) {
+Duck::Ptr<UI::Widget> ProcessListWidget::lv_create_entry(int index) {
 	auto& proc = _processes[index];
 	auto app_info = proc.app_info();
 	auto layout = UI::FlexLayout::make(UI::FlexLayout::HORIZONTAL);
@@ -55,13 +55,23 @@ Duck::Ptr<UI::Widget> ProcessListWidget::create_entry(int index) {
 	return layout;
 }
 
-Gfx::Dimensions ProcessListWidget::preferred_item_dimensions() {
+Gfx::Dimensions ProcessListWidget::lv_preferred_item_dimensions() {
 	return { 150, 18 };
 }
 
-int ProcessListWidget::num_items() {
+int ProcessListWidget::lv_num_items() {
 	return _processes.size();
 }
 
+void ProcessListWidget::initialize() {
+	set_sizing_mode(UI::FILL);
+	_list_view->delegate = self();
+	add_child(_list_view);
+}
+
 ProcessListWidget::ProcessListWidget() {
+}
+
+void ProcessListWidget::do_repaint(const UI::DrawContext& ctx) {
+	ctx.fill(ctx.rect(), RGB(255, 0, 0));
 }

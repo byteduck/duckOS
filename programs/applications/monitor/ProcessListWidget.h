@@ -22,18 +22,25 @@
 #include <libui/widget/ListView.h>
 #include <libsys/Process.h>
 
-class ProcessListWidget: public UI::ListView {
+class ProcessListWidget: public UI::Widget, public UI::ListViewDelegate {
 public:
 	WIDGET_DEF(ProcessListWidget);
 	void update();
 
 protected:
-	Duck::Ptr<UI::Widget> create_entry(int index) override;
-	Gfx::Dimensions preferred_item_dimensions() override;
-	int num_items() override;
+	// ListViewDelegate
+	Duck::Ptr<UI::Widget> lv_create_entry(int index) override;
+	Gfx::Dimensions lv_preferred_item_dimensions() override;
+	int lv_num_items() override;
+
+	void do_repaint(const UI::DrawContext& ctx) override;
+
+	// Object
+	void initialize() override;
 
 private:
 	ProcessListWidget();
 	std::vector<Sys::Process> _processes;
+	Duck::Ptr<UI::ListView> _list_view = UI::ListView::make(UI::ListView::VERTICAL);
 };
 
