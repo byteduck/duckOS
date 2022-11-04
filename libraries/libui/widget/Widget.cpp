@@ -285,8 +285,8 @@ void Widget::calculate_layout() {
 			case AUTO: {
 				auto dims = child_rect.dimensions();
 				child_rect.set_position({
-					_rect.x + _rect.width / 2 - dims.width / 2,
-					_rect.y + _rect.height / 2 - dims.height / 2
+					_rect.width / 2 - dims.width / 2,
+					_rect.height / 2 - dims.height / 2
 				});
 				break;
 			}
