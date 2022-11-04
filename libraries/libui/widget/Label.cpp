@@ -23,7 +23,7 @@
 using namespace UI;
 using namespace Gfx;
 
-Label::Label(const std::string_view& label): _label(label) {
+Label::Label(const std::string_view& label, TextAlignment horizontal, TextAlignment vertical): _label(label), _h_alignment(horizontal), _v_alignment(vertical) {
 	_color = Theme::fg();
 	_font = Theme::font();
 	set_uses_alpha(true);

@@ -43,7 +43,7 @@ namespace UI {
 		virtual Gfx::Dimensions preferred_size() override;
 
 	private:
-		explicit Label(const std::string_view& label);
+		explicit Label(const std::string_view& label, TextAlignment horizontal = CENTER, TextAlignment vertical = CENTER);
 
 		//Widget
 		void do_repaint(const DrawContext& ctx) override;
