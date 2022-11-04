@@ -32,6 +32,7 @@
 #define PWINDOW_HINT_USEALPHA 0x4
 #define PWINDOW_HINT_RESIZABLE 0x5
 #define PWINDOW_HINT_WINDOWTYPE 0x6
+#define PWINDOW_HINT_SHADOW 0x7
 
 /**
  * A window Object representing a window in the Pond window system.
@@ -191,6 +192,11 @@ namespace Pond {
 		 * Focuses the window.
 		 */
 		void focus();
+
+		/**
+		 * Sets whether the window has a shadow.
+		 */
+		void set_has_shadow(bool shadow);
 
 	private:
 		friend class Context;

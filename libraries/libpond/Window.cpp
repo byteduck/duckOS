@@ -141,3 +141,7 @@ void Window::set_type(WindowType type) {
 void Window::focus() {
 	_context->__river_focus_window({_id});
 }
+
+void Window::set_has_shadow(bool shadow) {
+	_context->__river_set_hint({_id, PWINDOW_HINT_SHADOW, (int) shadow});
+}
