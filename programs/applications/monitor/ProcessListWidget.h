@@ -19,21 +19,21 @@
 
 #pragma once
 
-#include <libui/widget/ListView.h>
+#include <libui/widget/TableView.h>
 #include <libsys/Process.h>
 
-class ProcessListWidget: public UI::Widget, public UI::ListViewDelegate {
+class ProcessListWidget: public UI::Widget, public UI::TableViewDelegate {
 public:
 	WIDGET_DEF(ProcessListWidget);
 	void update();
 
 protected:
 	// ListViewDelegate
-	Duck::Ptr<UI::Widget> lv_create_entry(int index) override;
-	Gfx::Dimensions lv_preferred_item_dimensions() override;
-	int lv_num_items() override;
-
-	void do_repaint(const UI::DrawContext& ctx) override;
+	Duck::Ptr<Widget> tv_create_entry(int row, int col) override;
+	std::string tv_column_name(int col) override;
+	int tv_num_entries() override;
+	int tv_row_height() override;
+	int tv_column_width(int col) override;
 
 	// Object
 	void initialize() override;
@@ -41,6 +41,6 @@ protected:
 private:
 	ProcessListWidget();
 	std::vector<Sys::Process> _processes;
-	Duck::Ptr<UI::ListView> _list_view = UI::ListView::make(UI::ListView::VERTICAL);
+	Duck::Ptr<UI::TableView> _table_view = UI::TableView::make(5);
 };
 
