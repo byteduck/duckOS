@@ -78,7 +78,7 @@ TerminalWidget::~TerminalWidget() {
 }
 
 Gfx::Dimensions TerminalWidget::preferred_size() {
-	return {404, 304};
+	return {font->bounding_box().width * 80, font->bounding_box().height * 30};
 }
 
 void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
@@ -89,11 +89,10 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 	if(needs_full_repaint) {
 		needs_full_repaint = false;
 		auto dims = term->get_dimensions();
-		ctx.draw_inset_rect({0, 0, ctx.width(), ctx.height()}, RGB(0, 0, 0));
 		for(int x = 0; x < dims.cols; x++) {
 			for(int y = 0; y < dims.lines; y++) {
 				auto character = term->get_character({x, y});
-				Gfx::Point pos = {(int) x * font->bounding_box().width + 2, (int) y * font->size() + 2};
+				Gfx::Point pos = {(int) x * font->bounding_box().width, (int) y * font->size()};
 				ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[character.attr.bg]);
 				ctx.draw_glyph(font, character.codepoint, pos, color_palette[character.attr.fg]);
 			}
@@ -105,20 +104,20 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 		switch(evt.type) {
 			case TerminalEvent::CHARACTER: {
 				auto& data = evt.data.character;
-				Gfx::Point pos = {(int) data.pos.col * font->bounding_box().width + 2, (int) data.pos.line * font->size() + 2};
+				Gfx::Point pos = {(int) data.pos.col * font->bounding_box().width, (int) data.pos.line * font->size()};
 				ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[data.character.attr.bg]);
 				ctx.draw_glyph(font, data.character.codepoint, pos, color_palette[data.character.attr.fg]);
 				break;
 			}
 
 			case TerminalEvent::CLEAR: {
-				ctx.draw_inset_rect({0, 0, ctx.width(), ctx.height()}, color_palette[evt.data.clear.attribute.bg]);
+				ctx.fill({0, 0, ctx.width(), ctx.height()}, color_palette[evt.data.clear.attribute.bg]);
 				break;
 			}
 
 			case TerminalEvent::CLEAR_LINE: {
 				auto& data = evt.data.clear_line;
-				ctx.fill({2,(int) data.line * font->size(), ctx.width() - 4, font->size()}, color_palette[data.attribute.bg]);
+				ctx.fill({0, (int) data.line * font->size(), ctx.width(), font->size()}, color_palette[data.attribute.bg]);
 				break;
 			}
 
@@ -131,7 +130,7 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 					framebuffer.width,
 					framebuffer.height - ((int) data.lines * font->size())
 				}, {0, 0});
-				ctx.fill({2, framebuffer.height - ((int) data.lines * font->size()) - 4, framebuffer.width - 4, (int) data.lines * font->size()}, color_palette[data.attribute.bg]);
+				ctx.fill({0, framebuffer.height - ((int) data.lines * font->size()), framebuffer.width, (int) data.lines * font->size()}, color_palette[data.attribute.bg]);
 			}
 		}
 	}
@@ -139,7 +138,7 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 
 	//Then, draw the blinking cursor
 	auto cursor = term->get_cursor();
-	Gfx::Point pos = {(int) cursor.col * font->bounding_box().width + 2, (int) cursor.line * font->size() + 2};
+	Gfx::Point pos = {(int) cursor.col * font->bounding_box().width, (int) cursor.line * font->size()};
 	if(blink_on) {
 		ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, RGB(200, 200, 200));
 	} else {
@@ -160,8 +159,8 @@ void TerminalWidget::on_layout_change(const Gfx::Rect& old_rect) {
 	Gfx::Dimensions dims = current_size();
 	needs_full_repaint = true;
 	term->set_dimensions({
-		(dims.width - 4) / font->bounding_box().width,
-		(dims.height - 4) / font->size()
+		dims.width / font->bounding_box().width,
+		dims.height / font->size()
 	});
 }
 
