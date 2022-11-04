@@ -26,6 +26,7 @@ SET(SOURCES
         widget/ContainerView.cpp
         widget/ListView.cpp
         widget/ScrollView.cpp
+        widget/TableView.cpp
 
         widget/layout/BoxLayout.cpp
         widget/layout/FlexLayout.cpp
