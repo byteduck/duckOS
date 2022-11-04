@@ -93,7 +93,6 @@ int main(int argc, char** argv, char** envp) {
 
 	//Show the window
 	window->set_contents(layout);
-	window->resize({dims.width, window->dimensions().height});
 	window->set_position({0, dims.height - window->dimensions().height});
 	window->show();
 
