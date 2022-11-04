@@ -67,7 +67,7 @@ void ListView::update_data() {
 void ListView::do_update(bool dimensions_changed) {
 	auto preferred_dims = preferred_item_dimensions();
 	_item_dims = {
-		_layout == VERTICAL ? current_size().width : preferred_dims.width,
+		_layout == VERTICAL ? current_size().width - 12 : preferred_dims.width,
 		preferred_dims.height
 	};
 
@@ -75,7 +75,7 @@ void ListView::do_update(bool dimensions_changed) {
 	int last = (scroll_position().y + current_size().height) / _item_dims.height;
 
 	if(_layout == GRID) {
-		_num_per_row = current_size().width / _item_dims.width;
+		_num_per_row = (current_size().width - 12) / _item_dims.width;
 		first *= _num_per_row;
 		last = last * _num_per_row + _num_per_row - 1;
 	}
