@@ -289,7 +289,7 @@ namespace Gfx {
 		 * Returns a rect inset by the given amounts.
 		 * @return The inset rect. If the given insets would result in negative dimensions, an empty rect is returned.
 		 */
-		inline Rect inset(int top, int right, int bottom, int left) {
+		inline Rect inset(int top, int right, int bottom, int left) const {
 			if(top + bottom > height || right + left > width)
 				return {0, 0, 0, 0};
 			return {
@@ -304,7 +304,7 @@ namespace Gfx {
 		 * Returns a rect inset by the given amount on all sides.
 		 * @return The inset rect. If the given inset is larger than the dimensions, an empty rect is returned.
 		 */
-		inline Rect inset(int amount) {
+		inline Rect inset(int amount) const {
 			return inset(amount, amount, amount, amount);
 		}
 
