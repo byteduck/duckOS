@@ -28,8 +28,8 @@
 #include <libpond/Event.h>
 
 #define UI_TITLEBAR_HEIGHT 20
-#define UI_WINDOW_BORDER_SIZE 2
-#define UI_WINDOW_PADDING 2
+#define UI_WINDOW_BORDER_SIZE 0
+#define UI_WINDOW_PADDING 1
 
 namespace UI {
 	class WindowDelegate;

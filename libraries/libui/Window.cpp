@@ -55,9 +55,9 @@ Gfx::Rect Window::contents_rect() {
 	if(_decorated) {
 		Gfx::Rect ret = _window->rect();
 		ret.width -= UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2;
-		ret.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3;
+		ret.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2;
 		ret.x = UI_WINDOW_PADDING + UI_WINDOW_BORDER_SIZE;
-		ret.y = UI_WINDOW_PADDING * 2 + UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT;
+		ret.y = UI_TITLEBAR_HEIGHT + UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING;
 		return ret;
 	} else {
 		Gfx::Dimensions dims = _window->dimensions();
@@ -130,19 +130,14 @@ void Window::repaint_now() {
 	if(_decorated) {
 		Color color = Theme::window();
 
-		//Window background/border
-		ctx.draw_outset_rect({0, 0, ctx.width(), ctx.height()}, color);
+		//Window background
+		ctx.fill({0, 0, ctx.width(), ctx.height()}, color);
 
 		//Title bar
-		Gfx::Rect titlebar_rect = {
-				UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
-				UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
-				ctx.width() - UI_WINDOW_BORDER_SIZE * 2 - UI_WINDOW_PADDING * 2,
-				UI_TITLEBAR_HEIGHT
-		};
+		Gfx::Rect titlebar_rect = {0, 0, ctx.width(), UI_TITLEBAR_HEIGHT};
 
 		//Title bar background
-		ctx.fill_gradient_h(titlebar_rect, Theme::window_titlebar_a(), Theme::window_titlebar_b());
+		ctx.fill_gradient_v(titlebar_rect, Theme::window_titlebar_b(), Theme::window_titlebar_a());
 
 		//Title bar icon
 		int title_xpos = 4;
@@ -160,7 +155,7 @@ void Window::repaint_now() {
 
 		//Title bar text
 		auto title_rect = titlebar_rect.inset(4, button_size + 4, 4, title_xpos);
-		ctx.draw_text(_title.c_str(), title_rect, BEGINNING, BEGINNING, Theme::font(), Theme::window_title());
+		ctx.draw_text(_title.c_str(), title_rect, CENTER, CENTER, Theme::font(), Theme::window_title());
 
 		//Buttons
 		_close_button.area = {
@@ -318,36 +313,7 @@ void Window::on_focus(bool focused) {
 void Window::calculate_layout() {
 	if(!_contents)
 		return;
-
-	Gfx::Rect new_rect = _contents->_rect;
-	Gfx::Rect bounds = contents_rect();
-
-	switch(_contents->_sizing_mode) {
-		case FILL:
-			new_rect.set_dimensions(bounds.dimensions());
-			break;
-		case PREFERRED:
-			new_rect.set_dimensions(_contents->preferred_size());
-			break;
-	}
-
-	switch(contents()->_positioning_mode) {
-		case AUTO: {
-			auto dims = new_rect.dimensions();
-			new_rect.set_position({
-				bounds.x + bounds.width / 2 - dims.width / 2,
-				bounds.y + bounds.height / 2 - dims.height / 2
-			});
-			break;
-		}
-
-		case ABSOLUTE: {
-			new_rect.set_position(bounds.position() + _contents->_absolute_position);
-			break;
-		}
-	}
-
-	_contents->set_layout_bounds(new_rect);
+	_contents->set_layout_bounds(contents_rect());
 }
 
 void Window::blit_widget(Duck::PtrRef<Widget> widget) {
