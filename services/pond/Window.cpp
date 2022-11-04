@@ -29,6 +29,9 @@ using namespace Gfx;
 
 int Window::current_id = 0;
 
+#define SHADOW_SIZE 6
+static int SHADOW_ALPH = 400 / (double) (SHADOW_SIZE * SHADOW_SIZE * 4);
+
 Window::Window(Window* parent, const Gfx::Rect& rect, bool hidden): _parent(parent), _rect(rect), _display(parent->_display), _id(++current_id), _hidden(hidden) {
 	if(_rect.width < 1)
 		_rect.width = 1;
@@ -129,8 +132,8 @@ Gfx::Rect Window::absolute_rect() const {
 	return _absolute_rect;
 }
 
-Gfx::Rect Window::visible_absolute_rect() const {
-	return _visible_absolute_rect;
+Gfx::Rect Window::absolute_shadow_rect() const {
+	return _absolute_shadow_rect;
 }
 
 void Window::set_dimensions(const Gfx::Dimensions& new_dims, bool notify_client) {
@@ -174,8 +177,12 @@ void Window::set_rect(const Gfx::Rect& rect, bool notify_client) {
 }
 
 void Window::invalidate() {
-	if(!hidden())
-		_display->invalidate(_visible_absolute_rect);
+	if(!hidden()) {
+		if(_parent)
+			_display->invalidate(_absolute_shadow_rect.overlapping_area(_parent->_absolute_rect));
+		else
+			_display->invalidate(_absolute_shadow_rect.overlapping_area(_display->dimensions()));
+	}
 }
 
 void Window::invalidate(const Gfx::Rect& area) {
@@ -252,8 +259,11 @@ bool Window::resizable() {
 void Window::set_hidden(bool hidden) {
 	if(hidden == _hidden)
 		return;
+	if(_parent)
+		_display->invalidate(_absolute_shadow_rect.overlapping_area(_parent->_absolute_rect));
+	else
+		_display->invalidate(_absolute_shadow_rect.overlapping_area(_display->dimensions()));
 	_hidden = hidden;
-	_display->invalidate(_visible_absolute_rect);
 	_display->window_hidden(this);
 }
 
@@ -307,14 +317,37 @@ void Window::alloc_framebuffer() {
 	}
 
 	_framebuffer = {(uint32_t*) _framebuffer_shm.ptr, _rect.width, _rect.height};
+
+	// Now, allocate and draw the shadow buffer
+	_shadow_buffer = Gfx::Framebuffer(_rect.width + SHADOW_SIZE * 2, _rect.height + SHADOW_SIZE * 2);
+
+	// Poor man's box-shadow :)
+	Rect shadow_rect = {0, 0, _shadow_buffer.width, _shadow_buffer.height};
+	_shadow_buffer.fill(shadow_rect, RGBA(0,0,0,0));
+	Rect window_rect = shadow_rect.inset(SHADOW_SIZE);
+	auto box_blur_rect = [&](Gfx::Rect rect) {
+		for(int y = rect.y; y < rect.height + rect.y; y++) {
+			for(int x = rect.x; x < rect.width + rect.x; x++) {
+				auto sample_rect = Rect {x - SHADOW_SIZE + 1, y - SHADOW_SIZE + 1, SHADOW_SIZE * 2 - 2, SHADOW_SIZE * 2 - 2}.overlapping_area(shadow_rect);
+				int alph = 0;
+				for(int sample_y = sample_rect.y; sample_y < sample_rect.height + sample_rect.y; sample_y++)
+					for(int sample_x = sample_rect.x; sample_x < sample_rect.width + sample_rect.x; sample_x++)
+						if(Point {sample_x, sample_y}.in(window_rect))
+							alph += SHADOW_ALPH;
+				*_shadow_buffer.at({x, y}) = RGBA(0,0,0,alph);
+			}
+		}
+	};
+
+	box_blur_rect({SHADOW_SIZE, 0, _shadow_buffer.width - SHADOW_SIZE * 2, SHADOW_SIZE});
+	box_blur_rect({SHADOW_SIZE, _shadow_buffer.height - SHADOW_SIZE, _shadow_buffer.width - SHADOW_SIZE * 2, SHADOW_SIZE});
+	box_blur_rect({0, 0, SHADOW_SIZE, _shadow_buffer.height});
+	box_blur_rect({_shadow_buffer.width - SHADOW_SIZE, 0, SHADOW_SIZE, _shadow_buffer.height});
 }
 
 void Window::recalculate_rects() {
 	_absolute_rect = calculate_absolute_rect(_rect);
-	if(_parent)
-		_visible_absolute_rect = _absolute_rect.overlapping_area(_parent->_visible_absolute_rect);
-	else
-		_visible_absolute_rect = _absolute_rect.overlapping_area(_display->dimensions());
+	_absolute_shadow_rect = _absolute_rect.inset(_draws_shadow ? -SHADOW_SIZE : 0);
 	for(auto child : _children)
 		child->recalculate_rects();
 }
@@ -356,6 +389,9 @@ void Window::set_hint(int hint, int value) {
 			if(value >= Pond::WindowType::DEFAULT && value <= Pond::WindowType::MENU)
 				set_type((Pond::WindowType) value);
 			break;
+		case PWINDOW_HINT_SHADOW:
+			set_has_shadow(value);
+			break;
 		default:
 			Duck::Log::warn("Unknown window hint ", hint);
 	}
@@ -372,5 +408,15 @@ void Window::set_type(Pond::WindowType type) {
 void Window::notify_focus(bool focus) {
 	if(_client)
 		_client->window_focused(this, focus);
+}
+
+bool Window::has_shadow() const {
+	return _draws_shadow;
+}
+
+void Window::set_has_shadow(bool shadow) {
+	_draws_shadow = shadow;
+	recalculate_rects();
+	invalidate();
 }
 

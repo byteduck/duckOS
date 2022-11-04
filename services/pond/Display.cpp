@@ -219,16 +219,23 @@ void Display::repaint() {
 			if(window == _mouse_window || window->hidden())
 				continue;
 
-			Gfx::Rect window_vabs = window->visible_absolute_rect();
-			if(window_vabs.collides(area)) {
+			auto window_shabs = window->absolute_shadow_rect();
+			if(window_shabs.collides(area)) {
 				//If it does, redraw the intersection of the window in question and the invalid area
 				Gfx::Rect window_abs = window->absolute_rect();
-				Gfx::Rect overlap_abs = area.overlapping_area(window_vabs);
+				Gfx::Rect overlap_abs = area.overlapping_area(window_abs);
 				auto transformed_overlap = overlap_abs.transform({-window_abs.x, -window_abs.y});
 				if(window->uses_alpha())
 					fb.copy_blitting(window->framebuffer(), transformed_overlap, overlap_abs.position());
 				else
 					fb.copy(window->framebuffer(), transformed_overlap, overlap_abs.position());
+
+				//Draw the shadow
+				if(window->has_shadow()) {
+					Gfx::Rect shadow_abs = area.overlapping_area(window_shabs);
+					auto transformed_shadow = shadow_abs.transform({-window_shabs.x, -window_shabs.y});
+					fb.copy_blitting(window->shadow_buffer(), transformed_shadow, shadow_abs.position());
+				}
 			}
 		}
 	}
@@ -412,7 +419,7 @@ void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t 
 		}
 
 		//Otherwise, if it's in the window, create the appropriate events
-		if(mouse.in(window->visible_absolute_rect())) {
+		if(mouse.in(window->absolute_rect())) {
 			event_window = window;
 			if(!window->gets_global_mouse()) {
 				window->mouse_moved(delta, mouse - window->absolute_rect().position(), mouse);

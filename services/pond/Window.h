@@ -68,9 +68,9 @@ public:
 	Gfx::Rect absolute_rect() const;
 
 	/**
-	 * The rect of the window's visible contents (ie area not clipped from parent window) in absolute coordinates
+	 * The rect of the window relative to the entire screen, including the shadow.
 	 */
-	Gfx::Rect visible_absolute_rect() const;
+	Gfx::Rect absolute_shadow_rect() const;
 
 	/**
 	 * Sets the rect of the window to the rect given, constrained to fit inside the parent.
@@ -215,37 +215,53 @@ public:
 	 * @param hint The hint to set.
 	 * @param value The get_value to set it to.
 	 */
-	 void set_hint(int hint, int value);
+	void set_hint(int hint, int value);
 
-	 /**
-	  * Calculates the absolute position of the given rect relative to this window's parent position.
-	  * @param rect The rect to calculate the absolute screen rect of.
-	  * @return The absolute screen-position rect.
-	  */
-	 Gfx::Rect calculate_absolute_rect(const Gfx::Rect& rect);
+	/**
+	 * Calculates the absolute position of the given rect relative to this window's parent position.
+	 * @param rect The rect to calculate the absolute screen rect of.
+	 * @return The absolute screen-position rect.
+	 */
+	Gfx::Rect calculate_absolute_rect(const Gfx::Rect& rect);
 
-	 /**
-	  * Sets whether or not the framebuffer is flipped.
-	  * @param flipped Whether or not the framebuffer has been flipped.
-	  */
-	 void set_flipped(bool flipped);
+	/**
+	 * Sets whether or not the framebuffer is flipped.
+	 * @param flipped Whether or not the framebuffer has been flipped.
+	 */
+	void set_flipped(bool flipped);
 
-	 /**
-	  * Gets the type of the window.
-	  * @return The window type.
-	  */
-	 Pond::WindowType type();
+	/**
+	 * Gets the type of the window.
+	 * @return The window type.
+	 */
+	Pond::WindowType type();
 
-	 /**
-	  * Sets the type of the window.
-	  * @param type The window type to use.
-	  */
-	 void set_type(Pond::WindowType type);
+	/**
+	 * Sets the type of the window.
+	 * @param type The window type to use.
+	 */
+	void set_type(Pond::WindowType type);
 
-	 /**
-	  * Notifies the window that its focus has changed.
-	  */
-	 void notify_focus(bool focus);
+	/**
+	 * Notifies the window that its focus has changed.
+	 */
+	void notify_focus(bool focus);
+
+	/**
+	 * Returns whether the window has a shadow.
+	 */
+	bool has_shadow() const;
+
+	/**
+	 * Sets whether the window has a shadow.
+	 */
+	void set_has_shadow(bool shadow);
+
+	/**
+	 * Gets the shadow framebuffer for drawing shadows.
+	 */
+	Gfx::Framebuffer& shadow_buffer() { return _shadow_buffer; }
+
 
 private:
 	friend class Mouse;
@@ -256,7 +272,7 @@ private:
 	shm _framebuffer_shm;
 	Gfx::Rect _rect;
 	Gfx::Rect _absolute_rect;
-	Gfx::Rect _visible_absolute_rect;
+	Gfx::Rect _absolute_shadow_rect;
 	Window* _parent;
 	Display* _display;
 	std::vector<Window*> _children;
@@ -271,7 +287,9 @@ private:
 	bool _hidden = true;
 	bool _uses_alpha = false;
 	bool _destructing = false;
+	bool _draws_shadow = true;
 	Pond::WindowType _type = Pond::DEFAULT;
+	Gfx::Framebuffer _shadow_buffer = {nullptr, 0, 0};
 
 	static int current_id;
 };
