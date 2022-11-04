@@ -18,7 +18,7 @@
 */
 
 #include "ProcessListWidget.h"
-#include <libui/widget/layout/BoxLayout.h>
+#include <libui/widget/layout/FlexLayout.h>
 #include <libui/widget/Image.h>
 #include <libui/widget/Label.h>
 
@@ -39,7 +39,7 @@ void ProcessListWidget::update() {
 Duck::Ptr<UI::Widget> ProcessListWidget::create_entry(int index) {
 	auto& proc = _processes[index];
 	auto app_info = proc.app_info();
-	auto layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL);
+	auto layout = UI::FlexLayout::make(UI::FlexLayout::HORIZONTAL);
 	layout->set_spacing(5);
 	std::string label_string = "[" + std::to_string(proc.pid()) + "] ";
 	if(app_info.has_value()) {
@@ -49,13 +49,14 @@ Duck::Ptr<UI::Widget> ProcessListWidget::create_entry(int index) {
 		label_string += proc.name();
 	}
 	auto label = UI::Label::make(label_string);
-	label->set_sizing_mode(UI::PREFERRED);
+	label->set_alignment(UI::CENTER, UI::BEGINNING);
+	label->set_sizing_mode(UI::FILL);
 	layout->add_child(label);
 	return layout;
 }
 
 Gfx::Dimensions ProcessListWidget::preferred_item_dimensions() {
-	return { 150, 20 };
+	return { 150, 18 };
 }
 
 int ProcessListWidget::num_items() {
