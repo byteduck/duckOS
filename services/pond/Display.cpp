@@ -232,9 +232,17 @@ void Display::repaint() {
 
 				//Draw the shadow
 				if(window->has_shadow()) {
-					Gfx::Rect shadow_abs = area.overlapping_area(window_shabs);
-					auto transformed_shadow = shadow_abs.transform({-window_shabs.x, -window_shabs.y});
-					fb.copy_blitting(window->shadow_buffer(), transformed_shadow, shadow_abs.position());
+					auto draw_partial_shadow = [&](Rect rect) {
+						Gfx::Rect shadow_abs = area.overlapping_area(rect);
+						auto transformed_shadow = shadow_abs.transform({-window_shabs.x, -window_shabs.y});
+						fb.copy_blitting(window->shadow_buffer(), transformed_shadow, shadow_abs.position());
+					};
+					// Only draw the bits of the shadow buffer outside of the window, no need to fill in a bunch of empty pixels in the middle :)
+					auto shadow_size = window_abs.x - window_shabs.x;
+					draw_partial_shadow(window_shabs.inset(0, shadow_size, window_shabs.height - shadow_size, shadow_size));
+					draw_partial_shadow(window_shabs.inset(window_shabs.height - shadow_size, shadow_size, 0, shadow_size));
+					draw_partial_shadow(window_shabs.inset(0, 0, 0, window_shabs.width - shadow_size));
+					draw_partial_shadow(window_shabs.inset(0, window_shabs.width - shadow_size, 0, 0));
 				}
 			}
 		}
