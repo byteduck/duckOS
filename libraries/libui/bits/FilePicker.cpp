@@ -39,11 +39,11 @@ std::vector<Duck::Path> FilePicker::pick() {
 
 	// Main flex layout
 	auto flex = FlexLayout::make(FlexLayout::VERTICAL);
-	flex->add_child(m_bar);
 	flex->add_child(file_view);
 	flex->add_child(buttons_flex);
 
 	window->set_contents(flex);
+	window->set_titlebar_accessory(m_bar);
 	window->set_resizable(true);
 	window->resize({300, 300});
 	window->set_title("Open File");
