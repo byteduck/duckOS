@@ -60,14 +60,12 @@ void Button::set_label(std::string new_label) {
 bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
 		m_pressed = true;
-		if(on_pressed)
-			on_pressed();
 		repaint();
 		return true;
 	} else if((evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1)) {
 		m_pressed = false;
-		if(on_released)
-			on_released();
+		if(on_pressed)
+			on_pressed();
 		repaint();
 		return true;
 	}
@@ -78,8 +76,6 @@ bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 	if(m_pressed) {
 		m_pressed = false;
-		if(on_released)
-			on_released();
 		repaint();
 	}
 }

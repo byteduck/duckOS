@@ -41,7 +41,6 @@ namespace UI {
 		virtual void calculate_layout() override;
 
 		std::function<void()> on_pressed = nullptr;
-		std::function<void()> on_released = nullptr;
 	private:
 		explicit Button(std::string label);
 		explicit Button(Duck::Ptr<const Gfx::Image> image);
