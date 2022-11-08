@@ -22,26 +22,4 @@
 #include <sys/types.h>
 #include "Geometry.h"
 #include "Framebuffer.h"
-
-__DECL_BEGIN
-
-#define COLOR_A(color) (((color) & 0xFF000000) >> 24)
-#define COLOR_R(color) (((color) & 0xFF0000) >> 16)
-#define COLOR_G(color) (((color) & 0x00FF00) >> 8)
-#define COLOR_B(color) ((color) & 0x0000FF)
-#define RGB(r,g,b) (0xFF000000 | ((r) << 16) | ((g) << 8) | (b))
-#define RGBA(r,g,b,a) (((a) << 24) | ((r) << 16) | ((g) << 8) | (b))
-
-#define COLOR_COMPONENT_MULT(a, b) (((unsigned) (a) *  (unsigned) (b) + 255 ) >> 8)
-#define COLOR_MULT(a, b) \
-	RGBA( \
-			COLOR_COMPONENT_MULT(COLOR_R(a), COLOR_R(b)), \
-			COLOR_COMPONENT_MULT(COLOR_G(a), COLOR_G(b)), \
-			COLOR_COMPONENT_MULT(COLOR_B(a), COLOR_B(b)), \
-			COLOR_COMPONENT_MULT(COLOR_A(a), COLOR_A(b)) \
-		)
-
-typedef uint32_t Color;
-
-__DECL_END
-
+#include "Color.h"

@@ -40,7 +40,7 @@ namespace Gfx {
 			int y = 0;
 		} next_offset; ///< The offset of the next glyph from the origin of this glyph
 
-		uint32_t bitmap[]; ///< The actual pixels making up the glyph. Should be grayscale.
+		Color bitmap[]; ///< The actual pixels making up the glyph. Should be grayscale.
 	};
 
 	struct FontData {

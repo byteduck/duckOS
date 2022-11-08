@@ -21,6 +21,7 @@
 
 #include <sys/types.h>
 #include "Geometry.h"
+#include "Color.h"
 #include <libduck/Serializable.h>
 
 #define IMGSIZE(width, height) (sizeof(uint32_t) * (width) * (height))
@@ -32,7 +33,7 @@ namespace Gfx {
 	class Framebuffer: public Duck::Serializable {
 	public:
 		Framebuffer();
-		Framebuffer(uint32_t* buffer, int width, int height);
+		Framebuffer(Color* buffer, int width, int height);
 		Framebuffer(int width, int height);
 		Framebuffer(Framebuffer&& other) noexcept;
 		Framebuffer(Framebuffer& other) noexcept;
@@ -41,7 +42,7 @@ namespace Gfx {
 		Framebuffer& operator=(const Framebuffer& other);
 		Framebuffer& operator=(Framebuffer&& other) noexcept;
 
-		uint32_t* data = nullptr;
+		Color* data = nullptr;
 		int width = 0;
 		int height = 0;
 		bool should_free = false;
@@ -108,14 +109,14 @@ namespace Gfx {
 		 * @param area The area to fill.
 		 * @param color The color to fill the area with.
 		 */
-		void fill(Rect area, uint32_t color) const;
+		void fill(Rect area, Color color) const;
 
 		/**
 		 * Fills an area of the Image with a color, calculating transparency.
 		 * @param area The area to fill.
 		 * @param color The color to fill the area with.
 		 */
-		void fill_blitting(Rect area, uint32_t color) const;
+		void fill_blitting(Rect area, Color color) const;
 
 		/**
 		 * Fills an area of the Image with a horizontal gradient (left to right).
@@ -123,7 +124,7 @@ namespace Gfx {
 		 * @param color_a The start color.
 		 * @param color_b The end color.
 		 */
-		void fill_gradient_h(Rect area, uint32_t color_a, uint32_t color_b) const;
+		void fill_gradient_h(Rect area, Color color_a, Color color_b) const;
 
 		/**
 		 * Fills an area of the Image with a vertical gradient (top to bottom).
@@ -131,21 +132,21 @@ namespace Gfx {
 		 * @param color_a The start color.
 		 * @param color_b The end color.
 		 */
-		void fill_gradient_v(Rect area, uint32_t color_a, uint32_t color_b) const;
+		void fill_gradient_v(Rect area, Color color_a, Color color_b) const;
 
 		/**
 		 * Draws the outline of an area on the Image.
 		 * @param area The rect of the area to outline.
 		 * @param color The color to draw the outline in.
 		 */
-		void outline(Rect area, uint32_t color) const;
+		void outline(Rect area, Color color) const;
 
 		/**
 		 * Draws the outline of an area on the Image, calculating transparency.
 		 * @param area The rect of the area to outline.
 		 * @param color The color to draw the outline in.
 		 */
-		void outline_blitting(Rect area, uint32_t color) const;
+		void outline_blitting(Rect area, Color color) const;
 
 		/**
 		 * Draws text on the Image with a certain color.
@@ -154,7 +155,7 @@ namespace Gfx {
 		 * @param font The font to use.
 		 * @param color The color to draw in.
 		 */
-		void draw_text(const char* str, const Point& pos, Font* font, uint32_t color) const;
+		void draw_text(const char* str, const Point& pos, Font* font, Color color) const;
 
 		/**
 		 * Draws a glyph on the Image with a certain color.
@@ -164,18 +165,18 @@ namespace Gfx {
 		 * @param color The color to draw the glyph in.
 		 * @return The position where the next character should be drawn.
 		 */
-		Point draw_glyph(Font* font, uint32_t codepoint, const Point& pos, uint32_t color) const;
+		Point draw_glyph(Font* font, uint32_t codepoint, const Point& pos, Color color) const;
 
 		/**
 		 * Multiplies the image with a certain color.
 		 * @param color The color to multiply by.
 		 */
-		void multiply(uint32_t color);
+		void multiply(Color color);
 
 		/**
 		 * Returns a pointer to the Image buffer at a certain position. Returns NULL if outside the constraints.
 		 */
-		uint32_t* at(const Point& position) const;
+		Color* at(const Point& position) const;
 
 		/// Serializable
 		size_t serialized_size() const override;

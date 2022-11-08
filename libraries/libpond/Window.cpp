@@ -114,7 +114,7 @@ int Window::id() const {
 }
 
 Framebuffer Window::framebuffer() const {
-	return {(uint32_t*) _shm.ptr + (_flipped ? 0 : _rect.width * _rect.height), _rect.width, _rect.height};
+	return {(Color*) _shm.ptr + (_flipped ? 0 : _rect.width * _rect.height), _rect.width, _rect.height};
 }
 
 unsigned int Window::mouse_buttons() const {

@@ -158,7 +158,7 @@ bool Theme::load() {
 				value = value.substr(1);
 			Color color = strtoul(value.c_str(), nullptr, 16);
 			if(value.length() == 6)
-				color += 0xFF000000;
+				color.a = 255;
 			colors[key] = color;
 		} else if(type == "Value") {
 			int val = strtol(value.c_str(), nullptr, 0);

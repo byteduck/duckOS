@@ -54,7 +54,7 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 		return;
 	}
 
-	uint32_t* buffer;
+	Color* buffer;
 
 	if(ioctl(framebuffer_fd, IO_VIDEO_MAP, &buffer) < 0) {
 		perror("Failed to map framebuffer");
@@ -283,7 +283,7 @@ void Display::flip_buffers() {
 
 	if(_can_flip_buffer) {
 		auto* video_buf = &_framebuffer.data[flipped ? _framebuffer.height * _framebuffer.width : 0];
-		memcpy_uint32(video_buf, _root_window->framebuffer().data,_framebuffer.width * _framebuffer.height);
+		memcpy_uint32((uint32_t*) video_buf, (uint32_t*) _root_window->framebuffer().data, _framebuffer.width * _framebuffer.height);
 		ioctl(framebuffer_fd, IO_VIDEO_OFFSET, flipped ? _framebuffer.height : 0);
 		flipped = !flipped;
 	} else {

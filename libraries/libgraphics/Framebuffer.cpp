@@ -26,8 +26,8 @@
 using namespace Gfx;
 
 Framebuffer::Framebuffer(): data(nullptr), width(0), height(0) {}
-Framebuffer::Framebuffer(uint32_t* buffer, int width, int height): data(buffer), width(width), height(height) {}
-Framebuffer::Framebuffer(int width, int height): data(new uint32_t[width * height]), width(width), height(height), should_free(true) {}
+Framebuffer::Framebuffer(Color* buffer, int width, int height): data(buffer), width(width), height(height) {}
+Framebuffer::Framebuffer(int width, int height): data(new Color[width * height]), width(width), height(height), should_free(true) {}
 Framebuffer::Framebuffer(Framebuffer&& other) noexcept: data(other.data), width(other.width), height(other.height), should_free(other.should_free) {
 	other.data = nullptr;
 }
@@ -80,7 +80,7 @@ void Framebuffer::copy(const Framebuffer& other, Rect other_area, const Point& p
 	other_area.height = self_area.height;
 
 	for(int y = 0; y < self_area.height; y++) {
-		memcpy_uint32(&data[self_area.x + (self_area.y + y) * width], &other.data[other_area.x + (other_area.y + y) * other.width], self_area.width);
+		memcpy_uint32((uint32_t*) &data[self_area.x + (self_area.y + y) * width], (uint32_t*) &other.data[other_area.x + (other_area.y + y) * other.width], self_area.width);
 	}
 }
 
@@ -221,7 +221,7 @@ void Framebuffer::draw_image_scaled(const Framebuffer& other, const Rect& rect) 
 	}
 }
 
-void Framebuffer::fill(Rect area, uint32_t color) const {
+void Framebuffer::fill(Rect area, Color color) const {
 	//Make sure area is in the bounds of the framebuffer
 	area = area.overlapping_area({0, 0, width, height});
 	if(area.empty())
@@ -234,7 +234,7 @@ void Framebuffer::fill(Rect area, uint32_t color) const {
 	}
 }
 
-void Framebuffer::fill_blitting(Rect area, uint32_t color) const {
+void Framebuffer::fill_blitting(Rect area, Color color) const {
 	//Make sure area is in the bounds of the framebuffer
 	area = area.overlapping_area({0, 0, width, height});
 	if(area.empty())
@@ -259,7 +259,7 @@ void Framebuffer::fill_blitting(Rect area, uint32_t color) const {
 	}
 }
 
-void Framebuffer::fill_gradient_h(Rect area, uint32_t color_a, uint32_t color_b) const {
+void Framebuffer::fill_gradient_h(Rect area, Color color_a, Color color_b) const {
 	if(color_a == color_b)
 		fill(area, color_a);
 	for(int x = 0; x < area.width; x++) {
@@ -274,7 +274,7 @@ void Framebuffer::fill_gradient_h(Rect area, uint32_t color_a, uint32_t color_b)
 	}
 }
 
-void Framebuffer::fill_gradient_v(Rect area, uint32_t color_a, uint32_t color_b) const {
+void Framebuffer::fill_gradient_v(Rect area, Color color_a, Color color_b) const {
 	if(color_a == color_b)
 		fill(area, color_a);
 	for(int y = 0; y < area.height; y++) {
@@ -289,21 +289,21 @@ void Framebuffer::fill_gradient_v(Rect area, uint32_t color_a, uint32_t color_b)
 	}
 }
 
-void Framebuffer::outline(Rect area, uint32_t color) const {
+void Framebuffer::outline(Rect area, Color color) const {
 	fill({area.x + 1, area.y, area.width - 2, 1}, color);
 	fill({area.x + 1, area.y + area.height - 1, area.width - 2, 1}, color);
 	fill({area.x, area.y, 1, area.height}, color);
 	fill({area.x + area.width - 1, area.y, 1, area.height}, color);
 }
 
-void Framebuffer::outline_blitting(Rect area, uint32_t color) const {
+void Framebuffer::outline_blitting(Rect area, Color color) const {
 	fill_blitting({area.x + 1, area.y, area.width - 2, 1}, color);
 	fill_blitting({area.x + 1, area.y + area.height - 1, area.width - 2, 1}, color);
 	fill_blitting({area.x, area.y, 1, area.height}, color);
 	fill_blitting({area.x + area.width - 1, area.y, 1, area.height}, color);
 }
 
-void Framebuffer::draw_text(const char* str, const Point& pos, Font* font, uint32_t color) const {
+void Framebuffer::draw_text(const char* str, const Point& pos, Font* font, Color color) const {
 	Point current_pos = pos;
 	while(*str) {
 		current_pos = draw_glyph(font, *str, current_pos, color);
@@ -311,7 +311,7 @@ void Framebuffer::draw_text(const char* str, const Point& pos, Font* font, uint3
 	}
 }
 
-Point Framebuffer::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph_pos, uint32_t color) const {
+Point Framebuffer::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph_pos, Color color) const {
 	auto* glyph = font->glyph(codepoint);
 	int y_offset = (font->bounding_box().base_y - glyph->base_y) + (font->size() - glyph->height);
 	int x_offset = glyph->base_x - font->bounding_box().base_x;
@@ -354,7 +354,7 @@ Point Framebuffer::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph
 	return glyph_pos + Point {glyph->next_offset.x, glyph->next_offset.y};
 }
 
-void Framebuffer::multiply(uint32_t color) {
+void Framebuffer::multiply(Color color) {
 	for(int y = 0; y < height; y++) {
 		for(int x = 0; x < width; x++) {
 			data[x + y * width] = COLOR_MULT(data[x + y * width], color);
@@ -362,7 +362,7 @@ void Framebuffer::multiply(uint32_t color) {
 	}
 }
 
-uint32_t* Framebuffer::at(const Point& position) const {
+Color* Framebuffer::at(const Point& position) const {
 	if(position.x < 0 || position.y < 0 || position.y >= height || position.x >= width)
 		return NULL;
 
@@ -384,7 +384,7 @@ void Framebuffer::serialize(uint8_t*& buf) const {
 	serialization->width = data ? width : 0;
 	serialization->height = data ? height : 0;
 	if(data && width && height)
-		memcpy_uint32(serialization->data, data, width * height);
+		memcpy_uint32(serialization->data, (uint32_t*) data, width * height);
 	buf += serialized_size();
 }
 
@@ -394,8 +394,8 @@ void Framebuffer::deserialize(const uint8_t*& buf) {
 	width = serialization->width;
 	height = serialization->height;
 	if(width && height) {
-		data = new uint32_t[width * height];
-		memcpy_uint32(data, serialization->data, width * height);
+		data = (Color*) malloc(sizeof(Color) * width * height);
+		memcpy_uint32((uint32_t*) data, serialization->data, width * height);
 	}
 	should_free = true;
 	buf += serialized_size();

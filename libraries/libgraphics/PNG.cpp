@@ -106,19 +106,19 @@ void grayscale_pixel(PNG* png) {
 	uint8_t c = png->pixel_buffer[0];
 
 	if(png->scanline_filtertype == PNG_FILTERTYPE_SUB && png->pixel_x > 0) {
-		uint32_t left_color = IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y);
+		Color left_color = IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y);
 		c += COLOR_R(left_color);
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_UP && png->pixel_y > 0) {
-		uint32_t up_color = IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1);
+		Color up_color = IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1);
 		c += COLOR_R(up_color);
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_AVG) {
-		uint32_t left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : 0;
-		uint32_t up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : 0;
+		Color left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : Color();
+		Color up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : Color();
 		c += (COLOR_R(up_color) + COLOR_R(left_color)) / 2;
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_PAETH) {
-		uint32_t left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : 0;
-		uint32_t up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : 0;
-		uint32_t corner_color = (png->pixel_x > 0 && png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y - 1) : 0;
+		Color left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : Color();
+		Color up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : Color();
+		Color corner_color = (png->pixel_x > 0 && png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y - 1) : Color();
 
 		c = ((int) c + paeth(COLOR_R(left_color), COLOR_R(up_color), COLOR_R(corner_color))) % 256;
 	}
@@ -132,25 +132,25 @@ void truecolor_pixel(PNG* png) {
 	uint8_t b = png->pixel_buffer[2];
 
 	if(png->scanline_filtertype == PNG_FILTERTYPE_SUB && png->pixel_x > 0) {
-		uint32_t left_color = IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y);
+		Color left_color = IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y);
 		r += COLOR_R(left_color);
 		g += COLOR_G(left_color);
 		b += COLOR_B(left_color);
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_UP && png->pixel_y > 0) {
-		uint32_t up_color = IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1);
+		Color up_color = IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1);
 		r += COLOR_R(up_color);
 		g += COLOR_G(up_color);
 		b += COLOR_B(up_color);
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_AVG) {
-		uint32_t left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : 0;
-		uint32_t up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : 0;
+		Color left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : Color();
+		Color up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : Color();
 		r += (COLOR_R(up_color) + COLOR_R(left_color)) / 2;
 		g += (COLOR_G(up_color) + COLOR_G(left_color)) / 2;
 		b += (COLOR_B(up_color) + COLOR_B(left_color)) / 2;
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_PAETH) {
-		uint32_t left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : 0;
-		uint32_t up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : 0;
-		uint32_t corner_color = (png->pixel_x > 0 && png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y - 1) : 0;
+		Color left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : Color();
+		Color up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : Color();
+		Color corner_color = (png->pixel_x > 0 && png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y - 1) : Color();
 
 		r = ((int) r + paeth(COLOR_R(left_color), COLOR_R(up_color), COLOR_R(corner_color))) % 256;
 		g = ((int) g + paeth(COLOR_G(left_color), COLOR_G(up_color), COLOR_G(corner_color))) % 256;
@@ -167,28 +167,28 @@ void alpha_truecolor_pixel(PNG* png) {
 	uint8_t a = png->pixel_buffer[3];
 
 	if(png->scanline_filtertype == PNG_FILTERTYPE_SUB && png->pixel_x > 0) {
-		uint32_t left_color = IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y);
+		Color left_color = IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y);
 		r += COLOR_R(left_color);
 		g += COLOR_G(left_color);
 		b += COLOR_B(left_color);
 		a += COLOR_A(left_color);
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_UP && png->pixel_y > 0) {
-		uint32_t up_color = IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1);
+		Color up_color = IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1);
 		r += COLOR_R(up_color);
 		g += COLOR_G(up_color);
 		b += COLOR_B(up_color);
 		a += COLOR_A(up_color);
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_AVG) {
-		uint32_t left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : 0;
-		uint32_t up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : 0;
+		Color left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : Color();
+		Color up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : Color();
 		r += (COLOR_R(up_color) + COLOR_R(left_color)) / 2;
 		g += (COLOR_G(up_color) + COLOR_G(left_color)) / 2;
 		b += (COLOR_B(up_color) + COLOR_B(left_color)) / 2;
 		a += (COLOR_A(up_color) + COLOR_A(left_color)) / 2;
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_PAETH) {
-		uint32_t left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : 0;
-		uint32_t up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : 0;
-		uint32_t corner_color = (png->pixel_x > 0 && png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y - 1) : 0;
+		Color left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : Color();
+		Color up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : Color();
+		Color corner_color = (png->pixel_x > 0 && png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y - 1) : Color();
 
 		r = ((int) r + paeth(COLOR_R(left_color), COLOR_R(up_color), COLOR_R(corner_color))) % 256;
 		g = ((int) g + paeth(COLOR_G(left_color), COLOR_G(up_color), COLOR_G(corner_color))) % 256;
@@ -204,22 +204,22 @@ void alpha_grayscale_pixel(PNG* png) {
 	uint8_t a = png->pixel_buffer[1];
 
 	if(png->scanline_filtertype == PNG_FILTERTYPE_SUB && png->pixel_x > 0) {
-		uint32_t left_color = IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y);
+		Color left_color = IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y);
 		c += COLOR_R(left_color);
 		a += COLOR_A(left_color);
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_UP && png->pixel_y > 0) {
-		uint32_t up_color = IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1);
+		Color up_color = IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1);
 		c += COLOR_R(up_color);
 		a += COLOR_A(up_color);
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_AVG) {
-		uint32_t left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : 0;
-		uint32_t up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : 0;
+		Color left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : Color();
+		Color up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : Color();
 		c += (COLOR_R(up_color) + COLOR_R(left_color)) / 2;
 		a += (COLOR_A(up_color) + COLOR_A(left_color)) / 2;
 	} else if(png->scanline_filtertype == PNG_FILTERTYPE_PAETH) {
-		uint32_t left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : 0;
-		uint32_t up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : 0;
-		uint32_t corner_color = (png->pixel_x > 0 && png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y - 1) : 0;
+		Color left_color = (png->pixel_x > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y) : Color();
+		Color up_color = (png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x, png->pixel_y - 1) : Color();
+		Color corner_color = (png->pixel_x > 0 && png->pixel_y > 0) ? IMGPTRPIXEL(png->image, png->pixel_x - 1, png->pixel_y - 1) : Color();
 
 		c = ((int) c + paeth(COLOR_R(left_color), COLOR_R(up_color), COLOR_R(corner_color))) % 256;
 		a = ((int) a + paeth(COLOR_A(left_color), COLOR_A(up_color), COLOR_A(corner_color))) % 256;
