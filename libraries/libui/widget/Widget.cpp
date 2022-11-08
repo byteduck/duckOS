@@ -315,7 +315,7 @@ void Widget::recalculate_rects() {
 		_visible_rect = _parent->_visible_rect.overlapping_area(_rect).transform(_rect.position() * -1);
 	} else {
 		_absolute_rect = _rect;
-		_visible_rect = _root_window ? _root_window->contents_rect().overlapping_area(_rect).transform(_rect.position() * -1) : _rect;
+		_visible_rect = _root_window ? _root_window->contents_rect().combine(_root_window->accessory_rect()).overlapping_area(_rect).transform(_rect.position() * -1) : _rect;
 	}
 
 	for(auto& child : children)

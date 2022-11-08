@@ -25,6 +25,10 @@
 
 using namespace UI;
 
+#define UI_TITLEBAR_HEIGHT 20
+#define UI_WINDOW_BORDER_SIZE 0
+#define UI_WINDOW_PADDING 2
+
 Window::Window(): _window(pond_context->create_window(nullptr, {-1, -1, -1, -1}, true)) {
 	_window->set_draggable(true);
 }
@@ -35,9 +39,10 @@ void Window::initialize() {
 
 void Window::resize(Gfx::Dimensions dims) {
 	if(_decorated) {
+		int accessory_height = _titlebar_accessory ? _titlebar_accessory->preferred_size().height + UI_WINDOW_PADDING * 2 : 0;
 		_window->resize({
-			UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2 + dims.width,
-			UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3 + dims.height
+			UI_WINDOW_BORDER_SIZE * 2 + dims.width,
+			UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + dims.height + accessory_height
 		});
 	} else {
 		_window->resize({dims.width, dims.height});
@@ -54,15 +59,32 @@ Gfx::Dimensions Window::dimensions() {
 Gfx::Rect Window::contents_rect() {
 	if(_decorated) {
 		Gfx::Rect ret = _window->rect();
-		ret.width -= UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2;
-		ret.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2;
-		ret.x = UI_WINDOW_PADDING + UI_WINDOW_BORDER_SIZE;
-		ret.y = UI_TITLEBAR_HEIGHT + UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING;
+		Gfx::Rect accessory = accessory_rect();
+		ret.width -= UI_WINDOW_BORDER_SIZE * 2;
+		ret.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * (has_accessory() ? 2 : 0) + accessory.height;
+		ret.x = UI_WINDOW_BORDER_SIZE;
+		ret.y = UI_TITLEBAR_HEIGHT + UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING * (has_accessory() ? 2 : 0) + accessory.height;
 		return ret;
 	} else {
 		Gfx::Dimensions dims = _window->dimensions();
 		return {0, 0, dims.width, dims.height};
 	}
+}
+
+Gfx::Rect Window::accessory_rect() {
+	if(!_titlebar_accessory)
+		return Gfx::Rect();
+
+	return {
+		UI_WINDOW_PADDING + UI_WINDOW_BORDER_SIZE,
+		UI_TITLEBAR_HEIGHT + UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING,
+		_window->rect().width - UI_WINDOW_BORDER_SIZE * 2 - UI_WINDOW_PADDING * 2,
+		_titlebar_accessory->preferred_size().height
+	};
+}
+
+bool Window::has_accessory() {
+	return _titlebar_accessory.operator bool();
 }
 
 void Window::set_position(Gfx::Point pos) {
@@ -77,7 +99,13 @@ void Window::set_contents(const std::shared_ptr<Widget>& contents) {
 	_contents = contents;
 	_focused_widget = contents;
 	_contents->set_window(self());
-	resize(_contents->current_size());
+	resize_to_contents();
+}
+
+void Window::set_titlebar_accessory(Duck::Ptr<Widget> accessory) {
+	_titlebar_accessory = accessory;
+	_titlebar_accessory->set_window(self());
+	resize_to_contents();
 }
 
 std::shared_ptr<Widget> Window::contents() {
@@ -137,7 +165,7 @@ void Window::repaint_now() {
 		Gfx::Rect titlebar_rect = {0, 0, ctx.width(), UI_TITLEBAR_HEIGHT};
 
 		//Title bar background
-		ctx.fill_gradient_v(titlebar_rect, Theme::window_titlebar_b(), Theme::window_titlebar_a());
+		ctx.fill_gradient_v(titlebar_rect.inset(0, 0, -accessory_rect().height - UI_WINDOW_PADDING * (has_accessory() ? 2 : 0), 0), Theme::window_titlebar_b(), Theme::window_titlebar_a());
 
 		//Title bar icon
 		int title_xpos = 4;
@@ -172,6 +200,8 @@ void Window::repaint_now() {
 	//Then, draw widgets
 	if(_contents)
 		blit_widget(_contents);
+	if(_titlebar_accessory)
+		blit_widget(_titlebar_accessory);
 	_window->invalidate();
 }
 
@@ -190,7 +220,7 @@ void Window::hide() {
 }
 
 void Window::resize_to_contents() {
-	Gfx::Dimensions contents_size = _contents->preferred_size();
+	Gfx::Dimensions contents_size = _contents ? _contents->preferred_size() : Gfx::Dimensions {10, 10};
 	resize(contents_size);
 }
 
@@ -209,15 +239,15 @@ void Window::set_decorated(bool decorated) {
 	//Adjust the rect of the window to keep the contents in the same position
 	Gfx::Rect new_rect = _window->rect();
 	if(decorated) {
-		new_rect.x -= UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING;
-		new_rect.y -= UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2;
-		new_rect.width += UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2;
-		new_rect.height += UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3;
+		new_rect.x -= UI_WINDOW_BORDER_SIZE;
+		new_rect.y -= UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT;
+		new_rect.width += UI_WINDOW_BORDER_SIZE * 2;
+		new_rect.height += UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT;
 	} else {
-		new_rect.x += UI_WINDOW_BORDER_SIZE + UI_WINDOW_PADDING;
-		new_rect.y += UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 2;
-		new_rect.width -= UI_WINDOW_BORDER_SIZE * 2 + UI_WINDOW_PADDING * 2;
-		new_rect.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + UI_WINDOW_PADDING * 3;
+		new_rect.x += UI_WINDOW_BORDER_SIZE;
+		new_rect.y += UI_WINDOW_BORDER_SIZE + UI_TITLEBAR_HEIGHT;
+		new_rect.width -= UI_WINDOW_BORDER_SIZE * 2;
+		new_rect.height -= UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT;
 	}
 	_window->set_position(new_rect.position());
 	_window->resize(new_rect.dimensions());
@@ -256,16 +286,24 @@ void Window::on_mouse_move(Pond::MouseMoveEvent evt) {
 	else if(_mouse.in(contents_rect()) && old_mouse.in(contents_rect()))
 		_window->set_draggable(false);
 
-	if(_contents && evt.new_pos.in(_contents->_rect)) {
-		evt.new_pos = evt.new_pos - _contents->_rect.position();
-		_contents->evt_mouse_move(evt);
-	} else if(_contents && old_mouse.in(_contents->_rect)) {
-		_contents->evt_mouse_leave({
-			PEVENT_MOUSE_LEAVE,
-			old_mouse - _contents->_rect.position(),
-			evt.window
-		});
-	}
+	auto do_widget = [&] (Duck::Ptr<Widget> widget) {
+		if(!widget)
+			return;
+
+		if(widget && evt.new_pos.in(widget->_rect)) {
+			evt.new_pos = evt.new_pos - widget->_rect.position();
+			widget->evt_mouse_move(evt);
+		} else if(widget && old_mouse.in(widget->_rect)) {
+			widget->evt_mouse_leave({
+				   PEVENT_MOUSE_LEAVE,
+				   old_mouse - widget->_rect.position(),
+				   evt.window
+		   });
+		}
+	};
+
+	do_widget(_contents);
+	do_widget(_titlebar_accessory);
 }
 
 void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
@@ -282,21 +320,28 @@ void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
 		}
 	}
 
-	if(_contents && _mouse.in(_contents->_rect)) {
+	if(_contents && _mouse.in(_contents->_rect))
 		_contents->evt_mouse_button(evt);
-	}
+	if(_titlebar_accessory && _mouse.in(_titlebar_accessory->_rect))
+		_titlebar_accessory->evt_mouse_button(evt);
 }
 
 void Window::on_mouse_scroll(Pond::MouseScrollEvent evt) {
-	if(_contents && _mouse.in(_contents->_rect)) {
+	if(_contents && _mouse.in(_contents->_rect))
 		_contents->evt_mouse_scroll(evt);
-	}
+	if(_titlebar_accessory && _mouse.in(_titlebar_accessory->_rect))
+		_titlebar_accessory->evt_mouse_scroll(evt);
 }
 
 void Window::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 	if(_contents && evt.last_pos.in(_contents->_rect)) {
 		evt.last_pos = evt.last_pos - _contents->_rect.position();
 		_contents->evt_mouse_leave(evt);
+	}
+
+	if(_titlebar_accessory && evt.last_pos.in(_titlebar_accessory->_rect)) {
+		evt.last_pos = evt.last_pos - _titlebar_accessory->_rect.position();
+		_titlebar_accessory->evt_mouse_leave(evt);
 	}
 }
 
@@ -311,9 +356,10 @@ void Window::on_focus(bool focused) {
 }
 
 void Window::calculate_layout() {
-	if(!_contents)
-		return;
-	_contents->set_layout_bounds(contents_rect());
+	if(_contents)
+		_contents->set_layout_bounds(contents_rect());
+	if(_titlebar_accessory)
+		_titlebar_accessory->set_layout_bounds(accessory_rect());
 }
 
 void Window::blit_widget(Duck::PtrRef<Widget> widget) {

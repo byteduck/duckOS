@@ -27,10 +27,6 @@
 #include <functional>
 #include <libpond/Event.h>
 
-#define UI_TITLEBAR_HEIGHT 20
-#define UI_WINDOW_BORDER_SIZE 0
-#define UI_WINDOW_PADDING 1
-
 namespace UI {
 	class WindowDelegate;
 
@@ -42,9 +38,12 @@ namespace UI {
 		void resize(Gfx::Dimensions dims);
 		Gfx::Dimensions dimensions();
 		Gfx::Rect contents_rect();
+		Gfx::Rect accessory_rect();
+		bool has_accessory();
 		void set_position(Gfx::Point pos);
 		Gfx::Point position();
 		void set_contents(const std::shared_ptr<Widget>& contents);
+		void set_titlebar_accessory(Duck::Ptr<Widget> accessory);
 		std::shared_ptr<Widget> contents();
 		void set_title(const std::string& title);
 		std::string title();
@@ -96,6 +95,7 @@ namespace UI {
 		friend class Widget;
 		Pond::Window* _window;
 		Duck::Ptr<Widget> _contents;
+		Duck::Ptr<Widget> _titlebar_accessory;
 		Duck::Ptr<Widget> _focused_widget;
 		std::vector<Duck::Ptr<Widget>> _widgets;
 		std::string _title;
