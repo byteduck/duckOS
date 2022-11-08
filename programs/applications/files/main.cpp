@@ -44,10 +44,10 @@ protected:
 	void initialize() override {
 		auto main_flex = UI::FlexLayout::make(UI::FlexLayout::VERTICAL);
 		file_grid->delegate = self();
-		main_flex->add_child(header);
 		main_flex->add_child(file_grid);
 
 		auto window = UI::Window::make();
+		window->set_titlebar_accessory(header);
 		window->set_contents(main_flex);
 		window->set_resizable(true);
 		window->set_title("Files");
