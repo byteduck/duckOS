@@ -44,6 +44,7 @@ namespace UI {
 		TableView(int num_cols);
 
 		void update_columns();
+		std::vector<int> calculate_column_widths();
 
 		Duck::Ptr<ListView> m_list_view = ListView::make(ListView::VERTICAL);
 		const int m_num_cols;

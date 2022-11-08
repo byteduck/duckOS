@@ -105,11 +105,11 @@ int ProcessListWidget::tv_column_width(int col) {
 		case 1:
 			return 32;
 		case 2:
-			return 100;
+			return -1;
 		case 3:
 			return 75;
 		case 4:
-			return 50;
+			return 60;
 	}
 	return 0;
 }

@@ -56,15 +56,12 @@ Duck::Ptr<Widget> TableView::lv_create_entry(int index) {
 	if(m_delegate.expired())
 		return nullptr;
 	auto delegate = m_delegate.lock();
-
 	auto layout = BoxLayout::make(BoxLayout::HORIZONTAL);
-	int total_width = 0;
+	auto widths = calculate_column_widths();
+
 	for(int i = 0; i < m_num_cols; i++) {
-		auto width = (i == m_num_cols - 1) ? current_size().width - 12 - total_width : m_column_widths[i];
-		width = std::max(1, width);
-		total_width += width;
 		auto color = index % 2 == 0 ? Theme::shadow_1() : Theme::shadow_2();
-		layout->add_child(TableViewCell::make(Gfx::Dimensions{width, m_row_height}, color, delegate->tv_create_entry(index, i)));
+		layout->add_child(TableViewCell::make(Gfx::Dimensions{widths[i], m_row_height}, color, delegate->tv_create_entry(index, i)));
 	}
 	return layout;
 }
@@ -74,6 +71,8 @@ Gfx::Dimensions TableView::lv_preferred_item_dimensions() {
 	for(auto col : m_column_widths)
 		if(col != -1)
 			sum += col;
+		else
+			sum += 100;
 	return { sum, m_row_height };
 }
 
@@ -91,8 +90,9 @@ void TableView::calculate_layout() {
 
 void TableView::do_repaint(const DrawContext& ctx) {
 	int x = 0;
+	auto widths = calculate_column_widths();
 	for(int col = 0; col < m_num_cols; col++) {
-		auto width = (col == m_num_cols - 1) ? current_size().width - x : m_column_widths[col];
+		auto width = col == m_num_cols - 1 ? current_size().width - x : widths[col];
 		auto col_rect = Gfx::Rect {x, 0, width, 16};
 		ctx.draw_outset_rect(col_rect, Theme::bg());
 		ctx.draw_text(m_header_labels[col].c_str(), col_rect.inset(0, 4, 0, 4), BEGINNING, CENTER, Theme::font(), Theme::fg());
@@ -118,4 +118,33 @@ void TableView::update_columns() {
 		m_column_widths[i] = delegate->tv_column_width(i);
 	}
 	m_row_height = delegate->tv_row_height();
+}
+
+std::vector<int> TableView::calculate_column_widths() {
+	// Count stretchy columns
+	int total_width = 0;
+	int num_stretchy = 0;
+	int stretchy_width = 0;
+	for(auto& width : m_column_widths) {
+		if(width != -1)
+			total_width += width;
+		else
+			num_stretchy++;
+	}
+
+	// Figure out width of stretchy columns
+	auto remaining_width = current_size().width - 12 - total_width;
+	if(num_stretchy)
+		stretchy_width = std::max(16, remaining_width / num_stretchy);
+
+	// Add 1px to some stretchy columns if needed to make up for remainder
+	int stretchy_remainder = remaining_width % num_stretchy;
+
+	// Calculate widths and return
+	std::vector<int> ret = m_column_widths;
+	for(auto& width : ret)
+		if(width == -1)
+			width = stretchy_width + (std::max(stretchy_remainder--, 0) ? 1 : 0);
+
+	return ret;
 }
