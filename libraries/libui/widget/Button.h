@@ -25,6 +25,10 @@
 #include <functional>
 
 namespace UI {
+	enum class ButtonStyle {
+		RAISED, FLAT
+	};
+
 	class Button: public Widget {
 	public:
 		WIDGET_DEF(Button)
@@ -32,11 +36,12 @@ namespace UI {
 		//Button
 		[[nodiscard]] std::string label();
 		void set_label(std::string new_label);
-
+		void set_style(ButtonStyle new_style);
 
 		//Widget
 		virtual bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 		virtual void on_mouse_leave(Pond::MouseLeaveEvent evt) override;
+		virtual bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 		virtual Gfx::Dimensions preferred_size() override;
 		virtual void calculate_layout() override;
 
@@ -52,7 +57,9 @@ namespace UI {
 		Duck::Ptr<Label> m_label;
 		Duck::Ptr<Widget> m_contents;
 		bool m_pressed = false;
+		bool m_hovered = false;
 		int m_padding = 4;
+		ButtonStyle m_style = ButtonStyle::RAISED;
 	};
 }
 

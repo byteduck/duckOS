@@ -57,6 +57,12 @@ void Button::set_label(std::string new_label) {
 	repaint();
 }
 
+void Button::set_style(ButtonStyle new_style) {
+	m_style = new_style;
+	set_uses_alpha(m_style == ButtonStyle::FLAT);
+	repaint();
+}
+
 bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
 		m_pressed = true;
@@ -74,10 +80,22 @@ bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 }
 
 void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
+	if(m_hovered) {
+		m_hovered = false;
+		repaint();
+	}
 	if(m_pressed) {
 		m_pressed = false;
 		repaint();
 	}
+}
+
+bool Button::on_mouse_move(Pond::MouseMoveEvent evt) {
+	if(!m_hovered) {
+		m_hovered = true;
+		repaint();
+	}
+	return false;
 }
 
 Gfx::Dimensions Button::preferred_size() {
@@ -93,5 +111,16 @@ void Button::calculate_layout() {
 }
 
 void Button::do_repaint(const DrawContext& ctx) {
-	ctx.draw_button_base({0, 0, ctx.width(), ctx.height()}, m_pressed);
+	switch(m_style) {
+		case ButtonStyle::FLAT: {
+			auto accent = Theme::accent();
+			Color color = m_pressed ? accent : (m_hovered ? Color(accent.r, accent.g, accent.b, 150) : Color());
+			ctx.fill(ctx.rect(), color);
+			break;
+		}
+		case ButtonStyle::RAISED:
+			ctx.draw_button_base({0, 0, ctx.width(), ctx.height()}, m_pressed);
+			break;
+	}
+
 }
