@@ -12,6 +12,9 @@ set(CMAKE_CXX_STANDARD 17)
 
 SET_PROPERTY(DIRECTORY APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "root")
 
+# Options
+SET(ADD_KERNEL_DEBUG_SYMBOLS OFF CACHE BOOL "Add symbols to the kernel -g and -ggdb for debugging")
+
 function(MAKE_LIBRARY LIBNAME)
     # Install dynamic library
     ADD_LIBRARY(${LIBNAME} SHARED ${SOURCES})

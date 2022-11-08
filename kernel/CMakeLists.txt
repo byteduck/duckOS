@@ -9,12 +9,13 @@ SET_SOURCE_FILES_PROPERTIES(asm/startup.s asm/tasking.s asm/int.s asm/syscall.s 
 
 SET(CMAKE_CXX_FLAGS "-ffreestanding -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
 
-# Build with debug symbols in debug mode
-ADD_COMPILE_OPTIONS("$<$<COMPILE_LANGUAGE:CXX>:$<$<CONFIG:DEBUG>:-g>>")
-ADD_COMPILE_OPTIONS("$<$<COMPILE_LANGUAGE:CXX>:$<$<CONFIG:DEBUG>:-ggdb>>")
-
-# Build with O2 in release mode
-ADD_COMPILE_OPTIONS("$<$<CONFIG:RELEASE>:-O2>")
+# Build with debug symbols if needed
+IF(ADD_KERNEL_DEBUG_SYMBOLS)
+    ADD_COMPILE_OPTIONS("$<$<COMPILE_LANGUAGE:CXX>:-g>")
+    ADD_COMPILE_OPTIONS("$<$<COMPILE_LANGUAGE:CXX>:-ggdb>")
+ELSE()
+    ADD_COMPILE_OPTIONS("-O2")
+ENDIF()
 
 SET(CMAKE_CXX_FLAGS_DEBUG "-Werror")
 
