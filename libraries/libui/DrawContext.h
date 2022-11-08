@@ -47,6 +47,8 @@ namespace UI {
 		void fill(Gfx::Rect rect, Color color) const;
 		void fill_gradient_h(Gfx::Rect rect, Color color_a, Color color_b) const;
 		void fill_gradient_v(Gfx::Rect rect, Color color_a, Color color_b) const;
+		void fill_ellipse(Gfx::Rect rect, Color color) const;
+		void fill_rounded_rect(Gfx::Rect rect, Color color, int radius = 5) const;
 
 		void draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Color color, TruncationMode truncation = TruncationMode::ELLIPSIS) const;
 		void draw_text(const char* str, Gfx::Point pos, Gfx::Font* font, Color color) const;

@@ -60,6 +60,32 @@ void UI::DrawContext::fill_gradient_v(Gfx::Rect rect, Color color_a, Color color
 	fb->fill_gradient_v(rect, color_a, color_b);
 }
 
+void UI::DrawContext::fill_ellipse(Gfx::Rect rect, Color color) const {
+	float mid_y = rect.height / 2.0f;
+	float height_squared = rect.height * rect.height;
+	for (int line = 0; line < rect.height; line++) {
+		float y = line - mid_y;
+		float radius = rect.width * sqrt(0.25f - (y * y) / height_squared);
+		fill({rect.x + rect.width / 2 - (int) radius, rect.y + line, (int) (radius * 2), 1}, color);
+	}
+}
+
+void UI::DrawContext::fill_rounded_rect(Gfx::Rect rect, Color color, int radius) const {
+	// Fill middle and outer bits, excluding corners
+	fill(rect.inset(radius), color);
+	fill(rect.inset(0, radius, rect.height - radius, radius), color);
+	fill(rect.inset(rect.height - radius, radius, 0, radius), color);
+	fill(rect.inset(radius, 0, radius, rect.width - radius), color);
+	fill(rect.inset(radius, rect.width - radius, radius, 0), color);
+
+	// Draw corners
+	Gfx::Dimensions corner_dims = {radius * 2, radius * 2};
+	fill_ellipse({rect.position(), corner_dims}, color);
+	fill_ellipse({rect.position() + Point { rect.width - radius * 2, 0 }, corner_dims}, color);
+	fill_ellipse({rect.position() + Point { 0, rect.height - radius * 2 }, corner_dims}, color);
+	fill_ellipse({rect.position() + Point { rect.width - radius * 2, rect.height - radius * 2 }, corner_dims}, color);
+}
+
 void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color, TruncationMode truncation) const {
 	// First, split up the text into lines
 	struct Line {
