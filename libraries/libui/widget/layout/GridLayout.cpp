@@ -30,19 +30,28 @@ GridLayout::GridLayout(const Gfx::Dimensions& num_cells): _num_cells(num_cells) 
 void GridLayout::calculate_layout() {
 	Gfx::Dimensions num_cells = calculate_num_cells();
 	int col_size = current_size().width / num_cells.width;
+	int col_remainder = current_size().width % num_cells.width;
 	int row_size = current_size().height / num_cells.height;
-	int col = 0, row = 0;
+	int row_remainder = current_size().height % num_cells.height;
+	int col = 0;
+	int x = 0, y = 0;
 	for(auto child : children) {
+		int width = col_size + (std::max(col_remainder--, 0) ? 1 : 0);
+		int height = row_size + (std::max(row_remainder, 0) ? 1 : 0);
 		child->set_layout_bounds({
-			col * col_size,
-			row * row_size,
-			col_size,
-			row_size
+			x,
+			y,
+			width,
+			height
 		});
+		x += width;
 		col++;
 		if(col == num_cells.width) {
 			col = 0;
-			row++;
+			x = 0;
+			y += height;
+			row_remainder--;
+			col_remainder = current_size().width % num_cells.width;
 		}
 	}
 }
