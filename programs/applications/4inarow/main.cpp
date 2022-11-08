@@ -22,6 +22,7 @@
 #include <libui/widget/layout/BoxLayout.h>
 #include <libui/widget/Button.h>
 #include <libui/widget/Checkbox.h>
+#include <libui/widget/Cell.h>
 
 int main(int argc, char** argv, char** envp) {
 	//Init LibUI
@@ -58,7 +59,7 @@ int main(int argc, char** argv, char** envp) {
 	mainview->add_child(toolbar);
 
 	//Show the main window
-	window->set_contents(mainview);
+	window->set_contents(UI::Cell::make(mainview));
 	window->show();
 	window->set_resizable(false);
 

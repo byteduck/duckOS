@@ -26,6 +26,7 @@
 #include <libsys/CPU.h>
 #include "ProcessListWidget.h"
 #include "MemoryUsageWidget.h"
+#include <libui/widget/Cell.h>
 #include <libduck/FileStream.h>
 
 #define UPDATE_FREQ 1000
@@ -84,9 +85,9 @@ int main(int argc, char** argv, char** envp) {
 	cpu_bar = UI::ProgressBar::make();
 
 	//Make layout
-	auto layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 10);
-	layout->add_child(mem_widget);
-	layout->add_child(cpu_bar);
+	auto layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 0);
+	layout->add_child(UI::Cell::make(mem_widget));
+	layout->add_child(UI::Cell::make(cpu_bar));
 
 	proc_list = ProcessListWidget::make();
 	layout->add_child(proc_list);

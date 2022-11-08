@@ -22,6 +22,7 @@
 #include <libui/widget/Label.h>
 #include <libduck/FileStream.h>
 #include "libui/widget/Image.h"
+#include <libui/widget/Cell.h>
 
 int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
@@ -50,7 +51,7 @@ int main(int argc, char** argv, char** envp) {
 	ver_label->set_sizing_mode(UI::PREFERRED);
 	text_layout->add_child(ver_label);
 
-	window->set_contents(text_layout);
+	window->set_contents(UI::Cell::make(text_layout));
 	window->resize({200, 150});
 	window->set_resizable(true);
 	window->show();
