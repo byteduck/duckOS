@@ -22,6 +22,7 @@ SET(SOURCES
 
         Menu.cpp
         widget/MenuWidget.cpp
+        widget/MenuBar.cpp
 
         widget/ContainerView.cpp
         widget/ListView.cpp
