@@ -37,9 +37,9 @@ bool MenuWidget::on_mouse_move(Pond::MouseMoveEvent evt) {
 		if(hovered_item != m_hovered_item)
 			repaint();
 		if(hovered_item != m_last_hovered_item) {
-			if(hovered_item && hovered_item->submenu) {
+			if(hovered_item && hovered_item->submenu()) {
 				m_expanded_item = hovered_item;
-				open_child_window(hovered_item->submenu, cur_rect);
+				open_child_window(hovered_item->submenu(), cur_rect);
 			} else {
 				m_expanded_item = nullptr;
 				if(m_child_menu.lock()) {
@@ -60,7 +60,7 @@ void MenuWidget::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 
 bool MenuWidget::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if((evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1) && m_hovered_item != MenuItem::Separator) {
-		if(m_hovered_item && m_hovered_item->action)
+		if(m_hovered_item && m_hovered_item->action())
 			m_hovered_item->action();
 		root_menu().lock()->close();
 		return true;
@@ -76,7 +76,7 @@ Gfx::Dimensions MenuWidget::preferred_size() {
 			height += SEPARATOR_ITEM_HEIGHT;
 			continue;
 		}
-		max_width = std::max(max_width, UI::Theme::font()->size_of(item->title.c_str()).width);
+		max_width = std::max(max_width, UI::Theme::font()->size_of(item->title().c_str()).width);
 		height += ITEM_HEIGHT;
 	}
 	return {
@@ -117,8 +117,8 @@ void MenuWidget::do_repaint(const DrawContext& ctx) {
 		auto contents_rect = item_rect.inset(ITEM_PADDING_Y, ITEM_PADDING_X + 1, ITEM_PADDING_Y, ITEM_PADDING_X);
 		if(m_hovered_item == item || m_expanded_item == item)
 			ctx.fill(item_rect.inset(1, 2, 2, 1), UI::Theme::accent());
-		ctx.draw_text(item->title.c_str(), contents_rect, BEGINNING, CENTER, UI::Theme::font(), UI::Theme::fg());
-		if(item->submenu)
+		ctx.draw_text(item->title().c_str(), contents_rect, BEGINNING, CENTER, UI::Theme::font(), UI::Theme::fg());
+		if(item->submenu())
 			ctx.draw_text(">", contents_rect, END, CENTER, UI::Theme::font(), UI::Theme::fg());
 		item_rect.y += ITEM_HEIGHT;
 	}

@@ -9,32 +9,56 @@ using namespace Duck;
 const Duck::Ptr<MenuItem> MenuItem::Separator = MenuItem::make();
 
 MenuItem::MenuItem(std::string title, Action action, Duck::Ptr<Menu> submenu):
-	title(std::move(title)), action(std::move(action)), submenu(std::move(submenu))
+		m_title(std::move(title)), m_action(std::move(action)), m_submenu(std::move(submenu))
 {
 	static int menu_id = 0;
 	m_id = ++menu_id;
 }
 
 size_t MenuItem::serialized_size() const {
-	return Serialization::buffer_size(title, m_id) + sizeof(bool) + (submenu ? submenu->serialized_size() : 0);
+	return Serialization::buffer_size(m_title, m_id) + sizeof(bool) + (m_submenu ? m_submenu->serialized_size() : 0);
 }
 
 void MenuItem::serialize(uint8_t*& buf) const {
-	bool has_submenu = submenu.operator bool();
-	Serialization::serialize(buf, title, m_id, has_submenu);
-	if(submenu)
-		submenu->serialize(buf);
+	bool has_submenu = m_submenu.operator bool();
+	Serialization::serialize(buf, m_title, m_id, has_submenu);
+	if(m_submenu)
+		m_submenu->serialize(buf);
 }
 
 void MenuItem::deserialize(const uint8_t*& buf) {
 	bool has_submenu;
-	Serialization::deserialize(buf, title, m_id, has_submenu);
+	Serialization::deserialize(buf, m_title, m_id, has_submenu);
 	if(has_submenu)
-		submenu = Menu::make(buf);
+		m_submenu = Menu::make(buf);
 }
 
 MenuItem::MenuItem(const uint8_t*& buf) {
 	deserialize(buf);
+}
+
+void MenuItem::set_title(std::string title) {
+	m_title = std::move(title);
+}
+
+std::string MenuItem::title() const {
+	return m_title;
+}
+
+void MenuItem::set_action(MenuItem::Action action) {
+	m_action = action;
+}
+
+MenuItem::Action MenuItem::action() const {
+	return m_action;
+}
+
+void MenuItem::set_submenu(Duck::Ptr<Menu> submenu) {
+	m_submenu = submenu;
+}
+
+Duck::Ptr<Menu> MenuItem::submenu() const {
+	return m_submenu;
 }
 
 Duck::Ptr<Menu> Menu::make(std::vector<Duck::Ptr<MenuItem>> items) {
@@ -51,7 +75,7 @@ const std::vector<Duck::Ptr<MenuItem>>& Menu::items() {
 	return m_items;
 }
 
-int Menu::size() {
+int Menu::size() const {
 	return m_items.size();
 }
 
