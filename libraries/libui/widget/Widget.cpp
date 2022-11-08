@@ -55,6 +55,10 @@ Gfx::Rect Widget::current_rect() {
 	return _rect;
 }
 
+Gfx::Rect Widget::current_absolute_rect() {
+	return _absolute_rect;
+}
+
 PositioningMode Widget::positioning_mode() {
 	return _positioning_mode;
 }
@@ -329,12 +333,13 @@ bool Widget::evt_mouse_move(Pond::MouseMoveEvent evt) {
 	_mouse_pos = evt.new_pos;
 
 	bool did_consume = false;
+	bool did_trigger = false;
 	for(auto& child : children) {
-		if(_mouse_pos.in(child->_rect)) {
+		if(!did_trigger && _mouse_pos.in(child->_rect)) {
 			Pond::MouseMoveEvent child_evt = evt;
 			child_evt.new_pos = evt.new_pos - child->_rect.position();
 			did_consume = child->evt_mouse_move(child_evt);
-			break;
+			did_trigger = true;
 		} else if(old_mouse_pos.in(child->_rect)) {
 			child->evt_mouse_leave({
 				PEVENT_MOUSE_LEAVE,

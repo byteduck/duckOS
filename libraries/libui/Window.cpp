@@ -267,12 +267,12 @@ void Window::on_keyboard(Pond::KeyEvent evt) {
 		_focused_widget->on_keyboard(evt);
 }
 
-void Window::on_mouse_move(Pond::MouseMoveEvent evt) {
+void Window::on_mouse_move(Pond::MouseMoveEvent event) {
 	//TODO: Global mouse events
 
-	_abs_mouse = evt.abs_pos;
+	_abs_mouse = event.abs_pos;
 	auto old_mouse = _mouse;
-	_mouse = evt.new_pos;
+	_mouse = event.new_pos;
 
 	if(_close_button.pressed && !_mouse.in(_close_button.area)) {
 		_close_button.pressed = false;
@@ -290,10 +290,11 @@ void Window::on_mouse_move(Pond::MouseMoveEvent evt) {
 		if(!widget)
 			return;
 
-		if(widget && evt.new_pos.in(widget->_rect)) {
+		Pond::MouseMoveEvent evt = event;
+		if(evt.new_pos.in(widget->_rect)) {
 			evt.new_pos = evt.new_pos - widget->_rect.position();
 			widget->evt_mouse_move(evt);
-		} else if(widget && old_mouse.in(widget->_rect)) {
+		} else if(old_mouse.in(widget->_rect)) {
 			widget->evt_mouse_leave({
 				   PEVENT_MOUSE_LEAVE,
 				   old_mouse - widget->_rect.position(),

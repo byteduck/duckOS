@@ -68,6 +68,11 @@ namespace UI {
 		Gfx::Rect current_rect();
 
 		/**
+		 * Returns the current absolute rect of the widget, relative to its window.
+		 */
+		Gfx::Rect current_absolute_rect();
+
+		/**
 		 * Returns the positioning mode of the widget.
 		 * @return The positioning mode of the widget.
 		 */
