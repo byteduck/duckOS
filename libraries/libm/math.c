@@ -26,3 +26,9 @@ double sqrt(double x) {
 	asm("fsqrt" : "=t"(result) : "0"(x));
 	return result;
 }
+
+float sqrtf(float x) {
+	float result;
+	asm("fsqrt" : "=t"(result) : "0"(x));
+	return result;
+}
