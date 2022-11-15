@@ -68,7 +68,7 @@ int Theme::value(const std::string& key) {
 	return current()->get_value(key);
 }
 
-Color Theme::color(const std::string& key) {
+Gfx::Color Theme::color(const std::string& key) {
 	return current()->get_color(key);
 }
 
@@ -89,7 +89,7 @@ Duck::Ptr<Image> Theme::get_image(const std::string& key) {
 	return ret ? ret : blank_image;
 }
 
-Color Theme::get_color(const std::string& key) {
+Gfx::Color Theme::get_color(const std::string& key) {
 	return colors[key];
 }
 
@@ -156,7 +156,7 @@ bool Theme::load() {
 		} else if(type == "Color") {
 			if(value[0] == '#')
 				value = value.substr(1);
-			Color color = strtoul(value.c_str(), nullptr, 16);
+			Gfx::Color color = strtoul(value.c_str(), nullptr, 16);
 			if(value.length() == 6)
 				color.a = 255;
 			colors[key] = color;
@@ -178,51 +178,51 @@ bool Theme::load() {
 	return true;
 }
 
-Color Theme::bg() {
+Gfx::Color Theme::bg() {
 	return current()->colors["bg"];
 }
 
-Color Theme::fg() {
+Gfx::Color Theme::fg() {
 	return current()->colors["fg"];
 }
 
-Color Theme::accent() {
+Gfx::Color Theme::accent() {
 	return current()->colors["accent"];
 }
 
-Color Theme::window() {
+Gfx::Color Theme::window() {
 	return current()->colors["window"];
 }
 
-Color Theme::window_title() {
+Gfx::Color Theme::window_title() {
 	return current()->colors["window-title"];
 }
 
-Color Theme::window_titlebar_a() {
+Gfx::Color Theme::window_titlebar_a() {
 	return current()->colors["window-titlebar-a"];
 }
 
-Color Theme::window_titlebar_b() {
+Gfx::Color Theme::window_titlebar_b() {
 	return current()->colors["window-titlebar-b"];
 }
 
-Color Theme::shadow_1() {
+Gfx::Color Theme::shadow_1() {
 	return current()->colors["shadow-1"];
 }
 
-Color Theme::shadow_2() {
+Gfx::Color Theme::shadow_2() {
 	return current()->colors["shadow-2"];
 }
 
-Color Theme::highlight() {
+Gfx::Color Theme::highlight() {
 	return current()->colors["highlight"];
 }
 
-Color Theme::button() {
+Gfx::Color Theme::button() {
 	return current()->colors["button"];
 }
 
-Color Theme::button_text() {
+Gfx::Color Theme::button_text() {
 	return current()->colors["button-text"];
 }
 

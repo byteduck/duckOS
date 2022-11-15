@@ -19,14 +19,14 @@ public:
 	}
 
 private:
-	TableViewCell(Gfx::Dimensions size, Color color, Duck::Ptr<Widget> widget): m_preferred_size(size), m_color(color) {
+	TableViewCell(Gfx::Dimensions size, Gfx::Color color, Duck::Ptr<Widget> widget): m_preferred_size(size), m_color(color) {
 		set_uses_alpha(true);
 		widget->set_sizing_mode(UI::FILL);
 		add_child(widget);
 	}
 
 	Gfx::Dimensions m_preferred_size;
-	Color m_color;
+	Gfx::Color m_color;
 };
 
 TableView::TableView(int num_cols): m_num_cols(num_cols) {

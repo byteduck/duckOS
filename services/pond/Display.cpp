@@ -54,7 +54,7 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 		return;
 	}
 
-	Color* buffer;
+	Gfx::Color* buffer;
 
 	if(ioctl(framebuffer_fd, IO_VIDEO_MAP, &buffer) < 0) {
 		perror("Failed to map framebuffer");

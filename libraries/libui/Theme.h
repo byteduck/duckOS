@@ -32,7 +32,7 @@ namespace UI {
 	public:
 		Duck::Ptr<Gfx::Image> get_image(const std::string& key);
 		int get_value(const std::string& key);
-		Color get_color(const std::string& key);
+		Gfx::Color get_color(const std::string& key);
 		std::string get_string(const std::string& key);
 		Gfx::Font* get_font();
 		Gfx::Font* get_font_mono();
@@ -44,7 +44,7 @@ namespace UI {
 
 		static Duck::Ptr<Gfx::Image> image(const std::string& key);
 		static int value(const std::string& key);
-		static Color color(const std::string& key);
+		static Gfx::Color color(const std::string& key);
 		static std::string string(const std::string& key);
 
 		//Standard fonts
@@ -52,18 +52,18 @@ namespace UI {
 		static Gfx::Font* font_mono();
 
 		//Standard colors
-		static Color bg();
-		static Color fg();
-		static Color accent();
-		static Color window();
-		static Color window_title();
-		static Color window_titlebar_a();
-		static Color window_titlebar_b();
-		static Color shadow_1();
-		static Color shadow_2();
-		static Color highlight();
-		static Color button();
-		static Color button_text();
+		static Gfx::Color bg();
+		static Gfx::Color fg();
+		static Gfx::Color accent();
+		static Gfx::Color window();
+		static Gfx::Color window_title();
+		static Gfx::Color window_titlebar_a();
+		static Gfx::Color window_titlebar_b();
+		static Gfx::Color shadow_1();
+		static Gfx::Color shadow_2();
+		static Gfx::Color highlight();
+		static Gfx::Color button();
+		static Gfx::Color button_text();
 
 		//Standard values
 		static int button_padding();
@@ -81,7 +81,7 @@ namespace UI {
 
 		std::string name;
 		std::map<std::string, Duck::Ptr<Gfx::Image>> images;
-		std::map<std::string, Color> colors;
+		std::map<std::string, Gfx::Color> colors;
 		std::map<std::string, int> values;
 		std::map<std::string, std::string> strings;
 

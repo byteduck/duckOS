@@ -29,8 +29,8 @@ namespace UI {
 		//Label
 		std::string label();
 		void set_label(const std::string_view& new_label);
-		Color color();
-		void set_color(Color new_color);
+		Gfx::Color color();
+		void set_color(Gfx::Color new_color);
 		TextAlignment vertical_alignment();
 		TextAlignment horizontal_alignment();
 		void set_alignment(TextAlignment vertical, TextAlignment horizontal);
@@ -49,7 +49,7 @@ namespace UI {
 		void do_repaint(const DrawContext& ctx) override;
 
 		std::string _label;
-		Color _color;
+		Gfx::Color _color;
 		TextAlignment _v_alignment = CENTER;
 		TextAlignment _h_alignment = CENTER;
 		Gfx::Font* _font;

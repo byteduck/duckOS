@@ -151,8 +151,8 @@ private:
 	Gfx::Framebuffer _framebuffer; ///The display framebuffer.
 	Gfx::Framebuffer _background_framebuffer; ///The framebuffer for the background.
 	Duck::Ptr<Gfx::Image> _wallpaper = nullptr; ///The wallpaper image.
-	Color _background_a = RGB(0,0,0); /// The first color of the wallpaper gradient.
-	Color _background_b = RGB(0,0,0); /// The second color of the wallpaper gradient.
+	Gfx::Color _background_a = RGB(0,0,0); /// The first color of the wallpaper gradient.
+	Gfx::Color _background_b = RGB(0,0,0); /// The second color of the wallpaper gradient.
 	Gfx::Rect _dimensions; ///The dimensions of the display.
 	std::vector<Gfx::Rect> invalid_areas; ///The invalidated areas that need to be redrawn.
 	std::vector<Window*> _windows; ///The windows on the display.

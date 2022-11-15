@@ -114,7 +114,7 @@ void Button::do_repaint(const DrawContext& ctx) {
 	switch(m_style) {
 		case ButtonStyle::FLAT: {
 			auto accent = Theme::accent();
-			Color color = m_pressed ? accent : (m_hovered ? Color(accent.r, accent.g, accent.b, 150) : Color());
+			Gfx::Color color = m_pressed ? accent : (m_hovered ? Gfx::Color(accent.r, accent.g, accent.b, 150) : Gfx::Color());
 			ctx.fill(ctx.rect(), color);
 			break;
 		}

@@ -296,7 +296,7 @@ Gfx::Rect Window::calculate_absolute_rect(const Gfx::Rect& rect) {
 
 void Window::set_flipped(bool flipped) {
 	_framebuffer = {
-			(Color*) _framebuffer_shm.ptr + (flipped ? _rect.width * _rect.height : 0),
+			(Gfx::Color*) _framebuffer_shm.ptr + (flipped ? _rect.width * _rect.height : 0),
 			_rect.width,
 			_rect.height
 	};
@@ -316,7 +316,7 @@ void Window::alloc_framebuffer() {
 		return;
 	}
 
-	_framebuffer = {(Color*) _framebuffer_shm.ptr, _rect.width, _rect.height};
+	_framebuffer = {(Gfx::Color*) _framebuffer_shm.ptr, _rect.width, _rect.height};
 
 	// Now, allocate and draw the shadow buffer
 	_shadow_buffer = Gfx::Framebuffer(_rect.width + SHADOW_SIZE * 2, _rect.height + SHADOW_SIZE * 2);

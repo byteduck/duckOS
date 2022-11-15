@@ -156,7 +156,7 @@ void Window::repaint_now() {
 	auto framebuffer = _window->framebuffer();
 	auto ctx = DrawContext(framebuffer);
 	if(_decorated) {
-		Color color = Theme::window();
+		Gfx::Color color = Theme::window();
 
 		//Window background
 		ctx.fill({0, 0, ctx.width(), ctx.height()}, color);

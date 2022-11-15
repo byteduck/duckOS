@@ -5,6 +5,7 @@
 
 #include <cstdint>
 
+namespace Gfx {
 typedef union Color {
 public:
 	struct {
@@ -22,13 +23,14 @@ public:
 	inline operator uint32_t() { return value; }
 
 } Color;
+}
 
 #define COLOR_A(color) (color.a)
 #define COLOR_R(color) (color.r)
 #define COLOR_G(color) (color.g)
 #define COLOR_B(color) (color.b)
-#define RGB(r,g,b) (Color {(uint8_t) (r), (uint8_t) (g), (uint8_t) (b), 255})
-#define RGBA(r,g,b,a) (Color { (uint8_t) (r), (uint8_t) (g), (uint8_t) (b), (uint8_t) (a) })
+#define RGB(r,g,b) (Gfx::Color {(uint8_t) (r), (uint8_t) (g), (uint8_t) (b), 255})
+#define RGBA(r,g,b,a) (Gfx::Color { (uint8_t) (r), (uint8_t) (g), (uint8_t) (b), (uint8_t) (a) })
 
 #define COLOR_COMPONENT_MULT(a, b) ((uint8_t) (((unsigned) (a) *  (unsigned) (b) + 255 ) >> 8))
 #define COLOR_MULT(a, b) \

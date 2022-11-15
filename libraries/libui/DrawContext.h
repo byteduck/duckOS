@@ -44,26 +44,26 @@ namespace UI {
 		const Gfx::Framebuffer& framebuffer() const;
 
 		///Drawing
-		void fill(Gfx::Rect rect, Color color) const;
-		void fill_gradient_h(Gfx::Rect rect, Color color_a, Color color_b) const;
-		void fill_gradient_v(Gfx::Rect rect, Color color_a, Color color_b) const;
-		void fill_ellipse(Gfx::Rect rect, Color color) const;
-		void fill_rounded_rect(Gfx::Rect rect, Color color, int radius = 5) const;
+		void fill(Gfx::Rect rect, Gfx::Color color) const;
+		void fill_gradient_h(Gfx::Rect rect, Gfx::Color color_a, Gfx::Color color_b) const;
+		void fill_gradient_v(Gfx::Rect rect, Gfx::Color color_a, Gfx::Color color_b) const;
+		void fill_ellipse(Gfx::Rect rect, Gfx::Color color) const;
+		void fill_rounded_rect(Gfx::Rect rect, Gfx::Color color, int radius = 5) const;
 
-		void draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Color color, TruncationMode truncation = TruncationMode::ELLIPSIS) const;
-		void draw_text(const char* str, Gfx::Point pos, Gfx::Font* font, Color color) const;
-		void draw_text(const char* str, Gfx::Point pos, Color color) const;
-		void draw_glyph(Gfx::Font* font, uint32_t codepoint, Gfx::Point pos, Color color) const;
+		void draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Gfx::Color color, TruncationMode truncation = TruncationMode::ELLIPSIS) const;
+		void draw_text(const char* str, Gfx::Point pos, Gfx::Font* font, Gfx::Color color) const;
+		void draw_text(const char* str, Gfx::Point pos, Gfx::Color color) const;
+		void draw_glyph(Gfx::Font* font, uint32_t codepoint, Gfx::Point pos, Gfx::Color color) const;
 		void draw_image(Duck::Ptr<const Gfx::Image> img, Gfx::Point pos) const;
 		void draw_image(Duck::Ptr<const Gfx::Image> img, Gfx::Rect rect) const;
 		void draw_image(const std::string& name, Gfx::Point pos) const;
 
-		void draw_inset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const;
-		void draw_inset_rect(Gfx::Rect rect, Color bg) const;
+		void draw_inset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const;
+		void draw_inset_rect(Gfx::Rect rect, Gfx::Color bg) const;
 		void draw_inset_rect(Gfx::Rect rect) const;
 
-		void draw_outset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const;
-		void draw_outset_rect(Gfx::Rect rect, Color bg) const;
+		void draw_outset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const;
+		void draw_outset_rect(Gfx::Rect rect, Gfx::Color bg) const;
 		void draw_outset_rect(Gfx::Rect rect) const;
 
 		void draw_button_base(Gfx::Rect button, bool pressed) const;

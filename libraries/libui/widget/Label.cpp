@@ -38,11 +38,11 @@ void Label::set_label(const std::string_view& new_label) {
 	update_layout();
 }
 
-Color Label::color() {
+Gfx::Color Label::color() {
 	return _color;
 }
 
-void Label::set_color(Color new_color) {
+void Label::set_color(Gfx::Color new_color) {
 	_color = new_color;
 	repaint();
 }

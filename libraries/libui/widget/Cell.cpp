@@ -5,7 +5,7 @@
 using namespace UI;
 
 const int Cell::default_padding = 4;
-const Color Cell::default_background = 0;
+const Gfx::Color Cell::default_background = 0;
 const Cell::Style Cell::default_style = Cell::Style::PLAIN;
 
 Gfx::Dimensions Cell::preferred_size() {
@@ -39,7 +39,7 @@ void Cell::do_repaint(const UI::DrawContext& ctx) {
 	}
 }
 
-Cell::Cell(Duck::Ptr<UI::Widget> child, int padding, Color background, Style style):
+Cell::Cell(Duck::Ptr<UI::Widget> child, int padding, Gfx::Color background, Style style):
 	m_padding(padding), m_background(background), m_style(style)
 {
 	set_sizing_mode(FILL);

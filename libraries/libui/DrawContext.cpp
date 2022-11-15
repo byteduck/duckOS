@@ -48,19 +48,19 @@ const Framebuffer& UI::DrawContext::framebuffer() const {
 	return *fb;
 }
 
-void UI::DrawContext::fill(Gfx::Rect rect, Color color) const {
+void UI::DrawContext::fill(Gfx::Rect rect, Gfx::Color color) const {
 	fb->fill(rect, color);
 }
 
-void UI::DrawContext::fill_gradient_h(Gfx::Rect rect, Color color_a, Color color_b) const {
+void UI::DrawContext::fill_gradient_h(Gfx::Rect rect, Gfx::Color color_a, Gfx::Color color_b) const {
 	fb->fill_gradient_h(rect, color_a, color_b);
 }
 
-void UI::DrawContext::fill_gradient_v(Gfx::Rect rect, Color color_a, Color color_b) const {
+void UI::DrawContext::fill_gradient_v(Gfx::Rect rect, Gfx::Color color_a, Gfx::Color color_b) const {
 	fb->fill_gradient_v(rect, color_a, color_b);
 }
 
-void UI::DrawContext::fill_ellipse(Gfx::Rect rect, Color color) const {
+void UI::DrawContext::fill_ellipse(Gfx::Rect rect, Gfx::Color color) const {
 	float mid_y = rect.height / 2.0f;
 	float height_squared = rect.height * rect.height;
 	for (int line = 0; line < rect.height; line++) {
@@ -70,7 +70,7 @@ void UI::DrawContext::fill_ellipse(Gfx::Rect rect, Color color) const {
 	}
 }
 
-void UI::DrawContext::fill_rounded_rect(Gfx::Rect rect, Color color, int radius) const {
+void UI::DrawContext::fill_rounded_rect(Gfx::Rect rect, Gfx::Color color, int radius) const {
 	// Fill middle and outer bits, excluding corners
 	fill(rect.inset(radius), color);
 	fill(rect.inset(0, radius, rect.height - radius, radius), color);
@@ -86,7 +86,7 @@ void UI::DrawContext::fill_rounded_rect(Gfx::Rect rect, Color color, int radius)
 	fill_ellipse({rect.position() + Point { rect.width - radius * 2, rect.height - radius * 2 }, corner_dims}, color);
 }
 
-void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Color color, TruncationMode truncation) const {
+void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Gfx::Color color, TruncationMode truncation) const {
 	// First, split up the text into lines
 	struct Line {
 		std::string text;
@@ -176,15 +176,15 @@ void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h
 	}
 }
 
-void UI::DrawContext::draw_text(const char* str, Gfx::Point point, Font* font, Color color) const {
+void UI::DrawContext::draw_text(const char* str, Gfx::Point point, Font* font, Gfx::Color color) const {
 	fb->draw_text(str, point, font, color);
 }
 
-void UI::DrawContext::draw_text(const char* str, Gfx::Point point, Color color) const {
+void UI::DrawContext::draw_text(const char* str, Gfx::Point point, Gfx::Color color) const {
 	fb->draw_text(str, point, Theme::font(), color);
 }
 
-void UI::DrawContext::draw_glyph(Font* font, uint32_t codepoint, Gfx::Point pos, Color color) const {
+void UI::DrawContext::draw_glyph(Font* font, uint32_t codepoint, Gfx::Point pos, Gfx::Color color) const {
 	fb->draw_glyph(font, codepoint, pos, color);
 }
 
@@ -200,7 +200,7 @@ void UI::DrawContext::draw_image(const std::string& name, Gfx::Point pos) const 
 	draw_image(Theme::image(name), pos);
 }
 
-void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const {
+void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const {
 	//Background
 	fb->fill({rect.x, rect.y, rect.width, rect.height}, bg);
 
@@ -215,7 +215,7 @@ void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Color bg, Color shadow_1, 
 	fb->fill({rect.x + rect.width - 1, rect.y + 1, 1, rect.height - 1}, highlight);
 }
 
-void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Color bg) const {
+void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Gfx::Color bg) const {
 	draw_inset_rect(rect, bg, Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
 }
 
@@ -223,7 +223,7 @@ void UI::DrawContext::draw_inset_rect(Gfx::Rect rect) const {
 	draw_inset_rect(rect, Theme::bg(), Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
 }
 
-void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Color bg, Color shadow_1, Color shadow_2, Color highlight) const {
+void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const {
 	//Background
 	fb->fill({rect.x, rect.y, rect.width, rect.height}, bg);
 
@@ -238,7 +238,7 @@ void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Color bg, Color shadow_1,
 	fb->fill({rect.x, rect.y + 1, 1, rect.height - 2}, highlight);
 }
 
-void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Color bg) const {
+void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Gfx::Color bg) const {
 	draw_outset_rect(rect, bg, Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
 }
 
