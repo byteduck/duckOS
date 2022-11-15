@@ -107,6 +107,6 @@ namespace River {
 	};
 
 	Duck::ResultRet<RiverPacket> receive_packet(int fd, bool block);
-	void send_packet(int fd, sockid_t recipient, const RiverPacket& packet);
+	Duck::Result send_packet(int fd, sockid_t recipient, const RiverPacket& packet);
 }
 

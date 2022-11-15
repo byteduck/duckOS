@@ -51,10 +51,10 @@ namespace River {
 			return path + "<" + typeid(T).name() + "[" + std::to_string(sizeof(T)) + "]>";
 		}
 
-		void send(sockid_t recipient, const T& data) const {
+		Duck::Result send(sockid_t recipient, const T& data) const {
 			if(!_endpoint) {
 				Duck::Log::err("[River] Tried sending uninitialized message ", _path);
-				return;
+				return Duck::Result(ErrorType::ENDPOINT_DOES_NOT_EXIST);
 			}
 
 			if(_endpoint->type() == Endpoint::HOST) {
@@ -71,9 +71,11 @@ namespace River {
 				Duck::Serialization::serialize(buf, data);
 
 				//Send the message packet
-				_endpoint->bus()->send_packet(packet);
+				auto res =  _endpoint->bus()->send_packet(packet);
+				return res;
 			} else {
 				Duck::Log::err("[River] Tried sending message through proxy endpoint");
+				return Duck::Result(ErrorType::ILLEGAL_REQUEST);
 			}
 		}
 

@@ -136,7 +136,7 @@ void BusServer::set_allow_new_endpoints(bool allow) {
 	_allow_new_endpoints = allow;
 }
 
-void BusServer::send_packet(int pid, const RiverPacket& packet) {
+Duck::Result BusServer::send_packet(int pid, const RiverPacket& packet) {
 	River::send_packet(_fd, pid, packet);
 }
 

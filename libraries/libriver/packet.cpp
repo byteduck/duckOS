@@ -143,7 +143,7 @@ Duck::ResultRet<RiverPacket> River::receive_packet(int fd, bool block)  {
 	return Result(NO_PACKET);
 }
 
-void River::send_packet(int fd, sockid_t recipient, const RiverPacket& packet) {
+Result River::send_packet(int fd, sockid_t recipient, const RiverPacket& packet) {
 	auto full_name = packet.endpoint + ":" + packet.path;
 	size_t n_bytes = full_name.length() + 1 + packet.data.size();
 
@@ -159,8 +159,12 @@ void River::send_packet(int fd, sockid_t recipient, const RiverPacket& packet) {
 	if(!packet.data.empty())
 		memcpy(raw_packet->data + full_name.length() + 1, packet.data.data(), packet.data.size());
 
-	if(::write_packet(fd, recipient, sizeof(RawPacket) + n_bytes, raw_packet))
+	if(::write_packet(fd, recipient, sizeof(RawPacket) + n_bytes, raw_packet)) {
 		Log::err("[River] Error writing packet: ", strerror(errno));
+		free(raw_packet);
+		return Result(errno);
+	}
 
 	free(raw_packet);
+	return Result::SUCCESS;
 }

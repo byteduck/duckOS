@@ -152,8 +152,7 @@ namespace River {
 				Duck::Log::err("[River] Couldn't send unregistered message ", _name, ":", path);
 				return MESSAGE_DOES_NOT_EXIST;
 			}
-			std::dynamic_pointer_cast<Message<T>>(msg)->send(recipient, data);
-			return SUCCESS;
+			return std::dynamic_pointer_cast<Message<T>>(msg)->send(recipient, data);
 		}
 
 		template<typename T>

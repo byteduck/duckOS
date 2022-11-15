@@ -87,8 +87,8 @@ ResultRet<std::shared_ptr<Endpoint>> BusConnection::get_endpoint(const std::stri
 	return ret;
 }
 
-void BusConnection::send_packet(const RiverPacket& packet) {
-	River::send_packet(_fd, SOCKETFS_RECIPIENT_HOST, packet);
+Result BusConnection::send_packet(const RiverPacket& packet) {
+	return River::send_packet(_fd, SOCKETFS_RECIPIENT_HOST, packet);
 }
 
 void BusConnection::read_all_packets(bool block) {

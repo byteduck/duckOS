@@ -71,7 +71,7 @@ namespace River {
 
 		BusServer(int fd, ServerType type): _fd(fd), _type(type), _self_pid(getpid()) {}
 
-		void send_packet(int pid, const RiverPacket& packet);
+		Duck::Result send_packet(int pid, const RiverPacket& packet);
 
 		void client_connected(const RiverPacket& packet);
 		void client_disconnected(const RiverPacket& packet);

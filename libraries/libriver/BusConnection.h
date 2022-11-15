@@ -48,7 +48,7 @@ namespace River {
 		Duck::ResultRet<std::shared_ptr<Endpoint>> register_endpoint(const std::string& name);
 		Duck::ResultRet<std::shared_ptr<Endpoint>> get_endpoint(const std::string& name);
 
-		void send_packet(const RiverPacket& packet);
+		Duck::Result send_packet(const RiverPacket& packet);
 		void read_all_packets(bool block);
 		void read_and_handle_packets(bool block);
 		int file_descriptor();
