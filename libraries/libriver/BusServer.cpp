@@ -137,7 +137,7 @@ void BusServer::set_allow_new_endpoints(bool allow) {
 }
 
 Duck::Result BusServer::send_packet(int pid, const RiverPacket& packet) {
-	River::send_packet(_fd, pid, packet);
+	return River::send_packet(_fd, pid, packet);
 }
 
 #define VERIFY_ENDPOINT \
