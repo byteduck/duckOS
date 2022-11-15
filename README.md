@@ -24,6 +24,27 @@ Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.
 - A window manager / compositor called pond
 - Various GUI applications
 - More!
+
+### Future plans
+#### Stuff that may happen soon™.
+- Revamp virtual memory system so it's not as error-prone and easier to debug (named regions, fix race conditions, faster allocation, etc.)
+  - Grant-based shared memory
+- Revamp kernel IPC system to be more efficient (Replace SocketFS with something like Mach or MINIX's grant-based IPC)
+- Better font rendering (Vector fonts, different sizes, etc.)
+- Finish porting GCC, self-host
+- More s t a b i l i t y and s p e e d
+- A better filesystem cache implementation that can free memory when needed and periodically flushes writes
+- More kernel & userspace unit tests
+- Better documentation of kernel, libraries, and applications
+- Some more kernel & userspace debugging tools so I don't have to spend hours knee-deep in the qemu debugger whenever a segfault happens due to a simple bug that could've been avoided with some extra coffee in my system
+
+### Lofty goals
+#### Maybe someday.
+- Multiprocessor (multicore) support
+- x64 / ARM support (?)
+- Slowly transition various modules from the kernel to userspace (ie microkernel)
+- Add Rust into the mix (?)
+- Network support
  
 ### Services
 
@@ -94,26 +115,6 @@ Ports will only compile if their corresponding submodule is downloaded with `git
 - [DOOM](ports/doom)
 - [binutils](ports/binutils)
 - [gcc](ports/gcc) (WIP - not completely functional yet.)
-
-### Known Issues / Limitations
-- Framebuffer scrolling is slow on real hardware. I'm not focusing on fixing this right now until I start working on a window manager.
-- Must be booted off of the master drive on the primary PATA controller as of now.
-- Ext2 triply indirect block pointers cannot be read/written, so there may be issues writing and reading large files
-- A buffer overflow attack on the kernel may be possible, because only pointers passed to syscalls are checked for validity (and not the length of the data to be read/written)
-- Dynamic linking does not currently use CoW to share memory between processes, so each process has its own copy of the library in memory
-- It's pretty unstable
-
-### Future Goals
-- Cut down on memory usage by sharing memory for various commonly used items (libraries, icons, configuration, etc)
-- Better support for real hardware
-- Network support
-- More s t a b i l i t y and s p e e d
-- Multiprocessor (multicore) support
-- An in-house heap implementation
-- More POSIX compatibility
-- Better looking UI with animations and effects such as shadows and blur/transparency
-- Slowly transition various functions from the kernel to userspace (ie microkernel)
-- A better filesystem cache implementation that can free memory when needed and periodically flushes writes
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
