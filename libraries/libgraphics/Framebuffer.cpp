@@ -121,13 +121,7 @@ void Framebuffer::copy_blitting(const Framebuffer& other, Rect other_area, const
 		for(int x = 0; x < self_area.width; x++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
-			unsigned int alpha = COLOR_A(other_val) + 1;
-			unsigned int inv_alpha = 256 - COLOR_A(other_val);
-			this_val = RGBA(
-					(uint8_t)((alpha * COLOR_R(other_val) + inv_alpha * COLOR_R(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_G(other_val) + inv_alpha * COLOR_G(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_A(other_val) + inv_alpha * COLOR_A(this_val)) >> 8));
+			this_val = this_val.blended(other_val);
 		}
 	}
 }
@@ -169,13 +163,7 @@ void Framebuffer::draw_image(const Framebuffer& other, Rect other_area, const Po
 		for(int x = 0; x < self_area.width; x++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = other.data[(other_area.x + x) + (other_area.y + y) * other.width];
-			unsigned int alpha = (unsigned int) COLOR_A(other_val) + 1;
-			unsigned int inv_alpha = 256 - (unsigned int) COLOR_A(other_val);
-			this_val = RGBA(
-					(uint8_t)((alpha * COLOR_R(other_val) + inv_alpha * COLOR_R(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_G(other_val) + inv_alpha * COLOR_G(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_A(other_val) + inv_alpha * COLOR_A(this_val)) >> 8));
+			this_val = this_val.blended(other_val);
 		}
 	}
 }
@@ -210,13 +198,7 @@ void Framebuffer::draw_image_scaled(const Framebuffer& other, const Rect& rect) 
 		for(int x = 0; x < self_area.width; x++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = other.data[(int) (other_area.x + x / scale_x) + (int) (other_area.y + y / scale_y) * other.width];
-			unsigned int alpha = COLOR_A(other_val) + 1;
-			unsigned int inv_alpha = 256 - COLOR_A(other_val);
-			this_val = RGBA(
-					(uint8_t)((alpha * COLOR_R(other_val) + inv_alpha * COLOR_R(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_G(other_val) + inv_alpha * COLOR_G(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_B(other_val) + inv_alpha * COLOR_B(this_val)) >> 8),
-					(uint8_t)((alpha * COLOR_A(other_val) + inv_alpha * COLOR_A(this_val)) >> 8));
+			this_val = this_val.blended(other_val);
 		}
 	}
 }
@@ -262,31 +244,15 @@ void Framebuffer::fill_blitting(Rect area, Color color) const {
 void Framebuffer::fill_gradient_h(Rect area, Color color_a, Color color_b) const {
 	if(color_a == color_b)
 		fill(area, color_a);
-	for(int x = 0; x < area.width; x++) {
-		double pct = (double)x / area.width;
-		double oneminus = 1.0 - pct;
-		fill({area.x + x, area.y, 1, area.height}, RGBA(
-				(uint8_t)(COLOR_R(color_a) * oneminus + COLOR_R(color_b) * pct),
-				(uint8_t)(COLOR_G(color_a) * oneminus + COLOR_G(color_b) * pct),
-				(uint8_t)(COLOR_B(color_a) * oneminus + COLOR_B(color_b) * pct),
-				(uint8_t)(COLOR_A(color_a) * oneminus + COLOR_A(color_b) * pct)
-		));
-	}
+	for(int x = 0; x < area.width; x++)
+		fill({area.x + x, area.y, 1, area.height}, color_a.mixed(color_b, (float) x / area.width));
 }
 
 void Framebuffer::fill_gradient_v(Rect area, Color color_a, Color color_b) const {
 	if(color_a == color_b)
 		fill(area, color_a);
-	for(int y = 0; y < area.height; y++) {
-		double pct = (double) y / area.height;
-		double oneminus = 1.0 - pct;
-		fill({area.x, area.y + y, area.width, 1}, RGBA(
-				(uint8_t)(COLOR_R(color_a) * oneminus + COLOR_R(color_b) * pct),
-				(uint8_t)(COLOR_G(color_a) * oneminus + COLOR_G(color_b) * pct),
-				(uint8_t)(COLOR_B(color_a) * oneminus + COLOR_B(color_b) * pct),
-				(uint8_t)(COLOR_A(color_a) * oneminus + COLOR_A(color_b) * pct)
-		));
-	}
+	for(int y = 0; y < area.height; y++)
+		fill({area.x, area.y + y, area.width, 1}, color_a.mixed(color_b, (float) y / area.height));
 }
 
 void Framebuffer::outline(Rect area, Color color) const {
@@ -357,7 +323,7 @@ Point Framebuffer::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph
 void Framebuffer::multiply(Color color) {
 	for(int y = 0; y < height; y++) {
 		for(int x = 0; x < width; x++) {
-			data[x + y * width] = COLOR_MULT(data[x + y * width], color);
+			data[x + y * width] *= color;
 		}
 	}
 }

@@ -17,10 +17,52 @@ public:
 	uint32_t value;
 
 	inline Color(): b(0), g(0), r(0), a(0) {}
-	inline Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a): b(b), g(g), r(r), a(a) {}
-	inline Color(uint8_t r, uint8_t g, uint8_t b): b(b), g(g), r(r), a(255) {}
-	inline Color(uint32_t raw_value): value(raw_value) {}
+	constexpr Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a): b(b), g(g), r(r), a(a) {}
+	constexpr Color(uint8_t r, uint8_t g, uint8_t b): b(b), g(g), r(r), a(255) {}
+	constexpr Color(uint32_t raw_value): value(raw_value) {}
 	inline operator uint32_t() { return value; }
+
+	[[nodiscard]] constexpr Color blended(Color other) const {
+		unsigned int alpha = other.a + 1;
+		unsigned int inv_alpha = 256 - other.a;
+		return {
+			(uint8_t) ((alpha * other.r + inv_alpha * r) >> 8),
+			(uint8_t) ((alpha * other.g + inv_alpha * g) >> 8),
+			(uint8_t) ((alpha * other.b + inv_alpha * b) >> 8),
+			(uint8_t) ((alpha * other.a + inv_alpha * a) >> 8)
+		};
+	}
+
+	[[nodiscard]] constexpr Color operator*(Color other) const {
+		return {
+				((uint8_t) (((int) r * (int) other.r + 255 ) >> 8)),
+				((uint8_t) (((int) g * (int) other.g + 255 ) >> 8)),
+				((uint8_t) (((int) b * (int) other.b + 255 ) >> 8)),
+				((uint8_t) (((int) a * (int) other.a + 255 ) >> 8)),
+		};
+	}
+
+	constexpr Color operator*=(Color other) {
+		return *this = *this * other;
+	}
+
+	[[nodiscard]] constexpr Color lightened(float amount = 0.25) const {
+		return darkened(1 + amount);
+	}
+
+	[[nodiscard]] constexpr Color darkened(float amount = 0.25) const {
+		return Color(r * amount, g * amount, b * amount, a * amount);
+	}
+
+	[[nodiscard]] constexpr Color mixed(Color other, float percent) const {
+		float oneminus = 1.0 - percent;
+		return Color(
+			(uint8_t)(r * oneminus + other.r * percent),
+			(uint8_t)(g * oneminus + other.g * percent),
+			(uint8_t)(b * oneminus + other.b * percent),
+			(uint8_t)(a * oneminus + other.a * percent)
+		);
+	}
 
 } Color;
 }
@@ -31,12 +73,3 @@ public:
 #define COLOR_B(color) (color.b)
 #define RGB(r,g,b) (Gfx::Color {(uint8_t) (r), (uint8_t) (g), (uint8_t) (b), 255})
 #define RGBA(r,g,b,a) (Gfx::Color { (uint8_t) (r), (uint8_t) (g), (uint8_t) (b), (uint8_t) (a) })
-
-#define COLOR_COMPONENT_MULT(a, b) ((uint8_t) (((unsigned) (a) *  (unsigned) (b) + 255 ) >> 8))
-#define COLOR_MULT(a, b) \
-	RGBA( \
-			COLOR_COMPONENT_MULT(COLOR_R(a), COLOR_R(b)), \
-			COLOR_COMPONENT_MULT(COLOR_G(a), COLOR_G(b)), \
-			COLOR_COMPONENT_MULT(COLOR_B(a), COLOR_B(b)), \
-			COLOR_COMPONENT_MULT(COLOR_A(a), COLOR_A(b)) \
-		)
