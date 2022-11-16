@@ -46,6 +46,8 @@ __DECL_BEGIN
 #define W_OK 3
 #define X_OK 4
 
+#define DEFAULT_PATH "/usr/local/bin:/usr/bin:/bin"
+
 extern char** environ;
 
 pid_t fork();

@@ -28,7 +28,6 @@
 
 char** environ = NULL;
 char** __original_environ = NULL;
-#define DEFAULT_PATH "/usr/local/bin:/usr/bin:/bin"
 
 pid_t fork() {
 	return syscall(SYS_FORK);

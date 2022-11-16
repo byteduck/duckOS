@@ -35,6 +35,15 @@ int Shell::run() {
 	int result = EXIT_SUCCESS;
 	bool is_tty = isatty(STDIN_FILENO);
 	setsid();
+
+	// Setup path
+	char* path_cstr = getenv("PATH");
+	std::string path(path_cstr ? path_cstr : "");
+	if(path.size())
+		path.push_back(':');
+	path.append(DEFAULT_PATH);
+	setenv("PATH", path.c_str(), true);
+
 	while(!should_exit) {
 		getcwd(cwd, 4096);
 
