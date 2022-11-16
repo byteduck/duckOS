@@ -20,8 +20,9 @@
 #include "PTYDevice.h"
 #include "PTYControllerDevice.h"
 
-PTYControllerDevice::PTYControllerDevice(unsigned int id): CharacterDevice(300, id), _output_buffer(1024) {
+PTYControllerDevice::PTYControllerDevice(unsigned int id): CharacterDevice(300, id), _output_buffer(8192) {
 	_pty = (new PTYDevice(id, shared_ptr()))->shared_ptr();
+	_buffer_blocker.set_ready(true);
 }
 
 ssize_t PTYControllerDevice::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
@@ -42,6 +43,7 @@ ssize_t PTYControllerDevice::read(FileDescriptor& fd, size_t offset, SafePointer
 	int off = 0;
 	while(count_loop--)
 		buffer.set(off++, _output_buffer.pop_front());
+	_buffer_blocker.set_ready(_output_buffer.empty());
 	return count;
 }
 
@@ -73,10 +75,26 @@ int PTYControllerDevice::ioctl(unsigned int request, SafePointer<void*> argp) {
 }
 
 size_t PTYControllerDevice::putchars(const uint8_t* buffer, size_t count) {
-	LOCK(_output_lock);
-	count = min(count, _output_buffer.capacity());
+	if(count > _output_buffer.capacity())
+		return -ENOSPC;
+
+	// Acquire lock and wait for space in buffer
+	while(true) {
+		_output_lock.acquire();
+		if(_output_buffer.capacity() - _output_buffer.size() < count) {
+			_output_lock.release();
+			TaskManager::current_thread()->block(_buffer_blocker);
+		} else {
+			break;
+		}
+	}
+
 	size_t count_loop = count;
-	while(count_loop--) _output_buffer.push_back(*(buffer++));
+	while(count_loop--)
+		_output_buffer.push_back(*(buffer++));
+
+	_output_lock.release();
+
 	return count;
 }
 

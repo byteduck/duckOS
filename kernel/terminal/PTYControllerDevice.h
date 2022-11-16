@@ -46,6 +46,7 @@ public:
 private:
 	SpinLock _output_lock, _write_lock, _ref_lock;
 	kstd::circular_queue<uint8_t> _output_buffer;
+	BooleanBlocker _buffer_blocker;
 	kstd::shared_ptr<PTYDevice> _pty;
 	unsigned int num_refs = 1;
 };
