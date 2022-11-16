@@ -23,6 +23,7 @@ Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.
 - A Bochs/Qemu/VirtualBox/Multiboot video driver (640x480x32bpp)
 - A window manager / compositor called pond
 - Various GUI applications
+- Ports of binutils and gcc
 - More!
 
 ### Future plans
@@ -31,7 +32,7 @@ Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.
   - Grant-based shared memory
 - Revamp kernel IPC system to be more efficient (Replace SocketFS with something like Mach or MINIX's grant-based IPC)
 - Better font rendering (Vector fonts, different sizes, etc.)
-- Finish porting GCC, self-host
+- ~~Finish porting GCC~~, self-host
 - More s t a b i l i t y and s p e e d
 - A better filesystem cache implementation that can free memory when needed and periodically flushes writes
 - More kernel & userspace unit tests
@@ -114,7 +115,7 @@ Ports will only compile if their corresponding submodule is downloaded with `git
 
 - [DOOM](ports/doom)
 - [binutils](ports/binutils)
-- [gcc](ports/gcc) (WIP - not completely functional yet.)
+- [gcc](ports/gcc)
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
