@@ -22,6 +22,7 @@
 #include "Lock.h"
 #include "BooleanBlocker.h"
 #include <kernel/kstd/shared_ptr.hpp>
+#include "../Atomic.h"
 
 class Thread;
 class SpinLock: public Lock {
@@ -33,8 +34,8 @@ public:
 	void release() override;
 private:
 	BooleanBlocker _blocker;
-	volatile int _locked = 0;
-	volatile int _times_locked = 0;
+	Atomic<int> _locked = 0;
+	Atomic<int, MemoryOrder::AcqRel> _times_locked = 0;
 	kstd::shared_ptr<Thread> _holding_thread;
 };
 

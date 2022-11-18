@@ -27,20 +27,15 @@ SpinLock::SpinLock() = default;
 SpinLock::~SpinLock() = default;
 
 bool SpinLock::locked() {
-	return _locked;
+	return _times_locked.load(MemoryOrder::SeqCst);
 }
 
 void SpinLock::release() {
 	if(!TaskManager::enabled())
 		return;
 
-	//Decrease counter
-	Atomic::dec(&_times_locked);
-
-	//If the counter is zero, release the lock
-	if(_times_locked == 0) {
-		_holding_thread = kstd::shared_ptr<Thread>();
-		Atomic::store(&_locked, 0);
+	// Decrease counter. If the counter is zero, release the lock
+	if(_times_locked.sub(1, MemoryOrder::Release) == 1) {
 		_blocker.set_ready(true);
 	}
 }
@@ -50,11 +45,13 @@ void SpinLock::acquire() {
 	if(!TaskManager::enabled() || !cur_thread) return; //Tasking isn't initialized yet
 
 	//Loop while the lock is held
-	while(Atomic::swap(&_locked, 1)) {
+	int expected = 0;
+	while(!_times_locked.compare_exchange_strong(expected, 1)) {
 		if(_holding_thread == cur_thread) {
+			// TODO: This is definitely susceptible to a race condition. Figure out how to make a recursive lock that works
 			//We are the holding process, so increment the counter and return
 			_blocker.set_ready(false);
-			Atomic::inc(&_times_locked);
+			_times_locked.add(1);
 			return;
 		}
 		//TODO: Find a good way to unblock just one waiting task
@@ -63,6 +60,5 @@ void SpinLock::acquire() {
 
 	//We now hold the lock
 	_blocker.set_ready(false);
-	Atomic::inc(&_times_locked);
 	_holding_thread = cur_thread;
 }

@@ -410,7 +410,7 @@ void PageDirectory::map_region(const LinkedMemoryRegion& region, bool read_write
 
 		//Set up the pagetable entry
 		size_t table_index = vpage % 1024;
-		Atomic::inc(&_page_tables_num_mapped[directory_index]);
+		_page_tables_num_mapped[directory_index]--;
 		PageTable::Entry *entry = &_page_tables[directory_index]->entries()[table_index];
 		entry->data.present = true;
 		entry->data.read_write = read_write;
@@ -431,7 +431,7 @@ void PageDirectory::unmap_region(const LinkedMemoryRegion& region) {
 		size_t table_index = page % 1024;
 		PageTable::Entry *table = &_page_tables[directory_index]->entries()[table_index];
 		table->value = 0;
-		Atomic::dec(&_page_tables_num_mapped[directory_index]);
+		_page_tables_num_mapped[directory_index]--;
 		if (_page_tables_num_mapped[directory_index] == 0)
 			dealloc_page_table(directory_index);
 
