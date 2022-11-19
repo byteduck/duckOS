@@ -37,6 +37,9 @@ SECTIONS {
 	    _PAGETABLES_END = .;
 		*(COMMON)
 		*(.bss*)
+
+		. = ALIGN(4K);
+		*(.kheap);
 	}
 
 	. = ALIGN(0x1000);

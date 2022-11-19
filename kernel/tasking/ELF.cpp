@@ -133,7 +133,8 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segm
 			MemoryRegion* vmem_region = page_directory->vmem_map().allocate_region(loadloc_pagealigned, loadsize_pagealigned);
 			if(!vmem_region) {
 				//If we failed to allocate the program vmem region, free the tmp region
-				MemoryManager::inst().pmem_map().free_region(tmp_region.phys);
+				ASSERT(false); // TODO
+//				MemoryManager::inst().pmem_map().free_region(tmp_region.phys);
 				KLog::crit("ELF", "Failed to allocate a vmem region in load_elf!");
 				return -ENOMEM;
 			}

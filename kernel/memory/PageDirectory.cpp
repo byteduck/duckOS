@@ -177,22 +177,23 @@ LinkedMemoryRegion PageDirectory::k_alloc_region(size_t mem_size) {
 	}
 
 	//Next, try allocating the physical pages.
-	MemoryRegion* pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size);
-	if(!pmem_region) {
-		PANIC("NO_MEM", "There's no more physical memory left.");
-	}
-
-	used_kernel_pmem += pmem_region->size;
-
-	//Finally, map the pages.
-	pmem_region->related = vmem_region;
-	vmem_region->related = pmem_region;
-	LinkedMemoryRegion region(pmem_region, vmem_region);
-	k_map_region(region, true);
-
-	memset((void*)vmem_region->start, 0, vmem_region->size);
-
-	return region;
+	ASSERT(false); // TODO
+//	MemoryRegion* pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size);
+//	if(!pmem_region) {
+//		PANIC("NO_MEM", "There's no more physical memory left.");
+//	}
+//
+//	used_kernel_pmem += pmem_region->size;
+//
+//	//Finally, map the pages.
+//	pmem_region->related = vmem_region;
+//	vmem_region->related = pmem_region;
+//	LinkedMemoryRegion region(pmem_region, vmem_region);
+//	k_map_region(region, true);
+//
+//	memset((void*)vmem_region->start, 0, vmem_region->size);
+//
+//	return region;
 }
 
 bool new_heap_region = false;
@@ -219,29 +220,28 @@ void* PageDirectory::k_alloc_region_for_heap(size_t mem_size) {
 
 	auto* vmem_region = kernel_vmem_map.allocate_region(mem_size, vregion_storage);
 	if(!vmem_region) {
-		dump_kernel();
 		PANIC("KRNL_NO_VMEM_SPACE", "The kernel could not allocate a vmem region for the heap.");
 	}
 
-	auto* pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size, pregion_storage);
-	if(!pmem_region) {
-		dump_physical();
-		PANIC("NO_MEM", "There's no more physical memory left.");
-	}
-
-	used_kernel_pmem += pmem_region->size;
-
-	//Finally, map the pages and zero out.
-	pmem_region->related = vmem_region;
-	vmem_region->related = pmem_region;
-	LinkedMemoryRegion region(pmem_region, vmem_region);
-	k_map_region(region, true);
-	memset((void*)vmem_region->start, 0x00, vmem_region->size);
-
-	//Set new_heap_region to true so we allocate a new one next time.
-	new_heap_region = true;
-
-	return (void*) region.virt->start;
+	ASSERT(false); // TODO
+//	auto* pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size, pregion_storage);
+//	if(!pmem_region) {
+//		PANIC("NO_MEM", "There's no more physical memory left.");
+//	}
+//
+//	used_kernel_pmem += pmem_region->size;
+//
+//	//Finally, map the pages and zero out.
+//	pmem_region->related = vmem_region;
+//	vmem_region->related = pmem_region;
+//	LinkedMemoryRegion region(pmem_region, vmem_region);
+//	k_map_region(region, true);
+//	memset((void*)vmem_region->start, 0x00, vmem_region->size);
+//
+//	//Set new_heap_region to true so we allocate a new one next time.
+//	new_heap_region = true;
+//
+//	return (void*) region.virt->start;
 }
 
 void PageDirectory::k_after_alloc() {
@@ -263,7 +263,8 @@ void PageDirectory::k_free_region(const LinkedMemoryRegion& region) {
 		return;
 
 	used_kernel_pmem -= region.phys->size;
-	MemoryManager::inst().pmem_map().free_region(region.phys);
+	ASSERT(false); // TODO
+//	MemoryManager::inst().pmem_map().free_region(region.phys);
 }
 
 bool PageDirectory::k_free_region(void* virtaddr) {
@@ -279,7 +280,8 @@ bool PageDirectory::k_free_region(void* virtaddr) {
 	k_unmap_region(region);
 	kernel_vmem_map.free_region(region.virt);
 	used_kernel_pmem -= region.phys->size;
-	MemoryManager::inst().pmem_map().free_region(region.phys);
+	ASSERT(false); // TODO
+//	MemoryManager::inst().pmem_map().free_region(region.phys);
 	return true;
 }
 
@@ -365,7 +367,8 @@ PageDirectory::~PageDirectory() {
 			} else if(cur->is_shm) {
 				cur->related->shm_deref();
 			} else if(!cur->reserved) {
-				MemoryManager::inst().pmem_map().free_region(cur->related);
+				ASSERT(false); // TODO
+//				MemoryManager::inst().pmem_map().free_region(cur->related);
 			}
 		}
 		cur = cur->next;
@@ -472,28 +475,29 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t mem_size, bool read_wri
 	}
 
 	//Next, try allocating the physical pages.
-	MemoryRegion *pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size);
-	if (!pmem_region) {
-		PANIC("NO_MEM", "There's no more physical memory left.");
-	}
-	_used_pmem += pmem_region->size;
-
-	//Finally, map the pages.
-	pmem_region->related = vmem_region;
-	vmem_region->related = pmem_region;
-	LinkedMemoryRegion region(pmem_region, vmem_region);
-	map_region(region, read_write);
-
-	if(is_mapped()) {
-		memset((void*)vmem_region->start, 0, vmem_region->size);
-	} else {
-		//If the region isn't mapped, we have to map it to the kernel temporarily to zero it out
-		auto kernel_region = k_map_physical_region(pmem_region, true);
-		memset((void*)kernel_region.virt->start, 0, vmem_region->size);
-		k_free_virtual_region(kernel_region);
-	}
-
-	return region;
+	ASSERT(false); // TODO
+//	MemoryRegion *pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size);
+//	if (!pmem_region) {
+//		PANIC("NO_MEM", "There's no more physical memory left.");
+//	}
+//	_used_pmem += pmem_region->size;
+//
+//	//Finally, map the pages.
+//	pmem_region->related = vmem_region;
+//	vmem_region->related = pmem_region;
+//	LinkedMemoryRegion region(pmem_region, vmem_region);
+//	map_region(region, read_write);
+//
+//	if(is_mapped()) {
+//		memset((void*)vmem_region->start, 0, vmem_region->size);
+//	} else {
+//		//If the region isn't mapped, we have to map it to the kernel temporarily to zero it out
+//		auto kernel_region = k_map_physical_region(pmem_region, true);
+//		memset((void*)kernel_region.virt->start, 0, vmem_region->size);
+//		k_free_virtual_region(kernel_region);
+//	}
+//
+//	return region;
 }
 
 LinkedMemoryRegion PageDirectory::allocate_stack_region(size_t mem_size, bool read_write) {
@@ -506,28 +510,29 @@ LinkedMemoryRegion PageDirectory::allocate_stack_region(size_t mem_size, bool re
 	}
 
 	//Next, try allocating the physical pages.
-	MemoryRegion *pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size);
-	if (!pmem_region) {
-		PANIC("NO_MEM", "There's no more physical memory left.");
-	}
-	_used_pmem += pmem_region->size;
-
-	//Finally, map the pages.
-	pmem_region->related = vmem_region;
-	vmem_region->related = pmem_region;
-	LinkedMemoryRegion region(pmem_region, vmem_region);
-	map_region(region, read_write);
-
-	if(is_mapped()) {
-		memset((void*)vmem_region->start, 0, vmem_region->size);
-	} else {
-		//If the region isn't mapped, we have to map it to the kernel temporarily to zero it out
-		auto kernel_region = k_map_physical_region(pmem_region, true);
-		memset((void*)kernel_region.virt->start, 0, vmem_region->size);
-		k_free_virtual_region(kernel_region);
-	}
-
-	return region;
+	ASSERT(false); //TODO
+//	MemoryRegion *pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size);
+//	if (!pmem_region) {
+//		PANIC("NO_MEM", "There's no more physical memory left.");
+//	}
+//	_used_pmem += pmem_region->size;
+//
+//	//Finally, map the pages.
+//	pmem_region->related = vmem_region;
+//	vmem_region->related = pmem_region;
+//	LinkedMemoryRegion region(pmem_region, vmem_region);
+//	map_region(region, read_write);
+//
+//	if(is_mapped()) {
+//		memset((void*)vmem_region->start, 0, vmem_region->size);
+//	} else {
+//		//If the region isn't mapped, we have to map it to the kernel temporarily to zero it out
+//		auto kernel_region = k_map_physical_region(pmem_region, true);
+//		memset((void*)kernel_region.virt->start, 0, vmem_region->size);
+//		k_free_virtual_region(kernel_region);
+//	}
+//
+//	return region;
 }
 
 LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size, bool read_write) {
@@ -538,28 +543,30 @@ LinkedMemoryRegion PageDirectory::allocate_region(size_t vaddr, size_t mem_size,
 		return {nullptr, nullptr};
 
 	//Next, try allocating the physical pages.
-	MemoryRegion *pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size);
-	if (!pmem_region) {
-		PANIC("NO_MEM", "There's no more physical memory left.");
-	}
-	_used_pmem += pmem_region->size;
-
-	//Finally, map the pages.
-	pmem_region->related = vmem_region;
-	vmem_region->related = pmem_region;
-	LinkedMemoryRegion region(pmem_region, vmem_region);
-	map_region(region, read_write);
-
-	if(is_mapped()) {
-		memset((void*)vmem_region->start, 0, vmem_region->size);
-	} else {
-		//If the region isn't mapped, we have to map it to the kernel temporarily to zero it out
-		auto kernel_region = k_map_physical_region(pmem_region, true);
-		memset((void*)kernel_region.virt->start, 0, vmem_region->size);
-		k_free_virtual_region(kernel_region);
-	}
-
-	return region;
+	ASSERT(false);
+	// TODO
+//	MemoryRegion *pmem_region = MemoryManager::inst().pmem_map().allocate_region(mem_size);
+//	if (!pmem_region) {
+//		PANIC("NO_MEM", "There's no more physical memory left.");
+//	}
+//	_used_pmem += pmem_region->size;
+//
+//	//Finally, map the pages.
+//	pmem_region->related = vmem_region;
+//	vmem_region->related = pmem_region;
+//	LinkedMemoryRegion region(pmem_region, vmem_region);
+//	map_region(region, read_write);
+//
+//	if(is_mapped()) {
+//		memset((void*)vmem_region->start, 0, vmem_region->size);
+//	} else {
+//		//If the region isn't mapped, we have to map it to the kernel temporarily to zero it out
+//		auto kernel_region = k_map_physical_region(pmem_region, true);
+//		memset((void*)kernel_region.virt->start, 0, vmem_region->size);
+//		k_free_virtual_region(kernel_region);
+//	}
+//
+//	return region;
 }
 
 void PageDirectory::free_region(const LinkedMemoryRegion& region) {
@@ -582,7 +589,8 @@ void PageDirectory::free_region(const LinkedMemoryRegion& region) {
 		region.phys->cow_deref();
 	} else {
 		_used_pmem -= region.phys->size;
-		MemoryManager::inst().pmem_map().free_region(region.phys);
+		ASSERT(false); // TODO
+//		MemoryManager::inst().pmem_map().free_region(region.phys);
 	}
 }
 
@@ -602,7 +610,8 @@ bool PageDirectory::free_region(size_t virtaddr, size_t size) {
 	if(!vregion->cow.marked_cow) {
 		//Split the physical region if it isn't CoW
 		size_t pregion_split_start = pregion->start + (virtaddr - vregion->start);
-		pregion = MemoryManager::inst().pmem_map().split_region(pregion, pregion_split_start, size);
+		ASSERT(false); // TODO
+//		pregion = MemoryManager::inst().pmem_map().split_region(pregion, pregion_split_start, size);
 		if(!pregion) return false;
 	}
 
@@ -1008,39 +1017,4 @@ bool PageDirectory::is_mapped() {
 	asm volatile("mov %%cr3, %0" : "=r"(current_page_directory));
 	return current_page_directory == entries_physaddr();
 
-}
-
-void PageDirectory::dump_all() {
-	dump_physical();
-	dump_kernel();
-	dump();
-}
-
-void PageDirectory::dump_physical() {
-	MemoryRegion* cur = MemoryManager::inst().pmem_map().first_region();
-	printf("\nPHYSICAL:\n");
-	while(cur) {
-		cur->print();
-		cur = cur->next;
-	}
-}
-
-void PageDirectory::dump_kernel() {
-	MemoryRegion* cur = MemoryManager::inst().pmem_map().first_region();
-	printf("\nKERNEL:\n");
-	cur = kernel_vmem_map.first_region();
-	while(cur) {
-		cur->print();
-		cur = cur->next;
-	}
-}
-
-void PageDirectory::dump() {
-	printf("\nPROGRAM:\n");
-	MemoryRegion* cur = _vmem_map.first_region();
-	while(cur) {
-		cur->print();
-		cur = cur->next;
-	}
-	printf("\n");
 }

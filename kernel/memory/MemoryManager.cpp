@@ -37,6 +37,10 @@ size_t total_bytes_ram = 0;
 size_t reserved_bytes_ram = 0;
 size_t bad_bytes_ram = 0;
 
+uint8_t early_kheap_memory[0x100000]; // 1MiB
+size_t used_early_kheap_memory = 0;
+bool setup_paging = false;
+
 MemoryManager* MemoryManager::_inst;
 
 MemoryManager::MemoryManager() {
@@ -87,18 +91,18 @@ void MemoryManager::setup_paging() {
 	);
 
 	//Setup the pmem map
-	_pmem_map = MemoryMap(PAGE_SIZE, &multiboot_memory_regions[0]);
-	MemoryRegion* text_region = _pmem_map.allocate_region(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, &early_pmem_text_region_storage[0], &early_pmem_text_region_storage[1]);
-	if(!text_region)
-		PANIC("KRNL_MAP_FAIL", "The kernel's text section could not be allocated in the physical memory map.");
-	MemoryRegion* data_region = _pmem_map.allocate_region(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, &early_pmem_data_region_storage[0], &early_pmem_data_region_storage[1]);
-	if(!text_region)
-		PANIC("KRNL_MAP_FAIL", "The kernel's data section could not be allocated in the physical memory map.");
-	_pmem_map.recalculate_memory_totals();
-
-	//Now, map and write everything to the directory
-	PageDirectory::map_kernel(text_region, data_region);
-	kernel_page_directory.update_kernel_entries();
+	ASSERT(false); //TODO
+////	MemoryRegion* text_region = _pmem_map.allocate_region(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, &early_pmem_text_region_storage[0], &early_pmem_text_region_storage[1]);
+////	if(!text_region)
+////		PANIC("KRNL_MAP_FAIL", "The kernel's text section could not be allocated in the physical memory map.");
+////	MemoryRegion* data_region = _pmem_map.allocate_region(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, &early_pmem_data_region_storage[0], &early_pmem_data_region_storage[1]);
+////	if(!text_region)
+////		PANIC("KRNL_MAP_FAIL", "The kernel's data section could not be allocated in the physical memory map.");
+////	_pmem_map.recalculate_memory_totals();
+//
+//	//Now, map and write everything to the directory
+//	PageDirectory::map_kernel(text_region, data_region);
+//	kernel_page_directory.update_kernel_entries();
 }
 
 void MemoryManager::load_page_directory(const kstd::shared_ptr<PageDirectory>& page_directory) {
@@ -112,12 +116,6 @@ void MemoryManager::load_page_directory(PageDirectory* page_directory) {
 void MemoryManager::load_page_directory(PageDirectory& page_directory) {
 	asm volatile("movl %0, %%cr3" :: "r"(page_directory.entries_physaddr()));
 }
-
-
-MemoryMap& MemoryManager::pmem_map() {
-	return _pmem_map;
-}
-
 
 void MemoryManager::page_fault_handler(struct Registers *r) {
 	Interrupt::Disabler disabler;
@@ -147,11 +145,13 @@ void MemoryManager::page_fault_handler(struct Registers *r) {
 
 
 size_t MemoryManager::get_used_mem() {
-	return pmem_map().used_memory();
+	ASSERT(false); //TODO
+//	return pmem_map().used_memory();
 }
 
 size_t MemoryManager::get_reserved_mem() {
-	return pmem_map().reserved_memory();
+	ASSERT(false); //TODO
+//	return pmem_map().reserved_memory();
 }
 
 size_t MemoryManager::get_usable_mem() {
@@ -197,21 +197,27 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 					mmap_entry->addr_high, mmap_entry->addr_low);
 		} else {
 			//Otherwise, round up the address of the entry to a page boundary and round the size down to a page boundary
-			MemoryRegion& region = multiboot_memory_regions[num_multiboot_memory_regions];
 			uint32_t addr_pagealigned = ((mmap_entry->addr_low + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
 			uint32_t size_pagealigned = ((mmap_entry->len_low - (addr_pagealigned - mmap_entry->addr_low)) / PAGE_SIZE) * PAGE_SIZE;
 			if(size_pagealigned) {
 				//If the page-aligned size is more than zero (eg mmap_entry->len >= PAGE_SIZE), interpret it
-				region = MemoryRegion(addr_pagealigned, size_pagealigned);
-				region.heap_allocated = false;
-				region.reserved = mmap_entry->type == MULTIBOOT_MEMORY_RESERVED;
-				region.used = mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE;
-				total_bytes_ram += region.size;
-				if(!region.used) usable_bytes_ram += region.size;
-				if(region.reserved) reserved_bytes_ram += region.size;
-				if(mmap_entry->type == MULTIBOOT_MEMORY_BADRAM) bad_bytes_ram += region.size;
-				num_multiboot_memory_regions++;
-				KLog::dbg("MemoryManager", "Adding memory region from 0x%x -> 0x%x (%s, %s)", region.start, region.start + (region.size - 1), region.used ? "Used" : "Unused", region.reserved ? "Reserved" : "Unreserved");
+				auto region = new PhysicalRegion(
+					addr_pagealigned / PAGE_SIZE,
+					size_pagealigned / PAGE_SIZE,
+					mmap_entry->type == MULTIBOOT_MEMORY_RESERVED,
+					mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE
+				);
+				total_bytes_ram += size_pagealigned;
+
+				if(!region->reserved())
+					usable_bytes_ram += size_pagealigned;
+				else
+					reserved_bytes_ram += size_pagealigned;
+
+				if(mmap_entry->type == MULTIBOOT_MEMORY_BADRAM)
+					bad_bytes_ram += size_pagealigned;
+
+				KLog::dbg("MemoryManager", "Adding memory region at page %x of %x pages (%s, %s)", region->start_page(), region->num_pages(), !region->free_pages() ? "Used" : "Unused", region->reserved() ? "Reserved" : "Unreserved");
 			} else {
 				//Otherwise, ignore it
 				KLog::dbg("MemoryManager", "Ignoring too-small memory region at 0x%x", mmap_entry->addr_low);
@@ -219,13 +225,6 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 		}
 		mmap_offset += mmap_entry->size + sizeof(mmap_entry->size);
 		mmap_entry = (struct multiboot_mmap_entry*) ((size_t)mmap_entry + mmap_entry->size + sizeof(mmap_entry->size));
-	}
-
-	//Create the linked list of memory regions
-	for(auto i = 0; i < num_multiboot_memory_regions; i++) {
-		MemoryRegion& region = multiboot_memory_regions[i];
-		region.prev = i ? &multiboot_memory_regions[i - 1] : nullptr;
-		region.next = i < num_multiboot_memory_regions - 1 ? &multiboot_memory_regions[i + 1] : nullptr;
 	}
 }
 
@@ -239,6 +238,16 @@ void liballoc_unlock() {
 
 void *liballoc_alloc(int pages) {
 	PageDirectory::used_kheap_pmem += pages * PAGE_SIZE;
+
+	// If we still have early kheap memory, use it
+	if(pages * PAGE_SIZE < (sizeof(early_kheap_memory) - used_early_kheap_memory)) {
+		void* ptr = early_kheap_memory + used_early_kheap_memory;
+		used_early_kheap_memory += pages * PAGE_SIZE;
+		memset(ptr, 0, pages * PAGE_SIZE);
+		return ptr;
+	}
+
+	ASSERT(setup_paging);
 	return PageDirectory::k_alloc_region_for_heap(pages * PAGE_SIZE);
 }
 
@@ -247,6 +256,11 @@ void liballoc_afteralloc(void* ptr_alloced) {
 }
 
 void liballoc_free(void *ptr, int pages) {
+	if(ptr > early_kheap_memory && ptr < early_kheap_memory + sizeof(early_kheap_memory)) {
+		KLog::dbg("Memory", "Tried freeing early kheap memory! This doesn't do anything.");
+		return;
+	}
+
 	PageDirectory::used_kheap_pmem -= pages * PAGE_SIZE;
 	PageDirectory::k_free_region(ptr);
 }

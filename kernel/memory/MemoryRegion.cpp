@@ -66,7 +66,8 @@ void MemoryRegion::cow_deref() {
 	lock.acquire();
 	cow.num_refs--;
 	if(!cow.num_refs) {
-		MemoryManager::inst().pmem_map().free_region(this);
+		ASSERT(false); // TODO
+//		MemoryManager::inst().pmem_map().free_region(this);
 	}
 	lock.release();
 }
@@ -83,7 +84,8 @@ void MemoryRegion::shm_deref() {
 	if(!shm_refs) {
 		PageDirectory::deregister_shared_region(this);
 		lock.release();
-		MemoryManager::inst().pmem_map().free_region(this);
+		ASSERT(false); // TODO
+//		MemoryManager::inst().pmem_map().free_region(this);
 		return;
 	}
 	lock.release();

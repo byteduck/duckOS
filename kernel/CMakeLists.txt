@@ -98,6 +98,11 @@ SET(KERNEL_SRCS
         memory/MemoryMap.cpp
         memory/LinkedMemoryRegion.cpp
         memory/Stack.h
+        memory/PhysicalRegion.cpp
+        memory/PhysicalPage.cpp
+        memory/VMRegion.cpp
+        memory/AnonymousVMRegion.cpp
+        memory/BuddyZone.cpp
         device/PATADevice.cpp
         CommandLine.cpp
         tasking/Signal.cpp

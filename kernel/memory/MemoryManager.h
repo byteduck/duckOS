@@ -25,6 +25,9 @@
 #include "PageTable.h"
 #include "PageDirectory.h"
 #include "MemoryMap.h"
+#include "PhysicalPage.h"
+#include "PhysicalRegion.h"
+#include "BuddyZone.h"
 #include <kernel/tasking/SpinLock.h>
 
 #define PAGING_4KiB 0
@@ -83,12 +86,8 @@ public:
 	PageTable::Entry kernel_early_page_table_entries1[1024] __attribute__((aligned(4096)));
 	PageTable::Entry kernel_early_page_table_entries2[1024] __attribute__((aligned(4096)));
 
-	MemoryMap _pmem_map = {0,nullptr};
-	MemoryRegion kernel_pmem_region = {0,0};
-	MemoryRegion multiboot_memory_regions[32];
 	MemoryRegion early_pmem_text_region_storage[2];
 	MemoryRegion early_pmem_data_region_storage[2];
-	uint8_t num_multiboot_memory_regions = 0;
 
 	SpinLock liballoc_spinlock;
 
@@ -114,11 +113,10 @@ public:
 	 */
 	void page_fault_handler(struct Registers *r);
 
-	/**
-	 * Get the physical memory bitmap.
-	 * @return The physical memory bitmap.
-	 */
-	MemoryMap& pmem_map();
+	/** Gets a reference to the given physical page (indexed by page number, NOT address.) **/
+	PhysicalPage& get_physical_page(size_t page_number) const {
+		return m_physical_pages[page_number];
+	}
 
 	/**
 	 * Used when setting up paging initially in order to map an entire page table starting at a virtual address.
@@ -176,7 +174,12 @@ public:
 	 void parse_mboot_memory_map(multiboot_info* header, multiboot_mmap_entry* first_entry);
 
 private:
+	friend class PhysicalRegion;
+
 	static MemoryManager* _inst;
+	PhysicalPage* m_physical_pages;
+	size_t m_num_physical_pages;
+	kstd::vector<PhysicalRegion*> m_physical_regions;
 };
 
 void liballoc_lock();
