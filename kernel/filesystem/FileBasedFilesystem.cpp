@@ -36,12 +36,12 @@ Result FileBasedFilesystem::read_logical_block(size_t block, uint8_t *buffer) {
 Result FileBasedFilesystem::read_logical_blocks(size_t block, size_t count, uint8_t *buffer) {
 	LOCK(lock);
 	int code = _file->seek(block * logical_block_size(), SEEK_SET);
-	if(code < 0) return code;
+	if(code < 0) return Result(code);
 
 	ssize_t nread = _file->read(KernelPointer<uint8_t>(buffer), count * logical_block_size());
-	if(nread < 0) return nread;
-	if(nread != count * logical_block_size()) return -EIO;
-	return SUCCESS;
+	if(nread < 0) return Result(nread);
+	if(nread != count * logical_block_size()) return Result(-EIO);
+	return Result(SUCCESS);
 }
 
 Result FileBasedFilesystem::write_logical_block(size_t block, const uint8_t *buffer) {
@@ -51,12 +51,12 @@ Result FileBasedFilesystem::write_logical_block(size_t block, const uint8_t *buf
 Result FileBasedFilesystem::write_logical_blocks(size_t block, size_t count, const uint8_t *buffer) {
 	LOCK(lock);
 	int code = _file->seek(block * logical_block_size(), SEEK_SET);
-	if(code < 0) return code;
+	if(code < 0) return Result(code);
 
 	ssize_t nwrote = _file->write(KernelPointer<const uint8_t>(buffer), count * logical_block_size());
-	if(nwrote < 0) return nwrote;
-	if(nwrote != count * logical_block_size()) return -EIO;
-	return SUCCESS;
+	if(nwrote < 0) return Result(nwrote);
+	if(nwrote != count * logical_block_size()) return Result(-EIO);
+	return Result(SUCCESS);
 }
 
 size_t FileBasedFilesystem::logical_block_size() {
@@ -76,33 +76,34 @@ Result FileBasedFilesystem::read_block(size_t block, uint8_t *buffer) {
 
 	int res = _file->seek(block * block_size(), SEEK_SET);
 	if (res < 0)
-		return res;
+		return Result(res);
 
 	ssize_t nread = _file->read(KernelPointer<uint8_t>(buffer), block_size());
 	if (nread == 0)
-		return -EIO;
+		return Result(-EIO);
 	else if(nread < 0)
-		return nread;
+		return Result(nread);
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result FileBasedFilesystem::read_blocks(size_t block, size_t count, uint8_t *buffer) {
-	Result res = SUCCESS;
+	Result res = Result(SUCCESS);
 	for(size_t i = 0; i < count; i++) {
 		res = read_block(block + i, buffer + block_size() * i);
-		if(res.is_error()) return res;
+		if(res.is_error())
+			return res;
 	}
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result FileBasedFilesystem::write_blocks(size_t block, size_t count, const uint8_t* buffer) {
-	Result res = SUCCESS;
+	Result res = Result(SUCCESS);
 	for(size_t i = 0; i < count; i++) {
 		res = write_block(block + i, buffer + i * block_size());
-		if(res.is_error()) return res;
+		if(res.is_error()) return Result(res);
 	}
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
@@ -110,15 +111,15 @@ Result FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
 
 	int res = _file->seek(block * block_size(), SEEK_SET);
 	if(res < 0)
-		return res;
+		return Result(res);
 
 	ssize_t nwrote = _file->write(KernelPointer<const uint8_t>(buffer), block_size());
 	if(nwrote == 0)
-		return -EIO;
+		return Result(-EIO);
 	else if(nwrote < 0)
-		return nwrote;
+		return Result(nwrote);
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result FileBasedFilesystem::zero_block(size_t block) {
@@ -128,7 +129,7 @@ Result FileBasedFilesystem::zero_block(size_t block) {
 
 	int res = _file->seek(block * block_size(), SEEK_SET);
 	if(res < 0)
-		return res;
+		return Result(res);
 
 	auto* zero_buf = new uint8_t[block_size()];
 	memset(zero_buf, 0, block_size());
@@ -137,28 +138,28 @@ Result FileBasedFilesystem::zero_block(size_t block) {
 	delete[] zero_buf;
 
 	if(nwrote == 0)
-		return -EIO;
+		return Result(-EIO);
 	else if(nwrote < 0)
-		return nwrote;
+		return Result(nwrote);
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result FileBasedFilesystem::truncate_block(size_t block, size_t new_size) {
-	if(new_size >= block_size()) return -EOVERFLOW;
+	if(new_size >= block_size()) return Result(-EOVERFLOW);
 	LOCK(lock);
 
 	//TODO: Implementation that doesn't require allocating a buffer
 
 	int res = _file->seek(block * block_size(), SEEK_SET);
 	if(res < 0)
-		return res;
+		return Result(res);
 
 	auto* buf = new uint8_t[block_size()];
 	res = _file->read(KernelPointer<uint8_t>(buf), block_size());
 	if(res < 0) {
 		delete[] buf;
-		return res;
+		return Result(res);
 	}
 
 	memset(buf + new_size, 0, (int)(block_size() - new_size));
@@ -166,11 +167,11 @@ Result FileBasedFilesystem::truncate_block(size_t block, size_t new_size) {
 	delete[] buf;
 
 	if(nwrote == 0)
-		return -EIO;
+		return Result(-EIO);
 	else if(nwrote < 0)
-		return nwrote;
+		return Result(nwrote);
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 ResultRet<kstd::shared_ptr<Inode>> FileBasedFilesystem::get_cached_inode(ino_t id) {
@@ -178,7 +179,7 @@ ResultRet<kstd::shared_ptr<Inode>> FileBasedFilesystem::get_cached_inode(ino_t i
 	for(size_t i = 0; i < _inode_cache.size(); i++) {
 		if(_inode_cache[i]->id == id) return _inode_cache[i];
 	}
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 void FileBasedFilesystem::add_cached_inode(const kstd::shared_ptr<Inode> &inode) {
@@ -209,7 +210,7 @@ ResultRet<kstd::shared_ptr<Inode>> FileBasedFilesystem::get_inode(ino_t id) {
 			auto ins = kstd::shared_ptr<Inode>(in);
 			add_cached_inode(ins);
 			return ins;
-		} else return -ENOENT;
+		} else return Result(-ENOENT);
 	} else {
 		return inode_perhaps.value();
 	}

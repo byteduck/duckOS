@@ -21,7 +21,6 @@
 #include "kernel/kstd/kstdio.h"
 
 Result::Result(int code): _code(code) {
-	ASSERT(code <= 0);
 }
 
 bool Result::is_success() const {

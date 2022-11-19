@@ -50,13 +50,13 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 	//Open the executable
 	auto fd_or_error = VFS::inst().open((kstd::string&) executable_loc, O_RDONLY, 0, file_open_user, args->working_dir);
 	if(fd_or_error.is_error())
-		return fd_or_error.code();
+		return fd_or_error.result();
 	auto fd = fd_or_error.value();
 
 	//Read info
 	auto info_or_err = ELF::read_info(fd, file_open_user);
 	if(info_or_err.is_error())
-		return info_or_err.code();
+		return info_or_err.result();
 	auto info = info_or_err.value();
 
 	//If there's an interpreter, we need to change the arguments accordingly
@@ -64,7 +64,7 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 		//Get the full path of the program we're trying to run
 		auto resolv = VFS::inst().resolve_path((kstd::string&) executable_loc, args->working_dir, file_open_user);
 		if(resolv.is_error())
-			return resolv.code();
+			return resolv.result();
 
 		//Add the interpreter + the full path of the program to the args
 		auto new_argv = kstd::vector<kstd::string>();
@@ -84,7 +84,7 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 	//Load the ELF into the process's page directory and set proc->current_brk
 	auto brk_or_err = ELF::load_sections(*info.fd, info.segments, proc->_page_directory);
 	if(brk_or_err.is_error())
-		return brk_or_err.code();
+		return brk_or_err.result();
 
 	return proc->_self_ptr;
 }
@@ -1027,7 +1027,7 @@ int Process::sys_threadjoin(tid_t tid, UserspacePointer<void*> retp) {
 	auto cur_thread = TaskManager::current_thread();
 	if(tid > _threads.size() || !_threads[tid - 1])
 		return -ESRCH;
-	Result result = cur_thread->join(cur_thread, _threads[tid - 1], retp).code();
+	Result result = cur_thread->join(cur_thread, _threads[tid - 1], retp);
 	if(result.is_success()) {
 		ASSERT(_threads[tid - 1]->state() == Thread::DEAD);
 		_threads[tid - 1].reset();

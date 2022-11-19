@@ -121,12 +121,12 @@ bool PTYFSInode::can_read(const FileDescriptor& fd) {
 	return _pty->can_read(fd);
 }
 
-Result PTYFSInode::add_entry(const kstd::string& name, Inode& inode) { return -EROFS; }
-ResultRet<kstd::shared_ptr<Inode>> PTYFSInode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) { return -EROFS; }
-Result PTYFSInode::remove_entry(const kstd::string& name) { return -EROFS; }
-Result PTYFSInode::truncate(off_t length) { return -EROFS; }
-Result PTYFSInode::chmod(mode_t mode) { return -EROFS; }
-Result PTYFSInode::chown(uid_t uid, gid_t gid) { return -EROFS; }
+Result PTYFSInode::add_entry(const kstd::string& name, Inode& inode) { return Result(-EROFS); }
+ResultRet<kstd::shared_ptr<Inode>> PTYFSInode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) { return Result(-EROFS); }
+Result PTYFSInode::remove_entry(const kstd::string& name) { return Result(-EROFS); }
+Result PTYFSInode::truncate(off_t length) { return Result(-EROFS); }
+Result PTYFSInode::chmod(mode_t mode) { return Result(-EROFS); }
+Result PTYFSInode::chown(uid_t uid, gid_t gid) { return Result(-EROFS); }
 void PTYFSInode::open(FileDescriptor& fd, int options) {}
 void PTYFSInode::close(FileDescriptor& fd) {}
-ResultRet<kstd::shared_ptr<LinkedInode>> PTYFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) { return -ENOLINK; }
+ResultRet<kstd::shared_ptr<LinkedInode>> PTYFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) { return Result(-ENOLINK); }

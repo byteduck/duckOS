@@ -57,10 +57,10 @@ char* PTYFS::name() {
 ResultRet<kstd::shared_ptr<Inode>> PTYFS::get_inode(ino_t id) {
 	LOCK(_lock);
 	if(!id)
-		return -ENOENT;
+		return Result(-ENOENT);
 	for(size_t i = 0; i < _entries.size(); i++)
 		if(_entries[i]->id == id) return static_cast<kstd::shared_ptr<Inode>>(_entries[i]);
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 ino_t PTYFS::root_inode_id() {

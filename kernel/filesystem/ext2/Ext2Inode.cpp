@@ -122,7 +122,8 @@ ssize_t Ext2Inode::read(size_t start, size_t length, SafePointer<uint8_t> buffer
 	if(_metadata.size == 0) return 0;
 	if(start > _metadata.size) return 0;
 	if(length == 0) return 0;
-	if(!exists()) return -ENOENT; //Inode was deleted
+	if(!exists())
+		return -ENOENT; //Inode was deleted
 
 	LOCK(lock);
 
@@ -292,8 +293,8 @@ ino_t Ext2Inode::find_id(const kstd::string& find_name) {
 
 Result Ext2Inode::add_entry(const kstd::string &name, Inode &inode) {
 	ASSERT(inode.fs.fsid() == ext2fs().fsid());
-	if(!metadata().is_directory()) return -ENOTDIR;
-	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
+	if(!metadata().is_directory()) return Result(-ENOTDIR);
+	if(!name.length() || name.length() > NAME_MAXLEN) return Result(-ENAMETOOLONG);
 
 	LOCK(lock);
 
@@ -307,7 +308,7 @@ Result Ext2Inode::add_entry(const kstd::string &name, Inode &inode) {
 		buf->name[buf->name_length] = '\0';
 		if(name == buf->name) {
 			delete buf;
-			return -EEXIST;
+			return Result(-EEXIST);
 		}
 		entries.push_back(*buf);
 	}
@@ -333,17 +334,18 @@ Result Ext2Inode::add_entry(const kstd::string &name, Inode &inode) {
 		if(res.is_error()) return res;
 	}
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 ResultRet<kstd::shared_ptr<Inode>> Ext2Inode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) {
-	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
+	if(!name.length() || name.length() > NAME_MAXLEN) return Result(-ENAMETOOLONG);
 
 	LOCK(lock);
 
 	//Create the inode
 	auto inode_or_err = ext2fs().allocate_inode(mode, uid, gid, 0, id);
-	if(inode_or_err.is_error()) return inode_or_err.code();
+	if(inode_or_err.is_error())
+		return inode_or_err.result();
 
 	if(IS_DIR(mode)) {
 		//Increase hardlink count to account for .. if the new entry is a directory
@@ -365,8 +367,8 @@ ResultRet<kstd::shared_ptr<Inode>> Ext2Inode::create_entry(const kstd::string& n
 }
 
 Result Ext2Inode::remove_entry(const kstd::string &name) {
-	if(!metadata().is_directory()) return -ENOTDIR;
-	if(!name.length() || name.length() > NAME_MAXLEN) return -ENAMETOOLONG;
+	if(!metadata().is_directory()) return Result(-ENOTDIR);
+	if(!name.length() || name.length() > NAME_MAXLEN) return Result(-ENAMETOOLONG);
 
 	LOCK(lock);
 
@@ -391,18 +393,19 @@ Result Ext2Inode::remove_entry(const kstd::string &name) {
 	delete buf;
 
 	//If we didn't find it or the inode doesn't exist for some reason, return with an error
-	if(!found) return -ENOENT;
+	if(!found) return Result(-ENOENT);
 	auto child_or_err = ext2fs().get_inode(entries[entry_index].id);
 	if(child_or_err.is_error()){
 		KLog::warn("ext2", "Orphaned directory entry in inode %d", id);
-		return child_or_err.code();
+		return child_or_err.result();
 	}
 
 	//Reduce the child's hardlink count if a file, or try_remove_dir if a directory
 	auto ext2ino = (kstd::shared_ptr<Ext2Inode>) child_or_err.value();
 	if(ext2ino->metadata().is_directory()) {
 		auto result = ext2ino->try_remove_dir();
-		if(result.is_error()) return result.code();
+		if(result.is_error())
+			return result;
 	} else {
 		ext2ino->reduce_hardlink_count();
 	}
@@ -415,12 +418,12 @@ Result Ext2Inode::remove_entry(const kstd::string &name) {
 		res = write_to_disk();
 		if(res.is_error()) return res;
 	}
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result Ext2Inode::truncate(off_t length) {
-	if(length < 0) return -EINVAL;
-	if((size_t)length == _metadata.size) return SUCCESS;
+	if(length < 0) return Result(-EINVAL);
+	if((size_t)length == _metadata.size) return Result(SUCCESS);
 	LOCK(lock);
 
 	uint32_t new_num_blocks = (length + ext2fs().block_size() - 1) / ext2fs().block_size();
@@ -428,11 +431,12 @@ Result Ext2Inode::truncate(off_t length) {
 	if(new_num_blocks > num_blocks()) {
 		//We're expanding the file, allocate new blocks
 		auto new_blocks_res = ext2fs().allocate_blocks(new_num_blocks - num_blocks(), true);
-		if(new_blocks_res.is_error()) return new_blocks_res.code();
+		if(new_blocks_res.is_error())
+			return new_blocks_res.result();
 
 		//If we didn't get the amount of blocks we wanted, return ENOSPC
 		auto new_blocks = new_blocks_res.value();
-		if(new_blocks.size() != new_num_blocks - num_blocks()) return -ENOSPC;
+		if(new_blocks.size() != new_num_blocks - num_blocks()) return Result(-ENOSPC);
 
 		//Add the new blocks to the block pointers
 		for(size_t i = 0; i < new_blocks.size(); i++)
@@ -466,14 +470,14 @@ Result Ext2Inode::truncate(off_t length) {
 		write_inode_entry();
 	}
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result Ext2Inode::chmod(mode_t mode) {
 	LOCK(lock);
 	_metadata.mode = mode;
 	write_inode_entry();
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result Ext2Inode::chown(uid_t uid, gid_t gid) {
@@ -481,7 +485,7 @@ Result Ext2Inode::chown(uid_t uid, gid_t gid) {
 	_metadata.uid = uid;
 	_metadata.gid = gid;
 	write_inode_entry();
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 void Ext2Inode::read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index, uint8_t* block_buf) {
@@ -550,20 +554,21 @@ Result Ext2Inode::write_to_disk(uint8_t* block_buf) {
 	Result res = write_block_pointers(block_buf);
 	if(res.is_error()){
 		FREE_BLOCKBUF(block_buf);
-		return res.code();
+		return res;
 	}
 
 
 	res = write_inode_entry(block_buf);
 	FREE_BLOCKBUF(block_buf);
-	if(res.is_error()) return res.code();
+	if(res.is_error())
+		return res;
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 	LOCK(lock);
-	if(_metadata.is_symlink() && _metadata.size < 60) return SUCCESS;
+	if(_metadata.is_symlink() && _metadata.size < 60) return Result(SUCCESS);
 
 	pointer_blocks = kstd::vector<uint32_t>(0);
 	pointer_blocks.reserve(calculate_num_ptr_blocks(num_blocks()));
@@ -579,7 +584,7 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 	if(num_blocks() > 12) {
 		if (!raw.s_pointer) {
 			raw.s_pointer = ext2fs().allocate_block();
-			if (!raw.s_pointer) return -ENOSPC; //Block allocation failed
+			if (!raw.s_pointer) return Result(-ENOSPC); //Block allocation failed
 		}
 		pointer_blocks.push_back(raw.s_pointer);
 
@@ -595,7 +600,7 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 		//Allocate doubly indirect block if needed and read
 		if(!raw.d_pointer) {
 			raw.d_pointer = ext2fs().allocate_block();
-			if(!raw.d_pointer) return -ENOSPC; //Block allocation failed
+			if(!raw.d_pointer) return Result(-ENOSPC); //Block allocation failed
 			ext2fs().read_block(raw.d_pointer, block_buf);
 			memset(block_buf, 0, ext2fs().block_size());
 		} else ext2fs().read_block(raw.d_pointer, block_buf);
@@ -613,7 +618,7 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 			if(!dblock) {
 				dblock = ext2fs().allocate_block();
 				((uint32_t*)block_buf)[dindex] = dblock;
-				if(!dblock) return -ENOSPC; //Allocation failed
+				if(!dblock) return Result(-ENOSPC); //Allocation failed
 			}
 			pointer_blocks.push_back(dblock);
 
@@ -638,7 +643,7 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 
 	raw.logical_blocks = (block_pointers.size() + pointer_blocks.size()) * (ext2fs().block_size() / 512);
 	_dirty = true;
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result Ext2Inode::write_inode_entry(uint8_t* block_buf) {
@@ -664,7 +669,7 @@ Result Ext2Inode::write_inode_entry(uint8_t* block_buf) {
 	_dirty = false;
 
 	FREE_BLOCKBUF(block_buf);
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result Ext2Inode::write_directory_entries(kstd::vector<DirectoryEntry> &entries) {
@@ -685,7 +690,8 @@ Result Ext2Inode::write_directory_entries(kstd::vector<DirectoryEntry> &entries)
 
 	//Resize the file to the new size
 	auto res = truncate((off_t) new_filesize);
-	if(res.is_error()) return res.code();
+	if(res.is_error())
+		return res;
 
 	//Next, write all the entries
 	size_t cur_block = 0;
@@ -734,7 +740,7 @@ Result Ext2Inode::write_directory_entries(kstd::vector<DirectoryEntry> &entries)
 	//Write the last block
 	ext2fs().write_block(get_block_pointer(cur_block), block_buf);
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 void Ext2Inode::create_metadata() {
@@ -771,7 +777,7 @@ void Ext2Inode::increase_hardlink_count() {
 }
 
 Result Ext2Inode::try_remove_dir() {
-	if(!metadata().is_directory()) return -ENOTDIR;
+	if(!metadata().is_directory()) return Result(-ENOTDIR);
 
 	LOCK(lock);
 
@@ -783,7 +789,7 @@ Result Ext2Inode::try_remove_dir() {
 	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(buf), nullptr))) {
 		if(num_entries >= 2) {
 			delete buf;
-			return -ENOTEMPTY;
+			return Result(-ENOTEMPTY);
 		}
 		offset += nread;
 		num_entries++;
@@ -795,7 +801,8 @@ Result Ext2Inode::try_remove_dir() {
 		DirectoryEntry& ent = entries[i];
 		if(ent.id != id) { //..
 			auto parent_ino_or_err = ext2fs().get_inode(ent.id);
-			if(parent_ino_or_err.is_error()) return parent_ino_or_err.code();
+			if(parent_ino_or_err.is_error())
+				return parent_ino_or_err.result();
 			auto parent_ino = (kstd::shared_ptr<Ext2Inode>) parent_ino_or_err.value();
 			parent_ino->reduce_hardlink_count();
 		}
@@ -806,7 +813,7 @@ Result Ext2Inode::try_remove_dir() {
 	ext2fs().remove_cached_inode(id);
 	ext2fs().free_inode(*this);
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 uint32_t Ext2Inode::calculate_num_ptr_blocks(uint32_t num_blocks) {

@@ -22,11 +22,19 @@
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/kstd/kstdio.h>
 
+#define TRY(expr) \
+	({ \
+        auto res = (expr); \
+        if (res.is_error()) \
+            return res.result(); \
+        res.value(); \
+    })
+
 class Result {
 public:
 	static const int Success = 0;
 
-	Result(int code);
+	explicit Result(int code);
 
 	bool is_success() const;
 	bool is_error() const;
@@ -38,11 +46,11 @@ private:
 template<typename T>
 class ResultRet {
 public:
-	ResultRet(int error):  _result(error) {};
 	ResultRet(Result error): _result(error) {};
 	ResultRet(T ret): _ret(ret), _result(0) {};
 	bool is_error() const {return _result.is_error();}
 	int code() const {return _result.code();}
+	Result result() const {return _result;}
 	T& value() {
 		ASSERT(!is_error());
 		return _ret;

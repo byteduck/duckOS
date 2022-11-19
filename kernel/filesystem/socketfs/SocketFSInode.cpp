@@ -115,7 +115,7 @@ ssize_t SocketFSInode::read(size_t start, size_t length, SafePointer<uint8_t> bu
 }
 
 ResultRet<kstd::shared_ptr<LinkedInode>> SocketFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
-	return -ENOLINK;
+	return Result(-ENOLINK);
 }
 
 ssize_t SocketFSInode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) {
@@ -222,12 +222,12 @@ ssize_t SocketFSInode::write(size_t start, size_t length, SafePointer<uint8_t> b
 }
 
 Result SocketFSInode::add_entry(const kstd::string& add_name, Inode& inode) {
-	return -EINVAL;
+	return Result(-EINVAL);
 }
 
 ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::string& create_name, mode_t mode, uid_t uid, gid_t gid) {
 	if(id != 1)
-		return -ENOTDIR;
+		return Result(-ENOTDIR);
 	LOCK(fs.lock);
 
 	mode = (mode & 0x0FFFu) | MODE_SOCKET;
@@ -244,7 +244,7 @@ ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::strin
 	//Make sure that nothing exists with the same name / id
 	for(size_t i = 0; i < fs.sockets.size(); i++) {
 		if(fs.sockets[i]->name == create_name || fs.sockets[i]->id == create_id)
-			return -EEXIST;
+			return Result(-EEXIST);
 	}
 
 	//Create the socket and return it
@@ -254,24 +254,24 @@ ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::strin
 }
 
 Result SocketFSInode::remove_entry(const kstd::string& remove_name) {
-	return -EACCES;
+	return Result(-EACCES);
 }
 
 Result SocketFSInode::truncate(off_t length) {
-	return -EINVAL;
+	return Result(-EINVAL);
 }
 
 Result SocketFSInode::chmod(mode_t new_mode) {
 	LOCK(lock);
 	_metadata.mode = new_mode;
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result SocketFSInode::chown(uid_t new_uid, gid_t new_gid) {
 	LOCK(lock);
 	_metadata.uid = new_uid;
 	_metadata.gid = new_gid;
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 void SocketFSInode::open(FileDescriptor& fd, int options) {
@@ -340,7 +340,7 @@ Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t se
 			client._blocker.set_ready(false);
 			TaskManager::current_thread()->block(client._blocker);
 		} else {
-			return -ENOSPC;
+			return Result(-ENOSPC);
 		}
 	}
 
@@ -357,5 +357,5 @@ Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t se
 	for(size_t i = 0; i < length; i++)
 		client.data_queue->push_back(buffer.get(i));
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }

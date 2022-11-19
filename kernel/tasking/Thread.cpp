@@ -259,7 +259,7 @@ bool Thread::should_unblock() {
 Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, UserspacePointer<void*> retp) {
 	//See if we're trying to join ourself
 	if(other.get() == this)
-		return -EDEADLK;
+		return Result(-EDEADLK);
 
 	{
 		ScopedLocker __locker1(other->_join_lock);
@@ -267,11 +267,11 @@ Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared
 
 		//Check if the other thread has been joined already
 		if (other->_joined || other->_state == DEAD)
-			return -EINVAL;
+			return Result(-EINVAL);
 
 		//Check if the other thread joined this thread
 		if (other->_joined_thread == self_ptr)
-			return -EDEADLK;
+			return Result(-EDEADLK);
 
 		//Join the other thread
 		other->_joined = true;
@@ -292,7 +292,7 @@ Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared
 		_joined_thread.reset();
 	}
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 bool Thread::call_signal_handler(int signal) {

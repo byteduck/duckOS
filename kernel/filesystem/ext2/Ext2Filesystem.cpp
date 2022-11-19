@@ -89,7 +89,7 @@ ResultRet<kstd::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mod
 	if(bg == -1){
 		KLog::err("ext2", "Couldn't allocate a new inode! (no free inodes)");
 		ext2lock.release();
-		return -ENOSPC;
+		return Result(-ENOSPC);
 	}
 
 	//Read the inode bitmap
@@ -123,7 +123,7 @@ ResultRet<kstd::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mod
 		group.write();
 		KLog::warn("ext2", "Free inode count inconsistency in block group %d!", bg);
 		ext2lock.release();
-		return -ENOSPC;
+		return Result(-ENOSPC);
 	}
 
 	//Update the blockgroup
@@ -136,7 +136,7 @@ ResultRet<kstd::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mod
 	kstd::vector<uint32_t> blocks(0);
 	if(num_blocks) {
 		auto blocks_or_err = allocate_blocks(num_blocks);
-		if (blocks_or_err.is_error()) return blocks_or_err.code();
+		if (blocks_or_err.is_error()) return blocks_or_err.result();
 		blocks = blocks_or_err.value();
 	}
 
@@ -208,7 +208,7 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	ino.mark_deleted();
 	ext2lock.release();
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 char *Ext2Filesystem::name() {
@@ -248,7 +248,7 @@ Result Ext2Filesystem::write_block_group_raw(uint32_t block_group, const ext2_bl
 }
 
 ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2BlockGroup* group, uint32_t num_blocks, bool zero_out) {
-	if(group->free_blocks < num_blocks) return -ENOSPC;
+	if(group->free_blocks < num_blocks) return Result(-ENOSPC);
 	if(num_blocks == 0) return kstd::vector<uint32_t>(0);
 
 	LOCK(ext2lock);
@@ -258,7 +258,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 	if(res.is_error()) {
 		delete[] block_buf;
 		KLog::err("ext2", "Error %d reading block bitmap for group %d", res.code(), group->num);
-		return res.code();
+		return res;
 	}
 
 
@@ -288,7 +288,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 	delete[] block_buf;
 	if(res.is_error()) {
 		KLog::err("ext2", "Error writing block bitmap for block group %d!", group->num);
-		return res.code();
+		return res;
 	}
 
 	return kstd::move(ret);
@@ -298,7 +298,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_b
 	LOCK(ext2lock);
 	if(num_blocks == 0) {
 		KLog::warn("ext2", "Tried to allocate zero ext2 blocks!");
-		return -EINVAL;
+		return Result(-EINVAL);
 	}
 
 	//First, find a block group that can fit all the blocks, or at least the most spacious block group
@@ -335,11 +335,11 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_b
 			}
 
 			//If the most spacious bg has no free blocks, return ENOSPC
-			if(most_spacious_bg->free_blocks == 0) return -ENOSPC;
+			if(most_spacious_bg->free_blocks == 0) return Result(-ENOSPC);
 
 			//Allocate the needed amount of blocks in that group
 			auto res = allocate_blocks_in_group(most_spacious_bg, min(most_spacious_bg->free_blocks, num_blocks), zero_out);
-			if(res.is_error()) return res.code();
+			if(res.is_error()) return res.result();
 
 			//Push the blocks allocated into the return vector
 			num_blocks -= res.value().size();

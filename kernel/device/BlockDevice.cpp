@@ -32,11 +32,11 @@ Result BlockDevice::write_block(uint32_t block, const uint8_t *buffer) {
 }
 
 Result BlockDevice::read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) {
-	return -EIO;
+	return Result(-EIO);
 }
 
 Result BlockDevice::write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
-	return -EIO;
+	return Result(-EIO);
 }
 
 size_t BlockDevice::block_size() {

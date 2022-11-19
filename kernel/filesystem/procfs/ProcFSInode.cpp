@@ -249,7 +249,7 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 ResultRet<kstd::shared_ptr<LinkedInode>> ProcFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
 	auto proc = TaskManager::process_for_pid(pid);
 	if(proc.is_error())
-		return -EIO;
+		return Result(-EIO);
 
 	kstd::string loc;
 
@@ -263,7 +263,7 @@ ResultRet<kstd::shared_ptr<LinkedInode>> ProcFSInode::resolve_link(const kstd::s
 			break;
 
 		default:
-			return -EIO;
+			return Result(-EIO);
 	}
 
 	return VFS::inst().resolve_path(loc, base, user, parent_storage, options, recursion_level);
@@ -302,27 +302,27 @@ ssize_t ProcFSInode::write(size_t start, size_t length, SafePointer<uint8_t> buf
 }
 
 Result ProcFSInode::add_entry(const kstd::string& name, Inode& inode) {
-	return -EIO;
+	return Result(-EIO);
 }
 
 ResultRet<kstd::shared_ptr<Inode>> ProcFSInode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) {
-	return -EIO;
+	return Result(-EIO);
 }
 
 Result ProcFSInode::remove_entry(const kstd::string& name) {
-	return -EIO;
+	return Result(-EIO);
 }
 
 Result ProcFSInode::truncate(off_t length) {
-	return -EIO;
+	return Result(-EIO);
 }
 
 Result ProcFSInode::chmod(mode_t mode) {
-	return -EIO;
+	return Result(-EIO);
 }
 
 Result ProcFSInode::chown(uid_t uid, gid_t gid) {
-	return -EIO;
+	return Result(-EIO);
 }
 
 void ProcFSInode::open(FileDescriptor& fd, int options) {

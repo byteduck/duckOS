@@ -30,13 +30,14 @@ Inode::~Inode() {
 }
 
 ResultRet<kstd::shared_ptr<Inode>> Inode::find(const kstd::string& name) {
-	if(metadata().exists() && !metadata().is_directory()) return -EISDIR;
+	if(metadata().exists() && !metadata().is_directory())
+		return Result(-EISDIR);
 	ino_t id  = find_id(name);
 	if(id != 0) {
 		auto ret = fs.get_inode(id);
 		return ret;
 	}
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 ResultRet<kstd::shared_ptr<LinkedInode>> Inode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
@@ -48,8 +49,9 @@ ResultRet<kstd::shared_ptr<LinkedInode>> Inode::resolve_link(const kstd::shared_
 
 	if(res != metadata().size) {
 		delete[] buf;
-		if(res < 0) return res;
-		return -EIO;
+		if(res < 0)
+			return Result(res);
+		return Result(-EIO);
 	}
 
 	kstd::string link_str((char*)buf);

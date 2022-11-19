@@ -60,7 +60,7 @@ ResultRet<kstd::shared_ptr<Inode>> SocketFS::get_inode(ino_t id) {
 			return static_cast<kstd::shared_ptr<Inode>>(sockets[i]);
 	}
 
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 ino_t SocketFS::root_inode_id() {

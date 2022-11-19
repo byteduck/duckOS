@@ -669,7 +669,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::create_shared_region(size_t vaddr, 
 		region = allocate_region(mem_size, true);
 
 	if(!region.virt)
-		return -ENOMEM;
+		return Result(-ENOMEM);
 
 	//Then, set up the regions
 	LOCK_N(m_shared_region_lock, __shmemlock);
@@ -714,12 +714,12 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 
 	//If it doesn't exist or isn't a shared memory region, return ENOENT
 	if(!pmem_region || !pmem_region->shm_allowed)
-		return -ENOENT;
+		return Result(-ENOENT);
 
 	//Double check our permissions
 	LOCK_N(pmem_region->lock, __pmem_lock);
 	if(!pmem_region->shm_allowed->contains(pid))
-		return -ENOENT;
+		return Result(-ENOENT);
 	bool write = (*pmem_region->shm_allowed)[pid].write;
 
 	//Then, allocate a vmem region for it
@@ -735,7 +735,7 @@ ResultRet<LinkedMemoryRegion> PageDirectory::attach_shared_region(int id, size_t
 
 	//If we failed to allocate the virtual region, error out
 	if(!vmem_region)
-		return vaddr ? -EEXIST : -ENOMEM;
+		return Result(vaddr ? -EEXIST : -ENOMEM);
 
 	//Set up the vmem region
 	vmem_region->is_shm = true;
@@ -780,7 +780,7 @@ Result PageDirectory::detach_shared_region(int id) {
 	vreg->shm_id = 0;
 	_vmem_map.free_region(vreg);
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result PageDirectory::allow_shared_region(int id, pid_t called_pid, pid_t pid, bool write, bool share) {
@@ -791,28 +791,28 @@ Result PageDirectory::allow_shared_region(int id, pid_t called_pid, pid_t pid, b
 	//We could have permission to share it but have not attached it yet, so we search all of pmem
 	auto* preg = m_shared_regions.find_node(id);
 	if(!preg)
-		return -EINVAL;
+		return Result(-EINVAL);
 	auto* phys = preg->data.second;
 	LOCK_N(phys->lock, __physlock);
 
 	//If we don't have share permissions, or we're trying to share with permissions we don't have, return EPERM
 	if(!phys->shm_allowed->contains(called_pid))
-		return -EPERM;
+		return Result(-EPERM);
 	auto our_perms = (*phys->shm_allowed)[called_pid];
 	if(!our_perms.share || (!our_perms.write && write))
-		return -EPERM;
+		return Result(-EPERM);
 
 	//Make sure the process we want exists
 	auto proc_res = TaskManager::process_for_pid(pid);
 	if(proc_res.is_error())
-		return -ENOENT;
+		return Result(-ENOENT);
 	auto proc = proc_res.value();
 
 	//Update the permissions
 	LOCK_N(proc->page_directory()->_lock, __proc_pd_lock);
 	phys->shm_allowed->insert({pid, {write, share}});
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 void PageDirectory::deregister_shared_region(MemoryRegion* region) {

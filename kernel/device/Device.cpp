@@ -85,7 +85,7 @@ ResultRet<kstd::shared_ptr<Device>> Device::get_device(unsigned major, unsigned 
 				return _devices[i];
 		}
 	}
-	return -ENODEV;
+	return Result(-ENODEV);
 }
 
 void Device::remove_device(unsigned major, unsigned minor) {

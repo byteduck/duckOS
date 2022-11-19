@@ -90,7 +90,7 @@ ResultRet<kstd::shared_ptr<Inode>> ProcFS::get_inode(ino_t id) {
 			return static_cast<kstd::shared_ptr<Inode>>(kstd::make_shared<ProcFSInode>(*this, entries[i]));
 	}
 
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 ino_t ProcFS::root_inode_id() {

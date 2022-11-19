@@ -34,7 +34,7 @@ Result DiskDevice::read_blocks(uint32_t start_block, uint32_t count, uint8_t* bu
 		cache_region->last_used = Time::now();
 		memcpy(buffer + i * block_size(), cache_region->block_data(block), block_size());
 	}
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result DiskDevice::write_blocks(uint32_t start_block, uint32_t count, const uint8_t* buffer) {

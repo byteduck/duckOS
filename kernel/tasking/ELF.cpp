@@ -43,15 +43,18 @@ ResultRet<ELF::elf32_header*> ELF::read_header(FileDescriptor& fd) {
 	auto* header = new ELF::elf32_header;
 
 	auto res = fd.seek(0, SEEK_SET);
-	if(res < 0) return res;
+	if(res < 0)
+		return Result(res);
 
 	res = fd.read(KernelPointer<ELF::elf32_header>(header), sizeof(ELF::elf32_header));
-	if(res < 0) return res;
+	if(res < 0)
+		return Result(res);
 
 
 	if(!ELF::can_execute(header)) {
 		delete header;
-		return -ENOEXEC;
+		return
+			Result(-ENOEXEC);
 	}
 
 	return header;
@@ -64,14 +67,17 @@ ResultRet<kstd::vector<ELF::elf32_segment_header>> ELF::read_program_headers(Fil
 
 	//Seek to the pheader_loc
 	auto res = fd.seek(pheader_loc, SEEK_SET);
-	if(res < 0) return res;
+	if(res < 0)
+		return Result(res);
 
 	//Create the segment header vector and read the headers into it
 	kstd::vector<elf32_segment_header> program_headers(num_pheaders);
 	res = fd.read(KernelPointer<elf32_segment_header>(program_headers.storage()), pheader_size * num_pheaders);
 	if(res <= 0) {
-		if(res < 0) return res;
-		else return -EIO;
+		if(res < 0)
+			return Result(res);
+		else
+			return Result(-EIO);
 	}
 
 	return program_headers;
@@ -83,14 +89,17 @@ ResultRet<kstd::string> ELF::read_interp(FileDescriptor& fd, kstd::vector<elf32_
 		if (header.p_type == ELF_PT_INTERP) {
 			//Seek to interpreter section
 			auto res = fd.seek(header.p_offset, SEEK_SET);
-			if(res < 0) return res;
+			if(res < 0)
+				return Result(res);
 
 			//Read the interpreter
 			auto* interp = new char[header.p_filesz];
 			res = fd.read(KernelPointer<char>(interp), header.p_filesz);
 			if(res <= 0) {
-				if(res < 0) return res;
-				else return -EIO;
+				if(res < 0)
+					return Result(res);
+				else
+					return Result(-EIO);
 			}
 
 			//Return it
@@ -101,7 +110,7 @@ ResultRet<kstd::string> ELF::read_interp(FileDescriptor& fd, kstd::vector<elf32_
 	}
 
 	//No interpreter
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const kstd::shared_ptr<PageDirectory>& page_directory) {
@@ -150,14 +159,15 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segm
 ResultRet<ELF::ElfInfo> ELF::read_info(const kstd::shared_ptr<FileDescriptor>& fd, User& user, kstd::string interpreter) {
 	//Read the ELF header
 	auto header_or_err = ELF::read_header(*fd);
-	if(header_or_err.is_error()) return header_or_err.code();
+	if(header_or_err.is_error())
+		return Result(header_or_err.code());
 	auto* header = header_or_err.value();
 
 	//Read the program headers
 	auto segments_or_err = ELF::read_program_headers(*fd, header);
 	if(segments_or_err.is_error()) {
 		delete header;
-		return segments_or_err.code();
+		return Result(segments_or_err.code());
 	}
 	auto segment_headers = segments_or_err.value();
 
@@ -165,15 +175,16 @@ ResultRet<ELF::ElfInfo> ELF::read_info(const kstd::shared_ptr<FileDescriptor>& f
 	auto interp_or_err = ELF::read_interp(*fd, segment_headers);
 	if(interp_or_err.is_error() && interp_or_err.code() != -ENOENT) {
 		delete header;
-		return interp_or_err.code();
+		return Result(interp_or_err.code());
 	} else if(!interp_or_err.is_error()) {
 		delete header;
-		if(interpreter.length()) return -ENOEXEC;
+		if(interpreter.length())
+			return Result(-ENOEXEC);
 
 		//Open the interpreter
 		auto interp_fd_or_err = VFS::inst().open(interp_or_err.value(), O_RDONLY, 0, user, VFS::inst().root_ref());
 		if(interp_fd_or_err.is_error())
-			return interp_fd_or_err.code();
+			return Result(interp_fd_or_err.code());
 		auto interp_fd = interp_fd_or_err.value();
 
 		//Read the interpreter's info

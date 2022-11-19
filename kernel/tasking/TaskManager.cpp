@@ -53,46 +53,46 @@ void kidle(){
 
 ResultRet<Process*> TaskManager::process_for_pid(pid_t pid){
 	if(!pid)
-		return -ENOENT;
+		return Result(-ENOENT);
 	for(int i = 0; i < processes->size(); i++) {
 		auto cur = processes->at(i);
 		if(cur->pid() == pid && cur->state() != Process::DEAD)
 			return processes->at(i);
 	}
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 ResultRet<Process*> TaskManager::process_for_pgid(pid_t pgid, pid_t excl){
 	if(!pgid)
-		return -ENOENT;
+		return Result(-ENOENT);
 	for(int i = 0; i < processes->size(); i++) {
 		auto cur = processes->at(i);
 		if(cur->pgid() == pgid && cur->pid() != excl && cur->state() != Process::DEAD)
 			return processes->at(i);
 	}
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 ResultRet<Process*> TaskManager::process_for_ppid(pid_t ppid, pid_t excl){
 	if(!ppid)
-		return -ENOENT;
+		return Result(-ENOENT);
 	for(int i = 0; i < processes->size(); i++) {
 		auto cur = processes->at(i);
 		if(cur->ppid() == ppid && cur->pid() != excl && cur->state() != Process::DEAD)
 			return processes->at(i);
 	}
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 ResultRet<Process*> TaskManager::process_for_sid(pid_t sid, pid_t excl){
 	if(!sid)
-		return -ENOENT;
+		return Result(-ENOENT);
 	for(int i = 0; i < processes->size(); i++) {
 		auto cur = processes->at(i);
 		if(cur->sid() == sid && cur->pid() != excl && cur->state() != Process::DEAD)
 			return processes->at(i);
 	}
-	return -ENOENT;
+	return Result(-ENOENT);
 }
 
 void TaskManager::kill_pgid(pid_t pgid, int sig) {

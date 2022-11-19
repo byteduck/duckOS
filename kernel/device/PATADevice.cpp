@@ -141,7 +141,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *bu
 	LOCK(_lock);
 
 	if(num_sectors * 512 > _dma_region.phys->size)
-		return false;
+		return Result(-EINVAL);
 	_prdt->addr = _dma_region.phys->start;
 	_prdt->size = num_sectors * 512;
 	_prdt->eot = 0x8000;
@@ -170,7 +170,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *bu
 
 	if(_post_irq_status & ATA_STATUS_ERR) {
 		KLog::err("PATA", "DMA read fail with status 0x%x and busmaster status 0x%x", _post_irq_status, _post_irq_bm_status);
-		return -EIO;
+		return Result(-EIO);
 	}
 
 	//Copy to buffer
@@ -179,7 +179,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *bu
 	//Tell bus master we're done
 	IO::outb(_bus_master_base + ATA_BM_STATUS, IO::inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 Result PATADevice::write_sectors_dma(size_t lba, uint8_t num_sectors, const uint8_t *buf) {
@@ -187,7 +187,7 @@ Result PATADevice::write_sectors_dma(size_t lba, uint8_t num_sectors, const uint
 	LOCK(_lock);
 
 	if(num_sectors * 512 > _dma_region.phys->size)
-		return false;
+		return Result(-EINVAL);
 	_prdt->addr = _dma_region.phys->start;
 	_prdt->size = num_sectors * 512;
 	_prdt->eot = 0x8000;
@@ -217,13 +217,13 @@ Result PATADevice::write_sectors_dma(size_t lba, uint8_t num_sectors, const uint
 
 	if(_post_irq_status & ATA_STATUS_ERR) {
 		KLog::err("PATA", "DMA write fail with status 0x%x and busmaster status 0x%x", _post_irq_status, _post_irq_bm_status);
-		return -EIO;
+		return Result(-EIO);
 	}
 
 	//Tell bus master we're done
 	IO::outb(_bus_master_base + ATA_BM_STATUS, IO::inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
 
-	return SUCCESS;
+	return Result(SUCCESS);
 }
 
 void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer) {
@@ -302,7 +302,7 @@ Result PATADevice::read_uncached_blocks(uint32_t block, uint32_t count, uint8_t 
 			if (res.is_error()) return res;
 			count -= num_sectors;
 		}
-		return SUCCESS;
+		return Result(SUCCESS);
 	} else {
 		//PIO mode
 		while(count) {
@@ -311,7 +311,7 @@ Result PATADevice::read_uncached_blocks(uint32_t block, uint32_t count, uint8_t 
 			block += to_read;
 			count -= to_read;
 		}
-		return SUCCESS;
+		return Result(SUCCESS);
 	}
 }
 
@@ -326,7 +326,7 @@ Result PATADevice::write_uncached_blocks(uint32_t block, uint32_t count, const u
 				return res;
 			count -= num_sectors;
 		}
-		return SUCCESS;
+		return Result(SUCCESS);
 	} else {
 		//PIO mode
 		while(count) {
@@ -335,7 +335,7 @@ Result PATADevice::write_uncached_blocks(uint32_t block, uint32_t count, const u
 			block += to_read;
 			count -= to_read;
 		}
-		return SUCCESS;
+		return Result(SUCCESS);
 	}
 }
 
