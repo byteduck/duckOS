@@ -37,7 +37,7 @@ File::File(FILE* file, bool close_on_destroy):
 
 ResultRet<size_t> File::read(void* buffer, size_t n) {
 	if(!m_fileref->is_open())
-		return {EBADF};
+		return Result {EBADF};
 
 	size_t res = fread(buffer, 1, n, m_fileref->cfile);
 	if(ferror(m_fileref->cfile)) {
@@ -50,7 +50,7 @@ ResultRet<size_t> File::read(void* buffer, size_t n) {
 
 ResultRet<size_t> File::write(const void* buffer, size_t n) {
 	if(!m_fileref->is_open())
-		return {EBADF};
+		return Result {EBADF};
 
 	size_t res = fwrite(buffer, 1, n, m_fileref->cfile);
 	if(ferror(m_fileref->cfile)) {
