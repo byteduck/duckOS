@@ -16,7 +16,7 @@ PhysicalRegion::PhysicalRegion(size_t start_page, size_t num_pages, bool reserve
 	// Create zones to fill the region
 	while(num_pages) {
 		// Round down num_pages to a power of 2, and create a zone with that many pages (or MAX_ORDER, whichever is smaller)
-		size_t zone_order = (sizeof(unsigned int) * 8) - __builtin_clz(num_pages);
+		size_t zone_order = (sizeof(unsigned int) * 8) - __builtin_clz(num_pages) - 1;
 		if(zone_order > BuddyZone::MAX_ORDER)
 			zone_order = BuddyZone::MAX_ORDER;
 		size_t zone_num_pages = 1 << zone_order;

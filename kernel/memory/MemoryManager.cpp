@@ -187,7 +187,6 @@ void MemoryManager::invlpg(void* vaddr) {
 }
 
 void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct multiboot_mmap_entry* mmap_entry) {
-	static
 	size_t mmap_offset = 0;
 	usable_bytes_ram = 0;
 	while(mmap_offset < header->mmap_length) {
