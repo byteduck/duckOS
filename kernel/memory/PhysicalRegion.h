@@ -21,6 +21,10 @@ public:
 	ResultRet<PageIndex> alloc_page();
 	void free_page(PageIndex page);
 
+protected:
+	friend class MemoryManager;
+	void init();
+
 private:
 	SpinLock m_lock;
 	kstd::vector<BuddyZone*> m_zones;

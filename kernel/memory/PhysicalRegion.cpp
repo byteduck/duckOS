@@ -2,6 +2,7 @@
 /* Copyright © 2016-2022 Byteduck */
 
 #include "PhysicalRegion.h"
+#include "MemoryManager.h"
 
 PhysicalRegion::PhysicalRegion(size_t start_page, size_t num_pages, bool reserved, bool used):
 	m_start_page(start_page),
@@ -69,4 +70,13 @@ void PhysicalRegion::free_page(PageIndex page) {
 		}
 	}
 	ASSERT(false);
+}
+
+void PhysicalRegion::init() {
+	// Setup the freelists of the zones.
+	for(size_t i = 0; i < m_zones.size(); i++) {
+		auto& page = MemoryManager::inst().get_physical_page(m_zones[i]->first_page());
+		page.free.prev = -1;
+		page.free.next = -1;
+	}
 }

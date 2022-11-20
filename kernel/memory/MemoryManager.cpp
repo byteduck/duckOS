@@ -36,8 +36,10 @@ size_t usable_bytes_ram = 0;
 size_t total_bytes_ram = 0;
 size_t reserved_bytes_ram = 0;
 size_t bad_bytes_ram = 0;
+size_t usable_lower_limt = ~0;
+size_t usable_upper_limit = 0;
 
-uint8_t early_kheap_memory[0x100000]; // 1MiB
+uint8_t early_kheap_memory[0x400000]; // 4MiB
 size_t used_early_kheap_memory = 0;
 bool setup_paging = false;
 
@@ -189,10 +191,11 @@ void MemoryManager::invlpg(void* vaddr) {
 void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct multiboot_mmap_entry* mmap_entry) {
 	size_t mmap_offset = 0;
 	usable_bytes_ram = 0;
+
 	while(mmap_offset < header->mmap_length) {
 		if(mmap_entry->addr_high || mmap_entry->len_high) {
 			//If the entry is in extended memory, ignore it
-			KLog::dbg("MemoryManager", "Ignoring memory region above 4GiB (0x%x%x)",
+			KLog::dbg("Memory", "Ignoring memory region above 4GiB (0x%x%x)",
 					mmap_entry->addr_high, mmap_entry->addr_low);
 		} else {
 			//Otherwise, round up the address of the entry to a page boundary and round the size down to a page boundary
@@ -208,6 +211,14 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 				);
 				total_bytes_ram += size_pagealigned;
 
+				if(!region->reserved() && region->free_pages()) {
+					if(addr_pagealigned < usable_lower_limt)
+						usable_lower_limt = addr_pagealigned;
+					if(addr_pagealigned + size_pagealigned > usable_upper_limit)
+						usable_upper_limit = addr_pagealigned + size_pagealigned;
+				}
+
+
 				if(!region->reserved())
 					usable_bytes_ram += size_pagealigned;
 				else
@@ -216,15 +227,26 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 				if(mmap_entry->type == MULTIBOOT_MEMORY_BADRAM)
 					bad_bytes_ram += size_pagealigned;
 
-				KLog::dbg("MemoryManager", "Adding memory region at page %x of %x pages (%s, %s)", region->start_page(), region->num_pages(), !region->free_pages() ? "Used" : "Unused", region->reserved() ? "Reserved" : "Unreserved");
+				m_physical_regions.push_back(region);
+
+				KLog::dbg("Memory", "Adding memory region at page %x of %x pages (%s, %s)", region->start_page(), region->num_pages(), !region->free_pages() ? "Used" : "Unused", region->reserved() ? "Reserved" : "Unreserved");
 			} else {
 				//Otherwise, ignore it
-				KLog::dbg("MemoryManager", "Ignoring too-small memory region at 0x%x", mmap_entry->addr_low);
+				KLog::dbg("Memory", "Ignoring too-small memory region at 0x%x", mmap_entry->addr_low);
 			}
 		}
 		mmap_offset += mmap_entry->size + sizeof(mmap_entry->size);
 		mmap_entry = (struct multiboot_mmap_entry*) ((size_t)mmap_entry + mmap_entry->size + sizeof(mmap_entry->size));
 	}
+
+	size_t num_usable_pages = (usable_upper_limit - usable_lower_limt) / PAGE_SIZE;
+	m_physical_pages = (PhysicalPage*) kcalloc(sizeof(PhysicalPage), num_usable_pages);
+
+	// Setup the physical region freelists
+	for(size_t i = 0; i < m_physical_regions.size(); i++)
+		m_physical_regions[i]->init();
+
+	KLog::dbg("Memory", "Usable memory limits: 0x%x -> 0x%x", usable_lower_limt, usable_upper_limit);
 }
 
 void liballoc_lock() {
