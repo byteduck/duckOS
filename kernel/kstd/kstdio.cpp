@@ -33,12 +33,15 @@ kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
 kstd::shared_ptr<VirtualTTY> tty(nullptr);
 bool use_tty = true;
 bool panicking = false;
+bool did_setup_tty = false;
 
 void putch(char c){
-	if(panicking)
-		tty->get_terminal()->write_char(c);
-	else if(tty && use_tty)
-		tty_desc->write(KernelPointer<uint8_t>((uint8_t*) &c), 1);
+	if(did_setup_tty) {
+		if(panicking)
+			tty->get_terminal()->write_char(c);
+		else if(tty && use_tty)
+			tty_desc->write(KernelPointer<uint8_t>((uint8_t*) &c), 1);
+	}
 	serial_putch(c);
 }
 
@@ -65,10 +68,12 @@ void serial_putch(char c) {
 }
 
 void print(const char* str){
-	if(panicking)
-		tty->get_terminal()->write_chars(str, strlen(str));
-	else if(tty && use_tty)
-		tty_desc->write(KernelPointer<uint8_t>((uint8_t*) str), strlen(str));
+	if(did_setup_tty) {
+		if(panicking)
+			tty->get_terminal()->write_chars(str, strlen(str));
+		else if(tty && use_tty)
+			tty_desc->write(KernelPointer<uint8_t>((uint8_t*) str), strlen(str));
+	}
 	while(*str)
 		serial_putch(*(str++));
 }
@@ -141,7 +146,9 @@ bool panicked = false;
 	TaskManager::enabled() = false;
 
 	panicking = true;
-	tty->set_graphical(false);
+	if(did_setup_tty)
+		tty->set_graphical(false);
+
 	printf("\033[41;97m\033[2J"); //Red BG, bright white FG
 	print("Whoops! Something terrible happened.\nIf you weren't expecting this, please open an issue on GitHub to report it.\nHere are the details:\n");
 	printf("%s\n", error);
@@ -173,4 +180,5 @@ void setup_tty() {
 	tty = VirtualTTY::current_tty();
 	tty_desc = kstd::make_shared<FileDescriptor>(tty);
 	tty_desc->set_options(O_WRONLY);
+	did_setup_tty = true;
 }
