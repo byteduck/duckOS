@@ -6,7 +6,8 @@
 
 BuddyZone::BuddyZone(PageIndex first_page, size_t num_pages):
 	m_first_page(first_page),
-	m_num_pages(num_pages)
+	m_num_pages(num_pages),
+	m_free_pages(num_pages)
 {
 	// Initialize the bitmaps for each order
 	for(int i = 0; i <= MAX_ORDER; i++) {
@@ -22,6 +23,7 @@ BuddyZone::BuddyZone(PageIndex first_page, size_t num_pages):
 	ASSERT(size_of_order(highest_order) == num_pages); // Make sure the number of pages is a power of 2
 	ASSERT(highest_order <= MAX_ORDER); // Make sure the highest order is less than or equal to the max order
 	m_orders[highest_order].freelist = 0;
+	m_orders[highest_order].set_bit(0, BuddyState::MIXED);
 }
 
 PhysicalPage& BuddyZone::get_block(int block) const {
@@ -29,13 +31,19 @@ PhysicalPage& BuddyZone::get_block(int block) const {
 }
 
 ResultRet<PageIndex> BuddyZone::alloc_block(size_t num_pages) {
+	if(!m_free_pages)
+		return Result(ENOMEM);
+
 	auto block_index = TRY(alloc_block_internal(order_for(num_pages)));
+	m_free_pages--;
 	return m_first_page + block_index;
 }
 
 void BuddyZone::free_block(PageIndex start_page, size_t num_pages) {
+	ASSERT(m_free_pages < m_num_pages);
 	ASSERT(start_page >= m_first_page);
 	free_block_internal(start_page - m_first_page, order_for(num_pages));
+	m_free_pages++;
 }
 
 ResultRet<int> BuddyZone::alloc_block_internal(unsigned int order) {
@@ -81,13 +89,14 @@ void BuddyZone::free_block_internal(int block, unsigned int order) {
 		bucket.set_bit(block, BuddyState::BOTH);
 
 		// If the block we're freeing is the first buddy block, remove the second from the freelist and vice versa
-		if((block / size_of_order(order)) % 2 == 0)
-			remove_from_freelist(block + size_of_order(order), order);
+		int first_buddy_index = bucket.bit_index(block) * 2 * size_of_order(order);
+		if(block == first_buddy_index)
+			remove_from_freelist(first_buddy_index + size_of_order(order), order);
 		else
-			remove_from_freelist(block, order);
+			remove_from_freelist(first_buddy_index, order);
 
 		// Merge them and hand them to the higher-order bucket
-		free_block_internal(block, order + 1);
+		free_block_internal(first_buddy_index, order + 1);
 	} else {
 		// The buddy isn't free, so set the state to mixed and add to the beginning of the freelist
 		bucket.set_bit(block, BuddyState::MIXED);

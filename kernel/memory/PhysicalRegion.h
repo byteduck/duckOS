@@ -18,8 +18,20 @@ public:
 	size_t free_pages() const { return m_free_pages; }
 	bool reserved() const { return m_reserved; }
 
+	/**
+	 * Allocates a page in this region.
+	 * @return The index of the page allocated (absolute).
+	 */
 	ResultRet<PageIndex> alloc_page();
+
+	/**
+	 * Frees a page in this region.
+	 * @param page The index of the page to free (absolute).
+	 */
 	void free_page(PageIndex page);
+
+	/** Returns whether the given page is in this region. **/
+	bool contains_page(PageIndex page);
 
 protected:
 	friend class MemoryManager;

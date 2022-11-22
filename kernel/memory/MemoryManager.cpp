@@ -92,7 +92,8 @@ void MemoryManager::setup_paging() {
 			: : "a"((size_t) kernel_page_directory.entries() - HIGHER_HALF)
 	);
 
-	//Setup the pmem map
+	// Mark the kernel's physical pages as in use
+	printf("%x\n", (KERNEL_TEXT - HIGHER_HALF) / PAGE_SIZE);
 	ASSERT(false); //TODO
 ////	MemoryRegion* text_region = _pmem_map.allocate_region(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, &early_pmem_text_region_storage[0], &early_pmem_text_region_storage[1]);
 ////	if(!text_region)
@@ -201,6 +202,14 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 			//Otherwise, round up the address of the entry to a page boundary and round the size down to a page boundary
 			uint32_t addr_pagealigned = ((mmap_entry->addr_low + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
 			uint32_t size_pagealigned = ((mmap_entry->len_low - (addr_pagealigned - mmap_entry->addr_low)) / PAGE_SIZE) * PAGE_SIZE;
+
+			// We don't want the zero page.
+			if(addr_pagealigned == 0) {
+				addr_pagealigned += PAGE_SIZE;
+				if(size_pagealigned)
+					size_pagealigned -= PAGE_SIZE;
+			}
+
 			if(size_pagealigned) {
 				//If the page-aligned size is more than zero (eg mmap_entry->len >= PAGE_SIZE), interpret it
 				auto region = new PhysicalRegion(
@@ -240,13 +249,40 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 	}
 
 	size_t num_usable_pages = (usable_upper_limit - usable_lower_limt) / PAGE_SIZE;
-	m_physical_pages = (PhysicalPage*) kcalloc(sizeof(PhysicalPage), num_usable_pages);
+	m_physical_pages = (PhysicalPage*) kcalloc(sizeof(PhysicalPage), usable_upper_limit / PAGE_SIZE);
 
 	// Setup the physical region freelists
 	for(size_t i = 0; i < m_physical_regions.size(); i++)
 		m_physical_regions[i]->init();
 
 	KLog::dbg("Memory", "Usable memory limits: 0x%x -> 0x%x", usable_lower_limt, usable_upper_limit);
+}
+
+ResultRet<PageIndex> MemoryManager::alloc_physical_page() const {
+	for(size_t i = 0; i < m_physical_regions.size(); i++) {
+		auto result = m_physical_regions[i]->alloc_page();
+		if(!result.is_error()) {
+			PageIndex ret = result.value();
+			// Set the refcount of the page to 1
+			get_physical_page(ret).allocated.ref_count = 1;
+			return ret;
+		}
+	}
+
+	return Result(ENOMEM);
+}
+
+void MemoryManager::free_physical_page(PageIndex page) const {
+	ASSERT(get_physical_page(page).allocated.ref_count.load(MemoryOrder::Relaxed) == 0);
+
+	for(size_t i = 0; i < m_physical_regions.size(); i++) {
+		if(m_physical_regions[i]->contains_page(page)) {
+			m_physical_regions[i]->free_page(page);
+			return;
+		}
+	}
+
+	ASSERT(false);
 }
 
 void liballoc_lock() {

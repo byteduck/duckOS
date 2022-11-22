@@ -25,7 +25,7 @@ enum class BuddyState {
 struct BuddyOrder {
 	/** Gets the index of the buddy bit for the given block index. */
 	inline size_t bit_index(int block_index) const {
-		return (size_t) (block_index >> order);
+		return (size_t) (block_index >> order) / 2;
 	}
 
 	/** Gets the buddy bit for the given block index. */
@@ -115,4 +115,5 @@ private:
 	BuddyOrder m_orders[MAX_ORDER + 1]; ///< The orders in the zone, with order 0 being 1 page blocks.
 	PageIndex m_first_page; ///< The index of the first page of this zone.
 	size_t m_num_pages; ///< The number of pages in this zone.
+	size_t m_free_pages; ///< The number of free pages in this zone.
 };

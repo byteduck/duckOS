@@ -5,8 +5,20 @@
 
 #include "../Atomic.h"
 #include "../kstd/kstddef.h"
+#include "Memory.h"
 
 union PhysicalPage {
+public:
+	void ref() {
+		allocated.ref_count.add(1);
+	}
+
+	void unref() {
+		if(allocated.ref_count.sub(1) == 1)
+			release();
+	}
+
+	PageIndex index();
 
 	/// When a page is in use, this struct is used to keep count of its references.
 	struct {
@@ -18,5 +30,9 @@ union PhysicalPage {
 		int16_t next; //< The index of the next free page in this page's bucket.
 		int16_t prev; //< The index of the previous free page in this page's bucket.
 	} free;
+
+private:
+
+	void release();
 
 };

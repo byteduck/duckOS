@@ -118,6 +118,17 @@ public:
 		return m_physical_pages[page_number];
 	}
 
+	/** Allocates a physical page for use. The resulting page will have a refcount of 1. **/
+	ResultRet<PageIndex> alloc_physical_page() const;
+
+	/**
+	 * Frees a physical page for future use. The page should have a refcount of 0.
+	 * The preferred method of freeing a physical page is by calling deref() on it, which will free it once it has zero
+	 * references.
+	 */
+	void free_physical_page(PageIndex page) const;
+
+
 	/**
 	 * Used when setting up paging initially in order to map an entire page table starting at a virtual address.
 	 * @param page_table The page table to set up

@@ -72,6 +72,10 @@ void PhysicalRegion::free_page(PageIndex page) {
 	ASSERT(false);
 }
 
+bool PhysicalRegion::contains_page(PageIndex page) {
+	return page >= m_start_page && page < m_start_page + m_num_pages;
+}
+
 void PhysicalRegion::init() {
 	// Setup the freelists of the zones.
 	for(size_t i = 0; i < m_zones.size(); i++) {
