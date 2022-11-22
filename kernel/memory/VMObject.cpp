@@ -4,7 +4,7 @@
 #include "VMObject.h"
 #include "MemoryManager.h"
 
-VMObject::VMObject(kstd::vector<PageIndex>&& physical_pages):
+VMObject::VMObject(kstd::vector<PageIndex> physical_pages):
 	m_physical_pages(kstd::move(physical_pages)),
 	m_size(m_physical_pages.size() * PAGE_SIZE)
 {

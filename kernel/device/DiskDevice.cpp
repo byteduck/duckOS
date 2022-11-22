@@ -68,15 +68,13 @@ DiskDevice::BlockCacheRegion* DiskDevice::get_cache_region(size_t block) {
 	_used_cache_memory += PAGE_SIZE;
 
 	//Read the blocks into it
-	read_uncached_blocks(reg->start_block, blocks_per_cache_region(), (uint8_t*) reg->region.virt->start);
+	read_uncached_blocks(reg->start_block, blocks_per_cache_region(), (uint8_t*) reg->region->start());
 
 	//Return the requested region
 	return reg.get();
 }
 
 DiskDevice::BlockCacheRegion::BlockCacheRegion(size_t start_block, size_t block_size):
-		region(PageDirectory::k_alloc_region(PAGE_SIZE)), block_size(block_size), start_block(start_block) {}
+		region(MemoryManager::inst().alloc_kernel_region(PAGE_SIZE)), block_size(block_size), start_block(start_block) {}
 
-DiskDevice::BlockCacheRegion::~BlockCacheRegion() {
-	PageDirectory::k_free_region(region);
-}
+DiskDevice::BlockCacheRegion::~BlockCacheRegion() = default;

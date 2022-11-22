@@ -33,5 +33,10 @@ namespace kstd {
 		t1 = kstd::move(t2);
 		t2 = kstd::move(temp);
 	}
+
+	template<typename A, typename B>
+	constexpr A ceil_div(A a, B b) {
+		return (a + (b - 1)) / b;
+	}
 }
 

@@ -29,6 +29,11 @@ class PageTable;
 
 class PageDirectory {
 public:
+	enum class DirectoryType {
+		USER,
+		KERNEL
+	};
+
 	typedef union Entry {
 		class __attribute((packed)) Data {
 		public:
@@ -50,16 +55,12 @@ public:
 		uint32_t value;
 	} Entry;
 
-	static Entry (&kernel_entries)[256];
-	static PageTable (&kernel_page_tables)[256];
-	static size_t kernel_page_tables_physaddr[1024];
-
 	/**
 	 * Initialize the kernel page directory entries & related variables.
 	 */
 	static void init_kmem();
 
-	explicit PageDirectory(bool no_init = false);
+	explicit PageDirectory(DirectoryType type = DirectoryType::USER);
 	~PageDirectory();
 
 	/**
@@ -80,16 +81,11 @@ public:
 	 */
 	SpinLock& lock();
 
-	/**
-	 * @return The entry at index.
-	 */
-	Entry& operator[](int index);
-
 	/** Maps a region into the page directory. **/
-	void map(kstd::shared_ptr<VMRegion> region);
+	void map(VMRegion& region);
 
 	/** Unmaps a region from the page directory. **/
-	void unmap(kstd::shared_ptr<VMRegion> region);
+	void unmap(VMRegion& region);
 
 	/**
 	 * Gets the physical address for virtaddr.
@@ -117,16 +113,6 @@ public:
 	void dealloc_page_table(size_t tables_index);
 
 	/**
-	 * Updates the entries for kernel space from the kernel page directory entries.
-	 */
-	void update_kernel_entries();
-
-	/**
-	 * Sets the entry pointer to entries. Should only be used for kernel page table.
-	 */
-	void set_entries(Entry* entries);
-
-	/**
 	 * Checks if a given virtual address is mapped to anything.
 	 * @param vaddr The virtual address to check.
 	 * @param permission Whether to check for write permission.
@@ -141,13 +127,24 @@ public:
 	bool is_mapped();
 
 private:
-	//The page directory entries for this page directory.
-	Entry* _entries = nullptr;
-	//An array of pointers to the page tables that the directory points to.
-	PageTable* _page_tables[768] = {nullptr};
-	//An array of u16s that stores the number of pages mapped in each page table, used to deallocate a page table once no longer needed
-	volatile int _page_tables_num_mapped[1024] = {0};
-	//A lock used to prevent race conditions.
-	SpinLock _lock;
+	// The entries for the kernel.
+	static Entry s_kernel_entries[1024];
+	// The page tables for the kernel.
+	static PageTable s_kernel_page_tables[256];
+	// The physical addresses of the kernel page tables.
+	static size_t s_kernel_page_tables_physaddr[1024];
+
+	// The type of the page directory.
+	const DirectoryType m_type;
+	// The VMRegion for this page directory's entries.
+	kstd::shared_ptr<VMRegion> m_entries_region;
+	// The page directory entries for this page directory.
+	Entry* m_entries = nullptr;
+	// An array of pointers to the page tables that the directory points to.
+	PageTable* m_page_tables[768] = {nullptr};
+	// An array of u16s that stores the number of pages mapped in each page table, used to deallocate a page table once no longer needed
+	volatile int m_page_tables_num_mapped[1024] = {0};
+	// A lock used to prevent race conditions.
+	SpinLock m_lock;
 };
 

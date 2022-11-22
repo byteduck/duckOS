@@ -14,7 +14,6 @@
 #include <kernel/kstd/utility.h>
 #define SHARED_ASSERT(x) /*ASSERT(x)*/ //TODO: Fix
 
-
 /**
  * @brief implementation of reference counter for the following minimal smart pointer.
  *
@@ -180,6 +179,10 @@ namespace kstd{
 		{
 			return pn.use_count();
 		}
+		void leak_ref(void) throw() // never throws
+		{
+			pn.acquire(px);
+		}
 
 		// underlying pointer operations :
 		T& operator*()  const throw() // never throws
@@ -280,3 +283,5 @@ namespace kstd{
 	}
 }
 
+template<typename T>
+using Ptr = kstd::shared_ptr<T>;

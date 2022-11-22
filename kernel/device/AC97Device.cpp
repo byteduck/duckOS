@@ -47,9 +47,9 @@ AC97Device::AC97Device(PCI::Address address):
 	m_mixer_address(PCI::read_word(address, PCI_BAR0) & ~1),
 	m_bus_address(PCI::read_word(address, PCI_BAR1) & ~1),
 	m_output_channel(m_bus_address + BusRegisters::NABM_PCM_OUT),
-	m_output_buffer_region(PageDirectory::k_alloc_region(PAGE_SIZE * AC97_OUTPUT_BUFFER_PAGES)),
-	m_output_buffer_descriptor_region(PageDirectory::k_alloc_region(sizeof(BufferDescriptor) * AC97_NUM_BUFFER_DESCRIPTORS)),
-	m_output_buffer_descriptors((BufferDescriptor*) m_output_buffer_descriptor_region.virt->start)
+	m_output_buffer_region(MM.alloc_dma_region(PAGE_SIZE * AC97_OUTPUT_BUFFER_PAGES)),
+	m_output_buffer_descriptor_region(MM.alloc_dma_region(sizeof(BufferDescriptor) * AC97_NUM_BUFFER_DESCRIPTORS)),
+	m_output_buffer_descriptors((BufferDescriptor*) m_output_buffer_descriptor_region->start())
 {
 	//Enable bus mastering and interrupts
 	PCI::enable_interrupt(m_address);
@@ -70,10 +70,7 @@ AC97Device::AC97Device(PCI::Address address):
 	reset_output();
 }
 
-AC97Device::~AC97Device() {
-	PageDirectory::k_free_region(m_output_buffer_region);
-	PageDirectory::k_free_region(m_output_buffer_descriptor_region);
-}
+AC97Device::~AC97Device() = default;
 
 ssize_t AC97Device::read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	return -ENOENT;
@@ -106,7 +103,7 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffe
 			reset_output();
 
 		//Copy as much data as is applicable to the current output buffer
-		auto* output_buffer = (uint32_t*)(m_output_buffer_region.virt->start + PAGE_SIZE * m_current_output_buffer_page);
+		auto* output_buffer = (uint32_t*)(m_output_buffer_region->start() + PAGE_SIZE * m_current_output_buffer_page);
 		size_t num_bytes = min(count, PAGE_SIZE);
 		buffer.read((uint8_t*) output_buffer, n_written, num_bytes);
 		count -= num_bytes;
@@ -114,12 +111,12 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffe
 
 		//Create the buffer descriptor
 		auto* descriptor = &m_output_buffer_descriptors[m_current_buffer_descriptor];
-		descriptor->data_addr = m_output_buffer_region.phys->start + PAGE_SIZE * m_current_output_buffer_page;
+		descriptor->data_addr = m_output_buffer_region->object()->size() + PAGE_SIZE * m_current_output_buffer_page;
 		descriptor->num_samples = num_bytes / sizeof(uint16_t);
 		descriptor->flags = {false, true};
 
 		//Set the buffer descriptor list address and last valid index in the channel registers
-		IO::outl(m_output_channel + ChannelRegisters::BUFFER_LIST_ADDR, m_output_buffer_descriptor_region.phys->start);
+		IO::outl(m_output_channel + ChannelRegisters::BUFFER_LIST_ADDR, (PhysicalAddress) m_output_buffer_descriptor_region->object()->physical_page(0).ptr());
 		IO::outb(m_output_channel + ChannelRegisters::LAST_VALID_INDEX, m_current_buffer_descriptor);
 
 		//If the output DMA is not enabled already, enable it

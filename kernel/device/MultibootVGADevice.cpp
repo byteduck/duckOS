@@ -61,9 +61,11 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 			return false;
 	}
 
-	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
-	double_buffer = new uint32_t[framebuffer_size() / sizeof(uint32_t)];
-	memset(double_buffer, 0, framebuffer_size());
+	ASSERT(false); // TODO
+
+//	framebuffer = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size(), true);
+//	double_buffer = new uint32_t[framebuffer_size() / sizeof(uint32_t)];
+//	memset(double_buffer, 0, framebuffer_size());
 
 	return true;
 }
@@ -119,8 +121,9 @@ void MultibootVGADevice::clear(uint32_t color) {
 }
 
 void* MultibootVGADevice::map_framebuffer(Process* proc) {
-	void* ret = proc->page_directory()->mmap(framebuffer_paddr, framebuffer_size(), true);
-	if(!ret)
-		return (void*) -ENOMEM;
-	return ret;
+	ASSERT(false); // TODO
+//	void* ret = proc->page_directory()->mmap(framebuffer_paddr, framebuffer_size(), true);
+//	if(!ret)
+//		return (void*) -ENOMEM;
+//	return ret;
 }

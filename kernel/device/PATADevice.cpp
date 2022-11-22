@@ -106,9 +106,9 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 	PCI::enable_interrupt(addr);
 	if(!use_pio) {
 		PCI::enable_bus_mastering(addr);
-		_prdt_region = PageDirectory::k_alloc_region(sizeof(PRDT));
-		_prdt = (PRDT*) _prdt_region.virt->start;
-		_dma_region = PageDirectory::k_alloc_region(ATA_MAX_SECTORS_AT_ONCE * 512);
+		_prdt_region = MM.alloc_kernel_region(sizeof(PRDT));
+		_prdt = (PRDT*) _prdt_region->start();
+		_dma_region = MM.alloc_dma_region(ATA_MAX_SECTORS_AT_ONCE * 512);
 
 		//Reset bus master status register
 		IO::outb(_bus_master_base + ATA_BM_STATUS, IO::inb(_bus_master_base + ATA_BM_STATUS) | 0x4u);
@@ -117,12 +117,7 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 	KLog::info("PATA", "Setup disk %s using %s (%d blocks)", _model_number, _use_pio ? "PIO" : "DMA", _max_addressable_block);
 }
 
-PATADevice::~PATADevice() {
-	if(_prdt_region.phys)
-		PageDirectory::k_free_region(_prdt_region);
-	if(_dma_region.phys)
-		PageDirectory::k_free_region(_dma_region);
-}
+PATADevice::~PATADevice() = default;
 
 uint8_t PATADevice::wait_status(uint8_t flags) {
 	uint8_t ret = 0;
@@ -140,9 +135,9 @@ Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *bu
 	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
 	LOCK(_lock);
 
-	if(num_sectors * 512 > _dma_region.phys->size)
+	if(num_sectors * 512 > _dma_region->object()->physical_page(0).paddr())
 		return Result(-EINVAL);
-	_prdt->addr = _dma_region.phys->start;
+	_prdt->addr = _dma_region->object()->physical_page(0).paddr();
 	_prdt->size = num_sectors * 512;
 	_prdt->eot = 0x8000;
 
@@ -152,7 +147,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *bu
 
 	//Stop bus master, write PRDT, clear flags, and set direction to read
 	IO::outb(_bus_master_base, 0);
-	IO::outl(_bus_master_base + ATA_BM_PRDT, _prdt_region.phys->start);
+	IO::outl(_bus_master_base + ATA_BM_PRDT, _prdt_region->object()->physical_page(0).paddr());
 	IO::outb(_bus_master_base, ATA_BM_READ);
 	IO::outb(_bus_master_base + ATA_BM_STATUS, IO::inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
 
@@ -174,7 +169,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *bu
 	}
 
 	//Copy to buffer
-	memcpy((void *) buf, (void*) _dma_region.virt->start, 512 * num_sectors);
+	memcpy((void *) buf, (void*) _dma_region->start(), 512 * num_sectors);
 
 	//Tell bus master we're done
 	IO::outb(_bus_master_base + ATA_BM_STATUS, IO::inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
@@ -186,14 +181,14 @@ Result PATADevice::write_sectors_dma(size_t lba, uint8_t num_sectors, const uint
 	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
 	LOCK(_lock);
 
-	if(num_sectors * 512 > _dma_region.phys->size)
+	if(num_sectors * 512 > _dma_region->size())
 		return Result(-EINVAL);
-	_prdt->addr = _dma_region.phys->start;
+	_prdt->addr = _dma_region->object()->physical_page(0).paddr();
 	_prdt->size = num_sectors * 512;
 	_prdt->eot = 0x8000;
 
 	//Copy to buffer
-	memcpy((void*) _dma_region.virt->start, buf, 512 * num_sectors);
+	memcpy((void*) _dma_region->start(), buf, 512 * num_sectors);
 
 	//Select drive and wait 10us
 	IO::outb(_io_base + ATA_DRIVESEL, 0xA0u | (_drive == SLAVE ? 0x8u : 0x0u));
@@ -201,7 +196,7 @@ Result PATADevice::write_sectors_dma(size_t lba, uint8_t num_sectors, const uint
 
 	//Stop bus master, write PRDT, and clear flags
 	IO::outb(_bus_master_base, 0);
-	IO::outl(_bus_master_base + ATA_BM_PRDT, _prdt_region.phys->start);
+	IO::outl(_bus_master_base + ATA_BM_PRDT, _prdt_region->object()->physical_page(0).paddr());
 	IO::outb(_bus_master_base + ATA_BM_STATUS, IO::inb(_bus_master_base + ATA_BM_STATUS) | 0x6u);
 
 	access_drive(ATA_WRITE_DMA, lba, num_sectors);

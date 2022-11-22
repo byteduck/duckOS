@@ -20,7 +20,6 @@
 #include <kernel/tasking/ELF.h>
 #include <kernel/filesystem/VFS.h>
 #include <kernel/memory/MemoryManager.h>
-#include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/filesystem/FileDescriptor.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/KLog.h>
@@ -123,34 +122,34 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segm
 			size_t loadsize_pagealigned = header.p_memsz + (header.p_vaddr % PAGE_SIZE);
 
 			//Allocate a kernel memory region to load the section into
-			LinkedMemoryRegion tmp_region = PageDirectory::k_alloc_region(loadsize_pagealigned);
+			auto tmp_region = MM.alloc_kernel_region(loadsize_pagealigned);
 
 			//Read the section into the region
 			fd.seek(header.p_offset, SEEK_SET);
-			fd.read(KernelPointer<uint8_t>((uint8_t*) tmp_region.virt->start + (header.p_vaddr - loadloc_pagealigned)), header.p_filesz);
+			fd.read(KernelPointer<uint8_t>((uint8_t*) tmp_region->start() + (header.p_vaddr - loadloc_pagealigned)), header.p_filesz);
 
+			ASSERT(false); // TODO
 			//Allocate a program vmem region
-			MemoryRegion* vmem_region = page_directory->vmem_map().allocate_region(loadloc_pagealigned, loadsize_pagealigned);
-			if(!vmem_region) {
-				//If we failed to allocate the program vmem region, free the tmp region
-				ASSERT(false); // TODO
-//				MemoryManager::inst().pmem_map().free_region(tmp_region.phys);
-				KLog::crit("ELF", "Failed to allocate a vmem region in load_elf!");
-				return -ENOMEM;
-			}
-
-			//Unmap the region from the kernel
-			PageDirectory::k_unmap_region(tmp_region);
-			PageDirectory::kernel_vmem_map.free_region(tmp_region.virt);
-
-			//Map the physical region to the program's vmem region
-			vmem_region->related = tmp_region.phys;
-			tmp_region.phys->related = vmem_region;
-			LinkedMemoryRegion prog_region(tmp_region.phys, vmem_region);
-			page_directory->map_region(prog_region, header.p_flags & ELF_PF_W);
-
-			if(current_brk < header.p_vaddr + header.p_memsz)
-				current_brk = header.p_vaddr + header.p_memsz;
+//			MemoryRegion* vmem_region = page_directory->vmem_map().allocate_region(loadloc_pagealigned, loadsize_pagealigned);
+//			if(!vmem_region) {
+//				//If we failed to allocate the program vmem region, free the tmp region
+////				MemoryManager::inst().pmem_map().free_region(tmp_region.phys);
+//				KLog::crit("ELF", "Failed to allocate a vmem region in load_elf!");
+//				return -ENOMEM;
+//			}
+//
+//			//Unmap the region from the kernel
+//			PageDirectory::k_unmap_region(tmp_region);
+//			PageDirectory::kernel_vmem_map.free_region(tmp_region.virt);
+//
+//			//Map the physical region to the program's vmem region
+//			vmem_region->related = tmp_region.phys;
+//			tmp_region.phys->related = vmem_region;
+//			LinkedMemoryRegion prog_region(tmp_region.phys, vmem_region);
+//			page_directory->map_region(prog_region, header.p_flags & ELF_PF_W);
+//
+//			if(current_brk < header.p_vaddr + header.p_memsz)
+//				current_brk = header.p_vaddr + header.p_memsz;
 		}
 	}
 

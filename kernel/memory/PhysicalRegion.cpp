@@ -58,6 +58,29 @@ ResultRet<PageIndex> PhysicalRegion::alloc_page() {
 	return Result(ENOMEM);
 }
 
+ResultRet<PageIndex> PhysicalRegion::alloc_pages(size_t num_pages) {
+	if(m_reserved)
+		return Result(ENOMEM);
+
+	LOCK(m_lock);
+	if(m_free_pages < num_pages)
+		return Result(ENOMEM);
+
+	auto order = BuddyZone::order_for(num_pages);
+	if(order > BuddyZone::MAX_ORDER)
+		return Result(EINVAL);
+
+	for(size_t zone = 0; zone < m_zones.size(); zone++) {
+		auto page_res = m_zones[zone]->alloc_block(num_pages);
+		if(!page_res.is_error()) {
+			m_free_pages -= num_pages;
+			return page_res.value();
+		}
+	}
+
+	return Result(ENOMEM);
+}
+
 void PhysicalRegion::free_page(PageIndex page) {
 	ASSERT(!m_reserved);
 	ASSERT(page >= m_start_page && page < m_start_page + m_num_pages);

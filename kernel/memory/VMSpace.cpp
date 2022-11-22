@@ -3,11 +3,15 @@
 
 #include "VMSpace.h"
 #include "../kstd/unix_types.h"
+#include "MemoryManager.h"
+#include "AnonymousVMObject.h"
 
-VMSpace::VMSpace(VirtualAddress start, size_t size):
+VMSpace::VMSpace(VirtualAddress start, size_t size, PageDirectory& page_directory):
 	m_start(start),
 	m_size(size),
-	m_region_map(new VMSpaceRegion {.start = start, .size = size, .used = false, .next = nullptr, .prev = nullptr}) {}
+	m_region_map(new VMSpaceRegion {.start = start, .size = size, .used = false, .next = nullptr, .prev = nullptr}),
+	m_page_directory(page_directory)
+{}
 
 VMSpace::~VMSpace() {
 	auto cur_region = m_region_map;
@@ -22,8 +26,8 @@ ResultRet<kstd::shared_ptr<VMRegion>> VMSpace::map_object(kstd::shared_ptr<VMObj
 	LOCK(m_lock);
 	auto vaddr = TRY(alloc_space(object->size()));
 	auto region = kstd::make_shared<VMRegion>(object, vaddr, object->size());
-	m_regions.push_back(region);
-	m_page_directory.map(region);
+	m_regions.push_back(region.get());
+	m_page_directory.map(*region);
 	return region;
 }
 
@@ -31,21 +35,46 @@ ResultRet<kstd::shared_ptr<VMRegion>> VMSpace::map_object(kstd::shared_ptr<VMObj
 	LOCK(m_lock);
 	auto vaddr = TRY(alloc_space_at(object->size(), address));
 	auto region = kstd::make_shared<VMRegion>(object, vaddr, object->size());
-	m_regions.push_back(region);
-	m_page_directory.map(region);
+	m_regions.push_back(region.get());
+	m_page_directory.map(*region);
 	return region;
 }
 
-Result VMSpace::unmap_region(kstd::shared_ptr<VMRegion> region) {
+Result VMSpace::unmap_region(VMRegion& region) {
 	LOCK(m_lock);
 	for(size_t i = 0; i < m_regions.size(); i++) {
-		if(m_regions[i] == region) {
+		if(m_regions[i] == &region) {
 			m_regions.erase(i);
-			auto free_res = free_space(region->size(), region->start());
+			auto free_res = free_space(region.size(), region.start());
 			ASSERT(!free_res.is_error())
 			m_page_directory.unmap(region);
 			return free_res;
 		}
+	}
+	return Result(ENOENT);
+}
+
+Result VMSpace::unmap_region(VirtualAddress address) {
+	LOCK(m_lock);
+	for(size_t i = 0; i < m_regions.size(); i++) {
+		auto region = m_regions[i];
+		if(region->start() == address) {
+			auto free_res = free_space(region->size(), region->start());
+			ASSERT(!free_res.is_error())
+			m_page_directory.unmap(*region);
+			m_regions.erase(i);
+			return free_res;
+		}
+	}
+	return Result(ENOENT);
+}
+
+ResultRet<VMRegion*> VMSpace::get_region(VirtualAddress address) {
+	LOCK(m_lock);
+	for(size_t i = 0; i < m_regions.size(); i++) {
+		auto region = m_regions[i];
+		if(region->start() == address)
+			return region;
 	}
 	return Result(ENOENT);
 }

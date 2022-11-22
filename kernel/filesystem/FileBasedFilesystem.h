@@ -23,7 +23,6 @@
 #include <kernel/time/Time.h>
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/kstd/vector.hpp>
-#include <kernel/memory/LinkedMemoryRegion.h>
 
 class FileBasedFilesystem: public Filesystem {
 public:

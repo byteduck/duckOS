@@ -22,9 +22,10 @@
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/unix_types.h>
 #include <kernel/kstd/shared_ptr.hpp>
-#include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/memory/Stack.h>
 #include <kernel/Result.hpp>
+#include "kernel/memory/VMRegion.h"
+#include "SpinLock.h"
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
 #define THREAD_KERNEL_STACK_SIZE 4096 //4KiB
@@ -101,8 +102,8 @@ private:
 	bool _waiting_to_die = false;
 
 	//Stack
-	LinkedMemoryRegion _kernel_stack_region;
-	LinkedMemoryRegion _stack_region;
+	Ptr<VMRegion> _kernel_stack_region;
+	Ptr<VMRegion> _stack_region;
 
 	//Blocking and Joining
 	Blocker* _blocker = nullptr;
@@ -115,7 +116,7 @@ private:
 	bool _ready_to_handle_signal = false;
 	bool _just_finished_signal = false;
 	size_t _signal_stack_top = 0;
-	LinkedMemoryRegion _sighandler_ustack_region;
-	LinkedMemoryRegion _sighandler_kstack_region;
+	Ptr<VMRegion> _sighandler_ustack_region;
+	Ptr<VMRegion> _sighandler_kstack_region;
 };
 

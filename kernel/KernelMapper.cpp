@@ -108,7 +108,7 @@ void KernelMapper::print_stacktrace() {
 			break;
 
 		//Check if the stack pointer is mapped
-		if(!PageDirectory::k_is_mapped((size_t) stk)) {
+		if(!MM.kernel_page_directory.is_mapped((VirtualAddress) stk, false)) {
 			printf("0x%x (Unmapped)\n", stk[1]);
 			break;
 		}

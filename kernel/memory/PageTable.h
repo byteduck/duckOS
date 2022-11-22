@@ -20,6 +20,7 @@
 #pragma once
 
 #include <kernel/kstd/types.h>
+#include "VMRegion.h"
 
 class PageDirectory;
 class PageTable {
@@ -45,7 +46,7 @@ public:
 		uint32_t value;
 	} Entry;
 
-	PageTable(size_t vaddr, PageDirectory* page_directory, bool alloc_table = true);
+	explicit PageTable(size_t vaddr, bool alloc_table = true);
 	PageTable();
 	~PageTable();
 
@@ -59,9 +60,8 @@ public:
 	Entry& operator[](int index);
 
 private:
+	Ptr<VMRegion> m_entries_region;
 	Entry* _entries = nullptr;
 	size_t _vaddr = 0;
-	PageDirectory* _page_directory = nullptr;
-	bool _alloced_table = false;
 };
 

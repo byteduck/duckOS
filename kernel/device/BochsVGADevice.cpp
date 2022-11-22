@@ -53,12 +53,14 @@ bool BochsVGADevice::detect() {
 		return false;
 	}
 
-	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
-	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
-	framebuffer_baseaddr = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size() * 2, true);
-	framebuffer = framebuffer_baseaddr;
-	KLog::info("VGA", "Found a bochs-compatible VGA device at %x:%x.%x", address.bus, address.slot, address.function);
-	KLog::dbg("VGA", "virtual framebuffer mapped from 0x%x to 0x%x", framebuffer_paddr, framebuffer_baseaddr);
+	ASSERT(false);
+	// TODO
+//	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
+//	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
+//	framebuffer_baseaddr = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size() * 2, true);
+//	framebuffer = framebuffer_baseaddr;
+//	KLog::info("VGA", "Found a bochs-compatible VGA device at %x:%x.%x", address.bus, address.slot, address.function);
+//	KLog::dbg("VGA", "virtual framebuffer mapped from 0x%x to 0x%x", framebuffer_paddr, framebuffer_baseaddr);
 	return true;
 }
 
@@ -137,10 +139,12 @@ void BochsVGADevice::clear(uint32_t color) {
 }
 
 void* BochsVGADevice::map_framebuffer(Process* proc) {
-	void* ret = proc->page_directory()->mmap(framebuffer_paddr, framebuffer_size() * 2, true);
-	if(!ret)
-		return (void*) -ENOMEM;
-	return ret;
+	ASSERT(false);
+	// TODO
+//	void* ret = proc->page_directory()->mmap(framebuffer_paddr, framebuffer_size() * 2, true);
+//	if(!ret)
+//		return (void*) -ENOMEM;
+//	return ret;
 }
 
 int BochsVGADevice::ioctl(unsigned int request, SafePointer<void*> argp) {

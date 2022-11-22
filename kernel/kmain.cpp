@@ -67,15 +67,15 @@ int kmain(uint32_t mbootptr){
 
 	new (__mem_manager_storage) MemoryManager;
 
+	// Call global constructors
+	for (constructor_func* ctor = start_ctors; ctor < end_ctors; ctor++)
+		(*ctor)();
+	ASSERT(did_constructors);
+
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
 	Memory::load_gdt();
 	Interrupt::init();
 	MemoryManager::inst().setup_paging();
-
-	//Call global constructors, now that memory management is initialized
-	for (constructor_func* ctor = start_ctors; ctor < end_ctors; ctor++)
-		(*ctor)();
-	ASSERT(did_constructors);
 
 	TimeManager::init();
 	Device::init();

@@ -106,27 +106,27 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 			kstd::string str;
 
 			str += "[mem]\nusable = ";
-			itoa((int) MemoryManager::inst().get_usable_mem(), numbuf, 10);
+			itoa((int) 0, numbuf, 10);
 			str += numbuf;
 
 			str += "\nused = ";
-			itoa((int) MemoryManager::inst().get_used_mem(), numbuf, 10);
+			itoa((int) 0, numbuf, 10);
 			str += numbuf;
 
 			str += "\nreserved = ";
-			itoa((int) MemoryManager::inst().get_reserved_mem(), numbuf, 10);
+			itoa((int) 0, numbuf, 10);
 			str += numbuf;
 
 			str += "\nkvirt = ";
-			itoa((int) MemoryManager::inst().get_kernel_vmem(), numbuf, 10);
+			itoa((int) 0, numbuf, 10);
 			str += numbuf;
 
 			str += "\nkphys = ";
-			itoa((int) MemoryManager::inst().get_kernel_pmem(), numbuf, 10);
+			itoa((int) 0, numbuf, 10);
 			str += numbuf;
 
 			str += "\nkheap = ";
-			itoa((int) MemoryManager::inst().get_kheap_pmem(), numbuf, 10);
+			itoa((int) 0, numbuf, 10);
 			str += numbuf;
 
 			str += "\nkcache = ";
@@ -221,15 +221,15 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 			str += numbuf;
 
 			str += "\npmem = ";
-			itoa(proc.value()->page_directory()->used_pmem(), numbuf, 10);
+			itoa(0, numbuf, 10);
 			str += numbuf;
 
 			str += "\nvmem = ";
-			itoa(proc.value()->page_directory()->used_vmem(), numbuf, 10);
+			itoa(0, numbuf, 10);
 			str += numbuf;
 
 			str += "\nshmem = ";
-			itoa(proc.value()->page_directory()->used_shmem(), numbuf, 10);
+			itoa(0, numbuf, 10);
 			str += numbuf;
 			str += "\n";
 

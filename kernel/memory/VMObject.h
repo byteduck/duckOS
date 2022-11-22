@@ -13,7 +13,7 @@
  */
 class VMObject {
 public:
-	VMObject(kstd::vector<PageIndex>&& physical_pages);
+	explicit VMObject(kstd::vector<PageIndex> physical_pages);
 	VMObject(const VMObject& other) = delete;
 	~VMObject();
 

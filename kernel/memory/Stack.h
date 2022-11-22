@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include "LinkedMemoryRegion.h"
 #include <kernel/kstd/cstring.h>
 
 class Stack {

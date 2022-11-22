@@ -98,6 +98,8 @@ SET(KERNEL_SRCS
         memory/PhysicalRegion.cpp
         memory/PhysicalPage.cpp
         memory/VMObject.cpp
+        memory/VMRegion.cpp
+        memory/VMSpace.cpp
         memory/AnonymousVMObject.cpp
         memory/BuddyZone.cpp
         device/PATADevice.cpp

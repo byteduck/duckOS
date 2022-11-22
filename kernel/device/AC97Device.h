@@ -20,7 +20,6 @@
 
 #include "CharacterDevice.h"
 #include "kernel/IO.h"
-#include "kernel/memory/LinkedMemoryRegion.h"
 #include <kernel/Result.hpp>
 #include <kernel/pci/PCI.h>
 #include <kernel/interrupt/IRQHandler.h>
@@ -117,8 +116,8 @@ private:
 
 	PCI::Address m_address;
 	uint16_t m_mixer_address, m_bus_address, m_output_channel;
-	LinkedMemoryRegion m_output_buffer_region;
-	LinkedMemoryRegion m_output_buffer_descriptor_region;
+	Ptr<VMRegion> m_output_buffer_region;
+	Ptr<VMRegion> m_output_buffer_descriptor_region;
 	BufferDescriptor* m_output_buffer_descriptors;
 	uint32_t m_current_output_buffer_page = 0;
 	uint32_t m_current_buffer_descriptor = 0;

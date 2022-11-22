@@ -19,17 +19,14 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/kstdio.h>
-#include <kernel/interrupt/isr.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/interrupt.h>
 #include "PageTable.h"
-#include "VMMap.h"
 #include "MemoryManager.h"
 #include <kernel/multiboot.h>
-#include "MemoryRegion.h"
+#include "AnonymousVMObject.h"
 #include <kernel/tasking/Thread.h>
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/Atomic.h>
 #include <kernel/kstd/KLog.h>
 
 size_t usable_bytes_ram = 0;
@@ -45,7 +42,9 @@ bool setup_paging = false;
 
 MemoryManager* MemoryManager::_inst;
 
-MemoryManager::MemoryManager() {
+MemoryManager::MemoryManager():
+	m_kernel_space(HIGHER_HALF, ~0x0 - HIGHER_HALF + 1, kernel_page_directory)
+{
 	if(_inst)
 		PANIC("MEMORY_MANAGER_DUPLICATE", "Something tried to initialize the memory manager twice.");
 	_inst = this;
@@ -58,14 +57,10 @@ MemoryManager& MemoryManager::inst() {
 void MemoryManager::setup_paging() {
 	//Assert that the kernel doesn't exceed 7MiB
 	ASSERT(KERNEL_DATA_END - KERNEL_TEXT <= 0x700000);
-
-	kernel_page_directory.set_entries(kernel_page_directory_entries);
 	PageDirectory::init_kmem();
 
-	liballoc_spinlock = SpinLock();
-
 	//Setup kernel page directory to map the kernel to HIGHER_HALF
-	PageTable kernel_early_page_table1(0, nullptr, false);
+	PageTable kernel_early_page_table1(0, false);
 	kernel_early_page_table1.entries() = kernel_early_page_table_entries1;
 	early_pagetable_setup(&kernel_early_page_table1, HIGHER_HALF, true);
 	for (auto i = 0; i < 1024; i++) {
@@ -74,7 +69,7 @@ void MemoryManager::setup_paging() {
 		kernel_early_page_table1[i].data.set_address(PAGE_SIZE * i);
 	}
 
-	PageTable kernel_early_page_table2(0, nullptr, false);
+	PageTable kernel_early_page_table2(0, false);
 	kernel_early_page_table2.entries() = kernel_early_page_table_entries2;
 	early_pagetable_setup(&kernel_early_page_table2, HIGHER_HALF + PAGE_SIZE * 1024, true);
 	for (auto i = 0; i < 1024; i++) {
@@ -91,10 +86,6 @@ void MemoryManager::setup_paging() {
 			"movl %%eax, %%cr0\n"
 			: : "a"((size_t) kernel_page_directory.entries() - HIGHER_HALF)
 	);
-
-	//Now, map and write everything to the directory
-	PageDirectory::map_kernel(text_region, data_region);
-	kernel_page_directory.update_kernel_entries();
 }
 
 void MemoryManager::load_page_directory(const kstd::shared_ptr<PageDirectory>& page_directory) {
@@ -135,43 +126,16 @@ void MemoryManager::page_fault_handler(struct Registers *r) {
 	}
 }
 
-
-size_t MemoryManager::get_used_mem() {
-	ASSERT(false); //TODO
-//	return pmem_map().used_memory();
-}
-
-size_t MemoryManager::get_reserved_mem() {
-	ASSERT(false); //TODO
-//	return pmem_map().reserved_memory();
-}
-
-size_t MemoryManager::get_usable_mem() {
-	return usable_bytes_ram;
-}
-
-size_t MemoryManager::get_kernel_vmem() {
-	return PageDirectory::kernel_vmem_map.used_memory();
-}
-
-size_t MemoryManager::get_kernel_pmem() {
-	return PageDirectory::used_kernel_pmem;
-}
-
-size_t MemoryManager::get_kheap_pmem() {
-	return PageDirectory::used_kheap_pmem;
-}
-
 void MemoryManager::early_pagetable_setup(PageTable *page_table, size_t virtual_address, bool read_write) {
 	ASSERT(virtual_address % PAGE_SIZE == 0);
 
 	size_t index = virtual_address / PAGE_SIZE;
 	size_t dir_index = (index / 1024) % 1024;
 
-	kernel_page_directory[dir_index].data.present = true;
-	kernel_page_directory[dir_index].data.read_write = read_write;
-	kernel_page_directory[dir_index].data.size = PAGE_SIZE_FLAG;
-	kernel_page_directory[dir_index].data.set_address((size_t) page_table->entries() - HIGHER_HALF);
+	kernel_page_directory.entries()[dir_index].data.present = true;
+	kernel_page_directory.entries()[dir_index].data.read_write = read_write;
+	kernel_page_directory.entries()[dir_index].data.size = PAGE_SIZE_FLAG;
+	kernel_page_directory.entries()[dir_index].data.set_address((size_t) page_table->entries() - HIGHER_HALF);
 }
 
 void MemoryManager::invlpg(void* vaddr) {
@@ -289,6 +253,54 @@ ResultRet<PageIndex> MemoryManager::alloc_physical_page() const {
 	return Result(ENOMEM);
 }
 
+ResultRet<kstd::vector<PageIndex>> MemoryManager::alloc_physical_pages(size_t num_pages) const {
+	auto new_pages = kstd::vector<PageIndex>();
+	new_pages.reserve(num_pages);
+	while(num_pages--)
+		new_pages.push_back(TRY(MemoryManager::inst().alloc_physical_page()));
+	return new_pages;
+}
+
+ResultRet<kstd::vector<PageIndex>> MemoryManager::alloc_contiguous_physical_pages(size_t num_pages) const {
+	for(size_t i = 0; i < m_physical_regions.size(); i++) {
+		auto result = m_physical_regions[i]->alloc_pages(num_pages);
+		if(!result.is_error()) {
+			PageIndex first_page = result.value();
+			kstd::vector<PageIndex> ret;
+			ret.reserve(num_pages);
+			for(size_t page_index = 0; page_index < num_pages; page_index++) {
+				get_physical_page(first_page + page_index).allocated.ref_count = 1;
+				ret.push_back(first_page + page_index);
+			}
+			return ret;
+		}
+	}
+
+	return Result(ENOMEM);
+}
+
+kstd::shared_ptr<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
+	auto do_alloc = [&]() -> ResultRet<kstd::shared_ptr<VMRegion>> {
+		auto object = TRY(AnonymousVMObject::alloc(size));
+		return TRY(m_kernel_space.map_object(object));
+	};
+	auto res = do_alloc();
+	if(res.is_error())
+		PANIC("ALLOC_KERNEL_REGION_FAIL", "Could not allocate a new anonymous memory region for the kernel.");
+	return res.value();
+}
+
+kstd::shared_ptr<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
+	auto do_alloc = [&]() -> ResultRet<kstd::shared_ptr<VMRegion>> {
+		auto object = TRY(AnonymousVMObject::alloc_contiguous(size));
+		return TRY(m_kernel_space.map_object(object));
+	};
+	auto res = do_alloc();
+	if(res.is_error())
+		PANIC("ALLOC_DMA_REGION_FAIL", "Could not allocate a new anonymous memory region for DMA.");
+	return res.value();
+}
+
 void MemoryManager::free_physical_page(PageIndex page) const {
 	ASSERT(get_physical_page(page).allocated.ref_count.load(MemoryOrder::Relaxed) == 0);
 
@@ -311,8 +323,6 @@ void liballoc_unlock() {
 }
 
 void *liballoc_alloc(int pages) {
-	PageDirectory::used_kheap_pmem += pages * PAGE_SIZE;
-
 	// If we still have early kheap memory, use it
 	if(pages * PAGE_SIZE < (sizeof(early_kheap_memory) - used_early_kheap_memory)) {
 		void* ptr = early_kheap_memory + used_early_kheap_memory;
@@ -322,11 +332,13 @@ void *liballoc_alloc(int pages) {
 	}
 
 	ASSERT(setup_paging);
-	return PageDirectory::k_alloc_region_for_heap(pages * PAGE_SIZE);
+	auto region = MM.alloc_kernel_region(pages * PAGE_SIZE);
+	region.leak_ref(); // So that it's not deallocated since we're throwing away this pointer
+	return (void*) region->start();
 }
 
 void liballoc_afteralloc(void* ptr_alloced) {
-	PageDirectory::k_after_alloc();
+
 }
 
 void liballoc_free(void *ptr, int pages) {
@@ -335,6 +347,9 @@ void liballoc_free(void *ptr, int pages) {
 		return;
 	}
 
-	PageDirectory::used_kheap_pmem -= pages * PAGE_SIZE;
-	PageDirectory::k_free_region(ptr);
+	// Find the region we need to free and delete it, since we manually leaked its reference count
+	auto region_res = MM.kernel_space().get_region((VirtualAddress) ptr);
+	if(region_res.is_error())
+		PANIC("LIBALLOC_FREE_FAIL", "Could not find the VMRegion associated with a call to liballoc_free.");
+	delete region_res.value();
 }

@@ -37,7 +37,7 @@ namespace kstd {
 				new (&_storage[i]) T(value);
 		}
 
-		vector(vector<T>& other): _capacity(other._capacity), _size(other._size) {
+		vector(const vector<T>& other): _capacity(other._capacity), _size(other._size) {
 			_storage = (T*) kcalloc(_size, sizeof(T));
 			for(size_t i = 0; i < _size; i++)
 				new (&_storage[i]) T(other._storage[i]);

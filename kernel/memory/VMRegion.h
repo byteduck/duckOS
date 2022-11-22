@@ -25,10 +25,13 @@ public:
 	 * @param size The end address of the region.
 	 */
 	VMRegion(kstd::shared_ptr<VMObject> object, size_t start, size_t size);
+	~VMRegion();
 
 	kstd::shared_ptr<VMObject> object() const { return m_object; }
 	VirtualAddress start() const { return m_start; }
+	VirtualAddress end() const { return m_start + m_size; }
 	size_t size() const { return m_size; }
+	bool is_kernel() const { return m_start >= HIGHER_HALF; }
 	Prot prot() const { return m_prot; }
 
 private:

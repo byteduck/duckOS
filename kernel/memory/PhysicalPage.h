@@ -18,7 +18,15 @@ public:
 			release();
 	}
 
-	PageIndex index();
+	PageIndex index() const;
+
+	inline void* ptr() const {
+		return (void*) (index() * PAGE_SIZE);
+	}
+
+	inline PhysicalAddress paddr() const {
+		return index() * PAGE_SIZE;
+	}
 
 	/// When a page is in use, this struct is used to keep count of its references.
 	struct {

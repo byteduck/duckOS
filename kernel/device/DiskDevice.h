@@ -20,7 +20,6 @@
 #pragma once
 
 #include <kernel/time/Time.h>
-#include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/memory/MemoryManager.h>
 #include "BlockDevice.h"
 #include <kernel/kstd/map.hpp>
@@ -45,9 +44,9 @@ private:
 
 		inline bool has_block(size_t block) const { return block >= start_block && block < start_block + num_blocks(); }
 		inline size_t num_blocks() const { return PAGE_SIZE / block_size; }
-		inline uint8_t* block_data(size_t block) const { return (uint8_t*) (region.virt->start + block_size * (block - start_block)); }
+		inline uint8_t* block_data(size_t block) const { return (uint8_t*) (region->start() + block_size * (block - start_block)); }
 
-		LinkedMemoryRegion region;
+		kstd::shared_ptr<VMRegion> region;
 		size_t block_size;
 		size_t start_block;
 		Time last_used = Time::now();

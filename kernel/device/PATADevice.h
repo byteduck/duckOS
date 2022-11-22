@@ -26,7 +26,6 @@
 #include "ATA.h"
 #include "DiskDevice.h"
 #include <kernel/tasking/SpinLock.h>
-#include <kernel/memory/LinkedMemoryRegion.h>
 #include <kernel/memory/MemoryManager.h>
 
 #define ATA_MAX_SECTORS_AT_ONCE (PAGE_SIZE / 512)
@@ -79,8 +78,8 @@ private:
 
 	//DMA stuff
 	PRDT* _prdt = nullptr;
-	LinkedMemoryRegion _dma_region;
-	LinkedMemoryRegion _prdt_region;
+	Ptr<VMRegion> _dma_region;
+	Ptr<VMRegion> _prdt_region;
 
 	//Interrupt stuff
 	UninterruptibleBooleanBlocker _blocker;

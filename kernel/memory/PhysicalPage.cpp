@@ -5,7 +5,7 @@
 #include "../kstd/kstdio.h"
 #include "MemoryManager.h"
 
-PageIndex PhysicalPage::index() {
+PageIndex PhysicalPage::index() const {
 	return this - &MemoryManager::inst().get_physical_page(0);
 }
 

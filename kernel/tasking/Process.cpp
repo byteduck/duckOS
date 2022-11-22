@@ -201,39 +201,41 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 	if(to_fork->_kernel_mode)
 		PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.");
 
-	_name = to_fork->_name;
-	_pid = TaskManager::get_new_pid();
-	_kernel_mode = false;
-	_cwd = to_fork->_cwd;
-	_ppid = to_fork->_pid;
-	_sid = to_fork->_sid;
-	_pgid = to_fork->_pgid;
-	_umask = to_fork->_umask;
-	_tty = to_fork->_tty;
-	_state = ALIVE;
-
-	//TODO: Prevent thread race condition when copying signal handlers/file descriptors
-	//Copy signal handlers
-	for(int i = 0; i < 32; i++)
-		signal_actions[i] = to_fork->signal_actions[i];
-
-	//Copy file descriptors
-	_file_descriptors.resize(to_fork->_file_descriptors.size());
-	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++) {
-		if(to_fork->_file_descriptors[i]) {
-			_file_descriptors[i] = kstd::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
-			_file_descriptors[i]->set_owner(_self_ptr);
-		}
-	}
-
-	//Create page directory and fork the old one
-	//TODO: Freeze other threads to prevent them from modifying memory before the fork can mark it CoW
-	_page_directory = kstd::make_shared<PageDirectory>();
-	_page_directory->fork_from(to_fork->_page_directory.get(), _ppid, _pid);
-
-	//Create the main thread
-	auto* main_thread = new Thread(_self_ptr, _cur_tid++,regs);
-	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
+	ASSERT(false);
+	// TODO
+//	_name = to_fork->_name;
+//	_pid = TaskManager::get_new_pid();
+//	_kernel_mode = false;
+//	_cwd = to_fork->_cwd;
+//	_ppid = to_fork->_pid;
+//	_sid = to_fork->_sid;
+//	_pgid = to_fork->_pgid;
+//	_umask = to_fork->_umask;
+//	_tty = to_fork->_tty;
+//	_state = ALIVE;
+//
+//	//TODO: Prevent thread race condition when copying signal handlers/file descriptors
+//	//Copy signal handlers
+//	for(int i = 0; i < 32; i++)
+//		signal_actions[i] = to_fork->signal_actions[i];
+//
+//	//Copy file descriptors
+//	_file_descriptors.resize(to_fork->_file_descriptors.size());
+//	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++) {
+//		if(to_fork->_file_descriptors[i]) {
+//			_file_descriptors[i] = kstd::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
+//			_file_descriptors[i]->set_owner(_self_ptr);
+//		}
+//	}
+//
+//	//Create page directory and fork the old one
+//	//TODO: Freeze other threads to prevent them from modifying memory before the fork can mark it CoW
+//	_page_directory = kstd::make_shared<PageDirectory>();
+//	_page_directory->fork_from(to_fork->_page_directory.get(), _ppid, _pid);
+//
+//	//Create the main thread
+//	auto* main_thread = new Thread(_self_ptr, _cur_tid++,regs);
+//	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
 }
 
 Process::~Process() {
@@ -886,71 +888,77 @@ int Process::sys_ioctl(int fd, unsigned request, UserspacePointer<void*> argp) {
 }
 
 void* Process::sys_memacquire(void* addr, size_t size) const {
-	if(addr) {
-		//We requested a specific address
-		auto region = _page_directory->allocate_region((size_t) addr, size, true);
-		if(!region.virt)
-			return (void*) -EINVAL;
-		return (void*) region.virt->start;
-	} else {
-		//We didn't request a specific address
-		auto region = _page_directory->allocate_region(size, true);
-		if(!region.virt)
-			return (void*) -ENOMEM;
-		return (void*) region.virt->start;
-	}
+	ASSERT(false); // TODO
+//	if(addr) {
+//		//We requested a specific address
+//		auto region = _page_directory->allocate_region((size_t) addr, size, true);
+//		if(!region.virt)
+//			return (void*) -EINVAL;
+//		return (void*) region.virt->start;
+//	} else {
+//		//We didn't request a specific address
+//		auto region = _page_directory->allocate_region(size, true);
+//		if(!region.virt)
+//			return (void*) -ENOMEM;
+//		return (void*) region.virt->start;
+//	}
 }
 
 int Process::sys_memrelease(void* addr, size_t size) const {
-	if(!_page_directory->free_region((size_t) addr, size))
-		return -EINVAL;
-	return SUCCESS;
+	ASSERT(false); // TODO
+//	if(!_page_directory->free_region((size_t) addr, size))
+//		return -EINVAL;
+//	return SUCCESS;
 }
 
 int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm> s) {
-	auto res = _page_directory->create_shared_region((size_t) addr, size, _pid);
-	if(res.is_error())
-		return res.code();
-
-	auto reg = res.value();
-	shm ret;
-	ret.size = reg.virt->size;
-	ret.ptr = (void*) reg.virt->start;
-	ret.id = reg.virt->shm_id;
-	s.set(ret);
-
-	return SUCCESS;
+	ASSERT(false); // TODO
+//	auto res = _page_directory->create_shared_region((size_t) addr, size, _pid);
+//	if(res.is_error())
+//		return res.code();
+//
+//	auto reg = res.value();
+//	shm ret;
+//	ret.size = reg.virt->size;
+//	ret.ptr = (void*) reg.virt->start;
+//	ret.id = reg.virt->shm_id;
+//	s.set(ret);
+//
+//	return SUCCESS;
 }
 
 int Process::sys_shmattach(int id, void* addr, UserspacePointer<struct shm> s) {
-	auto res = _page_directory->attach_shared_region(id, (size_t) addr, _pid);
-	if(res.is_error())
-		return res.code();
-
-	auto reg = res.value();
-	shm ret;
-	ret.size = reg.virt->size;
-	ret.ptr = (void*) reg.virt->start;
-	ret.id = reg.phys->shm_id;
-	s.set(ret);
-
-	return SUCCESS;
+	ASSERT(false); // TODO
+//	auto res = _page_directory->attach_shared_region(id, (size_t) addr, _pid);
+//	if(res.is_error())
+//		return res.code();
+//
+//	auto reg = res.value();
+//	shm ret;
+//	ret.size = reg.virt->size;
+//	ret.ptr = (void*) reg.virt->start;
+//	ret.id = reg.phys->shm_id;
+//	s.set(ret);
+//
+//	return SUCCESS;
 }
 
 int Process::sys_shmdetach(int id) {
-	return _page_directory->detach_shared_region(id).code();
+	ASSERT(false); // TODO
+//	return _page_directory->detach_shared_region(id).code();
 }
 
 int Process::sys_shmallow(int id, pid_t pid, int perms) {
 	//TODO: If PIDs end up getting recycled and we previously allowed a PID that was recycled, it could be a security issue
-	if(!(perms &  (SHM_READ | SHM_WRITE)))
-		return -EINVAL;
-	if((perms & SHM_WRITE) && !(perms & SHM_READ))
-		return -EINVAL;
-	if(TaskManager::process_for_pid(pid).is_error())
-		return -EINVAL;
-
-	return _page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE, perms & SHM_SHARE).code();
+	ASSERT(false); // TODO
+//	if(!(perms &  (SHM_READ | SHM_WRITE)))
+//		return -EINVAL;
+//	if((perms & SHM_WRITE) && !(perms & SHM_READ))
+//		return -EINVAL;
+//	if(TaskManager::process_for_pid(pid).is_error())
+//		return -EINVAL;
+//
+//	return _page_directory->allow_shared_region(id, _pid, pid, perms & SHM_WRITE, perms & SHM_SHARE).code();
 }
 
 int Process::sys_poll(UserspacePointer<pollfd> pollfd, nfds_t nfd, int timeout) {

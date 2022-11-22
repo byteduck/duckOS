@@ -27,14 +27,15 @@ CommandLine::CommandLine(const struct multiboot_info& header) {
 	if(!_inst)
 		_inst = this;
 	if(header.flags & MULTIBOOT_INFO_CMDLINE) {
-		char* str = (char*) PageDirectory::k_mmap(header.cmdline, 1024, true);
-		if(!str) {
-			KLog::warn("CommandLine", "cmdline couldn't be mmap-ed!");
-			return;
-		}
-
-		cmdline = str;
-		PageDirectory::k_munmap(str);
+		// TODO
+//		char* str = (char*) PageDirectory::k_mmap(header.cmdline, 1024, true);
+//		if(!str) {
+//			KLog::warn("CommandLine", "cmdline couldn't be mmap-ed!");
+//			return;
+//		}
+//
+//		cmdline = str;
+//		PageDirectory::k_munmap(str);
 
 		KLog::info("CommandLine", "Command line options: '%s'", cmdline.c_str());
 

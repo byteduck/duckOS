@@ -21,30 +21,14 @@
 
 #include <kernel/kstd/types.h>
 #include <kernel/kstd/shared_ptr.hpp>
-#include "MemoryRegion.h"
 #include "PageTable.h"
 #include "PageDirectory.h"
-#include "VMMap.h"
 #include "PhysicalPage.h"
 #include "PhysicalRegion.h"
 #include "BuddyZone.h"
+#include "VMSpace.h"
 #include <kernel/tasking/SpinLock.h>
-
-#define PAGING_4KiB 0
-#define PAGING_4MiB 1
-#define PAGE_SIZE 4096
-#define PAGE_SIZE_FLAG PAGING_4KiB
-#define HIGHER_HALF 0xC0000000
-#define KERNEL_TEXT ((size_t)&_KERNEL_TEXT)
-#define KERNEL_TEXT_END ((size_t)&_KERNEL_TEXT_END)
-#define KERNEL_DATA ((size_t)&_KERNEL_DATA)
-#define KERNEL_DATA_END ((size_t)&_KERNEL_DATA_END)
-#define KERNEL_END ((size_t)&_KERNEL_END)
-#define PAGETABLES_START ((size_t)&_PAGETABLES_START)
-#define PAGETABLES_END ((size_t)&_PAGETABLES_END)
-#define KERNEL_TEXT_SIZE (KERNEL_TEXT_END - KERNEL_TEXT)
-#define KERNEL_DATA_SIZE (KERNEL_DATA_END - KERNEL_DATA)
-#define KERNEL_END_VIRTADDR (HIGHER_HALF + KERNEL_SIZE_PAGES * PAGE_SIZE)
+#include "Memory.h"
 
 /**
  * The basic premise of how the memory allocation in duckOS is as follows:
@@ -78,16 +62,15 @@ extern "C" long _PAGETABLES_END;
 struct multiboot_info;
 struct multiboot_mmap_entry;
 
+#define MM MemoryManager::inst()
+
 class MemoryManager {
 public:
-	PageDirectory kernel_page_directory = {true};
+	PageDirectory kernel_page_directory { PageDirectory::DirectoryType::KERNEL };
 
 	PageDirectory::Entry kernel_page_directory_entries[1024] __attribute__((aligned(4096)));
 	PageTable::Entry kernel_early_page_table_entries1[1024] __attribute__((aligned(4096)));
 	PageTable::Entry kernel_early_page_table_entries2[1024] __attribute__((aligned(4096)));
-
-	MemoryRegion early_pmem_text_region_storage[2];
-	MemoryRegion early_pmem_data_region_storage[2];
 
 	SpinLock liballoc_spinlock;
 
@@ -121,13 +104,31 @@ public:
 	/** Allocates a physical page for use. The resulting page will have a refcount of 1. **/
 	ResultRet<PageIndex> alloc_physical_page() const;
 
+	/** Allocates non-contiguous physical pages for use. The resulting pages will have a refcount of 1. **/
+	ResultRet<kstd::vector<PageIndex>> alloc_physical_pages(size_t num_pages) const;
+
+	/** Allocates contiguous physical pages for use. The resulting pages will have a refcount of 1. **/
+	ResultRet<kstd::vector<PageIndex>> alloc_contiguous_physical_pages(size_t num_pages) const;
+
+	/**
+	 * Allocates a new non-contiguous anonymous region in kernel space.
+	 * @param size The minimum size, in bytes, of the new region.
+	 */
+	Ptr<VMRegion> alloc_kernel_region(size_t size);
+/**
+	 * Allocates a new contiguous anonymous region in kernel space.
+	 * @param size The minimum size, in bytes, of the new region.
+	 */
+	Ptr<VMRegion> alloc_dma_region(size_t size);
+
+	VMSpace& kernel_space() { return m_kernel_space; }
+
 	/**
 	 * Frees a physical page for future use. The page should have a refcount of 0.
 	 * The preferred method of freeing a physical page is by calling deref() on it, which will free it once it has zero
 	 * references.
 	 */
 	void free_physical_page(PageIndex page) const;
-
 
 	/**
 	 * Used when setting up paging initially in order to map an entire page table starting at a virtual address.
@@ -136,42 +137,6 @@ public:
 	 * @param read_write The read_write flag on the page tables.
 	 */
 	void early_pagetable_setup(PageTable* page_table, size_t virtual_address, bool read_write);
-
-	/**
-	 * Get the amount of used physical memory in bytes. Doesn't include reserved memory.
-	 * @return The amount of allocated physical memory in bytes (granularity of PAGE_SIZE)
-	 */
-	size_t get_used_mem();
-
-	/**
-	 * Get the amount of reserved physical memory in bytes.
-	 * @return The amount of reserved physical memory in bytes (granularity of PAGE_SIZE)
-	 */
-	size_t get_reserved_mem();
-
-	/**
-	 * Get the total amount of usable physical memory in bytes.
-	 * @return The amount of usable physical memory in bytes.
-	 */
-	 size_t get_usable_mem();
-
-	/**
-	 * Get the amount of vmem used by the kernel in bytes.
-	 * @return The amount of virtual memory the kernel is using (granularity of PAGE_SIZE)
-	 */
-	size_t get_kernel_vmem();
-
-	/**
-	 * Get the amount of pmem used by the kernel in bytes. (This includes the kernel's code + heap)
-	 * @return The amount of physical memory the kernel is using (granularity of PAGE_SIZE)
-	 */
-	size_t get_kernel_pmem();
-
-	/**
-	 * Get the amount of pmem used by the kernel heap in bytes.
-	 * @return The amount of memory the kernel is using (granularity of PAGE_SIZE)
-	 */
-	size_t get_kheap_pmem();
 
 	/**
 	 * Invalidates the page in the TLB that contains vaddr.
@@ -189,8 +154,8 @@ private:
 
 	static MemoryManager* _inst;
 	PhysicalPage* m_physical_pages;
-	size_t m_num_physical_pages;
 	kstd::vector<PhysicalRegion*> m_physical_regions;
+	VMSpace m_kernel_space;
 };
 
 void liballoc_lock();

@@ -25,6 +25,12 @@ public:
 	ResultRet<PageIndex> alloc_page();
 
 	/**
+	 * Allocates contiguous pages in this region.
+	 * @return The index of the first page allocated (absolute).
+	 */
+	ResultRet<PageIndex> alloc_pages(size_t num_pages);
+
+	/**
 	 * Frees a page in this region.
 	 * @param page The index of the page to free (absolute).
 	 */

@@ -15,7 +15,7 @@
  */
 class VMSpace {
 public:
-	VMSpace(VirtualAddress start, size_t size);
+	VMSpace(VirtualAddress start, size_t size, PageDirectory& page_directory);
 	~VMSpace();
 
 	/**
@@ -38,7 +38,21 @@ public:
 	 * @param region The region to unmap.
 	 * @return Whether the region was succesfully unmapped.
 	 */
-	Result unmap_region(kstd::shared_ptr<VMRegion> region);
+	Result unmap_region(VMRegion& region);
+
+	/**
+	 * Unmaps the region at the given address.
+	 * @param region The address of the region to unmap.
+	 * @return Whether the region was succesfully unmapped.
+	 */
+	Result unmap_region(VirtualAddress address);
+
+	/**
+	 * Gets the region at the given address
+	 * @param address The address of the region to find.
+	 * @return The region, if found.
+	 */
+	ResultRet<VMRegion*> get_region(VirtualAddress address);
 
 	VirtualAddress start() const { return m_start; }
 	size_t size() const { return m_size; }
@@ -63,9 +77,9 @@ private:
 
 	VirtualAddress m_start;
 	size_t m_size;
-	kstd::vector<kstd::shared_ptr<VMRegion>> m_regions;
+	kstd::vector<VMRegion*> m_regions;
 	VMSpaceRegion* m_region_map;
 	size_t m_used = 0;
 	SpinLock m_lock;
-	PageDirectory m_page_directory;
+	PageDirectory& m_page_directory;
 };
