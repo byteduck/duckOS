@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "VMRegion.h"
+#include "VMObject.h"
 
-class AnonymousVMRegion: public VMRegion {
+class AnonymousVMObject: public VMObject {
 private:
 
 };

@@ -94,14 +94,11 @@ SET(KERNEL_SRCS
         device/VGADevice.cpp
         device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp
-        memory/MemoryRegion.cpp
-        memory/MemoryMap.cpp
-        memory/LinkedMemoryRegion.cpp
         memory/Stack.h
         memory/PhysicalRegion.cpp
         memory/PhysicalPage.cpp
-        memory/VMRegion.cpp
-        memory/AnonymousVMRegion.cpp
+        memory/VMObject.cpp
+        memory/AnonymousVMObject.cpp
         memory/BuddyZone.cpp
         device/PATADevice.cpp
         CommandLine.cpp

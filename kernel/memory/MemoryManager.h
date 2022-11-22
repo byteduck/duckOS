@@ -24,7 +24,7 @@
 #include "MemoryRegion.h"
 #include "PageTable.h"
 #include "PageDirectory.h"
-#include "MemoryMap.h"
+#include "VMMap.h"
 #include "PhysicalPage.h"
 #include "PhysicalRegion.h"
 #include "BuddyZone.h"

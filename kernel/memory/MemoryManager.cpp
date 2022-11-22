@@ -23,7 +23,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/interrupt.h>
 #include "PageTable.h"
-#include "MemoryMap.h"
+#include "VMMap.h"
 #include "MemoryManager.h"
 #include <kernel/multiboot.h>
 #include "MemoryRegion.h"
@@ -92,20 +92,9 @@ void MemoryManager::setup_paging() {
 			: : "a"((size_t) kernel_page_directory.entries() - HIGHER_HALF)
 	);
 
-	// Mark the kernel's physical pages as in use
-	printf("%x\n", (KERNEL_TEXT - HIGHER_HALF) / PAGE_SIZE);
-	ASSERT(false); //TODO
-////	MemoryRegion* text_region = _pmem_map.allocate_region(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, &early_pmem_text_region_storage[0], &early_pmem_text_region_storage[1]);
-////	if(!text_region)
-////		PANIC("KRNL_MAP_FAIL", "The kernel's text section could not be allocated in the physical memory map.");
-////	MemoryRegion* data_region = _pmem_map.allocate_region(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, &early_pmem_data_region_storage[0], &early_pmem_data_region_storage[1]);
-////	if(!text_region)
-////		PANIC("KRNL_MAP_FAIL", "The kernel's data section could not be allocated in the physical memory map.");
-////	_pmem_map.recalculate_memory_totals();
-//
-//	//Now, map and write everything to the directory
-//	PageDirectory::map_kernel(text_region, data_region);
-//	kernel_page_directory.update_kernel_entries();
+	//Now, map and write everything to the directory
+	PageDirectory::map_kernel(text_region, data_region);
+	kernel_page_directory.update_kernel_entries();
 }
 
 void MemoryManager::load_page_directory(const kstd::shared_ptr<PageDirectory>& page_directory) {

@@ -3,12 +3,38 @@
 
 #pragma once
 
-#include "../kstd/kstddef.h"
+#include "Memory.h"
+#include "VMObject.h"
+#include "../kstd/shared_ptr.hpp"
 
+/**
+ * This class describes a region in virtual memory in a specific address space.
+ */
 class VMRegion {
 public:
+	struct Prot {
+		bool read : 1;
+		bool write : 1;
+		bool execute : 1;
+	};
+
+	/**
+	 * Creates a new virtual memory region.
+	 * @param object The VMObject that this region corresponds to.
+	 * @param start The start address of the region.
+	 * @param size The end address of the region.
+	 */
+	VMRegion(kstd::shared_ptr<VMObject> object, size_t start, size_t size);
+
+	kstd::shared_ptr<VMObject> object() const { return m_object; }
+	VirtualAddress start() const { return m_start; }
+	size_t size() const { return m_size; }
+	Prot prot() const { return m_prot; }
 
 private:
+
+	kstd::shared_ptr<VMObject> m_object;
 	size_t m_start;
 	size_t m_size;
+	Prot m_prot;
 };
