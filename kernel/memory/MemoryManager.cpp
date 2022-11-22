@@ -193,55 +193,83 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 	size_t mmap_offset = 0;
 	usable_bytes_ram = 0;
 
+	auto make_region = [&](size_t addr, size_t size, bool reserved, bool used) {
+		//Round up the address of the entry to a page boundary and round the size down to a page boundary
+		uint32_t addr_pagealigned = ((addr + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+		uint32_t size_pagealigned = ((size - (addr_pagealigned - addr)) / PAGE_SIZE) * PAGE_SIZE;
+
+		// We don't want the zero page.
+		if(addr_pagealigned == 0) {
+			addr_pagealigned += PAGE_SIZE;
+			if(size_pagealigned)
+				size_pagealigned -= PAGE_SIZE;
+		}
+
+		if(!size_pagealigned) {
+			KLog::dbg("Memory", "Ignoring too-small memory region at 0x%x", addr);
+			return;
+		}
+
+		auto region = new PhysicalRegion(
+			addr_pagealigned / PAGE_SIZE,
+			size_pagealigned / PAGE_SIZE,
+			reserved,
+			used
+		);
+		total_bytes_ram += size_pagealigned;
+
+		if(!region->reserved() && region->free_pages()) {
+			if(addr_pagealigned < usable_lower_limt)
+				usable_lower_limt = addr_pagealigned;
+			if(addr_pagealigned + size_pagealigned > usable_upper_limit)
+				usable_upper_limit = addr_pagealigned + size_pagealigned;
+		}
+
+		if(!region->reserved())
+			usable_bytes_ram += size_pagealigned;
+		else
+			reserved_bytes_ram += size_pagealigned;
+
+		if(mmap_entry->type == MULTIBOOT_MEMORY_BADRAM)
+			bad_bytes_ram += size_pagealigned;
+
+		m_physical_regions.push_back(region);
+
+		KLog::dbg("Memory", "Adding memory region at page 0x%x of 0x%x pages (%s, %s)", region->start_page(), region->num_pages(), !region->free_pages() ? "Used" : "Unused", region->reserved() ? "Reserved" : "Unreserved");
+	};
+
 	while(mmap_offset < header->mmap_length) {
 		if(mmap_entry->addr_high || mmap_entry->len_high) {
 			//If the entry is in extended memory, ignore it
 			KLog::dbg("Memory", "Ignoring memory region above 4GiB (0x%x%x)",
 					mmap_entry->addr_high, mmap_entry->addr_low);
 		} else {
-			//Otherwise, round up the address of the entry to a page boundary and round the size down to a page boundary
-			uint32_t addr_pagealigned = ((mmap_entry->addr_low + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
-			uint32_t size_pagealigned = ((mmap_entry->len_low - (addr_pagealigned - mmap_entry->addr_low)) / PAGE_SIZE) * PAGE_SIZE;
+			size_t addr = mmap_entry->addr_low;
+			size_t size = mmap_entry->len_low;
+			size_t end = addr + size;
 
-			// We don't want the zero page.
-			if(addr_pagealigned == 0) {
-				addr_pagealigned += PAGE_SIZE;
-				if(size_pagealigned)
-					size_pagealigned -= PAGE_SIZE;
-			}
-
-			if(size_pagealigned) {
-				//If the page-aligned size is more than zero (eg mmap_entry->len >= PAGE_SIZE), interpret it
-				auto region = new PhysicalRegion(
-					addr_pagealigned / PAGE_SIZE,
-					size_pagealigned / PAGE_SIZE,
-					mmap_entry->type == MULTIBOOT_MEMORY_RESERVED,
-					mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE
-				);
-				total_bytes_ram += size_pagealigned;
-
-				if(!region->reserved() && region->free_pages()) {
-					if(addr_pagealigned < usable_lower_limt)
-						usable_lower_limt = addr_pagealigned;
-					if(addr_pagealigned + size_pagealigned > usable_upper_limit)
-						usable_upper_limit = addr_pagealigned + size_pagealigned;
+			// Check if the kernel is contained inside of this region. If so, we need to bifurcate it.
+			if(KERNEL_DATA_END - HIGHER_HALF >= addr && KERNEL_DATA_END - HIGHER_HALF <= end) {
+				KLog::dbg("Memory", "Kernel is from pages 0x%x --> 0x%x", (KERNEL_TEXT - HIGHER_HALF) / PAGE_SIZE, (KERNEL_DATA_END - HIGHER_HALF) / PAGE_SIZE - 1);
+				if(addr < KERNEL_TEXT - HIGHER_HALF) {
+					// Space in region before kernel
+					make_region(addr,
+								KERNEL_TEXT - addr,
+								mmap_entry->type == MULTIBOOT_MEMORY_RESERVED,
+								mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE);
 				}
-
-
-				if(!region->reserved())
-					usable_bytes_ram += size_pagealigned;
-				else
-					reserved_bytes_ram += size_pagealigned;
-
-				if(mmap_entry->type == MULTIBOOT_MEMORY_BADRAM)
-					bad_bytes_ram += size_pagealigned;
-
-				m_physical_regions.push_back(region);
-
-				KLog::dbg("Memory", "Adding memory region at page %x of %x pages (%s, %s)", region->start_page(), region->num_pages(), !region->free_pages() ? "Used" : "Unused", region->reserved() ? "Reserved" : "Unreserved");
+				if(end > KERNEL_DATA_END - HIGHER_HALF) {
+					// Space in region after kernel
+					make_region(KERNEL_DATA_END - HIGHER_HALF,
+								end - (KERNEL_DATA_END - HIGHER_HALF),
+								mmap_entry->type == MULTIBOOT_MEMORY_RESERVED,
+								mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE);
+				}
 			} else {
-				//Otherwise, ignore it
-				KLog::dbg("Memory", "Ignoring too-small memory region at 0x%x", mmap_entry->addr_low);
+				make_region(addr,
+							size,
+							mmap_entry->type == MULTIBOOT_MEMORY_RESERVED,
+							mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE);
 			}
 		}
 		mmap_offset += mmap_entry->size + sizeof(mmap_entry->size);
