@@ -20,6 +20,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/KLog.h>
 #include "CommandLine.h"
+#include "kernel/memory/MemoryManager.h"
 
 CommandLine* CommandLine::_inst;
 
@@ -28,14 +29,14 @@ CommandLine::CommandLine(const struct multiboot_info& header) {
 		_inst = this;
 	if(header.flags & MULTIBOOT_INFO_CMDLINE) {
 		// TODO
-//		char* str = (char*) PageDirectory::k_mmap(header.cmdline, 1024, true);
-//		if(!str) {
-//			KLog::warn("CommandLine", "cmdline couldn't be mmap-ed!");
-//			return;
-//		}
-//
-//		cmdline = str;
-//		PageDirectory::k_munmap(str);
+		auto cmdline_region = MM.alloc_mapped_region(header.cmdline, 1024);
+		auto* str = (char*) cmdline_region->start();
+		if(!str) {
+			KLog::warn("CommandLine", "cmdline couldn't be mmap-ed!");
+			return;
+		}
+
+		cmdline = str;
 
 		KLog::info("CommandLine", "Command line options: '%s'", cmdline.c_str());
 

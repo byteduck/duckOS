@@ -35,6 +35,8 @@ size_t reserved_bytes_ram = 0;
 size_t bad_bytes_ram = 0;
 size_t usable_lower_limt = ~0;
 size_t usable_upper_limit = 0;
+size_t mem_lower_limit = ~0;
+size_t mem_upper_limit = 0;
 
 uint8_t early_kheap_memory[0x400000]; // 4MiB
 size_t used_early_kheap_memory = 0;
@@ -43,11 +45,17 @@ bool setup_paging = false;
 MemoryManager* MemoryManager::_inst;
 
 MemoryManager::MemoryManager():
-	m_kernel_space(HIGHER_HALF, ~0x0 - HIGHER_HALF + 1, kernel_page_directory)
+	m_kernel_space(HIGHER_HALF, ~0x0 - HIGHER_HALF + 1 - PAGE_SIZE, kernel_page_directory)
 {
 	if(_inst)
 		PANIC("MEMORY_MANAGER_DUPLICATE", "Something tried to initialize the memory manager twice.");
 	_inst = this;
+
+	// Make sure the kernel is reserved in the memory space
+	auto res = m_kernel_space.reserve_region(KERNEL_TEXT, KERNEL_TEXT_SIZE);
+	ASSERT(res.is_success());
+	res = m_kernel_space.reserve_region(KERNEL_DATA, KERNEL_DATA_SIZE);
+	ASSERT(res.is_success());
 }
 
 MemoryManager& MemoryManager::inst() {
@@ -58,25 +66,6 @@ void MemoryManager::setup_paging() {
 	//Assert that the kernel doesn't exceed 7MiB
 	ASSERT(KERNEL_DATA_END - KERNEL_TEXT <= 0x700000);
 	PageDirectory::init_kmem();
-
-	//Setup kernel page directory to map the kernel to HIGHER_HALF
-	PageTable kernel_early_page_table1(0, false);
-	kernel_early_page_table1.entries() = kernel_early_page_table_entries1;
-	early_pagetable_setup(&kernel_early_page_table1, HIGHER_HALF, true);
-	for (auto i = 0; i < 1024; i++) {
-		kernel_early_page_table1[i].data.present = true;
-		kernel_early_page_table1[i].data.read_write = true;
-		kernel_early_page_table1[i].data.set_address(PAGE_SIZE * i);
-	}
-
-	PageTable kernel_early_page_table2(0, false);
-	kernel_early_page_table2.entries() = kernel_early_page_table_entries2;
-	early_pagetable_setup(&kernel_early_page_table2, HIGHER_HALF + PAGE_SIZE * 1024, true);
-	for (auto i = 0; i < 1024; i++) {
-		kernel_early_page_table2[i].data.present = true;
-		kernel_early_page_table2[i].data.read_write = true;
-		kernel_early_page_table2[i].data.set_address(PAGE_SIZE * i + PAGE_SIZE * 1024);
-	}
 
 	//Enable paging
 	asm volatile(
@@ -126,18 +115,6 @@ void MemoryManager::page_fault_handler(struct Registers *r) {
 	}
 }
 
-void MemoryManager::early_pagetable_setup(PageTable *page_table, size_t virtual_address, bool read_write) {
-	ASSERT(virtual_address % PAGE_SIZE == 0);
-
-	size_t index = virtual_address / PAGE_SIZE;
-	size_t dir_index = (index / 1024) % 1024;
-
-	kernel_page_directory.entries()[dir_index].data.present = true;
-	kernel_page_directory.entries()[dir_index].data.read_write = read_write;
-	kernel_page_directory.entries()[dir_index].data.size = PAGE_SIZE_FLAG;
-	kernel_page_directory.entries()[dir_index].data.set_address((size_t) page_table->entries() - HIGHER_HALF);
-}
-
 void MemoryManager::invlpg(void* vaddr) {
 	asm volatile("invlpg %0" : : "m"(*(uint8_t*)vaddr) : "memory");
 }
@@ -177,6 +154,11 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 			if(addr_pagealigned + size_pagealigned > usable_upper_limit)
 				usable_upper_limit = addr_pagealigned + size_pagealigned;
 		}
+
+		if(addr_pagealigned < mem_lower_limit)
+			mem_lower_limit = addr_pagealigned;
+		if(addr_pagealigned + size_pagealigned > mem_upper_limit)
+			mem_upper_limit = addr_pagealigned + size_pagealigned;
 
 		if(!region->reserved())
 			usable_bytes_ram += size_pagealigned;
@@ -229,14 +211,14 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 		mmap_entry = (struct multiboot_mmap_entry*) ((size_t)mmap_entry + mmap_entry->size + sizeof(mmap_entry->size));
 	}
 
-	size_t num_usable_pages = (usable_upper_limit - usable_lower_limt) / PAGE_SIZE;
-	m_physical_pages = (PhysicalPage*) kcalloc(sizeof(PhysicalPage), usable_upper_limit / PAGE_SIZE);
+	m_physical_pages = (PhysicalPage*) kcalloc(sizeof(PhysicalPage), mem_upper_limit / PAGE_SIZE);
 
 	// Setup the physical region freelists
 	for(size_t i = 0; i < m_physical_regions.size(); i++)
 		m_physical_regions[i]->init();
 
 	KLog::dbg("Memory", "Usable memory limits: 0x%x -> 0x%x", usable_lower_limt, usable_upper_limit);
+	KLog::dbg("Memory", "Total memory limits: 0x%x -> 0x%x", mem_lower_limit, mem_upper_limit);
 }
 
 ResultRet<PageIndex> MemoryManager::alloc_physical_page() const {
@@ -245,7 +227,9 @@ ResultRet<PageIndex> MemoryManager::alloc_physical_page() const {
 		if(!result.is_error()) {
 			PageIndex ret = result.value();
 			// Set the refcount of the page to 1
-			get_physical_page(ret).allocated.ref_count = 1;
+			auto& page = get_physical_page(ret);
+			page.allocated.ref_count = 1;
+			page.allocated.reserved = false;
 			return ret;
 		}
 	}
@@ -269,7 +253,9 @@ ResultRet<kstd::vector<PageIndex>> MemoryManager::alloc_contiguous_physical_page
 			kstd::vector<PageIndex> ret;
 			ret.reserve(num_pages);
 			for(size_t page_index = 0; page_index < num_pages; page_index++) {
-				get_physical_page(first_page + page_index).allocated.ref_count = 1;
+				auto& page = get_physical_page(first_page + page_index);
+				page.allocated.ref_count = 1;
+				page.allocated.reserved = false;
 				ret.push_back(first_page + page_index);
 			}
 			return ret;
@@ -298,6 +284,24 @@ kstd::shared_ptr<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
 	auto res = do_alloc();
 	if(res.is_error())
 		PANIC("ALLOC_DMA_REGION_FAIL", "Could not allocate a new anonymous memory region for DMA.");
+	return res.value();
+}
+
+Ptr<VMRegion> MemoryManager::alloc_mapped_region(PhysicalAddress start, size_t size) {
+	auto do_map = [&]() -> ResultRet<kstd::shared_ptr<VMRegion>> {
+		auto object = TRY(AnonymousVMObject::map_to_physical(start, size));
+		return TRY(m_kernel_space.map_object(object));
+	};
+	auto res = do_map();
+	if(res.is_error())
+		PANIC("ALLOC_MAPPED_FAIL", "Could not map a physical region into kernel space.");
+	return res.value();
+}
+
+Ptr<VMRegion> MemoryManager::map_object(Ptr<VMObject> object) {
+	auto res = m_kernel_space.map_object(object);
+	if(res.is_error())
+		PANIC("ALLOC_MAPPED_FAIL", "Could not map an existing object into kernel space.");
 	return res.value();
 }
 

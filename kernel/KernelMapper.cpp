@@ -104,11 +104,14 @@ void KernelMapper::print_stacktrace() {
 	auto* stk = (uint32_t*) __builtin_frame_address(0);
 
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
+		if(!MM.kernel_page_directory.is_mapped((VirtualAddress) stk, false))
+			break;
+
 		if(stk[1] < HIGHER_HALF)
 			break;
 
 		//Check if the stack pointer is mapped
-		if(!MM.kernel_page_directory.is_mapped((VirtualAddress) stk, false)) {
+		if(!MM.kernel_page_directory.is_mapped((VirtualAddress) stk[1], false)) {
 			printf("0x%x (Unmapped)\n", stk[1]);
 			break;
 		}

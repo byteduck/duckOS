@@ -23,7 +23,7 @@ public:
 	 * @param object The object to allocate a region for.
 	 * @return The newly created region.
 	 */
-	ResultRet<kstd::shared_ptr<VMRegion>> map_object(kstd::shared_ptr<VMObject> object);
+	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object);
 
 	/**
 	 * Maps an object into a specific area of the address space.
@@ -31,7 +31,7 @@ public:
 	 * @param addr The address to map the object into.
 	 * @return The newly mapped region.
 	 */
-	ResultRet<kstd::shared_ptr<VMRegion>> map_object(kstd::shared_ptr<VMObject> object, VirtualAddress address);
+	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VirtualAddress address);
 
 	/**
 	 * Unmaps the given region from this address space.
@@ -54,8 +54,17 @@ public:
 	 */
 	ResultRet<VMRegion*> get_region(VirtualAddress address);
 
+	/**
+	 * Reserves a region so it cannot be allocated. Should be page-aligned.
+	 * @param start The start of the region.
+	 * @param size The size of the region.
+	 * @return Whether the region was succesfully reserved.
+	 */
+	Result reserve_region(VirtualAddress start, size_t size);
+
 	VirtualAddress start() const { return m_start; }
 	size_t size() const { return m_size; }
+	VirtualAddress end() const { return m_start + m_size; }
 	size_t used() const { return m_used; }
 
 private:

@@ -131,8 +131,6 @@ private:
 	static Entry s_kernel_entries[1024];
 	// The page tables for the kernel.
 	static PageTable s_kernel_page_tables[256];
-	// The physical addresses of the kernel page tables.
-	static size_t s_kernel_page_tables_physaddr[1024];
 
 	// The type of the page directory.
 	const DirectoryType m_type;

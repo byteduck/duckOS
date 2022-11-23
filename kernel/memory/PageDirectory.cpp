@@ -37,7 +37,6 @@
 
 __attribute__((aligned(4096))) PageDirectory::Entry PageDirectory::s_kernel_entries[1024];
 PageTable PageDirectory::s_kernel_page_tables[256];
-size_t PageDirectory::s_kernel_page_tables_physaddr[1024];
 __attribute__((aligned(4096))) PageTable::Entry s_kernel_page_table_entries[256][1024];
 
 /**
@@ -53,12 +52,8 @@ void PageDirectory::init_kmem() {
 	// Make the kernel's page tables
 	for(auto i = 0; i < 256; i++) {
 		new (&s_kernel_page_tables[i]) PageTable(HIGHER_HALF + i * PAGE_SIZE * 1024, false);
-
 		s_kernel_page_tables[i].entries() = s_kernel_page_table_entries[i];
 	}
-
-	for(auto & physaddr : s_kernel_page_tables_physaddr)
-		physaddr = 0;
 
 	// Clear out the kernel page directory entries below HIGHER_HALF
 	for(auto i = 0; i < 768; i++)
@@ -72,6 +67,25 @@ void PageDirectory::init_kmem() {
 		s_kernel_entries[i].data.user = false;
 		s_kernel_entries[i].data.set_address((size_t) s_kernel_page_tables[i - 768].entries() - HIGHER_HALF);
 	}
+
+	// Map the kernel
+	auto map_kernel_area = [&](size_t start, size_t end, bool read_write) {
+		size_t start_kernel_page = start / PAGE_SIZE;
+		size_t num_kernel_pages = kstd::ceil_div(end, PAGE_SIZE);
+		size_t end_kernel_page = start_kernel_page + num_kernel_pages;
+
+		// Map all of the pages for the kernel
+		for(size_t page = start_kernel_page; page < end_kernel_page; page++) {
+			size_t directory_index = (page / 1024) % 1024;
+			size_t table_index = page % 1024;
+			auto& entry = (s_kernel_page_table_entries[directory_index - 768])[table_index];
+			entry.data.present = true;
+			entry.data.set_address(page * PAGE_SIZE - HIGHER_HALF);
+			entry.data.read_write = read_write;
+		}
+	};
+	map_kernel_area(KERNEL_TEXT, KERNEL_TEXT_END, false);
+	map_kernel_area(KERNEL_DATA, KERNEL_DATA_END, true);
 }
 
 void PageDirectory::Entry::Data::set_address(size_t address) {
@@ -162,7 +176,6 @@ void PageDirectory::map(VMRegion& region) {
 			entry = &s_kernel_page_tables[directory_index - 768].entries()[table_index];
 		}
 
-
 		entry->data.present = true;
 		entry->data.read_write = prot.write;
 		entry->data.user = true;
@@ -230,11 +243,12 @@ size_t PageDirectory::get_physaddr(size_t virtaddr) {
 		size_t page_paddr = (m_page_tables[directory_index])->entries()[table_index].data.get_address();
 		return page_paddr + (virtaddr % PAGE_SIZE);
 	} else { //Kernel space
-		size_t page = (virtaddr - HIGHER_HALF) / PAGE_SIZE;
+		size_t page = (virtaddr) / PAGE_SIZE;
 		size_t directory_index = (page / 1024) % 1024;
-		if (!s_kernel_entries[directory_index].data.present) return -1; //TODO: Log an error
+		if (!s_kernel_entries[directory_index].data.present)
+			return -1; //TODO: Log an error
 		size_t table_index = page % 1024;
-		size_t page_paddr = (s_kernel_page_tables[directory_index])[table_index].data.get_address();
+		size_t page_paddr = (s_kernel_page_table_entries[directory_index - 768])[table_index].data.get_address();
 		return page_paddr + (virtaddr % PAGE_SIZE);
 	}
 }
@@ -285,10 +299,11 @@ bool PageDirectory::is_mapped(size_t vaddr, bool write) {
 		}
 		return true;
 	} else { //Kernel space
-		size_t page = (vaddr - HIGHER_HALF) / PAGE_SIZE;
+		size_t page = (vaddr) / PAGE_SIZE;
 		size_t directory_index = (page / 1024) % 1024;
-		if (!s_kernel_entries[directory_index].data.present) return false;
-		auto& entry = s_kernel_page_tables[directory_index][page % 1024];;
+		if (!s_kernel_entries[directory_index].data.present)
+			return false;
+		auto& entry = s_kernel_page_tables[directory_index - 768][page % 1024];;
 		return entry.data.present && (!write || entry.data.read_write);
 	}
 }

@@ -22,6 +22,7 @@
 #include <kernel/kstd/shared_ptr.hpp>
 #include <kernel/kstd/queue.hpp>
 #include "Signal.h"
+#include "../memory/VMSpace.h"
 #include <kernel/User.h>
 #include <kernel/kstd/string.h>
 
@@ -185,6 +186,7 @@ private:
 	bool _kernel_mode = false;
 
 	//Memory
+	Ptr<VMSpace> _vm_space;
 	kstd::shared_ptr<PageDirectory> _page_directory;
 
 	//Files & Pipes

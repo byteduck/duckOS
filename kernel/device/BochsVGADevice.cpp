@@ -53,14 +53,12 @@ bool BochsVGADevice::detect() {
 		return false;
 	}
 
-	ASSERT(false);
-	// TODO
-//	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
-//	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
-//	framebuffer_baseaddr = (uint32_t*) PageDirectory::k_mmap(framebuffer_paddr, framebuffer_size() * 2, true);
-//	framebuffer = framebuffer_baseaddr;
-//	KLog::info("VGA", "Found a bochs-compatible VGA device at %x:%x.%x", address.bus, address.slot, address.function);
-//	KLog::dbg("VGA", "virtual framebuffer mapped from 0x%x to 0x%x", framebuffer_paddr, framebuffer_baseaddr);
+	framebuffer_paddr = PCI::read_dword(address, PCI_BAR0) & 0xfffffff0;
+	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
+	framebuffer_region = MM.alloc_mapped_region(framebuffer_paddr, framebuffer_size() * 2);
+	framebuffer = (uint32_t*) framebuffer_region->start();
+	KLog::info("VGA", "Found a bochs-compatible VGA device at %x:%x.%x", address.bus, address.slot, address.function);
+	KLog::dbg("VGA", "virtual framebuffer mapped from 0x%x to 0x%x", framebuffer_paddr, framebuffer_region->start());
 	return true;
 }
 
@@ -153,7 +151,7 @@ int BochsVGADevice::ioctl(unsigned int request, SafePointer<void*> argp) {
 			if((int)argp.raw() < 0 || (int)argp.raw() > display_height)
 				return -EINVAL;
 			write_register(VBE_DISPI_INDEX_Y_OFFSET, (int) argp.raw());
-			framebuffer = framebuffer_baseaddr + ((uint16_t) (int) argp.raw() * display_width);
+			framebuffer = (uint32_t*) framebuffer_region->start() + ((uint16_t) (int) argp.raw() * display_width);
 			return SUCCESS;
 		default:
 			return VGADevice::ioctl(request, argp);

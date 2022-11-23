@@ -6,15 +6,19 @@
 #include "../Atomic.h"
 #include "../kstd/kstddef.h"
 #include "Memory.h"
+#include "../kstd/kstdio.h"
 
 union PhysicalPage {
 public:
 	void ref() {
-		allocated.ref_count.add(1);
+		if(allocated.ref_count.add(1) == 0xFFFF)
+			PANIC("PPAGE_REF_COUNT_OVERFLOW", "A physical page was referenced too many times and overflowed.");
 	}
 
 	void unref() {
-		if(allocated.ref_count.sub(1) == 1)
+		auto prev_value = allocated.ref_count.sub(1);
+		ASSERT(prev_value);
+		if(prev_value == 1)
 			release();
 	}
 
@@ -30,7 +34,8 @@ public:
 
 	/// When a page is in use, this struct is used to keep count of its references.
 	struct {
-		Atomic<uint32_t, MemoryOrder::AcqRel> ref_count;
+		Atomic<uint16_t, MemoryOrder::AcqRel> ref_count;
+		bool reserved; // If true, deref() will not free anything
 	} allocated;
 
 	/// When a page is free, this struct is used to keep track of the next free page for the buddy block system

@@ -115,11 +115,27 @@ public:
 	 * @param size The minimum size, in bytes, of the new region.
 	 */
 	Ptr<VMRegion> alloc_kernel_region(size_t size);
-/**
+
+	/**
 	 * Allocates a new contiguous anonymous region in kernel space.
 	 * @param size The minimum size, in bytes, of the new region.
 	 */
 	Ptr<VMRegion> alloc_dma_region(size_t size);
+
+	/**
+	 * Allocates a new virtual region in kernel space that is mapped to an existing range of physical pages.
+	 * @param start The start physical address to map to. Will be rounded down to a page boundary.
+	 * @param size The size (in bytes) to map to. Will be rounded up to a page boundary.
+	 * @return The newly mapped region.
+	 */
+	Ptr<VMRegion> alloc_mapped_region(PhysicalAddress start, size_t size);
+
+	/**
+	 * Maps a VMObject into kernel space.
+	 * @param object The object to map.
+	 * @return The region the object was mapped to.
+	 */
+	Ptr<VMRegion> map_object(Ptr<VMObject> object);
 
 	VMSpace& kernel_space() { return m_kernel_space; }
 
@@ -129,14 +145,6 @@ public:
 	 * references.
 	 */
 	void free_physical_page(PageIndex page) const;
-
-	/**
-	 * Used when setting up paging initially in order to map an entire page table starting at a virtual address.
-	 * @param page_table The page table to set up
-	 * @param virtual_address The virtual address to map the pagetable to.
-	 * @param read_write The read_write flag on the page tables.
-	 */
-	void early_pagetable_setup(PageTable* page_table, size_t virtual_address, bool read_write);
 
 	/**
 	 * Invalidates the page in the TLB that contains vaddr.

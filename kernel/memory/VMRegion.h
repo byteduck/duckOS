@@ -24,7 +24,7 @@ public:
 	 * @param start The start address of the region.
 	 * @param size The end address of the region.
 	 */
-	VMRegion(kstd::shared_ptr<VMObject> object, size_t start, size_t size);
+	VMRegion(kstd::shared_ptr<VMObject> object, size_t start, size_t size, Prot prot);
 	~VMRegion();
 
 	kstd::shared_ptr<VMObject> object() const { return m_object; }

@@ -11,5 +11,6 @@ PageIndex PhysicalPage::index() const {
 
 void PhysicalPage::release() {
 	ASSERT(allocated.ref_count.load(MemoryOrder::Relaxed) == 0);
-	MemoryManager::inst().free_physical_page(index());
+	if(!allocated.reserved)
+		MemoryManager::inst().free_physical_page(index());
 }

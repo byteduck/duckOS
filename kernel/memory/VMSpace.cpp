@@ -22,19 +22,26 @@ VMSpace::~VMSpace() {
 	}
 }
 
-ResultRet<kstd::shared_ptr<VMRegion>> VMSpace::map_object(kstd::shared_ptr<VMObject> object) {
+ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object) {
 	LOCK(m_lock);
 	auto vaddr = TRY(alloc_space(object->size()));
-	auto region = kstd::make_shared<VMRegion>(object, vaddr, object->size());
+	auto region = kstd::make_shared<VMRegion>(
+			object,
+			vaddr, object->size(),
+			VMRegion::Prot {.read = true, .write = true, .execute = true});
 	m_regions.push_back(region.get());
 	m_page_directory.map(*region);
 	return region;
 }
 
-ResultRet<kstd::shared_ptr<VMRegion>> VMSpace::map_object(kstd::shared_ptr<VMObject> object, VirtualAddress address) {
+ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object, VirtualAddress address) {
 	LOCK(m_lock);
 	auto vaddr = TRY(alloc_space_at(object->size(), address));
-	auto region = kstd::make_shared<VMRegion>(object, vaddr, object->size());
+	auto region = kstd::make_shared<VMRegion>(
+			object,
+			vaddr,
+			object->size(),
+			VMRegion::Prot {.read = true, .write = true, .execute = true});
 	m_regions.push_back(region.get());
 	m_page_directory.map(*region);
 	return region;
@@ -79,7 +86,13 @@ ResultRet<VMRegion*> VMSpace::get_region(VirtualAddress address) {
 	return Result(ENOENT);
 }
 
+Result VMSpace::reserve_region(VirtualAddress start, size_t size) {
+	LOCK(m_lock);
+	return alloc_space_at(size, start).result();
+}
+
 ResultRet<VirtualAddress> VMSpace::alloc_space(size_t size) {
+	ASSERT(size % PAGE_SIZE == 0);
 	auto cur_region = m_region_map;
 	while(cur_region) {
 		if(cur_region->used) {
@@ -114,10 +127,13 @@ ResultRet<VirtualAddress> VMSpace::alloc_space(size_t size) {
 
 		cur_region = cur_region->next;
 	}
+
 	return Result(ENOMEM);
 }
 
 ResultRet<VirtualAddress> VMSpace::alloc_space_at(size_t size, VirtualAddress address) {
+	ASSERT(address % PAGE_SIZE == 0);
+	ASSERT(size % PAGE_SIZE == 0);
 	auto cur_region = m_region_map;
 	while(cur_region) {
 		if(cur_region->contains(address, size)) {
@@ -176,6 +192,8 @@ ResultRet<VirtualAddress> VMSpace::alloc_space_at(size_t size, VirtualAddress ad
 }
 
 Result VMSpace::free_space(size_t size, VirtualAddress address) {
+	ASSERT(size % PAGE_SIZE == 0);
+	ASSERT(address % PAGE_SIZE == 0);
 	auto cur_region = m_region_map;
 	while(cur_region) {
 		if(cur_region->start == address) {
@@ -188,6 +206,8 @@ Result VMSpace::free_space(size_t size, VirtualAddress address) {
 				cur_region->prev = cur_region->prev->prev;
 				if(to_delete->prev)
 					to_delete->prev->next = cur_region;
+				cur_region->start -= to_delete->size;
+				cur_region->size += to_delete->size;
 				delete to_delete;
 			}
 
@@ -197,6 +217,7 @@ Result VMSpace::free_space(size_t size, VirtualAddress address) {
 				cur_region->next = cur_region->next->next;
 				if(to_delete->next)
 					to_delete->next->prev = cur_region;
+				cur_region->size += to_delete->size;
 				delete to_delete;
 			}
 

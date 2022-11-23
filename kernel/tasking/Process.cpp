@@ -188,6 +188,7 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 
 		//Make new page directory
 		_page_directory = kstd::make_shared<PageDirectory>();
+		_vm_space = kstd::make_shared<VMSpace>(PAGE_SIZE, HIGHER_HALF - PAGE_SIZE, *_page_directory);
 	}
 
 	//Create the main thread

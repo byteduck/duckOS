@@ -4,10 +4,11 @@
 #include "VMRegion.h"
 #include "MemoryManager.h"
 
-VMRegion::VMRegion(kstd::shared_ptr<VMObject> object, size_t start, size_t size):
+VMRegion::VMRegion(kstd::shared_ptr<VMObject> object, size_t start, size_t size, Prot prot):
 	m_object(object),
 	m_start(start),
-	m_size(size)
+	m_size(size),
+	m_prot(prot)
 {
 
 }

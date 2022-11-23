@@ -79,7 +79,7 @@ private:
 
 	PCI::Address address = {0,0,0};
 	uint32_t framebuffer_paddr = 0;
-	uint32_t* framebuffer_baseaddr = nullptr; /// < The mapped address of the framebuffer.
+	Ptr<VMRegion> framebuffer_region;
 	uint32_t* framebuffer = nullptr; /// < The address of the framebuffer with the current offset applied.
 	uint16_t display_width = VBE_DEFAULT_WIDTH;
 	uint16_t display_height = VBE_DEFAULT_HEIGHT;
