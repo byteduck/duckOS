@@ -17,6 +17,8 @@ public:
 	VMObject(const VMObject& other) = delete;
 	~VMObject();
 
+	virtual bool is_anonymous() const { return false; }
+
 	size_t size() const { return m_size; }
 	PhysicalPage& physical_page(size_t index) const;
 

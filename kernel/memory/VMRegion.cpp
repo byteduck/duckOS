@@ -20,3 +20,7 @@ VMRegion::~VMRegion() {
 		ASSERT(unmap_res.is_success());
 	}
 }
+
+void VMRegion::set_cow(bool cow) {
+	m_prot.cow = cow;
+}

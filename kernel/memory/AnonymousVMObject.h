@@ -31,6 +31,9 @@ public:
 	 */
 	static ResultRet<Ptr<AnonymousVMObject>> map_to_physical(PhysicalAddress start, size_t size);
 
+	// VMObject
+	bool is_anonymous() const override { return true; }
+
 private:
 	explicit AnonymousVMObject(kstd::vector<PageIndex> physical_pages);
 

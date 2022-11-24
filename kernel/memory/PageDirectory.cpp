@@ -25,6 +25,7 @@
 #include "PageTable.h"
 #include "MemoryManager.h"
 #include "kernel/kstd/KLog.h"
+#include "cmake-build-release/root/usr/include/kernel/KernelMapper.h"
 #include <kernel/kstd/cstring.h>
 
 /*
@@ -177,7 +178,7 @@ void PageDirectory::map(VMRegion& region) {
 		}
 
 		entry->data.present = true;
-		entry->data.read_write = prot.write;
+		entry->data.read_write = prot.write && !prot.cow;
 		entry->data.user = true;
 		entry->data.set_address(region.object()->physical_page(page_index).index() * PAGE_SIZE);
 
@@ -191,7 +192,7 @@ void PageDirectory::unmap(VMRegion& region) {
 	PageIndex start_vpage = region.start() / PAGE_SIZE;
 	size_t num_pages = region.size() / PAGE_SIZE;
 
-	if(region.end() >= HIGHER_HALF && m_type != DirectoryType::KERNEL) {
+	if(region.end() > HIGHER_HALF && m_type != DirectoryType::KERNEL) {
 		KLog::warn("PageDirectory", "Tried unmapping kernel in non-kernel directory!");
 		return;
 	}

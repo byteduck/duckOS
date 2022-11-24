@@ -205,41 +205,42 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 	if(to_fork->_kernel_mode)
 		PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.");
 
-	ASSERT(false);
 	// TODO
-//	_name = to_fork->_name;
-//	_pid = TaskManager::get_new_pid();
-//	_kernel_mode = false;
-//	_cwd = to_fork->_cwd;
-//	_ppid = to_fork->_pid;
-//	_sid = to_fork->_sid;
-//	_pgid = to_fork->_pgid;
-//	_umask = to_fork->_umask;
-//	_tty = to_fork->_tty;
-//	_state = ALIVE;
-//
-//	//TODO: Prevent thread race condition when copying signal handlers/file descriptors
-//	//Copy signal handlers
-//	for(int i = 0; i < 32; i++)
-//		signal_actions[i] = to_fork->signal_actions[i];
-//
-//	//Copy file descriptors
-//	_file_descriptors.resize(to_fork->_file_descriptors.size());
-//	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++) {
-//		if(to_fork->_file_descriptors[i]) {
-//			_file_descriptors[i] = kstd::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
-//			_file_descriptors[i]->set_owner(_self_ptr);
-//		}
-//	}
-//
-//	//Create page directory and fork the old one
-//	//TODO: Freeze other threads to prevent them from modifying memory before the fork can mark it CoW
-//	_page_directory = kstd::make_shared<PageDirectory>();
-//	_page_directory->fork_from(to_fork->_page_directory.get(), _ppid, _pid);
-//
-//	//Create the main thread
-//	auto* main_thread = new Thread(_self_ptr, _cur_tid++,regs);
-//	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
+	_name = to_fork->_name;
+	_pid = TaskManager::get_new_pid();
+	_kernel_mode = false;
+	_cwd = to_fork->_cwd;
+	_ppid = to_fork->_pid;
+	_sid = to_fork->_sid;
+	_pgid = to_fork->_pgid;
+	_umask = to_fork->_umask;
+	_tty = to_fork->_tty;
+	_state = ALIVE;
+
+	//TODO: Prevent thread race condition when copying signal handlers/file descriptors
+	//Copy signal handlers
+	for(int i = 0; i < 32; i++)
+		signal_actions[i] = to_fork->signal_actions[i];
+
+	//Copy file descriptors
+	_file_descriptors.resize(to_fork->_file_descriptors.size());
+	for(size_t i = 0; i < to_fork->_file_descriptors.size(); i++) {
+		if(to_fork->_file_descriptors[i]) {
+			_file_descriptors[i] = kstd::make_shared<FileDescriptor>(*to_fork->_file_descriptors[i]);
+			_file_descriptors[i]->set_owner(_self_ptr);
+		}
+	}
+
+	// Create page directory and fork the old one
+	/* TODO: We're probably leaking thread stack regions here, since they'll be put into _vm_regions rather than
+	 * Thread::_stack_region (they will be cleaned up once the process dies / exec()s, though).
+	 */
+	_page_directory = kstd::make_shared<PageDirectory>();
+	_vm_space = to_fork->_vm_space->fork(*_page_directory, _vm_regions);
+
+	//Create the main thread
+	auto* main_thread = new Thread(_self_ptr, _cur_tid++,regs);
+	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
 }
 
 Process::~Process() {

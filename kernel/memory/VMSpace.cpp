@@ -2,14 +2,15 @@
 /* Copyright © 2016-2022 Byteduck */
 
 #include "VMSpace.h"
-#include "../kstd/unix_types.h"
 #include "MemoryManager.h"
 #include "AnonymousVMObject.h"
+#include "../kstd/cstring.h"
 
 const VMProt VMSpace::default_prot = {
 	.read = true,
 	.write = true,
-	.execute = true
+	.execute = true,
+	.cow = false
 };
 
 VMSpace::VMSpace(VirtualAddress start, size_t size, PageDirectory& page_directory):
@@ -30,6 +31,52 @@ VMSpace::~VMSpace() {
 		delete cur_region;
 		cur_region = next;
 	}
+}
+
+Ptr<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<Ptr<VMRegion>>& regions_vec) {
+	LOCK(m_lock);
+	auto new_space = new VMSpace(m_start, m_size, page_directory);
+	new_space->m_used = m_used;
+	delete new_space->m_region_map;
+
+	// Clone allocation regions
+	auto cur_region = m_region_map;
+	VMSpaceRegion* prev_new_region = nullptr;
+	while(cur_region) {
+		auto new_region = new VMSpaceRegion(*cur_region);
+		if(cur_region == m_region_map)
+			new_space->m_region_map = new_region;
+		new_region->prev = prev_new_region;
+		if(prev_new_region)
+			prev_new_region->next = new_region;
+		prev_new_region = new_region;
+		cur_region = cur_region->next;
+	}
+
+	// Copy regions / objects
+	new_space->m_regions.reserve(m_regions.size());
+	regions_vec.reserve(regions_vec.size() + m_regions.size());
+	for(size_t i = 0; i < m_regions.size(); i++) {
+		auto& region = m_regions[i];
+
+		if(region->object()->is_anonymous()) {
+			// Remap anonymous writeable regions as CoW
+			if(region->prot().write) {
+				region->set_cow(true);
+				m_page_directory.map(*region);
+			}
+
+			// Map into new space
+			auto new_region = new VMRegion(region->object(), new_space, region->start(), region->size(), region->prot());
+			page_directory.map(*new_region);
+			new_space->m_regions.push_back(new_region);
+			regions_vec.push_back(Ptr<VMRegion>(new_region));
+		} else {
+			ASSERT(false);
+		}
+	}
+
+	return Ptr<VMSpace>(new_space);
 }
 
 ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object, VMProt prot) {
@@ -103,6 +150,31 @@ ResultRet<VMRegion*> VMSpace::get_region(VirtualAddress address) {
 Result VMSpace::reserve_region(VirtualAddress start, size_t size) {
 	LOCK(m_lock);
 	return alloc_space_at(size, start).result();
+}
+
+Result VMSpace::try_pagefault(VirtualAddress error_pos) {
+	LOCK(m_lock);
+
+	for(size_t i = 0; i < m_regions.size(); i++) {
+		auto& region = m_regions[i];
+		if(region->contains(error_pos)) {
+			// Check if the region is CoW.
+			if(region->is_cow() && region->object()->is_anonymous()) {
+				// TODO: Check if we're mapped first? We should be.
+				auto new_object = TRY(AnonymousVMObject::alloc(region->object()->size()));
+				auto mapped_object = MM.map_object(new_object);
+				memcpy((void*) mapped_object->start(), (void*) region->start(), new_object->size());
+				region->m_object = new_object;
+				region->set_cow(false);
+				m_page_directory.map(*region);
+				return Result(SUCCESS);
+			}
+
+			return Result(EINVAL);
+		}
+	}
+
+	return Result(ENOENT);
 }
 
 ResultRet<VirtualAddress> VMSpace::alloc_space(size_t size) {

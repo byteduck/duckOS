@@ -21,6 +21,14 @@ public:
 	const static VMProt default_prot;
 
 	/**
+	 * Forks this VMSpace into a new VMSpace, cloning or CoW-ing mapped objects as necessary.
+	 * @param page_directory The new page directory to use.
+	 * @param regions_vec A reference to a vector to store the resulting VMRegions in.
+	 * @return The newly forked VMSpace.
+	 */
+	Ptr<VMSpace> fork(PageDirectory& page_directory, kstd::vector<Ptr<VMRegion>>& regions_vec);
+
+	/**
 	 * Allocates a new region for the given object.
 	 * @param object The object to allocate a region for.
 	 * @return The newly created region.
@@ -63,6 +71,13 @@ public:
 	 * @return Whether the region was succesfully reserved.
 	 */
 	Result reserve_region(VirtualAddress start, size_t size);
+
+	/**
+	 * Tries gracefully handling a pagefault at a given error position.
+	 * @param error_pos The address of the pagefault.
+	 * @return A result indicating whether the pagefault could be gracefully handled.
+	 */
+	Result try_pagefault(VirtualAddress error_pos);
 
 	VirtualAddress start() const { return m_start; }
 	size_t size() const { return m_size; }
