@@ -53,6 +53,7 @@
 #include <kernel/kstd/vector.hpp>
 #include <kernel/Result.hpp>
 #include <kernel/kstd/string.h>
+#include <kernel/memory/VMSpace.h>
 
 class FileDescriptor;
 class User;
@@ -132,7 +133,7 @@ namespace ELF {
 	 * @param page_directory The page directory to load the program into.
 	 * @return An error or the program break.
 	 */
-	ResultRet<size_t> load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const kstd::shared_ptr<PageDirectory>& page_directory);
+	ResultRet<kstd::vector<Ptr<VMRegion>>> load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const Ptr<VMSpace>& vm_space);
 
 	/**
 	 * Gets information about an ELF executable.

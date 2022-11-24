@@ -4,8 +4,9 @@
 #include "VMRegion.h"
 #include "MemoryManager.h"
 
-VMRegion::VMRegion(kstd::shared_ptr<VMObject> object, size_t start, size_t size, Prot prot):
+VMRegion::VMRegion(Ptr<VMObject> object, VMSpace* space, size_t start, size_t size, VMProt prot):
 	m_object(object),
+	m_space(space),
 	m_start(start),
 	m_size(size),
 	m_prot(prot)
@@ -14,8 +15,8 @@ VMRegion::VMRegion(kstd::shared_ptr<VMObject> object, size_t start, size_t size,
 }
 
 VMRegion::~VMRegion() {
-	if(is_kernel()) {
-		auto unmap_res = MM.kernel_space().unmap_region(*this);
+	if(m_space) {
+		auto unmap_res = m_space->unmap_region(*this);
 		ASSERT(unmap_res.is_success());
 	}
 }

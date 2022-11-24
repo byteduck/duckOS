@@ -148,8 +148,8 @@ public:
 	int sys_fchown(int fd, uid_t uid, gid_t gid);
 	int sys_lchown(UserspacePointer<char> file, uid_t uid, gid_t gid);
 	int sys_ioctl(int fd, unsigned request, UserspacePointer<void*> argp);
-	void* sys_memacquire(void* addr, size_t size) const;
-	int sys_memrelease(void* addr, size_t size) const;
+	void* sys_memacquire(void* addr, size_t size);
+	int sys_memrelease(void* addr, size_t size);
 	int sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm> s);
 	int sys_shmattach(int id, void* addr, UserspacePointer<struct shm> s);
 	int sys_shmdetach(int id);
@@ -188,6 +188,7 @@ private:
 	//Memory
 	Ptr<VMSpace> _vm_space;
 	kstd::shared_ptr<PageDirectory> _page_directory;
+	kstd::vector<Ptr<VMRegion>> _vm_regions;
 
 	//Files & Pipes
 	kstd::vector<kstd::shared_ptr<FileDescriptor>> _file_descriptors;

@@ -39,6 +39,7 @@
 #include <kernel/kstd/cstring.h>
 #include <kernel/kstd/KLog.h>
 #include "kernel/memory/SafePointer.h"
+#include "kernel/memory/AnonymousVMObject.h"
 
 Process* Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::shared_ptr<LinkedInode>(nullptr));
@@ -61,6 +62,8 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 
 	//If there's an interpreter, we need to change the arguments accordingly
 	if(info.interpreter.length()) {
+		KLog::dbg("Process", "Executable %s requesting interpreter %s", executable_loc.c_str(), info.interpreter.c_str());
+
 		//Get the full path of the program we're trying to run
 		auto resolv = VFS::inst().resolve_path((kstd::string&) executable_loc, args->working_dir, file_open_user);
 		if(resolv.is_error())
@@ -82,9 +85,9 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 	proc->_exe = executable_loc;
 
 	//Load the ELF into the process's page directory and set proc->current_brk
-	auto brk_or_err = ELF::load_sections(*info.fd, info.segments, proc->_page_directory);
-	if(brk_or_err.is_error())
-		return brk_or_err.result();
+	auto regions = TRY(ELF::load_sections(*info.fd, info.segments, proc->_vm_space));
+	for(size_t i = 0; i < regions.size(); i++)
+		proc->_vm_regions.push_back(regions[i]);
 
 	return proc->_self_ptr;
 }
@@ -888,28 +891,38 @@ int Process::sys_ioctl(int fd, unsigned request, UserspacePointer<void*> argp) {
 	return _file_descriptors[fd]->ioctl(request, argp);
 }
 
-void* Process::sys_memacquire(void* addr, size_t size) const {
-	ASSERT(false); // TODO
-//	if(addr) {
-//		//We requested a specific address
-//		auto region = _page_directory->allocate_region((size_t) addr, size, true);
-//		if(!region.virt)
-//			return (void*) -EINVAL;
-//		return (void*) region.virt->start;
-//	} else {
-//		//We didn't request a specific address
-//		auto region = _page_directory->allocate_region(size, true);
-//		if(!region.virt)
-//			return (void*) -ENOMEM;
-//		return (void*) region.virt->start;
-//	}
+void* Process::sys_memacquire(void* addr, size_t size) {
+	auto object_res = AnonymousVMObject::alloc(size);
+	if(object_res.is_error())
+		return (void*) -ENOMEM;
+	auto object = object_res.value();
+	if(addr) {
+		//We requested a specific address
+		auto res = _vm_space->map_object(object, (VirtualAddress) addr);
+		if(res.is_error())
+			return (void*) -EINVAL;
+		_vm_regions.push_back(res.value());
+		return (void*) res.value()->start();
+	} else {
+		//We didn't request a specific address
+		auto res = _vm_space->map_object(object);
+		if(res.is_error())
+			return (void*) -ENOMEM;
+		_vm_regions.push_back(res.value());
+		return (void*) res.value()->start();
+	}
 }
 
-int Process::sys_memrelease(void* addr, size_t size) const {
-	ASSERT(false); // TODO
-//	if(!_page_directory->free_region((size_t) addr, size))
-//		return -EINVAL;
-//	return SUCCESS;
+int Process::sys_memrelease(void* addr, size_t size) {
+	// Find the region
+	for(size_t i = 0; i < _vm_regions.size(); i++) {
+		if(_vm_regions[i]->start() == (VirtualAddress) addr && _vm_regions[i]->size() == size) {
+			_vm_regions.erase(i);
+			return SUCCESS;
+		}
+	}
+	KLog::warn("Process", "memrelease() for %s(%d) failed.", _name.c_str(), _pid);
+	return ENOENT;
 }
 
 int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm> s) {

@@ -18,12 +18,14 @@ public:
 	VMSpace(VirtualAddress start, size_t size, PageDirectory& page_directory);
 	~VMSpace();
 
+	const static VMProt default_prot;
+
 	/**
 	 * Allocates a new region for the given object.
 	 * @param object The object to allocate a region for.
 	 * @return The newly created region.
 	 */
-	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object);
+	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VMProt prot = VMSpace::default_prot);
 
 	/**
 	 * Maps an object into a specific area of the address space.
@@ -31,7 +33,7 @@ public:
 	 * @param addr The address to map the object into.
 	 * @return The newly mapped region.
 	 */
-	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VirtualAddress address);
+	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VirtualAddress address, VMProt prot = VMSpace::default_prot);
 
 	/**
 	 * Unmaps the given region from this address space.
@@ -81,7 +83,7 @@ private:
 		VMSpaceRegion* prev;
 
 		size_t end() const { return start + size; }
-		bool contains(VirtualAddress address, size_t range_size) const { return start <= address && end() >= start + range_size; }
+		bool contains(VirtualAddress address) const { return start <= address && end() > address; }
 	};
 
 	VirtualAddress m_start;

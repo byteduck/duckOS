@@ -31,19 +31,19 @@ PhysicalPage& BuddyZone::get_block(int block) const {
 }
 
 ResultRet<PageIndex> BuddyZone::alloc_block(size_t num_pages) {
-	if(!m_free_pages)
+	if(m_free_pages < num_pages)
 		return Result(ENOMEM);
 
 	auto block_index = TRY(alloc_block_internal(order_for(num_pages)));
-	m_free_pages--;
+	m_free_pages -= num_pages;
 	return m_first_page + block_index;
 }
 
 void BuddyZone::free_block(PageIndex start_page, size_t num_pages) {
-	ASSERT(m_free_pages < m_num_pages);
 	ASSERT(start_page >= m_first_page);
+	ASSERT(start_page + num_pages <= m_first_page + m_num_pages);
 	free_block_internal(start_page - m_first_page, order_for(num_pages));
-	m_free_pages++;
+	m_free_pages += num_pages;
 }
 
 ResultRet<int> BuddyZone::alloc_block_internal(unsigned int order) {

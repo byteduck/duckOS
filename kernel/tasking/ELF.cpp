@@ -112,9 +112,8 @@ ResultRet<kstd::string> ELF::read_interp(FileDescriptor& fd, kstd::vector<elf32_
 	return Result(-ENOENT);
 }
 
-ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const kstd::shared_ptr<PageDirectory>& page_directory) {
-	uint32_t current_brk = 0;
-
+ResultRet<kstd::vector<Ptr<VMRegion>>> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const Ptr<VMSpace>& vm_space) {
+	kstd::vector<Ptr<VMRegion>> regions;
 	for(uint32_t i = 0; i < headers.size(); i++) {
 		auto& header = headers[i];
 		if(header.p_type == ELF_PT_LOAD) {
@@ -128,32 +127,18 @@ ResultRet<size_t> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segm
 			fd.seek(header.p_offset, SEEK_SET);
 			fd.read(KernelPointer<uint8_t>((uint8_t*) tmp_region->start() + (header.p_vaddr - loadloc_pagealigned)), header.p_filesz);
 
-			ASSERT(false); // TODO
-			//Allocate a program vmem region
-//			MemoryRegion* vmem_region = page_directory->vmem_map().allocate_region(loadloc_pagealigned, loadsize_pagealigned);
-//			if(!vmem_region) {
-//				//If we failed to allocate the program vmem region, free the tmp region
-////				MemoryManager::inst().pmem_map().free_region(tmp_region.phys);
-//				KLog::crit("ELF", "Failed to allocate a vmem region in load_elf!");
-//				return -ENOMEM;
-//			}
-//
-//			//Unmap the region from the kernel
-//			PageDirectory::k_unmap_region(tmp_region);
-//			PageDirectory::kernel_vmem_map.free_region(tmp_region.virt);
-//
-//			//Map the physical region to the program's vmem region
-//			vmem_region->related = tmp_region.phys;
-//			tmp_region.phys->related = vmem_region;
-//			LinkedMemoryRegion prog_region(tmp_region.phys, vmem_region);
-//			page_directory->map_region(prog_region, header.p_flags & ELF_PF_W);
-//
-//			if(current_brk < header.p_vaddr + header.p_memsz)
-//				current_brk = header.p_vaddr + header.p_memsz;
+			//Map it into the program's vmem
+			VMProt prot = {
+				.read = (bool) (header.p_flags & ELF_PF_R),
+				.write = (bool) (header.p_flags & ELF_PF_W),
+				.execute = (bool) (header.p_flags & ELF_PF_X)
+			};
+			auto vmem_region = TRY(vm_space->map_object(tmp_region->object(), loadloc_pagealigned, prot));
+			regions.push_back(vmem_region);
 		}
 	}
 
-	return current_brk;
+	return regions;
 }
 
 ResultRet<ELF::ElfInfo> ELF::read_info(const kstd::shared_ptr<FileDescriptor>& fd, User& user, kstd::string interpreter) {
