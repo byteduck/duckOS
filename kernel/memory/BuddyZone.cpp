@@ -81,7 +81,7 @@ ResultRet<int> BuddyZone::alloc_block_internal(unsigned int order) {
 }
 
 void BuddyZone::free_block_internal(int block, unsigned int order) {
-	ASSERT(order < MAX_ORDER);
+	ASSERT(order <= MAX_ORDER);
 
 	auto& bucket = m_orders[order];
 	if(bucket.get_bit(block) == BuddyState::MIXED) {
