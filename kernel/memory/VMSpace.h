@@ -62,7 +62,14 @@ public:
 	 * @param address The address of the region to find.
 	 * @return The region, if found.
 	 */
-	ResultRet<VMRegion*> get_region(VirtualAddress address);
+	ResultRet<VMRegion*> get_region_at(VirtualAddress address);
+
+	/**
+	 * Gets the region containing the given address
+	 * @param address The address contained within the region to find.
+	 * @return The region, if found.
+	 */
+	ResultRet<VMRegion*> get_region_containing(VirtualAddress address);
 
 	/**
 	 * Reserves a region so it cannot be allocated. Should be page-aligned.

@@ -68,25 +68,6 @@ void PageDirectory::init_kmem() {
 		s_kernel_entries[i].data.user = false;
 		s_kernel_entries[i].data.set_address((size_t) s_kernel_page_tables[i - 768].entries() - HIGHER_HALF);
 	}
-
-	// Map the kernel
-	auto map_kernel_area = [&](size_t start, size_t end, bool read_write) {
-		size_t start_kernel_page = start / PAGE_SIZE;
-		size_t num_kernel_pages = kstd::ceil_div(end, PAGE_SIZE);
-		size_t end_kernel_page = start_kernel_page + num_kernel_pages;
-
-		// Map all of the pages for the kernel
-		for(size_t page = start_kernel_page; page < end_kernel_page; page++) {
-			size_t directory_index = (page / 1024) % 1024;
-			size_t table_index = page % 1024;
-			auto& entry = (s_kernel_page_table_entries[directory_index - 768])[table_index];
-			entry.data.present = true;
-			entry.data.set_address(page * PAGE_SIZE - HIGHER_HALF);
-			entry.data.read_write = read_write;
-		}
-	};
-	map_kernel_area(KERNEL_TEXT, KERNEL_TEXT_END, false);
-	map_kernel_area(KERNEL_DATA, KERNEL_DATA_END, true);
 }
 
 void PageDirectory::Entry::Data::set_address(size_t address) {

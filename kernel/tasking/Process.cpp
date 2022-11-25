@@ -251,6 +251,8 @@ void Process::free_resources() {
 	if(_freed_resources)
 		return;
 	_freed_resources = true;
+	_vm_regions.resize(0);
+	_vm_space.reset();
 	_page_directory.reset();
 	for(int i = 0; i < _threads.size(); i++)
 		if(_threads[i])

@@ -137,11 +137,21 @@ Result VMSpace::unmap_region(VirtualAddress address) {
 	return Result(ENOENT);
 }
 
-ResultRet<VMRegion*> VMSpace::get_region(VirtualAddress address) {
+ResultRet<VMRegion*> VMSpace::get_region_at(VirtualAddress address) {
 	LOCK(m_lock);
 	for(size_t i = 0; i < m_regions.size(); i++) {
 		auto region = m_regions[i];
 		if(region->start() == address)
+			return region;
+	}
+	return Result(ENOENT);
+}
+
+ResultRet<VMRegion*> VMSpace::get_region_containing(VirtualAddress address) {
+	LOCK(m_lock);
+	for(size_t i = 0; i < m_regions.size(); i++) {
+		auto region = m_regions[i];
+		if(region->contains(address))
 			return region;
 	}
 	return Result(ENOENT);

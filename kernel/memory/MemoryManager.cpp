@@ -40,9 +40,11 @@ size_t mem_upper_limit = 0;
 
 uint8_t early_kheap_memory[0x400000]; // 4MiB
 size_t used_early_kheap_memory = 0;
-bool setup_paging = false;
+bool did_setup_paging = false;
 
 MemoryManager* MemoryManager::_inst;
+Ptr<VMRegion> kernel_text_region;
+Ptr<VMRegion> kernel_data_region;
 
 MemoryManager::MemoryManager():
 	m_kernel_space(HIGHER_HALF, ~0x0 - HIGHER_HALF + 1 - PAGE_SIZE, kernel_page_directory)
@@ -50,12 +52,6 @@ MemoryManager::MemoryManager():
 	if(_inst)
 		PANIC("MEMORY_MANAGER_DUPLICATE", "Something tried to initialize the memory manager twice.");
 	_inst = this;
-
-	// Make sure the kernel is reserved in the memory space
-	auto res = m_kernel_space.reserve_region(KERNEL_TEXT, KERNEL_TEXT_SIZE);
-	ASSERT(res.is_success());
-	res = m_kernel_space.reserve_region(KERNEL_DATA, KERNEL_DATA_SIZE);
-	ASSERT(res.is_success());
 }
 
 MemoryManager& MemoryManager::inst() {
@@ -63,9 +59,30 @@ MemoryManager& MemoryManager::inst() {
 }
 
 void MemoryManager::setup_paging() {
-	//Assert that the kernel doesn't exceed 7MiB
-	ASSERT(KERNEL_DATA_END - KERNEL_TEXT <= 0x700000);
 	PageDirectory::init_kmem();
+
+	// Map the kernel to the memory space
+	auto do_map = [&]() -> Result {
+		auto kernel_text_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE));
+		kernel_text_region = TRY(m_kernel_space.map_object(kernel_text_object, KERNEL_TEXT, VMProt {
+				.read = true,
+				.write = false,
+				.execute = true
+		}));
+
+		auto kernel_data_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE));
+		kernel_data_region = TRY(m_kernel_space.map_object(kernel_data_object, KERNEL_DATA, VMProt {
+				.read = true,
+				.write = true,
+				.execute = false
+		}));
+
+		return Result(SUCCESS);
+	};
+
+	// Make sure the kernel is reserved in the memory space
+	auto map_res = do_map();
+	ASSERT(map_res.is_success());
 
 	//Enable paging
 	asm volatile(
@@ -75,6 +92,8 @@ void MemoryManager::setup_paging() {
 			"movl %%eax, %%cr0\n"
 			: : "a"((size_t) kernel_page_directory.entries() - HIGHER_HALF)
 	);
+
+	did_setup_paging = true;
 }
 
 void MemoryManager::load_page_directory(const kstd::shared_ptr<PageDirectory>& page_directory) {
@@ -326,6 +345,8 @@ void liballoc_unlock() {
 	MemoryManager::inst().liballoc_spinlock.release();
 }
 
+Ptr<VMRegion> next_liballoc_kernel_region;
+
 void *liballoc_alloc(int pages) {
 	// If we still have early kheap memory, use it
 	if(pages * PAGE_SIZE < (sizeof(early_kheap_memory) - used_early_kheap_memory)) {
@@ -335,14 +356,21 @@ void *liballoc_alloc(int pages) {
 		return ptr;
 	}
 
-	ASSERT(setup_paging);
-	auto region = MM.alloc_kernel_region(pages * PAGE_SIZE);
+	ASSERT(did_setup_paging);
+	ASSERT(next_liballoc_kernel_region);
+	ASSERT(pages == 16);
+	auto region = next_liballoc_kernel_region;
+	next_liballoc_kernel_region.reset();
 	region.leak_ref(); // So that it's not deallocated since we're throwing away this pointer
 	return (void*) region->start();
 }
 
+bool is_setting_next_region = false;
 void liballoc_afteralloc(void* ptr_alloced) {
-
+	if(!next_liballoc_kernel_region && did_setup_paging && !is_setting_next_region) {
+		is_setting_next_region = true;
+		next_liballoc_kernel_region = MM.alloc_kernel_region(PAGE_SIZE * 16);
+	}
 }
 
 void liballoc_free(void *ptr, int pages) {
@@ -351,8 +379,10 @@ void liballoc_free(void *ptr, int pages) {
 		return;
 	}
 
+	ASSERT(pages == 16);
+
 	// Find the region we need to free and delete it, since we manually leaked its reference count
-	auto region_res = MM.kernel_space().get_region((VirtualAddress) ptr);
+	auto region_res = MM.kernel_space().get_region_at((VirtualAddress) ptr);
 	if(region_res.is_error())
 		PANIC("LIBALLOC_FREE_FAIL", "Could not find the VMRegion associated with a call to liballoc_free.");
 	delete region_res.value();
