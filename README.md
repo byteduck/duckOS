@@ -122,7 +122,6 @@ Ports will only compile if their corresponding submodule is downloaded with `git
 
 ### Credits
 - [blanham's mirror of liballoc 1.1](https://github.com/blanham/liballoc) for the kernel heap allocation implementation (it's open domain, so if you want to use it, I highly recommend it)
-- [SRombaut's implementation of shared_ptr](https://github.com/SRombauts/shared_ptr/)
 - [SerenityOS](http://serenityos.org) for a lot of inspiration
 - [Gohufont](https://font.gohu.org/) for the font (licensed under [WTFPL](http://www.wtfpl.net/about/))
 

@@ -48,7 +48,7 @@ Ptr<VMRegion> kernel_data_region;
 Ptr<VMRegion> physical_pages_region;
 
 MemoryManager::MemoryManager():
-	m_kernel_space(HIGHER_HALF, ~0x0 - HIGHER_HALF + 1 - PAGE_SIZE, kernel_page_directory)
+	m_kernel_space(kstd::make_shared<VMSpace>(HIGHER_HALF, ~0x0 - HIGHER_HALF + 1 - PAGE_SIZE, kernel_page_directory))
 {
 	if(_inst)
 		PANIC("MEMORY_MANAGER_DUPLICATE", "Something tried to initialize the memory manager twice.");
@@ -114,21 +114,21 @@ void MemoryManager::setup_paging() {
 	// Now that we're all set up to use normal methods of mapping stuff, map the kernel and physical pages again
 	auto do_map = [&]() -> Result {
 		auto kernel_text_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE));
-		kernel_text_region = TRY(m_kernel_space.map_object(kernel_text_object, KERNEL_TEXT, VMProt {
+		kernel_text_region = TRY(m_kernel_space->map_object(kernel_text_object, KERNEL_TEXT, VMProt {
 				.read = true,
 				.write = false,
 				.execute = true
 		}));
 
 		auto kernel_data_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE));
-		kernel_data_region = TRY(m_kernel_space.map_object(kernel_data_object, KERNEL_DATA, VMProt {
+		kernel_data_region = TRY(m_kernel_space->map_object(kernel_data_object, KERNEL_DATA, VMProt {
 				.read = true,
 				.write = true,
 				.execute = false
 		}));
 
 		auto physical_pages_object = TRY(AnonymousVMObject::map_to_physical(page_array_start_page * PAGE_SIZE, page_array_num_pages * PAGE_SIZE));
-		physical_pages_region = TRY(m_kernel_space.map_object(physical_pages_object, (VirtualAddress) m_physical_pages, VMProt {
+		physical_pages_region = TRY(m_kernel_space->map_object(physical_pages_object, (VirtualAddress) m_physical_pages, VMProt {
 				.read = true,
 				.write = true,
 				.execute = false
@@ -329,7 +329,7 @@ ResultRet<kstd::vector<PageIndex>> MemoryManager::alloc_contiguous_physical_page
 kstd::shared_ptr<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
 	auto do_alloc = [&]() -> ResultRet<kstd::shared_ptr<VMRegion>> {
 		auto object = TRY(AnonymousVMObject::alloc(size));
-		return TRY(m_kernel_space.map_object(object));
+		return TRY(m_kernel_space->map_object(object));
 	};
 	auto res = do_alloc();
 	if(res.is_error())
@@ -340,7 +340,7 @@ kstd::shared_ptr<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
 kstd::shared_ptr<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
 	auto do_alloc = [&]() -> ResultRet<kstd::shared_ptr<VMRegion>> {
 		auto object = TRY(AnonymousVMObject::alloc_contiguous(size));
-		return TRY(m_kernel_space.map_object(object));
+		return TRY(m_kernel_space->map_object(object));
 	};
 	auto res = do_alloc();
 	if(res.is_error())
@@ -351,7 +351,7 @@ kstd::shared_ptr<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
 Ptr<VMRegion> MemoryManager::alloc_mapped_region(PhysicalAddress start, size_t size) {
 	auto do_map = [&]() -> ResultRet<kstd::shared_ptr<VMRegion>> {
 		auto object = TRY(AnonymousVMObject::map_to_physical(start, size));
-		return TRY(m_kernel_space.map_object(object));
+		return TRY(m_kernel_space->map_object(object));
 	};
 	auto res = do_map();
 	if(res.is_error())
@@ -360,7 +360,7 @@ Ptr<VMRegion> MemoryManager::alloc_mapped_region(PhysicalAddress start, size_t s
 }
 
 Ptr<VMRegion> MemoryManager::map_object(Ptr<VMObject> object) {
-	auto res = m_kernel_space.map_object(object);
+	auto res = m_kernel_space->map_object(object);
 	if(res.is_error())
 		PANIC("ALLOC_MAPPED_FAIL", "Could not map an existing object into kernel space.");
 	return res.value();
@@ -424,8 +424,8 @@ void liballoc_free(void *ptr, int pages) {
 	ASSERT(pages == 16);
 
 	// Find the region we need to free and delete it, since we manually leaked its reference count
-	auto region_res = MM.kernel_space().get_region_at((VirtualAddress) ptr);
+	auto region_res = MM.kernel_space()->get_region_at((VirtualAddress) ptr);
 	if(region_res.is_error())
 		PANIC("LIBALLOC_FREE_FAIL", "Could not find the VMRegion associated with a call to liballoc_free.");
-	delete region_res.value();
+	region_res.value().leak_unref();
 }

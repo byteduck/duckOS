@@ -13,7 +13,7 @@
  * This class represents a virtual memory address space and all of the regions it contains. It's used to allocate and
  * map new regions in virtual memory.
  */
-class VMSpace {
+class VMSpace: public kstd::Shared<VMSpace> {
 public:
 	VMSpace(VirtualAddress start, size_t size, PageDirectory& page_directory);
 	~VMSpace();
@@ -62,14 +62,14 @@ public:
 	 * @param address The address of the region to find.
 	 * @return The region, if found.
 	 */
-	ResultRet<VMRegion*> get_region_at(VirtualAddress address);
+	ResultRet<Ptr<VMRegion>> get_region_at(VirtualAddress address);
 
 	/**
 	 * Gets the region containing the given address
 	 * @param address The address contained within the region to find.
 	 * @return The region, if found.
 	 */
-	ResultRet<VMRegion*> get_region_containing(VirtualAddress address);
+	ResultRet<Ptr<VMRegion>> get_region_containing(VirtualAddress address);
 
 	/**
 	 * Reserves a region so it cannot be allocated. Should be page-aligned.

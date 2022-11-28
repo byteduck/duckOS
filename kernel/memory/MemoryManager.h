@@ -137,7 +137,7 @@ public:
 	 */
 	Ptr<VMRegion> map_object(Ptr<VMObject> object);
 
-	VMSpace& kernel_space() { return m_kernel_space; }
+	Ptr<VMSpace> kernel_space() { return m_kernel_space; }
 
 	/**
 	 * Frees a physical page for future use. The page should have a refcount of 0.
@@ -163,7 +163,7 @@ private:
 	static MemoryManager* _inst;
 	PhysicalPage* m_physical_pages;
 	kstd::vector<PhysicalRegion*> m_physical_regions;
-	VMSpace m_kernel_space;
+	Ptr<VMSpace> m_kernel_space;
 };
 
 void liballoc_lock();

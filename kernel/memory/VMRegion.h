@@ -19,7 +19,7 @@ class VMSpace;
 /**
  * This class describes a region in virtual memory in a specific address space.
  */
-class VMRegion {
+class VMRegion: public kstd::Shared<VMRegion> {
 public:
 	/**
 	 * Creates a new virtual memory region.
@@ -27,7 +27,7 @@ public:
 	 * @param start The start address of the region.
 	 * @param size The end address of the region.
 	 */
-	VMRegion(Ptr<VMObject> object, VMSpace* space, size_t start, size_t size, VMProt prot);
+	VMRegion(Ptr<VMObject> object, Ptr<VMSpace> space, size_t start, size_t size, VMProt prot);
 	~VMRegion();
 
 	kstd::shared_ptr<VMObject> object() const { return m_object; }
@@ -44,7 +44,7 @@ public:
 private:
 	friend class VMSpace;
 	Ptr<VMObject> m_object;
-	VMSpace* m_space;
+	Weak<VMSpace> m_space;
 	size_t m_start;
 	size_t m_size;
 	VMProt m_prot;

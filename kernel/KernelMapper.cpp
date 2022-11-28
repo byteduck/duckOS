@@ -95,10 +95,8 @@ KernelMapper::Symbol* KernelMapper::get_symbol(size_t location) {
 }
 
 void KernelMapper::print_stacktrace() {
-	if(!symbols) {
+	if(!symbols)
 		printf("[Symbols not available yet]\n");
-		return;
-	}
 
 	//Start walking the stack
 	auto* stk = (uint32_t*) __builtin_frame_address(0);

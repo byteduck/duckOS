@@ -23,7 +23,7 @@ public:
 	 * @return The value copied from userspace at the specified index.
 	 */
 	inline T get(int index = 0) const {
-		return checked<T>(false, index, 1, [=]() {
+		return checked<T>(false, index, 1, [&]() {
 			return m_ptr[index];
 		});
 	}
@@ -33,7 +33,7 @@ public:
 	 * @param index An index into this pointer as an array.
 	 */
 	inline void set(int index, const T& value) const {
-		checked<void>(true, index, 1, [=]() {
+		checked<void>(true, index, 1, [&]() {
 			m_ptr[index] = value;
 		});
 	}
@@ -56,7 +56,7 @@ public:
 			return kstd::string((char*) m_ptr);
 
 		auto* proc = TaskManager::current_thread()->process();
-		return proc->page_directory()->lock().synced<kstd::string>([=]() {
+		return proc->page_directory()->lock().synced<kstd::string>([&]() {
 			auto cur_ptr = (char*) m_ptr;
 			proc->check_ptr(cur_ptr, false);
 			auto last_checked_page = (size_t) cur_ptr / PAGE_SIZE;
@@ -78,7 +78,7 @@ public:
 	 * @param count The number of T elements to copy to the destination buffer.
 	 */
 	void read(T* dest, size_t offset, size_t count) const {
-		checked<void>(false, offset, count, [=]() {
+		checked<void>(false, offset, count, [&]() {
 			memcpy(dest, m_ptr + offset, sizeof(T) * count);
 		});
 	}
@@ -99,7 +99,7 @@ public:
 	 * @param count The number of T elements to copy from the destination buffer.
 	 */
 	void write(const T* source, size_t offset, size_t count) const {
-		checked<void>(true, offset, count, [=]() {
+		checked<void>(true, offset, count, [&]() {
 			memcpy(m_ptr + offset, source, count * sizeof(T));
 		});
 	}
@@ -120,7 +120,7 @@ public:
 	 * @param count The number of T elements to copy from the destination buffer.
 	 */
 	void memset(T value, size_t offset, size_t count) const {
-		checked<void>(true, offset, count, [=]() {
+		checked<void>(true, offset, count, [&]() {
 			::memset(m_ptr + offset, value, sizeof(T) * count);
 		});
 	}
@@ -143,7 +143,7 @@ public:
 		if(!m_is_user)
 			return lambda();
 		auto* process = TaskManager::current_process();
-		return process->page_directory()->lock().synced<R>([=]() {
+		return process->page_directory()->lock().synced<R>([&]() {
 			auto page_start_ptr = ((size_t) (m_ptr + offset) / PAGE_SIZE) * PAGE_SIZE;
 			auto page_end_ptr = (((size_t) (m_ptr + offset + count) - 1) / PAGE_SIZE) * PAGE_SIZE;
 			for(size_t ptr = page_start_ptr; ptr <= page_end_ptr; ptr += PAGE_SIZE) {

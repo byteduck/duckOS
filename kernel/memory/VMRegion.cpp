@@ -4,7 +4,7 @@
 #include "VMRegion.h"
 #include "MemoryManager.h"
 
-VMRegion::VMRegion(Ptr<VMObject> object, VMSpace* space, size_t start, size_t size, VMProt prot):
+VMRegion::VMRegion(Ptr<VMObject> object, Ptr<VMSpace> space, size_t start, size_t size, VMProt prot):
 	m_object(object),
 	m_space(space),
 	m_start(start),
@@ -15,10 +15,10 @@ VMRegion::VMRegion(Ptr<VMObject> object, VMSpace* space, size_t start, size_t si
 }
 
 VMRegion::~VMRegion() {
-	if(m_space) {
-		auto unmap_res = m_space->unmap_region(*this);
+	m_space.with_locked([&](const Ptr<VMSpace>& space) {
+		auto unmap_res = space->unmap_region(*this);
 		ASSERT(unmap_res.is_success());
-	}
+	});
 }
 
 void VMRegion::set_cow(bool cow) {
