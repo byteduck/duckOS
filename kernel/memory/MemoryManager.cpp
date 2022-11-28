@@ -38,13 +38,14 @@ size_t usable_upper_limit = 0;
 size_t mem_lower_limit = ~0;
 size_t mem_upper_limit = 0;
 
-uint8_t early_kheap_memory[0x400000]; // 4MiB
+uint8_t early_kheap_memory[0x200000]; // 2MiB
 size_t used_early_kheap_memory = 0;
 bool did_setup_paging = false;
 
 MemoryManager* MemoryManager::_inst;
 Ptr<VMRegion> kernel_text_region;
 Ptr<VMRegion> kernel_data_region;
+Ptr<VMRegion> physical_pages_region;
 
 MemoryManager::MemoryManager():
 	m_kernel_space(HIGHER_HALF, ~0x0 - HIGHER_HALF + 1 - PAGE_SIZE, kernel_page_directory)
@@ -59,9 +60,58 @@ MemoryManager& MemoryManager::inst() {
 }
 
 void MemoryManager::setup_paging() {
-	PageDirectory::init_kmem();
+	// Setup and enable paging
+	PageDirectory::init_paging();
 
-	// Map the kernel to the memory space
+	// Find a region where we can store our physical page array
+	size_t num_physical_pages = kstd::ceil_div(mem_upper_limit, PAGE_SIZE);
+	size_t page_array_num_pages = kstd::ceil_div(num_physical_pages * sizeof(PhysicalPage), PAGE_SIZE);
+	size_t page_array_start_page = 0;
+	for(size_t i = 0; i < m_physical_regions.size(); i++) {
+		auto& region = m_physical_regions[i];
+		if(region->reserved() || region->num_pages() != region->free_pages() || region->free_pages() < page_array_num_pages)
+			continue;
+
+		page_array_start_page = m_physical_regions[i]->start_page();
+
+		// Resize the physical region so that we don't allocate these pages
+		size_t new_size = region->num_pages() - page_array_num_pages;
+		size_t new_start = region->start_page() + page_array_num_pages;
+		delete region;
+		if(new_size)
+			m_physical_regions[i] = new PhysicalRegion(new_start, new_size, false, false);
+		else
+			m_physical_regions.erase(i);
+
+		break;
+	}
+
+	// Make sure we found a page
+	if(page_array_start_page == 0)
+		PANIC("PAGE_ARRAY_NOMEM", "Cannot find enough contiguous memory to store the physical page array.");
+	KLog::dbg("Memory", "Mapping physical page array to pages 0x%x -> 0x%x", page_array_start_page, page_array_start_page + page_array_num_pages - 1);
+
+	// Map the array to memory
+	VMProt pages_prot = {
+		.read = true,
+		.write = true,
+		.execute = false,
+		.cow = false
+	};
+	for(size_t i = 0; i < page_array_num_pages; i++) {
+		if(kernel_page_directory.map_page(kstd::ceil_div(KERNEL_DATA_END, PAGE_SIZE) + i, page_array_start_page, pages_prot).is_error())
+			PANIC("PAGE_ARRAY_MAP_ERR", "Could not map the physical page array.");
+	}
+
+	// Set the pointer to the physical pages array and zero it out
+	m_physical_pages = (PhysicalPage*) (kstd::ceil_div(KERNEL_DATA_END, PAGE_SIZE) * PAGE_SIZE);
+	memset(m_physical_pages, 0, num_physical_pages * sizeof(PhysicalPage));
+
+	// Setup the physical region freelists
+	for(size_t i = 0; i < m_physical_regions.size(); i++)
+		m_physical_regions[i]->init();
+
+	// Now that we're all set up to use normal methods of mapping stuff, map the kernel and physical pages again
 	auto do_map = [&]() -> Result {
 		auto kernel_text_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE));
 		kernel_text_region = TRY(m_kernel_space.map_object(kernel_text_object, KERNEL_TEXT, VMProt {
@@ -77,21 +127,19 @@ void MemoryManager::setup_paging() {
 				.execute = false
 		}));
 
+		auto physical_pages_object = TRY(AnonymousVMObject::map_to_physical(page_array_start_page * PAGE_SIZE, page_array_num_pages * PAGE_SIZE));
+		physical_pages_region = TRY(m_kernel_space.map_object(physical_pages_object, (VirtualAddress) m_physical_pages, VMProt {
+				.read = true,
+				.write = true,
+				.execute = false
+		}));
+
 		return Result(SUCCESS);
 	};
 
 	// Make sure the kernel is reserved in the memory space
 	auto map_res = do_map();
 	ASSERT(map_res.is_success());
-
-	//Enable paging
-	asm volatile(
-			"movl %%eax, %%cr3\n" //Put the page directory pointer in cr3
-			"movl %%cr0, %%eax\n"
-			"orl $0x80000000, %%eax\n" //Set the proper flags in cr0
-			"movl %%eax, %%cr0\n"
-			: : "a"((size_t) kernel_page_directory.entries() - HIGHER_HALF)
-	);
 
 	did_setup_paging = true;
 }
@@ -229,12 +277,6 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 		mmap_offset += mmap_entry->size + sizeof(mmap_entry->size);
 		mmap_entry = (struct multiboot_mmap_entry*) ((size_t)mmap_entry + mmap_entry->size + sizeof(mmap_entry->size));
 	}
-
-	m_physical_pages = (PhysicalPage*) kcalloc(sizeof(PhysicalPage), mem_upper_limit / PAGE_SIZE);
-
-	// Setup the physical region freelists
-	for(size_t i = 0; i < m_physical_regions.size(); i++)
-		m_physical_regions[i]->init();
 
 	KLog::dbg("Memory", "Usable memory limits: 0x%x -> 0x%x", usable_lower_limt, usable_upper_limit);
 	KLog::dbg("Memory", "Total memory limits: 0x%x -> 0x%x", mem_lower_limit, mem_upper_limit);

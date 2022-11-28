@@ -58,7 +58,7 @@ public:
 	/**
 	 * Initialize the kernel page directory entries & related variables.
 	 */
-	static void init_kmem();
+	static void init_paging();
 
 	explicit PageDirectory(DirectoryType type = DirectoryType::USER);
 	~PageDirectory();
@@ -127,6 +127,23 @@ public:
 	bool is_mapped();
 
 private:
+	friend class MemoryManager;
+	/**
+	 * Maps a virtual page to a physical page.
+	 * @param vpage The index of the virtual page to map.
+	 * @param ppage The index of the physical page to map it to.
+	 * @param prot The protection to map the page with.
+	 * @return Whether the page was successfully mapped.
+	 */
+	Result map_page(PageIndex vpage, PageIndex ppage, VMProt prot);
+
+	/**
+	 * Unmaps a virtual page.
+	 * @param vpage The index of the virtual page to unmap.
+	 * @return Whether the page was successfully unmapped.
+	 */
+	Result unmap_page(PageIndex vpage);
+
 	// The entries for the kernel.
 	static Entry s_kernel_entries[1024];
 	// The page tables for the kernel.

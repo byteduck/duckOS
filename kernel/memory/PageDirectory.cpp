@@ -25,7 +25,7 @@
 #include "PageTable.h"
 #include "MemoryManager.h"
 #include "kernel/kstd/KLog.h"
-#include "cmake-build-release/root/usr/include/kernel/KernelMapper.h"
+#include "../KernelMapper.h"
 #include <kernel/kstd/cstring.h>
 
 /*
@@ -44,7 +44,7 @@ __attribute__((aligned(4096))) PageTable::Entry s_kernel_page_table_entries[256]
  * KERNEL MANAGEMENT
  */
 
-void PageDirectory::init_kmem() {
+void PageDirectory::init_paging() {
 	// Clear the kernel page table entries
 	for(auto & entries : s_kernel_page_table_entries)
 		for(auto & entry : entries)
@@ -68,6 +68,41 @@ void PageDirectory::init_kmem() {
 		s_kernel_entries[i].data.user = false;
 		s_kernel_entries[i].data.set_address((size_t) s_kernel_page_tables[i - 768].entries() - HIGHER_HALF);
 	}
+
+	auto map_range = [&](VirtualAddress vstart, VirtualAddress pstart, size_t size, VMProt prot) {
+		size_t start_vpage = vstart / PAGE_SIZE;
+		size_t start_ppage = pstart / PAGE_SIZE;
+		size_t num_pages = ((vstart + size) / PAGE_SIZE) - start_vpage;
+		for(size_t i = 0; i < num_pages; i++)
+			if(MM.kernel_page_directory.map_page(start_vpage + i, start_ppage + i, prot).is_error())
+				PANIC("PAGING_INIT_FAIL", "Could not map the kernel when setting up paging.");
+	};
+
+	// Map the kernel text and data
+
+	map_range(KERNEL_TEXT, KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, VMProt {
+		.read = true,
+		.write = false,
+		.execute = true,
+		.cow = false
+	});
+
+	map_range(KERNEL_DATA, KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, VMProt {
+			.read = true,
+			.write = true,
+			.execute = false,
+			.cow = false
+	});
+
+	// Enable paging
+
+	asm volatile(
+		"movl %%eax, %%cr3\n" //Put the page directory pointer in cr3
+		"movl %%cr0, %%eax\n"
+		"orl $0x80000000, %%eax\n" //Set the proper flags in cr0
+		"movl %%eax, %%cr0\n"
+		: : "a"((size_t) MM.kernel_page_directory.m_entries - HIGHER_HALF)
+	);
 }
 
 void PageDirectory::Entry::Data::set_address(size_t address) {
@@ -128,42 +163,8 @@ void PageDirectory::map(VMRegion& region) {
 	ASSERT(prot.read);
 
 	for(size_t page_index = 0; page_index < num_pages; page_index++) {
-		size_t vpage = page_index + start_vpage;
-		size_t directory_index = (vpage / 1024) % 1024;
-		size_t table_index = vpage % 1024;
-
-		PageTable::Entry* entry;
-
-		if(directory_index < 768) {
-			// Userspace
-			if(m_type != DirectoryType::USER) {
-				KLog::warn("PageDirectory", "Tried mapping user in kernel directory!");
-				return;
-			}
-
-			//If the page table for this page hasn't been alloc'd yet, alloc it
-			if (!m_page_tables[directory_index]){
-				alloc_page_table(directory_index);
-			}
-
-			m_page_tables_num_mapped[directory_index]++;
-			entry = &m_page_tables[directory_index]->entries()[table_index];
-		} else {
-			// Kernel space
-			if(m_type != DirectoryType::KERNEL) {
-				KLog::warn("PageDirectory", "Tried mapping kernel in non-kernel directory!");
-				return;
-			}
-
-			entry = &s_kernel_page_tables[directory_index - 768].entries()[table_index];
-		}
-
-		entry->data.present = true;
-		entry->data.read_write = prot.write && !prot.cow;
-		entry->data.user = true;
-		entry->data.set_address(region.object()->physical_page(page_index).index() * PAGE_SIZE);
-
-		MemoryManager::inst().invlpg((void *) (vpage * PAGE_SIZE));
+		if(map_page(start_vpage + page_index, region.object()->physical_page(page_index).index(), prot).is_error())
+			return;
 	}
 }
 
@@ -179,39 +180,8 @@ void PageDirectory::unmap(VMRegion& region) {
 	}
 
 	for(size_t page_index = 0; page_index < num_pages; page_index++) {
-		PageIndex page = start_vpage + page_index;
-		size_t directory_index = (page / 1024) % 1024;
-		size_t table_index = page % 1024;
-
-		if(directory_index < 768) {
-			// Userspace
-			if(m_type != DirectoryType::USER) {
-				KLog::warn("PageDirectory", "Tried mapping user in kernel directory!");
-				return;
-			}
-
-			//If the page table for this page hasn't been alloc'd yet, alloc it
-			if (!m_page_tables[directory_index]){
-				alloc_page_table(directory_index);
-			}
-
-			m_page_tables_num_mapped[directory_index]--;
-			auto* entry = &m_page_tables[directory_index]->entries()[table_index];
-			entry->value = 0;
-			if(!m_page_tables_num_mapped[directory_index])
-				dealloc_page_table(directory_index);
-		} else {
-			// Kernel space
-			if(m_type != DirectoryType::KERNEL) {
-				KLog::warn("PageDirectory", "Tried mapping kernel in non-kernel directory!");
-				return;
-			}
-
-			auto* entry = &s_kernel_page_tables[directory_index - 768].entries()[table_index];
-			entry->value = 0;
-		}
-
-		MemoryManager::inst().invlpg((void *) (page * PAGE_SIZE));
+		if(unmap_page(start_vpage + page_index).is_error())
+			return;
 	}
 }
 
@@ -294,6 +264,81 @@ bool PageDirectory::is_mapped() {
 	size_t current_page_directory;
 	asm volatile("mov %%cr3, %0" : "=r"(current_page_directory));
 	return current_page_directory == entries_physaddr();
+}
+
+Result PageDirectory::map_page(PageIndex vpage, PageIndex ppage, VMProt prot) {
+	size_t directory_index = (vpage / 1024) % 1024;
+	size_t table_index = vpage % 1024;
+
+	PageTable::Entry* entry;
+
+	if(directory_index < 768) {
+		// Userspace
+		if(m_type != DirectoryType::USER) {
+			KLog::warn("PageDirectory", "Tried mapping user in kernel directory!");
+			return Result(EINVAL);
+		}
+
+		//If the page table for this page hasn't been alloc'd yet, alloc it
+		if (!m_page_tables[directory_index]){
+			alloc_page_table(directory_index);
+		}
+
+		m_page_tables_num_mapped[directory_index]++;
+		entry = &m_page_tables[directory_index]->entries()[table_index];
+	} else {
+		// Kernel space
+		if(m_type != DirectoryType::KERNEL) {
+			KLog::warn("PageDirectory", "Tried mapping kernel in non-kernel directory!");
+			return Result(EINVAL);
+		}
+
+		entry = &s_kernel_page_tables[directory_index - 768].entries()[table_index];
+	}
+
+	entry->data.present = true;
+	entry->data.read_write = prot.write && !prot.cow;
+	entry->data.user = true;
+	entry->data.set_address(ppage * PAGE_SIZE);
+	MemoryManager::inst().invlpg((void *) (vpage * PAGE_SIZE));
+
+	return Result(SUCCESS);
+}
+
+Result PageDirectory::unmap_page(PageIndex vpage) {
+	size_t directory_index = (vpage / 1024) % 1024;
+	size_t table_index = vpage % 1024;
+
+	if(directory_index < 768) {
+		// Userspace
+		if(m_type != DirectoryType::USER) {
+			KLog::warn("PageDirectory", "Tried mapping user in kernel directory!");
+			return Result(EINVAL);
+		}
+
+		//If the page table for this page hasn't been alloc'd yet, alloc it
+		if (!m_page_tables[directory_index]){
+			alloc_page_table(directory_index);
+		}
+
+		m_page_tables_num_mapped[directory_index]--;
+		auto* entry = &m_page_tables[directory_index]->entries()[table_index];
+		entry->value = 0;
+		if(!m_page_tables_num_mapped[directory_index])
+			dealloc_page_table(directory_index);
+	} else {
+		// Kernel space
+		if(m_type != DirectoryType::KERNEL) {
+			KLog::warn("PageDirectory", "Tried mapping kernel in non-kernel directory!");
+			return Result(EINVAL);
+		}
+
+		auto* entry = &s_kernel_page_tables[directory_index - 768].entries()[table_index];
+		entry->value = 0;
+	}
+
+	MemoryManager::inst().invlpg((void *) (vpage * PAGE_SIZE));
+	return Result(SUCCESS);
 }
 
 
