@@ -92,7 +92,7 @@ namespace kstd {
 		}
 
 	private:
-		Atomic<long, MemoryOrder::AcqRel> m_strong_count = 0;
-		Atomic<long, MemoryOrder::AcqRel> m_weak_count = 0;
+		Atomic<long, MemoryOrder::SeqCst> m_strong_count = 0;
+		Atomic<long, MemoryOrder::SeqCst> m_weak_count = 0;
 	};
 }

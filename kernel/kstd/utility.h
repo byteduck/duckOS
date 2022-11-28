@@ -38,5 +38,8 @@ namespace kstd {
 	constexpr A ceil_div(A a, B b) {
 		return (a + (b - 1)) / b;
 	}
+
+	template<typename Base, typename Derived>
+	inline constexpr bool is_base_of = __is_base_of(Base, Derived);
 }
 
