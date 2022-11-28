@@ -314,6 +314,12 @@ PageDirectory* Process::page_directory() {
 		return _page_directory.get();
 }
 
+ResultRet<Ptr<VMRegion>> Process::map_object(Ptr<VMObject> object, VMProt prot) {
+	auto region = TRY(_vm_space->map_object(object, prot));
+	_vm_regions.push_back(region);
+	return region;
+}
+
 /************
  * SYSCALLS *
  ************/

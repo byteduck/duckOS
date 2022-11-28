@@ -88,6 +88,7 @@ public:
 
 	//Memory
 	PageDirectory* page_directory();
+	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VMProt prot);
 
 	//Syscalls
 	void check_ptr(const void* ptr, bool write = false);

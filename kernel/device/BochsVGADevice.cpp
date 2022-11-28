@@ -137,12 +137,15 @@ void BochsVGADevice::clear(uint32_t color) {
 }
 
 void* BochsVGADevice::map_framebuffer(Process* proc) {
-	ASSERT(false);
-	// TODO
-//	void* ret = proc->page_directory()->mmap(framebuffer_paddr, framebuffer_size() * 2, true);
-//	if(!ret)
-//		return (void*) -ENOMEM;
-//	return ret;
+	auto region_res = proc->map_object(framebuffer_region->object(), VMProt {
+		.read = true,
+		.write = true,
+		.execute = false,
+		.cow = false
+	});
+	if(region_res.is_error())
+		return nullptr;
+	return (void*) region_res.value()->start();
 }
 
 int BochsVGADevice::ioctl(unsigned int request, SafePointer<void*> argp) {
