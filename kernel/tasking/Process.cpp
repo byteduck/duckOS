@@ -474,7 +474,7 @@ int Process::sys_readdir(int file, UserspacePointer<char> buf, size_t len) {
 int Process::sys_fstat(int file, UserspacePointer<struct stat> buf) {
 	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
 		return -EBADF;
-	buf.checked<void>(true, 0, 1, [=]() {
+	buf.checked<void>(true, 0, 1, [&]() {
 		_file_descriptors[file]->metadata().stat(buf.raw());
 	});
 	return 0;

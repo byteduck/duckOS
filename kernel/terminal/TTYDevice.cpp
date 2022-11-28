@@ -37,7 +37,7 @@ TTYDevice::TTYDevice(unsigned int major, unsigned int minor): CharacterDevice(ma
 }
 
 ssize_t TTYDevice::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
-	return buffer.checked<ssize_t>(false, 0, count, [=]() {
+	return buffer.checked<ssize_t>(false, 0, count, [&]() {
 		return tty_write(buffer.raw(), count);
 	});
 }
