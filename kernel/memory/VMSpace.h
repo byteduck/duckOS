@@ -36,6 +36,13 @@ public:
 	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VMProt prot = VMSpace::default_prot);
 
 	/**
+	 * Allocates a new region for the given object near the end of the memory space.
+	 * @param object The object to allocate a region for.
+	 * @return The newly created region.
+	 */
+	ResultRet<Ptr<VMRegion>> map_stack(Ptr<VMObject> object, VMProt prot = VMSpace::default_prot);
+
+	/**
 	 * Maps an object into a specific area of the address space.
 	 * @param object The object to map into the space.
 	 * @param addr The address to map the object into.

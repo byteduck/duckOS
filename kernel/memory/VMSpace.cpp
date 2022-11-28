@@ -89,6 +89,20 @@ ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object, VMProt prot) 
 	return region;
 }
 
+ResultRet<Ptr<VMRegion>> VMSpace::map_stack(Ptr<VMObject> object, VMProt prot) {
+	LOCK(m_lock);
+
+	// Find the endmost region with space in it
+	auto cur_region = m_region_map;
+	while(cur_region->next)
+		cur_region = cur_region->next;
+	while((cur_region->used || cur_region->size < object->size()) && cur_region)
+		cur_region = cur_region->prev;
+	if(!cur_region)
+		return Result(ENOMEM);
+	return map_object(object, cur_region->end() - object->size(), prot);
+}
+
 ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object, VirtualAddress address, VMProt prot) {
 	LOCK(m_lock);
 	auto vaddr = TRY(alloc_space_at(object->size(), address));

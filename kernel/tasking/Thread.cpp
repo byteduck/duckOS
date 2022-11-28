@@ -42,7 +42,7 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 	if(!is_kernel_mode()) {
 		auto do_create_stack = [&]() -> Result {
 			auto stack_object = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
-			_stack_region = TRY(_process->_vm_space->map_object(stack_object, _process->_vm_space->end() - THREAD_STACK_SIZE));
+			_stack_region = TRY(_process->_vm_space->map_stack(stack_object));
 			mapped_user_stack_region = MM.map_object(stack_object);
 			return Result(SUCCESS);
 		};
@@ -99,59 +99,60 @@ Thread::Thread(Process* process, tid_t tid, Registers& regs): _process(process),
 
 Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (* thread_func)(void*), void* arg): _tid(tid), _process(process) {
 	//Create the kernel stack
-	ASSERT(false); // TODO
-//	_kernel_stack_region = PageDirectory::k_alloc_region(THREAD_KERNEL_STACK_SIZE);
-//	LinkedMemoryRegion mapped_user_stack_region;
-//	Stack user_stack(nullptr, 0);
-//	Stack kernel_stack((void*) (_kernel_stack_region.virt->start + _kernel_stack_region.virt->size));
-//
-//	if(!is_kernel_mode()) {
-//		_stack_region = _process->_page_directory->allocate_stack_region(THREAD_STACK_SIZE, true);
-//		if (!_stack_region.virt)
-//			PANIC("NEW_THREAD_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new thread's stack.");
-//		mapped_user_stack_region = PageDirectory::k_map_physical_region(_stack_region.phys, true);
-//		user_stack = Stack((void*) (mapped_user_stack_region.virt->start + _stack_region.virt->size), _stack_region.virt->start + _stack_region.virt->size);
-//	} else {
-//		user_stack = Stack((void*) (_kernel_stack_region.virt->start + _kernel_stack_region.virt->size));
-//	}
-//
-//	//Setup registers
-//	registers.eflags = 0x202;
-//	registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
-//	registers.eip = (size_t) entry_func;
-//	registers.eax = 0;
-//	registers.ebx = 0;
-//	registers.ecx = 0;
-//	registers.edx = 0;
-//	registers.ebp = user_stack.real_stackptr();
-//	registers.edi = 0;
-//	registers.esi = 0;
-//	if(_process->_kernel_mode) {
-//		registers.ds = 0x10; // ds
-//		registers.es = 0x10; // es
-//		registers.fs = 0x10; // fs
-//		registers.gs = 0x10; // gs
-//	} else {
-//		registers.ds = 0x23; // ds
-//		registers.es = 0x23; // es
-//		registers.fs = 0x23; // fs
-//		registers.gs = 0x23; // gs
-//	}
-//
-//	//Set up the user stack for the thread arguments
-//	user_stack.push_sizet((size_t) arg);
-//	user_stack.push_sizet((size_t) thread_func);
-//	user_stack.push_sizet(0);
-//
-//	//Setup the kernel stack with register states
-//	if(is_kernel_mode())
-//		setup_kernel_stack(kernel_stack, kernel_stack.real_stackptr(), registers);
-//	else
-//		setup_kernel_stack(kernel_stack, user_stack.real_stackptr(), registers);
-//
-//	//Unmap the user stack
-//	if(!is_kernel_mode())
-//		PageDirectory::k_free_virtual_region(mapped_user_stack_region);
+	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
+	Ptr<VMRegion> mapped_user_stack_region;
+	Stack user_stack(nullptr, 0);
+	Stack kernel_stack((void*) (_kernel_stack_region->end()));
+
+	if(!is_kernel_mode()) {
+		auto do_create_stack = [&]() -> Result {
+			auto stack_object = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
+			_stack_region = TRY(_process->_vm_space->map_stack(stack_object));
+			mapped_user_stack_region = MM.map_object(stack_object);
+			return Result(SUCCESS);
+		};
+
+		if (do_create_stack().is_error())
+			PANIC("NEW_THREAD_STACK_ALLOC_FAIL", "Was unable to allocate virtual memory for a new thread's stack.");
+
+		user_stack = Stack((void*) mapped_user_stack_region->end(), _stack_region->end());
+	} else {
+		user_stack = Stack((void*) _kernel_stack_region->end());
+	}
+
+	//Setup registers
+	registers.eflags = 0x202;
+	registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
+	registers.eip = (size_t) entry_func;
+	registers.eax = 0;
+	registers.ebx = 0;
+	registers.ecx = 0;
+	registers.edx = 0;
+	registers.ebp = user_stack.real_stackptr();
+	registers.edi = 0;
+	registers.esi = 0;
+	if(_process->_kernel_mode) {
+		registers.ds = 0x10; // ds
+		registers.es = 0x10; // es
+		registers.fs = 0x10; // fs
+		registers.gs = 0x10; // gs
+	} else {
+		registers.ds = 0x23; // ds
+		registers.es = 0x23; // es
+		registers.fs = 0x23; // fs
+		registers.gs = 0x23; // gs
+	}
+
+	//Set up the user stack for the thread arguments
+	user_stack.push_sizet((size_t) arg);
+	user_stack.push_sizet((size_t) thread_func);
+	user_stack.push_sizet(0);
+
+	//Setup the kernel stack with register states
+	if(is_kernel_mode())
+		setup_kernel_stack(kernel_stack, kernel_stack.real_stackptr(), registers);
+	else
+		setup_kernel_stack(kernel_stack, user_stack.real_stackptr(), registers);
 }
 
 Thread::~Thread() = default;
