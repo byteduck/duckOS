@@ -133,7 +133,8 @@ SET(KERNEL_SRCS
         device/AC97Device.cpp
         tests/KernelTest.cpp
         tests/kstd/TestMap.cpp
-        tests/TestMemory.cpp)
+        tests/TestMemory.cpp
+        tests/kstd/TestSharedPtr.cpp)
 
 ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS})
 TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL)

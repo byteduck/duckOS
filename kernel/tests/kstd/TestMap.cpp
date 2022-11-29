@@ -103,11 +103,11 @@ void check_values(IntMap& map, IntPairVector& in_map) {
 KERNEL_TEST(random_insert_remove) {
 	IntMap map;
 	IntPairVector in_map; // A vector containing the pairs that should be in the map
-	
+
 	// Randomly populate and check values are correct
 	randomly_populate(map, in_map);
 	check_values(map, in_map);
-	
+
 	// Remove half of the values randomly and check again
 	for(int i = 0; i < in_map.size() / 2; i++) {
 		int idx = rand() % in_map.size();
@@ -115,7 +115,7 @@ KERNEL_TEST(random_insert_remove) {
 		in_map.erase(idx);
 	}
 	check_values(map, in_map);
-	
+
 	// Populate map and check values again
 	randomly_populate(map, in_map);
 	check_values(map, in_map);
