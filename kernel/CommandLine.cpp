@@ -28,15 +28,7 @@ CommandLine::CommandLine(const struct multiboot_info& header) {
 	if(!_inst)
 		_inst = this;
 	if(header.flags & MULTIBOOT_INFO_CMDLINE) {
-		// TODO
-		auto cmdline_region = MM.alloc_mapped_region(header.cmdline, 1024);
-		auto* str = (char*) cmdline_region->start();
-		if(!str) {
-			KLog::warn("CommandLine", "cmdline couldn't be mmap-ed!");
-			return;
-		}
-
-		cmdline = str;
+		cmdline = (char*) (header.cmdline + HIGHER_HALF);
 
 		KLog::info("CommandLine", "Command line options: '%s'", cmdline.c_str());
 

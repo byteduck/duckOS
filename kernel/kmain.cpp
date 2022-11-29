@@ -73,13 +73,13 @@ int kmain(uint32_t mbootptr){
 	ASSERT(did_constructors);
 
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
+	CommandLine cmd_line(mboot_header);
 	Memory::load_gdt();
 	Interrupt::init();
 	MemoryManager::inst().setup_paging();
 
 	TimeManager::init();
 	Device::init();
-	CommandLine cmd_line(mboot_header);
 
 	//Try setting up VGA
 	BochsVGADevice* bochs_vga = BochsVGADevice::create();
