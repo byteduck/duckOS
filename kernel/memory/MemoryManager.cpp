@@ -64,7 +64,7 @@ void MemoryManager::setup_paging() {
 	PageDirectory::init_paging();
 
 	// Find a region where we can store our physical page array
-	size_t num_physical_pages = kstd::ceil_div(mem_upper_limit, PAGE_SIZE);
+	size_t num_physical_pages = mem_upper_limit / PAGE_SIZE;
 	size_t page_array_num_pages = kstd::ceil_div(num_physical_pages * sizeof(PhysicalPage), PAGE_SIZE);
 	size_t page_array_start_page = 0;
 	for(size_t i = 0; i < m_physical_regions.size(); i++) {
@@ -218,14 +218,14 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 		if(!region->reserved() && region->free_pages()) {
 			if(addr_pagealigned < usable_lower_limt)
 				usable_lower_limt = addr_pagealigned;
-			if(addr_pagealigned + size_pagealigned > usable_upper_limit)
-				usable_upper_limit = addr_pagealigned + size_pagealigned;
+			if(addr_pagealigned + (size_pagealigned - 1) > usable_upper_limit)
+				usable_upper_limit = addr_pagealigned + (size_pagealigned - 1);
 		}
 
 		if(addr_pagealigned < mem_lower_limit)
 			mem_lower_limit = addr_pagealigned;
-		if(addr_pagealigned + size_pagealigned > mem_upper_limit)
-			mem_upper_limit = addr_pagealigned + size_pagealigned;
+		if(addr_pagealigned + (size_pagealigned - 1) > mem_upper_limit)
+			mem_upper_limit = addr_pagealigned + (size_pagealigned - 1);
 
 		if(!region->reserved())
 			usable_bytes_ram += size_pagealigned;
