@@ -331,7 +331,14 @@ ResultRet<Ptr<VMRegion>> Process::map_object(Ptr<VMObject> object, VirtualAddres
  ************/
 
 void Process::check_ptr(const void *ptr, bool write) {
-	if((size_t) ptr >= HIGHER_HALF || !_page_directory->is_mapped((size_t) ptr, write)) {
+	auto region = _vm_space->get_region_containing((VirtualAddress) ptr);
+	if(region.is_error()) {
+		KLog::dbg("Process", "Pointer check at 0x%x failed for %s(%d): Not mapped", ptr, _name.c_str(), _pid);
+		kill(SIGSEGV);
+	}
+	auto prot = region.value()->prot();
+	if((!write && !prot.read) || (!(prot.write || prot.cow) && write)) {
+		KLog::dbg("Process", "Pointer check at 0x%x failed for %s(%d): Insufficient permissions", ptr, _name.c_str(), _pid);
 		kill(SIGSEGV);
 	}
 }

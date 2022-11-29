@@ -175,7 +175,7 @@ ResultRet<Ptr<VMRegion>> VMSpace::get_region_at(VirtualAddress address) {
 }
 
 ResultRet<Ptr<VMRegion>> VMSpace::get_region_containing(VirtualAddress address) {
-	LOCK(m_lock);
+//	LOCK(m_lock);
 	VMSpaceRegion* cur_region = m_region_map;
 	while(cur_region) {
 		if(cur_region->contains(address)) {

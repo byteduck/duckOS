@@ -169,8 +169,8 @@ namespace kstd {
 				m_ptr((T*)(other.m_ptr)),
 				m_count(other.m_count)
 		{
-			other.m_ptr = nullptr;
-			other.m_count = nullptr;
+			if(m_count)
+				m_count->acquire_weak();
 		}
 
 		// WeakPtr<U> -> WeakPtr<T>
