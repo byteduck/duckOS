@@ -28,7 +28,7 @@
 #include "SpinLock.h"
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
-#define THREAD_KERNEL_STACK_SIZE 4096 //4KiB
+#define THREAD_KERNEL_STACK_SIZE 524288 //512KiB
 
 class Process;
 class Blocker;
