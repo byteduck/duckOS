@@ -19,7 +19,7 @@ AnonymousVMObject::~AnonymousVMObject() {
 ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
 	auto pages = TRY(MemoryManager::inst().alloc_physical_pages(num_pages));
-	auto object = Ptr<AnonymousVMObject>(new AnonymousVMObject(kstd::move(pages)));
+	auto object = Ptr<AnonymousVMObject>(new AnonymousVMObject(pages));
 	auto tmp_mapped = MM.map_object(object);
 	memset((void*) tmp_mapped->start(), 0, object->size());
 	return object;
@@ -28,7 +28,7 @@ ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size) {
 ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::alloc_contiguous(size_t size) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
 	auto pages = TRY(MemoryManager::inst().alloc_contiguous_physical_pages(num_pages));
-	auto object = Ptr<AnonymousVMObject>(new AnonymousVMObject(kstd::move(pages)));
+	auto object = Ptr<AnonymousVMObject>(new AnonymousVMObject(pages));
 	auto tmp_mapped = MM.map_object(object);
 	memset((void*) tmp_mapped->start(), 0, object->size());
 	return object;

@@ -955,8 +955,6 @@ int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm>
 		return object_res.code();
 	auto object = object_res.value();
 
-	object->self();
-
 	VMProt prot = {
 		.read = true,
 		.write = true,
