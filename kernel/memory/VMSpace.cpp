@@ -36,10 +36,11 @@ Ptr<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<Ptr<VMReg
 	new_space->m_used = m_used;
 	delete new_space->m_region_map;
 
-	// Clone allocation regions
+	// Clone regions
 	auto cur_region = m_region_map;
 	VMSpaceRegion* prev_new_region = nullptr;
 	while(cur_region) {
+		// Clone the VMSpaceRegion
 		auto new_region = new VMSpaceRegion(*cur_region);
 		if(cur_region == m_region_map)
 			new_space->m_region_map = new_region;
@@ -47,30 +48,33 @@ Ptr<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<Ptr<VMReg
 		if(prev_new_region)
 			prev_new_region->next = new_region;
 		prev_new_region = new_region;
-		cur_region = cur_region->next;
-	}
 
-	// Copy regions / objects
-	new_space->m_regions.reserve(m_regions.size());
-	regions_vec.reserve(regions_vec.size() + m_regions.size());
-	for(size_t i = 0; i < m_regions.size(); i++) {
-		auto& region = m_regions[i];
+		// Clone the vmRegion
+		if(cur_region->vmRegion) {
+			auto region = cur_region->vmRegion;
+			if(region->object()->is_anonymous()) {
+				auto action = kstd::static_pointer_cast<AnonymousVMObject>(region->object())->fork_action();
 
-		if(region->object()->is_anonymous()) {
-			// Remap anonymous writeable regions as CoW
-			if(region->prot().write) {
-				region->set_cow(true);
-				m_page_directory.map(*region);
+				// If the object should become CoW on fork, do so
+				if(action == AnonymousVMObject::ForkAction::BecomeCoW) {
+					// Remap anonymous writeable regions as CoW
+					if(region->prot().write) {
+						region->set_cow(true);
+						m_page_directory.map(*region);
+					}
+
+					// Map into new space
+					auto new_vmRegion = Ptr<VMRegion>(new VMRegion(region->object(), new_space, region->start(), region->size(), region->prot()));
+					page_directory.map(*new_vmRegion);
+					new_region->vmRegion = new_vmRegion.get();
+					regions_vec.push_back(new_vmRegion);
+				}
+			} else {
+				ASSERT(false);
 			}
-
-			// Map into new space
-			auto new_region = Ptr<VMRegion>(new VMRegion(region->object(), new_space, region->start(), region->size(), region->prot()));
-			page_directory.map(*new_region);
-			new_space->m_regions.push_back(new_region.get());
-			regions_vec.push_back(new_region);
-		} else {
-			ASSERT(false);
 		}
+
+		cur_region = cur_region->next;
 	}
 
 	return new_space;
@@ -78,15 +82,16 @@ Ptr<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<Ptr<VMReg
 
 ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object, VMProt prot) {
 	LOCK(m_lock);
-	auto vaddr = TRY(alloc_space(object->size()));
-	auto region = kstd::make_shared<VMRegion>(
+	auto region = TRY(alloc_space(object->size()));
+	auto vmRegion = kstd::make_shared<VMRegion>(
 			object,
 			self(),
-			vaddr, object->size(),
+			region->start,
+			object->size(),
 			prot);
-	m_regions.push_back(region.get());
-	m_page_directory.map(*region);
-	return region;
+	region->vmRegion = vmRegion.get();
+	m_page_directory.map(*vmRegion);
+	return vmRegion;
 }
 
 ResultRet<Ptr<VMRegion>> VMSpace::map_stack(Ptr<VMObject> object, VMProt prot) {
@@ -105,65 +110,80 @@ ResultRet<Ptr<VMRegion>> VMSpace::map_stack(Ptr<VMObject> object, VMProt prot) {
 
 ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object, VirtualAddress address, VMProt prot) {
 	LOCK(m_lock);
-	auto vaddr = TRY(alloc_space_at(object->size(), address));
-	auto region = kstd::make_shared<VMRegion>(
+	auto region = TRY(alloc_space_at(object->size(), address));
+	auto vmRegion = kstd::make_shared<VMRegion>(
 			object,
 			self(),
-			vaddr,
+			region->start,
 			object->size(),
 			prot);
-	m_regions.push_back(region.get());
-	m_page_directory.map(*region);
-	return region;
+	region->vmRegion = vmRegion.get();
+	m_page_directory.map(*vmRegion);
+	return vmRegion;
 }
 
 Result VMSpace::unmap_region(VMRegion& region) {
 	LOCK(m_lock);
-	for(size_t i = 0; i < m_regions.size(); i++) {
-		if(m_regions[i] == &region) {
-			region.m_space.reset();
-			m_regions.erase(i);
-			auto free_res = free_space(region.size(), region.start());
-			ASSERT(!free_res.is_error())
-			m_page_directory.unmap(region);
-			return free_res;
+	VMSpaceRegion* cur_region = m_region_map;
+	while(cur_region) {
+		if(cur_region->vmRegion == &region) {
+			if(cur_region->vmRegion) {
+				cur_region->vmRegion->m_space.reset();
+				m_page_directory.unmap(*cur_region->vmRegion);
+				auto free_res = free_region(cur_region);
+				ASSERT(!free_res.is_error());
+				return free_res;
+			}
+			return Result(ENOENT);
 		}
+		cur_region = cur_region->next;
 	}
 	return Result(ENOENT);
 }
 
 Result VMSpace::unmap_region(VirtualAddress address) {
 	LOCK(m_lock);
-	for(size_t i = 0; i < m_regions.size(); i++) {
-		auto region = m_regions[i];
-		if(region->start() == address) {
-			region->m_space.reset();
-			auto free_res = free_space(region->size(), region->start());
-			ASSERT(!free_res.is_error())
-			m_page_directory.unmap(*region);
-			m_regions.erase(i);
-			return free_res;
+	VMSpaceRegion* cur_region = m_region_map;
+	while(cur_region) {
+		if(cur_region->start == address) {
+			if(cur_region->vmRegion) {
+				cur_region->vmRegion->m_space.reset();
+				m_page_directory.unmap(*cur_region->vmRegion);
+				auto free_res = free_region(cur_region);
+				ASSERT(!free_res.is_error());
+				return free_res;
+			}
+			return Result(ENOENT);
 		}
+		cur_region = cur_region->next;
 	}
 	return Result(ENOENT);
 }
 
 ResultRet<Ptr<VMRegion>> VMSpace::get_region_at(VirtualAddress address) {
 	LOCK(m_lock);
-	for(size_t i = 0; i < m_regions.size(); i++) {
-		auto region = m_regions[i];
-		if(region->start() == address)
-			return region->self();
+	VMSpaceRegion* cur_region = m_region_map;
+	while(cur_region) {
+		if(cur_region->start == address) {
+			if(cur_region->vmRegion)
+				return cur_region->vmRegion->self();
+			return Result(ENOENT);
+		}
+		cur_region = cur_region->next;
 	}
 	return Result(ENOENT);
 }
 
 ResultRet<Ptr<VMRegion>> VMSpace::get_region_containing(VirtualAddress address) {
 	LOCK(m_lock);
-	for(size_t i = 0; i < m_regions.size(); i++) {
-		auto region = m_regions[i];
-		if(region->contains(address))
-			return region->self();
+	VMSpaceRegion* cur_region = m_region_map;
+	while(cur_region) {
+		if(cur_region->contains(address)) {
+			if(cur_region->vmRegion)
+				return cur_region->vmRegion->self();
+			return Result(ENOENT);
+		}
+		cur_region = cur_region->next;
 	}
 	return Result(ENOENT);
 }
@@ -176,29 +196,43 @@ Result VMSpace::reserve_region(VirtualAddress start, size_t size) {
 Result VMSpace::try_pagefault(VirtualAddress error_pos) {
 	LOCK(m_lock);
 
-	for(size_t i = 0; i < m_regions.size(); i++) {
-		auto& region = m_regions[i];
-		if(region->contains(error_pos)) {
+	auto cur_region = m_region_map;
+	while(cur_region) {
+		if(cur_region->contains(error_pos)) {
+			auto vmRegion = cur_region->vmRegion;
+			if(!vmRegion)
+				return Result(EINVAL);
 			// Check if the region is CoW.
-			if(region->is_cow() && region->object()->is_anonymous()) {
+			if(vmRegion->is_cow() && vmRegion->object()->is_anonymous()) {
 				// TODO: Check if we're mapped first? We should be.
-				auto new_object = TRY(AnonymousVMObject::alloc(region->object()->size()));
+				auto new_object = TRY(AnonymousVMObject::alloc(vmRegion->object()->size()));
 				auto mapped_object = MM.map_object(new_object);
-				memcpy((void*) mapped_object->start(), (void*) region->start(), new_object->size());
-				region->m_object = new_object;
-				region->set_cow(false);
-				m_page_directory.map(*region);
+				memcpy((void*) mapped_object->start(), (void*) vmRegion->start(), new_object->size());
+				vmRegion->m_object = new_object;
+				vmRegion->set_cow(false);
+				m_page_directory.map(*vmRegion);
 				return Result(SUCCESS);
 			}
-
 			return Result(EINVAL);
 		}
+		cur_region = cur_region->next;
 	}
 
 	return Result(ENOENT);
 }
 
-ResultRet<VirtualAddress> VMSpace::alloc_space(size_t size) {
+ResultRet<VirtualAddress> VMSpace::find_free_space(size_t size) {
+	LOCK(m_lock);
+	auto cur_region = m_region_map;
+	while(cur_region) {
+		if(!cur_region->used && cur_region->size >= size)
+			return cur_region->start;
+		cur_region = cur_region->next;
+	}
+	return Result(ENOMEM);
+}
+
+ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space(size_t size) {
 	ASSERT(size % PAGE_SIZE == 0);
 	auto cur_region = m_region_map;
 	while(cur_region) {
@@ -210,7 +244,7 @@ ResultRet<VirtualAddress> VMSpace::alloc_space(size_t size) {
 		if(cur_region->size == size) {
 			cur_region->used = true;
 			m_used += cur_region->size;
-			return cur_region->start;
+			return cur_region;
 		}
 
 		if(cur_region->size >= size) {
@@ -233,7 +267,7 @@ ResultRet<VirtualAddress> VMSpace::alloc_space(size_t size) {
 			if(m_region_map == cur_region)
 				m_region_map = new_region;
 
-			return new_region->start;
+			return new_region;
 		}
 
 		cur_region = cur_region->next;
@@ -242,7 +276,7 @@ ResultRet<VirtualAddress> VMSpace::alloc_space(size_t size) {
 	return Result(ENOMEM);
 }
 
-ResultRet<VirtualAddress> VMSpace::alloc_space_at(size_t size, VirtualAddress address) {
+ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space_at(size_t size, VirtualAddress address) {
 	ASSERT(address % PAGE_SIZE == 0);
 	ASSERT(size % PAGE_SIZE == 0);
 	auto cur_region = m_region_map;
@@ -254,7 +288,7 @@ ResultRet<VirtualAddress> VMSpace::alloc_space_at(size_t size, VirtualAddress ad
 			if(cur_region->size == size) {
 				cur_region->used = true;
 				m_used += cur_region->size;
-				return cur_region->start;
+				return cur_region;
 			}
 
 			if(cur_region->size - (address - cur_region->start) >= size) {
@@ -292,7 +326,7 @@ ResultRet<VirtualAddress> VMSpace::alloc_space_at(size_t size, VirtualAddress ad
 				cur_region->size = size;
 				cur_region->used = true;
 				m_used += cur_region->size;
-				return address;
+				return cur_region;
 			}
 
 			return Result(ENOMEM);
@@ -304,42 +338,33 @@ ResultRet<VirtualAddress> VMSpace::alloc_space_at(size_t size, VirtualAddress ad
 	return Result(ENOMEM);
 }
 
-Result VMSpace::free_space(size_t size, VirtualAddress address) {
-	ASSERT(size % PAGE_SIZE == 0);
-	ASSERT(address % PAGE_SIZE == 0);
-	auto cur_region = m_region_map;
-	while(cur_region) {
-		if(cur_region->start == address) {
-			ASSERT(cur_region->size == size);
-			cur_region->used = false;
+Result VMSpace::free_region(VMSpaceRegion* region) {
+	region->used = false;
+	region->vmRegion = nullptr;
 
-			// Merge previous region if needed
-			if(cur_region->prev && !cur_region->prev->used) {
-				auto to_delete = cur_region->prev;
-				cur_region->prev = cur_region->prev->prev;
-				if(to_delete->prev)
-					to_delete->prev->next = cur_region;
-				cur_region->start -= to_delete->size;
-				cur_region->size += to_delete->size;
-				if(m_region_map == to_delete)
-					m_region_map = cur_region;
-				delete to_delete;
-			}
-
-			// Merge next region if needed
-			if(cur_region->next && !cur_region->next->used) {
-				auto to_delete = cur_region->next;
-				cur_region->next = cur_region->next->next;
-				if(to_delete->next)
-					to_delete->next->prev = cur_region;
-				cur_region->size += to_delete->size;
-				delete to_delete;
-			}
-
-			m_used -= size;
-			return Result(SUCCESS);
-		}
-		cur_region = cur_region->next;
+	// Merge previous region if needed
+	if(region->prev && !region->prev->used) {
+		auto to_delete = region->prev;
+		region->prev = region->prev->prev;
+		if(to_delete->prev)
+			to_delete->prev->next = region;
+		region->start -= to_delete->size;
+		region->size += to_delete->size;
+		if(m_region_map == to_delete)
+			m_region_map = region;
+		delete to_delete;
 	}
-	ASSERT(false);
+
+	// Merge next region if needed
+	if(region->next && !region->next->used) {
+		auto to_delete = region->next;
+		region->next = region->next->next;
+		if(to_delete->next)
+			to_delete->next->prev = region;
+		region->size += to_delete->size;
+		delete to_delete;
+	}
+
+	m_used -= region->size;
+	return Result(SUCCESS);
 }

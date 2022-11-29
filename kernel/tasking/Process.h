@@ -89,6 +89,7 @@ public:
 	//Memory
 	PageDirectory* page_directory();
 	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VMProt prot);
+	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VirtualAddress address, VMProt prot);
 
 	//Syscalls
 	void check_ptr(const void* ptr, bool write = false);
@@ -190,6 +191,7 @@ private:
 	Ptr<VMSpace> _vm_space;
 	kstd::shared_ptr<PageDirectory> _page_directory;
 	kstd::vector<Ptr<VMRegion>> _vm_regions;
+	SpinLock m_mem_lock;
 
 	//Files & Pipes
 	kstd::vector<kstd::shared_ptr<FileDescriptor>> _file_descriptors;

@@ -5,6 +5,17 @@
 #include "MemoryManager.h"
 #include "../kstd/cstring.h"
 
+SpinLock AnonymousVMObject::s_shared_lock;
+int AnonymousVMObject::s_cur_shm_id = 1;
+kstd::map<int, Weak<AnonymousVMObject>> AnonymousVMObject::s_shared_objects;
+
+AnonymousVMObject::~AnonymousVMObject() {
+	if(m_is_shared) {
+		LOCK(s_shared_lock);
+		s_shared_objects.erase(m_shm_id);
+	}
+}
+
 ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
 	auto pages = TRY(MemoryManager::inst().alloc_physical_pages(num_pages));
@@ -41,7 +52,39 @@ ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::map_to_physical(PhysicalAdd
 	}
 
 	auto object = new AnonymousVMObject(kstd::move(pages));
+	object->m_fork_action = ForkAction::Ignore;
 	return Ptr<AnonymousVMObject>(object);
+}
+
+ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::get_shared(int id) {
+	LOCK(s_shared_lock);
+	auto node = s_shared_objects.find_node(id);
+	if(node) {
+		auto ptr = node->data.second;
+		ASSERT(ptr);
+		return ptr.lock();
+	}
+	return Result(ENOENT);
+}
+
+void AnonymousVMObject::share(pid_t pid, VMProt prot) {
+	LOCK(m_lock);
+	if(!m_is_shared) {
+		LOCK_N(s_shared_lock, shared_lock);
+		m_shm_id = s_cur_shm_id++;
+		s_shared_objects.insert({m_shm_id, self()});
+		m_is_shared = true;
+	}
+	m_shared_permissions[pid] = prot;
+}
+
+
+ResultRet<VMProt> AnonymousVMObject::get_shared_permissions(pid_t pid) {
+	LOCK(m_lock);
+	auto node = m_shared_permissions.find_node(pid);
+	if(!node)
+		return Result(ENOENT);
+	return node->data.second;
 }
 
 AnonymousVMObject::AnonymousVMObject(kstd::vector<PageIndex> physical_pages):

@@ -93,31 +93,40 @@ public:
 	 */
 	Result try_pagefault(VirtualAddress error_pos);
 
+	/**
+	 * Finds a region in the space that has at least `size` bytes free.
+	 * SHOULD ONLY BE USED BY `MemoryManager` FOR HEAP ALLOCATION.
+	 *
+	 * @param size The size needed.
+	 * @return An address to the start of an unused region with adequate space, or an error if not found.
+	 */
+	ResultRet<VirtualAddress> find_free_space(size_t size);
+
 	VirtualAddress start() const { return m_start; }
 	size_t size() const { return m_size; }
 	VirtualAddress end() const { return m_start + m_size; }
 	size_t used() const { return m_used; }
+	SpinLock& lock() { return m_lock; }
 
 private:
-
-	ResultRet<VirtualAddress> alloc_space(size_t size);
-	ResultRet<VirtualAddress> alloc_space_at(size_t size, VirtualAddress address);
-	Result free_space(size_t size, VirtualAddress address);
-
 	struct VMSpaceRegion {
 		VirtualAddress start;
 		size_t size;
 		bool used;
 		VMSpaceRegion* next;
 		VMSpaceRegion* prev;
+		VMRegion* vmRegion;
 
 		size_t end() const { return start + size; }
 		bool contains(VirtualAddress address) const { return start <= address && end() > address; }
 	};
 
+	ResultRet<VMSpaceRegion*> alloc_space(size_t size);
+	ResultRet<VMSpaceRegion*> alloc_space_at(size_t size, VirtualAddress address);
+	Result free_region(VMSpaceRegion* region);
+
 	VirtualAddress m_start;
 	size_t m_size;
-	kstd::vector<VMRegion*> m_regions;
 	VMSpaceRegion* m_region_map;
 	size_t m_used = 0;
 	SpinLock m_lock;

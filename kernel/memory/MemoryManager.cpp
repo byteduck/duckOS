@@ -379,6 +379,69 @@ void MemoryManager::free_physical_page(PageIndex page) const {
 	ASSERT(false);
 }
 
+ResultRet<VirtualAddress> MemoryManager::alloc_heap_pages(size_t num_pages) {
+	LOCK(m_heap_lock);
+	ASSERT(m_num_heap_pages == 0); // Make sure this isn't already in progress... Just in case.
+
+	// Get some physical pages
+	if(num_pages > 1024)
+		PANIC("KHEAP_ALLOC_TOO_BIG", "Tried allocating more than 1024 pages at once for the kernel heap.");
+
+	for(size_t i = 0; i < num_pages; i++)
+		m_heap_pages[i] = TRY(alloc_physical_page());
+	m_num_heap_pages = num_pages;
+
+	// Lock the kernel vmem space so we don't mess with regions in the meantime, and then find some free space.
+	m_kernel_space->lock().acquire();
+	m_last_heap_loc = TRY(m_kernel_space->find_free_space(num_pages * PAGE_SIZE));
+
+	// Map the pages into kernel space.
+	size_t start_vpage = m_last_heap_loc / PAGE_SIZE;
+	for(size_t i = 0; i < num_pages; i++) {
+		kernel_page_directory.map_page(start_vpage + i, m_heap_pages[i], VMProt{
+			.read = true,
+			.write = true,
+			.execute = false,
+			.cow = false
+		});
+	}
+
+	// Zero them out and return the address.
+	memset((void*) m_last_heap_loc, 0, num_pages * PAGE_SIZE);
+	return m_last_heap_loc;
+}
+
+void MemoryManager::finalize_heap_pages() {
+	if(!did_setup_paging)
+		return;
+
+	LOCK(m_heap_lock);
+	if(!m_num_heap_pages)
+		return; // There's nothing to do.
+
+	static bool is_finalizing = false;
+	if(is_finalizing)
+		return;
+	is_finalizing = true;
+
+	m_heap_pages.resize(m_num_heap_pages);
+
+	// Now, officially map the pages in the "correct" way.
+	auto object = Ptr<VMObject>(new VMObject(m_heap_pages));
+	auto res = m_kernel_space->map_object(object, m_last_heap_loc);
+	if(res.is_error())
+		PANIC("KHEAP_FINALIZE_FAIL", "We weren't able to map the new heap region where the VMSpace said we could.");
+
+	// Leak a reference to the region since we'll manually un-leak it later
+	res.value().leak_ref();
+
+	// Unlock the vmem space and reset everything
+	is_finalizing = false;
+	m_kernel_space->lock().release();
+	m_num_heap_pages = 0;
+	m_heap_pages.resize(1024);
+}
+
 void liballoc_lock() {
 	MemoryManager::inst().liballoc_spinlock.acquire();
 }
@@ -386,8 +449,6 @@ void liballoc_lock() {
 void liballoc_unlock() {
 	MemoryManager::inst().liballoc_spinlock.release();
 }
-
-Ptr<VMRegion> next_liballoc_kernel_region;
 
 void *liballoc_alloc(int pages) {
 	// If we still have early kheap memory, use it
@@ -399,29 +460,22 @@ void *liballoc_alloc(int pages) {
 	}
 
 	ASSERT(did_setup_paging);
-	ASSERT(next_liballoc_kernel_region);
-	ASSERT(pages == 16);
-	auto region = next_liballoc_kernel_region;
-	next_liballoc_kernel_region.reset();
-	region.leak_ref(); // So that it's not deallocated since we're throwing away this pointer
-	return (void*) region->start();
+	auto alloc_res = MM.alloc_heap_pages(pages);
+	if(alloc_res.is_error())
+		PANIC("KHEAP_ALLOC_FAIL", "We couldn't allocate a new region for the kernel heap.");
+
+	return (void*) alloc_res.value();
 }
 
-bool is_setting_next_region = false;
 void liballoc_afteralloc(void* ptr_alloced) {
-	if(!next_liballoc_kernel_region && did_setup_paging && !is_setting_next_region) {
-		is_setting_next_region = true;
-		next_liballoc_kernel_region = MM.alloc_kernel_region(PAGE_SIZE * 16);
-	}
+	MM.finalize_heap_pages();
 }
 
 void liballoc_free(void *ptr, int pages) {
 	if(ptr > early_kheap_memory && ptr < early_kheap_memory + sizeof(early_kheap_memory)) {
-		KLog::dbg("Memory", "Tried freeing early kheap memory! This doesn't do anything.");
+//		KLog::dbg("Memory", "Tried freeing early kheap memory! This doesn't do anything.");
 		return;
 	}
-
-	ASSERT(pages == 16);
 
 	// Find the region we need to free and delete it, since we manually leaked its reference count
 	auto region_res = MM.kernel_space()->get_region_at((VirtualAddress) ptr);

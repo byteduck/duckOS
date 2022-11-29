@@ -152,15 +152,35 @@ public:
 	 */
 	 void invlpg(void* vaddr);
 
-	 /**
-	  * Parses the multiboot memory map.
-	  */
-	 void parse_mboot_memory_map(multiboot_info* header, multiboot_mmap_entry* first_entry);
+	/**
+	 * Parses the multiboot memory map.
+	 */
+	void parse_mboot_memory_map(multiboot_info* header, multiboot_mmap_entry* first_entry);
+
+	/**
+	 * Allocates a number of new pages for the heap. `finalize_heap_pages` MUST be called afterwards to release the lock
+	 * on the VMSpace and finalize the allocation.
+	 * @param num_pages The number of pages to allocate for the heap.
+	 * @return The virtual address of the first page allocated.
+	 */
+	ResultRet<VirtualAddress> alloc_heap_pages(size_t num_pages);
+
+	/**
+	 * See `alloc_heap_pages`.
+	 */
+	void finalize_heap_pages();
 
 private:
 	friend class PhysicalRegion;
 
 	static MemoryManager* _inst;
+
+	// Heap stuff
+	kstd::vector<PageIndex> m_heap_pages = kstd::vector<PageIndex>(1024);
+	size_t m_num_heap_pages;
+	VirtualAddress m_last_heap_loc;
+	SpinLock m_heap_lock;
+
 	PhysicalPage* m_physical_pages;
 	kstd::vector<PhysicalRegion*> m_physical_regions;
 	Ptr<VMSpace> m_kernel_space;

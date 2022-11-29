@@ -7,7 +7,14 @@
 
 namespace kstd {
 	template<typename T>
+	class WeakPtr;
+
+	template<typename T>
 	class Shared;
+	class SharedBase;
+
+	template<typename T>
+	void __set_shared_weak_self(SharedBase* base, WeakPtr<T> weak);
 
 	template<typename T>
 	class SharedPtr {
@@ -17,7 +24,7 @@ namespace kstd {
 		// SharedPtr<U> -> SharedPtr<T>
 		template<typename U>
 		SharedPtr(const SharedPtr<U>& other):
-			m_ptr(static_cast<T*>(other.m_ptr)),
+			m_ptr((T*)(other.m_ptr)),
 			m_count(other.m_count)
 		{
 			if(m_count)
@@ -36,7 +43,7 @@ namespace kstd {
 		// Move SharedPtr<U> -> SharedPtr<T>
 		template<typename U>
 		SharedPtr(SharedPtr<U>&& other):
-			m_ptr(static_cast<T*>(other.m_ptr)),
+			m_ptr((T*)(other.m_ptr)),
 			m_count(other.m_count)
 		{
 			other.m_ptr = nullptr;
@@ -56,9 +63,9 @@ namespace kstd {
 			m_ptr(ptr),
 			m_count(ptr ? new RefCount(1) : nullptr)
 		{
-			if constexpr(is_base_of<Shared<T>, T>) {
+			if constexpr(is_base_of<SharedBase, T>) {
 				if(ptr)
-					static_cast<Shared<T>*>(ptr)->m_weak_self = *this;
+					__set_shared_weak_self(static_cast<SharedBase*>(ptr), WeakPtr<T>(*this));
 			}
 		}
 
@@ -149,7 +156,7 @@ namespace kstd {
 		// SharedPtr<U> -> WeakPtr<T>
 		template<typename U>
 		WeakPtr(const SharedPtr<U>& other):
-				m_ptr(static_cast<T*>(other.m_ptr)),
+				m_ptr((T*)(other.m_ptr)),
 				m_count(other.m_count)
 		{
 			if(m_count)
@@ -159,7 +166,7 @@ namespace kstd {
 		// Move SharedPtr<U> -> WeakPtr<T>
 		template<typename U>
 		WeakPtr(SharedPtr<U>&& other):
-				m_ptr(static_cast<T*>(other.m_ptr)),
+				m_ptr((T*)(other.m_ptr)),
 				m_count(other.m_count)
 		{
 			other.m_ptr = nullptr;
@@ -169,7 +176,7 @@ namespace kstd {
 		// WeakPtr<U> -> WeakPtr<T>
 		template<typename U>
 		WeakPtr(const WeakPtr<U>& other):
-				m_ptr(static_cast<T*>(other.m_ptr)),
+				m_ptr((T*)(other.m_ptr)),
 				m_count(other.m_count)
 		{
 			if(m_count)
@@ -280,18 +287,27 @@ namespace kstd {
 		return WeakPtr<T>(static_cast<T*>(ptr.get()), ptr.ref_count());
 	}
 
+	class SharedBase {
+	protected:
+		template<typename T>
+		friend void __set_shared_weak_self(SharedBase* base, WeakPtr<T> weak);
+
+		WeakPtr<void*> m_weak_self;
+	};
+
 	template<typename T>
-	class Shared {
+	class Shared: public SharedBase {
 	public:
 		inline SharedPtr<T> self() {
 			ASSERT(m_weak_self.operator bool());
 			return m_weak_self.lock();
 		}
-
-	private:
-		friend class SharedPtr<T>;
-		WeakPtr<T> m_weak_self;
 	};
+
+	template<typename T>
+	void __set_shared_weak_self(SharedBase* base, WeakPtr<T> weak) {
+		base->m_weak_self = weak;
+	}
 
 	template<typename T>
 	using shared_ptr = SharedPtr<T>;

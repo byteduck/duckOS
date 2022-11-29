@@ -5,13 +5,14 @@
 
 #include "../kstd/vector.hpp"
 #include "PhysicalPage.h"
+#include "../kstd/shared_ptr.hpp"
 
 /**
  * This is a base class to describe a (contiguous) object in virtual memory. This object may be shared across multiple
  * address spaces (ie page directories / processes), and may be mapped at different virtual locations in each one.
  * VMObject is never used directly - instead, its subclasses are used.
  */
-class VMObject {
+class VMObject: public kstd::Shared<VMObject> {
 public:
 	explicit VMObject(kstd::vector<PageIndex> physical_pages);
 	VMObject(const VMObject& other) = delete;

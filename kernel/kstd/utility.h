@@ -39,7 +39,7 @@ namespace kstd {
 		return (a + (b - 1)) / b;
 	}
 
-	template<typename Base, typename Derived>
-	inline constexpr bool is_base_of = __is_base_of(Base, Derived);
+	template<typename T, typename U>
+	inline constexpr bool is_base_of = __is_base_of(T, U);
 }
 
