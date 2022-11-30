@@ -30,6 +30,7 @@ size_t lowest_addr = 0xFFFFFFFF;
 size_t highest_addr = 0x0;
 
 void KernelMapper::load_map() {
+#ifdef DUCKOS_KERNEL_DEBUG_SYMBOLS
 	KLog::dbg("KernelMapper", "Loading map...");
 
 	//Open the map
@@ -82,19 +83,27 @@ void KernelMapper::load_map() {
 	symbols->shrink_to_fit();
 
 	KLog::dbg("KernelMapper", "Map loaded with %d symbols between 0x%x and 0x%x", symbols->size(), lowest_addr, highest_addr);
+#endif
 }
 
 KernelMapper::Symbol* KernelMapper::get_symbol(size_t location) {
+#ifdef DUCKOS_KERNEL_DEBUG_SYMBOLS
 	if(!symbols || location > highest_addr || location < lowest_addr)
 		return nullptr;
 	for(int i = 0; i < symbols->size() - 1; i++) {
 		if(location < symbols->at(i+1).location)
 			return &symbols->at(i);
 	}
+#endif
 	return nullptr;
 }
 
+#define SYMBOLS_NOT_ENABLED_MESSAGE \
+	printf("Debug symbols not enabled.\n"); \
+	printf("Add -DADD_KERNEL_DEBUG_SYMBOLS:BOOL=ON to your CMake arguments to compile with debug symbols.\n");
+
 void KernelMapper::print_stacktrace() {
+#ifdef DUCKOS_KERNEL_DEBUG_SYMBOLS
 	if(!symbols)
 		printf("[Symbols not available yet]\n");
 
@@ -128,9 +137,13 @@ void KernelMapper::print_stacktrace() {
 		//Continue walking the stack
 		stk = (uint32_t*) stk[0];
 	}
+#else
+	SYMBOLS_NOT_ENABLED_MESSAGE
+#endif
 }
 
 void KernelMapper::print_userspace_stacktrace() {
+#ifdef DUCKOS_KERNEL_DEBUG_SYMBOLS
 	auto* stk = (uint32_t*) __builtin_frame_address(0);
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
 		if(!TaskManager::current_process()->page_directory()->is_mapped((size_t) stk, false) || !stk[1])
@@ -143,4 +156,7 @@ void KernelMapper::print_userspace_stacktrace() {
 			printf("0x%x\n", stk[1]);
 		stk = (uint32_t*) stk[0];
 	}
+#else
+	SYMBOLS_NOT_ENABLED_MESSAGE
+#endif
 }
