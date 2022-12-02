@@ -78,7 +78,9 @@ void print(const char* str){
 		serial_putch(*(str++));
 }
 
+SpinLock printf_lock;
 void printf(const char* fmt, ...) {
+	LOCK(printf_lock);
 	va_list list;
 	va_start(list, fmt);
 	vprintf(fmt, list);

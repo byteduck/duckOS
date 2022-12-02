@@ -62,15 +62,15 @@ __attribute__((constructor)) void constructor_test() {
 uint8_t __mem_manager_storage[sizeof(MemoryManager)] __attribute__((aligned(4096)));
 
 int kmain(uint32_t mbootptr){
-	clearScreen();
-	KLog::info("kinit", "Starting duckOS...");
-
-	new (__mem_manager_storage) MemoryManager;
-
 	// Call global constructors
 	for (constructor_func* ctor = start_ctors; ctor < end_ctors; ctor++)
 		(*ctor)();
 	ASSERT(did_constructors);
+
+	clearScreen();
+	KLog::info("kinit", "Starting duckOS...");
+
+	new (__mem_manager_storage) MemoryManager;
 
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
 	CommandLine cmd_line(mboot_header);
