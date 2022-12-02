@@ -27,7 +27,7 @@ char* Filesystem::name() {
 	return nullptr;
 }
 
-ResultRet<kstd::shared_ptr<Inode>> Filesystem::get_inode(ino_t iid) {
+ResultRet<kstd::Arc<Inode>> Filesystem::get_inode(ino_t iid) {
 	return Result(-ENOENT);
 }
 

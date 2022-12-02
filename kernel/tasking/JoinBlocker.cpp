@@ -20,7 +20,7 @@
 #include "JoinBlocker.h"
 #include "Thread.h"
 
-JoinBlocker::JoinBlocker(kstd::shared_ptr<Thread> thread, kstd::shared_ptr<Thread> wait_for) {
+JoinBlocker::JoinBlocker(kstd::Arc<Thread> thread, kstd::Arc<Thread> wait_for) {
 	_thread = thread;
 	_wait_thread = wait_for;
 }
@@ -29,6 +29,6 @@ bool JoinBlocker::is_ready() {
 	return _wait_thread->state() == Thread::ZOMBIE || _wait_thread->state() == Thread::DEAD;
 }
 
-kstd::shared_ptr<Thread> JoinBlocker::waited_thread() {
+kstd::Arc<Thread> JoinBlocker::waited_thread() {
 	return _wait_thread;
 }

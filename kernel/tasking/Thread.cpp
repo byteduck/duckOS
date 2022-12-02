@@ -35,7 +35,7 @@
 Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
 	//Create the kernel stack
 	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
-	Ptr<VMRegion> mapped_user_stack_region;
+	kstd::Arc<VMRegion> mapped_user_stack_region;
 	Stack user_stack(nullptr, 0);
 	Stack kernel_stack((void*) _kernel_stack_region->end());
 
@@ -100,7 +100,7 @@ Thread::Thread(Process* process, tid_t tid, Registers& regs): _process(process),
 Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (* thread_func)(void*), void* arg): _tid(tid), _process(process) {
 	//Create the kernel stack
 	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
-	Ptr<VMRegion> mapped_user_stack_region;
+	kstd::Arc<VMRegion> mapped_user_stack_region;
 	Stack user_stack(nullptr, 0);
 	Stack kernel_stack((void*) (_kernel_stack_region->end()));
 
@@ -260,7 +260,7 @@ bool Thread::should_unblock() {
 	return _blocker && (_blocker->is_ready() || _blocker->was_interrupted());
 }
 
-Result Thread::join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, UserspacePointer<void*> retp) {
+Result Thread::join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& other, UserspacePointer<void*> retp) {
 	//See if we're trying to join ourself
 	if(other.get() == this)
 		return Result(-EDEADLK);

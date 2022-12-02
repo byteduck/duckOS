@@ -6,6 +6,7 @@
 
 using kstd::ArcSelf;
 using kstd::Arc;
+using kstd::Weak;
 
 class TestClass: public ArcSelf<TestClass> {
 public:

@@ -7,7 +7,7 @@
 #define NUM_REGIONS 100
 
 KERNEL_TEST(allocate_and_free_regions) {
-	Ptr<VMRegion> regions[NUM_REGIONS];
+	kstd::Arc<VMRegion> regions[NUM_REGIONS];
 
 	// Allocate a bunch of randomly-sized regions
 	for(int i = 0; i < NUM_REGIONS; i++) {

@@ -21,7 +21,7 @@
 #include "PTYControllerDevice.h"
 #include <kernel/filesystem/ptyfs/PTYFS.h>
 
-PTYDevice::PTYDevice(unsigned int id, const kstd::shared_ptr<PTYControllerDevice>& controller): TTYDevice(301, id), _controller(controller) {
+PTYDevice::PTYDevice(unsigned int id, const kstd::Arc<PTYControllerDevice>& controller): TTYDevice(301, id), _controller(controller) {
 	char numbuf[10];
 	itoa(id, numbuf, 10);
 	_name = kstd::string("/dev/pts/") + numbuf;
@@ -46,7 +46,7 @@ void PTYDevice::ref_dec() {
 
 void PTYDevice::notify_controller_closed() {
 	LOCK(_lock);
-	_controller = kstd::shared_ptr<PTYControllerDevice>(nullptr);
+	_controller = kstd::Arc<PTYControllerDevice>(nullptr);
 	ref_dec();
 }
 

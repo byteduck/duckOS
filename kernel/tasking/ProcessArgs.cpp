@@ -22,7 +22,7 @@
 #include <kernel/kstd/cstring.h>
 #include <kernel/memory/Stack.h>
 
-ProcessArgs::ProcessArgs(const kstd::shared_ptr<LinkedInode>& working_dir): working_dir(working_dir) {}
+ProcessArgs::ProcessArgs(const kstd::Arc<LinkedInode>& working_dir): working_dir(working_dir) {}
 
 void ProcessArgs::setup_stack(Stack& stack) {
 	auto* argp = new size_t[argv.size()];

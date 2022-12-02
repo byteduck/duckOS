@@ -29,8 +29,8 @@
 #include "cstring.h"
 #include <kernel/filesystem/FileDescriptor.h>
 
-kstd::shared_ptr<FileDescriptor> tty_desc(nullptr);
-kstd::shared_ptr<VirtualTTY> tty(nullptr);
+kstd::Arc<FileDescriptor> tty_desc(nullptr);
+kstd::Arc<VirtualTTY> tty(nullptr);
 bool use_tty = true;
 bool panicking = false;
 bool did_setup_tty = false;

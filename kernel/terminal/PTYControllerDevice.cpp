@@ -99,7 +99,7 @@ size_t PTYControllerDevice::putchars(const uint8_t* buffer, size_t count) {
 }
 
 void PTYControllerDevice::notify_pty_closed() {
-	_pty = kstd::shared_ptr<PTYDevice>(nullptr);
+	_pty = kstd::Arc<PTYDevice>(nullptr);
 }
 
 void PTYControllerDevice::ref_inc() {
@@ -117,6 +117,6 @@ void PTYControllerDevice::ref_dec() {
 	}
 }
 
-kstd::shared_ptr<PTYDevice> PTYControllerDevice::pty() {
+kstd::Arc<PTYDevice> PTYControllerDevice::pty() {
 	return _pty;
 }

@@ -23,7 +23,7 @@
 #include "Inode.h"
 #include "FileDescriptor.h"
 
-FileBasedFilesystem::FileBasedFilesystem(const kstd::shared_ptr<FileDescriptor>& file): _file(file) {
+FileBasedFilesystem::FileBasedFilesystem(const kstd::Arc<FileDescriptor>& file): _file(file) {
 
 }
 
@@ -174,7 +174,7 @@ Result FileBasedFilesystem::truncate_block(size_t block, size_t new_size) {
 	return Result(SUCCESS);
 }
 
-ResultRet<kstd::shared_ptr<Inode>> FileBasedFilesystem::get_cached_inode(ino_t id) {
+ResultRet<kstd::Arc<Inode>> FileBasedFilesystem::get_cached_inode(ino_t id) {
 	LOCK(_inode_cache_lock);
 	for(size_t i = 0; i < _inode_cache.size(); i++) {
 		if(_inode_cache[i]->id == id) return _inode_cache[i];
@@ -182,7 +182,7 @@ ResultRet<kstd::shared_ptr<Inode>> FileBasedFilesystem::get_cached_inode(ino_t i
 	return Result(-ENOENT);
 }
 
-void FileBasedFilesystem::add_cached_inode(const kstd::shared_ptr<Inode> &inode) {
+void FileBasedFilesystem::add_cached_inode(const kstd::Arc<Inode> &inode) {
 	LOCK(_inode_cache_lock);
 	_inode_cache.push_back(inode);
 }
@@ -201,13 +201,13 @@ Inode* FileBasedFilesystem::get_inode_rawptr(ino_t id) {
 	return nullptr;
 }
 
-ResultRet<kstd::shared_ptr<Inode>> FileBasedFilesystem::get_inode(ino_t id) {
+ResultRet<kstd::Arc<Inode>> FileBasedFilesystem::get_inode(ino_t id) {
 	LOCK(_inode_cache_lock);
 	auto inode_perhaps = get_cached_inode(id);
 	if(inode_perhaps.is_error()) {
 		Inode* in = get_inode_rawptr(id);
 		if(in) {
-			auto ins = kstd::shared_ptr<Inode>(in);
+			auto ins = kstd::Arc<Inode>(in);
 			add_cached_inode(ins);
 			return ins;
 		} else return Result(-ENOENT);

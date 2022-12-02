@@ -20,7 +20,7 @@
 #pragma once
 
 #include <kernel/kstd/types.h>
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include "PageTable.h"
 #include "PageDirectory.h"
 #include "PhysicalPage.h"
@@ -86,7 +86,7 @@ public:
 	/**
 	 * Loads a page directory.
 	 */
-	void load_page_directory(const kstd::shared_ptr<PageDirectory>& page_directory);
+	void load_page_directory(const kstd::Arc<PageDirectory>& page_directory);
 	void load_page_directory(PageDirectory* page_directory);
 	void load_page_directory(PageDirectory& page_directory);
 
@@ -114,13 +114,13 @@ public:
 	 * Allocates a new non-contiguous anonymous region in kernel space.
 	 * @param size The minimum size, in bytes, of the new region.
 	 */
-	Ptr<VMRegion> alloc_kernel_region(size_t size);
+	kstd::Arc<VMRegion> alloc_kernel_region(size_t size);
 
 	/**
 	 * Allocates a new contiguous anonymous region in kernel space.
 	 * @param size The minimum size, in bytes, of the new region.
 	 */
-	Ptr<VMRegion> alloc_dma_region(size_t size);
+	kstd::Arc<VMRegion> alloc_dma_region(size_t size);
 
 	/**
 	 * Allocates a new virtual region in kernel space that is mapped to an existing range of physical pages.
@@ -128,16 +128,16 @@ public:
 	 * @param size The size (in bytes) to map to. Will be rounded up to a page boundary.
 	 * @return The newly mapped region.
 	 */
-	Ptr<VMRegion> alloc_mapped_region(PhysicalAddress start, size_t size);
+	kstd::Arc<VMRegion> alloc_mapped_region(PhysicalAddress start, size_t size);
 
 	/**
 	 * Maps a VMObject into kernel space.
 	 * @param object The object to map.
 	 * @return The region the object was mapped to.
 	 */
-	Ptr<VMRegion> map_object(Ptr<VMObject> object);
+	kstd::Arc<VMRegion> map_object(kstd::Arc<VMObject> object);
 
-	Ptr<VMSpace> kernel_space() { return m_kernel_space; }
+	kstd::Arc<VMSpace> kernel_space() { return m_kernel_space; }
 
 	/**
 	 * Frees a physical page for future use. The page should have a refcount of 0.
@@ -183,7 +183,7 @@ private:
 
 	PhysicalPage* m_physical_pages;
 	kstd::vector<PhysicalRegion*> m_physical_regions;
-	Ptr<VMSpace> m_kernel_space;
+	kstd::Arc<VMSpace> m_kernel_space;
 };
 
 void liballoc_lock();

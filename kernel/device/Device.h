@@ -26,15 +26,15 @@
 class Device: public File {
 public:
 	static void init();
-	static kstd::vector<kstd::shared_ptr<Device>> devices();
-	static ResultRet<kstd::shared_ptr<Device>> get_device(unsigned major, unsigned minor);
+	static kstd::vector<kstd::Arc<Device>> devices();
+	static ResultRet<kstd::Arc<Device>> get_device(unsigned major, unsigned minor);
 	static void remove_device(unsigned major, unsigned minor);
 
 	virtual ~Device() override;
 
 	unsigned major();
 	unsigned minor();
-	kstd::shared_ptr<Device> shared_ptr();
+	kstd::Arc<Device> shared_ptr();
 
 	virtual bool is_block_device();
 	virtual bool is_character_device();
@@ -43,7 +43,7 @@ protected:
 	Device(unsigned major, unsigned minor);
 
 private:
-	static kstd::vector<kstd::shared_ptr<Device>> _devices;
+	static kstd::vector<kstd::Arc<Device>> _devices;
 	static SpinLock _lock;
 
 	unsigned _major = 0;

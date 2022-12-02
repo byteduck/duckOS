@@ -22,7 +22,7 @@
 #include <kernel/kstd/vector.hpp>
 #include "Blocker.h"
 #include <kernel/time/Time.h>
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 
 #define POLLIN 0x01
 #define POLLPRI 0x02
@@ -37,7 +37,7 @@ public:
 	class PollFD {
 	public:
 		int fd_num;
-		kstd::shared_ptr<FileDescriptor> fd;
+		kstd::Arc<FileDescriptor> fd;
 		short events;
 	};
 

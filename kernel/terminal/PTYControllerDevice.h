@@ -22,7 +22,7 @@
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/kstd/circular_queue.hpp>
 #include <kernel/tasking/SpinLock.h>
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 
 class PTYDevice;
 class PTYControllerDevice: public CharacterDevice {
@@ -41,13 +41,13 @@ public:
 	void notify_pty_closed();
 	void ref_inc();
 	void ref_dec();
-	kstd::shared_ptr<PTYDevice> pty();
+	kstd::Arc<PTYDevice> pty();
 
 private:
 	SpinLock _output_lock, _write_lock, _ref_lock;
 	kstd::circular_queue<uint8_t> _output_buffer;
 	BooleanBlocker _buffer_blocker;
-	kstd::shared_ptr<PTYDevice> _pty;
+	kstd::Arc<PTYDevice> _pty;
 	unsigned int num_refs = 1;
 };
 

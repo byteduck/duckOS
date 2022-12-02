@@ -20,20 +20,20 @@
 #pragma once
 
 #include <kernel/kstd/vector.hpp>
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/kstd/string.h>
 
 class LinkedInode;
 class Stack;
 class ProcessArgs {
 public:
-	ProcessArgs(const kstd::shared_ptr<LinkedInode>& working_dir);
+	ProcessArgs(const kstd::Arc<LinkedInode>& working_dir);
 
 	void setup_stack(Stack& stack);
 
 	kstd::vector<kstd::string> argv;
 	kstd::vector<kstd::string> env;
-	kstd::shared_ptr<LinkedInode> working_dir;
+	kstd::Arc<LinkedInode> working_dir;
 };
 
 

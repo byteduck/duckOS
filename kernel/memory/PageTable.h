@@ -60,7 +60,7 @@ public:
 	Entry& operator[](int index);
 
 private:
-	Ptr<VMRegion> m_entries_region;
+	kstd::Arc<VMRegion> m_entries_region;
 	Entry* _entries = nullptr;
 	size_t _vaddr = 0;
 };

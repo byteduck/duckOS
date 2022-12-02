@@ -29,7 +29,7 @@ bool PTYMuxDevice::is_pty_mux() {
 	return true;
 }
 
-kstd::shared_ptr<PTYControllerDevice> PTYMuxDevice::create_new() {
+kstd::Arc<PTYControllerDevice> PTYMuxDevice::create_new() {
 	LOCK(lock);
 	auto pty = (new PTYControllerDevice(current_pty++))->shared_ptr();
 	if(!pty)

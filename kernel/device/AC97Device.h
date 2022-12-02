@@ -95,7 +95,7 @@ public:
 	};
 
 	~AC97Device();
-	static ResultRet<kstd::shared_ptr<AC97Device>> detect();
+	static ResultRet<kstd::Arc<AC97Device>> detect();
 
 	//File
 	ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
@@ -116,8 +116,8 @@ private:
 
 	PCI::Address m_address;
 	uint16_t m_mixer_address, m_bus_address, m_output_channel;
-	Ptr<VMRegion> m_output_buffer_region;
-	Ptr<VMRegion> m_output_buffer_descriptor_region;
+	kstd::Arc<VMRegion> m_output_buffer_region;
+	kstd::Arc<VMRegion> m_output_buffer_descriptor_region;
 	BufferDescriptor* m_output_buffer_descriptors;
 	uint32_t m_current_output_buffer_page = 0;
 	uint32_t m_current_buffer_descriptor = 0;

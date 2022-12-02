@@ -29,13 +29,13 @@
 #include <kernel/terminal/PTYControllerDevice.h>
 #include <kernel/tasking/Process.h>
 
-FileDescriptor::FileDescriptor(const kstd::shared_ptr<File>& file, Process* owner): _file(file), _owner(owner ? owner->pid() : -1) {
+FileDescriptor::FileDescriptor(const kstd::Arc<File>& file, Process* owner): _file(file), _owner(owner ? owner->pid() : -1) {
 	if(file->is_inode())
 		_inode = kstd::static_pointer_cast<InodeFile>(file)->inode();
 
 	//If we're opening the pty multiplexer, we should open a new PTY controller instead.
 	if(file->is_pty_mux())
-		_file = ((kstd::shared_ptr<PTYMuxDevice>) _file)->create_new();
+		_file = ((kstd::Arc<PTYMuxDevice>) _file)->create_new();
 
 	//Increase pty ref count if applicable
 	if(_file->is_pty())
@@ -159,7 +159,7 @@ InodeMetadata FileDescriptor::metadata() {
 	return {};
 }
 
-kstd::shared_ptr<File> FileDescriptor::file() {
+kstd::Arc<File> FileDescriptor::file() {
 	return _file;
 }
 

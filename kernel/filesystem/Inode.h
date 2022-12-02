@@ -20,7 +20,7 @@
 #pragma once
 
 #include <kernel/kstd/unix_types.h>
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/Result.hpp>
 #include <kernel/tasking/SpinLock.h>
 #include "InodeMetadata.h"
@@ -42,16 +42,16 @@ public:
 	void mark_deleted();
 	virtual ~Inode();
 
-	virtual ResultRet<kstd::shared_ptr<Inode>> find(const kstd::string& name);
+	virtual ResultRet<kstd::Arc<Inode>> find(const kstd::string& name);
 	virtual ino_t find_id(const kstd::string& name) = 0;
 	virtual ssize_t read(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) = 0;
 	virtual ssize_t read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) = 0;
 	virtual ssize_t write(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) = 0;
 	virtual Result add_entry(const kstd::string& name, Inode& inode) = 0;
-	virtual ResultRet<kstd::shared_ptr<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) = 0;
+	virtual ResultRet<kstd::Arc<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) = 0;
 	virtual Result remove_entry(const kstd::string& name) = 0;
 	virtual Result truncate(off_t length) = 0;
-	virtual ResultRet<kstd::shared_ptr<LinkedInode>> resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level);
+	virtual ResultRet<kstd::Arc<LinkedInode>> resolve_link(const kstd::Arc<LinkedInode>& base, const User& user, kstd::Arc<LinkedInode>* parent_storage, int options, int recursion_level);
 	virtual Result chmod(mode_t mode) = 0;
 	virtual Result chown(uid_t uid, gid_t gid) = 0;
 	virtual void open(FileDescriptor& fd, int options) = 0;

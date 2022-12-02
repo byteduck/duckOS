@@ -46,7 +46,7 @@ private:
 		inline size_t num_blocks() const { return PAGE_SIZE / block_size; }
 		inline uint8_t* block_data(size_t block) const { return (uint8_t*) (region->start() + block_size * (block - start_block)); }
 
-		kstd::shared_ptr<VMRegion> region;
+		kstd::Arc<VMRegion> region;
 		size_t block_size;
 		size_t start_block;
 		Time last_used = Time::now();
@@ -58,7 +58,7 @@ private:
 	inline size_t block_cache_region_start(size_t block) { return block - (block % blocks_per_cache_region()); }
 
 	//TODO: Free cache regions when low on memory
-	kstd::map<size_t, kstd::shared_ptr<BlockCacheRegion>> _cache_regions;
+	kstd::map<size_t, kstd::Arc<BlockCacheRegion>> _cache_regions;
 	SpinLock _cache_lock;
 
 	static size_t _used_cache_memory;

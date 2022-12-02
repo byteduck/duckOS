@@ -21,7 +21,7 @@
 
 #include "Lock.h"
 #include "BooleanBlocker.h"
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include "../Atomic.h"
 
 class Thread;
@@ -36,6 +36,6 @@ private:
 	BooleanBlocker _blocker;
 	Atomic<int, MemoryOrder::AcqRel> _times_locked = 0;
 
-	kstd::shared_ptr<Thread> _holding_thread;
+	kstd::Arc<Thread> _holding_thread;
 };
 

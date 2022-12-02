@@ -43,9 +43,9 @@ size_t used_early_kheap_memory = 0;
 bool did_setup_paging = false;
 
 MemoryManager* MemoryManager::_inst;
-Ptr<VMRegion> kernel_text_region;
-Ptr<VMRegion> kernel_data_region;
-Ptr<VMRegion> physical_pages_region;
+kstd::Arc<VMRegion> kernel_text_region;
+kstd::Arc<VMRegion> kernel_data_region;
+kstd::Arc<VMRegion> physical_pages_region;
 
 MemoryManager::MemoryManager():
 	m_kernel_space(kstd::make_shared<VMSpace>(HIGHER_HALF, ~0x0 - HIGHER_HALF + 1 - PAGE_SIZE, kernel_page_directory))
@@ -144,7 +144,7 @@ void MemoryManager::setup_paging() {
 	did_setup_paging = true;
 }
 
-void MemoryManager::load_page_directory(const kstd::shared_ptr<PageDirectory>& page_directory) {
+void MemoryManager::load_page_directory(const kstd::Arc<PageDirectory>& page_directory) {
 	load_page_directory(*page_directory);
 }
 
@@ -326,8 +326,8 @@ ResultRet<kstd::vector<PageIndex>> MemoryManager::alloc_contiguous_physical_page
 	return Result(ENOMEM);
 }
 
-kstd::shared_ptr<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
-	auto do_alloc = [&]() -> ResultRet<kstd::shared_ptr<VMRegion>> {
+kstd::Arc<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
+	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
 		auto object = TRY(AnonymousVMObject::alloc(size));
 		return TRY(m_kernel_space->map_object(object));
 	};
@@ -337,8 +337,8 @@ kstd::shared_ptr<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
 	return res.value();
 }
 
-kstd::shared_ptr<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
-	auto do_alloc = [&]() -> ResultRet<kstd::shared_ptr<VMRegion>> {
+kstd::Arc<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
+	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
 		auto object = TRY(AnonymousVMObject::alloc_contiguous(size));
 		return TRY(m_kernel_space->map_object(object));
 	};
@@ -348,8 +348,8 @@ kstd::shared_ptr<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
 	return res.value();
 }
 
-Ptr<VMRegion> MemoryManager::alloc_mapped_region(PhysicalAddress start, size_t size) {
-	auto do_map = [&]() -> ResultRet<kstd::shared_ptr<VMRegion>> {
+kstd::Arc<VMRegion> MemoryManager::alloc_mapped_region(PhysicalAddress start, size_t size) {
+	auto do_map = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
 		auto object = TRY(AnonymousVMObject::map_to_physical(start, size));
 		return TRY(m_kernel_space->map_object(object));
 	};
@@ -359,7 +359,7 @@ Ptr<VMRegion> MemoryManager::alloc_mapped_region(PhysicalAddress start, size_t s
 	return res.value();
 }
 
-Ptr<VMRegion> MemoryManager::map_object(Ptr<VMObject> object) {
+kstd::Arc<VMRegion> MemoryManager::map_object(kstd::Arc<VMObject> object) {
 	auto res = m_kernel_space->map_object(object);
 	if(res.is_error())
 		PANIC("ALLOC_MAPPED_FAIL", "Could not map an existing object into kernel space.");
@@ -427,7 +427,7 @@ void MemoryManager::finalize_heap_pages() {
 	m_heap_pages.resize(m_num_heap_pages);
 
 	// Now, officially map the pages in the "correct" way.
-	auto object = Ptr<VMObject>(new VMObject(m_heap_pages));
+	auto object = kstd::Arc<VMObject>(new VMObject(m_heap_pages));
 	auto res = m_kernel_space->map_object(object, m_last_heap_loc);
 	if(res.is_error())
 		PANIC("KHEAP_FINALIZE_FAIL", "We weren't able to map the new heap region where the VMSpace said we could.");

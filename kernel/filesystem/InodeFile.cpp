@@ -20,14 +20,14 @@
 #include "InodeFile.h"
 #include "Inode.h"
 
-InodeFile::InodeFile(kstd::shared_ptr<Inode> inode): _inode(inode) {
+InodeFile::InodeFile(kstd::Arc<Inode> inode): _inode(inode) {
 }
 
 bool InodeFile::is_inode() {
 	return true;
 }
 
-kstd::shared_ptr<Inode> InodeFile::inode() {
+kstd::Arc<Inode> InodeFile::inode() {
 	return _inode;
 }
 

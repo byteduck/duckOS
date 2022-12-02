@@ -29,9 +29,9 @@ VMSpace::~VMSpace() {
 	}
 }
 
-Ptr<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<Ptr<VMRegion>>& regions_vec) {
+kstd::Arc<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<kstd::Arc<VMRegion>>& regions_vec) {
 	LOCK(m_lock);
-	auto new_space = Ptr<VMSpace>(new VMSpace(m_start, m_size, page_directory));
+	auto new_space = kstd::Arc<VMSpace>(new VMSpace(m_start, m_size, page_directory));
 	new_space->m_used = m_used;
 	delete new_space->m_region_map;
 
@@ -63,7 +63,7 @@ Ptr<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<Ptr<VMReg
 					}
 
 					// Map into new space
-					auto new_vmRegion = Ptr<VMRegion>(new VMRegion(region->object(), new_space, region->start(), region->size(), region->prot()));
+					auto new_vmRegion = kstd::Arc<VMRegion>(new VMRegion(region->object(), new_space, region->start(), region->size(), region->prot()));
 					page_directory.map(*new_vmRegion);
 					new_region->vmRegion = new_vmRegion.get();
 					regions_vec.push_back(new_vmRegion);
@@ -79,7 +79,7 @@ Ptr<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<Ptr<VMReg
 	return new_space;
 }
 
-ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object, VMProt prot) {
+ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, VMProt prot) {
 	LOCK(m_lock);
 	auto region = TRY(alloc_space(object->size()));
 	auto vmRegion = kstd::make_shared<VMRegion>(
@@ -93,7 +93,7 @@ ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object, VMProt prot) 
 	return vmRegion;
 }
 
-ResultRet<Ptr<VMRegion>> VMSpace::map_stack(Ptr<VMObject> object, VMProt prot) {
+ResultRet<kstd::Arc<VMRegion>> VMSpace::map_stack(kstd::Arc<VMObject> object, VMProt prot) {
 	LOCK(m_lock);
 
 	// Find the endmost region with space in it
@@ -107,7 +107,7 @@ ResultRet<Ptr<VMRegion>> VMSpace::map_stack(Ptr<VMObject> object, VMProt prot) {
 	return map_object(object, cur_region->end() - object->size(), prot);
 }
 
-ResultRet<Ptr<VMRegion>> VMSpace::map_object(Ptr<VMObject> object, VirtualAddress address, VMProt prot) {
+ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot) {
 	LOCK(m_lock);
 	auto region = TRY(alloc_space_at(object->size(), address));
 	auto vmRegion = kstd::make_shared<VMRegion>(
@@ -159,7 +159,7 @@ Result VMSpace::unmap_region(VirtualAddress address) {
 	return Result(ENOENT);
 }
 
-ResultRet<Ptr<VMRegion>> VMSpace::get_region_at(VirtualAddress address) {
+ResultRet<kstd::Arc<VMRegion>> VMSpace::get_region_at(VirtualAddress address) {
 	LOCK(m_lock);
 	VMSpaceRegion* cur_region = m_region_map;
 	while(cur_region) {
@@ -173,7 +173,7 @@ ResultRet<Ptr<VMRegion>> VMSpace::get_region_at(VirtualAddress address) {
 	return Result(ENOENT);
 }
 
-ResultRet<Ptr<VMRegion>> VMSpace::get_region_containing(VirtualAddress address) {
+ResultRet<kstd::Arc<VMRegion>> VMSpace::get_region_containing(VirtualAddress address) {
 //	LOCK(m_lock);
 	VMSpaceRegion* cur_region = m_region_map;
 	while(cur_region) {

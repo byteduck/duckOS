@@ -5,7 +5,7 @@
 
 #include "../kstd/vector.hpp"
 #include "PhysicalPage.h"
-#include "../kstd/shared_ptr.hpp"
+#include "../kstd/Arc.h"
 
 /**
  * This is a base class to describe a (contiguous) object in virtual memory. This object may be shared across multiple

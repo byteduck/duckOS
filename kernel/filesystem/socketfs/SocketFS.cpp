@@ -50,14 +50,14 @@ char* SocketFS::name() {
 	return "socketfs";
 }
 
-ResultRet<kstd::shared_ptr<Inode>> SocketFS::get_inode(ino_t id) {
+ResultRet<kstd::Arc<Inode>> SocketFS::get_inode(ino_t id) {
 	if(id == 1)
-		return static_cast<kstd::shared_ptr<Inode>>(root_entry);
+		return static_cast<kstd::Arc<Inode>>(root_entry);
 
 	LOCK(lock);
 	for(size_t i = 0; i < sockets.size(); i++) {
 		if(sockets[i]->id == id)
-			return static_cast<kstd::shared_ptr<Inode>>(sockets[i]);
+			return static_cast<kstd::Arc<Inode>>(sockets[i]);
 	}
 
 	return Result(-ENOENT);

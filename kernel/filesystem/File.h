@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/Result.hpp>
 #include <kernel/memory/SafePointer.h>
 

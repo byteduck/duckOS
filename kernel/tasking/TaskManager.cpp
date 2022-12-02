@@ -32,11 +32,11 @@
 TSS TaskManager::tss;
 SpinLock TaskManager::lock;
 
-kstd::shared_ptr<Thread> cur_thread;
+kstd::Arc<Thread> cur_thread;
 Process* kidle_process;
 kstd::vector<Process*>* processes = nullptr;
 
-kstd::queue<kstd::shared_ptr<Thread>>* thread_queue = nullptr;
+kstd::queue<kstd::Arc<Thread>>* thread_queue = nullptr;
 
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
@@ -139,7 +139,7 @@ void TaskManager::init(){
 
 	lock = SpinLock();
 
-	thread_queue = new kstd::queue<kstd::shared_ptr<Thread>>();
+	thread_queue = new kstd::queue<kstd::Arc<Thread>>();
 	processes = new kstd::vector<Process*>();
 
 	//Create kidle process
@@ -162,7 +162,7 @@ kstd::vector<Process*>* TaskManager::process_list() {
 	return processes;
 }
 
-kstd::shared_ptr<Thread>& TaskManager::current_thread() {
+kstd::Arc<Thread>& TaskManager::current_thread() {
 	return cur_thread;
 }
 
@@ -181,7 +181,7 @@ int TaskManager::add_process(Process* proc){
 	return proc->pid();
 }
 
-void TaskManager::queue_thread(const kstd::shared_ptr<Thread>& thread) {
+void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
 	TaskManager::Disabler disabler;
 	if(!thread) {
 		KLog::warn("TaskManager", "Tried queueing null thread!");
@@ -202,7 +202,7 @@ void TaskManager::notify_current(uint32_t sig){
 	cur_thread->process()->kill(sig);
 }
 
-kstd::shared_ptr<Thread> TaskManager::next_thread() {
+kstd::Arc<Thread> TaskManager::next_thread() {
 	while(!thread_queue->empty() && !thread_queue->front()->can_be_run())
 		thread_queue->pop_front();
 
@@ -392,7 +392,7 @@ void TaskManager::preempt(){
 		old_thread->leave_critical();
 
 		//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
-		old_thread = kstd::shared_ptr<Thread>(nullptr);
+		old_thread = kstd::Arc<Thread>(nullptr);
 
 		asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
 		preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());

@@ -31,15 +31,15 @@ PTYFS& PTYFS::inst() {
 
 PTYFS::PTYFS() {
 	_inst = this;
-	_entries.push_back(kstd::make_shared<PTYFSInode>(*this, PTYFSInode::ROOT, kstd::shared_ptr<PTYDevice>(nullptr)));
+	_entries.push_back(kstd::make_shared<PTYFSInode>(*this, PTYFSInode::ROOT, kstd::Arc<PTYDevice>(nullptr)));
 }
 
-void PTYFS::add_pty(const kstd::shared_ptr<PTYDevice>& pty) {
+void PTYFS::add_pty(const kstd::Arc<PTYDevice>& pty) {
 	LOCK(_lock);
 	_entries.push_back(kstd::make_shared<PTYFSInode>(*this, PTYFSInode::PTY, pty));
 }
 
-void PTYFS::remove_pty(const kstd::shared_ptr<PTYDevice>& pty) {
+void PTYFS::remove_pty(const kstd::Arc<PTYDevice>& pty) {
 	LOCK(_lock);
 	for(size_t i = 0; i < _entries.size(); i++) {
 		if(_entries[i]->pty() == pty) {
@@ -54,12 +54,12 @@ char* PTYFS::name() {
 	return "PTYFS";
 }
 
-ResultRet<kstd::shared_ptr<Inode>> PTYFS::get_inode(ino_t id) {
+ResultRet<kstd::Arc<Inode>> PTYFS::get_inode(ino_t id) {
 	LOCK(_lock);
 	if(!id)
 		return Result(-ENOENT);
 	for(size_t i = 0; i < _entries.size(); i++)
-		if(_entries[i]->id == id) return static_cast<kstd::shared_ptr<Inode>>(_entries[i]);
+		if(_entries[i]->id == id) return static_cast<kstd::Arc<Inode>>(_entries[i]);
 	return Result(-ENOENT);
 }
 

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/kstd/unix_types.h>
 #include <kernel/kstd/vector.hpp>
 #include <kernel/Result.hpp>
@@ -38,44 +38,44 @@ public:
 	class Mount {
 	public:
 		Mount();
-		Mount(Filesystem* fs, const kstd::shared_ptr<LinkedInode>& host_inode);
-		kstd::shared_ptr<LinkedInode> host_inode();
+		Mount(Filesystem* fs, const kstd::Arc<LinkedInode>& host_inode);
+		kstd::Arc<LinkedInode> host_inode();
 		Filesystem* guest_fs();
 
 	private:
 		Filesystem* _fs;
-		kstd::shared_ptr<LinkedInode> _host_inode;
+		kstd::Arc<LinkedInode> _host_inode;
 	};
 
 	VFS();
 	~VFS();
 	static VFS& inst();
 
-	ResultRet<kstd::shared_ptr<LinkedInode>> resolve_path(kstd::string path, const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage = nullptr, int options = 0, int recursion_level = 0);
-	ResultRet<kstd::shared_ptr<FileDescriptor>> open(const kstd::string& path, int options, mode_t mode, const User& user, const kstd::shared_ptr<LinkedInode>& base);
-	ResultRet<kstd::shared_ptr<FileDescriptor>> create(const kstd::string& path, int options, mode_t mode, const User& user, const kstd::shared_ptr<LinkedInode>& parent);
-	Result unlink(const kstd::string& path, const User& user, const kstd::shared_ptr<LinkedInode>& base);
-	Result link(const kstd::string& file, const kstd::string& link_name, const User& user, const kstd::shared_ptr<LinkedInode>& base);
-	Result symlink(const kstd::string& file, const kstd::string& link_name, const User& user, const kstd::shared_ptr<LinkedInode>& base);
-	ResultRet<kstd::string> readlink(const kstd::string& path, const User& user, const kstd::shared_ptr<LinkedInode>& base, ssize_t& size);
-	Result rmdir(kstd::string path, const User& user, const kstd::shared_ptr<LinkedInode>& base);
-	Result mkdir(kstd::string path, mode_t mode, const User& user, const kstd::shared_ptr<LinkedInode>& base);
-	Result truncate(const kstd::string& path, off_t length, const User& user, const kstd::shared_ptr<LinkedInode>& base);
-	Result chmod(const kstd::string& path, mode_t mode, const User& user, const kstd::shared_ptr<LinkedInode>& base);
-	Result chown(const kstd::string& path, uid_t uid, gid_t gid, const User& user, const kstd::shared_ptr<LinkedInode>& base, int options = 0);
-	Result mount(Filesystem* fs, const kstd::shared_ptr<LinkedInode>& mountpoint);
-	Result access(kstd::string pathname, int mode, const User& user, const kstd::shared_ptr<LinkedInode>& base);
+	ResultRet<kstd::Arc<LinkedInode>> resolve_path(kstd::string path, const kstd::Arc<LinkedInode>& base, const User& user, kstd::Arc<LinkedInode>* parent_storage = nullptr, int options = 0, int recursion_level = 0);
+	ResultRet<kstd::Arc<FileDescriptor>> open(const kstd::string& path, int options, mode_t mode, const User& user, const kstd::Arc<LinkedInode>& base);
+	ResultRet<kstd::Arc<FileDescriptor>> create(const kstd::string& path, int options, mode_t mode, const User& user, const kstd::Arc<LinkedInode>& parent);
+	Result unlink(const kstd::string& path, const User& user, const kstd::Arc<LinkedInode>& base);
+	Result link(const kstd::string& file, const kstd::string& link_name, const User& user, const kstd::Arc<LinkedInode>& base);
+	Result symlink(const kstd::string& file, const kstd::string& link_name, const User& user, const kstd::Arc<LinkedInode>& base);
+	ResultRet<kstd::string> readlink(const kstd::string& path, const User& user, const kstd::Arc<LinkedInode>& base, ssize_t& size);
+	Result rmdir(kstd::string path, const User& user, const kstd::Arc<LinkedInode>& base);
+	Result mkdir(kstd::string path, mode_t mode, const User& user, const kstd::Arc<LinkedInode>& base);
+	Result truncate(const kstd::string& path, off_t length, const User& user, const kstd::Arc<LinkedInode>& base);
+	Result chmod(const kstd::string& path, mode_t mode, const User& user, const kstd::Arc<LinkedInode>& base);
+	Result chown(const kstd::string& path, uid_t uid, gid_t gid, const User& user, const kstd::Arc<LinkedInode>& base, int options = 0);
+	Result mount(Filesystem* fs, const kstd::Arc<LinkedInode>& mountpoint);
+	Result access(kstd::string pathname, int mode, const User& user, const kstd::Arc<LinkedInode>& base);
 
 	bool mount_root(Filesystem* fs);
-	kstd::shared_ptr<LinkedInode> root_ref();
-	ResultRet<Mount> get_mount(const kstd::shared_ptr<LinkedInode>& inode);
+	kstd::Arc<LinkedInode> root_ref();
+	ResultRet<Mount> get_mount(const kstd::Arc<LinkedInode>& inode);
 
 	static kstd::string path_base(const kstd::string& path);
 	static kstd::string path_minus_base(const kstd::string& path);
 
 private:
-	kstd::shared_ptr<Inode> _root_inode;
-	kstd::shared_ptr<LinkedInode> _root_ref;
+	kstd::Arc<Inode> _root_inode;
+	kstd::Arc<LinkedInode> _root_ref;
 	kstd::vector<Mount> mounts;
 	static VFS* instance;
 };

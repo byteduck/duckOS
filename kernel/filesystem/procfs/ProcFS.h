@@ -42,7 +42,7 @@ public:
 
 	//Filesystem
 	char* name() override;
-	ResultRet<kstd::shared_ptr<Inode>> get_inode(ino_t id) override;
+	ResultRet<kstd::Arc<Inode>> get_inode(ino_t id) override;
 	ino_t root_inode_id() override;
 	uint8_t fsid() override;
 
@@ -52,7 +52,7 @@ private:
 
 	SpinLock lock;
 	kstd::vector<ProcFSEntry> entries;
-	kstd::shared_ptr<ProcFSInode> root_inode;
+	kstd::Arc<ProcFSInode> root_inode;
 	ino_t cinode_id;
 };
 

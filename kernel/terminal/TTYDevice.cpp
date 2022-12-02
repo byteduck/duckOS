@@ -158,7 +158,7 @@ int TTYDevice::ioctl(unsigned int request, SafePointer<void*> argp) {
 			cur_proc->set_tty(shared_ptr());
 			return SUCCESS;
 		case TIOCNOTTY:
-			cur_proc->set_tty(kstd::shared_ptr<TTYDevice>(nullptr));
+			cur_proc->set_tty(kstd::Arc<TTYDevice>(nullptr));
 			return SUCCESS;
 		case TIOCGPGRP:
 			return _pgid;

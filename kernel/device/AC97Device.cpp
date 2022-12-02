@@ -23,7 +23,7 @@
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/kstd/cstring.h>
 
-ResultRet<kstd::shared_ptr<AC97Device>> AC97Device::detect() {
+ResultRet<kstd::Arc<AC97Device>> AC97Device::detect() {
 	PCI::Address found_ac97 = {0, 0, 0};
 	PCI::enumerate_devices([](PCI::Address address, PCI::ID id, uint16_t type, void* dataPtr) {
 		if(PCI::get_class(address) == AC97_PCI_CLASS && PCI::get_subclass(address) == AC97_PCI_SUBCLASS) {
@@ -37,7 +37,7 @@ ResultRet<kstd::shared_ptr<AC97Device>> AC97Device::detect() {
 		return Result(-ENOENT);
 	}
 
-	return (kstd::shared_ptr<AC97Device>) (new AC97Device(found_ac97))->shared_ptr();
+	return (kstd::Arc<AC97Device>) (new AC97Device(found_ac97))->shared_ptr();
 }
 
 AC97Device::AC97Device(PCI::Address address):

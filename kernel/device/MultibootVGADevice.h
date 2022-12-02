@@ -43,7 +43,7 @@ private:
 	MultibootVGADevice() = default;
 	bool detect(struct multiboot_info* mboot_header);
 	size_t framebuffer_paddr;
-	Ptr<VMRegion> framebuffer_region;
+	kstd::Arc<VMRegion> framebuffer_region;
 	uint32_t* framebuffer;
 	uint32_t* double_buffer = nullptr;
 	uint32_t framebuffer_pitch;

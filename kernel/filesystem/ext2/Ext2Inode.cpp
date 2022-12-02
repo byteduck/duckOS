@@ -337,7 +337,7 @@ Result Ext2Inode::add_entry(const kstd::string &name, Inode &inode) {
 	return Result(SUCCESS);
 }
 
-ResultRet<kstd::shared_ptr<Inode>> Ext2Inode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) {
+ResultRet<kstd::Arc<Inode>> Ext2Inode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) {
 	if(!name.length() || name.length() > NAME_MAXLEN) return Result(-ENAMETOOLONG);
 
 	LOCK(lock);
@@ -363,7 +363,7 @@ ResultRet<kstd::shared_ptr<Inode>> Ext2Inode::create_entry(const kstd::string& n
 		return entry_result;
 	}
 
-	return static_cast<kstd::shared_ptr<Inode>>(inode_or_err.value());
+	return static_cast<kstd::Arc<Inode>>(inode_or_err.value());
 }
 
 Result Ext2Inode::remove_entry(const kstd::string &name) {
@@ -401,7 +401,7 @@ Result Ext2Inode::remove_entry(const kstd::string &name) {
 	}
 
 	//Reduce the child's hardlink count if a file, or try_remove_dir if a directory
-	auto ext2ino = (kstd::shared_ptr<Ext2Inode>) child_or_err.value();
+	auto ext2ino = (kstd::Arc<Ext2Inode>) child_or_err.value();
 	if(ext2ino->metadata().is_directory()) {
 		auto result = ext2ino->try_remove_dir();
 		if(result.is_error())
@@ -803,7 +803,7 @@ Result Ext2Inode::try_remove_dir() {
 			auto parent_ino_or_err = ext2fs().get_inode(ent.id);
 			if(parent_ino_or_err.is_error())
 				return parent_ino_or_err.result();
-			auto parent_ino = (kstd::shared_ptr<Ext2Inode>) parent_ino_or_err.value();
+			auto parent_ino = (kstd::Arc<Ext2Inode>) parent_ino_or_err.value();
 			parent_ino->reduce_hardlink_count();
 		}
 	}

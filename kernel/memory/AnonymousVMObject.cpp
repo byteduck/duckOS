@@ -7,7 +7,7 @@
 
 SpinLock AnonymousVMObject::s_shared_lock;
 int AnonymousVMObject::s_cur_shm_id = 1;
-kstd::map<int, Weak<AnonymousVMObject>> AnonymousVMObject::s_shared_objects;
+kstd::map<int, kstd::Weak<AnonymousVMObject>> AnonymousVMObject::s_shared_objects;
 
 AnonymousVMObject::~AnonymousVMObject() {
 	if(m_is_shared) {
@@ -16,25 +16,25 @@ AnonymousVMObject::~AnonymousVMObject() {
 	}
 }
 
-ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size) {
+ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
 	auto pages = TRY(MemoryManager::inst().alloc_physical_pages(num_pages));
-	auto object = Ptr<AnonymousVMObject>(new AnonymousVMObject(pages));
+	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(pages));
 	auto tmp_mapped = MM.map_object(object);
 	memset((void*) tmp_mapped->start(), 0, object->size());
 	return object;
 }
 
-ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::alloc_contiguous(size_t size) {
+ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc_contiguous(size_t size) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
 	auto pages = TRY(MemoryManager::inst().alloc_contiguous_physical_pages(num_pages));
-	auto object = Ptr<AnonymousVMObject>(new AnonymousVMObject(pages));
+	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(pages));
 	auto tmp_mapped = MM.map_object(object);
 	memset((void*) tmp_mapped->start(), 0, object->size());
 	return object;
 }
 
-ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::map_to_physical(PhysicalAddress start, size_t size) {
+ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::map_to_physical(PhysicalAddress start, size_t size) {
 	ASSERT((start / PAGE_SIZE) * PAGE_SIZE == start);
 
 	PageIndex start_page = start / PAGE_SIZE;
@@ -53,10 +53,10 @@ ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::map_to_physical(PhysicalAdd
 
 	auto object = new AnonymousVMObject(kstd::move(pages));
 	object->m_fork_action = ForkAction::Ignore;
-	return Ptr<AnonymousVMObject>(object);
+	return kstd::Arc<AnonymousVMObject>(object);
 }
 
-ResultRet<Ptr<AnonymousVMObject>> AnonymousVMObject::get_shared(int id) {
+ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::get_shared(int id) {
 	LOCK(s_shared_lock);
 	auto node = s_shared_objects.find_node(id);
 	if(node) {

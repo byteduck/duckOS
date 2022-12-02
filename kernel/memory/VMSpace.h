@@ -3,7 +3,7 @@
 
 #pragma once
 #include "Memory.h"
-#include "../kstd/shared_ptr.hpp"
+#include "../kstd/Arc.h"
 #include "VMRegion.h"
 #include "../Result.hpp"
 #include "../tasking/SpinLock.h"
@@ -26,21 +26,21 @@ public:
 	 * @param regions_vec A reference to a vector to store the resulting VMRegions in.
 	 * @return The newly forked VMSpace.
 	 */
-	Ptr<VMSpace> fork(PageDirectory& page_directory, kstd::vector<Ptr<VMRegion>>& regions_vec);
+	kstd::Arc<VMSpace> fork(PageDirectory& page_directory, kstd::vector<kstd::Arc<VMRegion>>& regions_vec);
 
 	/**
 	 * Allocates a new region for the given object.
 	 * @param object The object to allocate a region for.
 	 * @return The newly created region.
 	 */
-	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VMProt prot = VMSpace::default_prot);
+	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VMProt prot = VMSpace::default_prot);
 
 	/**
 	 * Allocates a new region for the given object near the end of the memory space.
 	 * @param object The object to allocate a region for.
 	 * @return The newly created region.
 	 */
-	ResultRet<Ptr<VMRegion>> map_stack(Ptr<VMObject> object, VMProt prot = VMSpace::default_prot);
+	ResultRet<kstd::Arc<VMRegion>> map_stack(kstd::Arc<VMObject> object, VMProt prot = VMSpace::default_prot);
 
 	/**
 	 * Maps an object into a specific area of the address space.
@@ -48,7 +48,7 @@ public:
 	 * @param addr The address to map the object into.
 	 * @return The newly mapped region.
 	 */
-	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VirtualAddress address, VMProt prot = VMSpace::default_prot);
+	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot = VMSpace::default_prot);
 
 	/**
 	 * Unmaps the given region from this address space.
@@ -69,14 +69,14 @@ public:
 	 * @param address The address of the region to find.
 	 * @return The region, if found.
 	 */
-	ResultRet<Ptr<VMRegion>> get_region_at(VirtualAddress address);
+	ResultRet<kstd::Arc<VMRegion>> get_region_at(VirtualAddress address);
 
 	/**
 	 * Gets the region containing the given address
 	 * @param address The address contained within the region to find.
 	 * @return The region, if found.
 	 */
-	ResultRet<Ptr<VMRegion>> get_region_containing(VirtualAddress address);
+	ResultRet<kstd::Arc<VMRegion>> get_region_containing(VirtualAddress address);
 
 	/**
 	 * Reserves a region so it cannot be allocated. Should be page-aligned.

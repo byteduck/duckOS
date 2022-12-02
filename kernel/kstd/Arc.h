@@ -21,7 +21,7 @@ namespace kstd {
 	public:
 		Arc(): m_ptr(nullptr), m_count(nullptr) {}
 
-		// SharedPtr<U> -> SharedPtr<T>
+		// Arc<U> -> Arc<T>
 		template<typename U>
 		Arc(const Arc<U>& other):
 			m_ptr((T*)(other.m_ptr)),
@@ -40,7 +40,7 @@ namespace kstd {
 				m_count->acquire_strong();
 		}
 
-		// Move SharedPtr<U> -> SharedPtr<T>
+		// Move Arc<U> -> Arc<T>
 		template<typename U>
 		Arc(Arc<U>&& other) noexcept:
 			m_ptr((T*)(other.m_ptr)),
@@ -168,7 +168,7 @@ namespace kstd {
 	public:
 		Weak(): m_ptr(nullptr), m_count(nullptr) {}
 
-		// SharedPtr<U> -> WeakPtr<T>
+		// Weak<U> -> Weak<T>
 		template<typename U>
 		Weak(const Arc<U>& other):
 				m_ptr((T*)(other.m_ptr)),
@@ -178,7 +178,7 @@ namespace kstd {
 				m_count->acquire_weak();
 		}
 
-		// Move SharedPtr<U> -> WeakPtr<T>
+		// Move Weak<U> -> Weak<T>
 		template<typename U>
 		Weak(Arc<U>&& other):
 				m_ptr((T*)(other.m_ptr)),
@@ -188,7 +188,7 @@ namespace kstd {
 				m_count->acquire_weak();
 		}
 
-		// WeakPtr<U> -> WeakPtr<T>
+		// Weak<U> -> Weak<T>
 		template<typename U>
 		Weak(const Weak<U>& other):
 				m_ptr((T*)(other.m_ptr)),
@@ -207,7 +207,7 @@ namespace kstd {
 				m_count->acquire_weak();
 		}
 
-		// Move WeakPtr<U> -> WeakPtr<T>
+		// Move Weak<U> -> Weak<T>
 		template<typename U>
 		Weak(Weak<U>&& other):
 				m_ptr(static_cast<T*>(other.m_ptr)),
@@ -333,13 +333,4 @@ namespace kstd {
 	void __set_shared_weak_self(ArcSelfBase* base, Weak<T> weak) {
 		base->m_weak_self = weak;
 	}
-
-	template<typename T>
-	using shared_ptr = Arc<T>;
 }
-
-template<typename T>
-using Ptr = kstd::Arc<T>;
-
-template<typename T>
-using Weak = kstd::Weak<T>;

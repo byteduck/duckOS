@@ -29,7 +29,7 @@ Inode::~Inode() {
 
 }
 
-ResultRet<kstd::shared_ptr<Inode>> Inode::find(const kstd::string& name) {
+ResultRet<kstd::Arc<Inode>> Inode::find(const kstd::string& name) {
 	if(metadata().exists() && !metadata().is_directory())
 		return Result(-EISDIR);
 	ino_t id  = find_id(name);
@@ -40,7 +40,7 @@ ResultRet<kstd::shared_ptr<Inode>> Inode::find(const kstd::string& name) {
 	return Result(-ENOENT);
 }
 
-ResultRet<kstd::shared_ptr<LinkedInode>> Inode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<kstd::Arc<LinkedInode>> Inode::resolve_link(const kstd::Arc<LinkedInode>& base, const User& user, kstd::Arc<LinkedInode>* parent_storage, int options, int recursion_level) {
 	ASSERT(metadata().is_symlink());
 
 	auto* buf = new uint8_t[metadata().size + 1];

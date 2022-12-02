@@ -97,9 +97,9 @@ namespace ELF {
 
 	class ElfInfo {
 	public:
-		kstd::shared_ptr<elf32_header> header;
+		kstd::Arc<elf32_header> header;
 		kstd::vector<elf32_segment_header> segments;
-		kstd::shared_ptr<FileDescriptor> fd;
+		kstd::Arc<FileDescriptor> fd;
 		kstd::string interpreter;
 	};
 
@@ -133,7 +133,7 @@ namespace ELF {
 	 * @param page_directory The page directory to load the program into.
 	 * @return An error or the program break.
 	 */
-	ResultRet<kstd::vector<Ptr<VMRegion>>> load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const Ptr<VMSpace>& vm_space);
+	ResultRet<kstd::vector<kstd::Arc<VMRegion>>> load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const kstd::Arc<VMSpace>& vm_space);
 
 	/**
 	 * Gets information about an ELF executable.
@@ -142,5 +142,5 @@ namespace ELF {
 	 * @param interpreter If not empty, ENOEXEC will be returned if the executable requests an interpreter.
 	 * @return Information about the ELF executable or an error.
 	 */
-	 ResultRet<ElfInfo> read_info(const kstd::shared_ptr<FileDescriptor>& fd, User& user, kstd::string interpreter = kstd::string());
+	 ResultRet<ElfInfo> read_info(const kstd::Arc<FileDescriptor>& fd, User& user, kstd::string interpreter = kstd::string());
 }

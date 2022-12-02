@@ -26,7 +26,7 @@
 
 class FileBasedFilesystem: public Filesystem {
 public:
-	explicit FileBasedFilesystem(const kstd::shared_ptr<FileDescriptor>& file);
+	explicit FileBasedFilesystem(const kstd::Arc<FileDescriptor>& file);
 	~FileBasedFilesystem();
 
 	size_t logical_block_size();
@@ -44,23 +44,23 @@ public:
 	Result zero_block(size_t block);
 	Result truncate_block(size_t block, size_t new_size);
 
-	ResultRet<kstd::shared_ptr<Inode>> get_cached_inode(ino_t id);
-	void add_cached_inode(const kstd::shared_ptr<Inode>& inode);
+	ResultRet<kstd::Arc<Inode>> get_cached_inode(ino_t id);
+	void add_cached_inode(const kstd::Arc<Inode>& inode);
 	void remove_cached_inode(ino_t id);
 
 	virtual Inode* get_inode_rawptr(ino_t id);
-	virtual ResultRet<kstd::shared_ptr<Inode>> get_inode(ino_t id);
+	virtual ResultRet<kstd::Arc<Inode>> get_inode(ino_t id);
 
 protected:
 	void set_block_size(size_t block_size);
 
 	size_t _logical_block_size {512};
 	SpinLock lock;
-	kstd::shared_ptr<FileDescriptor> _file;
+	kstd::Arc<FileDescriptor> _file;
 	size_t _block_size;
 
 private:
-	kstd::vector<kstd::shared_ptr<Inode>> _inode_cache;
+	kstd::vector<kstd::Arc<Inode>> _inode_cache;
 	SpinLock _inode_cache_lock;
 };
 

@@ -24,10 +24,10 @@
 class Inode;
 class InodeFile: public File {
 public:
-	InodeFile(kstd::shared_ptr<Inode>);
+	InodeFile(kstd::Arc<Inode>);
 
 	bool is_inode() override;
-	kstd::shared_ptr<Inode> inode();
+	kstd::Arc<Inode> inode();
 	ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 	ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, SafePointer<DirectoryEntry> buffer) override;
 	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
@@ -37,7 +37,7 @@ public:
 	virtual bool can_write(const FileDescriptor& fd) override;
 
 private:
-	kstd::shared_ptr<Inode> _inode;
+	kstd::Arc<Inode> _inode;
 };
 
 

@@ -24,7 +24,7 @@
 #include <kernel/kstd/cstring.h>
 #include <kernel/filesystem/LinkedInode.h>
 
-PTYFSInode::PTYFSInode(PTYFS& fs, Type type, const kstd::shared_ptr<PTYDevice>& pty): Inode(fs, type == PTY ? pty->id() + 2 : 1), type(type), _pty(pty), ptyfs(fs) {
+PTYFSInode::PTYFSInode(PTYFS& fs, Type type, const kstd::Arc<PTYDevice>& pty): Inode(fs, type == PTY ? pty->id() + 2 : 1), type(type), _pty(pty), ptyfs(fs) {
 	// Inode ID 1 = Root, 2+ = (pty ID + 2)
 	kstd::string name;
 	uint8_t dtype;
@@ -53,7 +53,7 @@ PTYFSInode::PTYFSInode(PTYFS& fs, Type type, const kstd::shared_ptr<PTYDevice>& 
 	dir_entry = DirectoryEntry(id, dtype, name);
 }
 
-kstd::shared_ptr<PTYDevice> PTYFSInode::pty() {
+kstd::Arc<PTYDevice> PTYFSInode::pty() {
 	return _pty;
 }
 
@@ -122,11 +122,11 @@ bool PTYFSInode::can_read(const FileDescriptor& fd) {
 }
 
 Result PTYFSInode::add_entry(const kstd::string& name, Inode& inode) { return Result(-EROFS); }
-ResultRet<kstd::shared_ptr<Inode>> PTYFSInode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) { return Result(-EROFS); }
+ResultRet<kstd::Arc<Inode>> PTYFSInode::create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) { return Result(-EROFS); }
 Result PTYFSInode::remove_entry(const kstd::string& name) { return Result(-EROFS); }
 Result PTYFSInode::truncate(off_t length) { return Result(-EROFS); }
 Result PTYFSInode::chmod(mode_t mode) { return Result(-EROFS); }
 Result PTYFSInode::chown(uid_t uid, gid_t gid) { return Result(-EROFS); }
 void PTYFSInode::open(FileDescriptor& fd, int options) {}
 void PTYFSInode::close(FileDescriptor& fd) {}
-ResultRet<kstd::shared_ptr<LinkedInode>> PTYFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) { return Result(-ENOLINK); }
+ResultRet<kstd::Arc<LinkedInode>> PTYFSInode::resolve_link(const kstd::Arc<LinkedInode>& base, const User& user, kstd::Arc<LinkedInode>* parent_storage, int options, int recursion_level) { return Result(-ENOLINK); }

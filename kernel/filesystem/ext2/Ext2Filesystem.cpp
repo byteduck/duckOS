@@ -24,7 +24,7 @@
 #include <kernel/kstd/cstring.h>
 #include <kernel/kstd/KLog.h>
 
-Ext2Filesystem::Ext2Filesystem(const kstd::shared_ptr<FileDescriptor>& file) : FileBasedFilesystem(file) {
+Ext2Filesystem::Ext2Filesystem(const kstd::Arc<FileDescriptor>& file) : FileBasedFilesystem(file) {
 	_fsid = EXT2_FSID;
 }
 
@@ -74,7 +74,7 @@ Inode* Ext2Filesystem::get_inode_rawptr(ino_t id) {
 	return static_cast<Inode *>(new Ext2Inode(*this, id));
 }
 
-ResultRet<kstd::shared_ptr<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent) {
+ResultRet<kstd::Arc<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent) {
 	ext2lock.acquire();
 
 	//Find a block group to house the inode

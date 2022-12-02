@@ -4,7 +4,7 @@
 #pragma once
 
 #include "VMObject.h"
-#include "../kstd/shared_ptr.hpp"
+#include "../kstd/Arc.h"
 #include "../Result.hpp"
 #include "../kstd/map.hpp"
 #include "../kstd/unix_types.h"
@@ -24,14 +24,14 @@ public:
 	 * @param size The minimum size, in bytes, of the object.
 	 * @return The newly allocated object, if successful.
 	 */
-	static ResultRet<Ptr<AnonymousVMObject>> alloc(size_t size);
+	static ResultRet<kstd::Arc<AnonymousVMObject>> alloc(size_t size);
 
 	/**
 	 * Allocates a new anonymous VMObject backed by contiguous physical pages.
 	 * @param size The minimum size, in bytes, of the object.
 	 * @return The newly allocated object, if successful.
 	 */
-	static ResultRet<Ptr<AnonymousVMObject>> alloc_contiguous(size_t size);
+	static ResultRet<kstd::Arc<AnonymousVMObject>> alloc_contiguous(size_t size);
 
 	/**
 	 * Creates an anonymous VMObject backed by existing physical pages.
@@ -39,14 +39,14 @@ public:
 	 * @param size The size to map. Will be rounded up to a page boundary.
 	 * @return The newly allocated object, if successful.
 	 */
-	static ResultRet<Ptr<AnonymousVMObject>> map_to_physical(PhysicalAddress start, size_t size);
+	static ResultRet<kstd::Arc<AnonymousVMObject>> map_to_physical(PhysicalAddress start, size_t size);
 
 	/**
 	 * Finds the existing anonymous VMObject with the given shared memory ID, if any.
 	 * @param id The ID of the VMObject to find.
 	 * @return The object if found, or an error if not.
 	 */
-	static ResultRet<Ptr<AnonymousVMObject>> get_shared(int id);
+	static ResultRet<kstd::Arc<AnonymousVMObject>> get_shared(int id);
 
 	/**
 	 * Shares the anonymous VMObject with the given process with the given permissions.
@@ -76,7 +76,7 @@ private:
 
 	static SpinLock s_shared_lock;
 	static int s_cur_shm_id;
-	static kstd::map<int, Weak<AnonymousVMObject>> s_shared_objects;
+	static kstd::map<int, kstd::Weak<AnonymousVMObject>> s_shared_objects;
 
 	SpinLock m_lock;
 	kstd::map<pid_t, VMProt> m_shared_permissions;

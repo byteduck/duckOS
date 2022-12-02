@@ -21,7 +21,7 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/unix_types.h>
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/memory/Stack.h>
 #include <kernel/Result.hpp>
 #include "kernel/memory/VMRegion.h"
@@ -69,7 +69,7 @@ public:
 	void unblock();
 	bool is_blocked();
 	bool should_unblock();
-	Result join(const kstd::shared_ptr<Thread>& self_ptr, const kstd::shared_ptr<Thread>& other, UserspacePointer<void*> retp);
+	Result join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& other, UserspacePointer<void*> retp);
 
 	//Signals
 	bool call_signal_handler(int sig);
@@ -102,21 +102,21 @@ private:
 	bool _waiting_to_die = false;
 
 	//Stack
-	Ptr<VMRegion> _kernel_stack_region;
-	Ptr<VMRegion> _stack_region;
+	kstd::Arc<VMRegion> _kernel_stack_region;
+	kstd::Arc<VMRegion> _stack_region;
 
 	//Blocking and Joining
 	Blocker* _blocker = nullptr;
 	bool _joined = false;
 	SpinLock _join_lock;
-	kstd::shared_ptr<Thread> _joined_thread;
+	kstd::Arc<Thread> _joined_thread;
 
 	//Signals
 	bool _in_signal = false;
 	bool _ready_to_handle_signal = false;
 	bool _just_finished_signal = false;
 	size_t _signal_stack_top = 0;
-	Ptr<VMRegion> _sighandler_ustack_region;
-	Ptr<VMRegion> _sighandler_kstack_region;
+	kstd::Arc<VMRegion> _sighandler_ustack_region;
+	kstd::Arc<VMRegion> _sighandler_kstack_region;
 };
 

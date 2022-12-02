@@ -111,7 +111,7 @@ void kmain_late(){
 	KLog::dbg("kinit", "Initializing disk...");
 
 	//Setup the disk (Assumes we're using primary master drive
-	auto disk = kstd::shared_ptr<PATADevice>(PATADevice::find(
+	auto disk = kstd::Arc<PATADevice>(PATADevice::find(
 					PATADevice::PRIMARY,
 					PATADevice::MASTER,
 					CommandLine::inst().has_option("use_pio") //Use PIO if the command line option is present

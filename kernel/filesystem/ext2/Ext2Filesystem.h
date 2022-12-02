@@ -30,7 +30,7 @@ class Ext2BlockGroup;
 class Ext2Inode;
 class Ext2Filesystem: public FileBasedFilesystem {
 public:
-	Ext2Filesystem(const kstd::shared_ptr<FileDescriptor>& file);
+	Ext2Filesystem(const kstd::Arc<FileDescriptor>& file);
 	~Ext2Filesystem();
 	void init();
 
@@ -40,7 +40,7 @@ public:
 	Inode * get_inode_rawptr(ino_t id) override;
 
 	//Reading/writing
-	ResultRet<kstd::shared_ptr<Ext2Inode>> allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent);
+	ResultRet<kstd::Arc<Ext2Inode>> allocate_inode(mode_t mode, uid_t uid, gid_t gid, size_t size, ino_t parent);
 	Result free_inode(Ext2Inode& inode);
 	void read_superblock(ext2_superblock *sb);
 	void write_superblock();

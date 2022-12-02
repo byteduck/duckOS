@@ -26,7 +26,7 @@
 class VirtualTTY: public TTYDevice, private KeyboardHandler, private Term::Listener {
 public:
 	VirtualTTY(unsigned int major, unsigned int minor);
-	static kstd::shared_ptr<VirtualTTY> current_tty();
+	static kstd::Arc<VirtualTTY> current_tty();
 
 	void set_active();
 	bool active();
@@ -40,7 +40,7 @@ protected:
 
 private:
 	static size_t _current_tty;
-	static kstd::shared_ptr<VirtualTTY> _ttys[NUM_TTYS];
+	static kstd::Arc<VirtualTTY> _ttys[NUM_TTYS];
 	size_t _id;
 	Term::Terminal* terminal = nullptr;
 

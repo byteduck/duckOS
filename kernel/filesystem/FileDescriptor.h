@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/kstd/string.h>
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/kstd/unix_types.h>
@@ -32,7 +32,7 @@ class InodeMetadata;
 class Inode;
 class FileDescriptor {
 public:
-	explicit FileDescriptor(const kstd::shared_ptr<File>& file, Process* owner = nullptr);
+	explicit FileDescriptor(const kstd::Arc<File>& file, Process* owner = nullptr);
 	FileDescriptor(FileDescriptor& other, Process* new_owner = nullptr);
 	~FileDescriptor();
 
@@ -44,7 +44,7 @@ public:
 	bool nonblock() const;
 	bool cloexec() const;
 	InodeMetadata metadata();
-	kstd::shared_ptr<File> file();
+	kstd::Arc<File> file();
 	void open();
 	pid_t owner() const;
 	void set_owner(Process* owner);
@@ -67,8 +67,8 @@ public:
 	bool is_fifo_writer() const;
 
 private:
-	kstd::shared_ptr<File> _file;
-	kstd::shared_ptr<Inode> _inode;
+	kstd::Arc<File> _file;
+	kstd::Arc<Inode> _inode;
 	pid_t _owner = -1;
 	kstd::string _path = "";
 	int _id = -1;

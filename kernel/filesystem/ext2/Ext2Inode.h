@@ -69,7 +69,7 @@ public:
 	ssize_t write(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) override;
 	ino_t find_id(const kstd::string& name) override;
 	Result add_entry(const kstd::string& name, Inode& inode) override;
-	ResultRet<kstd::shared_ptr<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) override;
+	ResultRet<kstd::Arc<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) override;
 	Result remove_entry(const kstd::string& name) override;
 	Result truncate(off_t length) override;
 	Result chmod(mode_t mode) override;

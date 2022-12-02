@@ -78,8 +78,8 @@ private:
 
 	//DMA stuff
 	PRDT* _prdt = nullptr;
-	Ptr<VMRegion> _dma_region;
-	Ptr<VMRegion> _prdt_region;
+	kstd::Arc<VMRegion> _dma_region;
+	kstd::Arc<VMRegion> _prdt_region;
 
 	//Interrupt stuff
 	UninterruptibleBooleanBlocker _blocker;

@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/kstd/queue.hpp>
 #include <kernel/kstd/unix_types.h>
 #include <kernel/tasking/SpinLock.h>
@@ -47,7 +47,7 @@ public:
 
 	sockid_t id;
 	pid_t pid;
-	kstd::shared_ptr<kstd::queue<uint8_t>> data_queue;
+	kstd::Arc<kstd::queue<uint8_t>> data_queue;
 	BooleanBlocker _blocker;
 	SpinLock _lock;
 };

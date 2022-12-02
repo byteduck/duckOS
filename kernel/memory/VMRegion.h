@@ -5,7 +5,7 @@
 
 #include "Memory.h"
 #include "VMObject.h"
-#include "../kstd/shared_ptr.hpp"
+#include "../kstd/Arc.h"
 
 struct VMProt {
 	bool read : 1;
@@ -27,10 +27,10 @@ public:
 	 * @param start The start address of the region.
 	 * @param size The end address of the region.
 	 */
-	VMRegion(Ptr<VMObject> object, Ptr<VMSpace> space, size_t start, size_t size, VMProt prot);
+	VMRegion(kstd::Arc<VMObject> object, kstd::Arc<VMSpace> space, size_t start, size_t size, VMProt prot);
 	~VMRegion();
 
-	kstd::shared_ptr<VMObject> object() const { return m_object; }
+	kstd::Arc<VMObject> object() const { return m_object; }
 	VirtualAddress start() const { return m_start; }
 	VirtualAddress end() const { return m_start + m_size; }
 	size_t size() const { return m_size; }
@@ -43,8 +43,8 @@ public:
 
 private:
 	friend class VMSpace;
-	Ptr<VMObject> m_object;
-	Weak<VMSpace> m_space;
+	kstd::Arc<VMObject> m_object;
+	kstd::Weak<VMSpace> m_space;
 	size_t m_start;
 	size_t m_size;
 	VMProt m_prot;

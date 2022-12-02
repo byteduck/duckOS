@@ -22,7 +22,7 @@
 #include "Thread.h"
 #include "Process.h"
 
-WaitBlocker::WaitBlocker(kstd::shared_ptr<Thread> thread, pid_t wait_for) {
+WaitBlocker::WaitBlocker(kstd::Arc<Thread> thread, pid_t wait_for) {
 	_thread = thread;
 	_wait_pid = wait_for;
 	if(_wait_pid < -1) {

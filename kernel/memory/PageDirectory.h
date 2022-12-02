@@ -152,7 +152,7 @@ private:
 	// The type of the page directory.
 	const DirectoryType m_type;
 	// The VMRegion for this page directory's entries.
-	kstd::shared_ptr<VMRegion> m_entries_region;
+	kstd::Arc<VMRegion> m_entries_region;
 	// The page directory entries for this page directory.
 	Entry* m_entries = nullptr;
 	// An array of pointers to the page tables that the directory points to.

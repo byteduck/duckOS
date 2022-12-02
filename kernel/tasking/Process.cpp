@@ -42,7 +42,7 @@
 #include "kernel/memory/AnonymousVMObject.h"
 
 Process* Process::create_kernel(const kstd::string& name, void (*func)()){
-	ProcessArgs args = ProcessArgs(kstd::shared_ptr<LinkedInode>(nullptr));
+	ProcessArgs args = ProcessArgs(kstd::Arc<LinkedInode>(nullptr));
 	auto* ret = new Process(name, (size_t)func, true, &args, 1);
 	return ret->_self_ptr;
 }
@@ -124,11 +124,11 @@ kstd::string Process::exe() {
 	return _exe;
 }
 
-kstd::shared_ptr<LinkedInode> Process::cwd() {
+kstd::Arc<LinkedInode> Process::cwd() {
 	return _cwd;
 }
 
-void Process::set_tty(kstd::shared_ptr<TTYDevice> tty) {
+void Process::set_tty(kstd::Arc<TTYDevice> tty) {
 	_tty = tty;
 }
 
@@ -151,7 +151,7 @@ bool Process::is_kernel_mode() {
 	return _kernel_mode;
 }
 
-kstd::shared_ptr<Thread>& Process::main_thread() {
+kstd::Arc<Thread>& Process::main_thread() {
 	return _threads[0];
 }
 
@@ -163,7 +163,7 @@ void Process::set_last_active_thread(tid_t tid) {
 	_last_active_thread = tid;
 }
 
-const kstd::vector<kstd::shared_ptr<Thread>>& Process::threads() {
+const kstd::vector<kstd::Arc<Thread>>& Process::threads() {
 	return _threads;
 }
 
@@ -196,7 +196,7 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 
 	//Create the main thread
 	auto* main_thread = new Thread(_self_ptr, _cur_tid++, entry_point, args);
-	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
+	_threads.push_back(kstd::Arc<Thread>(main_thread));
 
 	TaskManager::enabled() = en;
 }
@@ -240,7 +240,7 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 
 	//Create the main thread
 	auto* main_thread = new Thread(_self_ptr, _cur_tid++,regs);
-	_threads.push_back(kstd::shared_ptr<Thread>(main_thread));
+	_threads.push_back(kstd::Arc<Thread>(main_thread));
 }
 
 Process::~Process() {
@@ -314,13 +314,13 @@ PageDirectory* Process::page_directory() {
 		return _page_directory.get();
 }
 
-ResultRet<Ptr<VMRegion>> Process::map_object(Ptr<VMObject> object, VMProt prot) {
+ResultRet<kstd::Arc<VMRegion>> Process::map_object(kstd::Arc<VMObject> object, VMProt prot) {
 	auto region = TRY(_vm_space->map_object(object, prot));
 	_vm_regions.push_back(region);
 	return region;
 }
 
-ResultRet<Ptr<VMRegion>> Process::map_object(Ptr<VMObject> object, VirtualAddress address, VMProt prot) {
+ResultRet<kstd::Arc<VMRegion>> Process::map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot) {
 	auto region = TRY(_vm_space->map_object(object, address, prot));
 	_vm_regions.push_back(region);
 	return region;
@@ -460,7 +460,7 @@ int Process::sys_open(UserspacePointer<char> filename, int options, int mode) {
 int Process::sys_close(int file) {
 	if(file < 0 || file >= (int) _file_descriptors.size() || !_file_descriptors[file])
 		return -EBADF;
-	_file_descriptors[file] = kstd::shared_ptr<FileDescriptor>(nullptr);
+	_file_descriptors[file] = kstd::Arc<FileDescriptor>(nullptr);
 	return 0;
 }
 

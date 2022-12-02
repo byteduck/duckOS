@@ -78,16 +78,16 @@ char* ProcFS::name() {
 	return "procfs";
 }
 
-ResultRet<kstd::shared_ptr<Inode>> ProcFS::get_inode(ino_t id) {
+ResultRet<kstd::Arc<Inode>> ProcFS::get_inode(ino_t id) {
 	if(id == root_inode_id())
-		return static_cast<kstd::shared_ptr<Inode>>(root_inode);
+		return static_cast<kstd::Arc<Inode>>(root_inode);
 	else if(id == id_for_entry(0, RootCurProcEntry))
-		return static_cast<kstd::shared_ptr<Inode>>(kstd::make_shared<ProcFSInode>(*this, ProcFSEntry(RootProcEntry, TaskManager::current_process()->pid())));
+		return static_cast<kstd::Arc<Inode>>(kstd::make_shared<ProcFSInode>(*this, ProcFSEntry(RootProcEntry, TaskManager::current_process()->pid())));
 
 	LOCK(lock);
 	for(size_t i = 0; i < entries.size(); i++) {
 		if(entries[i].dir_entry.id == id)
-			return static_cast<kstd::shared_ptr<Inode>>(kstd::make_shared<ProcFSInode>(*this, entries[i]));
+			return static_cast<kstd::Arc<Inode>>(kstd::make_shared<ProcFSInode>(*this, entries[i]));
 	}
 
 	return Result(-ENOENT);

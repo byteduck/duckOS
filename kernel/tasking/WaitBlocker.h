@@ -21,12 +21,12 @@
 
 #include "Blocker.h"
 #include <kernel/kstd/unix_types.h>
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 
 class Thread;
 class WaitBlocker: public Blocker {
 public:
-	WaitBlocker(kstd::shared_ptr<Thread> thread, pid_t wait_for);
+	WaitBlocker(kstd::Arc<Thread> thread, pid_t wait_for);
 	bool is_ready() override;
 
 	pid_t waited_pid();
@@ -38,6 +38,6 @@ private:
 	int _exit_status = 0;
 	pid_t _wait_pid;
 	pid_t _wait_pgid;
-	kstd::shared_ptr<Thread> _thread;
+	kstd::Arc<Thread> _thread;
 };
 

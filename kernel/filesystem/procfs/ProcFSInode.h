@@ -37,11 +37,11 @@ public:
 	InodeMetadata metadata() override;
 	ino_t find_id(const kstd::string& name) override;
 	ssize_t read(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) override;
-	ResultRet<kstd::shared_ptr<LinkedInode>> resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) override;
+	ResultRet<kstd::Arc<LinkedInode>> resolve_link(const kstd::Arc<LinkedInode>& base, const User& user, kstd::Arc<LinkedInode>* parent_storage, int options, int recursion_level) override;
 	ssize_t read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) override;
 	ssize_t write(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) override;
 	Result add_entry(const kstd::string& name, Inode& inode) override;
-	ResultRet<kstd::shared_ptr<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) override;
+	ResultRet<kstd::Arc<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) override;
 	Result remove_entry(const kstd::string& name) override;
 	Result truncate(off_t length) override;
 	Result chmod(mode_t mode) override;

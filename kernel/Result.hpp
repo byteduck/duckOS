@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/kstd/kstdio.h>
 
 #define TRY(expr) \

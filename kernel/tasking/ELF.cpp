@@ -112,8 +112,8 @@ ResultRet<kstd::string> ELF::read_interp(FileDescriptor& fd, kstd::vector<elf32_
 	return Result(-ENOENT);
 }
 
-ResultRet<kstd::vector<Ptr<VMRegion>>> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const Ptr<VMSpace>& vm_space) {
-	kstd::vector<Ptr<VMRegion>> regions;
+ResultRet<kstd::vector<kstd::Arc<VMRegion>>> ELF::load_sections(FileDescriptor& fd, kstd::vector<elf32_segment_header>& headers, const kstd::Arc<VMSpace>& vm_space) {
+	kstd::vector<kstd::Arc<VMRegion>> regions;
 	for(uint32_t i = 0; i < headers.size(); i++) {
 		auto& header = headers[i];
 		if(header.p_type == ELF_PT_LOAD) {
@@ -141,7 +141,7 @@ ResultRet<kstd::vector<Ptr<VMRegion>>> ELF::load_sections(FileDescriptor& fd, ks
 	return regions;
 }
 
-ResultRet<ELF::ElfInfo> ELF::read_info(const kstd::shared_ptr<FileDescriptor>& fd, User& user, kstd::string interpreter) {
+ResultRet<ELF::ElfInfo> ELF::read_info(const kstd::Arc<FileDescriptor>& fd, User& user, kstd::string interpreter) {
 	//Read the ELF header
 	auto header_or_err = ELF::read_header(*fd);
 	if(header_or_err.is_error())
@@ -176,5 +176,5 @@ ResultRet<ELF::ElfInfo> ELF::read_info(const kstd::shared_ptr<FileDescriptor>& f
 		return read_info(interp_fd, user, interp_or_err.value());
 	}
 
-	return ElfInfo {kstd::shared_ptr<elf32_header>(header), segment_headers, fd, interpreter };
+	return ElfInfo {kstd::Arc<elf32_header>(header), segment_headers, fd, interpreter };
 }

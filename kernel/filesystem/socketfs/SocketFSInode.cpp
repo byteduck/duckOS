@@ -114,7 +114,7 @@ ssize_t SocketFSInode::read(size_t start, size_t length, SafePointer<uint8_t> bu
 	return length;
 }
 
-ResultRet<kstd::shared_ptr<LinkedInode>> SocketFSInode::resolve_link(const kstd::shared_ptr<LinkedInode>& base, const User& user, kstd::shared_ptr<LinkedInode>* parent_storage, int options, int recursion_level) {
+ResultRet<kstd::Arc<LinkedInode>> SocketFSInode::resolve_link(const kstd::Arc<LinkedInode>& base, const User& user, kstd::Arc<LinkedInode>* parent_storage, int options, int recursion_level) {
 	return Result(-ENOLINK);
 }
 
@@ -225,7 +225,7 @@ Result SocketFSInode::add_entry(const kstd::string& add_name, Inode& inode) {
 	return Result(-EINVAL);
 }
 
-ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::string& create_name, mode_t mode, uid_t uid, gid_t gid) {
+ResultRet<kstd::Arc<Inode>> SocketFSInode::create_entry(const kstd::string& create_name, mode_t mode, uid_t uid, gid_t gid) {
 	if(id != 1)
 		return Result(-ENOTDIR);
 	LOCK(fs.lock);
@@ -250,7 +250,7 @@ ResultRet<kstd::shared_ptr<Inode>> SocketFSInode::create_entry(const kstd::strin
 	//Create the socket and return it
 	auto new_inode = kstd::make_shared<SocketFSInode>(fs, create_id, create_name, mode, uid, gid);
 	fs.sockets.push_back(new_inode);
-	return static_cast<kstd::shared_ptr<Inode>>(new_inode);
+	return static_cast<kstd::Arc<Inode>>(new_inode);
 }
 
 Result SocketFSInode::remove_entry(const kstd::string& remove_name) {

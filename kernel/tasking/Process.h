@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/kstd/queue.hpp>
 #include "Signal.h"
 #include "../memory/VMSpace.h"
@@ -66,18 +66,18 @@ public:
 	User user();
 	kstd::string name();
 	kstd::string exe();
-	kstd::shared_ptr<LinkedInode> cwd();
-	void set_tty(kstd::shared_ptr<TTYDevice> tty);
+	kstd::Arc<LinkedInode> cwd();
+	void set_tty(kstd::Arc<TTYDevice> tty);
 	State state();
 	int main_thread_state();
 	int exit_status();
 	bool is_kernel_mode();
 
 	//Threads
-	kstd::shared_ptr<Thread>& main_thread();
+	kstd::Arc<Thread>& main_thread();
 	tid_t last_active_thread();
 	void set_last_active_thread(tid_t tid);
-	const kstd::vector<kstd::shared_ptr<Thread>>& threads();
+	const kstd::vector<kstd::Arc<Thread>>& threads();
 
 	//Signals and death
 	void kill(int signal);
@@ -88,8 +88,8 @@ public:
 
 	//Memory
 	PageDirectory* page_directory();
-	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VMProt prot);
-	ResultRet<Ptr<VMRegion>> map_object(Ptr<VMObject> object, VirtualAddress address, VMProt prot);
+	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VMProt prot);
+	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot);
 
 	//Syscalls
 	void check_ptr(const void* ptr, bool write = false);
@@ -179,7 +179,7 @@ private:
 	pid_t _ppid = 0;
 	pid_t _sid = 0;
 	pid_t _pgid = 0;
-	kstd::shared_ptr<TTYDevice> _tty;
+	kstd::Arc<TTYDevice> _tty;
 	User _user;
 	mode_t _umask = 022;
 	int _exit_status = 0;
@@ -188,14 +188,14 @@ private:
 	bool _kernel_mode = false;
 
 	//Memory
-	Ptr<VMSpace> _vm_space;
-	kstd::shared_ptr<PageDirectory> _page_directory;
-	kstd::vector<Ptr<VMRegion>> _vm_regions;
+	kstd::Arc<VMSpace> _vm_space;
+	kstd::Arc<PageDirectory> _page_directory;
+	kstd::vector<kstd::Arc<VMRegion>> _vm_regions;
 	SpinLock m_mem_lock;
 
 	//Files & Pipes
-	kstd::vector<kstd::shared_ptr<FileDescriptor>> _file_descriptors;
-	kstd::shared_ptr<LinkedInode> _cwd;
+	kstd::vector<kstd::Arc<FileDescriptor>> _file_descriptors;
+	kstd::Arc<LinkedInode> _cwd;
 
 	//Blocking stuff
 	SpinLock _lock;
@@ -205,7 +205,7 @@ private:
 	kstd::queue<int> pending_signals;
 
 	//Threads
-	kstd::vector<kstd::shared_ptr<Thread>> _threads;
+	kstd::vector<kstd::Arc<Thread>> _threads;
 	tid_t _cur_tid = 1;
 	tid_t _last_active_thread = 1;
 

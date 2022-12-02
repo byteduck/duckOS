@@ -30,7 +30,7 @@
 #include <kernel/kstd/unix_types.h>
 #include <kernel/kstd/KLog.h>
 
-kstd::vector<kstd::shared_ptr<Device>> Device::_devices;
+kstd::vector<kstd::Arc<Device>> Device::_devices;
 SpinLock Device::_lock;
 
 void Device::init() {
@@ -46,7 +46,7 @@ Device::Device(unsigned major, unsigned minor): _major(major), _minor(minor) {
 	LOCK(_lock);
 	auto res = get_device(_major, _minor);
 	if (res.is_error() && res.code() == -ENODEV) {
-		_devices.push_back(kstd::shared_ptr<Device>(this));
+		_devices.push_back(kstd::Arc<Device>(this));
 		KLog::dbg("Device", "Device %d,%d registered", _major, _minor);
 	} else {
 		KLog::warn("Device", "Tried to register already-registered device %d,%d!", _major, _minor);
@@ -64,20 +64,20 @@ unsigned Device::minor() {
 	return _minor;
 }
 
-kstd::shared_ptr<Device> Device::shared_ptr() {
+kstd::Arc<Device> Device::shared_ptr() {
 	auto res = get_device(major(), minor());
 	if(res.is_error() || res.value().get() != this)
-		return kstd::shared_ptr<Device>(nullptr);
+		return kstd::Arc<Device>(nullptr);
 	else
 		return res.value();
 }
 
 
-kstd::vector<kstd::shared_ptr<Device>> Device::devices() {
+kstd::vector<kstd::Arc<Device>> Device::devices() {
 	return _devices;
 }
 
-ResultRet<kstd::shared_ptr<Device>> Device::get_device(unsigned major, unsigned minor) {
+ResultRet<kstd::Arc<Device>> Device::get_device(unsigned major, unsigned minor) {
 	LOCK(_lock);
 	for(size_t i = 0; i < _devices.size(); i++) {
 		if(_devices[i]){

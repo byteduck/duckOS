@@ -57,14 +57,14 @@ public:
 
 	//Filesystem
 	char* name() override;
-	ResultRet<kstd::shared_ptr<Inode>> get_inode(ino_t id) override;
+	ResultRet<kstd::Arc<Inode>> get_inode(ino_t id) override;
 	ino_t root_inode_id() override;
 	uint8_t fsid() override;
 
 protected:
 	friend class SocketFSInode;
-	kstd::vector<kstd::shared_ptr<SocketFSInode>> sockets;
-	kstd::shared_ptr<SocketFSInode> root_entry;
+	kstd::vector<kstd::Arc<SocketFSInode>> sockets;
+	kstd::Arc<SocketFSInode> root_entry;
 	SpinLock lock;
 
 };

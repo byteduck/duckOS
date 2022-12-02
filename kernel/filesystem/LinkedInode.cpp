@@ -22,12 +22,12 @@
 #include <kernel/User.h>
 #include "LinkedInode.h"
 
-LinkedInode::LinkedInode(const kstd::shared_ptr<Inode>& inode, const kstd::string& name, const kstd::shared_ptr<LinkedInode>& parent):
+LinkedInode::LinkedInode(const kstd::Arc<Inode>& inode, const kstd::string& name, const kstd::Arc<LinkedInode>& parent):
 	_inode(inode), _parent(parent), _name(name) {}
 
 LinkedInode::~LinkedInode() = default;
 
-kstd::shared_ptr<Inode> LinkedInode::inode() {
+kstd::Arc<Inode> LinkedInode::inode() {
 	return _inode;
 }
 
@@ -35,7 +35,7 @@ kstd::string LinkedInode::name() {
 	return _name;
 }
 
-kstd::shared_ptr<LinkedInode> LinkedInode::parent() {
+kstd::Arc<LinkedInode> LinkedInode::parent() {
 	return _parent;
 }
 

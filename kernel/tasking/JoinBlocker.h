@@ -22,19 +22,19 @@
 
 #include "Blocker.h"
 #include <kernel/kstd/unix_types.h>
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 
 class Thread;
 class JoinBlocker: public Blocker {
 public:
-	JoinBlocker(kstd::shared_ptr<Thread> thread, kstd::shared_ptr<Thread> wait_for);
+	JoinBlocker(kstd::Arc<Thread> thread, kstd::Arc<Thread> wait_for);
 	bool is_ready() override;
-	kstd::shared_ptr<Thread> waited_thread();
+	kstd::Arc<Thread> waited_thread();
 private:
 	int _err = 0;
 	int _exit_status = 0;
-	kstd::shared_ptr<Thread> _wait_thread;
-	kstd::shared_ptr<Thread> _thread;
+	kstd::Arc<Thread> _wait_thread;
+	kstd::Arc<Thread> _thread;
 };
 
 

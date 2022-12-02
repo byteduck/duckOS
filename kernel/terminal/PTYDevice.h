@@ -27,7 +27,7 @@ class PTYControllerDevice;
 class PTYFS;
 class PTYDevice: public TTYDevice {
 public:
-	PTYDevice(unsigned int id, const kstd::shared_ptr<PTYControllerDevice>& controller);
+	PTYDevice(unsigned int id, const kstd::Arc<PTYControllerDevice>& controller);
 
 	void ref_inc();
 	void ref_dec();
@@ -43,7 +43,7 @@ private:
 	size_t tty_write(const uint8_t* chars, size_t count) override;
 	void echo(uint8_t c) override;
 
-	kstd::shared_ptr<PTYControllerDevice> _controller;
+	kstd::Arc<PTYControllerDevice> _controller;
 	kstd::string _name;
 	unsigned int num_refs = 1;
 	SpinLock _lock;

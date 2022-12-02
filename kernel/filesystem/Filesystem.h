@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <kernel/kstd/shared_ptr.hpp>
+#include <kernel/kstd/Arc.h>
 #include <kernel/kstd/unix_types.h>
 #include <kernel/Result.hpp>
 #include "Inode.h"
@@ -29,7 +29,7 @@ public:
 	Filesystem();
 
 	virtual char* name();
-	virtual ResultRet<kstd::shared_ptr<Inode>> get_inode(ino_t id);
+	virtual ResultRet<kstd::Arc<Inode>> get_inode(ino_t id);
 	virtual ino_t root_inode_id();
 	virtual uint8_t fsid();
 
