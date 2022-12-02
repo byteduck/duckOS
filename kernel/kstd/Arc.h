@@ -7,23 +7,23 @@
 
 namespace kstd {
 	template<typename T>
-	class WeakPtr;
+	class Weak;
 
 	template<typename T>
-	class Shared;
-	class SharedBase;
+	class ArcSelf;
+	class ArcSelfBase;
 
 	template<typename T>
-	void __set_shared_weak_self(SharedBase* base, WeakPtr<T> weak);
+	void __set_shared_weak_self(ArcSelfBase* base, Weak<T> weak);
 
 	template<typename T>
-	class SharedPtr {
+	class Arc {
 	public:
-		SharedPtr(): m_ptr(nullptr), m_count(nullptr) {}
+		Arc(): m_ptr(nullptr), m_count(nullptr) {}
 
 		// SharedPtr<U> -> SharedPtr<T>
 		template<typename U>
-		SharedPtr(const SharedPtr<U>& other):
+		Arc(const Arc<U>& other):
 			m_ptr((T*)(other.m_ptr)),
 			m_count(other.m_count)
 		{
@@ -32,7 +32,7 @@ namespace kstd {
 		}
 
 		// Copy constructor
-		SharedPtr(const SharedPtr<T>& other):
+		Arc(const Arc<T>& other):
 				m_ptr(other.m_ptr),
 				m_count(other.m_count)
 		{
@@ -42,7 +42,7 @@ namespace kstd {
 
 		// Move SharedPtr<U> -> SharedPtr<T>
 		template<typename U>
-		SharedPtr(SharedPtr<U>&& other):
+		Arc(Arc<U>&& other) noexcept:
 			m_ptr((T*)(other.m_ptr)),
 			m_count(other.m_count)
 		{
@@ -51,7 +51,7 @@ namespace kstd {
 		}
 
 		// Move constructor
-		SharedPtr(SharedPtr<T>&& other):
+		Arc(Arc<T>&& other) noexcept:
 				m_ptr(other.m_ptr),
 				m_count(other.m_count)
 		{
@@ -59,17 +59,17 @@ namespace kstd {
 			other.m_count = nullptr;
 		}
 
-		explicit SharedPtr(T* ptr):
+		explicit Arc(T* ptr):
 			m_ptr(ptr),
 			m_count(ptr ? new RefCount(1) : nullptr)
 		{
-			if constexpr(is_base_of<SharedBase, T>) {
+			if constexpr(is_base_of<ArcSelfBase, T>) {
 				if(ptr)
-					__set_shared_weak_self(static_cast<SharedBase*>(ptr), WeakPtr<T>(*this));
+					__set_shared_weak_self(static_cast<ArcSelfBase*>(ptr), Weak<T>(*this));
 			}
 		}
 
-		explicit SharedPtr(T* ptr, RefCount* count):
+		explicit Arc(T* ptr, RefCount* count):
 			m_ptr(ptr),
 			m_count(count)
 		{
@@ -77,7 +77,12 @@ namespace kstd {
 				m_count->acquire_strong();
 		}
 
-		~SharedPtr() {
+		template<typename... Args>
+		static Arc<T> make(Args... args) {
+			return Arc<T>(new T(args...));
+		}
+
+		~Arc() {
 			reset();
 		}
 
@@ -109,7 +114,17 @@ namespace kstd {
 				m_count->release_strong();
 		}
 
-		SharedPtr<T>& operator=(SharedPtr<T> other) {
+		Arc<T>& operator=(const Arc<T>& other) noexcept {
+			if(&other == this)
+				return *this;
+			m_ptr = other.m_ptr;
+			m_count = other.m_count;
+			if(m_count)
+				m_count->acquire_strong();
+			return *this;
+		}
+
+		Arc<T>& operator=(Arc<T>&& other) noexcept {
 			kstd::swap(m_ptr, other.m_ptr);
 			kstd::swap(m_count, other.m_count);
 			return *this;
@@ -129,33 +144,33 @@ namespace kstd {
 		}
 
 		template<typename U>
-		bool operator==(const SharedPtr<U>& other) const {
+		bool operator==(const Arc<U>& other) const {
 			return other.m_ptr == m_ptr;
 		}
 
 		template<typename U>
-		bool operator!=(const SharedPtr<U>& other) const {
+		bool operator!=(const Arc<U>& other) const {
 			return other.m_ptr != m_ptr;
 		}
 
 	private:
 		template<typename U>
-		friend class SharedPtr;
+		friend class Arc;
 		template<typename U>
-		friend class WeakPtr;
+		friend class Weak;
 
 		T* m_ptr = nullptr;
 		RefCount* m_count = nullptr;
 	};
 
 	template<typename T>
-	class WeakPtr {
+	class Weak {
 	public:
-		WeakPtr(): m_ptr(nullptr), m_count(nullptr) {}
+		Weak(): m_ptr(nullptr), m_count(nullptr) {}
 
 		// SharedPtr<U> -> WeakPtr<T>
 		template<typename U>
-		WeakPtr(const SharedPtr<U>& other):
+		Weak(const Arc<U>& other):
 				m_ptr((T*)(other.m_ptr)),
 				m_count(other.m_count)
 		{
@@ -165,7 +180,7 @@ namespace kstd {
 
 		// Move SharedPtr<U> -> WeakPtr<T>
 		template<typename U>
-		WeakPtr(SharedPtr<U>&& other):
+		Weak(Arc<U>&& other):
 				m_ptr((T*)(other.m_ptr)),
 				m_count(other.m_count)
 		{
@@ -175,7 +190,7 @@ namespace kstd {
 
 		// WeakPtr<U> -> WeakPtr<T>
 		template<typename U>
-		WeakPtr(const WeakPtr<U>& other):
+		Weak(const Weak<U>& other):
 				m_ptr((T*)(other.m_ptr)),
 				m_count(other.m_count)
 		{
@@ -184,7 +199,7 @@ namespace kstd {
 		}
 
 		// Copy constructor
-		WeakPtr(const WeakPtr<T>& other):
+		Weak(const Weak<T>& other):
 				m_ptr(other.m_ptr),
 				m_count(other.m_count)
 		{
@@ -194,7 +209,7 @@ namespace kstd {
 
 		// Move WeakPtr<U> -> WeakPtr<T>
 		template<typename U>
-		WeakPtr(WeakPtr<U>&& other):
+		Weak(Weak<U>&& other):
 				m_ptr(static_cast<T*>(other.m_ptr)),
 				m_count(other.m_count)
 		{
@@ -203,7 +218,7 @@ namespace kstd {
 		}
 
 		// Move constructor
-		WeakPtr(WeakPtr<T>&& other):
+		Weak(Weak<T>&& other):
 				m_ptr(other.m_ptr),
 				m_count(other.m_count)
 		{
@@ -211,24 +226,34 @@ namespace kstd {
 			other.m_count = nullptr;
 		}
 
-		~WeakPtr() {
+		~Weak() {
 			reset();
 		}
 
-		SharedPtr<T> lock() {
+		Arc<T> lock() {
 			if(m_count && m_count->make_strong()) {
-				auto ret = SharedPtr<T>(m_ptr, m_count);
+				auto ret = Arc<T>(m_ptr, m_count);
 				m_count->release_strong();
 				return ret;
 			}
-			return SharedPtr<T>(nullptr);
+			return Arc<T>(nullptr);
 		}
 
 		operator bool() const {
 			return m_count && m_count->strong_count();
 		}
 
-		WeakPtr<T>& operator=(WeakPtr<T> other) {
+		Weak<T>& operator=(const Weak<T>& other) noexcept {
+			if(&other == this)
+				return *this;
+			m_ptr = other.m_ptr;
+			m_count = other.m_count;
+			if(m_count)
+				m_count->acquire_weak();
+			return *this;
+		}
+
+		Weak<T>& operator=(Weak<T>&& other) noexcept {
 			kstd::swap(m_ptr, other.m_ptr);
 			kstd::swap(m_count, other.m_count);
 			return *this;
@@ -253,68 +278,68 @@ namespace kstd {
 		}
 
 		template<typename U>
-		bool operator==(const WeakPtr<U>& other) {
+		bool operator==(const Weak<U>& other) {
 			return other.m_ptr == m_ptr;
 		}
 
 		template<typename U>
-		bool operator!=(const WeakPtr<U>& other) {
+		bool operator!=(const Weak<U>& other) {
 			return other.m_ptr != m_ptr;
 		}
 
 	private:
 		template<typename U>
-		friend class WeakPtr;
+		friend class Weak;
 
 		T* m_ptr = nullptr;
 		RefCount* m_count = nullptr;
 	};
 
 	template<typename T, class... Args>
-	SharedPtr<T> make_shared(Args&&... args) {
-		return SharedPtr<T>(new T(args...));
+	Arc<T> make_shared(Args&&... args) {
+		return Arc<T>(new T(args...));
 	}
 
 	template<class T, class U>
-	SharedPtr<T> static_pointer_cast(const SharedPtr<U>& ptr) // never throws
+	Arc<T> static_pointer_cast(const Arc<U>& ptr) // never throws
 	{
-		return SharedPtr<T>(static_cast<T*>(ptr.get()), ptr.ref_count());
+		return Arc<T>(static_cast<T*>(ptr.get()), ptr.ref_count());
 	}
 
 	template<class T, class U>
-	WeakPtr<T> static_pointer_cast(const WeakPtr<U>& ptr) // never throws
+	Weak<T> static_pointer_cast(const Weak<U>& ptr) // never throws
 	{
-		return WeakPtr<T>(static_cast<T*>(ptr.get()), ptr.ref_count());
+		return Weak<T>(static_cast<T*>(ptr.get()), ptr.ref_count());
 	}
 
-	class SharedBase {
+	class ArcSelfBase {
 	protected:
 		template<typename T>
-		friend void __set_shared_weak_self(SharedBase* base, WeakPtr<T> weak);
+		friend void __set_shared_weak_self(ArcSelfBase* base, Weak<T> weak);
 
-		WeakPtr<void*> m_weak_self;
+		Weak<void*> m_weak_self;
 	};
 
 	template<typename T>
-	class Shared: public SharedBase {
+	class ArcSelf: public ArcSelfBase {
 	public:
-		inline SharedPtr<T> self() {
+		inline Arc<T> self() {
 			ASSERT(m_weak_self.operator bool());
 			return m_weak_self.lock();
 		}
 	};
 
 	template<typename T>
-	void __set_shared_weak_self(SharedBase* base, WeakPtr<T> weak) {
+	void __set_shared_weak_self(ArcSelfBase* base, Weak<T> weak) {
 		base->m_weak_self = weak;
 	}
 
 	template<typename T>
-	using shared_ptr = SharedPtr<T>;
+	using shared_ptr = Arc<T>;
 }
 
 template<typename T>
-using Ptr = kstd::SharedPtr<T>;
+using Ptr = kstd::Arc<T>;
 
 template<typename T>
-using Weak = kstd::WeakPtr<T>;
+using Weak = kstd::Weak<T>;

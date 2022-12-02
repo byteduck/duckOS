@@ -2,9 +2,12 @@
 /* Copyright © 2016-2022 Byteduck */
 
 #include "../KernelTest.h"
-#include "../../kstd/SharedPtr.h"
+#include "../../kstd/Arc.h"
 
-class TestClass: public kstd::Shared<TestClass> {
+using kstd::ArcSelf;
+using kstd::Arc;
+
+class TestClass: public ArcSelf<TestClass> {
 public:
 	static int num_alloced;
 
@@ -19,24 +22,24 @@ public:
 
 int TestClass::num_alloced = 0;
 
-KERNEL_TEST(basic_shared_ptr) {
+KERNEL_TEST(basic_arc) {
 	TestClass::num_alloced = 0;
-	kstd::vector<kstd::SharedPtr<TestClass>> vec;
+	kstd::vector<Arc<TestClass>> vec;
 	for(int i = 0; i < 1000; i++)
-		vec.push_back(kstd::make_shared<TestClass>());
+		vec.push_back(Arc<TestClass>::make());
 	ENSURE_EQ(TestClass::num_alloced, 1000);
 	for(int i = 0; i < 1000; i++)
 		vec.erase(0);
 	ENSURE_EQ(TestClass::num_alloced, 0);
 }
 
-KERNEL_TEST(basic_weak_ptr) {
+KERNEL_TEST(basic_weak) {
 	TestClass::num_alloced = 0;
-	kstd::vector<kstd::SharedPtr<TestClass>> vec;
-	kstd::vector<kstd::WeakPtr<TestClass>> weak_vec;
+	kstd::vector<Arc<TestClass>> vec;
+	kstd::vector<Weak<TestClass>> weak_vec;
 
 	for(int i = 0; i < 1000; i++) {
-		auto test = kstd::make_shared<TestClass>();
+		auto test = Arc<TestClass>::make();
 		vec.push_back(test);
 		weak_vec.push_back(test);
 	}
@@ -55,25 +58,25 @@ KERNEL_TEST(basic_weak_ptr) {
 		ENSURE(!weak_vec[i]);
 }
 
-KERNEL_TEST(shared_ptr_refcount) {
+KERNEL_TEST(arc_refcount) {
 	TestClass::num_alloced = 0;
-	kstd::SharedPtr<TestClass> first_ptr(new TestClass());
+	kstd::Arc<TestClass> first_ptr(new TestClass());
 	auto* ref_count = first_ptr.ref_count();
 	ENSURE_EQ(ref_count->strong_count(), 1);
 	ENSURE_EQ(ref_count->weak_count(), 1);
 	ENSURE_EQ(TestClass::num_alloced, 1);
 
-	kstd::WeakPtr<TestClass> second_ptr = first_ptr;
+	kstd::Weak<TestClass> second_ptr = first_ptr;
 	ENSURE_EQ(ref_count->strong_count(), 1);
 	ENSURE_EQ(ref_count->weak_count(), 2);
 	ENSURE_EQ(TestClass::num_alloced, 1);
 
-	kstd::WeakPtr<TestClass> third_ptr = first_ptr->self();
+	kstd::Weak<TestClass> third_ptr = first_ptr->self();
 	ENSURE_EQ(ref_count->strong_count(), 1);
 	ENSURE_EQ(ref_count->weak_count(), 3);
 	ENSURE_EQ(TestClass::num_alloced, 1);
 
-	kstd::SharedPtr<TestClass> fourth_ptr = third_ptr.lock();
+	kstd::Arc<TestClass> fourth_ptr = third_ptr.lock();
 	ENSURE_EQ(ref_count->strong_count(), 2);
 	ENSURE_EQ(ref_count->weak_count(), 3);
 	ENSURE_EQ(TestClass::num_alloced, 1);
@@ -86,5 +89,32 @@ KERNEL_TEST(shared_ptr_refcount) {
 	fourth_ptr.reset();
 	ENSURE_EQ(ref_count->strong_count(), 0);
 	ENSURE_EQ(ref_count->weak_count(), 2);
+	ENSURE_EQ(TestClass::num_alloced, 0);
+}
+
+KERNEL_TEST(arc_assignment) {
+	TestClass::num_alloced = 0;
+	auto arc = Arc<TestClass>::make();
+	ENSURE_EQ(TestClass::num_alloced, 1);
+	ENSURE_EQ(arc.ref_count()->strong_count(), 1);
+
+	arc = Arc<TestClass>::make();
+	ENSURE_EQ(TestClass::num_alloced, 1);
+	ENSURE_EQ(arc.ref_count()->strong_count(), 1);
+
+	arc = arc;
+	ENSURE_EQ(TestClass::num_alloced, 1);
+	ENSURE_EQ(arc.ref_count()->strong_count(), 1);
+
+	auto arc2 = arc;
+	ENSURE_EQ(TestClass::num_alloced, 1);
+	ENSURE_EQ(arc2.ref_count(), arc.ref_count());
+	ENSURE_EQ(arc.ref_count()->strong_count(), 2);
+
+	arc.reset();
+	ENSURE_EQ(TestClass::num_alloced, 1);
+	ENSURE_EQ(arc2.ref_count()->strong_count(), 1);
+
+	arc2.reset();
 	ENSURE_EQ(TestClass::num_alloced, 0);
 }

@@ -19,7 +19,7 @@ class VMSpace;
 /**
  * This class describes a region in virtual memory in a specific address space.
  */
-class VMRegion: public kstd::Shared<VMRegion> {
+class VMRegion: public kstd::ArcSelf<VMRegion> {
 public:
 	/**
 	 * Creates a new virtual memory region.

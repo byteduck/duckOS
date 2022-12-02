@@ -12,7 +12,7 @@
  * address spaces (ie page directories / processes), and may be mapped at different virtual locations in each one.
  * VMObject is never used directly - instead, its subclasses are used.
  */
-class VMObject: public kstd::Shared<VMObject> {
+class VMObject: public kstd::ArcSelf<VMObject> {
 public:
 	explicit VMObject(kstd::vector<PageIndex> physical_pages);
 	VMObject(const VMObject& other) = delete;
