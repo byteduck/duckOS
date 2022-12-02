@@ -106,27 +106,27 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 			kstd::string str;
 
 			str += "[mem]\nusable = ";
-			itoa((int) 0, numbuf, 10);
+			itoa((int) MM.usable_mem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nused = ";
-			itoa((int) 0, numbuf, 10);
+			itoa((int) MM.used_pmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nreserved = ";
-			itoa((int) 0, numbuf, 10);
+			itoa((int) MM.reserved_pmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nkvirt = ";
-			itoa((int) 0, numbuf, 10);
+			itoa((int) MM.kernel_vmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nkphys = ";
-			itoa((int) 0, numbuf, 10);
+			itoa((int) MM.kernel_pmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nkheap = ";
-			itoa((int) 0, numbuf, 10);
+			itoa((int) MM.kernel_heap(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nkcache = ";
@@ -221,15 +221,15 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 			str += numbuf;
 
 			str += "\npmem = ";
-			itoa(0, numbuf, 10);
+			itoa(proc.value()->used_pmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nvmem = ";
-			itoa(0, numbuf, 10);
+			itoa(proc.value()->used_vmem(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nshmem = ";
-			itoa(0, numbuf, 10);
+			itoa(proc.value()->used_shmem(), numbuf, 10);
 			str += numbuf;
 			str += "\n";
 

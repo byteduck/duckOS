@@ -63,6 +63,7 @@ public:
 	ResultRet<VMProt> get_shared_permissions(pid_t pid);
 
 	bool is_shared() const { return m_is_shared; }
+	pid_t shared_owner() const { return m_shared_owner; }
 	int shm_id() const { return m_shm_id; }
 	ForkAction fork_action() const { return m_fork_action; }
 
@@ -81,6 +82,7 @@ private:
 	SpinLock m_lock;
 	kstd::map<pid_t, VMProt> m_shared_permissions;
 	bool m_is_shared = false;
+	pid_t m_shared_owner;
 	int m_shm_id = 0;
 	ForkAction m_fork_action = ForkAction::BecomeCoW;
 };

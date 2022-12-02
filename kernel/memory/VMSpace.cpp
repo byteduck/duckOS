@@ -363,6 +363,7 @@ ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space_at(size_t size, VirtualA
 Result VMSpace::free_region(VMSpaceRegion* region) {
 	region->used = false;
 	region->vmRegion = nullptr;
+	m_used -= region->size;
 
 	// Merge previous region if needed
 	if(region->prev && !region->prev->used) {
@@ -387,6 +388,5 @@ Result VMSpace::free_region(VMSpaceRegion* region) {
 		delete to_delete;
 	}
 
-	m_used -= region->size;
 	return Result(SUCCESS);
 }

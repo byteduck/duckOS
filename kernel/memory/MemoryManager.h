@@ -170,6 +170,14 @@ public:
 	 */
 	void finalize_heap_pages();
 
+	// Various usage statistics
+	size_t usable_mem() const;
+	size_t used_pmem() const;
+	size_t reserved_pmem() const;
+	size_t kernel_vmem() const;
+	size_t kernel_pmem() const;
+	size_t kernel_heap() const;
+
 private:
 	friend class PhysicalRegion;
 

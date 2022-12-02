@@ -90,6 +90,9 @@ public:
 	PageDirectory* page_directory();
 	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VMProt prot);
 	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot);
+	size_t used_pmem() const;
+	size_t used_vmem() const;
+	size_t used_shmem() const;
 
 	//Syscalls
 	void check_ptr(const void* ptr, bool write = false);
@@ -192,6 +195,8 @@ private:
 	kstd::Arc<PageDirectory> _page_directory;
 	kstd::vector<kstd::Arc<VMRegion>> _vm_regions;
 	SpinLock m_mem_lock;
+	size_t m_used_pmem;
+	size_t m_used_shmem;
 
 	//Files & Pipes
 	kstd::vector<kstd::Arc<FileDescriptor>> _file_descriptors;

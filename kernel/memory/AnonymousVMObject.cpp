@@ -71,6 +71,7 @@ void AnonymousVMObject::share(pid_t pid, VMProt prot) {
 	LOCK(m_lock);
 	if(!m_is_shared) {
 		LOCK_N(s_shared_lock, shared_lock);
+		m_shared_owner = pid;
 		m_shm_id = s_cur_shm_id++;
 		s_shared_objects.insert({m_shm_id, self()});
 		m_is_shared = true;

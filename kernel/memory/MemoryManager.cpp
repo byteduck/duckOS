@@ -37,6 +37,7 @@ size_t usable_lower_limt = ~0;
 size_t usable_upper_limit = 0;
 size_t mem_lower_limit = ~0;
 size_t mem_upper_limit = 0;
+size_t used_kheap_mem;
 
 uint8_t early_kheap_memory[0x200000]; // 2MiB
 size_t used_early_kheap_memory = 0;
@@ -430,6 +431,33 @@ void MemoryManager::finalize_heap_pages() {
 	m_heap_pages.resize(1024);
 }
 
+size_t MemoryManager::usable_mem() const {
+	return usable_bytes_ram;
+}
+
+size_t MemoryManager::used_pmem() const {
+	size_t used_pages = 0;
+	for(size_t i = 0; i < m_physical_regions.size(); i++)
+		used_pages += m_physical_regions[i]->num_pages() - m_physical_regions[i]->free_pages();
+	return used_pages * PAGE_SIZE;
+}
+
+size_t MemoryManager::reserved_pmem() const {
+	return reserved_bytes_ram;
+}
+
+size_t MemoryManager::kernel_vmem() const {
+	return m_kernel_space->used();
+}
+
+size_t MemoryManager::kernel_pmem() const {
+	return kernel_vmem(); //TODO: A better way of tracking who's using how much physical memory...
+}
+
+size_t MemoryManager::kernel_heap() const {
+	return used_kheap_mem;
+}
+
 void liballoc_lock() {
 	MemoryManager::inst().liballoc_spinlock.acquire();
 }
@@ -439,6 +467,8 @@ void liballoc_unlock() {
 }
 
 void *liballoc_alloc(int pages) {
+	used_kheap_mem += pages * PAGE_SIZE;
+
 	// If we still have early kheap memory, use it
 	if(pages * PAGE_SIZE < (sizeof(early_kheap_memory) - used_early_kheap_memory)) {
 		void* ptr = early_kheap_memory + used_early_kheap_memory;
@@ -460,6 +490,8 @@ void liballoc_afteralloc(void* ptr_alloced) {
 }
 
 void liballoc_free(void *ptr, int pages) {
+	used_kheap_mem -= pages * PAGE_SIZE;
+
 	if(ptr > early_kheap_memory && ptr < early_kheap_memory + sizeof(early_kheap_memory)) {
 //		KLog::dbg("Memory", "Tried freeing early kheap memory! This doesn't do anything.");
 		return;

@@ -326,6 +326,18 @@ ResultRet<kstd::Arc<VMRegion>> Process::map_object(kstd::Arc<VMObject> object, V
 	return region;
 }
 
+size_t Process::used_pmem() const {
+	return m_used_pmem;
+}
+
+size_t Process::used_vmem() const {
+	return _vm_space->used();
+}
+
+size_t Process::used_shmem() const {
+	return m_used_shmem;
+}
+
 /************
  * SYSCALLS *
  ************/
@@ -925,6 +937,7 @@ void* Process::sys_memacquire(void* addr, size_t size) {
 		if(res.is_error())
 			return (void*) -EINVAL;
 		_vm_regions.push_back(res.value());
+		m_used_pmem += res.value()->size();
 		return (void*) res.value()->start();
 	} else {
 		//We didn't request a specific address
@@ -932,6 +945,7 @@ void* Process::sys_memacquire(void* addr, size_t size) {
 		if(res.is_error())
 			return (void*) -ENOMEM;
 		_vm_regions.push_back(res.value());
+		m_used_pmem += res.value()->size();
 		return (void*) res.value()->start();
 	}
 }
@@ -941,6 +955,7 @@ int Process::sys_memrelease(void* addr, size_t size) {
 	// Find the region
 	for(size_t i = 0; i < _vm_regions.size(); i++) {
 		if(_vm_regions[i]->start() == (VirtualAddress) addr && _vm_regions[i]->size() == size) {
+			m_used_pmem -= _vm_regions[i]->size();
 			_vm_regions.erase(i);
 			return SUCCESS;
 		}
@@ -960,6 +975,11 @@ int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm>
 	if(region_res.is_error())
 		return region_res.code();
 	auto region = region_res.value();
+
+	m_mem_lock.synced<void>([&]() {
+		m_used_pmem += region->size();
+		m_used_shmem += region->size();
+	});
 
 	shm ret;
 	ret.size = region->size();
@@ -984,6 +1004,8 @@ int Process::sys_shmattach(int id, void* addr, UserspacePointer<struct shm> s) {
 		auto region = TRY(addr ? _vm_space->map_object(object, (VirtualAddress) addr, perms) : _vm_space->map_object(object, perms));
 		LOCK(m_mem_lock);
 		_vm_regions.push_back(region);
+
+		m_used_shmem += region->size();
 
 		// Setup the shm struct
 		struct shm ret = {
@@ -1010,6 +1032,9 @@ int Process::sys_shmdetach(int id) {
 	LOCK(m_mem_lock);
 	for(size_t i = 0; i < _vm_regions.size(); i++) {
 		if(_vm_regions[i]->object() == object) {
+			m_used_shmem -= object->size();
+			if(object->shared_owner() == _pid)
+				m_used_pmem -= object->size();
 			_vm_regions.erase(i);
 			return SUCCESS;
 		}
