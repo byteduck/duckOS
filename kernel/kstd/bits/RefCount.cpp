@@ -44,7 +44,6 @@ void RefCount::acquire_strong() {
 }
 
 void RefCount::acquire_weak() {
-	ASSERT(m_strong_count.load() != 0);
 	m_weak_count.add(1);
 }
 
