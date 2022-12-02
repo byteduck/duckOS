@@ -24,7 +24,7 @@ namespace kstd {
 		// Arc<U> -> Arc<T>
 		template<typename U>
 		Arc(const Arc<U>& other):
-			m_ptr((T*)(other.m_ptr)),
+			m_ptr(static_cast<T*>(other.m_ptr)),
 			m_count(other.m_count)
 		{
 			if(m_count)
@@ -43,7 +43,7 @@ namespace kstd {
 		// Move Arc<U> -> Arc<T>
 		template<typename U>
 		Arc(Arc<U>&& other) noexcept:
-			m_ptr((T*)(other.m_ptr)),
+			m_ptr(static_cast<T*>(other.m_ptr)),
 			m_count(other.m_count)
 		{
 			other.m_ptr = nullptr;
@@ -53,6 +53,16 @@ namespace kstd {
 		// Move constructor
 		Arc(Arc<T>&& other) noexcept:
 				m_ptr(other.m_ptr),
+				m_count(other.m_count)
+		{
+			other.m_ptr = nullptr;
+			other.m_count = nullptr;
+		}
+
+		// Special case for ArcSelf weak -> strong conversion
+		template<typename U = void*>
+		Arc(Arc<void*>&& other) noexcept:
+				m_ptr((T*)(other.m_ptr)),
 				m_count(other.m_count)
 		{
 			other.m_ptr = nullptr;
@@ -171,7 +181,7 @@ namespace kstd {
 		// Weak<U> -> Weak<T>
 		template<typename U>
 		Weak(const Arc<U>& other):
-				m_ptr((T*)(other.m_ptr)),
+				m_ptr(static_cast<T*>(other.m_ptr)),
 				m_count(other.m_count)
 		{
 			if(m_count)
@@ -181,7 +191,7 @@ namespace kstd {
 		// Move Weak<U> -> Weak<T>
 		template<typename U>
 		Weak(Arc<U>&& other):
-				m_ptr((T*)(other.m_ptr)),
+				m_ptr(static_cast<T*>(other.m_ptr)),
 				m_count(other.m_count)
 		{
 			if(m_count)
