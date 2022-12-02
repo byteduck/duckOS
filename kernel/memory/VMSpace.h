@@ -13,7 +13,7 @@
  * This class represents a virtual memory address space and all of the regions it contains. It's used to allocate and
  * map new regions in virtual memory.
  */
-class VMSpace: public kstd::Shared<VMSpace> {
+class VMSpace: public kstd::ArcSelf<VMSpace> {
 public:
 	VMSpace(VirtualAddress start, size_t size, PageDirectory& page_directory);
 	~VMSpace();

@@ -5,7 +5,6 @@
 #include "MemoryManager.h"
 #include "AnonymousVMObject.h"
 #include "../kstd/cstring.h"
-#include "../kstd/KLog.h"
 
 const VMProt VMSpace::default_prot = {
 	.read = true,
@@ -235,8 +234,16 @@ ResultRet<VirtualAddress> VMSpace::find_free_space(size_t size) {
 ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space(size_t size) {
 	ASSERT(size % PAGE_SIZE == 0);
 	auto cur_region = m_region_map;
+
+	/**
+	 * We allocate a new region if we need one BEFORE iterating through the regions, because there's a chance we'll
+	 * need to allocate more pages for the heap and if we're in the middle of iterating through regions when that
+	 * happens, it could get ugly.
+	 */
+	auto new_region = new VMSpaceRegion;
+
 	while(cur_region) {
-		if(cur_region->used) {
+		if(cur_region->used || cur_region->size < size) {
 			cur_region = cur_region->next;
 			continue;
 		}
@@ -244,35 +251,32 @@ ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space(size_t size) {
 		if(cur_region->size == size) {
 			cur_region->used = true;
 			m_used += cur_region->size;
+			delete new_region;
 			return cur_region;
 		}
 
-		if(cur_region->size >= size) {
-			auto new_region = new VMSpaceRegion {
-				.start = cur_region->start,
-				.size = size,
-				.used = true,
-				.next = cur_region,
-				.prev = cur_region->prev
-			};
+		*new_region = VMSpaceRegion {
+			.start = cur_region->start,
+			.size = size,
+			.used = true,
+			.next = cur_region,
+			.prev = cur_region->prev
+		};
 
-			if(cur_region->prev)
-				cur_region->prev->next = new_region;
+		if(cur_region->prev)
+			cur_region->prev->next = new_region;
 
-			cur_region->start += size;
-			cur_region->size -= size;
-			cur_region->prev = new_region;
-			m_used += new_region->size;
+		cur_region->start += size;
+		cur_region->size -= size;
+		cur_region->prev = new_region;
+		m_used += new_region->size;
 
-			if(m_region_map == cur_region)
-				m_region_map = new_region;
-
-			return new_region;
-		}
-
-		cur_region = cur_region->next;
+		if(m_region_map == cur_region)
+			m_region_map = new_region;
+		return new_region;
 	}
 
+	delete new_region;
 	return Result(ENOMEM);
 }
 
@@ -280,21 +284,35 @@ ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space_at(size_t size, VirtualA
 	ASSERT(address % PAGE_SIZE == 0);
 	ASSERT(size % PAGE_SIZE == 0);
 	auto cur_region = m_region_map;
+
+	/**
+	 * We allocate new regions if we need one BEFORE iterating through the regions, because there's a chance we'll
+	 * need to allocate more pages for the heap and if we're in the middle of iterating through regions when that
+	 * happens, it could get ugly.
+	 */
+	auto new_region_before = new VMSpaceRegion;
+	auto new_region_after = new VMSpaceRegion;
+
 	while(cur_region) {
 		if(cur_region->contains(address)) {
-			if(cur_region->used)
+			if(cur_region->used) {
+				delete new_region_before;
+				delete new_region_after;
 				return Result(ENOMEM);
+			}
 
 			if(cur_region->size == size) {
 				cur_region->used = true;
 				m_used += cur_region->size;
+				delete new_region_before;
+				delete new_region_after;
 				return cur_region;
 			}
 
 			if(cur_region->size - (address - cur_region->start) >= size) {
 				// Create new region before if needed
 				if(cur_region->start < address) {
-					auto new_region = new VMSpaceRegion {
+					*new_region_before = VMSpaceRegion {
 						.start = cur_region->start,
 						.size = address - cur_region->start,
 						.used = false,
@@ -302,15 +320,17 @@ ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space_at(size_t size, VirtualA
 						.prev = cur_region->prev
 					};
 					if(cur_region->prev)
-						cur_region->prev->next = new_region;
-					cur_region->prev = new_region;
+						cur_region->prev->next = new_region_before;
+					cur_region->prev = new_region_before;
 					if(m_region_map == cur_region)
-						m_region_map = new_region;
+						m_region_map = new_region_before;
+				} else {
+					delete new_region_before;
 				}
 
 				// Create new region after if needed
 				if(cur_region->end() > address + size) {
-					auto new_region = new VMSpaceRegion {
+					*new_region_after = VMSpaceRegion {
 						.start = address + size,
 						.size = cur_region->end() - (address + size),
 						.used = false,
@@ -318,8 +338,10 @@ ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space_at(size_t size, VirtualA
 						.prev = cur_region
 					};
 					if(cur_region->next)
-						cur_region->next->prev = new_region;
-					cur_region->next = new_region;
+						cur_region->next->prev = new_region_after;
+					cur_region->next = new_region_after;
+				} else {
+					delete new_region_after;
 				}
 
 				cur_region->start = address;
