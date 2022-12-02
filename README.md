@@ -28,8 +28,7 @@ Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.
 
 ### Future plans
 #### Stuff that may happen soon™.
-- Revamp virtual memory system so it's not as error-prone and easier to debug (named regions, fix race conditions, faster allocation, etc.)
-  - Grant-based shared memory
+- ~~Revamp virtual memory system so it's not as error-prone and easier to debug (named regions, fix race conditions, faster allocation, etc.)~~ **Done!**
 - Revamp kernel IPC system to be more efficient (Replace SocketFS with something like Mach or MINIX's grant-based IPC)
 - Better font rendering (Vector fonts, different sizes, etc.)
 - ~~Finish porting GCC~~, self-host
@@ -111,7 +110,7 @@ Programs that take arguments will provide you with the correct usage when you ru
 
 ### Ports
 
-Ports will only compile if their corresponding submodule is downloaded with `git submodule init` and `git submodule update`.
+Ports can be installed by running [ports.sh](ports/ports.sh) supplied with the desired port as an argument. The required dependencies will also be built and installed.
 
 - [DOOM](ports/doom)
 - [binutils](ports/binutils)
