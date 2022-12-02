@@ -34,8 +34,8 @@ public:
 	void release() override;
 private:
 	BooleanBlocker _blocker;
-	Atomic<int> _locked = 0;
 	Atomic<int, MemoryOrder::AcqRel> _times_locked = 0;
+
 	kstd::shared_ptr<Thread> _holding_thread;
 };
 

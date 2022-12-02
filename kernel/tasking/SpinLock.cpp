@@ -47,6 +47,7 @@ void SpinLock::acquire() {
 	//Loop while the lock is held
 	int expected = 0;
 	while(!_times_locked.compare_exchange_strong(expected, 1)) {
+		expected = 0;
 		if(_holding_thread == cur_thread) {
 			// TODO: This is definitely susceptible to a race condition. Figure out how to make a recursive lock that works
 			//We are the holding process, so increment the counter and return
