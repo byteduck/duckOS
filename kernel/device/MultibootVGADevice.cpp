@@ -120,12 +120,7 @@ void MultibootVGADevice::clear(uint32_t color) {
 }
 
 void* MultibootVGADevice::map_framebuffer(Process* proc) {
-	auto region_res = proc->map_object(framebuffer_region->object(), VMProt {
-			.read = true,
-			.write = true,
-			.execute = false,
-			.cow = false
-	});
+	auto region_res = proc->map_object(framebuffer_region->object(), VMProt::RW);
 	if(region_res.is_error())
 		return nullptr;
 	return (void*) region_res.value()->start();

@@ -80,19 +80,9 @@ void PageDirectory::init_paging() {
 
 	// Map the kernel text and data
 
-	map_range(KERNEL_TEXT, KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, VMProt {
-		.read = true,
-		.write = false,
-		.execute = true,
-		.cow = false
-	});
+	map_range(KERNEL_TEXT, KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, VMProt::RX);
 
-	map_range(KERNEL_DATA, KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, VMProt {
-			.read = true,
-			.write = true,
-			.execute = false,
-			.cow = false
-	});
+	map_range(KERNEL_DATA, KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, VMProt::RW);
 
 	// Enable paging
 

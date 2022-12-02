@@ -114,25 +114,13 @@ void MemoryManager::setup_paging() {
 	// Now that we're all set up to use normal methods of mapping stuff, map the kernel and physical pages again
 	auto do_map = [&]() -> Result {
 		auto kernel_text_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE));
-		kernel_text_region = TRY(m_kernel_space->map_object(kernel_text_object, KERNEL_TEXT, VMProt {
-				.read = true,
-				.write = false,
-				.execute = true
-		}));
+		kernel_text_region = TRY(m_kernel_space->map_object(kernel_text_object, KERNEL_TEXT, VMProt::RX));
 
 		auto kernel_data_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE));
-		kernel_data_region = TRY(m_kernel_space->map_object(kernel_data_object, KERNEL_DATA, VMProt {
-				.read = true,
-				.write = true,
-				.execute = false
-		}));
+		kernel_data_region = TRY(m_kernel_space->map_object(kernel_data_object, KERNEL_DATA, VMProt::RW));
 
 		auto physical_pages_object = TRY(AnonymousVMObject::map_to_physical(page_array_start_page * PAGE_SIZE, page_array_num_pages * PAGE_SIZE));
-		physical_pages_region = TRY(m_kernel_space->map_object(physical_pages_object, (VirtualAddress) m_physical_pages, VMProt {
-				.read = true,
-				.write = true,
-				.execute = false
-		}));
+		physical_pages_region = TRY(m_kernel_space->map_object(physical_pages_object, (VirtualAddress) m_physical_pages, VMProt::RW));
 
 		return Result(SUCCESS);
 	};

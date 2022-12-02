@@ -4,6 +4,34 @@
 #include "VMRegion.h"
 #include "MemoryManager.h"
 
+VMProt VMProt::R = {
+		.read = true,
+		.write = false,
+		.execute = false,
+		.cow = false
+};
+
+VMProt VMProt::RW = {
+		.read = true,
+		.write = true,
+		.execute = false,
+		.cow = false
+};
+
+VMProt VMProt::RX = {
+		.read = true,
+		.write = false,
+		.execute = true,
+		.cow = false
+};
+
+VMProt VMProt::RWX = {
+		.read = true,
+		.write = true,
+		.execute = true,
+		.cow = false
+};
+
 VMRegion::VMRegion(kstd::Arc<VMObject> object, kstd::Arc<VMSpace> space, size_t start, size_t size, VMProt prot):
 	m_object(object),
 	m_space(space),

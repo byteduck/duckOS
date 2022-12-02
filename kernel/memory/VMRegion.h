@@ -8,6 +8,10 @@
 #include "../kstd/Arc.h"
 
 struct VMProt {
+	static VMProt RWX;
+	static VMProt RW;
+	static VMProt RX;
+	static VMProt R;
 	bool read : 1;
 	bool write : 1;
 	bool execute : 1;
