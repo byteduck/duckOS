@@ -74,6 +74,7 @@ void AnonymousVMObject::share(pid_t pid, VMProt prot) {
 		m_shm_id = s_cur_shm_id++;
 		s_shared_objects.insert({m_shm_id, self()});
 		m_is_shared = true;
+		m_fork_action = ForkAction::Ignore;
 	}
 	m_shared_permissions[pid] = prot;
 }
