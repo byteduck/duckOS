@@ -955,14 +955,8 @@ int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm>
 		return object_res.code();
 	auto object = object_res.value();
 
-	VMProt prot = {
-		.read = true,
-		.write = true,
-		.execute = false,
-		.cow = false
-	};
-	object->share(_pid, prot);
-	auto region_res = addr ? map_object(object, (VirtualAddress) addr, prot) : map_object(object, prot);
+	object->share(_pid, VMProt::RW);
+	auto region_res = addr ? map_object(object, (VirtualAddress) addr, VMProt::RW) : map_object(object, VMProt::RW);
 	if(region_res.is_error())
 		return region_res.code();
 	auto region = region_res.value();

@@ -315,68 +315,66 @@ bool Thread::call_signal_handler(int signal) {
 	if(!signal_loc || signal_loc >= HIGHER_HALF)
 		return false;
 
-	ASSERT(false); // TODO
-//	//Allocate a userspace stack
-//	_sighandler_ustack_region = _process->_page_directory->allocate_region(THREAD_STACK_SIZE, true);
-//	if(!_sighandler_ustack_region.virt) {
-//		KLog::crit("Thread", "Failed to allocate sighandler user stack for pid %d!", _process->pid());
-//		_process->kill(SIGKILL);
-//		return false;
-//	}
-//
-//	//Allocate a kernel stack
-//	_sighandler_kstack_region = PageDirectory::k_alloc_region(THREAD_KERNEL_STACK_SIZE);
-//	if(!_sighandler_kstack_region.virt) {
-//		KLog::crit("Thread", "Failed to allocate sighandler kernel stack for pid %d!", _process->pid());
-//		_process->kill(SIGKILL);
-//		return false;
-//	}
-//
-//	//Map the user stack into the kernel temporarily
-//	auto k_ustack_region = PageDirectory::k_map_physical_region(_sighandler_ustack_region.phys, true);
-//
-//	Stack user_stack((void*) (k_ustack_region.virt->start + k_ustack_region.virt->size), _sighandler_ustack_region.virt->start + _sighandler_ustack_region.virt->size);
-//	_signal_stack_top = _sighandler_kstack_region.virt->start + _sighandler_kstack_region.virt->size;
-//
-//	//Push signal number and fake return address to the stack
-//	user_stack.push_int(signal);
-//	user_stack.push_sizet(SIGNAL_RETURN_FAKE_ADDR);
-//
-//	//Setup signal registers
-//	signal_registers.eflags = 0x202;
-//	signal_registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
-//	signal_registers.eip = signal_loc;
-//	signal_registers.eax = 0;
-//	signal_registers.ebx = 0;
-//	signal_registers.ecx = 0;
-//	signal_registers.edx = 0;
-//	signal_registers.ebp = user_stack.real_stackptr();
-//	signal_registers.edi = 0;
-//	signal_registers.esi = 0;
-//	if(_process->_kernel_mode) {
-//		signal_registers.ds = 0x10; // ds
-//		signal_registers.es = 0x10; // es
-//		signal_registers.fs = 0x10; // fs
-//		signal_registers.gs = 0x10; // gs
-//	} else {
-//		signal_registers.ds = 0x23; // ds
-//		signal_registers.es = 0x23; // es
-//		signal_registers.fs = 0x23; // fs
-//		signal_registers.gs = 0x23; // gs
-//	}
-//
-//	//Set up the stack
-//	setup_kernel_stack(user_stack, user_stack.real_stackptr(), signal_registers);
-//
-//	//Set the esp register using the real user stack location
-//	signal_registers.esp = user_stack.real_stackptr();
-//
-//	//Unmap the user stack from kernel space
-//	PageDirectory::k_free_virtual_region(k_ustack_region);
-//
-//	//Queue this thread
-//	_ready_to_handle_signal = true;
-//	TaskManager::queue_thread(_process->_threads[_tid - 1]);
+	//Allocate a userspace stack
+	auto alloc_user_stack = [&]() -> Result {
+		if(!_sighandler_ustack_region) {
+			auto user_stack = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
+			_sighandler_ustack_region = TRY(_process->_vm_space->map_object(user_stack, VMProt::RW));
+		}
+		return Result(SUCCESS);
+	};
+
+	if(alloc_user_stack().is_error()) {
+		KLog::crit("Thread", "Could not allocate userspace stack for signal handler!");
+		return false;
+	}
+
+	// Map the user stack into kernel space
+	auto k_ustack = MM.map_object(_sighandler_ustack_region->object());
+
+	//Allocate a kernel stack
+	if(!_sighandler_kstack_region)
+		_sighandler_kstack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
+
+	Stack user_stack((void*) k_ustack->end(), _sighandler_ustack_region->end());
+	_signal_stack_top = _sighandler_kstack_region->end();
+
+	//Push signal number and fake return address to the stack
+	user_stack.push_int(signal);
+	user_stack.push_sizet(SIGNAL_RETURN_FAKE_ADDR);
+
+	//Setup signal registers
+	signal_registers.eflags = 0x202;
+	signal_registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
+	signal_registers.eip = signal_loc;
+	signal_registers.eax = 0;
+	signal_registers.ebx = 0;
+	signal_registers.ecx = 0;
+	signal_registers.edx = 0;
+	signal_registers.ebp = user_stack.real_stackptr();
+	signal_registers.edi = 0;
+	signal_registers.esi = 0;
+	if(_process->_kernel_mode) {
+		signal_registers.ds = 0x10; // ds
+		signal_registers.es = 0x10; // es
+		signal_registers.fs = 0x10; // fs
+		signal_registers.gs = 0x10; // gs
+	} else {
+		signal_registers.ds = 0x23; // ds
+		signal_registers.es = 0x23; // es
+		signal_registers.fs = 0x23; // fs
+		signal_registers.gs = 0x23; // gs
+	}
+
+	//Set up the stack
+	setup_kernel_stack(user_stack, user_stack.real_stackptr(), signal_registers);
+
+	//Set the esp register using the real user stack location
+	signal_registers.esp = user_stack.real_stackptr();
+
+	//Queue this thread
+	_ready_to_handle_signal = true;
+	TaskManager::queue_thread(_process->_threads[_tid - 1]);
 
 	return true;
 }
@@ -408,8 +406,6 @@ void Thread::handle_pagefault(Registers* regs) {
 	//If the fault is at the fake signal return address, exit the signal handler
 	if(_in_signal && err_pos == SIGNAL_RETURN_FAKE_ADDR) {
 		_just_finished_signal = true;
-		_sighandler_kstack_region.reset();
-		_sighandler_ustack_region.reset();
 		ASSERT(TaskManager::yield());
 	}
 
