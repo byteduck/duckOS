@@ -24,7 +24,10 @@
 size_t VirtualTTY::_current_tty;
 kstd::Arc<VirtualTTY> VirtualTTY::_ttys[];
 
-VirtualTTY::VirtualTTY(unsigned int major, unsigned int minor) : TTYDevice(major, minor) {
+VirtualTTY::VirtualTTY(unsigned int major, unsigned int minor):
+	TTYDevice(major, minor),
+	_id(minor)
+{
 	terminal = new Term::Terminal({
 		(int) VGADevice::inst().get_display_width() / 8,
 		(int) VGADevice::inst().get_display_height() / 8
