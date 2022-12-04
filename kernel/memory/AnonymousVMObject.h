@@ -17,7 +17,7 @@ public:
 		BecomeCoW, Ignore
 	};
 
-	~AnonymousVMObject();
+	~AnonymousVMObject() override;
 
 	/**
 	 * Allocates a new anonymous VMObject.

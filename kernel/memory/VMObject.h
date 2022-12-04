@@ -16,7 +16,7 @@ class VMObject: public kstd::ArcSelf<VMObject> {
 public:
 	explicit VMObject(kstd::vector<PageIndex> physical_pages);
 	VMObject(const VMObject& other) = delete;
-	~VMObject();
+	virtual ~VMObject();
 
 	virtual bool is_anonymous() const { return false; }
 
