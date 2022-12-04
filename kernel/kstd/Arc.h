@@ -127,6 +127,7 @@ namespace kstd {
 		Arc<T>& operator=(const Arc<T>& other) noexcept {
 			if(&other == this)
 				return *this;
+			reset();
 			m_ptr = other.m_ptr;
 			m_count = other.m_count;
 			if(m_count)
@@ -256,6 +257,7 @@ namespace kstd {
 		Weak<T>& operator=(const Weak<T>& other) noexcept {
 			if(&other == this)
 				return *this;
+			reset();
 			m_ptr = other.m_ptr;
 			m_count = other.m_count;
 			if(m_count)
