@@ -130,7 +130,7 @@ namespace kstd {
 				_back = other._back;
 				_storage = (T*) kcalloc(_capacity, sizeof(T));
 				for (size_t i = 0; i < _size; i++)
-					new (&_storage[i]) T(kstd::move(other._storage[i]));
+					new (&_storage[i]) T(other._storage[i]);
 			}
 			return *this;
 		}
