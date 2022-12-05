@@ -28,6 +28,7 @@ public:
 	Time(long sec, long usec);
 	explicit Time(timespec spec);
 	static Time now();
+	static Time distant_future();
 
 	timespec to_timespec() const;
 	timeval to_timeval() const;

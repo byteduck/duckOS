@@ -33,6 +33,10 @@ Time Time::now() {
 	return Time(TimeManager::now());
 }
 
+Time Time::distant_future() {
+	return {2147483647L, 0};
+}
+
 timespec Time::to_timespec() const {
 	return {_sec, _usec};
 }

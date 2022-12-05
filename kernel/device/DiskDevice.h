@@ -22,11 +22,12 @@
 #include <kernel/time/Time.h>
 #include <kernel/memory/MemoryManager.h>
 #include "BlockDevice.h"
-#include <kernel/kstd/map.hpp>
+#include "../kstd/LRUCache.h"
 
 class DiskDevice: public BlockDevice {
 public:
-	DiskDevice(unsigned major, unsigned minor): BlockDevice(major, minor) {}
+	DiskDevice(unsigned major, unsigned minor);
+	~DiskDevice() override;
 
 	Result read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override final;
 	Result write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override final;
@@ -35,6 +36,8 @@ public:
 	virtual Result write_uncached_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) = 0;
 
 	static size_t used_cache_memory();
+	/** Tries to free a number of pages from the cache. Returns the number of pages that could be freed. **/
+	static size_t free_pages(size_t num_pages);
 
 private:
 	class BlockCacheRegion {
@@ -53,14 +56,15 @@ private:
 		bool dirty = false;
 	};
 
-	BlockCacheRegion* get_cache_region(size_t block);
+	// Static
+	static SpinLock s_disk_devices_lock;
+	static size_t s_used_cache_memory;
+	static kstd::vector<DiskDevice*> s_disk_devices;
+
+	kstd::LRUCache<size_t, kstd::Arc<BlockCacheRegion>> _cache_regions;
+	kstd::Arc<BlockCacheRegion> get_cache_region(size_t block);
 	inline size_t blocks_per_cache_region() { return PAGE_SIZE / block_size(); }
 	inline size_t block_cache_region_start(size_t block) { return block - (block % blocks_per_cache_region()); }
-
-	//TODO: Free cache regions when low on memory
-	kstd::map<size_t, kstd::Arc<BlockCacheRegion>> _cache_regions;
 	SpinLock _cache_lock;
-
-	static size_t _used_cache_memory;
 };
 
