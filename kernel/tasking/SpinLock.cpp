@@ -27,7 +27,7 @@ SpinLock::SpinLock() = default;
 SpinLock::~SpinLock() = default;
 
 bool SpinLock::locked() {
-	return _times_locked.load(MemoryOrder::SeqCst);
+	return m_holding_thread.load();
 }
 
 void SpinLock::release() {
@@ -35,8 +35,10 @@ void SpinLock::release() {
 		return;
 
 	// Decrease counter. If the counter is zero, release the lock
-	if(_times_locked.sub(1, MemoryOrder::Release) == 1) {
-		_blocker.set_ready(true);
+	m_times_locked--;
+	if(!m_times_locked) {
+		m_holding_thread.store(nullptr);
+		m_blocker.set_ready(true);
 	}
 }
 
@@ -45,21 +47,22 @@ void SpinLock::acquire() {
 	if(!TaskManager::enabled() || !cur_thread) return; //Tasking isn't initialized yet
 
 	//Loop while the lock is held
-	int expected = 0;
-	while(!_times_locked.compare_exchange_strong(expected, 1)) {
-		expected = 0;
-		if(_holding_thread == cur_thread) {
-			// TODO: This is definitely susceptible to a race condition. Figure out how to make a recursive lock that works
-			//We are the holding process, so increment the counter and return
-			_blocker.set_ready(false);
-			_times_locked.add(1);
-			return;
-		}
-		//TODO: Find a good way to unblock just one waiting task
-		cur_thread->block(_blocker);
+	while(true) {
+		// Try locking if no thread is holding
+		Thread* expected = nullptr;
+		if(m_holding_thread.compare_exchange_strong(expected, cur_thread.get()))
+			break;
+
+		// Try locking if current thread is holding
+		expected = cur_thread.get();
+		if(m_holding_thread.compare_exchange_strong(expected, cur_thread.get()))
+			break;
+
+		// Block until blocker is ready
+		cur_thread->block(m_blocker);
 	}
 
-	//We now hold the lock
-	_blocker.set_ready(false);
-	_holding_thread = cur_thread;
+	// We've got the lock!
+	m_blocker.set_ready(false);
+	m_times_locked++;
 }

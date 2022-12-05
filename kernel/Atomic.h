@@ -37,8 +37,8 @@ public:
 		return __atomic_load_n(&m_val, (int) order);
 	}
 
-	inline T store(T val, MemoryOrder order = default_order) volatile noexcept {
-		return __atomic_store_n(&m_val, val, (int) order);
+	inline void store(T val, MemoryOrder order = default_order) volatile noexcept {
+		__atomic_store_n(&m_val, val, (int) order);
 	}
 
 	inline T add(T val, MemoryOrder order = default_order) volatile noexcept {

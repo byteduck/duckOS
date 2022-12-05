@@ -22,6 +22,7 @@
 #include "Lock.h"
 #include "BooleanBlocker.h"
 #include <kernel/kstd/Arc.h>
+#include "../kstd/unix_types.h"
 #include "../Atomic.h"
 
 class Thread;
@@ -33,9 +34,8 @@ public:
 	void acquire() override;
 	void release() override;
 private:
-	BooleanBlocker _blocker;
-	Atomic<int, MemoryOrder::AcqRel> _times_locked = 0;
-
-	kstd::Arc<Thread> _holding_thread;
+	BooleanBlocker m_blocker;
+	Atomic<Thread*, MemoryOrder::AcqRel> m_holding_thread = 0;
+	int m_times_locked = 0;
 };
 
