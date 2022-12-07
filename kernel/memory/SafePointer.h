@@ -56,7 +56,7 @@ public:
 			return kstd::string((char*) m_ptr);
 
 		auto* proc = TaskManager::current_thread()->process();
-		return proc->page_directory()->lock().synced<kstd::string>([&]() {
+		return proc->vm_space()->lock().synced<kstd::string>([&]() {
 			auto cur_ptr = (char*) m_ptr;
 			proc->check_ptr(cur_ptr, false);
 			auto last_checked_page = (size_t) cur_ptr / PAGE_SIZE;
@@ -143,7 +143,7 @@ public:
 		if(!m_is_user)
 			return lambda();
 		auto* process = TaskManager::current_process();
-		return process->page_directory()->lock().synced<R>([&]() {
+		return process->vm_space()->lock().synced<R>([&]() {
 			auto page_start_ptr = ((size_t) (m_ptr + offset) / PAGE_SIZE) * PAGE_SIZE;
 			auto page_end_ptr = (((size_t) (m_ptr + offset + count) - 1) / PAGE_SIZE) * PAGE_SIZE;
 			for(size_t ptr = page_start_ptr; ptr <= page_end_ptr; ptr += PAGE_SIZE) {

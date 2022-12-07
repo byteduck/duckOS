@@ -88,6 +88,7 @@ public:
 
 	//Memory
 	PageDirectory* page_directory();
+	kstd::Arc<VMSpace> vm_space();
 	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VMProt prot);
 	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot);
 	size_t used_pmem() const;

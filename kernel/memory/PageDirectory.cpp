@@ -140,10 +140,6 @@ size_t PageDirectory::entries_physaddr() {
 	return get_physaddr((size_t) m_entries);
 }
 
-SpinLock& PageDirectory::lock() {
-	return m_lock;
-}
-
 void PageDirectory::map(VMRegion& region) {
 	LOCK(m_lock);
 

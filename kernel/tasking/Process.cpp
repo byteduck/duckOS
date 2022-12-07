@@ -314,6 +314,10 @@ PageDirectory* Process::page_directory() {
 		return _page_directory.get();
 }
 
+kstd::Arc<VMSpace> Process::vm_space() {
+	return _vm_space;
+}
+
 ResultRet<kstd::Arc<VMRegion>> Process::map_object(kstd::Arc<VMObject> object, VMProt prot) {
 	auto region = TRY(_vm_space->map_object(object, prot));
 	_vm_regions.push_back(region);

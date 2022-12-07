@@ -75,12 +75,6 @@ public:
 	 */
 	size_t entries_physaddr();
 
-	/**
-	 * Gets the lock for the page directory. Hold this lock to prevent memory from being mapped or unmapped during an
-	 * operation.
-	 */
-	SpinLock& lock();
-
 	/** Maps a region into the page directory. **/
 	void map(VMRegion& region);
 
