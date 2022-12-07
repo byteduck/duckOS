@@ -39,3 +39,11 @@ bool Blocker::was_interrupted() {
 void Blocker::on_interrupted() {
 
 }
+
+bool Blocker::is_lock() {
+	return false;
+}
+
+Thread* Blocker::responsible_thread() {
+	return nullptr;
+}

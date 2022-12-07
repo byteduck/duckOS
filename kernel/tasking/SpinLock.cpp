@@ -36,10 +36,8 @@ void SpinLock::release() {
 
 	// Decrease counter. If the counter is zero, release the lock
 	m_times_locked--;
-	if(!m_times_locked) {
+	if(!m_times_locked)
 		m_holding_thread.store(nullptr);
-		m_blocker.set_ready(true);
-	}
 }
 
 void SpinLock::acquire() {
@@ -58,11 +56,18 @@ void SpinLock::acquire() {
 		if(m_holding_thread.compare_exchange_strong(expected, cur_thread.get()))
 			break;
 
-		// Block until blocker is ready
-		cur_thread->block(m_blocker);
+		// Block until unlocked
+		cur_thread->block(*this);
 	}
 
 	// We've got the lock!
-	m_blocker.set_ready(false);
 	m_times_locked++;
+}
+
+bool SpinLock::is_ready() {
+	return m_holding_thread.load() == 0;
+}
+
+Thread* SpinLock::responsible_thread() {
+	return m_holding_thread.load();
 }

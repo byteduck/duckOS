@@ -237,6 +237,20 @@ void Thread::block(Blocker& blocker) {
 		PANIC("INVALID_BLOCK", "Tried to block thread %d of PID %d in state %s", _tid, _process->pid(), state_name());
 	ASSERT(!_blocker);
 
+	// Check for deadlock
+	// TODO: This will only detect if 2 threads are directly deadlocking each other. This will not detect deadlocks involving more than 2 threads.
+	if(blocker.responsible_thread()) {
+		Thread* responsible = blocker.responsible_thread();
+		if(responsible->is_blocked() && !responsible->should_unblock() && responsible->_blocker->responsible_thread() == this) {
+			PANIC(
+				"THREAD_DEADLOCK",
+				"Two threads (%s[%d.%d] and %s[%d.%d]) entered a deadlock.",
+				_process->name().c_str(), _process->pid(), _tid,
+				responsible->_process->name().c_str(), responsible->_process->pid(), responsible->_tid
+			);
+		}
+	}
+
 	TaskManager::enabled() = false;
 	_state = BLOCKED;
 	_blocker = &blocker;

@@ -26,15 +26,18 @@
 #include "../Atomic.h"
 
 class Thread;
-class SpinLock: public Lock {
+class SpinLock: public Lock, public Blocker {
 public:
 	SpinLock();
 	~SpinLock();
 	bool locked() override;
 	void acquire() override;
 	void release() override;
+	bool is_ready() override;
+	bool is_lock() override { return true; }
+	Thread* responsible_thread() override;
+
 private:
-	BooleanBlocker m_blocker;
 	Atomic<Thread*, MemoryOrder::AcqRel> m_holding_thread = 0;
 	int m_times_locked = 0;
 };
