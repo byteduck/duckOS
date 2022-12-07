@@ -155,7 +155,7 @@ ssize_t SocketFSInode::write(size_t start, size_t length, SafePointer<uint8_t> b
 	if(!fd)
 		return -EINVAL;
 
-	LOCK(lock);
+	lock.acquire();
 	auto packet = SafePointer<SocketFSPacket>(buf).get();
 	auto packet_data = SafePointer<uint8_t>(buf.raw() + sizeof(SocketFSPacket), buf.is_user());
 
@@ -178,6 +178,7 @@ ssize_t SocketFSInode::write(size_t start, size_t length, SafePointer<uint8_t> b
 
 	if(!sender) {
 		//Couldn't find the client it came from...
+		lock.release();
 		return -EIO;
 	}
 
@@ -190,6 +191,7 @@ ssize_t SocketFSInode::write(size_t start, size_t length, SafePointer<uint8_t> b
 			//We don't care about errors here, we should just continue sending it to the rest of the clients
 			write_packet(clients[i], SOCKETFS_TYPE_MSG, sender->id, packet.length, packet.shm_id, packet.shm_perms, packet_data, fd->nonblock());
 		}
+		lock.release();
 		return SUCCESS;
 	} else if(sender == &host) {
 		//Find the client this packet has to go to
@@ -201,23 +203,30 @@ ssize_t SocketFSInode::write(size_t start, size_t length, SafePointer<uint8_t> b
 		}
 	} else if(sender != &host) {
 		//Clients can only send packets to the host
-		if(packet.recipient != SOCKETFS_RECIPIENT_HOST)
+		if(packet.recipient != SOCKETFS_RECIPIENT_HOST) {
+			lock.release();
 			return -EINVAL;
+		}
 		recipient = &host;
 	}
 
-	if(!recipient)
+	if(!recipient) {
+		lock.release();
 		return -EINVAL; //No such recipient
+	}
 
 	//Share shm with recipient if we need to
 	if(packet.shm_id) {
 		int shm_res = TaskManager::current_process()->sys_shmallow(packet.shm_id, recipient->pid, packet.shm_perms);
-		if (shm_res != SUCCESS)
+		if (shm_res != SUCCESS) {
+			lock.release();
 			return shm_res;
+		}
 	}
 
 	//Finally, write the packet to the correct queue
 	auto res = write_packet(*recipient, SOCKETFS_TYPE_MSG, sender->id, packet.length, packet.shm_id, packet.shm_perms, packet_data, fd->nonblock());
+	lock.release();
 	return res.code();
 }
 
@@ -337,8 +346,10 @@ Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t se
 	//If there's room in the buffer, block (if O_NONBLOCK isn't set)
 	while(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE) {
 		if(!nonblock) {
+			lock.release();
 			client._blocker.set_ready(false);
 			TaskManager::current_thread()->block(client._blocker);
+			lock.acquire();
 		} else {
 			return Result(-ENOSPC);
 		}
