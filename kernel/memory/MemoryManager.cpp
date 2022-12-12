@@ -192,11 +192,12 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 				size_pagealigned -= PAGE_SIZE;
 		}
 
-		if(!size_pagealigned) {
+		if(size_pagealigned / PAGE_SIZE < 2) {
 			KLog::dbg("Memory", "Ignoring too-small memory region at 0x%x", addr);
 			return;
 		}
 
+		KLog::dbg("Memory", "Making memory region at page 0x%x of 0x%x pages (%s, %s)", addr_pagealigned / PAGE_SIZE, size_pagealigned / PAGE_SIZE, used ? "Used" : "Unused", reserved ? "Reserved" : "Unreserved");
 		auto region = new PhysicalRegion(
 			addr_pagealigned / PAGE_SIZE,
 			size_pagealigned / PAGE_SIZE,
