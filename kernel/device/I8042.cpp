@@ -74,8 +74,6 @@ bool I8042::init() {
 	if(!controller_command_read(I8042_CMD_TEST_PORT1)) {
 		KLog::dbg("I8042", "Keyboard available");
 		controller_command(I8042_CMD_ENABLE_PORT1);
-		config |= I8042_CONFIG_INT1;
-		config &= ~I8042_CONFIG_CLOCK1;
 		keyboard_available = true;
 	}
 	else {
@@ -87,8 +85,6 @@ bool I8042::init() {
 		if(!controller_command_read(I8042_CMD_TEST_PORT2)) {
 			KLog::dbg("I8042", "Mouse available");
 			controller_command(I8042_CMD_ENABLE_PORT2);
-			config |= I8042_CONFIG_INT2;
-			config &= ~I8042_CONFIG_CLOCK2;
 			mouse_available = true;
 		}
 		else {
@@ -96,14 +92,13 @@ bool I8042::init() {
 		}
 	}
 
-	//Write the updated config
-	write_config(config);
-
 	//Reset the devices
 	if(keyboard_available) {
 		if(reset_device(KEYBOARD)) {
 			KLog::dbg("I8042", "Keyboard successfully enabled");
 			_inst->_keyboard = new KeyboardDevice();
+			config |= I8042_CONFIG_INT1;
+			config &= ~I8042_CONFIG_CLOCK1;
 		} else {
 			KLog::err("I8042", "Error enabling keyboard");
 			_inst->_keyboard = nullptr;
@@ -114,11 +109,16 @@ bool I8042::init() {
 		if (reset_device(MOUSE)) {
 			KLog::dbg("I8042", "Mouse successfully enabled");
 			_inst->_mouse = new MouseDevice();
+			config |= I8042_CONFIG_INT2;
+			config &= ~I8042_CONFIG_CLOCK2;
 		} else {
 			KLog::err("I8042", "Error enabling mouse");
 			_inst->_mouse = nullptr;
 		}
 	}
+
+	//Write the updated config
+	write_config(config);
 
 	return true;
 }
