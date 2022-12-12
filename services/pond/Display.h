@@ -137,6 +137,10 @@ public:
 
 
 private:
+	enum class BufferMode {
+		Single, Double, DoubleFlip
+	};
+
 	/**
 	 * Figures out which direction the window should be resized based on mouse position.
 	 */
@@ -169,7 +173,7 @@ private:
 	bool display_buffer_dirty = true; ///Whether or not the buffer is dirty and needs to be flipped.
 	int _keyboard_fd; ///The file descriptor of the keyboard.
 	Window* _focused_window = nullptr; ///The currently focused window.
-	bool _can_flip_buffer = false; ///Whether or not the display buffer can be flipped.
+	BufferMode _buffer_mode = BufferMode::Single; ///Whether to use single or double buffering, or a flippable display buffer.
 	Gfx::Rect _invalid_buffer_area = {-1, -1, -1, -1}; ///The invalid area of the display buffer that needs to be redrawn next flip
 
 	static Display* _inst; ///The main instance of the display.

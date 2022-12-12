@@ -66,9 +66,9 @@ Display::Display(): _dimensions({0, 0, 0, 0}) {
 
 	//If we can set the offset into video memory, that means we can flip the display buffer and write directly to it
 	if(!ioctl(framebuffer_fd, IO_VIDEO_OFFSET, 0))
-		_can_flip_buffer = true;
+		_buffer_mode = BufferMode::DoubleFlip;
 	else
-		_can_flip_buffer = false;
+		_buffer_mode = BufferMode::Double;
 
 	_framebuffer = {buffer, _dimensions.width, _dimensions.height};
 	Log::info("Display opened and mapped (", _dimensions.width, " x ", _dimensions.height, ")");
@@ -181,7 +181,7 @@ void Display::repaint() {
 		return;
 	gettimeofday(&paint_time, NULL);
 
-	auto& fb = _root_window->framebuffer();
+	auto& fb = _buffer_mode == BufferMode::Single ? _framebuffer : _root_window->framebuffer();
 
 	//Combine areas that overlap
 	auto it = invalid_areas.begin();
@@ -200,8 +200,8 @@ void Display::repaint() {
 			it++;
 	}
 
-	//If the buffer can't be flipped, combine the invalid areas together to calculate the portion of the framebuffer to be redrawn
-	if(!_can_flip_buffer) {
+	//If double buffering, combine the invalid areas together to calculate the portion of the framebuffer to be redrawn
+	if(_buffer_mode == BufferMode::Double) {
 		//If the invalid buffer area is empty (has an x of -1), initialize it to the first invalid area
 		if(_invalid_buffer_area.x == -1)
 			_invalid_buffer_area = invalid_areas[0];
@@ -281,12 +281,12 @@ void Display::flip_buffers() {
 	if(!display_buffer_dirty)
 		return;
 
-	if(_can_flip_buffer) {
+	if(_buffer_mode == BufferMode::DoubleFlip) {
 		auto* video_buf = &_framebuffer.data[flipped ? _framebuffer.height * _framebuffer.width : 0];
 		memcpy_uint32((uint32_t*) video_buf, (uint32_t*) _root_window->framebuffer().data, _framebuffer.width * _framebuffer.height);
 		ioctl(framebuffer_fd, IO_VIDEO_OFFSET, flipped ? _framebuffer.height : 0);
 		flipped = !flipped;
-	} else {
+	} else if(_buffer_mode == BufferMode::Double) {
 		_framebuffer.copy(_root_window->framebuffer(), _invalid_buffer_area, _invalid_buffer_area.position());
 		_invalid_buffer_area.x = -1;
 	}
