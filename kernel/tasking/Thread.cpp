@@ -31,6 +31,7 @@
 #include <kernel/kstd/KLog.h>
 #include <kernel/memory/SafePointer.h>
 #include "../memory/AnonymousVMObject.h"
+#include "../interrupt/interrupt.h"
 
 Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
 	//Create the kernel stack
@@ -251,10 +252,12 @@ void Thread::block(Blocker& blocker) {
 		}
 	}
 
-	TaskManager::enabled() = false;
-	_state = BLOCKED;
-	_blocker = &blocker;
-	TaskManager::enabled() = true;
+	{
+		Interrupt::Disabler disabler;
+		_state = BLOCKED;
+		_blocker = &blocker;
+	}
+
 	ASSERT(TaskManager::yield());
 }
 

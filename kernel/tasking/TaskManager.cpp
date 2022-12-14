@@ -26,6 +26,7 @@
 #include "TSS.h"
 #include "Process.h"
 #include "Thread.h"
+#include "../interrupt/interrupt.h"
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/KLog.h>
 
@@ -116,7 +117,7 @@ void TaskManager::reparent_orphans(Process* proc) {
 	}
 }
 
-bool& TaskManager::enabled(){
+bool TaskManager::enabled(){
 	return tasking_enabled;
 }
 
@@ -182,7 +183,7 @@ int TaskManager::add_process(Process* proc){
 }
 
 void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
-	TaskManager::Disabler disabler;
+	Interrupt::Disabler disabler;
 	if(!thread) {
 		KLog::warn("TaskManager", "Tried queueing null thread!");
 		return;
@@ -402,11 +403,3 @@ void TaskManager::preempt(){
 	}
 }
 #pragma GCC pop_options
-
-TaskManager::Disabler::Disabler(): _enabled(enabled()) {
-	enabled() = false;
-}
-
-TaskManager::Disabler::~Disabler() {
-	enabled() = _enabled;
-}

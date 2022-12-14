@@ -176,9 +176,7 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 		_state(ALIVE),
 		_self_ptr(this)
 {
-	//Disable task switching so we don't screw up paging
-	bool en = TaskManager::enabled();
-	TaskManager::enabled() = false;
+	Interrupt::Disabler disabler;
 
 	if(!kernel) {
 		auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
@@ -197,8 +195,6 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 	//Create the main thread
 	auto* main_thread = new Thread(_self_ptr, _cur_tid++, entry_point, args);
 	_threads.push_back(kstd::Arc<Thread>(main_thread));
-
-	TaskManager::enabled() = en;
 }
 
 Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _self_ptr(this) {
@@ -430,13 +426,12 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 		filename.~string();
 
 		//Add the new process to the process list
-		TaskManager::enabled() = false;
+		Interrupt::Disabler disabler;
 		_pid = -1;
 		_state = DEAD;
 		TaskManager::add_process(new_proc);
 	}
 
-	TaskManager::enabled() = true;
 	ASSERT(TaskManager::yield());
 	return -1;
 }

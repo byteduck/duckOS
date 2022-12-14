@@ -36,7 +36,7 @@ namespace TaskManager {
 	extern SpinLock lock;
 
 	void init();
-	bool& enabled();
+	bool enabled();
 	bool is_idle();
 	bool is_preempting();
 	void reparent_orphans(Process* proc);
@@ -67,14 +67,5 @@ namespace TaskManager {
 	extern "C" void __attribute((cdecl)) preempt_init_asm(unsigned int new_esp);
 	extern "C" void __attribute((cdecl)) preempt_asm(unsigned int *old_esp, unsigned int *new_esp, uint32_t new_cr3);
 	extern "C" void proc_first_preempt();
-
-	class Disabler {
-	public:
-		Disabler();
-		~Disabler();
-
-	private:
-		bool _enabled;
-	};
 };
 

@@ -80,11 +80,14 @@ void print(const char* str){
 
 SpinLock printf_lock;
 void printf(const char* fmt, ...) {
-	LOCK(printf_lock);
+	if(!panicking)
+		printf_lock.acquire();
 	va_list list;
 	va_start(list, fmt);
 	vprintf(fmt, list);
 	va_end(list);
+	if(!panicking)
+		printf_lock.release();
 }
 
 void vprintf(const char* fmt, va_list argp){
@@ -144,8 +147,7 @@ void vprintf(const char* fmt, va_list argp){
 bool panicked = false;
 
 [[noreturn]] void PANIC(const char* error, const char* msg, ...){
-	asm volatile("cli");
-	TaskManager::enabled() = false;
+	Interrupt::Disabler disabler;
 
 	panicking = true;
 	if(did_setup_tty)
