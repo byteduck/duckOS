@@ -123,5 +123,5 @@ void RTC::disable() {
 }
 
 bool RTC::mark_in_irq() {
-	return false;
+	return true;
 }

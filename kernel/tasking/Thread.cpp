@@ -416,10 +416,7 @@ void* Thread::signal_stack_top() {
 	return (void*) _signal_stack_top;
 }
 
-void Thread::handle_pagefault(Registers* regs) {
-	size_t err_pos;
-	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-
+void Thread::handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction_pointer) {
 	//If the fault is at the fake signal return address, exit the signal handler
 	if(_in_signal && err_pos == SIGNAL_RETURN_FAKE_ADDR) {
 		_just_finished_signal = true;
@@ -429,10 +426,10 @@ void Thread::handle_pagefault(Registers* regs) {
 
 	//Otherwise, try CoW and kill the process if it doesn't work
 	if(_process->_vm_space->try_pagefault(err_pos).is_error()) {
-		if(regs->eip > HIGHER_HALF) {
+		if(instruction_pointer > HIGHER_HALF) {
 			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x).", _process->pid(), _tid, err_pos);
 		}
-		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, err_pos, regs->eip);
+		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, err_pos, instruction_pointer);
 #ifdef DEBUG
 		printf("Userspace stack trace:\n");
 		KernelMapper::print_userspace_stacktrace();

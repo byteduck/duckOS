@@ -87,7 +87,10 @@ namespace Interrupt {
 					if(!TaskManager::current_thread() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()) {
 						MemoryManager::inst().page_fault_handler(r);
 					} else {
-						TaskManager::current_thread()->handle_pagefault(r);
+						size_t err_pos;
+						asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
+						asm volatile("sti");
+						TaskManager::current_thread()->handle_pagefault(err_pos, r->eip);
 					}
 					break;
 

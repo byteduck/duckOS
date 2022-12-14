@@ -63,6 +63,7 @@ namespace TaskManager {
 	pid_t get_new_pid();
 	kstd::Arc<Thread> next_thread();
 
+	void tick();
 	extern "C" void preempt();
 	extern "C" void __attribute((cdecl)) preempt_init_asm(unsigned int new_esp);
 	extern "C" void __attribute((cdecl)) preempt_asm(unsigned int *old_esp, unsigned int *new_esp, uint32_t new_cr3);

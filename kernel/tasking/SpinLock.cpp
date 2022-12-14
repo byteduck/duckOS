@@ -20,7 +20,6 @@
 #include "SpinLock.h"
 #include "Thread.h"
 #include "TaskManager.h"
-#include <kernel/Atomic.h>
 
 SpinLock::SpinLock() = default;
 
@@ -56,18 +55,9 @@ void SpinLock::acquire() {
 		if(m_holding_thread.compare_exchange_strong(expected, cur_thread.get()))
 			break;
 
-		// Block until unlocked
-		cur_thread->block(*this);
+		asm volatile("pause");
 	}
 
 	// We've got the lock!
 	m_times_locked++;
-}
-
-bool SpinLock::is_ready() {
-	return m_holding_thread.load() == 0;
-}
-
-Thread* SpinLock::responsible_thread() {
-	return m_holding_thread.load();
 }

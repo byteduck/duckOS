@@ -183,7 +183,6 @@ int TaskManager::add_process(Process* proc){
 }
 
 void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
-	Interrupt::Disabler disabler;
 	if(!thread) {
 		KLog::warn("TaskManager", "Tried queueing null thread!");
 		return;
@@ -253,6 +252,11 @@ void TaskManager::do_yield_async() {
 		yield_async = false;
 		asm volatile("int $0x81");
 	}
+}
+
+void TaskManager::tick() {
+	ASSERT(Interrupt::in_irq());
+	yield();
 }
 
 #pragma GCC push_options
@@ -330,6 +334,7 @@ void TaskManager::preempt(){
 		}
 	}
 
+	Interrupt::Disabler disabler;
 	preempting = true;
 
 	/*

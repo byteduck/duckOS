@@ -80,7 +80,7 @@ public:
 	void* signal_stack_top();
 
 	//Misc
-	void handle_pagefault(Registers* regs);
+	void handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction_pointer);
 
 	uint8_t fpu_state[512] __attribute__((aligned(16)));
 	Registers registers = {};
