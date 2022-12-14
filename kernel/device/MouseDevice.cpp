@@ -154,6 +154,7 @@ void MouseDevice::handle_packet() {
 	}
 
 	LOCK(lock);
-	if(!event_buffer.push_back({x, y, z, (uint8_t) (packet_data[0] & 0x7u)}))
-		KLog::warn("I8042/Mouse", "Event buffer full!");
+	if(event_buffer.size() == event_buffer.capacity())
+		event_buffer.pop_front();
+	event_buffer.push_back({x, y, z, (uint8_t) (packet_data[0] & 0x7u)});
 }

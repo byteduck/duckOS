@@ -134,6 +134,7 @@ void KeyboardDevice::set_key_state(uint8_t scancode, bool pressed) {
 		_handler->handle_key(event);
 	_e0_flag = false;
 	LOCK(_lock);
-	if(!_event_buffer.push_back(event))
-		KLog::warn("I8042/Keyboard", "Event buffer full!");
+	if(_event_buffer.size() == _event_buffer.capacity())
+		_event_buffer.pop_front();
+	_event_buffer.push_back(event);
 }
