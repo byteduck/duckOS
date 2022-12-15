@@ -55,7 +55,7 @@ void SpinLock::acquire() {
 		if(m_holding_thread.compare_exchange_strong(expected, cur_thread.get()))
 			break;
 
-		asm volatile("pause");
+		TaskManager::yield();
 	}
 
 	// We've got the lock!

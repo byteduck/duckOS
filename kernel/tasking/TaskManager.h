@@ -33,7 +33,7 @@ struct TSS;
 
 namespace TaskManager {
 	extern TSS tss;
-	extern SpinLock lock;
+	extern SpinLock g_tasking_lock;
 
 	void init();
 	bool enabled();
@@ -57,13 +57,17 @@ namespace TaskManager {
 	bool yield_if_not_preempting();
 	bool yield_if_idle();
 	void do_yield_async();
+	void tick();
+
+	void enter_critical();
+	void leave_critical();
 
 	void notify_current(uint32_t sig);
 
 	pid_t get_new_pid();
 	kstd::Arc<Thread> next_thread();
 
-	void tick();
+
 	extern "C" void preempt();
 	extern "C" void __attribute((cdecl)) preempt_init_asm(unsigned int new_esp);
 	extern "C" void __attribute((cdecl)) preempt_asm(unsigned int *old_esp, unsigned int *new_esp, uint32_t new_cr3);

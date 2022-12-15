@@ -31,7 +31,7 @@
 #include <kernel/kstd/KLog.h>
 
 TSS TaskManager::tss;
-SpinLock TaskManager::lock;
+SpinLock TaskManager::g_tasking_lock;
 
 kstd::Arc<Thread> cur_thread;
 Process* kidle_process;
@@ -138,8 +138,6 @@ pid_t TaskManager::get_new_pid(){
 void TaskManager::init(){
 	KLog::dbg("TaskManager", "Initializing tasking...");
 
-	lock = SpinLock();
-
 	thread_queue = new kstd::queue<kstd::Arc<Thread>>();
 	processes = new kstd::vector<Process*>();
 
@@ -172,6 +170,7 @@ Process* TaskManager::current_process() {
 }
 
 int TaskManager::add_process(Process* proc){
+	LOCK(g_tasking_lock);
 	tasking_enabled = false;
 	ProcFS::inst().proc_add(proc);
 	processes->push_back(proc);
@@ -183,6 +182,7 @@ int TaskManager::add_process(Process* proc){
 }
 
 void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
+	LOCK(g_tasking_lock);
 	if(!thread) {
 		KLog::warn("TaskManager", "Tried queueing null thread!");
 		return;
@@ -203,6 +203,8 @@ void TaskManager::notify_current(uint32_t sig){
 }
 
 kstd::Arc<Thread> TaskManager::next_thread() {
+	LOCK(g_tasking_lock);
+
 	while(!thread_queue->empty() && !thread_queue->front()->can_be_run())
 		thread_queue->pop_front();
 
@@ -259,10 +261,24 @@ void TaskManager::tick() {
 	yield();
 }
 
+int g_critical_count = 0;
+
+void TaskManager::enter_critical() {
+	asm volatile("cli");
+	g_critical_count++;
+}
+
+void TaskManager::leave_critical() {
+	g_critical_count--;
+	if(!g_critical_count)
+		asm volatile("sti");
+}
+
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 void TaskManager::preempt(){
-	if(!tasking_enabled) return;
+	if(!tasking_enabled)
+		return;
 
 	cur_thread->enter_critical();
 
@@ -296,7 +312,6 @@ void TaskManager::preempt(){
 	 * try to block the thread again (ie acquiring the liballoc lock)
 	 */
 	if(cur_thread->can_be_run()) {
-		LOCK(lock);
 		//Handle pending signals, cleanup dead processes, and release zombie processes' resources
 		for(int i = 0; i < processes->size(); i++) {
 			auto current = processes->at(i);
@@ -334,7 +349,6 @@ void TaskManager::preempt(){
 		}
 	}
 
-	Interrupt::Disabler disabler;
 	preempting = true;
 
 	/*
