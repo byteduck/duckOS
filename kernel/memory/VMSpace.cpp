@@ -80,7 +80,6 @@ kstd::Arc<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<kst
 }
 
 ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, VMProt prot) {
-	LOCK(m_lock);
 	auto region = TRY(alloc_space(object->size()));
 	auto vmRegion = kstd::make_shared<VMRegion>(
 			object,
@@ -108,7 +107,6 @@ ResultRet<kstd::Arc<VMRegion>> VMSpace::map_stack(kstd::Arc<VMObject> object, VM
 }
 
 ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot) {
-	LOCK(m_lock);
 	auto region = TRY(alloc_space_at(object->size(), address));
 	auto vmRegion = kstd::make_shared<VMRegion>(
 			object,
@@ -122,40 +120,46 @@ ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, V
 }
 
 Result VMSpace::unmap_region(VMRegion& region) {
-	LOCK(m_lock);
+	m_lock.acquire();
 	VMSpaceRegion* cur_region = m_region_map;
 	while(cur_region) {
 		if(cur_region->vmRegion == &region) {
 			if(cur_region->vmRegion) {
 				cur_region->vmRegion->m_space.reset();
 				m_page_directory.unmap(*cur_region->vmRegion);
+				m_lock.release();
 				auto free_res = free_region(cur_region);
 				ASSERT(!free_res.is_error());
 				return free_res;
 			}
+			m_lock.release();
 			return Result(ENOENT);
 		}
 		cur_region = cur_region->next;
 	}
+	m_lock.release();
 	return Result(ENOENT);
 }
 
 Result VMSpace::unmap_region(VirtualAddress address) {
-	LOCK(m_lock);
+	m_lock.acquire();
 	VMSpaceRegion* cur_region = m_region_map;
 	while(cur_region) {
 		if(cur_region->start == address) {
 			if(cur_region->vmRegion) {
 				cur_region->vmRegion->m_space.reset();
 				m_page_directory.unmap(*cur_region->vmRegion);
+				m_lock.release();
 				auto free_res = free_region(cur_region);
 				ASSERT(!free_res.is_error());
 				return free_res;
 			}
+			m_lock.release();
 			return Result(ENOENT);
 		}
 		cur_region = cur_region->next;
 	}
+	m_lock.release();
 	return Result(ENOENT);
 }
 
@@ -194,7 +198,6 @@ Result VMSpace::reserve_region(VirtualAddress start, size_t size) {
 
 Result VMSpace::try_pagefault(VirtualAddress error_pos) {
 	LOCK(m_lock);
-
 	auto cur_region = m_region_map;
 	while(cur_region) {
 		if(cur_region->contains(error_pos)) {
@@ -233,7 +236,6 @@ ResultRet<VirtualAddress> VMSpace::find_free_space(size_t size) {
 
 ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space(size_t size) {
 	ASSERT(size % PAGE_SIZE == 0);
-	auto cur_region = m_region_map;
 
 	/**
 	 * We allocate a new region if we need one BEFORE iterating through the regions, because there's a chance we'll
@@ -242,38 +244,42 @@ ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space(size_t size) {
 	 */
 	auto new_region = new VMSpaceRegion;
 
-	while(cur_region) {
-		if(cur_region->used || cur_region->size < size) {
-			cur_region = cur_region->next;
-			continue;
+	{
+		LOCK(m_lock);
+		auto cur_region = m_region_map;
+		while(cur_region) {
+			if(cur_region->used || cur_region->size < size) {
+				cur_region = cur_region->next;
+				continue;
+			}
+
+			if(cur_region->size == size) {
+				cur_region->used = true;
+				m_used += cur_region->size;
+				delete new_region;
+				return cur_region;
+			}
+
+			*new_region = VMSpaceRegion {
+					.start = cur_region->start,
+					.size = size,
+					.used = true,
+					.next = cur_region,
+					.prev = cur_region->prev
+			};
+
+			if(cur_region->prev)
+				cur_region->prev->next = new_region;
+
+			cur_region->start += size;
+			cur_region->size -= size;
+			cur_region->prev = new_region;
+			m_used += new_region->size;
+
+			if(m_region_map == cur_region)
+				m_region_map = new_region;
+			return new_region;
 		}
-
-		if(cur_region->size == size) {
-			cur_region->used = true;
-			m_used += cur_region->size;
-			delete new_region;
-			return cur_region;
-		}
-
-		*new_region = VMSpaceRegion {
-			.start = cur_region->start,
-			.size = size,
-			.used = true,
-			.next = cur_region,
-			.prev = cur_region->prev
-		};
-
-		if(cur_region->prev)
-			cur_region->prev->next = new_region;
-
-		cur_region->start += size;
-		cur_region->size -= size;
-		cur_region->prev = new_region;
-		m_used += new_region->size;
-
-		if(m_region_map == cur_region)
-			m_region_map = new_region;
-		return new_region;
 	}
 
 	delete new_region;
@@ -283,7 +289,6 @@ ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space(size_t size) {
 ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space_at(size_t size, VirtualAddress address) {
 	ASSERT(address % PAGE_SIZE == 0);
 	ASSERT(size % PAGE_SIZE == 0);
-	auto cur_region = m_region_map;
 
 	/**
 	 * We allocate new regions if we need one BEFORE iterating through the regions, because there's a chance we'll
@@ -293,100 +298,110 @@ ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space_at(size_t size, VirtualA
 	auto new_region_before = new VMSpaceRegion;
 	auto new_region_after = new VMSpaceRegion;
 
-	while(cur_region) {
-		if(cur_region->contains(address)) {
-			if(cur_region->used) {
-				delete new_region_before;
-				delete new_region_after;
+	{
+		LOCK(m_lock);
+		auto cur_region = m_region_map;
+		while(cur_region) {
+			if(cur_region->contains(address)) {
+				if(cur_region->used) {
+					delete new_region_before;
+					delete new_region_after;
+					return Result(ENOMEM);
+				}
+
+				if(cur_region->size == size) {
+					cur_region->used = true;
+					m_used += cur_region->size;
+					delete new_region_before;
+					delete new_region_after;
+					return cur_region;
+				}
+
+				if(cur_region->size - (address - cur_region->start) >= size) {
+					// Create new region before if needed
+					if(cur_region->start < address) {
+						*new_region_before = VMSpaceRegion {
+								.start = cur_region->start,
+								.size = address - cur_region->start,
+								.used = false,
+								.next = cur_region,
+								.prev = cur_region->prev
+						};
+						if(cur_region->prev)
+							cur_region->prev->next = new_region_before;
+						cur_region->prev = new_region_before;
+						if(m_region_map == cur_region)
+							m_region_map = new_region_before;
+					} else {
+						delete new_region_before;
+					}
+
+					// Create new region after if needed
+					if(cur_region->end() > address + size) {
+						*new_region_after = VMSpaceRegion {
+								.start = address + size,
+								.size = cur_region->end() - (address + size),
+								.used = false,
+								.next = cur_region->next,
+								.prev = cur_region
+						};
+						if(cur_region->next)
+							cur_region->next->prev = new_region_after;
+						cur_region->next = new_region_after;
+					} else {
+						delete new_region_after;
+					}
+
+					cur_region->start = address;
+					cur_region->size = size;
+					cur_region->used = true;
+					m_used += cur_region->size;
+					return cur_region;
+				}
+
 				return Result(ENOMEM);
 			}
 
-			if(cur_region->size == size) {
-				cur_region->used = true;
-				m_used += cur_region->size;
-				delete new_region_before;
-				delete new_region_after;
-				return cur_region;
-			}
-
-			if(cur_region->size - (address - cur_region->start) >= size) {
-				// Create new region before if needed
-				if(cur_region->start < address) {
-					*new_region_before = VMSpaceRegion {
-						.start = cur_region->start,
-						.size = address - cur_region->start,
-						.used = false,
-						.next = cur_region,
-						.prev = cur_region->prev
-					};
-					if(cur_region->prev)
-						cur_region->prev->next = new_region_before;
-					cur_region->prev = new_region_before;
-					if(m_region_map == cur_region)
-						m_region_map = new_region_before;
-				} else {
-					delete new_region_before;
-				}
-
-				// Create new region after if needed
-				if(cur_region->end() > address + size) {
-					*new_region_after = VMSpaceRegion {
-						.start = address + size,
-						.size = cur_region->end() - (address + size),
-						.used = false,
-						.next = cur_region->next,
-						.prev = cur_region
-					};
-					if(cur_region->next)
-						cur_region->next->prev = new_region_after;
-					cur_region->next = new_region_after;
-				} else {
-					delete new_region_after;
-				}
-
-				cur_region->start = address;
-				cur_region->size = size;
-				cur_region->used = true;
-				m_used += cur_region->size;
-				return cur_region;
-			}
-
-			return Result(ENOMEM);
+			cur_region = cur_region->next;
 		}
-
-		cur_region = cur_region->next;
 	}
 
 	return Result(ENOMEM);
 }
 
 Result VMSpace::free_region(VMSpaceRegion* region) {
-	region->used = false;
-	region->vmRegion = nullptr;
-	m_used -= region->size;
+	VMSpaceRegion* to_delete[2] = {nullptr, nullptr};
+	{
+		LOCK(m_lock);
+		region->used = false;
+		region->vmRegion = nullptr;
+		m_used -= region->size;
 
-	// Merge previous region if needed
-	if(region->prev && !region->prev->used) {
-		auto to_delete = region->prev;
-		region->prev = region->prev->prev;
-		if(to_delete->prev)
-			to_delete->prev->next = region;
-		region->start -= to_delete->size;
-		region->size += to_delete->size;
-		if(m_region_map == to_delete)
-			m_region_map = region;
-		delete to_delete;
+		// Merge previous region if needed
+		if(region->prev && !region->prev->used) {
+			to_delete[0] = region->prev;
+			region->prev = region->prev->prev;
+			if(to_delete[0]->prev)
+				to_delete[0]->prev->next = region;
+			region->start -= to_delete[0]->size;
+			region->size += to_delete[0]->size;
+			if(m_region_map == to_delete[0])
+				m_region_map = region;
+		}
+
+		// Merge next region if needed
+		if(region->next && !region->next->used) {
+			to_delete[1] = region->next;
+			region->next = region->next->next;
+			if(to_delete[1]->next)
+				to_delete[1]->next->prev = region;
+			region->size += to_delete[1]->size;
+		}
 	}
 
-	// Merge next region if needed
-	if(region->next && !region->next->used) {
-		auto to_delete = region->next;
-		region->next = region->next->next;
-		if(to_delete->next)
-			to_delete->next->prev = region;
-		region->size += to_delete->size;
-		delete to_delete;
-	}
+	// We do this while not holding the lock just in case this triggers a page free in the allocator.
+	delete to_delete[0];
+	delete to_delete[1];
 
 	return Result(SUCCESS);
 }

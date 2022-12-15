@@ -381,6 +381,7 @@ void MemoryManager::free_physical_page(PageIndex page) const {
 
 ResultRet<VirtualAddress> MemoryManager::alloc_heap_pages(size_t num_pages) {
 	LOCK(m_heap_lock);
+	TaskManager::enter_critical();
 	ASSERT(m_num_heap_pages == 0); // Make sure this isn't already in progress... Just in case.
 
 	// Get some physical pages
@@ -440,6 +441,7 @@ void MemoryManager::finalize_heap_pages() {
 	m_kernel_space->lock().release();
 	m_num_heap_pages = 0;
 	m_heap_pages.resize(1024);
+	TaskManager::leave_critical();
 }
 
 size_t MemoryManager::usable_mem() const {
@@ -489,6 +491,7 @@ void *liballoc_alloc(int pages) {
 	}
 
 	ASSERT(did_setup_paging);
+	TaskManager::enter_critical();
 	auto alloc_res = MM.alloc_heap_pages(pages);
 	if(alloc_res.is_error())
 		PANIC("KHEAP_ALLOC_FAIL", "We couldn't allocate a new region for the kernel heap.");
