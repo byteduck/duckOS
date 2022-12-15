@@ -89,7 +89,6 @@ namespace Interrupt {
 					} else {
 						size_t err_pos;
 						asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-						asm volatile("sti");
 						TaskManager::current_thread()->handle_pagefault(err_pos, r->eip);
 					}
 					break;

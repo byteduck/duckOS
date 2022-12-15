@@ -136,7 +136,8 @@ SET(KERNEL_SRCS
         tests/TestMemory.cpp
         tests/kstd/TestArc.cpp
         kstd/bits/RefCount.cpp
-        kstd/Optional.cpp)
+        kstd/Optional.cpp
+        tasking/Reaper.cpp)
 
 ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS})
 TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL "$<$<BOOL:${ADD_KERNEL_DEBUG_SYMBOLS}>:DUCKOS_KERNEL_DEBUG_SYMBOLS>")

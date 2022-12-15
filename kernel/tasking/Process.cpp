@@ -26,20 +26,15 @@
 #include "WaitBlocker.h"
 #include "PollBlocker.h"
 #include "SleepBlocker.h"
-#include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/syscall.h>
 #include <kernel/terminal/VirtualTTY.h>
 #include <kernel/terminal/PTYControllerDevice.h>
 #include <kernel/terminal/PTYDevice.h>
-#include <kernel/interrupt/interrupt.h>
-#include <kernel/KernelMapper.h>
 #include "Thread.h"
-#include "JoinBlocker.h"
 #include <kernel/filesystem/Pipe.h>
-#include <kernel/kstd/cstring.h>
 #include <kernel/kstd/KLog.h>
-#include "kernel/memory/SafePointer.h"
 #include "kernel/memory/AnonymousVMObject.h"
+#include "Reaper.h"
 
 Process* Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::Arc<LinkedInode>(nullptr));
@@ -176,7 +171,7 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 		_state(ALIVE),
 		_self_ptr(this)
 {
-	Interrupt::Disabler disabler;
+	TaskManager::ScopedCritical critical;
 
 	if(!kernel) {
 		auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
@@ -262,6 +257,7 @@ void Process::reap() {
 	if(_state != ZOMBIE)
 		return;
 	_state = DEAD;
+	Reaper::inst().reap(this);
 }
 
 void Process::kill(int signal) {
@@ -274,7 +270,7 @@ bool Process::handle_pending_signal() {
 	if(pending_signals.empty() || main_thread()->in_signal_handler())
 		return false;
 
-	int signal = pending_signals.front();
+	int signal = pending_signals.pop_front();
 
 	if(signal >= 0 && signal <= 32) {
 		Signal::SignalSeverity severity = Signal::signal_severities[signal];
@@ -290,12 +286,14 @@ bool Process::handle_pending_signal() {
 				_threads[i]->kill();
 		} else if(signal_actions[signal].action) {
 			//We have a signal handler for this. If the process is blocked but can be interrupted, do so.
-			if(!main_thread()->call_signal_handler(signal))
+			if(!main_thread()->call_signal_handler(signal)) {
+				// We weren't ready to handle it. Push it back to pending_signals
+				pending_signals.push_back(signal);
 				return false;
+			}
 		}
 	}
 
-	pending_signals.pop_front();
 	return true;
 }
 
@@ -426,9 +424,10 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 		filename.~string();
 
 		//Add the new process to the process list
-		Interrupt::Disabler disabler;
+		TaskManager::ScopedCritical critical;
 		_pid = -1;
 		_state = DEAD;
+		Reaper::inst().reap(this);
 		TaskManager::add_process(new_proc);
 	}
 
@@ -559,7 +558,7 @@ int Process::sys_sigaction(int sig, UserspacePointer<sigaction> new_action, User
 		return -EINVAL;
 	{
 		//We don't want this interrupted or else we'd have a problem if it's needed before it's done
-		Interrupt::Disabler disabler;
+		TaskManager::enter_critical();
 		if(old_action) {
 			auto old = old_action.get();
 			memcpy(&old.sa_sigaction, &signal_actions[sig].action, sizeof(Signal::SigAction::action));
@@ -568,6 +567,7 @@ int Process::sys_sigaction(int sig, UserspacePointer<sigaction> new_action, User
 		}
 		signal_actions[sig].action = new_action.get().sa_sigaction;
 		signal_actions[sig].flags = new_action.get().sa_flags;
+		TaskManager::leave_critical();
 	}
 	return 0;
 }

@@ -18,13 +18,9 @@
 */
 
 #include "PATADevice.h"
-#include <kernel/memory/PageDirectory.h>
-#include <kernel/memory/kliballoc.h>
-#include <kernel/tasking/TaskManager.h>
 #include <kernel/IO.h>
-#include <kernel/kstd/cstring.h>
-#include <kernel/tasking/Thread.h>
 #include <kernel/kstd/KLog.h>
+#include <kernel/filesystem/FileDescriptor.h>
 
 PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio) {
 	PCI::Address addr = {0,0,0};
@@ -264,6 +260,8 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 }
 
 void PATADevice::access_drive(uint8_t command, uint32_t lba, uint8_t num_sectors) {
+	TaskManager::enter_critical();
+
 	//TODO: Support 48-bit LBA
 	wait_ready();
 
@@ -279,11 +277,9 @@ void PATADevice::access_drive(uint8_t command, uint32_t lba, uint8_t num_sectors
 
 	wait_ready();
 
-	//Install IRQ
-	asm volatile("cli");
+	//Install IRQ and send command
 	reinstall_irq();
-
-	//Send command
+	TaskManager::leave_critical();
 	IO::outb(_io_base + ATA_COMMAND, command);
 }
 
@@ -337,8 +333,6 @@ Result PATADevice::write_uncached_blocks(uint32_t block, uint32_t count, const u
 size_t PATADevice::block_size() {
 	return 512;
 }
-
-#include <kernel/filesystem/FileDescriptor.h>
 
 ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	size_t first_block = offset / block_size();

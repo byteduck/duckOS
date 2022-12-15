@@ -1,7 +1,9 @@
 #include "KLog.h"
 #include "kstdio.h"
+#include "../tasking/SpinLock.h"
 #include <kernel/time/TimeManager.h>
 
+extern SpinLock printf_lock;
 void klog_print(const char* component, const char* color, const char* type, const char* fmt, va_list list) {
 	auto time = TimeManager::uptime();
 	char* usec_buf = "0000000";
@@ -10,6 +12,7 @@ void klog_print(const char* component, const char* color, const char* type, cons
 		time.tv_usec /= 10;
 	}
 
+	LOCK(printf_lock);
 	printf("\033[%sm[%d.%s] [%s] [%s] ", color, (int) time.tv_sec, usec_buf, component, type);
 	vprintf(fmt, list);
 	print("\033[39;49m\n");

@@ -147,7 +147,7 @@ void MemoryManager::load_page_directory(PageDirectory& page_directory) {
 }
 
 void MemoryManager::page_fault_handler(struct Registers *r) {
-	Interrupt::Disabler disabler;
+	TaskManager::ScopedCritical critical;
 	uint32_t err_pos;
 	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
 	switch (r->err_code) {
@@ -380,7 +380,6 @@ void MemoryManager::free_physical_page(PageIndex page) const {
 }
 
 ResultRet<VirtualAddress> MemoryManager::alloc_heap_pages(size_t num_pages) {
-	LOCK(m_heap_lock);
 	TaskManager::enter_critical();
 	ASSERT(m_num_heap_pages == 0); // Make sure this isn't already in progress... Just in case.
 
@@ -416,7 +415,6 @@ void MemoryManager::finalize_heap_pages() {
 	if(!did_setup_paging)
 		return;
 
-	LOCK(m_heap_lock);
 	if(!m_num_heap_pages)
 		return; // There's nothing to do.
 

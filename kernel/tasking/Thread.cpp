@@ -238,6 +238,10 @@ void Thread::block(Blocker& blocker) {
 		PANIC("INVALID_BLOCK", "Tried to block thread %d of PID %d in state %s", _tid, _process->pid(), state_name());
 	ASSERT(!_blocker);
 
+	// Check if the blocker is already ready. If so, unblock immediately
+	if(blocker.is_ready())
+		return;
+
 	// Check for deadlock
 	// TODO: This will only detect if 2 threads are directly deadlocking each other. This will not detect deadlocks involving more than 2 threads.
 	if(blocker.responsible_thread()) {
@@ -253,7 +257,7 @@ void Thread::block(Blocker& blocker) {
 	}
 
 	{
-		Interrupt::Disabler disabler;
+		TaskManager::ScopedCritical critical;
 		_state = BLOCKED;
 		_blocker = &blocker;
 	}
@@ -393,6 +397,10 @@ bool Thread::call_signal_handler(int signal) {
 	_ready_to_handle_signal = true;
 	TaskManager::queue_thread(_process->_threads[_tid - 1]);
 
+	// If this thread is the current thread, do a context switch
+	if(TaskManager::current_thread().get() == this)
+		TaskManager::yield();
+
 	return true;
 }
 
@@ -427,7 +435,7 @@ void Thread::handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction
 	//Otherwise, try CoW and kill the process if it doesn't work
 	if(_process->_vm_space->try_pagefault(err_pos).is_error()) {
 		if(instruction_pointer > HIGHER_HALF) {
-			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x).", _process->pid(), _tid, err_pos);
+			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, err_pos, instruction_pointer);
 		}
 		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, err_pos, instruction_pointer);
 #ifdef DEBUG

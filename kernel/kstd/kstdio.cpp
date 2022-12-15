@@ -80,17 +80,16 @@ void print(const char* str){
 
 SpinLock printf_lock;
 void printf(const char* fmt, ...) {
-	if(!panicking)
-		printf_lock.acquire();
 	va_list list;
 	va_start(list, fmt);
 	vprintf(fmt, list);
 	va_end(list);
-	if(!panicking)
-		printf_lock.release();
 }
 
 void vprintf(const char* fmt, va_list argp){
+	if(!panicking)
+		printf_lock.acquire();
+
 	const char *p;
 	int i;
 	char *s;
@@ -142,12 +141,16 @@ void vprintf(const char* fmt, va_list argp){
 				break;
 		}
 	}
+
+	if(!panicking)
+		printf_lock.release();
 }
 
 bool panicked = false;
 
 [[noreturn]] void PANIC(const char* error, const char* msg, ...){
-	Interrupt::Disabler disabler;
+	TaskManager::enter_critical();
+	Interrupt::NMIDisabler disabler;
 
 	panicking = true;
 	if(did_setup_tty)

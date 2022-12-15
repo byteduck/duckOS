@@ -43,6 +43,7 @@ namespace TaskManager {
 
 	kstd::vector<Process*>* process_list();
 	int add_process(Process* proc);
+	void remove_process(Process* proc);
 	void queue_thread(const kstd::Arc<Thread>& thread);
 	kstd::Arc<Thread>& current_thread();
 	Process* current_process();
@@ -61,6 +62,26 @@ namespace TaskManager {
 
 	void enter_critical();
 	void leave_critical();
+
+	class ScopedCritical {
+	public:
+		ScopedCritical() {
+			TaskManager::enter_critical();
+		}
+
+		~ScopedCritical() {
+			if(!m_done)
+				TaskManager::leave_critical();
+		}
+
+		void exit() {
+			m_done = true;
+			TaskManager::leave_critical();
+		}
+
+	private:
+		bool m_done = false;
+	};
 
 	void notify_current(uint32_t sig);
 

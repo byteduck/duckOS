@@ -81,7 +81,7 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffe
 	size_t n_written = 0;
 	while(count) {
 		//Wait until we have a free buffer to write to
-		asm volatile("cli");
+		TaskManager::ScopedCritical critical;
 		do {
 			//Read the status, current index, and last valid index
 			auto status_byte = IO::inw(m_output_channel + ChannelRegisters::STATUS);
@@ -96,7 +96,6 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffe
 			m_blocker.set_ready(false);
 			TaskManager::current_thread()->block(m_blocker);
 		} while(m_output_dma_enabled);
-		asm volatile("sti");
 
 		//If the output DMA is not currently enabled, reset the PCM channel to be sure
 		if(!m_output_dma_enabled)

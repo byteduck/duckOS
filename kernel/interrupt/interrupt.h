@@ -27,17 +27,6 @@
 namespace Interrupt {
 	void init();
 
-	class Disabler {
-	public:
-		inline Disabler() {
-			asm volatile("cli");
-		}
-
-		inline ~Disabler() {
-			asm volatile("sti");
-		}
-	};
-
 	class NMIDisabler {
 	public:
 		inline NMIDisabler() {

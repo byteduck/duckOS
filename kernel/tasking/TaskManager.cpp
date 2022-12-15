@@ -27,6 +27,7 @@
 #include "Process.h"
 #include "Thread.h"
 #include "../interrupt/interrupt.h"
+#include "Reaper.h"
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/KLog.h>
 
@@ -142,15 +143,20 @@ void TaskManager::init(){
 	processes = new kstd::vector<Process*>();
 
 	//Create kidle process
-	kidle_process = Process::create_kernel("kidle", kidle);
+	kidle_process = Process::create_kernel("[kidle]", kidle);
 	processes->push_back(kidle_process);
 
 	//Create kinit process
-	auto kinit_process = Process::create_kernel("kinit", kmain_late);
+	auto kinit_process = Process::create_kernel("[kinit]", kmain_late);
 	processes->push_back(kinit_process);
 
-	//Add kinit thread to queue
+	//Create kreaper process
+	auto kreaper_process = Process::create_kernel("[kreaper]", kreaper_entry);
+	processes->push_back(kreaper_process);
+
+	//Add threads to queue
 	queue_thread(kinit_process->main_thread());
+	queue_thread(kreaper_process->main_thread());
 
 	//Preempt
 	cur_thread = kidle_process->main_thread();
@@ -179,6 +185,16 @@ int TaskManager::add_process(Process* proc){
 		queue_thread(threads[i]);
 	tasking_enabled = true;
 	return proc->pid();
+}
+
+void TaskManager::remove_process(Process* proc) {
+	LOCK(g_tasking_lock);
+	for(size_t i = 0; i < processes->size(); i++) {
+		if(processes->at(i) == proc) {
+			processes->erase(i);
+			return;
+		}
+	}
 }
 
 void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
@@ -230,7 +246,7 @@ bool TaskManager::yield() {
 		yield_async = true;
 		return false;
 	} else {
-		asm volatile("int $0x81");
+		preempt();
 		return true;
 	}
 }
@@ -252,7 +268,7 @@ bool TaskManager::yield_if_idle() {
 void TaskManager::do_yield_async() {
 	if(yield_async) {
 		yield_async = false;
-		asm volatile("int $0x81");
+		preempt();
 	}
 }
 
@@ -261,16 +277,16 @@ void TaskManager::tick() {
 	yield();
 }
 
-int g_critical_count = 0;
+Atomic<int> g_critical_count = 0;
 
 void TaskManager::enter_critical() {
+	g_critical_count.add(1);
 	asm volatile("cli");
-	g_critical_count++;
 }
 
 void TaskManager::leave_critical() {
-	g_critical_count--;
-	if(!g_critical_count)
+	ASSERT(g_critical_count.load() > 0);
+	if(g_critical_count.sub(1) == 1)
 		asm volatile("sti");
 }
 
@@ -280,10 +296,8 @@ void TaskManager::preempt(){
 	if(!tasking_enabled)
 		return;
 
+	enter_critical();
 	cur_thread->enter_critical();
-
-	static bool prev_alive = false; // Whether or not there was an alive process last preemption
-	bool any_alive = false;
 
 	/*
 	 * Try unblocking threads that are blocked
@@ -303,48 +317,6 @@ void TaskManager::preempt(){
 							queue_thread(thread);
 					}
 				}
-			}
-		}
-	}
-
-	/*
-	 * Only update process/thread states if the thread we're switching from isn't already blocked, as doing so may
-	 * try to block the thread again (ie acquiring the liballoc lock)
-	 */
-	if(cur_thread->can_be_run()) {
-		//Handle pending signals, cleanup dead processes, and release zombie processes' resources
-		for(int i = 0; i < processes->size(); i++) {
-			auto current = processes->at(i);
-			switch(current->state()) {
-				case Process::ALIVE: {
-					current->handle_pending_signal();
-					auto& threads = current->threads();
-
-					//Evaluate if any of the process's threads are alive or need unblocking
-					for(int j = 0; j < threads.size(); j++) {
-						auto thread = threads[j];
-						if(!thread)
-							continue;
-						if(thread->state() == Thread::ALIVE)
-							any_alive = true;
-					}
-
-					break;
-				}
-				case Process::DEAD: {
-					if(cur_thread->process() != current) {
-						current->free_resources();
-						ProcFS::inst().proc_remove(current);
-						processes->erase(i);
-						delete current;
-						i--;
-					}
-					break;
-				}
-				case Process::ZOMBIE:
-					break;
-				default:
-					PANIC("PROC_INVALID_STATE", "A process had an invalid state (%d).", current->state());
 			}
 		}
 	}
@@ -410,6 +382,7 @@ void TaskManager::preempt(){
 			queue_thread(old_thread);
 
 		old_thread->leave_critical();
+		leave_critical();
 
 		//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
 		old_thread = kstd::Arc<Thread>(nullptr);
@@ -418,7 +391,13 @@ void TaskManager::preempt(){
 		preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());
 		asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
 	} else {
+		leave_critical();
 		old_thread->leave_critical();
 	}
+
+	// Handle a pending signal.
+	cur_thread->enter_critical();
+	cur_thread->process()->handle_pending_signal();
+	cur_thread->leave_critical();
 }
 #pragma GCC pop_options

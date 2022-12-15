@@ -19,6 +19,7 @@
 
 #include "RTC.h"
 #include "CMOS.h"
+#include "../tasking/TaskManager.h"
 #include <kernel/interrupt/interrupt.h>
 
 #define LEAPYEAR(year) (((year) % 4 == 0) && (((year) % 100 != 0) || ((year) % 400 == 0)))
@@ -109,7 +110,7 @@ int RTC::frequency() {
 
 void RTC::enable() {
 	//Disable interrupts and non-maskable interrupts and enable the RTC update ended interrupt
-	Interrupt::Disabler idis;
+	TaskManager::ScopedCritical critical;
 	Interrupt::NMIDisabler nmidis;
 	CMOS::write(0x8B, CMOS_SQUARE_WAVE_INTERRUPT_FLAG | CMOS::read(CMOS_STATUS_B));
 	set_frequency(RTC_FREQUENCY);
@@ -117,7 +118,7 @@ void RTC::enable() {
 
 void RTC::disable() {
 	//Disable interrupts and non-maskable interrupts and enable the RTC update ended interrupt
-	Interrupt::Disabler idis;
+	TaskManager::ScopedCritical critical;
 	Interrupt::NMIDisabler nmidis;
 	CMOS::write(0x8B, CMOS::read(CMOS_STATUS_B) & (~CMOS_SQUARE_WAVE_INTERRUPT_FLAG));
 }

@@ -40,7 +40,6 @@ global isr31
 
 %macro ISR_NOCODE 1 ;These are ISRs that don't have codes already pushed onto the stack
 	isr%1:
-		cli
 		push byte 0
 		push byte %1
 		jmp isr_common
@@ -48,7 +47,6 @@ global isr31
 
 %macro ISR_CODE 1 ;These are ISRs that have codes already pushed onto the stack
 	isr%1:
-		cli
 		push byte %1
 		jmp isr_common
 %endmacro
@@ -131,7 +129,6 @@ global irq15
 
 %macro irq 1
 	irq%1:
-		cli
 		push byte 0
 		push byte %1+32
 		jmp irq_common
