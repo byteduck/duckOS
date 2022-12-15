@@ -54,6 +54,7 @@ private:
 		size_t start_block;
 		Time last_used = Time::now();
 		bool dirty = false;
+		SpinLock lock;
 	};
 
 	// Static

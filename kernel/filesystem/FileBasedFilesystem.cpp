@@ -34,11 +34,7 @@ Result FileBasedFilesystem::read_logical_block(size_t block, uint8_t *buffer) {
 }
 
 Result FileBasedFilesystem::read_logical_blocks(size_t block, size_t count, uint8_t *buffer) {
-	LOCK(lock);
-	int code = _file->seek(block * logical_block_size(), SEEK_SET);
-	if(code < 0) return Result(code);
-
-	ssize_t nread = _file->read(KernelPointer<uint8_t>(buffer), count * logical_block_size());
+	ssize_t nread = _file->file()->read(*_file, block * logical_block_size(), KernelPointer<uint8_t>(buffer), count * logical_block_size());
 	if(nread < 0) return Result(nread);
 	if(nread != count * logical_block_size()) return Result(-EIO);
 	return Result(SUCCESS);
@@ -49,11 +45,7 @@ Result FileBasedFilesystem::write_logical_block(size_t block, const uint8_t *buf
 }
 
 Result FileBasedFilesystem::write_logical_blocks(size_t block, size_t count, const uint8_t *buffer) {
-	LOCK(lock);
-	int code = _file->seek(block * logical_block_size(), SEEK_SET);
-	if(code < 0) return Result(code);
-
-	ssize_t nwrote = _file->write(KernelPointer<const uint8_t>(buffer), count * logical_block_size());
+	ssize_t nwrote = _file->file()->write(*_file, block * logical_block_size(), KernelPointer<const uint8_t>(buffer), count * logical_block_size());
 	if(nwrote < 0) return Result(nwrote);
 	if(nwrote != count * logical_block_size()) return Result(-EIO);
 	return Result(SUCCESS);
@@ -72,13 +64,7 @@ void FileBasedFilesystem::set_block_size(size_t block_size) {
 }
 
 Result FileBasedFilesystem::read_block(size_t block, uint8_t *buffer) {
-	LOCK(lock);
-
-	int res = _file->seek(block * block_size(), SEEK_SET);
-	if (res < 0)
-		return Result(res);
-
-	ssize_t nread = _file->read(KernelPointer<uint8_t>(buffer), block_size());
+	ssize_t nread = _file->file()->read(*_file, block * block_size(), KernelPointer<uint8_t>(buffer), block_size());
 	if (nread == 0)
 		return Result(-EIO);
 	else if(nread < 0)
@@ -107,13 +93,7 @@ Result FileBasedFilesystem::write_blocks(size_t block, size_t count, const uint8
 }
 
 Result FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
-	LOCK(lock);
-
-	int res = _file->seek(block * block_size(), SEEK_SET);
-	if(res < 0)
-		return Result(res);
-
-	ssize_t nwrote = _file->write(KernelPointer<const uint8_t>(buffer), block_size());
+	ssize_t nwrote = _file->file()->write(*_file, block * block_size(), KernelPointer<const uint8_t>(buffer), block_size());
 	if(nwrote == 0)
 		return Result(-EIO);
 	else if(nwrote < 0)
@@ -123,18 +103,11 @@ Result FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
 }
 
 Result FileBasedFilesystem::zero_block(size_t block) {
-	LOCK(lock);
-
 	//TODO: Implementation that doesn't require allocating a buffer
-
-	int res = _file->seek(block * block_size(), SEEK_SET);
-	if(res < 0)
-		return Result(res);
-
 	auto* zero_buf = new uint8_t[block_size()];
 	memset(zero_buf, 0, block_size());
 
-	ssize_t nwrote = _file->write(KernelPointer<const uint8_t>(zero_buf), block_size());
+	ssize_t nwrote = _file->file()->write(*_file, block * block_size(), KernelPointer<const uint8_t>(zero_buf), block_size());
 	delete[] zero_buf;
 
 	if(nwrote == 0)
@@ -147,23 +120,17 @@ Result FileBasedFilesystem::zero_block(size_t block) {
 
 Result FileBasedFilesystem::truncate_block(size_t block, size_t new_size) {
 	if(new_size >= block_size()) return Result(-EOVERFLOW);
-	LOCK(lock);
 
 	//TODO: Implementation that doesn't require allocating a buffer
-
-	int res = _file->seek(block * block_size(), SEEK_SET);
-	if(res < 0)
-		return Result(res);
-
 	auto* buf = new uint8_t[block_size()];
-	res = _file->read(KernelPointer<uint8_t>(buf), block_size());
+	int res = _file->file()->read(*_file, block * block_size(), KernelPointer<uint8_t>(buf), block_size());
 	if(res < 0) {
 		delete[] buf;
 		return Result(res);
 	}
 
 	memset(buf + new_size, 0, (int)(block_size() - new_size));
-	ssize_t nwrote = _file->write(KernelPointer<uint8_t>(buf), block_size());
+	ssize_t nwrote = _file->file()->write(*_file, block * block_size(), KernelPointer<uint8_t>(buf), block_size());
 	delete[] buf;
 
 	if(nwrote == 0)

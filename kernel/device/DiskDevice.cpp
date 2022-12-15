@@ -42,12 +42,12 @@ DiskDevice::~DiskDevice() {
 };
 
 Result DiskDevice::read_blocks(uint32_t start_block, uint32_t count, uint8_t* buffer) {
-	LOCK(_cache_lock);
 	kstd::Arc<BlockCacheRegion> cache_region;
 	for(size_t i = 0; i < count; i++) {
 		size_t block = start_block + i;
 		if(!cache_region || !cache_region->has_block(block))
 			cache_region = get_cache_region(block);
+		LOCK(cache_region->lock);
 		cache_region->last_used = Time::now();
 		memcpy(buffer + i * block_size(), cache_region->block_data(block), block_size());
 	}
@@ -55,12 +55,12 @@ Result DiskDevice::read_blocks(uint32_t start_block, uint32_t count, uint8_t* bu
 }
 
 Result DiskDevice::write_blocks(uint32_t start_block, uint32_t count, const uint8_t* buffer) {
-	LOCK(_cache_lock);
 	kstd::Arc<BlockCacheRegion> cache_region;
 	for(size_t i = 0; i < count; i++) {
 		size_t block = start_block + i;
 		if(!cache_region || !cache_region->has_block(block))
 			cache_region = get_cache_region(block);
+		LOCK(cache_region->lock);
 		cache_region->last_used = Time::now();
 		cache_region->dirty = true;
 		memcpy(cache_region->block_data(block), buffer + i * block_size(), block_size());
@@ -117,22 +117,26 @@ size_t DiskDevice::free_pages(size_t num_pages) {
 }
 
 kstd::Arc<DiskDevice::BlockCacheRegion> DiskDevice::get_cache_region(size_t block) {
-	LOCK(_cache_lock);
+	_cache_lock.acquire();
 
 	//See if we already have the block
 	auto reg_opt = _cache_regions.get(block_cache_region_start(block));
-	if(reg_opt)
+	if(reg_opt) {
+		_cache_lock.release();
 		return reg_opt.move_value();
+	}
 
 	//Create a new cache region
 	auto reg = kstd::Arc<BlockCacheRegion>::make(block_cache_region_start(block), block_size());
 	s_used_cache_memory += PAGE_SIZE;
+	LOCK(reg->lock);
+	_cache_regions.insert(block_cache_region_start(block), reg);
+	_cache_lock.release();
 
 	//Read the blocks into it
 	read_uncached_blocks(reg->start_block, blocks_per_cache_region(), (uint8_t*) reg->region->start());
 
 	//Return the requested region
-	_cache_regions.insert(block_cache_region_start(block), reg);
 	return reg;
 }
 

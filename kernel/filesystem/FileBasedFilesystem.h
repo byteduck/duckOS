@@ -55,7 +55,6 @@ protected:
 	void set_block_size(size_t block_size);
 
 	size_t _logical_block_size {512};
-	SpinLock lock;
 	kstd::Arc<FileDescriptor> _file;
 	size_t _block_size;
 
