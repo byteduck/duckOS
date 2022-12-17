@@ -280,8 +280,8 @@ void TaskManager::tick() {
 Atomic<int> g_critical_count = 0;
 
 void TaskManager::enter_critical() {
-	if(g_critical_count.add(1) == 0)
-		asm volatile("cli");
+	asm volatile("cli");
+	g_critical_count.add(1);
 }
 
 void TaskManager::leave_critical() {
