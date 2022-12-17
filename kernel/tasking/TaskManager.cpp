@@ -293,9 +293,9 @@ void TaskManager::leave_critical() {
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 void TaskManager::preempt(){
-	ASSERT(!g_critical_count.load());
 	if(!tasking_enabled)
 		return;
+	ASSERT(!g_critical_count.load());
 
 	/*
 	 * Try unblocking threads that are blocked

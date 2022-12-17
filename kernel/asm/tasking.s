@@ -51,15 +51,23 @@ preempt_init_asm: ;Pretty much the same as preempt_asm, but without storing the 
 
 [global preempt_asm]
 preempt_asm:
+    pushfd
+    push ebx
+    push esi
+    push edi
     push ebp
     mov ebp, esp
-    mov eax, [ebp+8] ;old_esp
-    mov ecx, [ebp+12] ;new_esp
-    mov edx, [ebp+16] ;new_cr3
+    mov eax, [ebp+24] ;old_esp
+    mov ecx, [ebp+28] ;new_esp
+    mov edx, [ebp+32] ;new_cr3
     mov [eax], esp
     mov cr3, edx
     mov esp, [ecx]
     pop ebp
+    pop edi
+    pop esi
+    pop ebx
+    popfd
 	mov eax, 0x20
 	out 0x20, al
 	out 0xA0, al

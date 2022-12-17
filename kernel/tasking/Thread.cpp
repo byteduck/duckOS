@@ -468,6 +468,10 @@ void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Regi
 
 	if(_process->pid() != 0) {
 		kernel_stack.push_sizet((size_t) TaskManager::proc_first_preempt);
+		kernel_stack.push32(regs.eflags);
+		kernel_stack.push32(regs.ebx);
+		kernel_stack.push32(regs.esi);
+		kernel_stack.push32(regs.edi);
 		kernel_stack.push32(0); //Fake popped EBP
 	}
 
