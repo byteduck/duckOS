@@ -88,7 +88,7 @@ namespace kstd {
 		}
 
 		template<typename... Args>
-		static Arc<T> make(Args... args) {
+		static Arc<T> make(Args&&... args) {
 			return Arc<T>(new T(args...));
 		}
 
@@ -179,7 +179,7 @@ namespace kstd {
 	public:
 		Weak(): m_ptr(nullptr), m_count(nullptr) {}
 
-		// Weak<U> -> Weak<T>
+		// Arc<U> -> Weak<T>
 		template<typename U>
 		Weak(const Arc<U>& other):
 				m_ptr(static_cast<T*>(other.m_ptr)),
@@ -189,7 +189,7 @@ namespace kstd {
 				m_count->acquire_weak();
 		}
 
-		// Move Weak<U> -> Weak<T>
+		// Move Arc<U> -> Weak<T>
 		template<typename U>
 		Weak(Arc<U>&& other):
 				m_ptr(static_cast<T*>(other.m_ptr)),

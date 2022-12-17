@@ -187,11 +187,11 @@ private:
 	kstd::vector<PageIndex> m_heap_pages = kstd::vector<PageIndex>(1024);
 	size_t m_num_heap_pages;
 	VirtualAddress m_last_heap_loc;
-	SpinLock m_heap_lock;
 
 	PhysicalPage* m_physical_pages;
 	kstd::vector<PhysicalRegion*> m_physical_regions;
 	kstd::Arc<VMSpace> m_kernel_space;
+	kstd::Arc<VMSpace> m_heap_space;
 };
 
 void liballoc_lock();

@@ -298,12 +298,12 @@ void *PREFIX(malloc)(size_t req_size)
 		l_memRoot = allocate_new_page( size );
 		if ( l_memRoot == NULL )
 		{
+			liballoc_afteralloc(NULL);
 			liballoc_unlock();
 #ifdef LIBALLOC_DEBUG
 			printf( "liballoc: initial l_memRoot initialization failed\n", p);
 		  FLUSH();
 #endif
-			liballoc_afteralloc(NULL);
 			return NULL;
 		}
 
@@ -414,8 +414,8 @@ void *PREFIX(malloc)(size_t req_size)
 			printf( "CASE 2: returning %x\n", p);
 			FLUSH();
 #endif
-			liballoc_unlock();		// release the lock
 			liballoc_afteralloc(p);
+			liballoc_unlock();		// release the lock
 			return p;
 		}
 
@@ -451,8 +451,8 @@ void *PREFIX(malloc)(size_t req_size)
 			printf( "CASE 3: returning %x\n", p);
 			FLUSH();
 #endif
-			liballoc_unlock();		// release the lock
 			liballoc_afteralloc(p);
+			liballoc_unlock();		// release the lock
 			return p;
 		}
 
@@ -499,8 +499,8 @@ void *PREFIX(malloc)(size_t req_size)
 					printf( "CASE 4.1: returning %x\n", p);
 						FLUSH();
 #endif
-					liballoc_unlock();		// release the lock
 					liballoc_afteralloc(p);
+					liballoc_unlock();		// release the lock
 					return p;
 				}
 			}
@@ -543,8 +543,8 @@ void *PREFIX(malloc)(size_t req_size)
 						FLUSH();
 #endif
 
-					liballoc_unlock();		// release the lock
 					liballoc_afteralloc(p);
+					liballoc_unlock();		// release the lock
 					return p;
 				}
 			}	// min->next != NULL
@@ -586,6 +586,7 @@ void *PREFIX(malloc)(size_t req_size)
 
 
 
+	liballoc_afteralloc(NULL);
 	liballoc_unlock();		// release the lock
 
 #ifdef LIBALLOC_DEBUG
@@ -597,7 +598,6 @@ void *PREFIX(malloc)(size_t req_size)
 	liballoc_dump();
 	FLUSH();
 #endif
-	liballoc_afteralloc(NULL);
 	return NULL;
 }
 

@@ -50,7 +50,8 @@ kstd::Arc<VMRegion> kernel_data_region;
 kstd::Arc<VMRegion> physical_pages_region;
 
 MemoryManager::MemoryManager():
-	m_kernel_space(kstd::make_shared<VMSpace>(HIGHER_HALF, ~0x0 - HIGHER_HALF + 1 - PAGE_SIZE, kernel_page_directory))
+	m_kernel_space(kstd::Arc<VMSpace>::make(HIGHER_HALF, KERNEL_VIRTUAL_HEAP_BEGIN - HIGHER_HALF, kernel_page_directory)),
+	m_heap_space(kstd::Arc<VMSpace>::make(KERNEL_VIRTUAL_HEAP_BEGIN, ~0x0 - KERNEL_VIRTUAL_HEAP_BEGIN + 1 - PAGE_SIZE, kernel_page_directory))
 {
 	if(_inst)
 		PANIC("MEMORY_MANAGER_DUPLICATE", "Something tried to initialize the memory manager twice.");
@@ -381,7 +382,6 @@ void MemoryManager::free_physical_page(PageIndex page) const {
 
 ResultRet<VirtualAddress> MemoryManager::alloc_heap_pages(size_t num_pages) {
 	TaskManager::enter_critical();
-	ASSERT(m_num_heap_pages == 0); // Make sure this isn't already in progress... Just in case.
 
 	// Get some physical pages
 	if(num_pages > 1024)
@@ -391,9 +391,8 @@ ResultRet<VirtualAddress> MemoryManager::alloc_heap_pages(size_t num_pages) {
 		m_heap_pages[i] = TRY(alloc_physical_page());
 	m_num_heap_pages = num_pages;
 
-	// Lock the kernel vmem space so we don't mess with regions in the meantime, and then find some free space.
-	m_kernel_space->lock().acquire();
-	m_last_heap_loc = TRY(m_kernel_space->find_free_space(num_pages * PAGE_SIZE));
+	// Find a free area in the heap space. We don't allocate it yet, as that would call `kmalloc` :)
+	m_last_heap_loc = TRY(m_heap_space->find_free_space(num_pages * PAGE_SIZE));
 
 	// Map the pages into kernel space.
 	size_t start_vpage = m_last_heap_loc / PAGE_SIZE;
@@ -412,33 +411,28 @@ ResultRet<VirtualAddress> MemoryManager::alloc_heap_pages(size_t num_pages) {
 }
 
 void MemoryManager::finalize_heap_pages() {
-	if(!did_setup_paging)
+	if(!did_setup_paging || !m_num_heap_pages)
 		return;
 
-	if(!m_num_heap_pages)
-		return; // There's nothing to do.
-
-	static bool is_finalizing = false;
-	if(is_finalizing)
+	static bool finalizing_heap = false;
+	if(finalizing_heap)
 		return;
-	is_finalizing = true;
-
-	m_heap_pages.resize(m_num_heap_pages);
+	finalizing_heap = true;
 
 	// Now, officially map the pages in the "correct" way.
+	m_heap_pages.resize(m_num_heap_pages);
 	auto object = kstd::Arc<VMObject>(new VMObject(m_heap_pages));
-	auto res = m_kernel_space->map_object(object, m_last_heap_loc);
+	auto res = m_heap_space->map_object(object, m_last_heap_loc);
 	if(res.is_error())
 		PANIC("KHEAP_FINALIZE_FAIL", "We weren't able to map the new heap region where the VMSpace said we could.");
 
 	// Leak a reference to the region since we'll manually un-leak it later
 	res.value().leak_ref();
 
-	// Unlock the vmem space and reset everything
-	is_finalizing = false;
-	m_kernel_space->lock().release();
+	// Unlock the heap and reset everything
 	m_num_heap_pages = 0;
 	m_heap_pages.resize(1024);
+	finalizing_heap = false;
 	TaskManager::leave_critical();
 }
 
@@ -489,7 +483,6 @@ void *liballoc_alloc(int pages) {
 	}
 
 	ASSERT(did_setup_paging);
-	TaskManager::enter_critical();
 	auto alloc_res = MM.alloc_heap_pages(pages);
 	if(alloc_res.is_error())
 		PANIC("KHEAP_ALLOC_FAIL", "We couldn't allocate a new region for the kernel heap.");
