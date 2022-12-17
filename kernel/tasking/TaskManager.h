@@ -61,7 +61,7 @@ namespace TaskManager {
 	void tick();
 
 	void enter_critical();
-	void leave_critical();
+	extern "C" void leave_critical();
 
 	class ScopedCritical {
 	public:
@@ -90,6 +90,7 @@ namespace TaskManager {
 
 
 	extern "C" void preempt();
+	extern "C" void preempt_finish();
 	extern "C" void __attribute((cdecl)) preempt_init_asm(unsigned int new_esp);
 	extern "C" void __attribute((cdecl)) preempt_asm(unsigned int *old_esp, unsigned int *new_esp, uint32_t new_cr3);
 	extern "C" void proc_first_preempt();

@@ -280,8 +280,8 @@ void TaskManager::tick() {
 Atomic<int> g_critical_count = 0;
 
 void TaskManager::enter_critical() {
-	g_critical_count.add(1);
-	asm volatile("cli");
+	if(g_critical_count.add(1) == 0)
+		asm volatile("cli");
 }
 
 void TaskManager::leave_critical() {
@@ -293,11 +293,9 @@ void TaskManager::leave_critical() {
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 void TaskManager::preempt(){
+	ASSERT(!g_critical_count.load());
 	if(!tasking_enabled)
 		return;
-
-	enter_critical();
-	cur_thread->enter_critical();
 
 	/*
 	 * Try unblocking threads that are blocked
@@ -321,6 +319,8 @@ void TaskManager::preempt(){
 		}
 	}
 
+	enter_critical();
+	cur_thread->enter_critical();
 	preempting = true;
 
 	/*
@@ -381,23 +381,21 @@ void TaskManager::preempt(){
 		if(old_thread != kidle_process->main_thread() && old_thread->can_be_run())
 			queue_thread(old_thread);
 
-		old_thread->leave_critical();
-		leave_critical();
-
 		//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
-		old_thread = kstd::Arc<Thread>(nullptr);
+		old_thread.reset();
 
 		asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
 		preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());
 		asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
-	} else {
-		leave_critical();
-		old_thread->leave_critical();
 	}
 
+	preempt_finish();
+}
+#pragma GCC pop_options
+
+void TaskManager::preempt_finish() {
+	leave_critical();
 	// Handle a pending signal.
-	cur_thread->enter_critical();
 	cur_thread->process()->handle_pending_signal();
 	cur_thread->leave_critical();
 }
-#pragma GCC pop_options

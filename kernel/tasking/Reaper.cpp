@@ -33,7 +33,6 @@ void Reaper::start() {
 		m_lock.acquire();
 
 		{
-			TaskManager::ScopedCritical critical;
 			while(!m_queue.empty()) {
 				auto process = m_queue.pop_front();
 				process->free_resources();

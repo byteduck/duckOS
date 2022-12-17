@@ -1,5 +1,6 @@
 [extern preempt]
 [extern tasking_enabled]
+[extern preempt_finish]
 
 [global preempt_now_asm]
 preempt_now_asm:
@@ -66,6 +67,7 @@ preempt_asm:
 
 [global proc_first_preempt]
 proc_first_preempt:
+    call preempt_finish
     pop gs
     pop fs
     pop es

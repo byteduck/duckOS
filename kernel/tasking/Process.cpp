@@ -171,8 +171,6 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 		_state(ALIVE),
 		_self_ptr(this)
 {
-	TaskManager::ScopedCritical critical;
-
 	if(!kernel) {
 		auto ttydesc = kstd::make_shared<FileDescriptor>(VirtualTTY::current_tty());
 		ttydesc->set_owner(_self_ptr);
