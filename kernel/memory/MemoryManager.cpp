@@ -503,7 +503,7 @@ void liballoc_free(void *ptr, int pages) {
 	}
 
 	// Find the region we need to free and delete it, since we manually leaked its reference count
-	auto region_res = MM.kernel_space()->get_region_at((VirtualAddress) ptr);
+	auto region_res = MM.heap_space()->get_region_at((VirtualAddress) ptr);
 	if(region_res.is_error())
 		PANIC("LIBALLOC_FREE_FAIL", "Could not find the VMRegion associated with a call to liballoc_free.");
 	region_res.value().leak_unref();

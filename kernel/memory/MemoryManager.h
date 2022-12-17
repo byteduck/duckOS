@@ -138,6 +138,7 @@ public:
 	kstd::Arc<VMRegion> map_object(kstd::Arc<VMObject> object);
 
 	kstd::Arc<VMSpace> kernel_space() { return m_kernel_space; }
+	kstd::Arc<VMSpace> heap_space() { return m_heap_space; }
 
 	/**
 	 * Frees a physical page for future use. The page should have a refcount of 0.
