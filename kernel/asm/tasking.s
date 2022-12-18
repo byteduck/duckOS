@@ -2,36 +2,6 @@
 [extern tasking_enabled]
 [extern preempt_finish]
 
-[global preempt_now_asm]
-preempt_now_asm:
-    push eax
-    push ebx
-    push ecx
-    push edx
-    push ebp
-    push edi
-    push esi
-    push ds
-    push es
-    push fs
-    push gs
-	call preempt
-    pop gs
-    pop fs
-    pop es
-    pop ds
-    pop esi
-    pop edi
-    pop ebp
-	pop edx
-	pop ecx
-	pop ebx
-	mov eax, 0x20
-	out 0x20, al
-	out 0xA0, al
-	pop eax
-	iret
-
 [global preempt_init_asm]
 preempt_init_asm: ;Pretty much the same as preempt_asm, but without storing the state of the current process
     mov eax, [esp+4]

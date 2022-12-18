@@ -23,7 +23,6 @@
 #include "irq.h"
 
 extern "C" void asm_syscall_handler();
-extern "C" void preempt_now_asm();
 
 void Interrupt::init() {
 	//Register the IDT
@@ -32,8 +31,6 @@ void Interrupt::init() {
 	Interrupt::isr_init();
 	//Setup the syscall handler
 	Interrupt::idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
-	//Setup the immediate preemption handler
-	Interrupt::idt_set_gate(0x81, (unsigned)preempt_now_asm, 0x08, 0x8E);
 	//Setup IRQ handlers
 	Interrupt::irq_init();
 	//Start interrupts
