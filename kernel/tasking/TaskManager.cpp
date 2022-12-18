@@ -48,6 +48,7 @@ static uint8_t quantum_counter = 0;
 
 void kidle(){
 	tasking_enabled = true;
+	TaskManager::yield();
 	while(1) {
 		asm volatile("hlt");
 	}
@@ -176,19 +177,17 @@ Process* TaskManager::current_process() {
 }
 
 int TaskManager::add_process(Process* proc){
-	LOCK(g_tasking_lock);
-	tasking_enabled = false;
+	TaskManager::ScopedCritical critical;
 	ProcFS::inst().proc_add(proc);
 	processes->push_back(proc);
 	auto& threads = proc->threads();
 	for(int i = 0; i < threads.size(); i++)
 		queue_thread(threads[i]);
-	tasking_enabled = true;
 	return proc->pid();
 }
 
 void TaskManager::remove_process(Process* proc) {
-	LOCK(g_tasking_lock);
+	TaskManager::ScopedCritical critical;
 	for(size_t i = 0; i < processes->size(); i++) {
 		if(processes->at(i) == proc) {
 			processes->erase(i);
@@ -198,7 +197,7 @@ void TaskManager::remove_process(Process* proc) {
 }
 
 void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
-	LOCK(g_tasking_lock);
+	TaskManager::ScopedCritical critical;
 	if(!thread) {
 		KLog::warn("TaskManager", "Tried queueing null thread!");
 		return;
@@ -219,8 +218,6 @@ void TaskManager::notify_current(uint32_t sig){
 }
 
 kstd::Arc<Thread> TaskManager::next_thread() {
-	LOCK(g_tasking_lock);
-
 	while(!thread_queue->empty() && !thread_queue->front()->can_be_run())
 		thread_queue->pop_front();
 
@@ -297,6 +294,10 @@ void TaskManager::preempt(){
 		return;
 	ASSERT(!g_critical_count.load());
 
+	enter_critical();
+	cur_thread->enter_critical();
+	preempting = true;
+
 	/*
 	 * Try unblocking threads that are blocked
 	 */
@@ -318,10 +319,6 @@ void TaskManager::preempt(){
 			}
 		}
 	}
-
-	enter_critical();
-	cur_thread->enter_critical();
-	preempting = true;
 
 	/*
 	 * If it's time to switch, switch.

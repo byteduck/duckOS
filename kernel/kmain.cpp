@@ -77,8 +77,6 @@ int kmain(uint32_t mbootptr){
 	Memory::load_gdt();
 	Interrupt::init();
 	MemoryManager::inst().setup_paging();
-
-	TimeManager::init();
 	Device::init();
 
 	//Try setting up VGA
@@ -103,6 +101,8 @@ int kmain(uint32_t mbootptr){
 
 void kmain_late(){
 	KLog::dbg("kinit", "Tasking initialized.");
+
+	TimeManager::init();
 
 	auto* tty0 = new VirtualTTY(4, 0);
 	tty0->set_active();

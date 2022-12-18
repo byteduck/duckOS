@@ -422,11 +422,13 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 		filename.~string();
 
 		//Add the new process to the process list
-		TaskManager::ScopedCritical critical;
-		_pid = -1;
-		_state = DEAD;
-		Reaper::inst().reap(this);
+		{
+			TaskManager::ScopedCritical critical;
+			_pid = -1;
+			_state = DEAD;
+		}
 		TaskManager::add_process(new_proc);
+		Reaper::inst().reap(this);
 	}
 
 	ASSERT(TaskManager::yield());
