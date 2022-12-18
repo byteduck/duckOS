@@ -381,8 +381,6 @@ void MemoryManager::free_physical_page(PageIndex page) const {
 }
 
 ResultRet<VirtualAddress> MemoryManager::alloc_heap_pages(size_t num_pages) {
-	TaskManager::enter_critical();
-
 	// Get some physical pages
 	if(num_pages > 1024)
 		PANIC("KHEAP_ALLOC_TOO_BIG", "Tried allocating more than 1024 pages at once for the kernel heap.");
@@ -433,7 +431,6 @@ void MemoryManager::finalize_heap_pages() {
 	m_num_heap_pages = 0;
 	m_heap_pages.resize(1024);
 	finalizing_heap = false;
-	TaskManager::leave_critical();
 }
 
 size_t MemoryManager::usable_mem() const {
