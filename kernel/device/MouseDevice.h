@@ -79,7 +79,6 @@ private:
 	uint8_t packet_data[4];
 	uint8_t packet_state = 0;
 	kstd::circular_queue<MouseEvent> event_buffer;
-	SpinLock lock;
 };
 
 

@@ -75,12 +75,13 @@ MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128), IRQHandle
 }
 
 ssize_t MouseDevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
-	LOCK(lock);
 	size_t ret = 0;
 	while(ret < count) {
+		TaskManager::ScopedCritical critical;
 		if(event_buffer.empty()) break;
 		if((count - ret) < sizeof(MouseEvent)) break;
 		auto evt = event_buffer.pop_front();
+		critical.exit();
 		buffer.write((uint8_t*) &evt, ret, sizeof(MouseEvent));
 		ret += sizeof(MouseEvent);
 	}
@@ -129,8 +130,6 @@ bool MouseDevice::can_write(const FileDescriptor& fd) {
 }
 
 void MouseDevice::handle_packet() {
-	send_eoi();
-
 	packet_state = 0;
 	int x = packet_data[1];
 	int y = packet_data[2];
@@ -153,7 +152,6 @@ void MouseDevice::handle_packet() {
 		y = 0;
 	}
 
-	LOCK(lock);
 	if(event_buffer.size() == event_buffer.capacity())
 		event_buffer.pop_front();
 	event_buffer.push_back({x, y, z, (uint8_t) (packet_data[0] & 0x7u)});

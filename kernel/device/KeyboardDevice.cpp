@@ -39,16 +39,17 @@ KeyboardDevice::KeyboardDevice(): CharacterDevice(13, 0), IRQHandler(1), _event_
 }
 
 ssize_t KeyboardDevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
-	LOCK(_lock);
 	size_t ret = 0;
 	SafePointer<KeyEvent> key_buffer = buffer;
 	int event_idx = 0;
 	while(ret < count) {
+		TaskManager::ScopedCritical critical;
 		if(_event_buffer.empty())
 			break;
 		if((count - ret) < sizeof(KeyEvent))
 			break;
 		auto evt = _event_buffer.pop_front();
+		critical.exit();
 		key_buffer.set(event_idx, evt);
 		ret += sizeof(KeyEvent);
 		event_idx++;
@@ -77,8 +78,6 @@ void KeyboardDevice::handle_irq(Registers *regs) {
 }
 
 void KeyboardDevice::handle_byte(uint8_t byte) {
-	send_eoi();
-
 	auto scancode = byte;
 	auto key = scancode & 0x7fu;
 	bool key_pressed = !(scancode & KBD_IS_PRESSED);
@@ -133,7 +132,6 @@ void KeyboardDevice::set_key_state(uint8_t scancode, bool pressed) {
 	if (_handler != nullptr)
 		_handler->handle_key(event);
 	_e0_flag = false;
-	LOCK(_lock);
 	if(_event_buffer.size() == _event_buffer.capacity())
 		_event_buffer.pop_front();
 	_event_buffer.push_back(event);
