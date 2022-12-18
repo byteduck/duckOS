@@ -223,17 +223,17 @@ void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8
 	access_drive(ATA_WRITE_PIO, sector, sectors);
 
 	for(auto j = 0; j < sectors; j++) {
+		TaskManager::ScopedCritical critical;
 		IO::wait(10);
 		while(IO::inb(_io_base + ATA_STATUS) & ATA_STATUS_BSY || !(IO::inb(_io_base + ATA_STATUS) & ATA_STATUS_DRQ));
 		for(auto i = 0; i < 256; i++) {
 			IO::outw(_io_base + ATA_DATA, buffer[i * 2] + (buffer[i * 2 + 1] << 8u));
 		}
+		critical.exit();
 		TaskManager::current_thread()->block(_blocker);
 		_blocker.set_ready(false);
-		asm volatile("cli");
 		buffer += 512;
 	}
-	asm volatile("sti");
 	uninstall_irq();
 }
 
@@ -245,8 +245,7 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 	for(auto j = 0; j < sectors; j++) {
 		TaskManager::current_thread()->block(_blocker);
 		_blocker.set_ready(false);
-		asm volatile("cli");
-
+		TaskManager::ScopedCritical critical;
 		for (auto i = 0; i < 256; i++) {
 			uint16_t tmp = IO::inw(_io_base + ATA_DATA);
 			buffer[i * 2] = (uint8_t) tmp;
@@ -256,7 +255,6 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 	}
 
 	uninstall_irq();
-	asm volatile("sti");
 }
 
 void PATADevice::access_drive(uint8_t command, uint32_t lba, uint8_t num_sectors) {
