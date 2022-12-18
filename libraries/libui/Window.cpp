@@ -283,7 +283,7 @@ void Window::on_mouse_move(Pond::MouseMoveEvent event) {
 	//TODO: Add some mechanism in pond to exclude an area from dragging
 	if(!_mouse.in(contents_rect()) && old_mouse.in(contents_rect()))
 		_window->set_draggable(true);
-	else if(_mouse.in(contents_rect()) && old_mouse.in(contents_rect()))
+	else if(_mouse.in(contents_rect()) && !old_mouse.in(contents_rect()))
 		_window->set_draggable(false);
 
 	auto do_widget = [&] (Duck::Ptr<Widget> widget) {

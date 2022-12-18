@@ -82,7 +82,8 @@ bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 	if(m_hovered) {
 		m_hovered = false;
-		repaint();
+		if(m_style == ButtonStyle::FLAT)
+			repaint();
 	}
 	if(m_pressed) {
 		m_pressed = false;
@@ -93,7 +94,8 @@ void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 bool Button::on_mouse_move(Pond::MouseMoveEvent evt) {
 	if(!m_hovered) {
 		m_hovered = true;
-		repaint();
+		if(m_style == ButtonStyle::FLAT)
+			repaint();
 	}
 	return false;
 }
