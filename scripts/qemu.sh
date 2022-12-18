@@ -34,10 +34,10 @@ if command -v wslpath >/dev/null; then
 		DUCKOS_WIN_QEMU_INSTALL_DIR="C:\\Program Files\\qemu"
 	fi
 	USE_KVM="0"
-	DUCKOS_QEMU="$(wslpath "${DUCKOS_WIN_QEMU_INSTALL_DIR}")/qemu-system-x86_64.exe"
+	DUCKOS_QEMU="$(wslpath "${DUCKOS_WIN_QEMU_INSTALL_DIR}")/qemu-system-i386.exe"
 	DUCKOS_IMAGE="$(wslpath -w "$DUCKOS_IMAGE")"
 else
-	DUCKOS_QEMU="qemu-system-x86_64"
+	DUCKOS_QEMU="qemu-system-i386"
 fi
 
 DUCKOS_QEMU_DISPLAY=""
