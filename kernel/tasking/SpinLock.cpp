@@ -26,7 +26,7 @@ SpinLock::SpinLock() = default;
 SpinLock::~SpinLock() = default;
 
 bool SpinLock::locked() {
-	return m_holding_thread.load();
+	return m_holding_thread.load(MemoryOrder::SeqCst);
 }
 
 void SpinLock::release() {
@@ -36,7 +36,7 @@ void SpinLock::release() {
 	// Decrease counter. If the counter is zero, release the lock
 	m_times_locked--;
 	if(!m_times_locked)
-		m_holding_thread.store(nullptr);
+		m_holding_thread.store(nullptr, MemoryOrder::SeqCst);
 }
 
 void SpinLock::acquire() {
