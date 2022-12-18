@@ -81,9 +81,9 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffe
 	size_t n_written = 0;
 	while(count) {
 		//Wait until we have a free buffer to write to
-		TaskManager::ScopedCritical critical;
 		do {
 			//Read the status, current index, and last valid index
+			TaskManager::ScopedCritical critical;
 			auto status_byte = IO::inw(m_output_channel + ChannelRegisters::STATUS);
 			BufferStatus status = {.value = status_byte};
 			auto current_index = IO::inb(m_output_channel + ChannelRegisters::CURRENT_INDEX);
@@ -93,6 +93,7 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffe
 				num_buffers_left++;
 			if(num_buffers_left < AC97_NUM_BUFFER_DESCRIPTORS)
 				break;
+			critical.exit();
 			m_blocker.set_ready(false);
 			TaskManager::current_thread()->block(m_blocker);
 		} while(m_output_dma_enabled);
