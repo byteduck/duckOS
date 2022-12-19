@@ -34,9 +34,7 @@ MultibootVGADevice *MultibootVGADevice::create(struct multiboot_info *mboot_head
 	return ret;
 }
 
-MultibootVGADevice::~MultibootVGADevice() {
-	if(double_buffer) delete[] double_buffer;
-}
+MultibootVGADevice::~MultibootVGADevice() = default;
 
 bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 	if(!(mboot_header->flags & MULTIBOOT_INFO_FRAMEBUFFER_INFO)) {
@@ -63,24 +61,20 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 
 	framebuffer_region = MM.alloc_mapped_region(framebuffer_paddr, framebuffer_size());
 	framebuffer = (uint32_t*) framebuffer_region->start();
-	double_buffer = new uint32_t[framebuffer_size() / sizeof(uint32_t)];
-	memset(double_buffer, 0, framebuffer_size());
 
 	return true;
 }
 
 ssize_t MultibootVGADevice::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	LOCK(_lock);
-	if(!double_buffer || !framebuffer) return -ENOSPC;
+	if(!framebuffer) return -ENOSPC;
 	if(offset + count > framebuffer_size()) return -ENOSPC;
-	buffer.read(((uint8_t*)double_buffer + offset), count);
 	buffer.read(((uint8_t*)framebuffer + offset), count);
 	return count;
 }
 
 void MultibootVGADevice::set_pixel(size_t x, size_t y, uint32_t value) {
 	if(x > framebuffer_width || y > framebuffer_height) return;
-	double_buffer[x + y * framebuffer_width] = value;
 	framebuffer[x + y * framebuffer_width] = value;
 }
 
@@ -106,15 +100,13 @@ size_t MultibootVGADevice::framebuffer_size() {
 
 void MultibootVGADevice::scroll(size_t pixels) {
 	if(pixels > framebuffer_height) return;
-	memcpy(double_buffer, double_buffer + pixels * framebuffer_width, (framebuffer_height - pixels) * framebuffer_width * sizeof(uint32_t));
-	memset(double_buffer + (framebuffer_height - pixels) * framebuffer_width, 0, framebuffer_width * pixels * sizeof(uint32_t));
-	memcpy(framebuffer, double_buffer, framebuffer_size());
+	memcpy(framebuffer, framebuffer + pixels * framebuffer_width, (framebuffer_height - pixels) * framebuffer_width * sizeof(uint32_t));
+	memset(framebuffer + (framebuffer_height - pixels) * framebuffer_width, 0, framebuffer_width * pixels * sizeof(uint32_t));
 }
 
 void MultibootVGADevice::clear(uint32_t color) {
 	size_t size = framebuffer_height * framebuffer_width;
 	for(size_t i = 0; i < size; i++) {
-		double_buffer[i] = color;
 		framebuffer[i] = color;
 	}
 }

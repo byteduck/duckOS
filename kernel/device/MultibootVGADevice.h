@@ -45,7 +45,6 @@ private:
 	size_t framebuffer_paddr;
 	kstd::Arc<VMRegion> framebuffer_region;
 	uint32_t* framebuffer;
-	uint32_t* double_buffer = nullptr;
 	uint32_t framebuffer_pitch;
 	uint32_t framebuffer_width;
 	uint32_t framebuffer_height;
