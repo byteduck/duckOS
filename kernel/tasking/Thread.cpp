@@ -466,7 +466,7 @@ void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Regi
 	kernel_stack.push32(regs.fs);
 	kernel_stack.push32(regs.gs);
 
-	if(_process->pid() != 0) {
+	if(_process->pid() != 0 || _tid != 1) {
 		kernel_stack.push_sizet((size_t) TaskManager::proc_first_preempt);
 		kernel_stack.push32(regs.eflags);
 		kernel_stack.push32(regs.ebx);

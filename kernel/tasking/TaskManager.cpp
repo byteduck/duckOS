@@ -18,24 +18,20 @@
 */
 
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/kstd/kstddef.h>
-#include <kernel/kstd/kstdio.h>
 #include <kernel/kmain.h>
 #include <kernel/interrupt/irq.h>
 #include <kernel/filesystem/procfs/ProcFS.h>
 #include "TSS.h"
 #include "Process.h"
 #include "Thread.h"
-#include "../interrupt/interrupt.h"
 #include "Reaper.h"
-#include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/KLog.h>
 
 TSS TaskManager::tss;
 SpinLock TaskManager::g_tasking_lock;
 
 kstd::Arc<Thread> cur_thread;
-Process* kidle_process;
+Process* kernel_process;
 kstd::vector<Process*>* processes = nullptr;
 
 kstd::queue<kstd::Arc<Thread>>* thread_queue = nullptr;
@@ -124,9 +120,9 @@ bool TaskManager::enabled(){
 }
 
 bool TaskManager::is_idle() {
-	if(!kidle_process)
+	if(!kernel_process)
 		return true;
-	return cur_thread == kidle_process->main_thread();
+	return cur_thread == kernel_process->main_thread();
 }
 
 bool TaskManager::is_preempting() {
@@ -143,24 +139,20 @@ void TaskManager::init(){
 	thread_queue = new kstd::queue<kstd::Arc<Thread>>();
 	processes = new kstd::vector<Process*>();
 
-	//Create kidle process
-	kidle_process = Process::create_kernel("[kidle]", kidle);
-	processes->push_back(kidle_process);
+	//Create kernel process
+	kernel_process = Process::create_kernel("[kernel]", kidle);
+	processes->push_back(kernel_process);
 
 	//Create kinit process
 	auto kinit_process = Process::create_kernel("[kinit]", kmain_late);
 	processes->push_back(kinit_process);
-
-	//Create kreaper process
-	auto kreaper_process = Process::create_kernel("[kreaper]", kreaper_entry);
-	processes->push_back(kreaper_process);
-
-	//Add threads to queue
 	queue_thread(kinit_process->main_thread());
-	queue_thread(kreaper_process->main_thread());
+
+	//Create kernel threads
+	kernel_process->spawn_kernel_thread(kreaper_entry);
 
 	//Preempt
-	cur_thread = kidle_process->main_thread();
+	cur_thread = kernel_process->main_thread();
 	preempt_init_asm(cur_thread->registers.esp);
 }
 
@@ -202,7 +194,7 @@ void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
 		KLog::warn("TaskManager", "Tried queueing null thread!");
 		return;
 	}
-	if(thread == kidle_process->main_thread()) {
+	if(thread == kernel_process->main_thread()) {
 		KLog::warn("TaskManager", "Tried queuing kidle thread!");
 		return;
 	}
@@ -224,11 +216,10 @@ kstd::Arc<Thread> TaskManager::next_thread() {
 	if(thread_queue->empty()) {
 		if(cur_thread->can_be_run()) {
 			return cur_thread;
-		} else if(kidle_process->main_thread()->state() != Thread::ALIVE) {
-			PANIC("KTHREAD_DEADLOCK",
-				  "The kernel thread is blocked, and no other thread is available to switch to.");
+		} else if(kernel_process->main_thread()->state() != Thread::ALIVE) {
+			PANIC("KTHREAD_DEADLOCK", "The kernel idle thread is blocked!");
 		} else {
-			return kidle_process->main_thread();
+			return kernel_process->main_thread();
 		}
 	}
 
@@ -255,9 +246,9 @@ bool TaskManager::yield_if_not_preempting() {
 }
 
 bool TaskManager::yield_if_idle() {
-	if(!kidle_process)
+	if(!kernel_process)
 		return false;
-	if(cur_thread->process() == kidle_process)
+	if(cur_thread == kernel_process->main_thread())
 		return yield();
 	return false;
 }
@@ -375,7 +366,7 @@ void TaskManager::preempt(){
 	if(!cur_thread->can_be_run())
 		PANIC("INVALID_CONTEXT_SWITCH", "Tried to switch to thread %d of PID %d in state %d", cur_thread->tid(), cur_thread->process()->pid(), cur_thread->state());
 	if(should_preempt) {
-		if(old_thread != kidle_process->main_thread() && old_thread->can_be_run())
+		if(old_thread != kernel_process->main_thread() && old_thread->can_be_run())
 			queue_thread(old_thread);
 
 		//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around

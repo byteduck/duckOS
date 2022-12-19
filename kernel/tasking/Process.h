@@ -77,6 +77,7 @@ public:
 	kstd::Arc<Thread>& main_thread();
 	tid_t last_active_thread();
 	void set_last_active_thread(tid_t tid);
+	kstd::Arc<Thread> spawn_kernel_thread(void (*entry)());
 	const kstd::vector<kstd::Arc<Thread>>& threads();
 
 	//Signals and death

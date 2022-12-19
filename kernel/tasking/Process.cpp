@@ -158,6 +158,14 @@ void Process::set_last_active_thread(tid_t tid) {
 	_last_active_thread = tid;
 }
 
+kstd::Arc<Thread> Process::spawn_kernel_thread(void (*entry)()) {
+	ProcessArgs args = ProcessArgs(kstd::Arc<LinkedInode>(nullptr));
+	auto thread = kstd::make_shared<Thread>(_self_ptr, _cur_tid++, (size_t) entry, &args);
+	_threads.push_back(thread);
+	TaskManager::queue_thread(thread);
+	return thread;
+}
+
 const kstd::vector<kstd::Arc<Thread>>& Process::threads() {
 	return _threads;
 }
