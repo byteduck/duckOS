@@ -220,18 +220,17 @@ Result PATADevice::write_sectors_dma(size_t lba, uint8_t num_sectors, const uint
 void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8_t *buffer) {
 	LOCK(_lock);
 
+	_blocker.set_ready(false);
 	access_drive(ATA_WRITE_PIO, sector, sectors);
-
 	for(auto j = 0; j < sectors; j++) {
+		TaskManager::current_thread()->block(_blocker);
+		_blocker.set_ready(false);
 		TaskManager::ScopedCritical critical;
 		IO::wait(10);
 		while(IO::inb(_io_base + ATA_STATUS) & ATA_STATUS_BSY || !(IO::inb(_io_base + ATA_STATUS) & ATA_STATUS_DRQ));
 		for(auto i = 0; i < 256; i++) {
 			IO::outw(_io_base + ATA_DATA, buffer[i * 2] + (buffer[i * 2 + 1] << 8u));
 		}
-		critical.exit();
-		TaskManager::current_thread()->block(_blocker);
-		_blocker.set_ready(false);
 		buffer += 512;
 	}
 	uninstall_irq();
@@ -240,8 +239,8 @@ void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8
 void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buffer) {
 	LOCK(_lock);
 
+	_blocker.set_ready(false);
 	access_drive(ATA_READ_PIO, sector, sectors);
-
 	for(auto j = 0; j < sectors; j++) {
 		TaskManager::current_thread()->block(_blocker);
 		_blocker.set_ready(false);
@@ -253,7 +252,6 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 		}
 		buffer += 512;
 	}
-
 	uninstall_irq();
 }
 
