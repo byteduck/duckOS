@@ -267,17 +267,6 @@ void Process::reap() {
 }
 
 void Process::kill(int signal) {
-	pending_signals.push_back(signal);
-	if(TaskManager::current_thread()->process() == _self_ptr)
-		ASSERT(TaskManager::yield_if_not_preempting());
-}
-
-bool Process::handle_pending_signal() {
-	if(pending_signals.empty() || main_thread()->in_signal_handler())
-		return false;
-
-	int signal = pending_signals.pop_front();
-
 	if(signal >= 0 && signal <= 32) {
 		Signal::SignalSeverity severity = Signal::signal_severities[signal];
 
@@ -288,19 +277,30 @@ bool Process::handle_pending_signal() {
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill all threads
+			TaskManager::current_thread()->enter_critical();
 			for(int i = 0; i < _threads.size(); i++)
 				_threads[i]->kill();
+			TaskManager::current_thread()->leave_critical();
 		} else if(signal_actions[signal].action) {
 			//We have a signal handler for this. If the process is blocked but can be interrupted, do so.
 			if(!main_thread()->call_signal_handler(signal)) {
 				// We weren't ready to handle it. Push it back to pending_signals
+				LOCK(_lock);
 				pending_signals.push_back(signal);
-				return false;
 			}
 		}
 	}
+}
 
-	return true;
+void Process::handle_pending_signal() {
+	_lock.acquire();
+	if(!pending_signals.empty()) {
+		int sig = pending_signals.pop_front();
+		_lock.release();
+		kill(sig);
+	} else {
+		_lock.release();
+	}
 }
 
 bool Process::has_pending_signals() {
@@ -1173,16 +1173,17 @@ int Process::sys_access(UserspacePointer<char> pathname, int mode) {
 
 void Process::alert_thread_died() {
 	//Check if all the threads are dead. If they are, we are ready to die.
-	bool any_alive = false;
+	int count_alive = 0;
 	for(size_t i = 0; i < threads().size(); i++)
 		if(_threads[i] && _threads[i]->state() != Thread::DEAD)
-			any_alive = true;
+			count_alive++;
 
-	if(!any_alive) {
+	// If we have one thread alive (ie the one currently dying), we're ready to die.
+	if(count_alive == 1) {
 		auto parent = TaskManager::process_for_pid(_ppid);
 		if (!parent.is_error() && parent.value() != this)
 			parent.value()->kill(SIGCHLD);
-		_state = ZOMBIE;
 		TaskManager::reparent_orphans(this);
+		_state = ZOMBIE;
 	}
 }

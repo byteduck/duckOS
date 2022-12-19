@@ -84,7 +84,7 @@ public:
 	void kill(int signal);
 	void reap();
 	void free_resources();
-	bool handle_pending_signal();
+	void handle_pending_signal();
 	bool has_pending_signals();
 
 	//Memory

@@ -23,15 +23,10 @@
 #include "Blocker.h"
 #include "TaskManager.h"
 #include "JoinBlocker.h"
-#include <kernel/KernelMapper.h>
-#include <kernel/interrupt/isr.h>
 #include <kernel/memory/MemoryManager.h>
-#include <kernel/memory/PageDirectory.h>
-#include <kernel/memory/Stack.h>
 #include <kernel/kstd/KLog.h>
 #include <kernel/memory/SafePointer.h>
 #include "../memory/AnonymousVMObject.h"
-#include "../interrupt/interrupt.h"
 
 Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
 	//Create the kernel stack
@@ -321,6 +316,9 @@ Result Thread::join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& 
 }
 
 bool Thread::call_signal_handler(int signal) {
+	if(_ready_to_handle_signal || _in_signal || _just_finished_signal)
+		return false;
+
 	if(is_blocked()) {
 		if(_blocker->can_be_interrupted()) {
 			_blocker->interrupt();
@@ -486,8 +484,8 @@ void Thread::exit(void* return_value) {
 
 void Thread::reap() {
 	ASSERT(_state != DEAD);
-	_state = DEAD;
 	_process->alert_thread_died();
+	_state = DEAD;
 	if(TaskManager::current_thread().get() == this)
 		TaskManager::yield();
 }
