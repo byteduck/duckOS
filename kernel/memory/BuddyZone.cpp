@@ -6,11 +6,15 @@
 
 BuddyZone::BuddyZone(PageIndex first_page, size_t num_pages):
 	m_first_page(first_page),
+	m_highest_order(order_for(num_pages)),
 	m_num_pages(num_pages),
 	m_free_pages(num_pages)
 {
+	ASSERT(size_of_order(m_highest_order) == num_pages); // Make sure the number of pages is a power of 2
+	ASSERT(m_highest_order <= MAX_ORDER); // Make sure the highest order is less than or equal to the max order
+
 	// Initialize the bitmaps for each order
-	for(int i = 0; i <= MAX_ORDER; i++) {
+	for(int i = 0; i <= m_highest_order; i++) {
 		auto& bucket = m_orders[i];
 		bucket.order = i;
 		auto num_blocks = num_pages / size_of_order(i);
@@ -19,11 +23,8 @@ BuddyZone::BuddyZone(PageIndex first_page, size_t num_pages):
 			bucket.block_map = kstd::Bitmap(order_bitmap_size);
 	}
 
-	auto highest_order = order_for(num_pages);
-	ASSERT(size_of_order(highest_order) == num_pages); // Make sure the number of pages is a power of 2
-	ASSERT(highest_order <= MAX_ORDER); // Make sure the highest order is less than or equal to the max order
-	m_orders[highest_order].freelist = 0;
-	m_orders[highest_order].set_bit(0, BuddyState::MIXED);
+	m_orders[m_highest_order].freelist = 0;
+	m_orders[m_highest_order].set_bit(0, BuddyState::MIXED);
 }
 
 PhysicalPage& BuddyZone::get_block(int block) const {
@@ -47,7 +48,7 @@ void BuddyZone::free_block(PageIndex start_page, size_t num_pages) {
 }
 
 ResultRet<int> BuddyZone::alloc_block_internal(unsigned int order) {
-	ASSERT(order <= MAX_ORDER);
+	ASSERT(order <= m_highest_order);
 
 	auto& bucket = m_orders[order];
 	if(bucket.freelist == -1) {
@@ -81,7 +82,7 @@ ResultRet<int> BuddyZone::alloc_block_internal(unsigned int order) {
 }
 
 void BuddyZone::free_block_internal(int block, unsigned int order) {
-	ASSERT(order <= MAX_ORDER);
+	ASSERT(order <= m_highest_order);
 
 	auto& bucket = m_orders[order];
 	if(bucket.get_bit(block) == BuddyState::MIXED) {

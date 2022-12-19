@@ -100,9 +100,11 @@ bool PhysicalRegion::contains_page(PageIndex page) {
 }
 
 void PhysicalRegion::init() {
+	if(m_reserved)
+		return;
 	// Setup the freelists of the zones.
-	for(size_t i = 0; i < m_zones.size(); i++) {
-		auto& page = MemoryManager::inst().get_physical_page(m_zones[i]->first_page());
+	for(auto& zone : m_zones) {
+		auto& page = MemoryManager::inst().get_physical_page(zone->first_page());
 		page.free.prev = -1;
 		page.free.next = -1;
 	}

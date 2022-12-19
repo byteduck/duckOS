@@ -114,6 +114,7 @@ private:
 
 	BuddyOrder m_orders[MAX_ORDER + 1]; ///< The orders in the zone, with order 0 being 1 page blocks.
 	PageIndex m_first_page; ///< The index of the first page of this zone.
+	unsigned int m_highest_order; ///< The highest order of this zone.
 	size_t m_num_pages; ///< The number of pages in this zone.
 	size_t m_free_pages; ///< The number of free pages in this zone.
 };

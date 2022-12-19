@@ -102,7 +102,7 @@ void MemoryManager::setup_paging() {
 		.cow = false
 	};
 	for(size_t i = 0; i < page_array_num_pages; i++) {
-		if(kernel_page_directory.map_page(kstd::ceil_div(KERNEL_DATA_END, PAGE_SIZE) + i, page_array_start_page, pages_prot).is_error())
+		if(kernel_page_directory.map_page(kstd::ceil_div(KERNEL_DATA_END, PAGE_SIZE) + i, page_array_start_page + i, pages_prot).is_error())
 			PANIC("PAGE_ARRAY_MAP_ERR", "Could not map the physical page array.");
 	}
 
