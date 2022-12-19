@@ -185,7 +185,7 @@ private:
 	static MemoryManager* _inst;
 
 	// Heap stuff
-	kstd::vector<PageIndex> m_heap_pages = kstd::vector<PageIndex>(1024);
+	kstd::vector<PageIndex> m_heap_pages = kstd::vector<PageIndex>(4096);
 	size_t m_num_heap_pages;
 	VirtualAddress m_last_heap_loc;
 
