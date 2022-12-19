@@ -23,6 +23,7 @@
 #include "kstddef.h"
 #include "utility.h"
 #include "kstdio.h"
+#include "Iterator.h"
 
 namespace kstd {
 	template<typename T>
@@ -183,6 +184,15 @@ namespace kstd {
 		T* storage() {
 			return _storage;
 		}
+
+		// Iterator
+		using Iterator = ContainerIterator<vector, T>;
+		using ConstIterator = ContainerIterator<const vector, const T>;
+
+		Iterator begin() { return Iterator::begin(*this); }
+		ConstIterator begin() const { return ConstIterator::begin(*this); }
+		Iterator end() { return Iterator::end(*this); }
+		ConstIterator end() const { return ConstIterator::end(*this); }
 
 	private:
 		T* _storage = nullptr;
