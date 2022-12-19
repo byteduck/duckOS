@@ -118,7 +118,7 @@ void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h
 
 	while(*str) {
 		auto glyph = font->glyph(*str);
-		if(!rect_for_glyph(glyph).inside(rect)) {
+		if(*str == '\n' || !rect_for_glyph(glyph).inside(rect)) {
 			// We ran out of space on the line, try line wrapping
 			finalize_line();
 			if(!rect_for_glyph(glyph).inside(rect)) {
