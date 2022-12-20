@@ -199,7 +199,6 @@ void Thread::kill() {
 		if (_blocker->can_be_interrupted()) {
 			_blocker->interrupt();
 			unblock();
-			TaskManager::queue_thread(_process->_threads[_tid - 1]);
 		} else {
 			KLog::warn("Thread", "Could not interrupt %s(pid: %d, tid: %d) while killing...", _process->name().c_str(),  _process->pid(), _tid);
 		}
@@ -269,6 +268,10 @@ void Thread::unblock() {
 	_blocker = nullptr;
 	if(_state == BLOCKED)
 		_state = ALIVE;
+	{
+		LOCK(TaskManager::g_tasking_lock);
+		TaskManager::queue_thread(self());
+	}
 }
 
 bool Thread::is_blocked() {
@@ -394,7 +397,10 @@ bool Thread::call_signal_handler(int signal) {
 
 	//Queue this thread
 	_ready_to_handle_signal = true;
-	TaskManager::queue_thread(_process->_threads[_tid - 1]);
+	{
+		LOCK(TaskManager::g_tasking_lock);
+		TaskManager::queue_thread(_process->_threads[_tid - 1]);
+	}
 
 	// If this thread is the current thread, do a context switch
 	if(TaskManager::current_thread().get() == this)
@@ -439,6 +445,22 @@ void Thread::handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction
 		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, err_pos, instruction_pointer);
 		_process->kill(SIGSEGV);
 	}
+}
+
+void Thread::enqueue_thread(const kstd::Arc<Thread>& thread) {
+	ASSERT(TaskManager::g_tasking_lock.held_by_current_thread());
+	if(thread.get() == this)
+		return;
+	if(m_next)
+		m_next->enqueue_thread(thread);
+	else
+		m_next = thread;
+}
+
+kstd::Arc<Thread> Thread::next_thread() {
+	auto next = m_next;
+	m_next.reset();
+	return next;
 }
 
 void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Registers& regs) {

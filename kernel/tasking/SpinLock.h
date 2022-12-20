@@ -28,13 +28,25 @@
 class Thread;
 class SpinLock: public Lock {
 public:
+	enum class AcquireMode {
+		EnterCritical, ///< The CPU will enter critical mode while acquiring the lock, and will not leave once acquired.
+		Normal, ///< The CPU will acquire the lock without entering critical mode.
+		Try ///< The CPU will try to acquire the lock, but will return if it is already locked.
+	};
+
 	SpinLock();
 	~SpinLock();
 	bool locked() override;
 	void acquire() override;
+	bool try_acquire();
+	void acquire_and_enter_critical();
 	void release() override;
+	bool held_by_current_thread();
+	int count() { return m_times_locked; }
 
 private:
+	inline bool acquire_with_mode(AcquireMode mode);
+
 	Atomic<Thread*, MemoryOrder::AcqRel> m_holding_thread = 0;
 	int m_times_locked = 0;
 };

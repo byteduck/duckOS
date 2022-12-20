@@ -164,6 +164,7 @@ kstd::Arc<Thread> Process::spawn_kernel_thread(void (*entry)()) {
 	ProcessArgs args = ProcessArgs(kstd::Arc<LinkedInode>(nullptr));
 	auto thread = kstd::make_shared<Thread>(_self_ptr, _cur_tid++, (size_t) entry, &args);
 	_threads.push_back(thread);
+	ASSERT(TaskManager::g_tasking_lock.held_by_current_thread());
 	TaskManager::queue_thread(thread);
 	return thread;
 }
@@ -1146,7 +1147,10 @@ int Process::sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void
 	auto thread = kstd::make_shared<Thread>(_self_ptr, _cur_tid++, entry_func, thread_func, arg);
 	recalculate_pmem_total();
 	_threads.push_back(thread);
-	TaskManager::queue_thread(thread);
+	{
+		LOCK(TaskManager::g_tasking_lock);
+		TaskManager::queue_thread(thread);
+	}
 	return thread->tid();
 }
 

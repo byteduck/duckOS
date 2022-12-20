@@ -34,7 +34,7 @@ class Process;
 class Blocker;
 class ProcessArgs;
 template<typename T> class UserspacePointer;
-class Thread {
+class Thread: public kstd::ArcSelf<Thread> {
 public:
 	enum State {
 		ALIVE = 0,
@@ -82,6 +82,10 @@ public:
 	//Misc
 	void handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction_pointer);
 
+	//Thread queue
+	void enqueue_thread(const kstd::Arc<Thread>& thread);
+	kstd::Arc<Thread> next_thread();
+
 	uint8_t fpu_state[512] __attribute__((aligned(16)));
 	Registers registers = {};
 	Registers signal_registers = {};
@@ -118,5 +122,8 @@ private:
 	size_t _signal_stack_top = 0;
 	kstd::Arc<VMRegion> _sighandler_ustack_region;
 	kstd::Arc<VMRegion> _sighandler_kstack_region;
+
+	// Thread queue
+	kstd::Arc<Thread> m_next;
 };
 

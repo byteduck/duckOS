@@ -29,12 +29,12 @@
 
 TSS TaskManager::tss;
 SpinLock TaskManager::g_tasking_lock;
+SpinLock g_process_lock;
 
 kstd::Arc<Thread> cur_thread;
 Process* kernel_process;
 kstd::vector<Process*>* processes = nullptr;
-
-kstd::queue<kstd::Arc<Thread>>* thread_queue = nullptr;
+kstd::Arc<Thread> g_next_thread;
 
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
@@ -107,6 +107,7 @@ void TaskManager::kill_pgid(pid_t pgid, int sig) {
 }
 
 void TaskManager::reparent_orphans(Process* proc) {
+	LOCK(g_tasking_lock);
 	for(int i = 0; i < processes->size(); i++) {
 		auto cur = processes->at(i);
 		if(cur->ppid() == proc->pid()) {
@@ -135,8 +136,8 @@ pid_t TaskManager::get_new_pid(){
 
 void TaskManager::init(){
 	KLog::dbg("TaskManager", "Initializing tasking...");
+	g_tasking_lock.acquire();
 
-	thread_queue = new kstd::queue<kstd::Arc<Thread>>();
 	processes = new kstd::vector<Process*>();
 
 	//Create kernel process
@@ -169,9 +170,12 @@ Process* TaskManager::current_process() {
 }
 
 int TaskManager::add_process(Process* proc){
-	TaskManager::ScopedCritical critical;
+	g_process_lock.acquire();
 	ProcFS::inst().proc_add(proc);
 	processes->push_back(proc);
+	g_process_lock.release();
+
+	LOCK(g_tasking_lock);
 	auto& threads = proc->threads();
 	for(int i = 0; i < threads.size(); i++)
 		queue_thread(threads[i]);
@@ -179,7 +183,7 @@ int TaskManager::add_process(Process* proc){
 }
 
 void TaskManager::remove_process(Process* proc) {
-	TaskManager::ScopedCritical critical;
+	LOCK(g_process_lock);
 	for(size_t i = 0; i < processes->size(); i++) {
 		if(processes->at(i) == proc) {
 			processes->erase(i);
@@ -189,7 +193,8 @@ void TaskManager::remove_process(Process* proc) {
 }
 
 void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
-	TaskManager::ScopedCritical critical;
+	ASSERT(g_tasking_lock.held_by_current_thread());
+
 	if(!thread) {
 		KLog::warn("TaskManager", "Tried queueing null thread!");
 		return;
@@ -202,18 +207,26 @@ void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
 		KLog::warn("TaskManager", "Tried queuing %s thread!", thread->state_name());
 		return;
 	}
-	thread_queue->push_back(thread);
+
+	if(g_next_thread)
+		g_next_thread->enqueue_thread(thread);
+	else
+		g_next_thread = thread;
 }
 
 void TaskManager::notify_current(uint32_t sig){
 	cur_thread->process()->kill(sig);
 }
 
-kstd::Arc<Thread> TaskManager::next_thread() {
-	while(!thread_queue->empty() && !thread_queue->front()->can_be_run())
-		thread_queue->pop_front();
+kstd::Arc<Thread> TaskManager::pick_next_thread() {
+	ASSERT(g_tasking_lock.held_by_current_thread());
 
-	if(thread_queue->empty()) {
+	// Make sure the next thread is in a runnable state
+	while(g_next_thread && !g_next_thread->can_be_run())
+		g_next_thread = g_next_thread->next_thread();
+
+	// If we don't have a next thread to run, either continue running the current thread or run kidle
+	if(!g_next_thread) {
 		if(cur_thread->can_be_run()) {
 			return cur_thread;
 		} else if(kernel_process->main_thread()->state() != Thread::ALIVE) {
@@ -223,7 +236,9 @@ kstd::Arc<Thread> TaskManager::next_thread() {
 		}
 	}
 
-	return thread_queue->pop_front();
+	auto next = g_next_thread;
+	g_next_thread = g_next_thread->next_thread();
+	return next;
 }
 
 bool TaskManager::yield() {
@@ -265,7 +280,7 @@ void TaskManager::tick() {
 	yield();
 }
 
-Atomic<int> g_critical_count = 0;
+Atomic<int, MemoryOrder::Consume> g_critical_count = 0;
 
 void TaskManager::enter_critical() {
 	asm volatile("cli");
@@ -285,43 +300,31 @@ void TaskManager::preempt(){
 		return;
 	ASSERT(!g_critical_count.load());
 
-	enter_critical();
+	g_tasking_lock.acquire_and_enter_critical();
 	cur_thread->enter_critical();
 	preempting = true;
 
-	/*
-	 * Try unblocking threads that are blocked
-	 */
-	for(int i = 0; i < processes->size(); i++) {
-		auto current = processes->at(i);
-		if(current->state() == Process::ALIVE) {
-			auto& threads = current->threads();
-			for(int j = 0; j < threads.size(); j++) {
-				auto& thread = threads[j];
+	// Try unblocking threads that are blocked
+	if(g_process_lock.try_acquire()) {
+		for(auto& process : *processes) {
+			if(process->state() != Process::ALIVE)
+				break;
+			for(auto& thread : process->threads()) {
 				if(!thread)
 					continue;
-				if(thread->state() == Thread::BLOCKED) {
-					if(thread->should_unblock()) {
-						thread->unblock();
-						if(cur_thread != thread)
-							queue_thread(thread);
-					}
-				}
+				if(thread->state() == Thread::BLOCKED && thread->should_unblock())
+					thread->unblock();
 			}
 		}
+		g_process_lock.release();
 	}
 
-	/*
-	 * If it's time to switch, switch.
-	 * A task switch will occur if the current process's quantum is up, if there were previously no running processes
-	 * and one has become ready, and only if there is more than one running process.
-	 */
-	//Pick a new process and decrease the quantum counter
+	// Pick a new thread
 	auto old_thread = cur_thread;
-	cur_thread = next_thread();
+	auto next_thread = pick_next_thread();
 	quantum_counter = 1; //Every process has a quantum of 1 for now
 
-	bool should_preempt = old_thread != cur_thread;
+	bool should_preempt = old_thread != next_thread;
 
 	//If we were just in a signal handler, don't save the esp to old_proc->registers
 	unsigned int* old_esp;
@@ -342,35 +345,38 @@ void TaskManager::preempt(){
 	}
 
 	//If we're about to start handling a signal, set in_signal_handler to true.
-	if(cur_thread->ready_to_handle_signal()) {
+	if(next_thread->ready_to_handle_signal()) {
 		should_preempt = true;
-		cur_thread->in_signal_handler() = true;
-		cur_thread->ready_to_handle_signal() = false;
+		next_thread->in_signal_handler() = true;
+		next_thread->ready_to_handle_signal() = false;
 	}
 
 	//If we're switching to a process in a signal handler, use the esp from signal_registers
 	unsigned int* new_esp;
-	if(cur_thread->in_signal_handler()) {
-		new_esp = &cur_thread->signal_registers.esp;
-		tss.esp0 = (size_t) cur_thread->signal_stack_top();
+	if(next_thread->in_signal_handler()) {
+		new_esp = &next_thread->signal_registers.esp;
+		tss.esp0 = (size_t) next_thread->signal_stack_top();
 	} else {
-		new_esp = &cur_thread->registers.esp;
-		tss.esp0 = (size_t) cur_thread->kernel_stack_top();
+		new_esp = &next_thread->registers.esp;
+		tss.esp0 = (size_t) next_thread->kernel_stack_top();
 	}
 
 	if(should_preempt)
-		cur_thread->process()->set_last_active_thread(cur_thread->tid());
+		next_thread->process()->set_last_active_thread(next_thread->tid());
 
-	//Switch tasks.
+	// Switch context.
 	preempting = false;
-	if(!cur_thread->can_be_run())
-		PANIC("INVALID_CONTEXT_SWITCH", "Tried to switch to thread %d of PID %d in state %d", cur_thread->tid(), cur_thread->process()->pid(), cur_thread->state());
+	if(!next_thread->can_be_run())
+		PANIC("INVALID_CONTEXT_SWITCH", "Tried to switch to thread %d of PID %d in state %d", next_thread->tid(), next_thread->process()->pid(), next_thread->state());
 	if(should_preempt) {
+		// If we can run the old thread, re-queue it after we preempt
 		if(old_thread != kernel_process->main_thread() && old_thread->can_be_run())
 			queue_thread(old_thread);
 
 		//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
 		old_thread.reset();
+
+		cur_thread = next_thread;
 
 		asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
 		preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());
@@ -382,6 +388,8 @@ void TaskManager::preempt(){
 #pragma GCC pop_options
 
 void TaskManager::preempt_finish() {
+	ASSERT(g_tasking_lock.count() == 1);
+	g_tasking_lock.release();
 	leave_critical();
 	// Handle a pending signal.
 	cur_thread->process()->handle_pending_signal();

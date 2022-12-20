@@ -86,7 +86,7 @@ namespace TaskManager {
 	void notify_current(uint32_t sig);
 
 	pid_t get_new_pid();
-	kstd::Arc<Thread> next_thread();
+	kstd::Arc<Thread> pick_next_thread();
 
 
 	extern "C" void preempt();

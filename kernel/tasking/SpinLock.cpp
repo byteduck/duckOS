@@ -40,11 +40,27 @@ void SpinLock::release() {
 }
 
 void SpinLock::acquire() {
+	acquire_with_mode(AcquireMode::Normal);
+}
+
+bool SpinLock::try_acquire() {
+	return acquire_with_mode(AcquireMode::Try);
+}
+
+void SpinLock::acquire_and_enter_critical() {
+	acquire_with_mode(AcquireMode::EnterCritical);
+}
+
+inline bool SpinLock::acquire_with_mode(AcquireMode mode) {
 	auto cur_thread = TaskManager::current_thread();
-	if(!TaskManager::enabled() || !cur_thread) return; //Tasking isn't initialized yet
+	if(!TaskManager::enabled() || !cur_thread)
+		return true; //Tasking isn't initialized yet
 
 	//Loop while the lock is held
 	while(true) {
+		if(mode == AcquireMode::EnterCritical)
+			TaskManager::enter_critical();
+
 		// Try locking if no thread is holding
 		Thread* expected = nullptr;
 		if(m_holding_thread.compare_exchange_strong(expected, cur_thread.get()))
@@ -55,9 +71,18 @@ void SpinLock::acquire() {
 		if(m_holding_thread.compare_exchange_strong(expected, cur_thread.get()))
 			break;
 
+		if(mode == AcquireMode::EnterCritical)
+			TaskManager::leave_critical();
+		else if(mode == AcquireMode::Try)
+			return false;
 		TaskManager::yield();
 	}
 
 	// We've got the lock!
 	m_times_locked++;
+	return true;
+}
+
+bool SpinLock::held_by_current_thread() {
+	return TaskManager::current_thread().get() == m_holding_thread.load(MemoryOrder::SeqCst);
 }

@@ -24,7 +24,8 @@ enum class MemoryOrder {
 	Acquire = __ATOMIC_ACQUIRE,
 	Release = __ATOMIC_RELEASE,
 	AcqRel = __ATOMIC_ACQ_REL,
-	SeqCst = __ATOMIC_SEQ_CST
+	SeqCst = __ATOMIC_SEQ_CST,
+	Consume = __ATOMIC_CONSUME
 };
 
 template<typename T, MemoryOrder default_order = MemoryOrder::SeqCst>
