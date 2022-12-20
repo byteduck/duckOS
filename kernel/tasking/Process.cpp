@@ -79,10 +79,12 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 	auto* proc = new Process(VFS::path_base(executable_loc), info.header->program_entry_position, false, args, parent);
 	proc->_exe = executable_loc;
 
-	//Load the ELF into the process's page directory and set proc->current_brk
+	//Add the regions into the process's vm regions
 	auto regions = TRY(ELF::load_sections(*info.fd, info.segments, proc->_vm_space));
-	for(size_t i = 0; i < regions.size(); i++)
-		proc->_vm_regions.push_back(regions[i]);
+	for(const auto& region : regions)
+		proc->_vm_regions.push_back(region);
+
+	proc->recalculate_pmem_total();
 
 	return proc->_self_ptr;
 }
@@ -212,6 +214,8 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 	_pgid = to_fork->_pgid;
 	_umask = to_fork->_umask;
 	_tty = to_fork->_tty;
+	m_used_pmem = to_fork->m_used_pmem;
+	m_used_shmem = to_fork->m_used_shmem;
 	_state = ALIVE;
 
 	//TODO: Prevent thread race condition when copying signal handlers/file descriptors
@@ -986,7 +990,6 @@ int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm>
 	auto region = region_res.value();
 
 	m_mem_lock.synced<void>([&]() {
-		m_used_pmem += region->size();
 		m_used_shmem += region->size();
 	});
 
@@ -1042,8 +1045,6 @@ int Process::sys_shmdetach(int id) {
 	for(size_t i = 0; i < _vm_regions.size(); i++) {
 		if(_vm_regions[i]->object() == object) {
 			m_used_shmem -= object->size();
-			if(object->shared_owner() == _pid)
-				m_used_pmem -= object->size();
 			_vm_regions.erase(i);
 			return SUCCESS;
 		}
@@ -1143,6 +1144,7 @@ int Process::sys_sleep(UserspacePointer<timespec> time, UserspacePointer<timespe
 
 int Process::sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg) {
 	auto thread = kstd::make_shared<Thread>(_self_ptr, _cur_tid++, entry_func, thread_func, arg);
+	recalculate_pmem_total();
 	_threads.push_back(thread);
 	TaskManager::queue_thread(thread);
 	return thread->tid();
@@ -1190,4 +1192,8 @@ void Process::alert_thread_died() {
 		TaskManager::reparent_orphans(this);
 		_state = ZOMBIE;
 	}
+}
+
+void Process::recalculate_pmem_total() {
+	m_used_pmem = _vm_space->calculate_regular_anonymous_total();
 }

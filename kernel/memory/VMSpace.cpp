@@ -234,6 +234,24 @@ ResultRet<VirtualAddress> VMSpace::find_free_space(size_t size) {
 	return Result(ENOMEM);
 }
 
+size_t VMSpace::calculate_regular_anonymous_total() {
+	LOCK(m_lock);
+	size_t total = 0;
+	auto cur_region = m_region_map;
+	while(cur_region) {
+		if(cur_region->used) {
+			auto& object = cur_region->vmRegion->m_object;
+			if(object->is_anonymous()) {
+				auto anon_object = kstd::static_pointer_cast<AnonymousVMObject>(object);
+				if(!anon_object->is_shared())
+					total += anon_object->size();
+			}
+		}
+		cur_region = cur_region->next;
+	}
+	return total;
+}
+
 ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space(size_t size) {
 	ASSERT(size % PAGE_SIZE == 0);
 

@@ -102,6 +102,11 @@ public:
 	 */
 	ResultRet<VirtualAddress> find_free_space(size_t size);
 
+	/**
+	 * Calculates the total non-shared, anonymous memory in the space.
+	 */
+	size_t calculate_regular_anonymous_total();
+
 	VirtualAddress start() const { return m_start; }
 	size_t size() const { return m_size; }
 	VirtualAddress end() const { return m_start + m_size; }

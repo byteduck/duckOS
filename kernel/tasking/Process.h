@@ -176,6 +176,7 @@ private:
 	Process(Process* to_fork, Registers& regs);
 
 	void alert_thread_died();
+	void recalculate_pmem_total();
 
 	//Identifying info and state
 	kstd::string _name = "";
@@ -197,8 +198,8 @@ private:
 	kstd::Arc<PageDirectory> _page_directory;
 	kstd::vector<kstd::Arc<VMRegion>> _vm_regions;
 	SpinLock m_mem_lock;
-	size_t m_used_pmem;
-	size_t m_used_shmem;
+	size_t m_used_pmem = 0;
+	size_t m_used_shmem = 0;
 
 	//Files & Pipes
 	kstd::vector<kstd::Arc<FileDescriptor>> _file_descriptors;

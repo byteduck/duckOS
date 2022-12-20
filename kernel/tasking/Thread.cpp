@@ -487,6 +487,9 @@ void Thread::reap() {
 	ASSERT(_state != DEAD);
 	_process->alert_thread_died();
 	_state = DEAD;
+	_sighandler_ustack_region.reset();
+	_stack_region.reset();
+	_process->recalculate_pmem_total();
 	if(TaskManager::current_thread().get() == this)
 		TaskManager::yield();
 }
