@@ -71,6 +71,14 @@ namespace Sys::Mem {
 		inline Amount free() const {
 			return {(size_t) usable - (size_t) used};
 		}
+
+		inline Amount available() const {
+			return {(size_t) usable - (size_t) used + (size_t) kernel_disk_cache};
+		}
+
+		inline double available_frac() const {
+			return (double)((long double) available() / (long double) usable);
+		}
 	};
 
 	Duck::ResultRet<Info> get_info(Duck::InputStream& file);
