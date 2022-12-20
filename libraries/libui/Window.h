@@ -107,6 +107,7 @@ namespace UI {
 		bool _needs_repaint = false;
 		bool _focused = false;
 		bool _closed = false;
+		bool _center_on_show = true;
 
 		struct TitleButton {
 			std::string image;

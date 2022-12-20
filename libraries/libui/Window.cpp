@@ -88,6 +88,7 @@ bool Window::has_accessory() {
 }
 
 void Window::set_position(Gfx::Point pos) {
+	_center_on_show = false;
 	_window->set_position(pos);
 }
 
@@ -212,6 +213,15 @@ void Window::close() {
 }
 
 void Window::show() {
+	// Center window on first show
+	if(_center_on_show) {
+		auto display_dims = UI::pond_context->get_display_dimensions();
+		set_position({
+			display_dims.width / 2 - dimensions().width / 2,
+			display_dims.height / 2 - dimensions().height / 2
+		});
+	}
+
 	_window->set_hidden(false);
 }
 
