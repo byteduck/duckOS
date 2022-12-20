@@ -84,6 +84,7 @@ ResultRet<PageIndex> PhysicalRegion::alloc_pages(size_t num_pages) {
 void PhysicalRegion::free_page(PageIndex page) {
 	ASSERT(!m_reserved);
 	ASSERT(page >= m_start_page && page < m_start_page + m_num_pages);
+	LOCK(m_lock);
 	for(size_t i = 0; i < m_zones.size(); i++) {
 		auto zone = m_zones[i];
 		if(zone->contains_page(page)) {

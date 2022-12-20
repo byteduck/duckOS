@@ -43,6 +43,7 @@ ResultRet<PageIndex> BuddyZone::alloc_block(size_t num_pages) {
 void BuddyZone::free_block(PageIndex start_page, size_t num_pages) {
 	ASSERT(start_page >= m_first_page);
 	ASSERT(start_page + num_pages <= m_first_page + m_num_pages);
+	ASSERT(size_of_order(order_for(num_pages)) == num_pages);
 	free_block_internal(start_page - m_first_page, order_for(num_pages));
 	m_free_pages += num_pages;
 }
