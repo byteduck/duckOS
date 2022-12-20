@@ -38,9 +38,6 @@ preempt_asm:
     pop esi
     pop ebx
     popfd
-	mov eax, 0x20
-	out 0x20, al
-	out 0xA0, al
     ret
 
 [global proc_first_preempt]

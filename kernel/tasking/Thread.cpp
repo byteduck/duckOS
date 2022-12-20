@@ -356,6 +356,7 @@ bool Thread::call_signal_handler(int signal) {
 		_sighandler_kstack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
 
 	Stack user_stack((void*) k_ustack->end(), _sighandler_ustack_region->end());
+	Stack kernel_stack((void*) _sighandler_kstack_region->end());
 	_signal_stack_top = _sighandler_kstack_region->end();
 
 	//Push signal number and fake return address to the stack
@@ -386,10 +387,7 @@ bool Thread::call_signal_handler(int signal) {
 	}
 
 	//Set up the stack
-	setup_kernel_stack(user_stack, user_stack.real_stackptr(), signal_registers);
-
-	//Set the esp register using the real user stack location
-	signal_registers.esp = user_stack.real_stackptr();
+	setup_kernel_stack(kernel_stack, user_stack.real_stackptr(), signal_registers);
 
 	//Queue this thread
 	_ready_to_handle_signal = true;

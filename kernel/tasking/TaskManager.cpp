@@ -350,7 +350,7 @@ void TaskManager::preempt(){
 
 	//If we're switching to a process in a signal handler, use the esp from signal_registers
 	unsigned int* new_esp;
-	if(cur_thread->in_signal_handler()){
+	if(cur_thread->in_signal_handler()) {
 		new_esp = &cur_thread->signal_registers.esp;
 		tss.esp0 = (size_t) cur_thread->signal_stack_top();
 	} else {
