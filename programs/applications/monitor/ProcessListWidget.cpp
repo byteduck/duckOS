@@ -64,10 +64,16 @@ Duck::Ptr<UI::Widget> ProcessListWidget::tv_create_entry(int row, int col) {
 		else
 			return UI::Label::make(proc.name(), UI::BEGINNING);
 
-	case 3: // Memory
+	case 3: // Virtual
+		return UI::Label::make(proc.virtual_mem().readable(), UI::BEGINNING);
+
+	case 4: // Physical
 		return UI::Label::make(proc.physical_mem().readable(), UI::BEGINNING);
 
-	case 4: // State
+	case 5: // Shared
+		return UI::Label::make(proc.shared_mem().readable(), UI::BEGINNING);
+
+	case 6: // State
 		return UI::Label::make(proc.state_name(), UI::BEGINNING);
 	}
 
@@ -83,8 +89,12 @@ std::string ProcessListWidget::tv_column_name(int col) {
 		case 2:
 			return "Name";
 		case 3:
-			return "Memory";
+			return "Virtual";
 		case 4:
+			return "Physical";
+		case 5:
+			return "Shared";
+		case 6:
 			return "State";
 	}
 	return "";
@@ -109,6 +119,10 @@ int ProcessListWidget::tv_column_width(int col) {
 		case 3:
 			return 75;
 		case 4:
+			return 75;
+		case 5:
+			return 75;
+		case 6:
 			return 60;
 	}
 	return 0;

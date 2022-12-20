@@ -41,6 +41,6 @@ protected:
 private:
 	ProcessListWidget();
 	std::vector<Sys::Process> _processes;
-	Duck::Ptr<UI::TableView> _table_view = UI::TableView::make(5);
+	Duck::Ptr<UI::TableView> _table_view = UI::TableView::make(7);
 };
 

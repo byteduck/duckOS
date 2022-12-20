@@ -23,8 +23,8 @@
 using namespace UI;
 using namespace Sys;
 
-void MemoryUsageWidget::update() {
-	m_mem_info = Mem::get_info(m_mem_stream);
+void MemoryUsageWidget::update(Mem::Info info) {
+	m_mem_info = info;
 	repaint();
 }
 
@@ -66,10 +66,4 @@ void MemoryUsageWidget::do_repaint(const DrawContext& ctx) {
 	ctx.draw_text(mem_text.c_str(), bar_area, CENTER, CENTER, Theme::font(), Theme::fg());
 }
 
-MemoryUsageWidget::MemoryUsageWidget(): m_mem_info({}) {
-	auto res = m_mem_stream.open("/proc/meminfo");
-	if(res.is_error()) {
-		Duck::Log::err("Failed to open meminfo");
-		exit(res.code());
-	}
-}
+MemoryUsageWidget::MemoryUsageWidget(): m_mem_info({}) {}

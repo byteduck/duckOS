@@ -35,13 +35,16 @@ using namespace Sys;
 
 Duck::Ptr<UI::ProgressBar> cpu_bar;
 Duck::Ptr<MemoryUsageWidget> mem_widget;
+Duck::Ptr<UI::Label> mem_label;
 Duck::Ptr<ProcessListWidget> proc_list;
 
 Duck::FileInputStream cpu_stream;
+Duck::FileInputStream mem_stream;
 
 CPU::Info cpu_info;
+Mem::Info mem_info;
 
-void update() {
+Duck::Result update() {
 	static timeval last_update = {0, 0};
 
 	//See if it's time to update
@@ -49,28 +52,41 @@ void update() {
 	gettimeofday(&tv, nullptr);
 	int diff = (int) (((tv.tv_sec - last_update.tv_sec) * 1000000) + (tv.tv_usec - last_update.tv_usec))/1000;
 	if(diff < UPDATE_FREQ & last_update.tv_sec != 0)
-		return;
+		return Duck::Result::SUCCESS;
 	last_update = tv;
 
-	auto cpu_res = CPU::get_info(cpu_stream);
-	if(!cpu_res.is_error())
-		cpu_info = cpu_res.value();
+	// Update
+	cpu_info = TRY(CPU::get_info(cpu_stream));
+	mem_info = TRY(Mem::get_info(mem_stream));
 
-	mem_widget->update();
+	mem_widget->update(mem_info);
+
+	std::string mem_text = "Kernel: " + Mem::Amount {mem_info.kernel_phys - mem_info.kernel_disk_cache}.readable();
+	mem_text += " / Disk Cache: " + mem_info.kernel_disk_cache.readable();
+	mem_text += " / User: " + Mem::Amount {mem_info.used - mem_info.kernel_virt}.readable();
+	mem_label->set_label(mem_text);
 
 	cpu_bar->set_progress(cpu_info.utilization / 100.0);
 	cpu_bar->set_label("CPU: " + std::to_string(cpu_info.utilization) + "%");
 
 	proc_list->update();
+
+	return Duck::Result::SUCCESS;
 }
 
 int main(int argc, char** argv, char** envp) {
-	//Open cpuinfo
-
+	// Open cpuinfo
 	auto res = cpu_stream.open("/proc/cpuinfo");
 	if(res.is_error()) {
 		perror("Failed to open cpuinfo");
 		return res.code();
+	}
+
+	// Open meminfo
+	res = mem_stream.open("/proc/meminfo");
+	if(res.is_error()) {
+		Duck::Log::err("Failed to open meminfo");
+		exit(res.code());
 	}
 
 	//Init libUI
@@ -82,12 +98,14 @@ int main(int argc, char** argv, char** envp) {
 
 	//Make widgets
 	mem_widget = MemoryUsageWidget::make();
+	mem_label = UI::Label::make("");
 	cpu_bar = UI::ProgressBar::make();
 
 	//Make layout
 	auto layout = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 0);
-	layout->add_child(UI::Cell::make(mem_widget));
 	layout->add_child(UI::Cell::make(cpu_bar));
+	layout->add_child(UI::Cell::make(mem_widget));
+	layout->add_child(UI::Cell::make(mem_label));
 
 	proc_list = ProcessListWidget::make();
 	layout->add_child(proc_list);

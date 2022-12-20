@@ -26,7 +26,7 @@
 class MemoryUsageWidget: public UI::Widget {
 public:
 	WIDGET_DEF(MemoryUsageWidget);
-	void update();
+	void update(Sys::Mem::Info mem_info);
 
 	Gfx::Dimensions preferred_size() override;
 
@@ -37,7 +37,6 @@ private:
 	MemoryUsageWidget();
 
 	Sys::Mem::Info m_mem_info;
-	Duck::FileInputStream m_mem_stream;
 };
 
 
