@@ -84,6 +84,8 @@ size_t PTYControllerDevice::putchars(const uint8_t* buffer, size_t count) {
 		if(_output_buffer.capacity() - _output_buffer.size() < count) {
 			_output_lock.release();
 			TaskManager::current_thread()->block(_buffer_blocker);
+			if(_buffer_blocker.was_interrupted())
+				return -EINTR;
 		} else {
 			break;
 		}

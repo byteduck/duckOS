@@ -96,6 +96,8 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffe
 			critical.exit();
 			m_blocker.set_ready(false);
 			TaskManager::current_thread()->block(m_blocker);
+			if(m_blocker.was_interrupted())
+				return -EINTR;
 		} while(m_output_dma_enabled);
 
 		//If the output DMA is not currently enabled, reset the PCM channel to be sure

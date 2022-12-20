@@ -349,6 +349,8 @@ Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t se
 			lock.release();
 			client._blocker.set_ready(false);
 			TaskManager::current_thread()->block(client._blocker);
+			if(client._blocker.was_interrupted())
+				return Result(EINTR);
 			lock.acquire();
 		} else {
 			return Result(-ENOSPC);

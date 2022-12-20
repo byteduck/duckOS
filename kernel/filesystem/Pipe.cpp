@@ -49,6 +49,8 @@ ssize_t Pipe::read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffe
 	if(!_writers && _queue.empty()) return 0;
 	if(!_blocker.is_ready())
 		TaskManager::current_thread()->block(_blocker);
+	if(_blocker.was_interrupted())
+		return -EINTR;
 	LOCK(_lock);
 	if(count > _queue.size())
 		count = _queue.size();

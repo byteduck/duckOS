@@ -549,6 +549,8 @@ int Process::sys_waitpid(pid_t pid, UserspacePointer<int> status, int flags) {
 	//TODO: Flags
 	WaitBlocker blocker(TaskManager::current_thread(), pid);
 	TaskManager::current_thread()->block(blocker);
+	if(blocker.was_interrupted())
+		return -EINTR;
 	if(blocker.error())
 		return blocker.error();
 	if(status)
@@ -1097,6 +1099,8 @@ int Process::sys_poll(UserspacePointer<pollfd> pollfd, nfds_t nfd, int timeout) 
 	//Block
 	PollBlocker blocker(polls, Time(0, timeout * 1000));
 	TaskManager::current_thread()->block(blocker);
+	if(blocker.was_interrupted())
+		return -EINTR;
 
 	//Set appropriate revent
 	for(nfds_t i = 0; i < nfd; i++) {

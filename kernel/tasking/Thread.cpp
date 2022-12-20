@@ -196,10 +196,13 @@ void* Thread::return_value() {
 
 void Thread::kill() {
 	if(is_blocked()) {
-		if (_blocker->can_be_interrupted())
+		if (_blocker->can_be_interrupted()) {
 			_blocker->interrupt();
-		else
-			KLog::warn("Thread", "Could not interrupt %s(pid: %d, tid: %d) while killing...", _process->name().c_str(), _process->pid(), _tid);
+			unblock();
+			TaskManager::queue_thread(_process->_threads[_tid - 1]);
+		} else {
+			KLog::warn("Thread", "Could not interrupt %s(pid: %d, tid: %d) while killing...", _process->name().c_str(),  _process->pid(), _tid);
+		}
 	}
 
 	if(_in_critical)
@@ -213,7 +216,7 @@ bool Thread::waiting_to_die() {
 }
 
 bool Thread::can_be_run() {
-	return state() == ALIVE && !_waiting_to_die;
+	return state() == ALIVE;
 }
 
 void Thread::enter_critical() {
