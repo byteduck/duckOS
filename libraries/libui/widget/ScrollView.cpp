@@ -92,10 +92,6 @@ void ScrollView::recalculate_scrollbar() {
 
 Gfx::Dimensions ScrollView::preferred_size() {
 	Gfx::Dimensions size = scrollable_area();
-	if(size.width > LIBUI_SCROLLVIEW_MAX_PREFERRED_WIDTH)
-		size.width = LIBUI_SCROLLVIEW_MAX_PREFERRED_WIDTH;
-	if(size.height > LIBUI_SCROLLVIEW_MAX_PREFERRED_HEIGHT - 15)
-		size.height = LIBUI_SCROLLVIEW_MAX_PREFERRED_HEIGHT - 15;
 	return size + Gfx::Dimensions{15, 0};
 }
 
