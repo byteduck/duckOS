@@ -51,7 +51,7 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 	}
 
 	//Setup registers
-	registers.eflags = 0x202;
+	registers.eflags = 0x2;
 	registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
 	registers.eip = entry_point;
 	registers.eax = 0;
@@ -117,7 +117,7 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 	}
 
 	//Setup registers
-	registers.eflags = 0x202;
+	registers.eflags = 0x2;
 	registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
 	registers.eip = (size_t) entry_func;
 	registers.eax = 0;
@@ -370,7 +370,7 @@ bool Thread::call_signal_handler(int signal) {
 	user_stack.push_sizet(SIGNAL_RETURN_FAKE_ADDR);
 
 	//Setup signal registers
-	signal_registers.eflags = 0x202;
+	signal_registers.eflags = 0x2;
 	signal_registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
 	signal_registers.eip = signal_loc;
 	signal_registers.eax = 0;
