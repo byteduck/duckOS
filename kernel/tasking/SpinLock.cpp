@@ -41,6 +41,7 @@ void SpinLock::release() {
 
 void SpinLock::acquire() {
 	acquire_with_mode(AcquireMode::Normal);
+	ASSERT(!TaskManager::in_critical());
 }
 
 bool SpinLock::try_acquire() {
@@ -75,6 +76,8 @@ inline bool SpinLock::acquire_with_mode(AcquireMode mode) {
 			TaskManager::leave_critical();
 		else if(mode == AcquireMode::Try)
 			return false;
+
+		ASSERT(!TaskManager::in_critical());
 		TaskManager::yield();
 	}
 
