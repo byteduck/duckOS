@@ -30,12 +30,14 @@ public:
 	bool is_ready() override;
 
 	pid_t waited_pid();
+	Process* waited_process();
 	pid_t error();
 	pid_t exit_status();
 
 private:
 	int _err = 0;
 	int _exit_status = 0;
+	Process* _waited_process = nullptr;
 	pid_t _wait_pid;
 	pid_t _wait_pgid;
 	kstd::Arc<Thread> _thread;

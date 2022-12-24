@@ -560,6 +560,8 @@ int Process::sys_waitpid(pid_t pid, UserspacePointer<int> status, int flags) {
 		return blocker.error();
 	if(status)
 		status.set(blocker.exit_status());
+	if(blocker.waited_process())
+		blocker.waited_process()->reap();
 	return blocker.waited_pid();
 }
 
