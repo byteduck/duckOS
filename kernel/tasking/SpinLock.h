@@ -25,6 +25,8 @@
 #include "../kstd/unix_types.h"
 #include "../Atomic.h"
 
+#define CRITICAL_LOCK(lock) ScopedCriticalLocker __locker((lock));
+
 class Thread;
 class SpinLock: public Lock {
 public:
@@ -51,3 +53,11 @@ private:
 	int m_times_locked = 0;
 };
 
+class ScopedCriticalLocker {
+public:
+	ScopedCriticalLocker(SpinLock& lock);
+	~ScopedCriticalLocker();
+
+private:
+	SpinLock& m_lock;
+};

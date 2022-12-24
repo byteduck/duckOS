@@ -89,3 +89,12 @@ inline bool SpinLock::acquire_with_mode(AcquireMode mode) {
 bool SpinLock::held_by_current_thread() {
 	return TaskManager::current_thread().get() == m_holding_thread.load(MemoryOrder::SeqCst);
 }
+
+ScopedCriticalLocker::ScopedCriticalLocker(SpinLock& lock): m_lock(lock) {
+	m_lock.acquire_and_enter_critical();
+}
+
+ScopedCriticalLocker::~ScopedCriticalLocker() {
+	m_lock.release();
+	TaskManager::leave_critical();
+}
