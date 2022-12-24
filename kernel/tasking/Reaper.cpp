@@ -22,10 +22,11 @@ Reaper& Reaper::inst() {
 }
 
 void Reaper::reap(Process* process) {
-	ASSERT(process->state() == Process::DEAD);
-	LOCK(m_lock);
+	m_lock.acquire();
 	m_queue.push_back(process);
+	m_lock.release();
 	m_blocker.set_ready(true);
+	process->_state = Process::DEAD;
 }
 
 void Reaper::start() {
@@ -35,7 +36,6 @@ void Reaper::start() {
 		{
 			while(!m_queue.empty()) {
 				auto process = m_queue.pop_front();
-				process->free_resources();
 				ProcFS::inst().proc_remove(process);
 				TaskManager::remove_process(process);
 				delete process;

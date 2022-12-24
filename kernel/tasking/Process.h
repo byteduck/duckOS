@@ -83,7 +83,6 @@ public:
 	//Signals and death
 	void kill(int signal);
 	void reap();
-	void free_resources();
 	void handle_pending_signal();
 	bool has_pending_signals();
 
@@ -172,6 +171,7 @@ public:
 
 private:
 	friend class Thread;
+	friend class Reaper;
 	Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
 	Process(Process* to_fork, Registers& regs);
 
@@ -189,9 +189,9 @@ private:
 	User _user;
 	mode_t _umask = 022;
 	int _exit_status = 0;
-	bool _freed_resources = false;
 	State _state;
 	bool _kernel_mode = false;
+	bool _is_destroying = false;
 
 	//Memory
 	kstd::Arc<VMSpace> _vm_space;

@@ -17,7 +17,6 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include <kernel/kstd/kstdio.h>
 #include "Lock.h"
 
 ScopedLocker::ScopedLocker(Lock& lock): _lock(lock) {

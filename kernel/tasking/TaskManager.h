@@ -33,7 +33,21 @@ struct TSS;
 
 namespace TaskManager {
 	extern TSS tss;
+
+	/** This lock is acquired while preempting to ensure that thread queues are in a valid state. This lock MUST be
+	 *  held prior to calling queue_thread or messing with the thread queue. You should use a ScopedCriticalLocker or
+	 *  the CRITICAL_LOCK macro to acquire g_tasking_lock and enter a critical state which will automatically be
+	 *  released after leaving the scope.
+     */
 	extern SpinLock g_tasking_lock;
+
+	/** This lock is acquired while editing the process list. **/
+	extern SpinLock g_process_lock;
+
+	/** This is the thread at the beginning of the thread queue. The thread queue is updated on calls to `queue_thread`
+	 *  and in Thread::reap (which ensures that the reaped thread is removed from the queue.
+	 */
+	extern Thread* g_next_thread;
 
 	void init();
 	bool enabled();
@@ -62,6 +76,7 @@ namespace TaskManager {
 
 	void enter_critical();
 	extern "C" void leave_critical();
+	bool in_critical();
 
 	class ScopedCritical {
 	public:

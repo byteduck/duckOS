@@ -246,19 +246,13 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 }
 
 Process::~Process() {
-	free_resources();
-}
-
-void Process::free_resources() {
-	if(_freed_resources)
-		return;
-	_freed_resources = true;
+	_is_destroying = true;
 	_vm_regions.resize(0);
 	_vm_space.reset();
 	_page_directory.reset();
-	for(int i = 0; i < _threads.size(); i++)
-		if(_threads[i])
-			ASSERT(_threads[i]->state() == Thread::DEAD);
+	for(auto& thread : _threads)
+		if(thread)
+			thread->reap();
 	_threads.resize(0);
 	_file_descriptors.resize(0);
 }
@@ -267,7 +261,6 @@ void Process::reap() {
 	LOCK(_lock);
 	if(_state != ZOMBIE)
 		return;
-	_state = DEAD;
 	Reaper::inst().reap(this);
 }
 
@@ -372,7 +365,7 @@ void Process::sys_exit(int status) {
 ssize_t Process::sys_read(int fd, UserspacePointer<uint8_t> buf, size_t count) {
 	if(fd < 0 || fd >= (int) _file_descriptors.size() || !_file_descriptors[fd])
 		return -EBADF;
-	return _file_descriptors[fd]->read(buf, count);
+	return  _file_descriptors[fd]->read(buf, count);
 }
 
 ssize_t Process::sys_write(int fd, UserspacePointer<uint8_t> buffer, size_t count) {
@@ -435,11 +428,7 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 		filename.~string();
 
 		//Add the new process to the process list
-		{
-			TaskManager::ScopedCritical critical;
-			_pid = -1;
-			_state = DEAD;
-		}
+		_pid = -1;
 		TaskManager::add_process(new_proc);
 		Reaper::inst().reap(this);
 	}
@@ -570,20 +559,23 @@ int Process::sys_gettimeofday(UserspacePointer<timeval> t, UserspacePointer<void
 	return 0;
 }
 
-int Process::sys_sigaction(int sig, UserspacePointer<sigaction> new_action, UserspacePointer<sigaction> old_action) {
+int Process::sys_sigaction(int sig, UserspacePointer<sigaction> new_action_ptr, UserspacePointer<sigaction> old_action) {
 	if(sig == SIGSTOP || sig == SIGKILL || sig < 1 || sig >= 32)
 		return -EINVAL;
 	{
-		//We don't want this interrupted or else we'd have a problem if it's needed before it's done
-		TaskManager::enter_critical();
 		if(old_action) {
 			auto old = old_action.get();
 			memcpy(&old.sa_sigaction, &signal_actions[sig].action, sizeof(Signal::SigAction::action));
 			memcpy(&old.sa_flags, &signal_actions[sig].flags, sizeof(Signal::SigAction::flags));
 			old_action.set(old);
 		}
-		signal_actions[sig].action = new_action.get().sa_sigaction;
-		signal_actions[sig].flags = new_action.get().sa_flags;
+
+		auto new_action = new_action_ptr.get();
+
+		//We don't want this interrupted or else we'd have a problem if it's needed before it's done
+		TaskManager::enter_critical();
+		signal_actions[sig].action = new_action.sa_sigaction;
+		signal_actions[sig].flags = new_action.sa_flags;
 		TaskManager::leave_critical();
 	}
 	return 0;
@@ -1150,7 +1142,7 @@ int Process::sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void
 	recalculate_pmem_total();
 	_threads.push_back(thread);
 	{
-		LOCK(TaskManager::g_tasking_lock);
+		CRITICAL_LOCK(TaskManager::g_tasking_lock);
 		TaskManager::queue_thread(thread);
 	}
 	return thread->tid();
@@ -1184,6 +1176,9 @@ int Process::sys_access(UserspacePointer<char> pathname, int mode) {
 }
 
 void Process::alert_thread_died() {
+	if(_is_destroying)
+		return;
+
 	//Check if all the threads are dead. If they are, we are ready to die.
 	int count_alive = 0;
 	for(size_t i = 0; i < threads().size(); i++)
@@ -1201,5 +1196,7 @@ void Process::alert_thread_died() {
 }
 
 void Process::recalculate_pmem_total() {
+	if(_is_destroying)
+		return;
 	m_used_pmem = _vm_space->calculate_regular_anonymous_total();
 }

@@ -29,12 +29,12 @@
 
 TSS TaskManager::tss;
 SpinLock TaskManager::g_tasking_lock;
-SpinLock g_process_lock;
+SpinLock TaskManager::g_process_lock;
 
 kstd::Arc<Thread> cur_thread;
 Process* kernel_process;
 kstd::vector<Process*>* processes = nullptr;
-kstd::Arc<Thread> g_next_thread;
+Thread* TaskManager::g_next_thread;
 
 uint32_t __cpid__ = 0;
 bool tasking_enabled = false;
@@ -106,14 +106,11 @@ void TaskManager::kill_pgid(pid_t pgid, int sig) {
 	}
 }
 
-void TaskManager::reparent_orphans(Process* proc) {
-	LOCK(g_tasking_lock);
-	for(int i = 0; i < processes->size(); i++) {
-		auto cur = processes->at(i);
-		if(cur->ppid() == proc->pid()) {
-			cur->set_ppid(1);
-		}
-	}
+void TaskManager::reparent_orphans(Process* dead) {
+	CRITICAL_LOCK(g_tasking_lock);
+	for(auto process : *processes)
+		if(process->ppid() == dead->pid())
+			process->set_ppid(1);
 }
 
 bool TaskManager::enabled(){
@@ -175,10 +172,10 @@ int TaskManager::add_process(Process* proc){
 	processes->push_back(proc);
 	g_process_lock.release();
 
-	LOCK(g_tasking_lock);
+	CRITICAL_LOCK(g_tasking_lock);
 	auto& threads = proc->threads();
-	for(int i = 0; i < threads.size(); i++)
-		queue_thread(threads[i]);
+	for(const auto& thread : threads)
+		queue_thread(thread);
 	return proc->pid();
 }
 
@@ -209,9 +206,9 @@ void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
 	}
 
 	if(g_next_thread)
-		g_next_thread->enqueue_thread(thread);
+		g_next_thread->enqueue_thread(thread.get());
 	else
-		g_next_thread = thread;
+		g_next_thread = thread.get();
 }
 
 void TaskManager::notify_current(uint32_t sig){
@@ -236,7 +233,7 @@ kstd::Arc<Thread> TaskManager::pick_next_thread() {
 		}
 	}
 
-	auto next = g_next_thread;
+	auto next = g_next_thread->self();
 	g_next_thread = g_next_thread->next_thread();
 	return next;
 }
@@ -280,7 +277,7 @@ void TaskManager::tick() {
 	yield();
 }
 
-Atomic<int, MemoryOrder::Consume> g_critical_count = 0;
+Atomic<int, MemoryOrder::SeqCst> g_critical_count = 0;
 
 void TaskManager::enter_critical() {
 	asm volatile("cli");
@@ -291,6 +288,10 @@ void TaskManager::leave_critical() {
 	ASSERT(g_critical_count.load() > 0);
 	if(g_critical_count.sub(1) == 1)
 		asm volatile("sti");
+}
+
+bool TaskManager::in_critical() {
+	return g_critical_count.load();
 }
 
 #pragma GCC push_options
@@ -373,10 +374,9 @@ void TaskManager::preempt(){
 		if(old_thread != kernel_process->main_thread() && old_thread->can_be_run())
 			queue_thread(old_thread);
 
-		//In case this thread is being destroyed, we don't want the reference in old_thread to keep it around
-		old_thread.reset();
-
 		cur_thread = next_thread;
+		next_thread.reset();
+		old_thread.reset();
 
 		asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
 		preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());
@@ -392,6 +392,7 @@ void TaskManager::preempt_finish() {
 	g_tasking_lock.release();
 	leave_critical();
 	// Handle a pending signal.
-	cur_thread->process()->handle_pending_signal();
+	if(cur_thread != kernel_process->main_thread())
+		cur_thread->process()->handle_pending_signal();
 	cur_thread->leave_critical();
 }

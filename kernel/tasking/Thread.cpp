@@ -151,7 +151,9 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 		setup_kernel_stack(kernel_stack, user_stack.real_stackptr(), registers);
 }
 
-Thread::~Thread() = default;
+Thread::~Thread() {
+	ASSERT(_state == DEAD);
+}
 
 Process* Thread::process() {
 	return _process;
@@ -269,7 +271,7 @@ void Thread::unblock() {
 	if(_state == BLOCKED)
 		_state = ALIVE;
 	{
-		LOCK(TaskManager::g_tasking_lock);
+		CRITICAL_LOCK(TaskManager::g_tasking_lock);
 		TaskManager::queue_thread(self());
 	}
 }
@@ -398,7 +400,7 @@ bool Thread::call_signal_handler(int signal) {
 	//Queue this thread
 	_ready_to_handle_signal = true;
 	{
-		LOCK(TaskManager::g_tasking_lock);
+		CRITICAL_LOCK(TaskManager::g_tasking_lock);
 		TaskManager::queue_thread(_process->_threads[_tid - 1]);
 	}
 
@@ -447,19 +449,21 @@ void Thread::handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction
 	}
 }
 
-void Thread::enqueue_thread(const kstd::Arc<Thread>& thread) {
+void Thread::enqueue_thread(Thread* thread) {
 	ASSERT(TaskManager::g_tasking_lock.held_by_current_thread());
-	if(thread.get() == this)
+	if(thread == this)
 		return;
-	if(m_next)
+	if(m_next) {
 		m_next->enqueue_thread(thread);
-	else
+	} else {
 		m_next = thread;
+		thread->m_prev = this;
+	}
 }
 
-kstd::Arc<Thread> Thread::next_thread() {
+Thread* Thread::next_thread() {
 	auto next = m_next;
-	m_next.reset();
+	m_next = nullptr;
 	return next;
 }
 
@@ -506,9 +510,23 @@ void Thread::exit(void* return_value) {
 }
 
 void Thread::reap() {
-	ASSERT(_state != DEAD);
+	if(_state == DEAD)
+		return;
+
 	_process->alert_thread_died();
-	_state = DEAD;
+
+	{
+		TaskManager::ScopedCritical critical;
+		_state = DEAD;
+		if(TaskManager::g_next_thread == this)
+			TaskManager::g_next_thread = m_next;
+		if(m_prev && m_prev->m_next == this)
+			m_prev->m_next = m_next;
+		if(m_next)
+			m_next->m_prev = this;
+	}
+
+
 	_sighandler_ustack_region.reset();
 	_stack_region.reset();
 	_process->recalculate_pmem_total();

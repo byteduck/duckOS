@@ -83,8 +83,8 @@ public:
 	void handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction_pointer);
 
 	//Thread queue
-	void enqueue_thread(const kstd::Arc<Thread>& thread);
-	kstd::Arc<Thread> next_thread();
+	void enqueue_thread(Thread* thread);
+	Thread* next_thread();
 
 	uint8_t fpu_state[512] __attribute__((aligned(16)));
 	Registers registers = {};
@@ -124,6 +124,7 @@ private:
 	kstd::Arc<VMRegion> _sighandler_kstack_region;
 
 	// Thread queue
-	kstd::Arc<Thread> m_next;
+	Thread* m_next = nullptr;
+	Thread* m_prev = nullptr;
 };
 
