@@ -34,6 +34,7 @@ MouseDevice *MouseDevice::inst() {
 MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128), IRQHandler(12)  {
 	instance = this;
 	KLog::dbg("I8042/Mouse", "Initializing mouse...");
+	I8042::read(I8042::MOUSE); // Drain buffer
 
 	//Get the device ID
 	I8042::write(I8042::MOUSE, MOUSE_GET_DEVICE_ID);
