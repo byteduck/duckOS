@@ -44,12 +44,13 @@ public:
 	void acquire_and_enter_critical();
 	void release() override;
 	bool held_by_current_thread();
-	int count() { return m_times_locked; }
+	[[nodiscard]] tid_t holding_thread() const { return m_holding_thread.load(MemoryOrder::SeqCst); }
+	[[nodiscard]] int times_locked() const { return m_times_locked; }
 
 private:
 	inline bool acquire_with_mode(AcquireMode mode);
 
-	Atomic<Thread*, MemoryOrder::AcqRel> m_holding_thread = 0;
+	Atomic<tid_t, MemoryOrder::AcqRel> m_holding_thread = -1;
 	int m_times_locked = 0;
 };
 
@@ -57,7 +58,9 @@ class ScopedCriticalLocker {
 public:
 	ScopedCriticalLocker(SpinLock& lock);
 	~ScopedCriticalLocker();
+	void release();
 
 private:
 	SpinLock& m_lock;
+	bool m_released = false;
 };

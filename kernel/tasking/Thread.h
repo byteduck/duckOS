@@ -26,6 +26,9 @@
 #include <kernel/Result.hpp>
 #include "kernel/memory/VMRegion.h"
 #include "SpinLock.h"
+#include "../memory/PageDirectory.h"
+#include "../kstd/queue.hpp"
+#include "kernel/kstd/circular_queue.hpp"
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
 #define THREAD_KERNEL_STACK_SIZE 524288 //512KiB
@@ -50,7 +53,7 @@ public:
 
 	//Properties
 	Process* process();
-	pid_t tid();
+	tid_t tid();
 	void* kernel_stack_top();
 	State state();
 	const char* state_name();
@@ -59,6 +62,9 @@ public:
 	void kill();
 	bool waiting_to_die();
 	bool can_be_run();
+
+	//Memory
+	[[nodiscard]] PageDirectory* page_directory() const;
 
 	//Critical
 	void enter_critical();
@@ -70,6 +76,8 @@ public:
 	bool is_blocked();
 	bool should_unblock();
 	Result join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& other, UserspacePointer<void*> retp);
+	void acquired_lock(SpinLock* lock);
+	void released_lock(SpinLock* lock);
 
 	//Signals
 	bool call_signal_handler(int sig);
@@ -92,6 +100,7 @@ public:
 
 private:
 	friend class Process;
+	friend class Reaper;
 
 	void setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Registers& regs);
 	void exit(void* return_value);
@@ -105,6 +114,10 @@ private:
 	int _in_critical = 0;
 	bool _waiting_to_die = false;
 
+	//Memory
+	kstd::Arc<VMSpace> m_vm_space;
+	kstd::Arc<PageDirectory> m_page_directory;
+
 	//Stack
 	kstd::Arc<VMRegion> _kernel_stack_region;
 	kstd::Arc<VMRegion> _stack_region;
@@ -114,6 +127,7 @@ private:
 	bool _joined = false;
 	SpinLock _join_lock;
 	kstd::Arc<Thread> _joined_thread;
+	kstd::circular_queue<SpinLock*> _held_locks { 100 };
 
 	//Signals
 	bool _in_signal = false;

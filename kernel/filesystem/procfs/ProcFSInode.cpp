@@ -198,11 +198,11 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 			str += proc.value()->name();
 
 			str += "\nstate = ";
-			itoa(proc.value()->main_thread_state(), numbuf, 10);
+			itoa(proc.value()->all_threads_state(), numbuf, 10);
 			str += numbuf;
 
 			str += "\nstate_name = ";
-			str += PROC_STATE_NAMES[proc.value()->main_thread_state()];
+			str += PROC_STATE_NAMES[proc.value()->all_threads_state()];
 
 			str += "\npid = ";
 			itoa(proc.value()->pid(), numbuf, 10);

@@ -21,27 +21,33 @@
 #include "Thread.h"
 #include "TaskManager.h"
 
+extern bool g_panicking;
+
 SpinLock::SpinLock() = default;
 
 SpinLock::~SpinLock() = default;
 
 bool SpinLock::locked() {
-	return m_holding_thread.load(MemoryOrder::SeqCst);
+	return m_holding_thread.load(MemoryOrder::SeqCst) != -1;
 }
 
 void SpinLock::release() {
-	if(!TaskManager::enabled())
+	if(!TaskManager::enabled() || g_panicking)
 		return;
+
+	TaskManager::ScopedCritical crit;
 
 	// Decrease counter. If the counter is zero, release the lock
 	m_times_locked--;
-	if(!m_times_locked)
-		m_holding_thread.store(nullptr, MemoryOrder::SeqCst);
+	if(!m_times_locked) {
+		TaskManager::current_thread()->released_lock(this);
+		m_holding_thread.store(-1, MemoryOrder::SeqCst);
+	}
 }
 
 void SpinLock::acquire() {
 	acquire_with_mode(AcquireMode::Normal);
-	ASSERT(!TaskManager::in_critical());
+	ASSERT(!TaskManager::in_critical() || g_panicking);
 }
 
 bool SpinLock::try_acquire() {
@@ -54,8 +60,9 @@ void SpinLock::acquire_and_enter_critical() {
 
 inline bool SpinLock::acquire_with_mode(AcquireMode mode) {
 	auto cur_thread = TaskManager::current_thread();
-	if(!TaskManager::enabled() || !cur_thread)
+	if(!TaskManager::enabled() || !cur_thread || g_panicking)
 		return true; //Tasking isn't initialized yet
+	auto cur_tid = cur_thread->tid();
 
 	//Loop while the lock is held
 	while(true) {
@@ -63,13 +70,15 @@ inline bool SpinLock::acquire_with_mode(AcquireMode mode) {
 			TaskManager::enter_critical();
 
 		// Try locking if no thread is holding
-		Thread* expected = nullptr;
-		if(m_holding_thread.compare_exchange_strong(expected, cur_thread.get()))
+		tid_t expected = -1;
+		if(m_holding_thread.compare_exchange_strong(expected, cur_tid)) {
+			TaskManager::current_thread()->acquired_lock(this);
 			break;
+		}
 
 		// Try locking if current thread is holding
-		expected = cur_thread.get();
-		if(m_holding_thread.compare_exchange_strong(expected, cur_thread.get()))
+		expected = cur_tid;
+		if(m_holding_thread.compare_exchange_strong(expected, cur_tid))
 			break;
 
 		if(mode == AcquireMode::EnterCritical)
@@ -87,7 +96,8 @@ inline bool SpinLock::acquire_with_mode(AcquireMode mode) {
 }
 
 bool SpinLock::held_by_current_thread() {
-	return TaskManager::current_thread().get() == m_holding_thread.load(MemoryOrder::SeqCst);
+	auto cur_thread = TaskManager::current_thread();
+	return !cur_thread || cur_thread->tid() == m_holding_thread.load(MemoryOrder::SeqCst);
 }
 
 ScopedCriticalLocker::ScopedCriticalLocker(SpinLock& lock): m_lock(lock) {
@@ -95,6 +105,13 @@ ScopedCriticalLocker::ScopedCriticalLocker(SpinLock& lock): m_lock(lock) {
 }
 
 ScopedCriticalLocker::~ScopedCriticalLocker() {
+	release();
+}
+
+void ScopedCriticalLocker::release() {
+	if(m_released)
+		return;
+	m_released = true;
 	m_lock.release();
 	TaskManager::leave_critical();
 }

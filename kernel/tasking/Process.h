@@ -23,6 +23,7 @@
 #include <kernel/kstd/queue.hpp>
 #include "Signal.h"
 #include "../memory/VMSpace.h"
+#include "../kstd/map.hpp"
 #include <kernel/User.h>
 #include <kernel/kstd/string.h>
 
@@ -55,7 +56,7 @@ public:
 
 	//Construction
 	static Process* create_kernel(const kstd::string& name, void (*func)());
-	static ResultRet<Process*> create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent);
+	static ResultRet<Process*> create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t pid, pid_t parent);
 
 	//Process Info
 	pid_t pid();
@@ -69,20 +70,19 @@ public:
 	kstd::Arc<LinkedInode> cwd();
 	void set_tty(kstd::Arc<TTYDevice> tty);
 	State state();
-	int main_thread_state();
+	int all_threads_state();
 	int exit_status();
 	bool is_kernel_mode();
 
 	//Threads
-	kstd::Arc<Thread>& main_thread();
 	tid_t last_active_thread();
 	void set_last_active_thread(tid_t tid);
 	kstd::Arc<Thread> spawn_kernel_thread(void (*entry)());
-	const kstd::vector<kstd::Arc<Thread>>& threads();
+	const kstd::vector<tid_t>& threads();
+	kstd::Arc<Thread> get_thread(tid_t tid);
 
 	//Signals and death
 	void kill(int signal);
-	void reap();
 	void handle_pending_signal();
 	bool has_pending_signals();
 
@@ -172,11 +172,13 @@ public:
 private:
 	friend class Thread;
 	friend class Reaper;
-	Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t parent);
+	Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t pid, pid_t ppid);
 	Process(Process* to_fork, Registers& regs);
 
-	void alert_thread_died();
+	void alert_thread_died(kstd::Arc<Thread> thread);
 	void recalculate_pmem_total();
+	void insert_thread(const kstd::Arc<Thread>& thread);
+	void remove_thread(const kstd::Arc<Thread>& thread);
 
 	//Identifying info and state
 	kstd::string _name = "";
@@ -205,17 +207,16 @@ private:
 	kstd::vector<kstd::Arc<FileDescriptor>> _file_descriptors;
 	kstd::Arc<LinkedInode> _cwd;
 
-	//Blocking stuff
-	SpinLock _lock;
-
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
 	kstd::queue<int> pending_signals;
+	SpinLock m_signal_lock;
 
 	//Threads
-	kstd::vector<kstd::Arc<Thread>> _threads;
-	tid_t _cur_tid = 1;
+	kstd::map<tid_t, kstd::Arc<Thread>> _threads;
+	kstd::vector<tid_t> _tids;
 	tid_t _last_active_thread = 1;
+	SpinLock _thread_lock;
 
 	Process* _self_ptr;
 };

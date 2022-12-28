@@ -14,7 +14,7 @@ public:
 	Reaper();
 	static Reaper& inst();
 
-	void reap(Process* process);
+	void reap(const kstd::Arc<Thread>& thread);
 
 protected:
 	friend void kreaper_entry();
@@ -23,6 +23,6 @@ protected:
 private:
 	SpinLock m_lock;
 	BooleanBlocker m_blocker;
-	kstd::queue <Process*> m_queue;
+	kstd::queue <kstd::Arc<Thread>> m_queue;
 	static Reaper* s_inst;
 };

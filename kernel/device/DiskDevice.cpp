@@ -129,12 +129,16 @@ kstd::Arc<DiskDevice::BlockCacheRegion> DiskDevice::get_cache_region(size_t bloc
 	//Create a new cache region
 	auto reg = kstd::Arc<BlockCacheRegion>::make(block_cache_region_start(block), block_size());
 	s_used_cache_memory += PAGE_SIZE;
-	LOCK(reg->lock);
+	reg->lock.acquire();
 	_cache_regions.insert(block_cache_region_start(block), reg);
-	_cache_lock.release();
 
 	//Read the blocks into it
 	read_uncached_blocks(reg->start_block, blocks_per_cache_region(), (uint8_t*) reg->region->start());
+
+	//TODO: Figure out how to read the block after releasing the cache lock so that other blocks can be used in the meantime
+	//(We cannot do this currently as that would result in acquiring / releasing locks in the wrong order)
+	reg->lock.release();
+	_cache_lock.release();
 
 	//Return the requested region
 	return reg;

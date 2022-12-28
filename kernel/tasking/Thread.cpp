@@ -27,8 +27,14 @@
 #include <kernel/kstd/KLog.h>
 #include <kernel/memory/SafePointer.h>
 #include "../memory/AnonymousVMObject.h"
+#include "Reaper.h"
 
-Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args): _tid(tid), _process(process) {
+Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args):
+	_tid(tid),
+	_process(process),
+	m_vm_space(process->_vm_space),
+	m_page_directory(process->_page_directory)
+{
 	//Create the kernel stack
 	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
 	kstd::Arc<VMRegion> mapped_user_stack_region;
@@ -38,7 +44,7 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 	if(!is_kernel_mode()) {
 		auto do_create_stack = [&]() -> Result {
 			auto stack_object = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
-			_stack_region = TRY(_process->_vm_space->map_stack(stack_object));
+			_stack_region = TRY(m_vm_space->map_stack(stack_object));
 			mapped_user_stack_region = MM.map_object(stack_object);
 			return Result(SUCCESS);
 		};
@@ -83,7 +89,13 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 		setup_kernel_stack(kernel_stack, user_stack.real_stackptr(), registers);
 }
 
-Thread::Thread(Process* process, tid_t tid, Registers& regs): _process(process), _tid(tid), registers(regs) {
+Thread::Thread(Process* process, tid_t tid, Registers& regs):
+	_process(process),
+	_tid(tid),
+	registers(regs),
+	m_vm_space(process->_vm_space),
+	m_page_directory(process->_page_directory)
+{
 	//Allocate kernel stack
 	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
 
@@ -93,7 +105,12 @@ Thread::Thread(Process* process, tid_t tid, Registers& regs): _process(process),
 	setup_kernel_stack(stack, regs.useresp, registers);
 }
 
-Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (* thread_func)(void*), void* arg): _tid(tid), _process(process) {
+Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (* thread_func)(void*), void* arg):
+	_tid(tid),
+	_process(process),
+	m_vm_space(process->_vm_space),
+	m_page_directory(process->_page_directory)
+{
 	//Create the kernel stack
 	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
 	kstd::Arc<VMRegion> mapped_user_stack_region;
@@ -103,7 +120,7 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 	if(!is_kernel_mode()) {
 		auto do_create_stack = [&]() -> Result {
 			auto stack_object = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
-			_stack_region = TRY(_process->_vm_space->map_stack(stack_object));
+			_stack_region = TRY(m_vm_space->map_stack(stack_object));
 			mapped_user_stack_region = MM.map_object(stack_object);
 			return Result(SUCCESS);
 		};
@@ -159,7 +176,7 @@ Process* Thread::process() {
 	return _process;
 }
 
-pid_t Thread::tid() {
+tid_t Thread::tid() {
 	return _tid;
 }
 
@@ -206,10 +223,14 @@ void Thread::kill() {
 		}
 	}
 
-	if(_in_critical)
+	if(TaskManager::current_thread().get() == this) {
+		enter_critical();
 		_waiting_to_die = true;
-	else
-		reap();
+		leave_critical();
+	} else {
+		_state = DEAD;
+		Reaper::inst().reap(self());
+	}
 }
 
 bool Thread::waiting_to_die() {
@@ -220,6 +241,10 @@ bool Thread::can_be_run() {
 	return state() == ALIVE;
 }
 
+PageDirectory* Thread::page_directory() const {
+	return m_page_directory ? m_page_directory.get() : &MM.kernel_page_directory;
+}
+
 void Thread::enter_critical() {
 	_in_critical++;
 }
@@ -228,7 +253,9 @@ void Thread::leave_critical() {
 	_in_critical--;
 	if(_waiting_to_die && !_in_critical) {
 		_waiting_to_die = false;
-		reap();
+		Reaper::inst().reap(self());
+		_state = DEAD;
+		ASSERT(TaskManager::yield());
 	}
 }
 
@@ -311,7 +338,7 @@ Result Thread::join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& 
 
 	{
 		//Reap the joined thread and set the return status
-		other->reap();
+		Reaper::inst().reap(other);
 		if(retp)
 			retp.set(other->return_value());
 
@@ -321,6 +348,23 @@ Result Thread::join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& 
 	}
 
 	return Result(SUCCESS);
+}
+
+void Thread::acquired_lock(SpinLock* lock) {
+	TaskManager::ScopedCritical crit;
+	if(_held_locks.size() == _held_locks.capacity())
+		PANIC("MAX_LOCKS", "A thread is holding way too many locks.");
+	if(lock != &MM.liballoc_spinlock && lock != &TaskManager::g_tasking_lock)
+		_held_locks.push_back(lock);
+}
+
+void Thread::released_lock(SpinLock* lock) {
+	TaskManager::ScopedCritical crit;
+	if(lock != &MM.liballoc_spinlock && lock != &TaskManager::g_tasking_lock) {
+		// Ensure locks are acquired and released in the correct order
+		auto last_held = _held_locks.pop_back();
+		ASSERT(last_held == lock);
+	}
 }
 
 bool Thread::call_signal_handler(int signal) {
@@ -337,23 +381,23 @@ bool Thread::call_signal_handler(int signal) {
 	}
 
 	if(signal < 1 || signal >= 32)
-		return false;
+		return true;
 	auto signal_loc = (size_t) _process->signal_actions[signal].action;
 	if(!signal_loc || signal_loc >= HIGHER_HALF)
-		return false;
+		return true;
 
 	//Allocate a userspace stack
 	auto alloc_user_stack = [&]() -> Result {
 		if(!_sighandler_ustack_region) {
 			auto user_stack = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
-			_sighandler_ustack_region = TRY(_process->_vm_space->map_object(user_stack, VMProt::RW));
+			_sighandler_ustack_region = TRY(m_vm_space->map_object(user_stack, VMProt::RW));
 		}
 		return Result(SUCCESS);
 	};
 
 	if(alloc_user_stack().is_error()) {
 		KLog::crit("Thread", "Could not allocate userspace stack for signal handler!");
-		return false;
+		return true;
 	}
 
 	// Map the user stack into kernel space
@@ -401,7 +445,7 @@ bool Thread::call_signal_handler(int signal) {
 	_ready_to_handle_signal = true;
 	{
 		CRITICAL_LOCK(TaskManager::g_tasking_lock);
-		TaskManager::queue_thread(_process->_threads[_tid - 1]);
+		TaskManager::queue_thread(self());
 	}
 
 	// If this thread is the current thread, do a context switch
@@ -440,7 +484,7 @@ void Thread::handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction
 
 
 	//Otherwise, try CoW and kill the process if it doesn't work
-	if(_process->_vm_space->try_pagefault(err_pos).is_error()) {
+	if(m_vm_space->try_pagefault(err_pos).is_error()) {
 		if(instruction_pointer > HIGHER_HALF) {
 			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, err_pos, instruction_pointer);
 		}
@@ -491,7 +535,7 @@ void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Regi
 	kernel_stack.push32(regs.fs);
 	kernel_stack.push32(regs.gs);
 
-	if(_process->pid() != 0 || _tid != 1) {
+	if(_process->pid() != 0 || _tid != 0) {
 		kernel_stack.push_sizet((size_t) TaskManager::proc_first_preempt);
 		kernel_stack.push32(regs.eflags);
 		kernel_stack.push32(regs.ebx);
@@ -506,30 +550,16 @@ void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Regi
 
 void Thread::exit(void* return_value) {
 	_return_value = return_value;
-	_state = ZOMBIE;
+	kill();
 }
 
 void Thread::reap() {
-	if(_state == DEAD)
-		return;
-
-	_process->alert_thread_died();
-
-	{
-		TaskManager::ScopedCritical critical;
-		_state = DEAD;
-		if(TaskManager::g_next_thread == this)
-			TaskManager::g_next_thread = m_next;
-		if(m_prev && m_prev->m_next == this)
-			m_prev->m_next = m_next;
-		if(m_next)
-			m_next->m_prev = this;
-	}
-
-
-	_sighandler_ustack_region.reset();
-	_stack_region.reset();
-	_process->recalculate_pmem_total();
-	if(TaskManager::current_thread().get() == this)
-		TaskManager::yield();
+	_process->alert_thread_died(self());
+	TaskManager::ScopedCritical critical;
+	if(TaskManager::g_next_thread == this)
+		TaskManager::g_next_thread = m_next;
+	if(m_prev && m_prev->m_next == this)
+		m_prev->m_next = m_next;
+	if(m_next)
+		m_next->m_prev = this;
 }

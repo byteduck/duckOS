@@ -21,28 +21,26 @@ Reaper& Reaper::inst() {
 	return *s_inst;
 }
 
-void Reaper::reap(Process* process) {
+void Reaper::reap(const kstd::Arc<Thread>& thread) {
 	m_lock.acquire();
-	m_queue.push_back(process);
+	m_queue.push_back(thread);
 	m_lock.release();
 	m_blocker.set_ready(true);
-	process->_state = Process::DEAD;
 }
 
 void Reaper::start() {
 	while(1) {
-		m_lock.acquire();
-
 		{
+			LOCK(m_lock);
 			while(!m_queue.empty()) {
-				auto process = m_queue.pop_front();
-				ProcFS::inst().proc_remove(process);
-				TaskManager::remove_process(process);
-				delete process;
+				auto thread = m_queue.pop_front();
+				thread->reap();
+				if(thread->process()->state() == Process::ZOMBIE && !thread->process()->ppid()) {
+					TaskManager::remove_process(thread->process());
+					delete thread->process();
+				}
 			}
 		}
-
-		m_lock.release();
 		m_blocker.set_ready(false);
 		TaskManager::current_thread()->block(m_blocker);
 	}

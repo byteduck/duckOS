@@ -34,15 +34,15 @@
 #include <kernel/filesystem/Pipe.h>
 #include <kernel/kstd/KLog.h>
 #include "kernel/memory/AnonymousVMObject.h"
-#include "Reaper.h"
+#include "../filesystem/procfs/ProcFS.h"
 
 Process* Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::Arc<LinkedInode>(nullptr));
-	auto* ret = new Process(name, (size_t)func, true, &args, 1);
+	auto* ret = new Process(name, (size_t)func, true, &args, TaskManager::get_new_pid(), 1);
 	return ret->_self_ptr;
 }
 
-ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t parent) {
+ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, User& file_open_user, ProcessArgs* args, pid_t pid, pid_t parent) {
 	//Open the executable
 	auto fd_or_error = VFS::inst().open((kstd::string&) executable_loc, O_RDONLY, 0, file_open_user, args->working_dir);
 	if(fd_or_error.is_error())
@@ -76,7 +76,7 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 	}
 
 	//Create the process
-	auto* proc = new Process(VFS::path_base(executable_loc), info.header->program_entry_position, false, args, parent);
+	auto* proc = new Process(VFS::path_base(executable_loc), info.header->program_entry_position, false, args, pid, parent);
 	proc->_exe = executable_loc;
 
 	//Add the regions into the process's vm regions
@@ -133,11 +133,14 @@ Process::State Process::state() {
 	return _state;
 }
 
-int Process::main_thread_state() {
-	if(_state == ALIVE)
-		return _threads[0]->state();
-	else
+int Process::all_threads_state() {
+	if(_state != ALIVE)
 		return _state;
+	LOCK(_thread_lock);
+	for(auto& tid : _tids)
+		if(_threads[tid]->state() == Thread::ALIVE)
+			return ALIVE;
+	return Thread::BLOCKED;
 }
 
 int Process::exit_status() {
@@ -146,10 +149,6 @@ int Process::exit_status() {
 
 bool Process::is_kernel_mode() {
 	return _kernel_mode;
-}
-
-kstd::Arc<Thread>& Process::main_thread() {
-	return _threads[0];
 }
 
 tid_t Process::last_active_thread() {
@@ -162,21 +161,28 @@ void Process::set_last_active_thread(tid_t tid) {
 
 kstd::Arc<Thread> Process::spawn_kernel_thread(void (*entry)()) {
 	ProcessArgs args = ProcessArgs(kstd::Arc<LinkedInode>(nullptr));
-	auto thread = kstd::make_shared<Thread>(_self_ptr, _cur_tid++, (size_t) entry, &args);
-	_threads.push_back(thread);
+	auto thread = kstd::make_shared<Thread>(_self_ptr, TaskManager::get_new_pid(), (size_t) entry, &args);
+	insert_thread(thread);
 	ASSERT(TaskManager::g_tasking_lock.held_by_current_thread());
 	TaskManager::queue_thread(thread);
 	return thread;
 }
 
-const kstd::vector<kstd::Arc<Thread>>& Process::threads() {
-	return _threads;
+const kstd::vector<tid_t>& Process::threads() {
+	return _tids;
 }
 
-Process::Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t ppid):
+kstd::Arc<Thread> Process::get_thread(tid_t tid) {
+	auto node = _threads.find_node(tid);
+	if(node)
+		return node->data.second;
+	return {};
+}
+
+Process::Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t pid, pid_t ppid):
 		_user(User::root()),
 		_name(name),
-		_pid(TaskManager::get_new_pid()),
+		_pid(pid),
 		_kernel_mode(kernel),
 		_ppid(_pid > 1 ? ppid : 0),
 		_state(ALIVE),
@@ -197,8 +203,8 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 	}
 
 	//Create the main thread
-	auto* main_thread = new Thread(_self_ptr, _cur_tid++, entry_point, args);
-	_threads.push_back(kstd::Arc<Thread>(main_thread));
+	auto* main_thread = new Thread(_self_ptr, _pid, entry_point, args);
+	insert_thread(kstd::Arc<Thread>(main_thread));
 }
 
 Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _self_ptr(this) {
@@ -241,28 +247,11 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 	_vm_space = to_fork->_vm_space->fork(*_page_directory, _vm_regions);
 
 	//Create the main thread
-	auto* main_thread = new Thread(_self_ptr, _cur_tid++,regs);
-	_threads.push_back(kstd::Arc<Thread>(main_thread));
+	auto* main_thread = new Thread(_self_ptr, _pid, regs);
+	insert_thread(kstd::Arc<Thread>(main_thread));
 }
 
-Process::~Process() {
-	_is_destroying = true;
-	_vm_regions.resize(0);
-	_vm_space.reset();
-	_page_directory.reset();
-	for(auto& thread : _threads)
-		if(thread)
-			thread->reap();
-	_threads.resize(0);
-	_file_descriptors.resize(0);
-}
-
-void Process::reap() {
-	LOCK(_lock);
-	if(_state != ZOMBIE)
-		return;
-	Reaper::inst().reap(this);
-}
+Process::~Process() {}
 
 void Process::kill(int signal) {
 	if(signal >= 0 && signal <= 32) {
@@ -276,28 +265,50 @@ void Process::kill(int signal) {
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
 			//If the signal has no handler and is KILL or FATAL, then kill all threads
 			TaskManager::current_thread()->enter_critical();
-			for(int i = 0; i < _threads.size(); i++)
-				_threads[i]->kill();
+			for(auto tid : _tids)
+				get_thread(tid)->kill();
 			TaskManager::current_thread()->leave_critical();
 		} else if(signal_actions[signal].action) {
-			//We have a signal handler for this. If the process is blocked but can be interrupted, do so.
-			if(!main_thread()->call_signal_handler(signal)) {
-				// We weren't ready to handle it. Push it back to pending_signals
-				LOCK(_lock);
+			// We have a signal handler for this.
+			if(TaskManager::current_thread()->process() == this) {
+				// We are a thread from this process - try to handle the signal immediately.
+				if(!TaskManager::current_thread()->call_signal_handler(signal)) {
+					// We couldn't handle it - push it back to the queue.
+					LOCK(m_signal_lock);
+					pending_signals.push_back(signal);
+				}
+			} else {
+				// We are a thread from another process. Interrupt a thread if needed and queue the signal.
+				ScopedLocker thread_locker(_thread_lock);
+				ScopedLocker signal_locker(m_signal_lock);
 				pending_signals.push_back(signal);
+				TaskManager::ScopedCritical critical;
+				for(auto& tid : _tids) {
+					auto thread = get_thread(tid);
+					if(thread->state() == Thread::ALIVE)
+						break;
+					if(thread->is_blocked() && thread->_blocker->can_be_interrupted()) {
+						thread->_blocker->interrupt();
+						thread->unblock();
+						break;
+					}
+				}
 			}
 		}
 	}
 }
 
 void Process::handle_pending_signal() {
-	_lock.acquire();
+	// We have to enter critical while holding the lock, or else if the process has multiple threads
+	m_signal_lock.acquire_and_enter_critical();
 	if(!pending_signals.empty()) {
 		int sig = pending_signals.pop_front();
-		_lock.release();
+		m_signal_lock.release();
+		TaskManager::leave_critical();
 		kill(sig);
 	} else {
-		_lock.release();
+		m_signal_lock.release();
+		TaskManager::leave_critical();
 	}
 }
 
@@ -377,21 +388,22 @@ ssize_t Process::sys_write(int fd, UserspacePointer<uint8_t> buffer, size_t coun
 
 pid_t Process::sys_fork(Registers& regs) {
 	auto* new_proc = new Process(this, regs);
+	// If the process execs before sys_fork finishes, pid would be -1 so we save it here
+	auto pid = new_proc->pid();
 	TaskManager::add_process(new_proc->_self_ptr);
-	return new_proc->pid();
+	return pid;
 }
 
 int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 	//Scoped so that stack variables are cleaned up before yielding
 	{
 		//Create the new process
-		auto R_new_proc = Process::create_user(filename, _user, args, _ppid);
+		auto R_new_proc = Process::create_user(filename, _user, args, _pid, _ppid);
 		if (R_new_proc.is_error())
 			return R_new_proc.code();
 		auto new_proc = R_new_proc.value();
 
 		//Properly set new process's PID, blocker, and stdout/in/err
-		new_proc->_pid = _pid;
 		new_proc->_user = _user;
 		new_proc->_pgid = _pgid;
 		new_proc->_sid = _sid;
@@ -428,12 +440,18 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 		filename.~string();
 
 		//Add the new process to the process list
+		auto main_thread = _threads[_pid];
+		if(main_thread) {
+			remove_thread(main_thread);
+			main_thread->_tid = -1;
+			insert_thread(main_thread);
+		}
 		_pid = -1;
+		_ppid = 0;
 		TaskManager::add_process(new_proc);
-		Reaper::inst().reap(this);
 	}
 
-	ASSERT(TaskManager::yield());
+	kill(SIGKILL);
 	return -1;
 }
 
@@ -550,7 +568,7 @@ int Process::sys_waitpid(pid_t pid, UserspacePointer<int> status, int flags) {
 	if(status)
 		status.set(blocker.exit_status());
 	if(blocker.waited_process())
-		blocker.waited_process()->reap();
+		delete blocker.waited_process();
 	return blocker.waited_pid();
 }
 
@@ -1138,9 +1156,9 @@ int Process::sys_sleep(UserspacePointer<timespec> time, UserspacePointer<timespe
 }
 
 int Process::sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg) {
-	auto thread = kstd::make_shared<Thread>(_self_ptr, _cur_tid++, entry_func, thread_func, arg);
+	auto thread = kstd::make_shared<Thread>(_self_ptr, TaskManager::get_new_pid(), entry_func, thread_func, arg);
 	recalculate_pmem_total();
-	_threads.push_back(thread);
+	insert_thread(thread);
 	{
 		CRITICAL_LOCK(TaskManager::g_tasking_lock);
 		TaskManager::queue_thread(thread);
@@ -1154,19 +1172,19 @@ int Process::sys_gettid() {
 
 int Process::sys_threadjoin(tid_t tid, UserspacePointer<void*> retp) {
 	auto cur_thread = TaskManager::current_thread();
-	if(tid > _threads.size() || !_threads[tid - 1])
+	auto thread = get_thread(tid);
+	if(tid > _threads.size() || !thread)
 		return -ESRCH;
-	Result result = cur_thread->join(cur_thread, _threads[tid - 1], retp);
+	Result result = cur_thread->join(cur_thread, thread, retp);
 	if(result.is_success()) {
-		ASSERT(_threads[tid - 1]->state() == Thread::DEAD);
-		_threads[tid - 1].reset();
+		ASSERT(thread->state() == Thread::DEAD);
+		thread.reset();
 	}
 	return result.code();
 }
 
 int Process::sys_threadexit(void* return_value) {
 	TaskManager::current_thread()->exit(return_value);
-	TaskManager::yield();
 	ASSERT(false);
 	return -1;
 }
@@ -1175,28 +1193,43 @@ int Process::sys_access(UserspacePointer<char> pathname, int mode) {
 	return VFS::inst().access(pathname.str(), mode, _user, _cwd).code();
 }
 
-void Process::alert_thread_died() {
-	if(_is_destroying)
-		return;
+void Process::alert_thread_died(kstd::Arc<Thread> thread) {
+	remove_thread(thread);
 
-	//Check if all the threads are dead. If they are, we are ready to die.
-	int count_alive = 0;
-	for(size_t i = 0; i < threads().size(); i++)
-		if(_threads[i] && _threads[i]->state() != Thread::DEAD)
-			count_alive++;
-
-	// If we have one thread alive (ie the one currently dying), we're ready to die.
-	if(count_alive == 1) {
+	// If all threads are dead, we are ready to die.
+	if(_threads.size() == 0) {
 		auto parent = TaskManager::process_for_pid(_ppid);
-		if (!parent.is_error() && parent.value() != this)
+		if (!parent.is_error() && parent.value() != this) {
 			parent.value()->kill(SIGCHLD);
+		} else if(_pid == -1) {
+			// We are a process that just exec()'d. Nothing to do here.
+		} else {
+			KLog::warn("Process", "Process %d died and did not have a parent for SIGCHLD!", _pid);
+		}
 		TaskManager::reparent_orphans(this);
 		_state = ZOMBIE;
 	}
 }
 
 void Process::recalculate_pmem_total() {
-	if(_is_destroying)
+	if(_is_destroying || !_vm_space)
 		return;
 	m_used_pmem = _vm_space->calculate_regular_anonymous_total();
+}
+
+void Process::insert_thread(const kstd::Arc<Thread>& thread) {
+	LOCK(_thread_lock);
+	_threads[thread->_tid] = thread;
+	_tids.push_back(thread->_tid);
+}
+
+void Process::remove_thread(const kstd::Arc<Thread>& thread) {
+	LOCK(_thread_lock);
+	_threads.erase(thread->_tid);
+	for(size_t i = 0; i < _tids.size(); i++) {
+		if(_tids[i] == thread->_tid) {
+			_tids.erase(i);
+			break;
+		}
+	}
 }

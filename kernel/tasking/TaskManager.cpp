@@ -36,7 +36,7 @@ Process* kernel_process;
 kstd::vector<Process*>* processes = nullptr;
 Thread* TaskManager::g_next_thread;
 
-uint32_t __cpid__ = 0;
+Atomic<int> next_pid = 0;
 bool tasking_enabled = false;
 bool yield_async = false;
 bool preempting = false;
@@ -120,7 +120,7 @@ bool TaskManager::enabled(){
 bool TaskManager::is_idle() {
 	if(!kernel_process)
 		return true;
-	return cur_thread == kernel_process->main_thread();
+	return cur_thread->tid() == kernel_process->pid();
 }
 
 bool TaskManager::is_preempting() {
@@ -128,7 +128,7 @@ bool TaskManager::is_preempting() {
 }
 
 pid_t TaskManager::get_new_pid(){
-	return __cpid__++;
+	return next_pid.add(1);
 }
 
 void TaskManager::init(){
@@ -144,13 +144,13 @@ void TaskManager::init(){
 	//Create kinit process
 	auto kinit_process = Process::create_kernel("[kinit]", kmain_late);
 	processes->push_back(kinit_process);
-	queue_thread(kinit_process->main_thread());
+	queue_thread(kinit_process->get_thread(kinit_process->pid()));
 
 	//Create kernel threads
 	kernel_process->spawn_kernel_thread(kreaper_entry);
 
 	//Preempt
-	cur_thread = kernel_process->main_thread();
+	cur_thread = kernel_process->get_thread(kernel_process->pid());
 	preempt_init_asm(cur_thread->registers.esp);
 }
 
@@ -174,8 +174,8 @@ int TaskManager::add_process(Process* proc){
 
 	CRITICAL_LOCK(g_tasking_lock);
 	auto& threads = proc->threads();
-	for(const auto& thread : threads)
-		queue_thread(thread);
+	for(const auto& tid : threads)
+		queue_thread(proc->get_thread(tid));
 	return proc->pid();
 }
 
@@ -196,7 +196,7 @@ void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
 		KLog::warn("TaskManager", "Tried queueing null thread!");
 		return;
 	}
-	if(thread == kernel_process->main_thread()) {
+	if(thread->tid() == kernel_process->pid()) {
 		KLog::warn("TaskManager", "Tried queuing kidle thread!");
 		return;
 	}
@@ -226,10 +226,10 @@ kstd::Arc<Thread> TaskManager::pick_next_thread() {
 	if(!g_next_thread) {
 		if(cur_thread->can_be_run()) {
 			return cur_thread;
-		} else if(kernel_process->main_thread()->state() != Thread::ALIVE) {
+		} else if(kernel_process->get_thread(kernel_process->pid())->state() != Thread::ALIVE) {
 			PANIC("KTHREAD_DEADLOCK", "The kernel idle thread is blocked!");
 		} else {
-			return kernel_process->main_thread();
+			return kernel_process->get_thread(kernel_process->pid());
 		}
 	}
 
@@ -260,7 +260,7 @@ bool TaskManager::yield_if_not_preempting() {
 bool TaskManager::yield_if_idle() {
 	if(!kernel_process)
 		return false;
-	if(cur_thread == kernel_process->main_thread())
+	if(cur_thread->tid() == kernel_process->pid())
 		return yield();
 	return false;
 }
@@ -309,8 +309,9 @@ void TaskManager::preempt(){
 	if(g_process_lock.try_acquire()) {
 		for(auto& process : *processes) {
 			if(process->state() != Process::ALIVE)
-				break;
-			for(auto& thread : process->threads()) {
+				continue;
+			for(auto& tid : process->threads()) {
+				auto thread = process->get_thread(tid);
 				if(!thread)
 					continue;
 				if(thread->state() == Thread::BLOCKED && thread->should_unblock())
@@ -371,15 +372,14 @@ void TaskManager::preempt(){
 		PANIC("INVALID_CONTEXT_SWITCH", "Tried to switch to thread %d of PID %d in state %d", next_thread->tid(), next_thread->process()->pid(), next_thread->state());
 	if(should_preempt) {
 		// If we can run the old thread, re-queue it after we preempt
-		if(old_thread != kernel_process->main_thread() && old_thread->can_be_run())
+		if(old_thread->tid() != kernel_process->pid() && old_thread->can_be_run())
 			queue_thread(old_thread);
 
 		cur_thread = next_thread;
 		next_thread.reset();
-		old_thread.reset();
 
 		asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
-		preempt_asm(old_esp, new_esp, cur_thread->process()->page_directory()->entries_physaddr());
+		preempt_asm(old_esp, new_esp, cur_thread->page_directory()->entries_physaddr());
 		asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
 	}
 
@@ -388,11 +388,11 @@ void TaskManager::preempt(){
 #pragma GCC pop_options
 
 void TaskManager::preempt_finish() {
-	ASSERT(g_tasking_lock.count() == 1);
+	ASSERT(g_tasking_lock.times_locked() == 1);
 	g_tasking_lock.release();
 	leave_critical();
 	// Handle a pending signal.
-	if(cur_thread != kernel_process->main_thread())
+	if(cur_thread->tid() != kernel_process->pid())
 		cur_thread->process()->handle_pending_signal();
 	cur_thread->leave_critical();
 }
