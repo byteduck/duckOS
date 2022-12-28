@@ -181,6 +181,7 @@ int TaskManager::add_process(Process* proc){
 
 void TaskManager::remove_process(Process* proc) {
 	LOCK(g_process_lock);
+	ProcFS::inst().proc_remove(proc);
 	for(size_t i = 0; i < processes->size(); i++) {
 		if(processes->at(i) == proc) {
 			processes->erase(i);

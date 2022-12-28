@@ -68,9 +68,11 @@ void ProcFS::proc_add(Process* proc) {
 
 void ProcFS::proc_remove(Process* proc) {
 	pid_t pid = proc->pid();
-	for(size_t i = 0; i < entries.size();) {
-		if(entries[i].pid == pid) entries.erase(i);
-		else i++;
+	for(size_t i = 0; i < entries.size(); i++) {
+		if(entries[i].pid == pid) {
+			entries.erase(i);
+			break;
+		}
 	}
 }
 

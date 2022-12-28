@@ -251,7 +251,9 @@ Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _sel
 	insert_thread(kstd::Arc<Thread>(main_thread));
 }
 
-Process::~Process() {}
+Process::~Process() {
+	TaskManager::remove_process(this);
+}
 
 void Process::kill(int signal) {
 	if(signal >= 0 && signal <= 32) {

@@ -35,8 +35,9 @@ void Reaper::start() {
 			while(!m_queue.empty()) {
 				auto thread = m_queue.pop_front();
 				thread->reap();
+
 				if(thread->process()->state() == Process::ZOMBIE && !thread->process()->ppid()) {
-					TaskManager::remove_process(thread->process());
+					// This is a process that just exec()'d
 					delete thread->process();
 				}
 			}
