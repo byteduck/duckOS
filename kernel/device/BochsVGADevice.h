@@ -48,8 +48,8 @@
 #define VBE_DISPI_IOPORT_INDEX 0x01CE
 #define VBE_DISPI_IOPORT_DATA 0x01CF
 
-#define VBE_DEFAULT_WIDTH 640
-#define VBE_DEFAULT_HEIGHT 480
+#define VBE_DEFAULT_WIDTH 1080
+#define VBE_DEFAULT_HEIGHT 720
 
 class Process;
 class BochsVGADevice: public VGADevice {
