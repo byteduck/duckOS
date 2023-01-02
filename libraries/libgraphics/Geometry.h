@@ -393,6 +393,28 @@ namespace Gfx {
 			T h_inset = height * (1 - factor) * 0.5;
 			return inset(h_inset, w_inset, h_inset, w_inset);
 		}
+
+		/**
+		 * Gets the center of the rect.
+		 * @return The center of the rect.
+		 */
+		inline Point center() const {
+			return { x + width / 2, y + height / 2 };
+		}
+
+		/**
+		 * Returns the rect transformed to be centered on a point.
+		 * @param point The point to center on.
+		 * @return The rect centered on the point.
+		 */
+		inline GenericRect centered_on(Point point) const {
+			return {
+				point.x - width / 2,
+				point.y - height / 2,
+				width,
+				height
+			};
+		}
 	};
 
 	template<typename T>
