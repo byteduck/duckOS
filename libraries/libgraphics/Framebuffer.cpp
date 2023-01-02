@@ -188,11 +188,11 @@ void Framebuffer::draw_image_scaled(const Framebuffer& other, const Rect& rect) 
 		return;
 
 	//Update other area with the changes made to self_area
-	Rect other_area = {0, 0, other.width, other.height};
-	other_area.x += (int) ((self_area.x - rect.x) / scale_x);
-	other_area.y += (int) ((self_area.y - rect.y) / scale_y);
-	other_area.width = (int) (self_area.width / scale_x);
-	other_area.height = (int) (self_area.height / scale_y);
+	DoubleRect other_area = {0, 0, (float) other.width, (float) other.height};
+	other_area.x += (self_area.x - rect.x) / scale_x;
+	other_area.y += (self_area.y - rect.y) / scale_y;
+	other_area.width = self_area.width / scale_x;
+	other_area.height = self_area.height / scale_y;
 
 	for(int y = 0; y < self_area.height; y++) {
 		for(int x = 0; x < self_area.width; x++) {
