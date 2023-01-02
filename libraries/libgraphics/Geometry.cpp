@@ -18,34 +18,3 @@
 */
 
 #include "Geometry.h"
-
-bool Gfx::Point::near_border(const Rect& rect, int border_size) const {
-	Rect border_rect = {
-			rect.x - border_size,
-			rect.y - border_size,
-			rect.width + border_size * 2,
-			rect.height + border_size * 2
-	};
-
-	Rect inner_rect = {
-			rect.x + border_size,
-			rect.y + border_size,
-			rect.width - border_size * 2,
-			rect.height - border_size * 2
-	};
-
-	return in(border_rect) && !in(inner_rect);
-}
-
-Gfx::Point Gfx::Point::constrain(const Rect& rect) const {
-		Point ret = {x, y};
-		if(ret.x < rect.x)
-			ret.x = rect.x;
-		if(ret.x >= rect.x + rect.width)
-			ret.x = rect.x + rect.width - (rect.width ? 1 : 0);
-		if(ret.y < rect.y)
-			ret.y = rect.y;
-		if(ret.y >= rect.y + rect.height && rect.height)
-			ret.y = rect.y + rect.height - (rect.height ? 1 : 0);
-		return ret;
-}
