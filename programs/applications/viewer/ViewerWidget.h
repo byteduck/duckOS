@@ -11,6 +11,7 @@ public:
 	WIDGET_DEF(ViewerWidget)
 
 	void do_repaint(const UI::DrawContext& ctx) override;
+	void on_layout_change(const Gfx::Rect& old_rect) override;
 
 	Gfx::Dimensions preferred_size() override;
 

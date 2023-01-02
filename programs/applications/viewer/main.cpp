@@ -37,8 +37,8 @@ int main(int argc, char** argv, char** envp) {
 	window->set_title("Viewer: " + std::string(image.has_value() ? image_path : "No Image"));
 	window->set_resizable(true);
 
-	auto disp_rect = Gfx::Rect {{0,0}, UI::pond_context->get_display_dimensions()}.inset(16);
-	if(!disp_rect.contains({{0, 0}, window->dimensions()}))
+	auto disp_rect = Gfx::Rect {{0,0}, UI::pond_context->get_display_dimensions() - Gfx::Dimensions {32, 32}};
+	if(!Gfx::Rect {{0, 0}, window->dimensions()}.inside(disp_rect))
 		window->resize(UI::pond_context->get_display_dimensions() - Gfx::Dimensions {32, 32});
 
 	window->show();

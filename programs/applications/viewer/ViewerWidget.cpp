@@ -13,6 +13,11 @@ void ViewerWidget::do_repaint(const UI::DrawContext& ctx) {
 	ctx.draw_image(m_image, m_image_rect.scaled(m_scale_factor));
 }
 
+void ViewerWidget::on_layout_change(const Gfx::Rect& old_rect) {
+	auto centered_rect = m_image_rect.centered_on(Gfx::Rect {0, 0, current_size()}.center());
+	m_image_rect.set_position(centered_rect.position());
+}
+
 Gfx::Dimensions ViewerWidget::preferred_size() {
 	return m_image_rect.dimensions() * m_scale_factor;
 }
