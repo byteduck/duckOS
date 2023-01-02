@@ -4,6 +4,7 @@
 #include <libui/widget/Label.h>
 #include <libui/widget/Image.h>
 #include <libui/bits/FilePicker.h>
+#include "ViewerWidget.h"
 
 using namespace Duck;
 
@@ -27,7 +28,7 @@ int main(int argc, char** argv, char** envp) {
 		window->set_contents(UI::Label::make(image.message()));
 	} else {
 		window->set_contents(({
-			auto img = UI::Image::make(image.value());
+			auto img = ViewerWidget::make(image.value());
 			img->set_sizing_mode(UI::FILL);
 			img;
 		}));
@@ -35,11 +36,12 @@ int main(int argc, char** argv, char** envp) {
 
 	window->set_title("Viewer: " + std::string(image.has_value() ? image_path : "No Image"));
 	window->set_resizable(true);
-	window->show();
 
-	auto disp_rect = Gfx::Rect {{0,0 }, UI::pond_context->get_display_dimensions()};
+	auto disp_rect = Gfx::Rect {{0,0}, UI::pond_context->get_display_dimensions()}.inset(16);
 	if(!disp_rect.contains({{0, 0}, window->dimensions()}))
-		window->resize(UI::pond_context->get_display_dimensions());
+		window->resize(UI::pond_context->get_display_dimensions() - Gfx::Dimensions {32, 32});
+
+	window->show();
 
 	UI::run();
 }
