@@ -20,6 +20,7 @@
 #pragma once
 
 #include "Filesystem.h"
+#include "../kstd/LRUCache.h"
 #include <kernel/time/Time.h>
 #include <kernel/tasking/SpinLock.h>
 #include <kernel/kstd/vector.hpp>
@@ -59,8 +60,8 @@ protected:
 	size_t _block_size;
 
 private:
-	kstd::vector<kstd::Arc<Inode>> _inode_cache;
-	SpinLock _inode_cache_lock;
+	kstd::LRUCache<ino_t, kstd::Arc<Inode>> m_inode_cache;
+	SpinLock m_inode_cache_lock;
 };
 
 

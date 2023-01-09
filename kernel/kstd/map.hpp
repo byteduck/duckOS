@@ -21,6 +21,7 @@
 
 #include "utility.h"
 #include "pair.hpp"
+#include "Optional.h"
 
 namespace kstd {
 	template<typename Key, typename Val>
@@ -217,6 +218,13 @@ namespace kstd {
 			if(!ret)
 				return insert({key, Val()})->data.second;
 			return ret->data.second;
+		}
+
+		Val* get(const Key& key) {
+			auto ret = find_node(key);
+			if(!ret)
+				return nullptr;
+			return &ret->data.second;
 		}
 		
 		size_t size() {

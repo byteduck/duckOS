@@ -17,13 +17,24 @@ namespace kstd {
 
 		/** Insert the item with the given key and value, replacing it if it exists. **/
 		void insert(Key key, Value value) {
-			auto node = m_map.find_node(key);
+			auto node = m_map.get(key);
 			if(node) {
-				node->data.second = value;
+				*node = value;
 				promote(key);
 			} else {
 				m_map.insert({key, value});
 				m_lru_list.push_back(key);
+			}
+		}
+
+		/** Removes the item with the given key if it exists. **/
+		void erase(Key key) {
+			m_map.erase(key);
+			for(size_t i = 0; i < m_lru_list.size(); i++) {
+				if(m_lru_list[i] == key) {
+					m_lru_list.erase(i);
+					return;
+				}
 			}
 		}
 
@@ -44,10 +55,10 @@ namespace kstd {
 
 		/** Gets the item with the given key **/
 		kstd::Optional<Value> get(Key key) {
-			auto item = m_map.find_node(key);
+			auto item = m_map.get(key);
 			if(item) {
 				promote(key);
-				return item->data.second;
+				return *item;
 			}
 			return kstd::nullopt;
 		}

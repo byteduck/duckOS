@@ -142,26 +142,21 @@ Result FileBasedFilesystem::truncate_block(size_t block, size_t new_size) {
 }
 
 ResultRet<kstd::Arc<Inode>> FileBasedFilesystem::get_cached_inode(ino_t id) {
-	LOCK(_inode_cache_lock);
-	for(size_t i = 0; i < _inode_cache.size(); i++) {
-		if(_inode_cache[i]->id == id) return _inode_cache[i];
-	}
+	LOCK(m_inode_cache_lock);
+	auto inode = m_inode_cache.get(id);
+	if(inode)
+		return inode.value();
 	return Result(-ENOENT);
 }
 
 void FileBasedFilesystem::add_cached_inode(const kstd::Arc<Inode> &inode) {
-	LOCK(_inode_cache_lock);
-	_inode_cache.push_back(inode);
+	LOCK(m_inode_cache_lock);
+	m_inode_cache.insert(inode->id, inode);
 }
 
 void FileBasedFilesystem::remove_cached_inode(ino_t id) {
-	LOCK(_inode_cache_lock);
-	for(size_t i = 0; i < _inode_cache.size(); i++) {
-		if(_inode_cache[i]->id == id) {
-			_inode_cache.erase(i);
-			return;
-		}
-	}
+	LOCK(m_inode_cache_lock);
+	m_inode_cache.erase(id);
 }
 
 Inode* FileBasedFilesystem::get_inode_rawptr(ino_t id) {
@@ -169,7 +164,7 @@ Inode* FileBasedFilesystem::get_inode_rawptr(ino_t id) {
 }
 
 ResultRet<kstd::Arc<Inode>> FileBasedFilesystem::get_inode(ino_t id) {
-	LOCK(_inode_cache_lock);
+	LOCK(m_inode_cache_lock);
 	auto inode_perhaps = get_cached_inode(id);
 	if(inode_perhaps.is_error()) {
 		Inode* in = get_inode_rawptr(id);
