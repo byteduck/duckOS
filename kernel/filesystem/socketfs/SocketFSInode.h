@@ -60,11 +60,14 @@ public:
 	kstd::string name;
 
 private:
-	Result write_packet(SocketFSClient& recipient, int type, sockid_t sender, size_t size, int shm_id, int shm_perms, SafePointer<uint8_t> buffer, bool nonblock);
+	Result write_packet(const kstd::Arc<SocketFSClient>& recipient, int type, sockid_t sender, size_t size, int shm_id, int shm_perms, SafePointer<uint8_t> buffer, bool nonblock);
 
-	kstd::vector<SocketFSClient> clients;
-	SocketFSClient host;
-	SpinLock lock;
+	[[nodiscard]] kstd::Arc<SocketFSClient> get_client(const FileDescriptor* fd) const;
+
+	kstd::vector<kstd::Arc<SocketFSClient>> m_clients;
+	mutable SpinLock m_clients_lock;
+
+	kstd::Arc<SocketFSClient> host;
 	DirectoryEntry dir_entry;
 	bool is_open = true;
 };

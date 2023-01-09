@@ -27,7 +27,11 @@
 #include <kernel/kstd/KLog.h>
 
 SocketFSInode::SocketFSInode(SocketFS& fs, ino_t id, const kstd::string& name, mode_t mode, uid_t uid, gid_t gid):
-Inode(fs, id), fs(fs), id(id), name(name), host(0, TaskManager::current_process()->pid())
+	Inode(fs, id),
+	fs(fs),
+	id(id),
+	name(name),
+	host(kstd::Arc<SocketFSClient>::make(0, TaskManager::current_process()->pid()))
 {
 	if(id == 1) { //We're the root inode
 		_metadata.mode = MODE_DIRECTORY;
@@ -77,39 +81,26 @@ ssize_t SocketFSInode::read(size_t start, size_t length, SafePointer<uint8_t> bu
 	if(!fd)
 		return -EINVAL;
 
-	LOCK(lock);
-
 	//Find the client that is reading
-	SocketFSClient* reader = nullptr;
-	auto client_hash = SocketFS::client_hash(fd);
+	kstd::Arc<SocketFSClient> reader = get_client(fd);
 
-	if(host == client_hash) {
-		reader = &host;
-	} else {
-		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i] == client_hash) {
-				reader = &clients[i];
-				break;
-			}
-		}
-	}
-
-	if(!reader) {
-		//Couldn't find the client reading...
+	//Couldn't find the client reading...
+	if(!reader)
 		return -EIO;
-	}
 
-	if(length > reader->data_queue->size())
-		length = reader->data_queue->size();
+	LOCK(reader->data_lock);
+
+	if(length > reader->data_queue.size())
+		length = reader->data_queue.size();
 
 	//Read into the buffer from the queue
 	auto& queue = reader->data_queue;
 	for(size_t i = 0; i < length; i++) {
-		buffer.set(i, queue->front());
-		queue->pop_front();
+		buffer.set(i, queue.front());
+		queue.pop_front();
 	}
 
-	reader->_blocker.set_ready(true);
+	reader->blocker.set_ready(true);
 
 	return length;
 }
@@ -155,78 +146,59 @@ ssize_t SocketFSInode::write(size_t start, size_t length, SafePointer<uint8_t> b
 	if(!fd)
 		return -EINVAL;
 
-	lock.acquire();
 	auto packet = SafePointer<SocketFSPacket>(buf).get();
 	auto packet_data = SafePointer<uint8_t>(buf.raw() + sizeof(SocketFSPacket), buf.is_user());
-
-	SocketFSClient* recipient = nullptr;
-	SocketFSClient* sender = nullptr;
 	bool is_broadcast = packet.type == SOCKETFS_TYPE_BROADCAST;
 
 	//Find the client that the packet is coming from
-	auto client_hash = SocketFS::client_hash(fd);
-	if(host == client_hash) {
-		sender = &host;
-	} else {
-		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i] == client_hash) {
-				sender = &clients[i];
-				break;
-			}
-		}
-	}
+	auto sender = get_client(fd);
+	kstd::Arc<SocketFSClient> recipient;
 
 	if(!sender) {
 		//Couldn't find the client it came from...
-		lock.release();
 		return -EIO;
 	}
 
-	if(is_broadcast && sender == &host) {
+	if(is_broadcast && sender == host) {
 		//If it's a broadcast, send it to all clients
-		for(size_t i = 0; i < clients.size(); i++) {
+		LOCK(m_clients_lock);
+		for(auto& client : m_clients) {
 			//Share shm with client if we need to
 			if(packet.shm_id)
-				TaskManager::current_process()->sys_shmallow(packet.shm_id, clients[i].pid, packet.shm_perms);
+				TaskManager::current_process()->sys_shmallow(packet.shm_id, client->pid, packet.shm_perms);
 			//We don't care about errors here, we should just continue sending it to the rest of the clients
-			write_packet(clients[i], SOCKETFS_TYPE_MSG, sender->id, packet.length, packet.shm_id, packet.shm_perms, packet_data, fd->nonblock());
+			write_packet(client, SOCKETFS_TYPE_MSG, sender->id, packet.length, packet.shm_id, packet.shm_perms, packet_data, fd->nonblock());
 		}
-		lock.release();
 		return SUCCESS;
-	} else if(sender == &host) {
+	} else if(sender == host) {
 		//Find the client this packet has to go to
-		for(size_t i = 0; i < clients.size(); i++) {
-			if(clients[i] == packet.recipient) {
-				recipient = &clients[i];
+		LOCK(m_clients_lock);
+		for(auto& client : m_clients) {
+			if(client->id == packet.recipient) {
+				recipient = client;
 				break;
 			}
 		}
-	} else if(sender != &host) {
+	} else if(sender != host) {
 		//Clients can only send packets to the host
-		if(packet.recipient != SOCKETFS_RECIPIENT_HOST) {
-			lock.release();
+		if(packet.recipient != SOCKETFS_RECIPIENT_HOST)
 			return -EINVAL;
-		}
-		recipient = &host;
+		recipient = host;
 	}
 
 	if(!recipient) {
-		lock.release();
 		return -EINVAL; //No such recipient
 	}
 
 	//Share shm with recipient if we need to
 	if(packet.shm_id) {
 		int shm_res = TaskManager::current_process()->sys_shmallow(packet.shm_id, recipient->pid, packet.shm_perms);
-		if (shm_res != SUCCESS) {
-			lock.release();
+		if (shm_res != SUCCESS)
 			return shm_res;
-		}
 	}
 
 	//Finally, write the packet to the correct queue
-	auto res = write_packet(*recipient, SOCKETFS_TYPE_MSG, sender->id, packet.length, packet.shm_id, packet.shm_perms, packet_data, fd->nonblock());
-	lock.release();
+	auto res = write_packet(recipient, SOCKETFS_TYPE_MSG, sender->id, packet.length, packet.shm_id, packet.shm_perms, packet_data, fd->nonblock());
 	return res.code();
 }
 
@@ -284,28 +256,25 @@ Result SocketFSInode::chown(uid_t new_uid, gid_t new_gid) {
 }
 
 void SocketFSInode::open(FileDescriptor& fd, int options) {
-	LOCK(lock);
-
 	auto client_hash = SocketFS::client_hash(&fd);
 
 	//If nobody has taken ownership of this socket, make this file descriptor the owner
-	if(!host && (options & O_CREAT)) {
-		host.id = client_hash;
-		host.pid = TaskManager::current_process()->pid();
+	if(host->id == 0 && (options & O_CREAT)) {
+		host->id = client_hash;
+		host->pid = TaskManager::current_process()->pid();
 		return;
 	}
 
 	//Add the client and send the connect message to the host
-	clients.push_back(SocketFSClient(client_hash, fd.owner()));
+	LOCK(m_clients_lock);
+	m_clients.push_back(kstd::Arc<SocketFSClient>::make(client_hash, fd.owner()));
 	write_packet(host, SOCKETFS_TYPE_MSG_CONNECT, client_hash, 0, 0, 0, KernelPointer<uint8_t>(nullptr), true);
 }
 
 void SocketFSInode::close(FileDescriptor& fd) {
-	LOCK(lock);
-
 	auto client_hash = SocketFS::client_hash(&fd);
 
-	if(host == client_hash) {
+	if(client_hash == host->id) {
 		//Remove the socket
 		is_open = false;
 		ScopedLocker __locker2(fs.lock);
@@ -319,56 +288,62 @@ void SocketFSInode::close(FileDescriptor& fd) {
 		return;
 	}
 
-	for(size_t i = 0; i < clients.size(); i++) {
-		if(clients[i] == client_hash) {
+	LOCK(m_clients_lock);
+	for(size_t i = 0; i < m_clients.size(); i++) {
+		if(client_hash == m_clients[i]->id) {
 			write_packet(host, SOCKETFS_TYPE_MSG_DISCONNECT, client_hash, 0, 0, 0, KernelPointer<uint8_t>(nullptr), true);
-			clients.erase(i);
+			m_clients.erase(i);
 			break;
 		}
 	}
 }
 
 bool SocketFSInode::can_read(const FileDescriptor& fd) {
-	auto client_hash = SocketFS::client_hash(&fd);
-
-	if(host == client_hash)
-		return !host.data_queue->empty();
-
-	for(size_t i = 0; i < clients.size(); i++) {
-		if(clients[i] == client_hash)
-			return !clients[i].data_queue->empty();
-	}
-
+	auto id = SocketFS::client_hash(&fd);
+	if(id == host->id)
+		return !host->data_queue.empty();
+	for(auto& client : m_clients)
+		if(client->id == id)
+			return !client->data_queue.empty();
 	return false;
 }
 
-Result SocketFSInode::write_packet(SocketFSClient& client, int type, sockid_t sender, size_t length, int shm_id, int shm_perms, SafePointer<uint8_t> buffer, bool nonblock) {
+Result SocketFSInode::write_packet(const kstd::Arc<SocketFSClient>& client, int type, sockid_t sender, size_t length, int shm_id, int shm_perms, SafePointer<uint8_t> buffer, bool nonblock) {
 	//If there's room in the buffer, block (if O_NONBLOCK isn't set)
-	while(sizeof(SocketFSPacket) + length + client.data_queue->size() > SOCKETFS_MAX_BUFFER_SIZE) {
+	while(sizeof(SocketFSPacket) + length + client->data_queue.size() > SOCKETFS_MAX_BUFFER_SIZE) {
 		if(!nonblock) {
-			lock.release();
-			client._blocker.set_ready(false);
-			TaskManager::current_thread()->block(client._blocker);
-			if(client._blocker.was_interrupted())
+			client->blocker.set_ready(false);
+			TaskManager::current_thread()->block(client->blocker);
+			if(client->blocker.was_interrupted())
 				return Result(EINTR);
-			lock.acquire();
 		} else {
 			return Result(-ENOSPC);
 		}
 	}
 
 	//Acquire the lock
-	LOCK(client._lock);
+	LOCK(client->data_lock);
 
 	//Write the packet header
 	SocketFSPacket packet_header = {type, sender, TaskManager::current_process()->pid(), length, shm_id, shm_perms};
 	auto* data = (const uint8_t*) &packet_header;
 	for(size_t i = 0; i < sizeof(SocketFSPacket); i++)
-		client.data_queue->push_back(*data++);
+		client->data_queue.push_back(*data++);
 
 	//Write the packet body
 	for(size_t i = 0; i < length; i++)
-		client.data_queue->push_back(buffer.get(i));
+		client->data_queue.push_back(buffer.get(i));
 
 	return Result(SUCCESS);
+}
+
+kstd::Arc<SocketFSClient> SocketFSInode::get_client(const FileDescriptor* fd) const {
+	auto id = SocketFS::client_hash(fd);
+	if(id == host->id)
+		return host;
+	LOCK(m_clients_lock);
+	for(auto client : m_clients)
+		if(client->id == id)
+			return client;
+	return {};
 }
