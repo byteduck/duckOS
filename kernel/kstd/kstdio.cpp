@@ -37,7 +37,7 @@ bool did_setup_tty = false;
 
 void putch(char c){
 	if(did_setup_tty) {
-		if(g_panicking)
+		if(g_panicking || TaskManager::in_critical())
 			tty->get_terminal()->write_char(c);
 		else if(tty && use_tty)
 			tty_desc->write(KernelPointer<uint8_t>((uint8_t*) &c), 1);
@@ -69,7 +69,7 @@ void serial_putch(char c) {
 
 void print(const char* str){
 	if(did_setup_tty) {
-		if(g_panicking)
+		if(g_panicking || TaskManager::in_critical())
 			tty->get_terminal()->write_chars(str, strlen(str));
 		else if(tty && use_tty)
 			tty_desc->write(KernelPointer<uint8_t>((uint8_t*) str), strlen(str));
@@ -87,7 +87,7 @@ void printf(const char* fmt, ...) {
 }
 
 void vprintf(const char* fmt, va_list argp){
-	if(!g_panicking)
+	if(!g_panicking && !TaskManager::in_critical())
 		printf_lock.acquire();
 
 	const char *p;
@@ -142,7 +142,7 @@ void vprintf(const char* fmt, va_list argp){
 		}
 	}
 
-	if(!g_panicking)
+	if(!g_panicking && !TaskManager::in_critical())
 		printf_lock.release();
 }
 
