@@ -49,7 +49,6 @@ SET(KERNEL_SRCS
         interrupt/idt.cpp
         interrupt/irq.cpp
         interrupt/isr.cpp
-        interrupt/syscall.cpp
         pci/PCI.cpp
         device/Device.cpp
         device/BlockDevice.cpp
@@ -137,7 +136,34 @@ SET(KERNEL_SRCS
         tests/kstd/TestArc.cpp
         kstd/bits/RefCount.cpp
         kstd/Optional.cpp
-        tasking/Reaper.cpp)
+        tasking/Reaper.cpp
+        syscall/syscall.cpp
+        syscall/access.cpp
+        syscall/chdir.cpp
+        syscall/chmod.cpp
+        syscall/dup.cpp
+        syscall/exec.cpp
+        syscall/exit.cpp
+        syscall/fork.cpp
+        syscall/getcwd.cpp
+        syscall/gettimeofday.cpp
+        syscall/ioctl.cpp
+        syscall/isatty.cpp
+        syscall/kill.cpp
+        syscall/link.cpp
+        syscall/mem.cpp
+        syscall/mkdir.cpp
+        syscall/pid.cpp
+        syscall/pipe.cpp
+        syscall/poll.cpp
+        syscall/ptsname.cpp
+        syscall/read_write.cpp
+        syscall/sigaction.cpp
+        syscall/sleep.cpp
+        syscall/stat.cpp
+        syscall/thread.cpp
+        syscall/truncate.cpp
+        syscall/waitpid.cpp)
 
 ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS})
 TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL "$<$<BOOL:${ADD_KERNEL_DEBUG_SYMBOLS}>:DUCKOS_KERNEL_DEBUG_SYMBOLS>")

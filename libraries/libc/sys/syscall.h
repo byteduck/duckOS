@@ -20,7 +20,7 @@
 #ifndef DUCKOS_LIBC_SYSCALL_H
 #define DUCKOS_LIBC_SYSCALL_H
 
-#include <kernel/interrupt/syscall.h>
+#include <kernel/syscall/syscall_numbers.h>
 #include "cdefs.h"
 
 __DECL_BEGIN

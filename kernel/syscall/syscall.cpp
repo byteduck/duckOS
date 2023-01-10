@@ -18,13 +18,9 @@
 */
 
 #include <kernel/kstd/kstddef.h>
-#include <kernel/interrupt/syscall.h>
+#include "syscall.h"
 #include <kernel/kstd/kstdio.h>
 #include <kernel/tasking/TaskManager.h>
-#include <kernel/kstd/unix_types.h>
-#include <kernel/tasking/Thread.h>
-#include <kernel/tasking/Process.h>
-#include <kernel/tasking/Signal.h>
 #include "kernel/memory/SafePointer.h"
 
 void syscall_handler(Registers& regs){
