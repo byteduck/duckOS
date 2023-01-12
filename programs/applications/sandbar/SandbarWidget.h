@@ -7,7 +7,7 @@
 #include <libui/widget/Button.h>
 #include "AppMenu.h"
 
-class SandbarWidget: public UI::FlexLayout {
+class SandbarWidget: public UI::Widget {
 public:
 	WIDGET_DEF(SandbarWidget);
 
@@ -18,6 +18,7 @@ protected:
 private:
 	SandbarWidget(Duck::Ptr<AppMenu> sandbar);
 
+	Duck::Ptr<UI::FlexLayout> m_layout;
 	Duck::Ptr<UI::Button> m_duck_button;
 	Duck::Ptr<AppMenu> m_app_menu;
 };
