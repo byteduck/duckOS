@@ -18,9 +18,9 @@ SandbarWidget::SandbarWidget(Duck::Ptr<AppMenu> app_menu):
 {
 	add_child(Cell::make(m_layout));
 
-	auto button_stack = Stack::make(Stack::HORIZONTAL, 4, UI::Image::make("/duck"), UI::Label::make("Applications"));
-	m_duck_button = UI::Button::make(Cell::make(button_stack, 2));
+	m_duck_button = UI::Button::make(UI::icon("/duck"));
 	m_duck_button->set_sizing_mode(UI::PREFERRED);
+	m_duck_button->set_style(ButtonStyle::INSET);
 	m_duck_button->on_pressed = [&] {
 		m_app_menu->toggle();
 	};
