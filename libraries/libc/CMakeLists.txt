@@ -25,7 +25,7 @@ SET(SOURCES
         sys/thread.cpp
         sys/wait.c
         termios.c
-        time.c
+        time.cpp
         unistd.c
         utime.c
         ../libduck/SpinLock.cpp)
