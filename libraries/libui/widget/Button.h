@@ -26,7 +26,7 @@
 
 namespace UI {
 	enum class ButtonStyle {
-		RAISED, FLAT
+		RAISED, FLAT, INSET
 	};
 
 	class Button: public Widget {

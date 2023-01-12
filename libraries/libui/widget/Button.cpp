@@ -120,6 +120,13 @@ void Button::do_repaint(const DrawContext& ctx) {
 			ctx.fill(ctx.rect(), color);
 			break;
 		}
+		case ButtonStyle::INSET: {
+			if(m_pressed)
+				ctx.draw_inset_rect(ctx.rect());
+			else
+				ctx.fill(ctx.rect(), Theme::bg());
+			break;
+		}
 		case ButtonStyle::RAISED:
 			ctx.draw_button_base({0, 0, ctx.width(), ctx.height()}, m_pressed);
 			break;
