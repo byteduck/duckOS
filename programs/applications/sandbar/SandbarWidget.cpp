@@ -21,8 +21,8 @@ SandbarWidget::SandbarWidget(Duck::Ptr<AppMenu> app_menu):
 	};
 
 	add_child(m_duck_button);
-//	add_child(UI::Cell::make());
-//	add_child(TimeWidget::make());
+	add_child(UI::Cell::make());
+	add_child(TimeWidget::make());
 }
 
 void SandbarWidget::do_repaint(const DrawContext& ctx) {

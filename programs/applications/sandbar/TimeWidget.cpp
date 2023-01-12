@@ -9,16 +9,23 @@
 TimeWidget::TimeWidget() {
 	m_timer = UI::set_interval([this] {
 		repaint();
-	}, 1.0);
+	}, 1000);
 	set_uses_alpha(true);
 }
 
 void TimeWidget::do_repaint(const UI::DrawContext& ctx) {
+	char stringbuf[30];
+	time_t epoch = time(nullptr);
+	tm cur_time = *localtime(&epoch);
+	snprintf(stringbuf, 30, "%.2d:%.2d:%.2d\n%.2d/%.2d/%d",
+			cur_time.tm_hour,
+			cur_time.tm_min,
+			cur_time.tm_sec,
+			cur_time.tm_mon + 1,
+			cur_time.tm_mday,
+			cur_time.tm_year + 1900);
 	ctx.fill(ctx.rect(), RGBA(0,0,0,0));
-
-	timeval time;
-	gettimeofday(&time, nullptr);
-	ctx.draw_text(std::to_string(time.tv_sec).c_str(), ctx.rect(), UI::TextAlignment::CENTER, UI::TextAlignment::CENTER, UI::Theme::font(), UI::Theme::fg());
+	ctx.draw_text(stringbuf, ctx.rect(), UI::TextAlignment::CENTER, UI::TextAlignment::CENTER, UI::Theme::font(), UI::Theme::fg());
 }
 
 Gfx::Dimensions TimeWidget::preferred_size() {
