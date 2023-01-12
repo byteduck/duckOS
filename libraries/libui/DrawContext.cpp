@@ -269,7 +269,11 @@ void UI::DrawContext::draw_button(Gfx::Rect rect, const Framebuffer& img, bool p
 
 void UI::DrawContext::draw_button(Gfx::Rect rect, Duck::Ptr<const Image> img, bool pressed) const {
 	draw_button_base(rect, pressed);
-	img->draw(*fb, rect.position() + Gfx::Point {rect.dimensions().width / 2, rect.dimensions().height / 2} - Gfx::Point {img->size().width / 2, img->size().height / 2});
+	Gfx::Point img_pos = rect.position()
+			+ Gfx::Point {rect.dimensions().width / 2, rect.dimensions().height / 2}
+			- Gfx::Point {img->size().width / 2, img->size().height / 2}
+			+ (pressed ? Gfx::Point { 1, 1 } : Gfx::Point { 0, 0 });
+	img->draw(*fb, img_pos);
 }
 
 void UI::DrawContext::draw_vertical_scrollbar(Gfx::Rect area, Gfx::Rect handle_area, bool enabled) const {

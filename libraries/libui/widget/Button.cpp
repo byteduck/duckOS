@@ -60,16 +60,19 @@ void Button::set_label(std::string new_label) {
 void Button::set_style(ButtonStyle new_style) {
 	m_style = new_style;
 	set_uses_alpha(m_style == ButtonStyle::FLAT);
+	calculate_layout();
 	repaint();
 }
 
 bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
 		m_pressed = true;
+		calculate_layout();
 		repaint();
 		return true;
 	} else if((evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1)) {
 		m_pressed = false;
+		calculate_layout();
 		if(on_pressed)
 			on_pressed();
 		repaint();
@@ -87,6 +90,7 @@ void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 	}
 	if(m_pressed) {
 		m_pressed = false;
+		calculate_layout();
 		repaint();
 	}
 }
@@ -109,7 +113,8 @@ void Button::calculate_layout() {
 	auto dims = size - Gfx::Dimensions {m_padding * 2, m_padding * 2};
 	dims.width = std::max(dims.width, 0);
 	dims.height = std::max(dims.height, 0);
-	m_contents->set_layout_bounds(Gfx::Rect{{m_padding, m_padding}, dims});
+	auto extra_padding = m_pressed && m_style != ButtonStyle::FLAT ? 1 : 0;
+	m_contents->set_layout_bounds(Gfx::Rect{{m_padding + extra_padding, m_padding + extra_padding}, dims});
 }
 
 void Button::do_repaint(const DrawContext& ctx) {
