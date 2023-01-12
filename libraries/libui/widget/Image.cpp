@@ -3,6 +3,7 @@
 //
 
 #include "Image.h"
+#include "../libui.h"
 
 using namespace UI;
 
@@ -10,7 +11,9 @@ Image::Image(Duck::Ptr<const Gfx::Image> image, Image::ScalingMode mode): _image
 	set_uses_alpha(true);
 }
 
-Image::Image(std::string name, UI::Image::ScalingMode mode) {}
+Image::Image(std::string name, UI::Image::ScalingMode mode): _image(UI::icon(name)), _scaling_mode(mode) {
+	set_uses_alpha(true);
+}
 
 Duck::Ptr<const Gfx::Image> Image::image() {
 	return _image;
