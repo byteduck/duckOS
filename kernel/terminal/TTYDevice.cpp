@@ -138,7 +138,10 @@ void TTYDevice::emit(uint8_t c) {
 	}
 
 	_input_buffer.push_back(c);
-	echo(c);
+	_buffer_blocker.set_ready(true);
+
+	if(_termios.c_lflag & ECHO)
+		echo(c);
 }
 
 bool TTYDevice::can_read(const FileDescriptor& fd) {
