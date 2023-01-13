@@ -46,9 +46,20 @@ jobs:
           cd toolchain
           ./build-toolchain.sh install-headers
       
-      - name: Build OS
+      - name: Build duckOS (Release)
         run: |
           cd cmake-build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE=toolchain/CMakeToolchain.txt
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=toolchain/CMakeToolchain.txt -DCMAKE_BUILD_TYPE=Release
           make install
+          
+      - name: Make image
+        run: |
+          cd cmake-build
+          make image
+          
+      - name: Upload image
+        uses: actions/upload-artifact@v3
+        with:
+          name: Disk Image
+          path: cmake-build/duckOS.img
 
