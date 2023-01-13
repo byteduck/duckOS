@@ -18,6 +18,7 @@
 */
 
 #include "Terminal.h"
+#include <libkeyboard/Keyboard.h>
 
 #ifdef DUCKOS_KERNEL
 #include <kernel/kstd/cstring.h>
@@ -29,6 +30,7 @@
 #endif
 
 using namespace Term;
+using namespace Keyboard;
 
 Terminal::Terminal(const Size& dimensions, Listener& listener):
 dimensions(dimensions),
@@ -97,6 +99,29 @@ void Terminal::handle_keypress(uint16_t keycode, uint32_t codepoint, uint8_t mod
 		//Send ctrl codepoint
 		if(codepoint >= 'a' && codepoint <= 'z')
 			codepoint -= ('a' - 1);
+	}
+
+	auto emit_csi = [&] (char esc) {
+		char str[] = {'\033', '[', esc, '\0'};
+		emit_str(str);
+	};
+
+	auto key = (Key) keycode;
+	switch(key) {
+		case Key::Up:
+			emit_csi('A');
+			return;
+		case Key::Down:
+			emit_csi('B');
+			return;
+		case Key::Right:
+			emit_csi('C');
+			return;
+		case Key::Left:
+			emit_csi('D');
+			return;
+		default:
+			break;
 	}
 
 	if(modifiers & KBD_MOD_ALT)
@@ -317,6 +342,12 @@ void Terminal::evaluate_escape_codepoint(uint32_t codepoint) {
 				case 'J': //Clear
 					escape_mode = false;
 					evaluate_clear_escape();
+				case 'A':
+				case 'B':
+				case 'C':
+				case 'D':
+					escape_mode = false;
+					break;
 				default:
 					current_escape_parameter[escape_parameter_char_index++] = codepoint;
 					if(escape_parameter_char_index >= 9) {
