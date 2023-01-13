@@ -61,7 +61,7 @@ void MenuWidget::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 bool MenuWidget::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if((evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1) && m_hovered_item != MenuItem::Separator) {
 		if(m_hovered_item && m_hovered_item->action())
-			m_hovered_item->action();
+			m_hovered_item->action()();
 		root_menu().lock()->close();
 		return true;
 	}
