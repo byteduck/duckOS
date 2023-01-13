@@ -20,6 +20,7 @@
 #include "Shell.h"
 #include "util.h"
 #include "Command.h"
+#include <libtui/LineEditor.h>
 #include <cstdio>
 #include <cstdlib>
 #include <unistd.h>
@@ -44,6 +45,8 @@ int Shell::run() {
 	path.append(DEFAULT_PATH);
 	setenv("PATH", path.c_str(), true);
 
+	TUI::LineEditor editor;
+
 	while(!should_exit) {
 		getcwd(cwd, 4096);
 
@@ -55,9 +58,7 @@ int Shell::run() {
 		}
 
 		//Read the command and trim and evaluate it
-		std::string input;
-		std::getline(std::cin, input).eof();
-		result = evaluate(input);
+		result = evaluate(editor.get_line());
 		if(std::cin.eof())
 			break;
 	}
