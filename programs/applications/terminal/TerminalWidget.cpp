@@ -136,15 +136,28 @@ void TerminalWidget::do_repaint(const UI::DrawContext& ctx) {
 	}
 	events.clear();
 
-	//Then, draw the blinking cursor
+	// Get cursor position
 	auto cursor = term->get_cursor();
 	Gfx::Point pos = {(int) cursor.col * font->bounding_box().width, (int) cursor.line * font->size()};
+
+	// Draw character under cursor
+	auto character = term->get_character(cursor);
+	ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[character.attr.bg]);
+	ctx.draw_glyph(font, character.codepoint, pos, color_palette[character.attr.fg]);
+
+	// Draw the cursor
 	if(blink_on) {
-		ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, RGB(200, 200, 200));
-	} else {
-		auto character = term->get_character(cursor);
-		ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, color_palette[character.attr.bg]);
-		ctx.draw_glyph(font, character.codepoint, pos, color_palette[character.attr.fg]);
+		switch(cursor_style) {
+		case CursorStyle::Block:
+			ctx.fill({pos.x, pos.y, font->bounding_box().width, font->size()}, RGB(200, 200, 200));
+			break;
+		case CursorStyle::IBeam:
+			ctx.fill({pos.x, pos.y, 1, font->size()}, RGB(200, 200, 200));
+			break;
+		case CursorStyle::Underline:
+			ctx.fill({pos.x, pos.y + font->size() - 1, font->bounding_box().width, 1}, RGB(200, 200, 200));
+				break;
+		}
 	}
 }
 
@@ -174,9 +187,25 @@ Duck::Ptr<UI::Menu> TerminalWidget::create_menu() {
 			 UI::MenuItem::make("Send SIGINT (^C)", [&] {
 				 term->handle_keypress(0, 'c', KBD_MOD_CTRL);
 			 })
+		})),
+		UI::MenuItem::make("Cursor Style", nullptr, UI::Menu::make({
+		   UI::MenuItem::make("Block", [&] {
+			   set_cursor_style(CursorStyle::Block);
+		   }),
+		   UI::MenuItem::make("I-Beam", [&] {
+			   set_cursor_style(CursorStyle::IBeam);
+		   }),
+		   UI::MenuItem::make("Underline", [&] {
+			   set_cursor_style(CursorStyle::Underline);
+		   })
 		}))
 	};
 	return UI::Menu::make(items);
+}
+
+void TerminalWidget::set_cursor_style(CursorStyle style) {
+	cursor_style = style;
+	repaint();
 }
 
 bool TerminalWidget::on_mouse_button(Pond::MouseButtonEvent evt) {

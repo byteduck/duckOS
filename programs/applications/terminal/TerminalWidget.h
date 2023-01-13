@@ -26,6 +26,12 @@ class TerminalWidget: public UI::Widget, public Term::Listener {
 public:
 	WIDGET_DEF(TerminalWidget)
 
+	enum class CursorStyle {
+		Block,
+		IBeam,
+		Underline
+	};
+
 	~TerminalWidget();
 
 	//Widget
@@ -38,6 +44,7 @@ public:
 	void handle_term_events();
 	void run(const char* command);
 	Duck::Ptr<UI::Menu> create_menu();
+	void set_cursor_style(CursorStyle style);
 
 	//Terminal::Listener
 	void on_character_change(const Term::Position& position, const Term::Character& character) override;
@@ -53,7 +60,7 @@ private:
 	TerminalWidget();
 
 	Gfx::Font* font = nullptr;
-	Term::Terminal* term = nullptr;
+	Term::Terminal* term;
 	int pty_fd = -1;
 	pid_t proc_pid = -1;
 	bool needs_full_repaint = false;
@@ -82,6 +89,7 @@ private:
 	};
 
 	std::vector<TerminalEvent> events;
+	CursorStyle cursor_style = CursorStyle::Block;
 };
 
 
