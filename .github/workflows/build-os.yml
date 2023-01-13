@@ -39,7 +39,13 @@ jobs:
         run: |
           cd toolchain
           ./build-toolchain.sh
-          
+      
+      - name: Install headers
+        if: steps.cache-toolchain.outputs.cache-hit == 'true'
+        run: |
+          cd toolchain
+          ./build-toolchain.sh install-headers
+      
       - name: Build OS
         run: |
           cd cmake-build

@@ -30,6 +30,32 @@ build_binutils () {
   popd
 }
 
+install_headers() {
+  msg "Installing libc headers..."
+  mkdir -p "$SYSROOT"/usr/include
+  LIBC_HEADERS=$(find "$LIBC_LOC" -name '*.h' -print)
+  while IFS= read -r HEADER; do
+    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
+  done <<< "$LIBC_HEADERS"
+  success "Installed libc headers!"
+
+  msg "Installing libm headers..."
+  mkdir -p "$SYSROOT"/usr/include
+  LIBM_HEADERS=$(find "$LIBM_LOC" -name '*.h' -print)
+  while IFS= read -r HEADER; do
+    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
+  done <<< "$LIBM_HEADERS"
+  success "Installed libm headers!"
+
+  msg "Installing kernel headers..."
+  mkdir -p "$SYSROOT"/usr/include/kernel
+  KERNEL_HEADERS=$(find "$KERNEL_LOC" -name '*.h' -print)
+  while IFS= read -r HEADER; do
+    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/kernel/$(echo "$HEADER" | sed -e "s@$KERNEL_LOC@@")"
+  done <<< "$KERNEL_HEADERS"
+  success "Installed kernel headers!"
+}
+
 build_gcc () {
   pushd .
   cd "$BUILD"
@@ -53,29 +79,7 @@ build_gcc () {
   make install-gcc install-target-libgcc || exit 1
   success "Installed gcc!"
 
-  msg "Installing libc headers..."
-  mkdir -p "$SYSROOT"/usr/include
-  LIBC_HEADERS=$(find "$LIBC_LOC" -name '*.h' -print)
-  while IFS= read -r HEADER; do
-    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBC_LOC@@")"
-  done <<< "$LIBC_HEADERS"
-  success "Installed libc headers!"
-
-  msg "Installing libm headers..."
-  mkdir -p "$SYSROOT"/usr/include
-  LIBM_HEADERS=$(find "$LIBM_LOC" -name '*.h' -print)
-  while IFS= read -r HEADER; do
-    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
-  done <<< "$LIBM_HEADERS"
-  success "Installed libm headers!"
-  
-  msg "Installing kernel headers..."
-  mkdir -p "$SYSROOT"/usr/include/kernel
-  KERNEL_HEADERS=$(find "$KERNEL_LOC" -name '*.h' -print)
-  while IFS= read -r HEADER; do
-    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/kernel/$(echo "$HEADER" | sed -e "s@$KERNEL_LOC@@")"
-  done <<< "$KERNEL_HEADERS"
-  success "Installed kernel headers!"
+  install_headers
 
   msg "Making libstdc++..."
   make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1
@@ -94,6 +98,9 @@ if [ "$1" ]; then
     build_binutils edited
   elif [ "$1" == "edited-gcc" ]; then
     build_gcc edited
+  elif [ "$1" == "install-headers" ]; then
+    install_headers
+    exit
   else
     fail "Unknown argument ${1}. Please pass either edited-binutils or edited-gcc to rebuild the respective component from the edit directory."
   fi
