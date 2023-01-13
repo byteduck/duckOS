@@ -27,7 +27,15 @@ jobs:
           sudo apt update
           sudo apt install build-essential cmake bison flex libgmp3-dev libmpc-dev libmpfr-dev texinfo qemu-system-i386 qemu-utils nasm gawk grub2-common grub-pc
 
+      - name: Cache toolchain
+        id: cache-toolchain
+        uses: actions/cache@v3
+        with:
+          path: toolchain/tools
+          key: ${{ runner.os }}-toolchain-${{ hashFiles('toolchain/*.patch') }}
+      
       - name: Build toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
         run: |
           cd toolchain
           ./build-toolchain.sh
@@ -37,3 +45,4 @@ jobs:
           cd cmake-build
           cmake .. -DCMAKE_TOOLCHAIN_FILE=toolchain/CMakeToolchain.txt
           make install
+

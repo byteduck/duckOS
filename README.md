@@ -3,8 +3,6 @@
 
 A hobby UNIX-like OS with a graphical window manager for x86 computers.
 
-![Toolchain](https://github.com/byteduck/duckOS/workflows/Toolchain/badge.svg)
-![Kernel](https://github.com/byteduck/duckOS/workflows/Kernel/badge.svg)
 ![duckOS](https://github.com/byteduck/duckOS/workflows/duckOS/badge.svg)
 
 ### Try duckOS in your browser!
