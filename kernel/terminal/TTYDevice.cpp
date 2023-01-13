@@ -138,7 +138,9 @@ void TTYDevice::emit(uint8_t c) {
 	}
 
 	_input_buffer.push_back(c);
-	_buffer_blocker.set_ready(true);
+
+	if(!(_termios.c_lflag & ICANON))
+		_buffer_blocker.set_ready(true);
 
 	if(_termios.c_lflag & ECHO)
 		echo(c);
