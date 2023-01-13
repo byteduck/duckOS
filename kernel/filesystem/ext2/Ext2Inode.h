@@ -78,13 +78,13 @@ public:
 	void close(FileDescriptor& fd) override;
 
 private:
-	void read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index, uint8_t* block_buf);
-	void read_doubly_indirect(uint32_t doubly_indirect_block, uint32_t& block_index, uint8_t* block_buf);
-	void read_triply_indirect(uint32_t triply_indirect_block, uint32_t& block_index, uint8_t* block_buf);
-	void read_block_pointers(uint8_t* block_buf = nullptr);
-	Result write_to_disk(uint8_t* block_buf = nullptr);
-	Result write_block_pointers(uint8_t* block_buf = nullptr);
-	Result write_inode_entry(uint8_t* block_buf = nullptr);
+	void read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index);
+	void read_doubly_indirect(uint32_t doubly_indirect_block, uint32_t& block_index);
+	void read_triply_indirect(uint32_t triply_indirect_block, uint32_t& block_index);
+	void read_block_pointers();
+	Result write_to_disk();
+	Result write_block_pointers();
+	Result write_inode_entry();
 	Result write_directory_entries(kstd::vector<DirectoryEntry>& entries);
 	void create_metadata();
 	void reduce_hardlink_count();

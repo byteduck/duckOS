@@ -52,9 +52,8 @@ void Ext2Filesystem::init() {
 
 bool Ext2Filesystem::probe(FileDescriptor& file){
 	file.seek(512 * 2, SEEK_SET); //Supercluster begins at partition sector + 2
-	auto buf = new uint8_t[512];
+	uint8_t buf[512];
 	file.read(KernelPointer<uint8_t>(buf), 512);
-	delete[] buf;
 	return ((ext2_superblock *)buf)->signature == EXT2_SIGNATURE;
 }
 
@@ -94,10 +93,9 @@ ResultRet<kstd::Arc<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, uid_
 
 	//Read the inode bitmap
 	Ext2BlockGroup& group = *get_block_group(bg);
-	auto* inode_bitmap = new uint8_t[block_size()];
+	uint8_t inode_bitmap[block_size()];
 	Result rb_res = read_block(group.inode_bitmap_block, inode_bitmap);
 	if(rb_res.is_error()) {
-		delete[] inode_bitmap;
 		KLog::err("ext2", "I/O error reading inode bitmap block for block group %d!", bg);
 		ext2lock.release();
 		return rb_res;
@@ -115,7 +113,6 @@ ResultRet<kstd::Arc<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, uid_
 
 	//Write the inode bitmap
 	write_block(group.inode_bitmap_block, inode_bitmap);
-	delete[] inode_bitmap;
 
 	//Didn't find a free inode, so the free inode count was wrong
 	if(inode_index == 0) {
@@ -166,10 +163,9 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 
 	//Update the inode bitmap and free inodes in the block group
 	Ext2BlockGroup* bg = get_block_group(ino.block_group());
-	auto block_buf = new uint8_t[block_size()];
+	uint8_t block_buf[block_size()];
 	Result res = read_block(bg->inode_bitmap_block, block_buf);
 	if(res.is_error()) {
-		delete[] block_buf;
 		KLog::err("ext2", "Error while reading bitmap for block group %d!", ino.block_group());
 		ext2lock.release();
 		return res;
@@ -178,7 +174,6 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	set_bitmap_bit(block_buf, ino.index(), false);
 	res = write_block(bg->inode_bitmap_block, block_buf);
 	if(res.is_error()) {
-		delete[] block_buf;
 		KLog::err("ext2", "Error while writing bitmap for block group %d!", ino.block_group());
 		ext2lock.release();
 		return res;
@@ -204,7 +199,6 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	superblock.free_inodes++;
 	write_superblock();
 
-	delete[] block_buf;
 	ino.mark_deleted();
 	ext2lock.release();
 
@@ -219,31 +213,26 @@ ino_t Ext2Filesystem::root_inode_id() {
 	return 2;
 }
 
-Result Ext2Filesystem::read_block_group_raw(uint32_t block_group, ext2_block_group_descriptor* buffer, uint8_t* block_buf) {
-	ALLOC_BLOCKBUF(block_buf, block_size());
+Result Ext2Filesystem::read_block_group_raw(uint32_t block_group, ext2_block_group_descriptor* buffer) {
+	uint8_t block_buf[block_size()];
 	auto ret = read_block(2 + (block_group * sizeof(ext2_block_group_descriptor)) / block_size(), block_buf);
 	auto* d = (ext2_block_group_descriptor*) block_buf;
 	d += block_group % (block_size() / sizeof(ext2_block_group_descriptor));
 	memcpy((void*) buffer, d, sizeof(ext2_block_group_descriptor));
-	FREE_BLOCKBUF(block_buf);
 	return ret;
 }
 
-Result Ext2Filesystem::write_block_group_raw(uint32_t block_group, const ext2_block_group_descriptor *buffer, uint8_t* block_buf) {
-	ALLOC_BLOCKBUF(block_buf, block_size());
-
+Result Ext2Filesystem::write_block_group_raw(uint32_t block_group, const ext2_block_group_descriptor *buffer) {
+	uint8_t block_buf[block_size()];
 	auto res = read_block(2 + (block_group * sizeof(ext2_block_group_descriptor)) / block_size(), block_buf);
-	if(res.is_error()) {
-		delete[] block_buf;
+	if(res.is_error())
 		return res;
-	}
 
 	auto* d = (ext2_block_group_descriptor*) block_buf;
 	d += block_group % (block_size() / sizeof(ext2_block_group_descriptor));
 	memcpy(d, buffer, sizeof(ext2_block_group_descriptor));
 	auto write_successful = write_block(2 + (block_group * sizeof(ext2_block_group_descriptor)) / block_size(), block_buf);
 
-	FREE_BLOCKBUF(block_buf);
 	return write_successful;
 }
 
@@ -252,11 +241,10 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 	if(num_blocks == 0) return kstd::vector<uint32_t>(0);
 
 	LOCK(ext2lock);
-	auto* block_buf = new uint8_t[block_size()];
+	uint8_t block_buf[block_size()];
 
 	Result res = read_block(group->block_bitmap_block, block_buf);
 	if(res.is_error()) {
-		delete[] block_buf;
 		KLog::err("ext2", "Error %d reading block bitmap for group %d", res.code(), group->num);
 		return res;
 	}
@@ -285,7 +273,6 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 	write_superblock();
 	group->write();
 	res = write_block(group->block_bitmap_block, block_buf);
-	delete[] block_buf;
 	if(res.is_error()) {
 		KLog::err("ext2", "Error writing block bitmap for block group %d!", group->num);
 		return res;
@@ -372,7 +359,7 @@ void Ext2Filesystem::free_block(uint32_t block) {
 	}
 
 	//Update blockgroup
-	auto* block_buf = new uint8_t[block_size()];
+	uint8_t block_buf[block_size()];
 	read_block(bg->block_bitmap_block, block_buf);
 	set_bitmap_bit(block_buf, block - bg->first_block(), false);
 	write_block(bg->block_bitmap_block, block_buf);
@@ -380,8 +367,6 @@ void Ext2Filesystem::free_block(uint32_t block) {
 
 	//Update superblock
 	superblock.free_blocks++;
-
-	delete[] block_buf;
 }
 
 void Ext2Filesystem::free_blocks(kstd::vector<uint32_t>& blocks) {

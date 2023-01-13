@@ -22,27 +22,25 @@
 #include "Ext2Filesystem.h"
 
 Ext2BlockGroup::Ext2BlockGroup(Ext2Filesystem* fs, uint32_t num): fs(fs), num(num) {
-	auto* buf = new ext2_block_group_descriptor;
-	fs->read_block_group_raw(num, buf);
-	block_bitmap_block = buf->block_usage_bitmap;
-	inode_bitmap_block = buf->inode_usage_bitmap;
-	inode_table_block = buf->inode_table;
-	free_blocks = buf->free_blocks;
-	free_inodes = buf->free_inodes;
-	num_directories = buf->num_directories;
-	delete buf;
+	ext2_block_group_descriptor buf;
+	fs->read_block_group_raw(num, &buf);
+	block_bitmap_block = buf.block_usage_bitmap;
+	inode_bitmap_block = buf.inode_usage_bitmap;
+	inode_table_block = buf.inode_table;
+	free_blocks = buf.free_blocks;
+	free_inodes = buf.free_inodes;
+	num_directories = buf.num_directories;
 }
 
 void Ext2BlockGroup::write() {
-	auto* buf = new ext2_block_group_descriptor;
-	buf->block_usage_bitmap = block_bitmap_block;
-	buf->inode_usage_bitmap = inode_bitmap_block;
-	buf->inode_table = inode_table_block;
-	buf->free_blocks = free_blocks;
-	buf->free_inodes = free_inodes;
-	buf->num_directories = num_directories;
-	fs->write_block_group_raw(num, buf);
-	delete buf;
+	ext2_block_group_descriptor buf;
+	buf.block_usage_bitmap = block_bitmap_block;
+	buf.inode_usage_bitmap = inode_bitmap_block;
+	buf.inode_table = inode_table_block;
+	buf.free_blocks = free_blocks;
+	buf.free_inodes = free_inodes;
+	buf.num_directories = num_directories;
+	fs->write_block_group_raw(num, &buf);
 }
 
 uint32_t Ext2BlockGroup::first_block() {

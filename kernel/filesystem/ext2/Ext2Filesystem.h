@@ -53,8 +53,8 @@ public:
 	void free_block(uint32_t block);
 	void free_blocks(kstd::vector<uint32_t>& blocks);
 	Ext2BlockGroup* get_block_group(uint32_t block_group);
-	Result read_block_group_raw(uint32_t block_group, ext2_block_group_descriptor* buffer, uint8_t* block_buf = nullptr);
-	Result write_block_group_raw(uint32_t block_group, const ext2_block_group_descriptor* buffer, uint8_t* block_buf = nullptr);
+	Result read_block_group_raw(uint32_t block_group, ext2_block_group_descriptor* buffer);
+	Result write_block_group_raw(uint32_t block_group, const ext2_block_group_descriptor* buffer);
 
 	//Misc
 	static bool probe(FileDescriptor& dev);

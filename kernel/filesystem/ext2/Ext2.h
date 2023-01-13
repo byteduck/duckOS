@@ -52,13 +52,6 @@
 #define EXT2_FT_SOCK 6
 #define EXT2_FT_SYMLINK 7
 
-#define ALLOC_BLOCKBUF(buf, blocksize) \
-	bool __alloced_blockbuf = buf == nullptr;\
-	if(__alloced_blockbuf) buf = new uint8_t[blocksize];
-
-#define FREE_BLOCKBUF(buf) \
-	if(__alloced_blockbuf) delete[] buf;
-
 
 typedef struct __attribute__((packed)) ext2_superblock {
 	uint32_t total_inodes;

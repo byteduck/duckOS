@@ -337,16 +337,14 @@ ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t>
 	size_t block = first_block;
 	ssize_t nread = 0;
 
-	auto block_buf = new uint8_t[block_size()];
+	uint8_t block_buf[block_size()];
 	while(bytes_left) {
 		if(block > _max_addressable_block)
 			break;
 
 		Result res = read_block(block, block_buf);
-		if(res.is_error()) {
-			delete[] block_buf;
+		if(res.is_error())
 			return res.code();
-		}
 
 		if(block == first_block) {
 			if(count < block_size() - first_block_start) {
@@ -372,7 +370,6 @@ ssize_t PATADevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t>
 		block++;
 	}
 
-	delete[] block_buf;
 	return nread;
 }
 
@@ -386,12 +383,11 @@ ssize_t PATADevice::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t
 	if(last_block > _max_addressable_block)
 		return -ENOSPC;
 
-	auto block_buf = new uint8_t[block_size()];
+	uint8_t block_buf[block_size()];
 	while(bytes_left) {
 		//Read the block into a buffer
 		Result res = read_block(block, block_buf);
 		if(res.is_error()) {
-			delete[] block_buf;
 			return res.code();
 		}
 
@@ -416,13 +412,11 @@ ssize_t PATADevice::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t
 
 		res = write_block(block, block_buf);
 		if(res.is_error()) {
-			delete[] block_buf;
 			return res.code();
 		}
 		block++;
 	}
 
-	delete[] block_buf;
 	return count;
 }
 

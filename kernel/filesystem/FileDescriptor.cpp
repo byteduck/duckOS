@@ -225,23 +225,21 @@ ssize_t FileDescriptor::read_dir_entries(SafePointer<char> buffer, size_t len) {
 	LOCK(lock);
 	if(!metadata().is_directory()) return -ENOTDIR;
 	ssize_t nbytes = 0;
-	auto* dirbuf = new DirectoryEntry;
+	DirectoryEntry dirbuf;
 	while(true) {
-		ssize_t read = _file->read_dir_entry(*this, offset(), KernelPointer<DirectoryEntry>(dirbuf));
+		ssize_t read = _file->read_dir_entry(*this, offset(), KernelPointer<DirectoryEntry>(&dirbuf));
 		if(read > 0) {
 			if(_can_seek) _seek += read;
 			if(read + nbytes > len) break;
-			size_t entry_len = dirbuf->entry_length();
-			buffer.write((const char*) dirbuf, nbytes, entry_len);
+			size_t entry_len = dirbuf.entry_length();
+			buffer.write((const char*) &dirbuf, nbytes, entry_len);
 			nbytes += entry_len;
 		} else if(read == 0) {
 			break; //Nothing left to read
 		} else {
-			delete dirbuf;
 			return read; //Error
 		}
 	}
-	delete dirbuf;
 	return nbytes;
 }
 

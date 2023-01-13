@@ -43,19 +43,17 @@ ResultRet<kstd::Arc<Inode>> Inode::find(const kstd::string& name) {
 ResultRet<kstd::Arc<LinkedInode>> Inode::resolve_link(const kstd::Arc<LinkedInode>& base, const User& user, kstd::Arc<LinkedInode>* parent_storage, int options, int recursion_level) {
 	ASSERT(metadata().is_symlink());
 
-	auto* buf = new uint8_t[metadata().size + 1];
+	uint8_t buf[metadata().size + 1];
 	auto res = read(0, metadata().size, KernelPointer<uint8_t>(buf), nullptr);
 	buf[metadata().size] = '\0';
 
 	if(res != metadata().size) {
-		delete[] buf;
 		if(res < 0)
 			return Result(res);
 		return Result(-EIO);
 	}
 
 	kstd::string link_str((char*)buf);
-	delete[] buf;
 	return VFS::inst().resolve_path(link_str, base, user, parent_storage, options, recursion_level);
 }
 

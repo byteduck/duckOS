@@ -29,7 +29,7 @@ Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id
 	Ext2BlockGroup* bg = ext2fs().get_block_group(block_group());
 
 	//Read the inode table
-	auto* block_buf = new uint8_t[ext2fs().block_size()];
+	uint8_t block_buf[ext2fs().block_size()];
 	ext2fs().read_blocks(bg->inode_table_block + block(), 1, block_buf);
 
 	//Copy inode entry into raw
@@ -41,8 +41,7 @@ Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id
 
 	//Read block pointers
 	if(!_metadata.is_device())
-		read_block_pointers(block_buf);
-	delete[] block_buf;
+		read_block_pointers();
 }
 
 Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw &raw, kstd::vector<uint32_t>& block_pointers, ino_t parent): Inode(filesystem, i), block_pointers(block_pointers), raw(raw) {
@@ -142,7 +141,7 @@ ssize_t Ext2Inode::read(size_t start, size_t length, SafePointer<uint8_t> buffer
 	size_t bytes_left = length;
 	size_t block_index = first_block;
 
-	auto block_buf = new uint8_t[ext2fs().block_size()];
+	uint8_t block_buf[ext2fs().block_size()];
 	while(bytes_left) {
 		ext2fs().read_block(get_block_pointer(block_index), block_buf);
 		if(block_index == first_block) {
@@ -164,7 +163,6 @@ ssize_t Ext2Inode::read(size_t start, size_t length, SafePointer<uint8_t> buffer
 		}
 		block_index++;
 	}
-	delete[] block_buf;
 	return length;
 }
 
@@ -194,7 +192,7 @@ ssize_t Ext2Inode::write(size_t start, size_t length, SafePointer<uint8_t> buf, 
 		if(res.is_error()) return res.code();
 	}
 
-	auto block_buf = new uint8_t[ext2fs().block_size()];
+	uint8_t block_buf[ext2fs().block_size()];
 	while(bytes_left) {
 		uint32_t block = get_block_pointer(block_index);
 
@@ -228,19 +226,16 @@ ssize_t Ext2Inode::write(size_t start, size_t length, SafePointer<uint8_t> buf, 
 		block_index++;
 	}
 
-	delete[] block_buf;
-
 	return length;
 }
 
 ssize_t Ext2Inode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) {
 	LOCK(lock);
 
-	auto* buf = new uint8_t[ext2fs().block_size()];
+	uint8_t buf[ext2fs().block_size()];
 	size_t block = start / ext2fs().block_size();
 	size_t start_in_block = start % ext2fs().block_size();
 	if(read(block * ext2fs().block_size(), ext2fs().block_size(), KernelPointer<uint8_t>(buf), fd) == 0) {
-		delete[] buf;
 		return 0;
 	}
 	auto* dir = (ext2_directory*)(buf + start_in_block);
@@ -249,7 +244,6 @@ ssize_t Ext2Inode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buff
 	if(name_length > NAME_MAXLEN - 1) name_length = NAME_MAXLEN - 1;
 
 	if(dir->inode == 0) {
-		delete[] buf;
 		return 0;
 	}
 
@@ -261,7 +255,6 @@ ssize_t Ext2Inode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buff
 	SafePointer<uint8_t> name_ptr((uint8_t*) buffer.raw()->name, buffer.is_user());
 	name_ptr.write(&dir->type+1, name_length);
 
-	delete[] buf;
 	return dir->size;
 }
 
@@ -302,17 +295,14 @@ Result Ext2Inode::add_entry(const kstd::string &name, Inode &inode) {
 	kstd::vector<DirectoryEntry> entries;
 	size_t offset = 0;
 	ssize_t nread;
-	auto* buf = new DirectoryEntry;
-	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(buf), nullptr))) {
+	DirectoryEntry buf;
+	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(&buf), nullptr))) {
 		offset += nread;
-		buf->name[buf->name_length] = '\0';
-		if(name == buf->name) {
-			delete buf;
+		buf.name[buf.name_length] = '\0';
+		if(name == buf.name)
 			return Result(-EEXIST);
-		}
-		entries.push_back(*buf);
+		entries.push_back(buf);
 	}
-	delete buf;
 
 	//Determine filetype
 	uint8_t type = EXT2_FT_UNKNOWN;
@@ -379,18 +369,17 @@ Result Ext2Inode::remove_entry(const kstd::string &name) {
 	size_t entry_index;
 	bool found = false;
 	size_t i = 0;
-	auto* buf = new DirectoryEntry;
-	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(buf), nullptr))) {
+	DirectoryEntry buf;
+	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(&buf), nullptr))) {
 		offset += nread;
-		buf->name[buf->name_length] = '\0';
-		if(name == buf->name) {
+		buf.name[buf.name_length] = '\0';
+		if(name == buf.name) {
 			entry_index = i;
 			found = true;
 		}
-		entries.push_back(*buf);
+		entries.push_back(buf);
 		i++;
 	}
-	delete buf;
 
 	//If we didn't find it or the inode doesn't exist for some reason, return with an error
 	if(!found) return Result(-ENOENT);
@@ -488,8 +477,9 @@ Result Ext2Inode::chown(uid_t uid, gid_t gid) {
 	return Result(SUCCESS);
 }
 
-void Ext2Inode::read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index, uint8_t* block_buf) {
+void Ext2Inode::read_singly_indirect(uint32_t singly_indirect_block, uint32_t& block_index) {
 	if(block_index >= num_blocks()) return;
+	uint8_t block_buf[ext2fs().block_size()];
 	ext2fs().read_block(singly_indirect_block, block_buf);
 	pointer_blocks.push_back(singly_indirect_block);
 	for(uint32_t i = 0; i < ext2fs().block_pointers_per_block && block_index < num_blocks(); i++) {
@@ -498,29 +488,26 @@ void Ext2Inode::read_singly_indirect(uint32_t singly_indirect_block, uint32_t& b
 	}
 }
 
-void Ext2Inode::read_doubly_indirect(uint32_t doubly_indirect_block, uint32_t& block_index, uint8_t* block_buf) {
+void Ext2Inode::read_doubly_indirect(uint32_t doubly_indirect_block, uint32_t& block_index) {
 	if(block_index >= num_blocks()) return;
-	auto* sbuf = new uint8_t[ext2fs().block_size()];
+	uint8_t block_buf[ext2fs().block_size()];
 	ext2fs().read_block(doubly_indirect_block, block_buf);
 	pointer_blocks.push_back(doubly_indirect_block);
-	for(uint32_t i = 0; i < ext2fs().block_pointers_per_block && block_index < num_blocks(); i++) {
-		read_singly_indirect(((uint32_t*)block_buf)[i], block_index, sbuf);
-	}
-	delete[] sbuf;
+	for(uint32_t i = 0; i < ext2fs().block_pointers_per_block && block_index < num_blocks(); i++)
+		read_singly_indirect(((uint32_t*)block_buf)[i], block_index);
 }
 
-void Ext2Inode::read_triply_indirect(uint32_t triply_indirect_block, uint32_t& block_index, uint8_t* block_buf) {
+void Ext2Inode::read_triply_indirect(uint32_t triply_indirect_block, uint32_t& block_index) {
 	if(block_index >= num_blocks()) return;
-	auto* dbuf = new uint8_t[ext2fs().block_size()];
+	uint8_t block_buf[ext2fs().block_size()];
 	ext2fs().read_block(triply_indirect_block, block_buf);
 	pointer_blocks.push_back(triply_indirect_block);
 	for(uint32_t i = 0; i < ext2fs().block_pointers_per_block && block_index < num_blocks(); i++) {
-		read_doubly_indirect(((uint32_t*)block_buf)[i], block_index, dbuf);
+		read_doubly_indirect(((uint32_t*)block_buf)[i], block_index);
 	}
-	delete[] dbuf;
 }
 
-void Ext2Inode::read_block_pointers(uint8_t* block_buf) {
+void Ext2Inode::read_block_pointers() {
 	LOCK(lock);
 
 	if(_metadata.is_symlink() && _metadata.size < 60) {
@@ -529,7 +516,7 @@ void Ext2Inode::read_block_pointers(uint8_t* block_buf) {
 		return;
 	}
 
-	ALLOC_BLOCKBUF(block_buf, ext2fs().block_size());
+	uint8_t buf[ext2fs().block_size()];
 	block_pointers = kstd::vector<uint32_t>();
 	block_pointers.reserve(num_blocks());
 	pointer_blocks = kstd::vector<uint32_t>();
@@ -540,33 +527,27 @@ void Ext2Inode::read_block_pointers(uint8_t* block_buf) {
 		block_index++;
 	}
 
-	read_singly_indirect(raw.s_pointer, block_index, block_buf);
-	read_doubly_indirect(raw.d_pointer, block_index, block_buf);
-	read_triply_indirect(raw.t_pointer, block_index, block_buf);
-
-	FREE_BLOCKBUF(block_buf);
+	read_singly_indirect(raw.s_pointer, block_index);
+	read_doubly_indirect(raw.d_pointer, block_index);
+	read_triply_indirect(raw.t_pointer, block_index);
 }
 
-Result Ext2Inode::write_to_disk(uint8_t* block_buf) {
+Result Ext2Inode::write_to_disk() {
 	LOCK(lock);
-	ALLOC_BLOCKBUF(block_buf, ext2fs().block_size());
 
-	Result res = write_block_pointers(block_buf);
-	if(res.is_error()){
-		FREE_BLOCKBUF(block_buf);
+	Result res = write_block_pointers();
+	if(res.is_error())
 		return res;
-	}
 
 
-	res = write_inode_entry(block_buf);
-	FREE_BLOCKBUF(block_buf);
+	res = write_inode_entry();
 	if(res.is_error())
 		return res;
 
 	return Result(SUCCESS);
 }
 
-Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
+Result Ext2Inode::write_block_pointers() {
 	LOCK(lock);
 	if(_metadata.is_symlink() && _metadata.size < 60) return Result(SUCCESS);
 
@@ -580,6 +561,8 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 			raw.block_pointers[block_index] = get_block_pointer(block_index);
 		}
 	}
+
+	uint8_t block_buf[ext2fs().block_size()];
 
 	if(num_blocks() > 12) {
 		if (!raw.s_pointer) {
@@ -606,7 +589,7 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 		} else ext2fs().read_block(raw.d_pointer, block_buf);
 		pointer_blocks.push_back(raw.d_pointer);
 
-		auto* dblock_buf = new uint8_t[ext2fs().block_size()];
+		uint8_t dblock_buf[ext2fs().block_size()];
 
 		uint32_t cur_block = 12 + ext2fs().block_pointers_per_block;
 		//For each block pointed to in the doubly indirect block,
@@ -632,7 +615,6 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 		}
 
 		//Write doubly-indirect block to disk
-		delete[] dblock_buf;
 		ext2fs().write_block(raw.d_pointer, block_buf);
 	} else raw.d_pointer = 0;
 
@@ -646,9 +628,9 @@ Result Ext2Inode::write_block_pointers(uint8_t* block_buf) {
 	return Result(SUCCESS);
 }
 
-Result Ext2Inode::write_inode_entry(uint8_t* block_buf) {
+Result Ext2Inode::write_inode_entry() {
 	LOCK(lock);
-	ALLOC_BLOCKBUF(block_buf, ext2fs().block_size());
+	uint8_t block_buf[ext2fs().block_size()];
 
 	raw.size = _metadata.size;
 	raw.mode = _metadata.mode;
@@ -668,7 +650,6 @@ Result Ext2Inode::write_inode_entry(uint8_t* block_buf) {
 	ext2fs().write_block(bg->inode_table_block + block(), block_buf);
 	_dirty = false;
 
-	FREE_BLOCKBUF(block_buf);
 	return Result(SUCCESS);
 }
 
@@ -696,7 +677,7 @@ Result Ext2Inode::write_directory_entries(kstd::vector<DirectoryEntry> &entries)
 	//Next, write all the entries
 	size_t cur_block = 0;
 	size_t cur_byte_in_block = 0;
-	auto* block_buf = new uint8_t[ext2fs().block_size()];
+	uint8_t block_buf[ext2fs().block_size()];
 
 	for(size_t i = 0; i < entries.size(); i++) {
 		DirectoryEntry& ent = entries[i];
@@ -781,21 +762,18 @@ Result Ext2Inode::try_remove_dir() {
 
 	LOCK(lock);
 
-	auto* buf = new DirectoryEntry;
+	DirectoryEntry buf;
 	ssize_t nread;
 	size_t offset = 0;
 	size_t num_entries = 0;
 	kstd::vector<DirectoryEntry> entries;
-	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(buf), nullptr))) {
-		if(num_entries >= 2) {
-			delete buf;
+	while((nread = read_dir_entry(offset, KernelPointer<DirectoryEntry>(&buf), nullptr))) {
+		if(num_entries >= 2)
 			return Result(-ENOTEMPTY);
-		}
 		offset += nread;
 		num_entries++;
-		entries.push_back(*buf);
+		entries.push_back(buf);
 	}
-	delete buf;
 
 	for(size_t i = 0; i < 2; i++) {
 		DirectoryEntry& ent = entries[i];

@@ -103,12 +103,10 @@ Result FileBasedFilesystem::write_block(size_t block, const uint8_t* buffer) {
 }
 
 Result FileBasedFilesystem::zero_block(size_t block) {
-	//TODO: Implementation that doesn't require allocating a buffer
-	auto* zero_buf = new uint8_t[block_size()];
+	uint8_t zero_buf[block_size()];
 	memset(zero_buf, 0, block_size());
 
 	ssize_t nwrote = _file->file()->write(*_file, block * block_size(), KernelPointer<const uint8_t>(zero_buf), block_size());
-	delete[] zero_buf;
 
 	if(nwrote == 0)
 		return Result(-EIO);
@@ -121,17 +119,13 @@ Result FileBasedFilesystem::zero_block(size_t block) {
 Result FileBasedFilesystem::truncate_block(size_t block, size_t new_size) {
 	if(new_size >= block_size()) return Result(-EOVERFLOW);
 
-	//TODO: Implementation that doesn't require allocating a buffer
-	auto* buf = new uint8_t[block_size()];
+	uint8_t buf[block_size()];
 	int res = _file->file()->read(*_file, block * block_size(), KernelPointer<uint8_t>(buf), block_size());
-	if(res < 0) {
-		delete[] buf;
+	if(res < 0)
 		return Result(res);
-	}
 
 	memset(buf + new_size, 0, (int)(block_size() - new_size));
 	ssize_t nwrote = _file->file()->write(*_file, block * block_size(), KernelPointer<uint8_t>(buf), block_size());
-	delete[] buf;
 
 	if(nwrote == 0)
 		return Result(-EIO);
