@@ -48,6 +48,19 @@ std::string LineEditor::get_line() {
 	return m_buffer;
 }
 
+void LineEditor::set_line(const std::string& line) {
+	clear_line();
+	m_buffer = line;
+	reprint_line();
+	move_cursor(line.size());
+}
+
+void LineEditor::clear_line() {
+	m_buffer = "";
+	reprint_line();
+	m_cursor = m_buffer.end();
+}
+
 void LineEditor::reprint_line() {
 	// Clear line
 	int cursor = m_cursor - m_buffer.begin();
@@ -113,9 +126,13 @@ void LineEditor::handle_escape_char(char ch) {
 	switch(ch) {
 		case 'A': // Up arrow
 			m_state = REGULAR;
+			if(up_pressed)
+				up_pressed();
 			break;
 		case 'B': // Down Arrow
 			m_state = REGULAR;
+			if(down_pressed)
+				down_pressed();
 			break;
 		case 'C': // Right arrow
 			if(m_cursor < m_buffer.end())

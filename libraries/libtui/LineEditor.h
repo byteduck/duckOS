@@ -6,6 +6,7 @@
 #include <termios.h>
 #include <string>
 #include <vector>
+#include <functional>
 
 namespace TUI {
 	class LineEditor {
@@ -14,6 +15,10 @@ namespace TUI {
 
 		std::string get_line();
 
+		void set_line(const std::string& line);
+
+		std::function<void(void)> up_pressed = nullptr;
+		std::function<void(void)> down_pressed = nullptr;
 	private:
 		termios m_termios;
 
@@ -24,6 +29,7 @@ namespace TUI {
 			DONE
 		};
 
+		void clear_line();
 		void reprint_line();
 		void move_cursor(int amount);
 
