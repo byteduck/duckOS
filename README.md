@@ -1,12 +1,14 @@
 # duckOS
-### A hobby operating system
-
-A hobby UNIX-like OS with a graphical window manager for x86 computers.
 
 ![duckOS](https://github.com/byteduck/duckOS/workflows/duckOS/badge.svg)
 
-### Try duckOS in your browser!
-Thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can now try a (slow) version of duckOS in your browser! [Try it here!](https://aaron.sonin.me/duckOS)
+A hobby UNIX-like OS with a graphical window manager and applications for x86-based computers.
+
+### Try duckOS
+
+A disk image of duckOS can be downloaded from the artifacts of the duckOS GitHub [workflow](https://github.com/byteduck/duckOS/actions/workflows/build-os.yml). This can then be virtualized or emulated using QEMU or your software of choice.
+
+Alternatively, thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can try a version of duckOS in your browser. This is a lot slower running it locally, and the build will usually be a bit out-of-date. You can try it [here](https://aaron.sonin.me/duckOS)!
 
 ### Screenshots
 ![Screenshot](docs/screenshot-2022-11-08.png)
