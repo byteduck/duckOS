@@ -26,6 +26,8 @@
 #include <unistd.h>
 #include <iostream>
 #include <cstring>
+#include <queue>
+#define MAX_COMMAND_HISTORY 100
 
 Shell::Shell(int argc, char** argv, char** envp) {
 
@@ -46,6 +48,22 @@ int Shell::run() {
 	setenv("PATH", path.c_str(), true);
 
 	TUI::LineEditor editor;
+	std::vector<std::string> command_history;
+	std::vector<std::string>::iterator recall_index;
+
+	editor.up_pressed = [&] {
+		recall_index = std::max(recall_index - 1, command_history.begin());
+		if(!command_history.empty())
+			editor.set_line(*recall_index);
+	};
+
+	editor.down_pressed = [&] {
+		recall_index = std::min(recall_index + 1, command_history.end());
+		if(recall_index == command_history.end())
+			editor.set_line("");
+		else if(!command_history.empty())
+			editor.set_line(*recall_index);
+	};
 
 	while(!should_exit) {
 		getcwd(cwd, 4096);
@@ -58,7 +76,12 @@ int Shell::run() {
 		}
 
 		//Read the command and trim and evaluate it
-		result = evaluate(editor.get_line());
+		recall_index = command_history.end();
+		auto command = editor.get_line();
+		result = evaluate(command);
+		command_history.push_back(command);
+		if(command_history.size() > MAX_COMMAND_HISTORY)
+			command_history.erase(command_history.begin());
 		if(std::cin.eof())
 			break;
 	}
