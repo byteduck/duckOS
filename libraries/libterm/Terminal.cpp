@@ -78,19 +78,38 @@ void Terminal::set_cursor(const Term::Position& position) {
 		listener.on_cursor_change(old_pos);
 }
 
+void Terminal::advance_cursor() {
+	auto new_pos = cursor_position;
+	new_pos.col++;
+	if(new_pos.col == dimensions.cols) {
+		new_pos.line++;
+		new_pos.col = 0;
+	}
+	if(new_pos.line >= dimensions.lines) {
+		scroll(new_pos.line + 1 - dimensions.lines);
+		new_pos.line = dimensions.lines - 1;
+	}
+	set_cursor(new_pos);
+}
+
+void Terminal::regress_cursor() {
+	auto new_pos = cursor_position;
+	new_pos.col--;
+	if(new_pos.col < 0) {
+		new_pos.line--;
+		new_pos.col = dimensions.cols - 1;
+		if(new_pos.line < 0)
+			new_pos.line = 0;
+	}
+	set_cursor(new_pos);
+}
+
 Term::Position Terminal::get_cursor() {
 	return cursor_position;
 }
 
 void Terminal::backspace() {
-	auto new_pos = cursor_position;
-	if(new_pos.col == 0) {
-		new_pos.col = dimensions.cols;
-		if(new_pos.line)
-			new_pos.line--;
-	}
-	new_pos.col--;
-	set_cursor(new_pos);
+	regress_cursor();
 	listener.on_backspace(cursor_position);
 }
 
@@ -307,6 +326,7 @@ Term::Attribute Terminal::get_current_attribute() {
 }
 
 void Terminal::evaluate_escape_codepoint(uint32_t codepoint) {
+	current_escape_codepoint = codepoint;
 	switch(escape_status) {
 		case Beginning:
 			if(codepoint != '['){
@@ -347,6 +367,7 @@ void Terminal::evaluate_escape_codepoint(uint32_t codepoint) {
 				case 'C':
 				case 'D':
 					escape_mode = false;
+					evaluate_cursor_escape();
 					break;
 				default:
 					current_escape_parameter[escape_parameter_char_index++] = codepoint;
@@ -416,5 +437,23 @@ void Terminal::evaluate_clear_line_escape() {
 			break;
 		default:
 			return;
+	}
+}
+
+void Terminal::evaluate_cursor_escape() {
+	int amount = !escape_parameters[0] ? 1 : atoi(escape_parameters[0]);
+	switch(current_escape_codepoint) {
+		case 'A':
+		case 'B':
+			// TODO
+			break;
+		case 'C':
+			while(amount-- > 0)
+				advance_cursor();
+			break;
+		case 'D':
+			while(amount-- > 0)
+				regress_cursor();
+			break;
 	}
 }

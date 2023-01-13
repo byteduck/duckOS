@@ -33,6 +33,8 @@ namespace Term {
 		void set_dimensions(const Size& new_size);
 		Size get_dimensions();
 		void set_cursor(const Position& position);
+		void advance_cursor();
+		void regress_cursor();
 		Position get_cursor();
 		void backspace();
 		void handle_keypress(uint16_t keycode, uint32_t codepoint, uint8_t modifiers);
@@ -52,6 +54,7 @@ namespace Term {
 		void evaluate_graphics_mode_escape();
 		void evaluate_clear_escape();
 		void evaluate_clear_line_escape();
+		void evaluate_cursor_escape();
 
 	private:
 		enum EscapeStatus {
@@ -70,6 +73,7 @@ namespace Term {
 		char* current_escape_parameter;
 		size_t escape_parameter_index = 0;
 		size_t escape_parameter_char_index = 0;
+		uint32_t current_escape_codepoint = 0;
 	};
 }
 
