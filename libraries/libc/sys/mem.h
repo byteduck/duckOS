@@ -22,12 +22,8 @@
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
-
-#define PAGE_SIZE 4096
-
-#define SHM_READ 0x1u
-#define SHM_WRITE 0x2u
-#define SHM_SHARE 0x4u
+#include <kernel/api/shm.h>
+#include <kernel/api/page_size.h>
 
 __DECL_BEGIN
 
@@ -46,12 +42,6 @@ void* memacquire(void* addr, size_t size);
  * @return 0 if successful, -1 if not.
  */
 int memrelease(void* addr, size_t size);
-
-struct shm {
-	void* ptr;
-	size_t size;
-	int id;
-} __attribute__((aligned(16)));
 
 /**
  * Allocates an area of memory that can be shared. Child processes created with fork() will automatically have access.

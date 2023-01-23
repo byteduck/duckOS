@@ -4,10 +4,10 @@
 #pragma once
 
 #include "../kstd/kstddef.h"
+#include "../api/page_size.h"
 
 #define PAGING_4KiB 0
 #define PAGING_4MiB 1
-#define PAGE_SIZE 4096
 #define PAGE_SIZE_FLAG PAGING_4KiB
 #define HIGHER_HALF 0xC0000000
 #define KERNEL_TEXT ((size_t)&_KERNEL_TEXT)

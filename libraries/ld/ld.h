@@ -21,8 +21,7 @@
 
 #include <vector>
 #include <unordered_map>
-
-#define PAGE_SIZE 4096
+#include <kernel/api/page_size.h>
 
 #define ELF_MAGIC 0x464C457F //0x7F followed by 'ELF'
 

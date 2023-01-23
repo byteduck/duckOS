@@ -21,6 +21,7 @@
 #include "TTYDevice.h"
 #include <kernel/kstd/cstring.h>
 #include <kernel/tasking/Signal.h>
+#include <kernel/api/ioctl.h>
 
 TTYDevice::TTYDevice(unsigned int major, unsigned int minor): CharacterDevice(major, minor), _input_buffer(1024) {
 	_termios.c_iflag = 0;

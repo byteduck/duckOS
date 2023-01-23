@@ -22,23 +22,9 @@
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
-
-#define POLLIN 0x01
-#define POLLPRI 0x02
-#define POLLOUT 0x04
-#define POLLERR 0x08
-#define POLLHUP 0x10
-#define POLLINVAL 0x20
+#include <kernel/api/poll.h>
 
 __DECL_BEGIN
-
-typedef size_t nfds_t;
-
-struct pollfd {
-	int fd;
-	short events;
-	short revents;
-};
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout);
 

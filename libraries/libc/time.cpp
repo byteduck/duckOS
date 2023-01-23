@@ -108,7 +108,7 @@ time_t mktime(struct tm* timeptr) {
 
 time_t time(time_t* timer) {
 	struct timeval tv;
-	gettimeofday(&tv, NULL);
+	gettimeofday(&tv, nullptr);
 	if(timer)
 		*timer = tv.tv_sec;
 	return tv.tv_sec;
@@ -119,7 +119,7 @@ int timespec_get(struct timespec* ts, int base) {
 }
 
 char* asctime(const struct tm* timeptr) {
-	return NULL;
+	return nullptr;
 }
 
 char* ctime(const time_t* timer) {

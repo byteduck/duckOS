@@ -21,7 +21,7 @@
 #define DUCKOS_LIBC_STDDEF_H
 
 #include <sys/cdefs.h>
-#include <stdint.h>
+#include <kernel/api/stddef.h>
 
 __DECL_BEGIN
 
@@ -31,10 +31,6 @@ __DECL_BEGIN
 #define NULL ((void*)0)
 typedef int wchar_t;
 #endif
-
-typedef __PTRDIFF_TYPE__ ptrdiff_t;
-typedef __SIZE_TYPE__ size_t;
-typedef long double max_align_t;
 
 __DECL_END
 

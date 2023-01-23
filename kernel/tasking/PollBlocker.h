@@ -24,13 +24,6 @@
 #include <kernel/time/Time.h>
 #include <kernel/kstd/Arc.h>
 
-#define POLLIN 0x01
-#define POLLPRI 0x02
-#define POLLOUT 0x04
-#define POLLERR 0x08
-#define POLLHUP 0x10
-#define POLLINVAL 0x20
-
 class FileDescriptor;
 class PollBlocker: public Blocker {
 public:

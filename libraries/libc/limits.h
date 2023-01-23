@@ -50,7 +50,7 @@
 #define ARG_MAX 65536
 
 #ifndef PAGE_SIZE
-#define PAGE_SIZE 4096
+#include <kernel/api/page_size.h>
 #endif
 
 #endif //DUCKOS_LIBC_LIMITS_H

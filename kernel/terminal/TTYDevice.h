@@ -23,6 +23,7 @@
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/kstd/unix_types.h>
 #include <kernel/tasking/SpinLock.h>
+#include "../api/termios.h"
 
 #define NUM_TTYS 8
 

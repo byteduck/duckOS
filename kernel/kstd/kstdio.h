@@ -20,6 +20,7 @@
 #pragma once
 
 #include <kernel/kstd/kstddef.h>
+#include "../api/stdarg.h"
 
 #ifdef DEBUG
 #define ASSERT(cond) \

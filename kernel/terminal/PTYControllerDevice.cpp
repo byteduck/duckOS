@@ -19,6 +19,7 @@
 
 #include "PTYDevice.h"
 #include "PTYControllerDevice.h"
+#include <kernel/api/ioctl.h>
 
 PTYControllerDevice::PTYControllerDevice(unsigned int id): CharacterDevice(300, id), _output_buffer(8192) {
 	_pty = (new PTYDevice(id, shared_ptr()))->shared_ptr();

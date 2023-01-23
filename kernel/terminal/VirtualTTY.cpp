@@ -20,6 +20,7 @@
 #include "VirtualTTY.h"
 #include <kernel/device/VGADevice.h>
 #include <kernel/font8x8/font8x8_basic.h>
+#include <kernel/api/ioctl.h>
 
 size_t VirtualTTY::_current_tty;
 kstd::Arc<VirtualTTY> VirtualTTY::_ttys[];

@@ -24,22 +24,13 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <kernel/api/unistd.h>
 
 __DECL_BEGIN
 
 #define STDIN_FILENO	0
 #define STDOUT_FILENO	1
 #define STDERR_FILENO	2
-
-#ifndef SEEK_SET
-#define SEEK_SET 0
-#endif
-#ifndef SEEK_CUR
-#define SEEK_CUR 1
-#endif
-#ifndef SEEK_END
-#define SEEK_END 2
-#endif
 
 #define F_OK 1
 #define R_OK 2

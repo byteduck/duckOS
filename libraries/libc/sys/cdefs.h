@@ -17,19 +17,4 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBC_DECL_H
-#define DUCKOS_LIBC_DECL_H
-
-#ifdef __cplusplus
-	#ifndef __DECL_BEGIN
-		#define __DECL_BEGIN extern "C" {
-		#define __DECL_END }
-	#endif
-#else
-	#ifndef __DECL_BEGIN
-		#define __DECL_BEGIN
-		#define __DECL_END
-	#endif
-#endif
-
-#endif //DUCKOS_LIBC_DECL_H
+#include <kernel/api/cdefs.h>

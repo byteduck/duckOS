@@ -26,20 +26,7 @@
 
 __DECL_BEGIN
 
-#include <kernel/tasking/Signal.h>
-
-typedef uint32_t sig_atomic_t;
-typedef void (*sighandler_t)(int);
-typedef unsigned long sigset_t;
-typedef struct sigaction {
-	sighandler_t sa_sigaction;
-	sigset_t sa_mask;
-	int sa_flags;
-} sigaction_t;
-
-#define SIG_DFL ((sighandler_t)0)
-#define SIG_ERR ((sighandler_t)1)
-#define SIG_IGN ((sighandler_t)2)
+#include <kernel/api/signal.h>
 
 void (*signal(int sig, sighandler_t func))(int);
 int raise(int sig);
