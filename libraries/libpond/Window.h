@@ -24,7 +24,7 @@
 #include <libgraphics/Graphics.h>
 #include "Context.h"
 #include <libgraphics/Image.h>
-#include <sys/mem.h>
+#include <sys/shm.h>
 
 #define PWINDOW_HINT_GLOBALMOUSE 0x1
 #define PWINDOW_HINT_DRAGGABLE 0x2

@@ -18,7 +18,7 @@
 */
 
 #include <sys/syscall.h>
-#include <sys/mem.h>
+#include <sys/shm.h>
 #include <kernel/api/mmap.h>
 
 int shmcreate(void* addr, size_t size, struct shm* s) {

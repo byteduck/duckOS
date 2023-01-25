@@ -20,7 +20,7 @@
 #pragma once
 
 #include <libriver/river.h>
-#include <sys/mem.h>
+#include <sys/shm.h>
 #include "Client.h"
 #include <libduck/File.h>
 

@@ -22,7 +22,7 @@
 #include <cstdio>
 #include <cstring>
 #include <climits>
-#include <sys/mem.h>
+#include <sys/shm.h>
 #include <memory>
 
 using namespace Gfx;

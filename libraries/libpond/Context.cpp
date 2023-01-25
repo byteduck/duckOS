@@ -20,7 +20,7 @@
 #include "Context.h"
 #include "Window.h"
 #include <cstdio>
-#include <sys/mem.h>
+#include <sys/shm.h>
 #include <libgraphics/Font.h>
 #include <utility>
 #include <libriver/river.h>

@@ -21,7 +21,7 @@
 
 #include <stddef.h>
 #include <cstdint>
-#include <sys/mem.h>
+#include <sys/shm.h>
 #include <map>
 #include "Graphics.h"
 #include "Geometry.h"

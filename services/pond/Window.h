@@ -24,7 +24,7 @@
 #include <libgraphics/Graphics.h>
 #include "Client.h"
 #include <libgraphics/Image.h>
-#include <sys/mem.h>
+#include <sys/shm.h>
 #include <sys/input.h>
 #include <libpond/enums.h>
 

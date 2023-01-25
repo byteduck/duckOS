@@ -14,7 +14,7 @@ SET(SOURCES
         string.c
         strings.c
         sys/ioctl.c
-        sys/mem.c
+        sys/shm.c
         sys/printf.c
         sys/liballoc.cpp
         sys/scanf.c
