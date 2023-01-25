@@ -151,8 +151,6 @@ public:
 	int sys_fchown(int fd, uid_t uid, gid_t gid);
 	int sys_lchown(UserspacePointer<char> file, uid_t uid, gid_t gid);
 	int sys_ioctl(int fd, unsigned request, UserspacePointer<void*> argp);
-	void* sys_memacquire(void* addr, size_t size);
-	int sys_memrelease(void* addr, size_t size);
 	int sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm> s);
 	int sys_shmattach(int id, void* addr, UserspacePointer<struct shm> s);
 	int sys_shmdetach(int id);
@@ -165,6 +163,8 @@ public:
 	int sys_threadjoin(tid_t tid, UserspacePointer<void*> retp);
 	int sys_threadexit(void* return_value);
 	int sys_access(UserspacePointer<char> pathname, int mode);
+	ResultRet<void*> sys_mmap(UserspacePointer<struct mmap_args> args);
+	int sys_munmap(void* addr, size_t length);
 
 private:
 	friend class Thread;

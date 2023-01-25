@@ -24,6 +24,7 @@ SET(SOURCES
         sys/syscall.c
         sys/thread.cpp
         sys/wait.c
+        sys/mman.c
         termios.c
         time.cpp
         unistd.c

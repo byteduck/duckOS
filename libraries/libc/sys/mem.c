@@ -19,13 +19,22 @@
 
 #include <sys/syscall.h>
 #include <sys/mem.h>
+#include <kernel/api/mmap.h>
 
 void* memacquire(void* addr, size_t size) {
-	return (void*) syscall3(SYS_MEMACQUIRE, (int) addr, (int) size);
+	struct mmap_args args = {
+		addr,
+		size,
+		PROT_READ | PROT_WRITE | PROT_EXEC,
+		MAP_ANONYMOUS
+	};
+	if(addr)
+		args.flags |= MAP_FIXED;
+	return (void*) syscall2(SYS_MMAP, (int) &args);
 }
 
 int memrelease(void* addr, size_t size) {
-	return syscall3(SYS_MEMRELEASE, (int) addr, (size_t) size);
+	return syscall3(SYS_MUNMAP, (int) addr, (size_t) size);
 }
 
 int shmcreate(void* addr, size_t size, struct shm* s) {

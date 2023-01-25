@@ -5,45 +5,7 @@
 #include "../memory/SafePointer.h"
 #include "../memory/AnonymousVMObject.h"
 #include "../kstd/KLog.h"
-
-void* Process::sys_memacquire(void* addr, size_t size) {
-	LOCK(m_mem_lock);
-	auto object_res = AnonymousVMObject::alloc(size);
-	if(object_res.is_error())
-		return (void*) -ENOMEM;
-	auto object = object_res.value();
-	if(addr) {
-		//We requested a specific address
-		auto res = _vm_space->map_object(object, (VirtualAddress) addr);
-		if(res.is_error())
-			return (void*) -EINVAL;
-		_vm_regions.push_back(res.value());
-		m_used_pmem += res.value()->size();
-		return (void*) res.value()->start();
-	} else {
-		//We didn't request a specific address
-		auto res = _vm_space->map_object(object);
-		if(res.is_error())
-			return (void*) -ENOMEM;
-		_vm_regions.push_back(res.value());
-		m_used_pmem += res.value()->size();
-		return (void*) res.value()->start();
-	}
-}
-
-int Process::sys_memrelease(void* addr, size_t size) {
-	LOCK(m_mem_lock);
-	// Find the region
-	for(size_t i = 0; i < _vm_regions.size(); i++) {
-		if(_vm_regions[i]->start() == (VirtualAddress) addr && _vm_regions[i]->size() == size) {
-			m_used_pmem -= _vm_regions[i]->size();
-			_vm_regions.erase(i);
-			return SUCCESS;
-		}
-	}
-	KLog::warn("Process", "memrelease() for %s(%d) failed.", _name.c_str(), _pid);
-	return ENOENT;
-}
+#include "../api/mmap.h"
 
 int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm> s) {
 	auto object_res = AnonymousVMObject::alloc(size);
@@ -147,4 +109,57 @@ int Process::sys_shmallow(int id, pid_t pid, int perms) {
 	});
 
 	return SUCCESS;
+}
+
+ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) {
+	mmap_args args = args_ptr.get();
+	LOCK(m_mem_lock);
+
+	kstd::Arc<VMObject> vm_object;
+	kstd::Arc<VMRegion> region;
+	VMProt prot = {
+		.read = (bool) (args.prot & PROT_READ),
+		.write = (bool) (args.prot & PROT_WRITE),
+		.execute = (bool) (args.prot & PROT_EXEC),
+		.cow = false
+	};
+
+	// First, create an appropriate object
+	if(args.flags & MAP_ANONYMOUS) {
+		vm_object = TRY(AnonymousVMObject::alloc(args.length));
+	}
+
+	if(!vm_object)
+		return Result(EINVAL);
+
+	// Then, map it appropriately
+	if(args.addr && (args.flags & MAP_FIXED)) {
+		region = TRY(_vm_space->map_object(vm_object, (VirtualAddress) args.addr));
+	} else {
+		if(args.addr)
+			KLog::warn("mmap", "mmap requested address without MAP_FIXED!");
+		region = TRY(_vm_space->map_object(vm_object));
+	}
+
+	if(!region)
+		return Result(EINVAL);
+
+	m_used_pmem += region->size();
+	_vm_regions.push_back(region);
+	return (void*) region->start();
+}
+
+int Process::sys_munmap(void* addr, size_t length) {
+	// TODO: Unmap partial regions
+	LOCK(m_mem_lock);
+	// Find the region
+	for(size_t i = 0; i < _vm_regions.size(); i++) {
+		if(_vm_regions[i]->start() == (VirtualAddress) addr && _vm_regions[i]->size() == length) {
+			m_used_pmem -= _vm_regions[i]->size();
+			_vm_regions.erase(i);
+			return SUCCESS;
+		}
+	}
+	KLog::warn("Process", "memrelease() for %s(%d) failed.", _name.c_str(), _pid);
+	return ENOENT;
 }

@@ -59,8 +59,8 @@
 #define SYS_CHOWN 56
 #define SYS_FCHOWN 57
 #define SYS_LCHOWN 58
-#define SYS_MEMACQUIRE 59
-#define SYS_MEMRELEASE 60
+#define SYS_MMAP 59
+#define SYS_MUNMAP 60
 #define SYS_IOCTL 61
 #define SYS_GETPPID 62
 #define SYS_SHMCREATE 63
