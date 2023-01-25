@@ -13,3 +13,7 @@ void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset)
 int munmap(void* addr, size_t length) {
 	return syscall3(SYS_MUNMAP, (int) addr, (int) length);
 }
+
+int mprotect(void *addr, size_t len, int prot) {
+	return syscall4(SYS_MPROTECT, (int) addr, (int) len, prot);
+}

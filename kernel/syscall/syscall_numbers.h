@@ -76,6 +76,7 @@
 #define SYS_THREADEXIT 73
 #define SYS_ISCOMPUTERON 74
 #define SYS_ACCESS 75
+#define SYS_MPROTECT 76
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

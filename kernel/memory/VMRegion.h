@@ -44,6 +44,7 @@ public:
 	VMProt prot() const { return m_prot; }
 
 	void set_cow(bool cow);
+	void set_prot(VMProt prot);
 
 private:
 	friend class VMSpace;

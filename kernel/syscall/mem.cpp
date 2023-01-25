@@ -163,3 +163,27 @@ int Process::sys_munmap(void* addr, size_t length) {
 	KLog::warn("Process", "memrelease() for %s(%d) failed.", _name.c_str(), _pid);
 	return ENOENT;
 }
+
+int Process::sys_mprotect(void* addr, size_t length, int prot_flags) {
+	// TODO: Protect partial regions
+	LOCK(m_mem_lock);
+
+	VMProt prot = {
+			.read = (bool) (prot_flags & PROT_READ),
+			.write = (bool) (prot_flags & PROT_WRITE),
+			.execute = (bool) (prot_flags & PROT_EXEC),
+			.cow = false
+	};
+
+	// Find the region
+	for(size_t i = 0; i < _vm_regions.size(); i++) {
+		if(_vm_regions[i]->start() == (VirtualAddress) addr && _vm_regions[i]->size() == length) {
+			_vm_regions[i]->set_prot(prot);
+			_page_directory->map(*_vm_regions[i]);
+			return SUCCESS;
+		}
+	}
+
+	KLog::warn("Process", "mprotect() for %s(%d) failed.", _name.c_str(), _pid);
+	return ENOENT;
+}

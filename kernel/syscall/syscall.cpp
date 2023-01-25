@@ -182,6 +182,8 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return true;
 		case SYS_ACCESS:
 			return cur_proc->sys_access((char*) arg1, (int) arg2);
+		case SYS_MPROTECT:
+			return cur_proc->sys_mprotect((void*) arg1, (size_t) arg2, arg3);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

@@ -52,3 +52,7 @@ VMRegion::~VMRegion() {
 void VMRegion::set_cow(bool cow) {
 	m_prot.cow = cow;
 }
+
+void VMRegion::set_prot(VMProt prot) {
+	m_prot = prot;
+}

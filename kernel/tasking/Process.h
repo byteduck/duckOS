@@ -165,6 +165,7 @@ public:
 	int sys_access(UserspacePointer<char> pathname, int mode);
 	ResultRet<void*> sys_mmap(UserspacePointer<struct mmap_args> args);
 	int sys_munmap(void* addr, size_t length);
+	int sys_mprotect(void* addr, size_t length, int prot);
 
 private:
 	friend class Thread;
