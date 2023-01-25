@@ -45,13 +45,14 @@ if [ $# -eq 0 ]; then
     USER_SIZE=$("$DU_COMMAND" -sk "${SOURCE_DIR}/user" | cut -f1)
   fi
   IMAGE_SIZE=$(($("$DU_COMMAND" -sk root | cut -f1) + IMAGE_EXTRASIZE + USER_SIZE))
+  IMAGE_SIZE=$(expr '(' '(' "$IMAGE_SIZE" + 1023 ')' / 1024 ')' '*' 1024)
 
   if [ -f "$IMAGE_NAME" ]; then
     USE_EXISTING=1
     msg "Using existing image..."
   else
     msg "Creating image ($IMAGE_SIZE K)..."
-    qemu-img create -q -f raw "$IMAGE_NAME" "$IMAGE_SIZE"K || fail "Couldn't create image"
+    qemu-img create -q -f raw "$IMAGE_NAME" "$IMAGE_SIZE"k || fail "Couldn't create image"
     chown "$SUDO_UID":"$SUDO_GID" "$IMAGE_NAME"
   fi
 
