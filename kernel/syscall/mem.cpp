@@ -134,11 +134,11 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 
 	// Then, map it appropriately
 	if(args.addr && (args.flags & MAP_FIXED)) {
-		region = TRY(_vm_space->map_object(vm_object, (VirtualAddress) args.addr));
+		region = TRY(_vm_space->map_object(vm_object, (VirtualAddress) args.addr, prot));
 	} else {
 		if(args.addr)
 			KLog::warn("mmap", "mmap requested address without MAP_FIXED!");
-		region = TRY(_vm_space->map_object(vm_object));
+		region = TRY(_vm_space->map_object(vm_object, prot));
 	}
 
 	if(!region)
