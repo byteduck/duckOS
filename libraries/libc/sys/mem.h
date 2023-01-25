@@ -17,8 +17,7 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#ifndef DUCKOS_LIBC_MMAP_H
-#define DUCKOS_LIBC_MMAP_H
+#pragma once
 
 #include <sys/types.h>
 #include <sys/cdefs.h>
@@ -26,24 +25,6 @@
 #include <kernel/api/page_size.h>
 
 __DECL_BEGIN
-
-/**
- * Request memory to be allocated to the program.
- * @param addr NULL or a specific address that the memory should be allocated at.
- * @param size The minimum amount of memory to be allocated (after the start address, if specified)
- * @deprecated This has been deprecated; use `mmap` instead.
- * @return The page-aligned address of the memory allocated. If an address was specified, this may be rounded down to be page-aligned.
- */
-__attribute__((__deprecated__)) void* memacquire(void* addr, size_t size);
-
-/**
- * Release memory from the program.
- * @param addr The address containing the memory to release. Will be rounded down to be page-aligned.
- * @param size The amount of memory to free. Will be rounded up to be page-aligned.
- * @deprecated This has been deprecated; use `munmap` instead.
- * @return 0 if successful, -1 if not.
- */
-__attribute__((__deprecated__)) int memrelease(void* addr, size_t size);
 
 /**
  * Allocates an area of memory that can be shared. Child processes created with fork() will automatically have access.
@@ -80,5 +61,3 @@ int shmdetach(int id);
 int shmallow(int id, pid_t pid, int perms);
 
 __DECL_END
-
-#endif //DUCKOS_LIBC_MMAP_H

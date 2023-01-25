@@ -20,7 +20,7 @@
 #include <sys/liballoc.h>
 #include <limits.h>
 #include <libc/stdio.h>
-#include "mem.h"
+#include "mman.h"
 #include <libduck/SpinLock.h>
 
 Duck::SpinLock __liballoc_lock;
@@ -34,11 +34,11 @@ void liballoc_unlock() {
 }
 
 void* liballoc_alloc(int pages) {
-	return memacquire(NULL, pages * PAGE_SIZE);
+	return mmap(NULL, pages * PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
 }
 
 extern void	liballoc_free(void* ptr, int pages) {
-	if(memrelease(ptr, pages * PAGE_SIZE) < 0) {
+	if(munmap(ptr, pages * PAGE_SIZE) < 0) {
 		fprintf(stderr, "WARNING: FAILED TO MEMRELEASE A MALLOC'D REGION");
 	}
 }
