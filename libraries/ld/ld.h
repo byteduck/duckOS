@@ -218,6 +218,7 @@ public:
 	int read_pheaders();
 	int read_dynamic_table();
 	int load_sections();
+	void mprotect_sections();
 	int read_sheaders();
 	int read_copy_relocations();
 	int read_symbols();

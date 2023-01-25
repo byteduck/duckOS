@@ -25,8 +25,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <map>
-#include <sys/mem.h>
 #include <libduck/Log.h>
+#include <sys/mman.h>
 
 using Duck::Log;
 
@@ -72,6 +72,7 @@ int main(int argc, char** argv, char** envp) {
 	while(rev_it != objects.rend()) {
 		auto* object = rev_it->second;
 		object->relocate();
+		object->mprotect_sections();
 		close(object->fd);
 		rev_it++;
 	}
@@ -141,18 +142,10 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 		memloc = 0;
 		size_t alloc_start = (calculated_base / PAGE_SIZE) * PAGE_SIZE;
 		size_t alloc_size = ((memsz + (calculated_base - alloc_start) + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
-		if (memacquire((void*) alloc_start, alloc_size) < (void*) nullptr) {
-			Log::err("Failed to allocate memory for ", name_cstr, ": ", strerror(errno));
-			return -1;
-		}
 		current_brk = alloc_start + alloc_size;
 	} else {
 		memloc = current_brk;
 		size_t alloc_size = ((memsz + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
-		if (memacquire((void*) current_brk, alloc_size) < (void*) nullptr) {
-			Log::err("Failed to allocate memory for ", name_cstr, ": ", strerror(errno));
-			return -1;
-		}
 		current_brk += alloc_size;
 	}
 
@@ -346,13 +339,20 @@ int Object::load_sections() {
 	for(auto & pheader : pheaders) {
 			switch(pheader.p_type) {
 			case PT_LOAD: {
-				//Load the section into memory
+				// Allocate memory for the section
+				size_t vaddr_mod = pheader.p_vaddr % PAGE_SIZE;
+				size_t round_memloc = memloc + pheader.p_vaddr - vaddr_mod;
+				size_t round_size = ((pheader.p_memsz + vaddr_mod + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+				if(mmap((void*) round_memloc, round_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED, 0, 0) == MAP_FAILED)
+					Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
+
+				// Load the section into memory
 				if(lseek(fd, pheader.p_offset, SEEK_SET) < 0)
 					return -1;
 				if(read(fd, (void*) (memloc + pheader.p_vaddr), pheader.p_filesz) < 0)
 					return -1;
 
-				//Zero out the remaining bytes
+				// Zero out the remaining bytes
 				size_t bytes_left = pheader.p_memsz - pheader.p_filesz;
 				if(bytes_left)
 					memset((void*) (memloc + pheader.p_vaddr + pheader.p_filesz), 0, bytes_left);
@@ -361,6 +361,21 @@ int Object::load_sections() {
 	}
 
 	return 0;
+}
+
+void Object::mprotect_sections() {
+	for(auto & pheader : pheaders) {
+		if(pheader.p_type == PT_LOAD) {
+			size_t vaddr_mod = pheader.p_vaddr % PAGE_SIZE;
+			size_t round_memloc = memloc + pheader.p_vaddr - vaddr_mod;
+			size_t round_size = ((pheader.p_memsz + vaddr_mod + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+			int mmap_prot =
+					((pheader.p_flags & PF_R) ? PROT_READ : 0) |
+					((pheader.p_flags & PF_W) ? PROT_WRITE : 0) |
+					((pheader.p_flags & PF_X) ? PROT_EXEC : 0);
+			mprotect((void*) round_memloc, round_size, mmap_prot);
+		}
+	}
 }
 
 int Object::read_sheaders() {
