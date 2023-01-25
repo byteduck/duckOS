@@ -7,7 +7,7 @@
 
 void* mmap(void* addr, size_t length, int prot, int flags, int fd, off_t offset) {
 	struct mmap_args args  = { addr, length, prot, flags, fd, offset };
-	return syscall2(SYS_MMAP, (int) &args);
+	return (void*) syscall2(SYS_MMAP, (int) &args);
 }
 
 int munmap(void* addr, size_t length) {
