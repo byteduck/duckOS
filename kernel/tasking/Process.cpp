@@ -329,7 +329,7 @@ ResultRet<kstd::Arc<VMRegion>> Process::map_object(kstd::Arc<VMObject> object, V
 }
 
 ResultRet<kstd::Arc<VMRegion>> Process::map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot) {
-	auto region = TRY(_vm_space->map_object(object, address, prot));
+	auto region = TRY(_vm_space->map_object(object, prot, VirtualRange { address, object->size() }));
 	_vm_regions.push_back(region);
 	return region;
 }

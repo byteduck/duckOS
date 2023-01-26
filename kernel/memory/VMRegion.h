@@ -31,16 +31,18 @@ public:
 	 * @param start The start address of the region.
 	 * @param size The end address of the region.
 	 */
-	VMRegion(kstd::Arc<VMObject> object, kstd::Arc<VMSpace> space, size_t start, size_t size, VMProt prot);
+	VMRegion(kstd::Arc<VMObject> object, kstd::Arc<VMSpace> space, VirtualRange range, VirtualAddress object_start, VMProt prot);
 	~VMRegion();
 
 	kstd::Arc<VMObject> object() const { return m_object; }
-	VirtualAddress start() const { return m_start; }
-	VirtualAddress end() const { return m_start + m_size; }
-	size_t size() const { return m_size; }
-	bool is_kernel() const { return m_start >= HIGHER_HALF; }
+	VirtualAddress start() const { return m_range.start; }
+	VirtualRange range() const { return m_range; }
+	VirtualAddress object_start() const { return m_object_start; }
+	VirtualAddress end() const { return m_range.end(); }
+	size_t size() const { return m_range.size; }
+	bool is_kernel() const { return m_range.start >= HIGHER_HALF; }
 	bool is_cow() const { return m_prot.cow; }
-	bool contains(VirtualAddress address) const { return address >= m_start && address < end(); }
+	bool contains(VirtualAddress address) const { return m_range.contains(address); }
 	VMProt prot() const { return m_prot; }
 
 	void set_cow(bool cow);
@@ -48,9 +50,9 @@ public:
 
 private:
 	friend class VMSpace;
-	kstd::Arc<VMObject> m_object;
-	kstd::Weak<VMSpace> m_space;
-	size_t m_start;
-	size_t m_size;
-	VMProt m_prot;
+	kstd::Arc<VMObject> m_object; /// The object this VMRegion is associated with.
+	kstd::Weak<VMSpace> m_space; /// The VMSpace this region belongs to.
+	VirtualRange m_range; /// Where in the VMSpace this region resides.
+	size_t m_object_start; /// Where in the VMObject this region begins.
+	VMProt m_prot; /// The protection of this region.
 };

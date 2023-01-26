@@ -32,11 +32,11 @@ VMProt VMProt::RWX = {
 		.cow = false
 };
 
-VMRegion::VMRegion(kstd::Arc<VMObject> object, kstd::Arc<VMSpace> space, size_t start, size_t size, VMProt prot):
+VMRegion::VMRegion(kstd::Arc<VMObject> object, kstd::Arc<VMSpace> space, VirtualRange range, size_t object_start, VMProt prot):
 	m_object(object),
 	m_space(space),
-	m_start(start),
-	m_size(size),
+	m_range(range),
+	m_object_start(object_start),
 	m_prot(prot)
 {
 

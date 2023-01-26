@@ -75,11 +75,19 @@ public:
 	 */
 	size_t entries_physaddr();
 
-	/** Maps a region into the page directory. **/
-	void map(VMRegion& region);
+	/**
+	 * Maps a portion of a region into the page directory.
+	 * @param region The region to map.
+	 * @param range The range within the region to map relative to the start of the region. Use VirtualRange::null to map the whole region.
+	 */
+	void map(VMRegion& region, VirtualRange range = VirtualRange::null);
 
-	/** Unmaps a region from the page directory. **/
-	void unmap(VMRegion& region);
+	/**
+	 * Unmaps a portion of a region from the page directory.
+	 * @param region The region to map.
+	 * @param range The range within the region to unmap relative to the start of the region. Use VirtualRange::null to unmap the whole region.
+	 */
+	void unmap(VMRegion& region, VirtualRange range = VirtualRange::null);
 
 	/**
 	 * Gets the physical address for virtaddr.

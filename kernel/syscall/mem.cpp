@@ -43,7 +43,7 @@ int Process::sys_shmattach(int id, void* addr, UserspacePointer<struct shm> s) {
 			return Result(ENOENT);
 
 		// Map into our space
-		auto region = TRY(addr ? _vm_space->map_object(object, (VirtualAddress) addr, perms) : _vm_space->map_object(object, perms));
+		auto region = TRY(addr ? _vm_space->map_object(object, perms, VirtualRange { (VirtualAddress) addr, object->size() }) : _vm_space->map_object(object, perms));
 		LOCK(m_mem_lock);
 		_vm_regions.push_back(region);
 
@@ -134,7 +134,7 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 
 	// Then, map it appropriately
 	if(args.addr && (args.flags & MAP_FIXED)) {
-		region = TRY(_vm_space->map_object(vm_object, (VirtualAddress) args.addr, prot));
+		region = TRY(_vm_space->map_object(vm_object, prot, VirtualRange { (VirtualAddress) args.addr, vm_object->size() }));
 	} else {
 		if(args.addr)
 			KLog::warn("mmap", "mmap requested address without MAP_FIXED!");

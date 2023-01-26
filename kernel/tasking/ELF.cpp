@@ -133,7 +133,7 @@ ResultRet<kstd::vector<kstd::Arc<VMRegion>>> ELF::load_sections(FileDescriptor& 
 				.write = (bool) (header.p_flags & ELF_PF_W),
 				.execute = (bool) (header.p_flags & ELF_PF_X)
 			};
-			auto vmem_region = TRY(vm_space->map_object(tmp_region->object(), loadloc_pagealigned, prot));
+			auto vmem_region = TRY(vm_space->map_object(tmp_region->object(), prot, VirtualRange { loadloc_pagealigned, tmp_region->size() }));
 			regions.push_back(vmem_region);
 		}
 	}

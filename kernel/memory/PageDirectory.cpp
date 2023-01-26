@@ -140,32 +140,47 @@ size_t PageDirectory::entries_physaddr() {
 	return get_physaddr((size_t) m_entries);
 }
 
-void PageDirectory::map(VMRegion& region) {
+void PageDirectory::map(VMRegion& region, VirtualRange range) {
 	LOCK(m_lock);
 
-	PageIndex start_vpage = region.start() / PAGE_SIZE;
-	size_t num_pages = region.size() / PAGE_SIZE;
+	if(range.size == 0)
+		range.size = region.size();
+
+	PageIndex start_vpage = (region.start() + range.start) / PAGE_SIZE;
+	PageIndex start_index = range.start / PAGE_SIZE;
+	PageIndex end_index = (range.start + range.size) / PAGE_SIZE;
 	auto prot = region.prot();
 	ASSERT(prot.read);
+	ASSERT(range.start % PAGE_SIZE == 0);
+	ASSERT(range.size % PAGE_SIZE == 0);
+	ASSERT(range.start + range.size <= region.end());
 
-	for(size_t page_index = 0; page_index < num_pages; page_index++) {
+	for(size_t page_index = start_index; page_index < end_index; page_index++) {
 		if(map_page(start_vpage + page_index, region.object()->physical_page(page_index).index(), prot).is_error())
 			return;
 	}
 }
 
-void PageDirectory::unmap(VMRegion& region) {
+void PageDirectory::unmap(VMRegion& region, VirtualRange range) {
 	LOCK(m_lock);
 
-	PageIndex start_vpage = region.start() / PAGE_SIZE;
-	size_t num_pages = region.size() / PAGE_SIZE;
+	if(range.size == 0)
+		range.size = region.size();
+
+	PageIndex start_vpage = (region.start() + range.start) / PAGE_SIZE;
+	PageIndex start_index = range.start / PAGE_SIZE;
+	PageIndex end_index = (range.start + range.size) / PAGE_SIZE;
+
+	ASSERT(range.start % PAGE_SIZE == 0);
+	ASSERT(range.size % PAGE_SIZE == 0);
+	ASSERT(range.start + range.size <= region.end());
 
 	if(region.end() > HIGHER_HALF && m_type != DirectoryType::KERNEL) {
 		KLog::warn("PageDirectory", "Tried unmapping kernel in non-kernel directory!");
 		return;
 	}
 
-	for(size_t page_index = 0; page_index < num_pages; page_index++) {
+	for(size_t page_index = start_index; page_index < end_index; page_index++) {
 		if(unmap_page(start_vpage + page_index).is_error())
 			return;
 	}
@@ -270,8 +285,9 @@ Result PageDirectory::map_page(PageIndex vpage, PageIndex ppage, VMProt prot) {
 			alloc_page_table(directory_index);
 		}
 
-		m_page_tables_num_mapped[directory_index]++;
 		entry = &m_page_tables[directory_index]->entries()[table_index];
+		if(!entry->data.present)
+			m_page_tables_num_mapped[directory_index]++;
 	} else {
 		// Kernel space
 		if(m_type != DirectoryType::KERNEL) {
@@ -307,8 +323,9 @@ Result PageDirectory::unmap_page(PageIndex vpage) {
 			alloc_page_table(directory_index);
 		}
 
-		m_page_tables_num_mapped[directory_index]--;
 		auto* entry = &m_page_tables[directory_index]->entries()[table_index];
+		if(entry->data.present)
+			m_page_tables_num_mapped[directory_index]--;
 		entry->value = 0;
 		if(!m_page_tables_num_mapped[directory_index])
 			dealloc_page_table(directory_index);

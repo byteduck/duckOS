@@ -21,7 +21,7 @@ public:
 	virtual bool is_anonymous() const { return false; }
 
 	size_t size() const { return m_size; }
-	PhysicalPage& physical_page(size_t index) const;
+	virtual PhysicalPage& physical_page(size_t index) const;
 
 private:
 	kstd::vector<PageIndex> m_physical_pages;

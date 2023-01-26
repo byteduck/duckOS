@@ -26,3 +26,17 @@
 typedef size_t PageIndex;
 typedef size_t PhysicalAddress;
 typedef size_t VirtualAddress;
+
+struct VirtualRange {
+public:
+	VirtualRange(VirtualAddress start, size_t size):
+		start(start),
+		size(size) {}
+
+	const static VirtualRange null;
+
+	VirtualAddress start;
+	size_t size;
+	[[nodiscard]] VirtualAddress end() const { return start + size; }
+	[[nodiscard]] bool contains(VirtualAddress address) const { return address >= start && address < end(); }
+};

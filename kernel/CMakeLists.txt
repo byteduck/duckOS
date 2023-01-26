@@ -101,6 +101,7 @@ SET(KERNEL_SRCS
         memory/VMSpace.cpp
         memory/AnonymousVMObject.cpp
         memory/BuddyZone.cpp
+        memory/Memory.cpp
         device/PATADevice.cpp
         CommandLine.cpp
         tasking/Signal.cpp

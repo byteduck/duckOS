@@ -63,7 +63,7 @@ kstd::Arc<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<kst
 					}
 
 					// Map into new space
-					auto new_vmRegion = kstd::Arc<VMRegion>(new VMRegion(region->object(), new_space, region->start(), region->size(), region->prot()));
+					auto new_vmRegion = kstd::Arc<VMRegion>(new VMRegion(region->object(), new_space, region->range(), region->object_start(), region->prot()));
 					page_directory.map(*new_vmRegion);
 					new_region->vmRegion = new_vmRegion.get();
 					regions_vec.push_back(new_vmRegion);
@@ -79,13 +79,28 @@ kstd::Arc<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<kst
 	return new_space;
 }
 
-ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, VMProt prot) {
-	auto region = TRY(alloc_space(object->size()));
+ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, VMProt prot, VirtualRange range, VirtualAddress object_start) {
+	// Use the size of the range if defined, or the remainder of the object size if not.
+	if(!range.size)
+		range.size = object->size() - object_start;
+
+	// Validate alignments and size
+	if(range.start % PAGE_SIZE != 0 || range.size % PAGE_SIZE != 0 || object_start % PAGE_SIZE != 0 || object_start + range.size > object->size())
+		return Result(EINVAL);
+
+	// Allocate the space region appropriately
+	VMSpaceRegion* region;
+	if(range.start)
+		region = TRY(alloc_space_at(range.size, range.start));
+	else
+		region = TRY(alloc_space(range.size));
+
+	// Create and map the region
 	auto vmRegion = kstd::make_shared<VMRegion>(
 			object,
 			self(),
-			region->start,
-			object->size(),
+			VirtualRange {region->start, object->size()},
+			object_start,
 			prot);
 	region->vmRegion = vmRegion.get();
 	m_page_directory.map(*vmRegion);
@@ -103,20 +118,7 @@ ResultRet<kstd::Arc<VMRegion>> VMSpace::map_stack(kstd::Arc<VMObject> object, VM
 		cur_region = cur_region->prev;
 	if(!cur_region)
 		return Result(ENOMEM);
-	return map_object(object, cur_region->end() - object->size(), prot);
-}
-
-ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot) {
-	auto region = TRY(alloc_space_at(object->size(), address));
-	auto vmRegion = kstd::make_shared<VMRegion>(
-			object,
-			self(),
-			region->start,
-			object->size(),
-			prot);
-	region->vmRegion = vmRegion.get();
-	m_page_directory.map(*vmRegion);
-	return vmRegion;
+	return map_object(object, prot, {cur_region->end() - object->size(), object->size()});
 }
 
 Result VMSpace::unmap_region(VMRegion& region) {

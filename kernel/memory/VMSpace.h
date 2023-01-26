@@ -31,9 +31,12 @@ public:
 	/**
 	 * Allocates a new region for the given object.
 	 * @param object The object to allocate a region for.
+	 * @param prot The protection to use.
+	 * @param range The range within the space to map to. Use a start of zero to map wherever it fits, and a size of zero to map the whole object. Both must be page-aligned.
+	 * @param object_start The offset within the object to begin the mapping. Must be page-aligned.
 	 * @return The newly created region.
 	 */
-	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VMProt prot = VMSpace::default_prot);
+	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VMProt prot, VirtualRange range = VirtualRange::null, VirtualAddress object_start = 0);
 
 	/**
 	 * Allocates a new region for the given object near the end of the memory space.
@@ -41,14 +44,6 @@ public:
 	 * @return The newly created region.
 	 */
 	ResultRet<kstd::Arc<VMRegion>> map_stack(kstd::Arc<VMObject> object, VMProt prot = VMSpace::default_prot);
-
-	/**
-	 * Maps an object into a specific area of the address space.
-	 * @param object The object to map into the space.
-	 * @param addr The address to map the object into.
-	 * @return The newly mapped region.
-	 */
-	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VirtualAddress address, VMProt prot = VMSpace::default_prot);
 
 	/**
 	 * Unmaps the given region from this address space.
