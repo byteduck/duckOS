@@ -52,28 +52,25 @@ kstd::Arc<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<kst
 		// Clone the vmRegion
 		if(cur_region->vmRegion) {
 			auto region = cur_region->vmRegion;
-			if(region->object()->is_anonymous()) {
-				auto action = kstd::static_pointer_cast<AnonymousVMObject>(region->object())->fork_action();
-
-				// If the object should become CoW on fork, do so
-				if(action == AnonymousVMObject::ForkAction::BecomeCoW) {
-					// Remap anonymous writeable regions as CoW
-					if(region->prot().write) {
-						region->set_cow(true);
-						m_page_directory.map(*region);
-					}
-
-					// Map into new space
-					auto new_vmRegion = kstd::Arc<VMRegion>(new VMRegion(region->object(), new_space, region->range(), region->object_start(), region->prot()));
+			// Mark as CoW / share if necessary
+			switch(region->object()->fork_action()) {
+				case VMObject::ForkAction::BecomeCoW:
+					region->set_cow(true);
+					m_page_directory.map(*region);
+					[[fallthrough]];
+				case VMObject::ForkAction::Share: {
+					auto new_vmRegion = kstd::Arc<VMRegion>::make(
+							region->object(),
+							new_space,
+							region->range(), region->object_start(),
+							region->prot());
 					page_directory.map(*new_vmRegion);
 					new_region->vmRegion = new_vmRegion.get();
 					regions_vec.push_back(new_vmRegion);
+					break;
 				}
-			} else if(region->object()->is_inode()) {
-				ASSERT(false);
-				// TODO: We need to handle this.
-			} else {
-				ASSERT(false);
+				case VMObject::ForkAction::Ignore:
+					break;
 			}
 		}
 
@@ -211,13 +208,9 @@ Result VMSpace::try_pagefault(VirtualAddress error_pos) {
 			if(!vmRegion)
 				return Result(EINVAL);
 
-			// Check if the region is CoW.
-			if(vmRegion->is_cow() && vmRegion->object()->is_anonymous()) {
-				// TODO: Check if we're mapped first? We should be.
-				auto new_object = TRY(AnonymousVMObject::alloc(vmRegion->object()->size()));
-				auto mapped_object = MM.map_object(new_object);
-				memcpy((void*) mapped_object->start(), (void*) vmRegion->start(), new_object->size());
-				vmRegion->m_object = new_object;
+			// Check if the region is CoW and writeable.
+			if(vmRegion->is_cow() && vmRegion->prot().write) {
+				vmRegion->m_object = TRY(vmRegion->object()->copy_on_write());
 				vmRegion->set_cow(false);
 				m_page_directory.map(*vmRegion);
 				return Result(SUCCESS);

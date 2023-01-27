@@ -145,9 +145,31 @@ public:
 	template<typename F>
 	void with_quickmapped(PageIndex page, F&& callback) {
 		LOCK(m_quickmap_lock);
-		kernel_page_directory.map_page(KERNEL_QUICKMAP_PAGE / PAGE_SIZE, page, VMProt::RW);
-		callback((void*) KERNEL_QUICKMAP_PAGE);
-		kernel_page_directory.unmap_page(KERNEL_QUICKMAP_PAGE / PAGE_SIZE);
+		ASSERT(!m_is_quickmapping);
+		m_is_quickmapping = true;
+		kernel_page_directory.map_page(KERNEL_QUICKMAP_PAGE_A / PAGE_SIZE, page, VMProt::RW);
+		callback((void*) KERNEL_QUICKMAP_PAGE_A);
+		kernel_page_directory.unmap_page(KERNEL_QUICKMAP_PAGE_A / PAGE_SIZE);
+		m_is_quickmapping = false;
+	}
+
+	/**
+	 * Temporarily maps a physical page into memory and calls a function with it mapped.
+	 * @param page_a The first physical page to map.
+	 * @param page_b The second physical page to map.
+	 * @param callback A callback that takes two void* pointes  to the mapped memory of the pages.
+	 */
+	template<typename F>
+	void with_dual_quickmapped(PageIndex page_a, PageIndex page_b, F&& callback) {
+		LOCK(m_quickmap_lock);
+		ASSERT(!m_is_quickmapping);
+		m_is_quickmapping = true;
+		kernel_page_directory.map_page(KERNEL_QUICKMAP_PAGE_A / PAGE_SIZE, page_a, VMProt::RW);
+		kernel_page_directory.map_page(KERNEL_QUICKMAP_PAGE_B / PAGE_SIZE, page_b, VMProt::RW);
+		callback((void*) KERNEL_QUICKMAP_PAGE_A, (void*) KERNEL_QUICKMAP_PAGE_B);
+		kernel_page_directory.unmap_page(KERNEL_QUICKMAP_PAGE_A / PAGE_SIZE);
+		kernel_page_directory.unmap_page(KERNEL_QUICKMAP_PAGE_B / PAGE_SIZE);
+		m_is_quickmapping = false;
 	}
 
 	kstd::Arc<VMSpace> kernel_space() { return m_kernel_space; }
@@ -208,6 +230,7 @@ private:
 	kstd::Arc<VMSpace> m_heap_space;
 
 	SpinLock m_quickmap_lock;
+	bool m_is_quickmapping = false;
 };
 
 void liballoc_lock();

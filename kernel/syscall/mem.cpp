@@ -138,7 +138,8 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 		if(!file || !file->is_inode())
 			return Result(EBADF);
 		auto inode = kstd::static_pointer_cast<InodeFile>(file)->inode();
-		vm_object = InodeVMObject::make_for_inode(inode);
+		auto type = args.flags & MAP_SHARED ? InodeVMObject::Type::Shared : InodeVMObject::Type::Private;
+		vm_object = InodeVMObject::make_for_inode(inode, type);
 	}
 
 	if(!vm_object)

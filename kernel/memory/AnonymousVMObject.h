@@ -13,10 +13,6 @@
 
 class AnonymousVMObject: public VMObject {
 public:
-	enum class ForkAction {
-		BecomeCoW, Ignore
-	};
-
 	~AnonymousVMObject() override;
 
 	/**
@@ -65,10 +61,11 @@ public:
 	bool is_shared() const { return m_is_shared; }
 	pid_t shared_owner() const { return m_shared_owner; }
 	int shm_id() const { return m_shm_id; }
-	ForkAction fork_action() const { return m_fork_action; }
 
 	// VMObject
 	bool is_anonymous() const override { return true; }
+	ForkAction fork_action() const override { return m_fork_action; }
+	ResultRet<kstd::Arc<VMObject>> copy_on_write() override;
 
 private:
 	friend class MemoryManager;
@@ -82,7 +79,7 @@ private:
 	SpinLock m_lock;
 	kstd::map<pid_t, VMProt> m_shared_permissions;
 	bool m_is_shared = false;
+	ForkAction m_fork_action = ForkAction::BecomeCoW;
 	pid_t m_shared_owner;
 	int m_shm_id = 0;
-	ForkAction m_fork_action = ForkAction::BecomeCoW;
 };
