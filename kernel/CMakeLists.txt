@@ -164,9 +164,19 @@ SET(KERNEL_SRCS
         syscall/stat.cpp
         syscall/thread.cpp
         syscall/truncate.cpp
-        syscall/waitpid.cpp)
+        syscall/waitpid.cpp
+        syscall/uname.cpp)
 
-ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS})
+add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h"
+        COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/../scripts/version.sh" "${CMAKE_CURRENT_BINARY_DIR}/duckos_version.h.tmp"
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${CMAKE_CURRENT_BINARY_DIR}/duckos_version.h.tmp" "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h"
+        COMMAND "${CMAKE_COMMAND}" -E remove "${CMAKE_CURRENT_BINARY_DIR}/duckos_version.h.tmp"
+)
+add_custom_target(generate_version_file DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h")
+
+ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS} ${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h)
+ADD_DEPENDENCIES(duckk32 generate_version_file)
 TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL "$<$<BOOL:${ADD_KERNEL_DEBUG_SYMBOLS}>:DUCKOS_KERNEL_DEBUG_SYMBOLS>")
 
 SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/kernel.ld)
@@ -174,7 +184,7 @@ SET_TARGET_PROPERTIES(duckk32 PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
 TARGET_LINK_LIBRARIES(duckk32 gcc)
 TARGET_LINK_OPTIONS(duckk32 PRIVATE LINKER:-T ${LINKER_SCRIPT} -nostdlib)
 
-TARGET_INCLUDE_DIRECTORIES(duckk32 PRIVATE ${CMAKE_SOURCE_DIR})
+TARGET_INCLUDE_DIRECTORIES(duckk32 PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 # Install headers
 FILE(GLOB_RECURSE KHEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
