@@ -146,7 +146,7 @@ void PageDirectory::map(VMRegion& region, VirtualRange range) {
 	if(range.size == 0)
 		range.size = region.size();
 
-	PageIndex start_vpage = (region.start() + range.start) / PAGE_SIZE;
+	PageIndex start_vpage = region.start() / PAGE_SIZE;
 	PageIndex start_index = range.start / PAGE_SIZE;
 	PageIndex end_index = (range.start + range.size) / PAGE_SIZE;
 	auto prot = region.prot();
@@ -167,7 +167,7 @@ void PageDirectory::unmap(VMRegion& region, VirtualRange range) {
 	if(range.size == 0)
 		range.size = region.size();
 
-	PageIndex start_vpage = (region.start() + range.start) / PAGE_SIZE;
+	PageIndex start_vpage = region.start() / PAGE_SIZE;
 	PageIndex start_index = range.start / PAGE_SIZE;
 	PageIndex end_index = (range.start + range.size) / PAGE_SIZE;
 
