@@ -100,6 +100,7 @@ SET(KERNEL_SRCS
         memory/VMRegion.cpp
         memory/VMSpace.cpp
         memory/AnonymousVMObject.cpp
+        memory/InodeVMObject.cpp
         memory/BuddyZone.cpp
         memory/Memory.cpp
         device/PATADevice.cpp

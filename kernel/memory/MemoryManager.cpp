@@ -50,7 +50,7 @@ kstd::Arc<VMRegion> kernel_data_region;
 kstd::Arc<VMRegion> physical_pages_region;
 
 MemoryManager::MemoryManager():
-	m_kernel_space(kstd::Arc<VMSpace>::make(HIGHER_HALF, KERNEL_VIRTUAL_HEAP_BEGIN - HIGHER_HALF, kernel_page_directory)),
+	m_kernel_space(kstd::Arc<VMSpace>::make(HIGHER_HALF, KERNEL_VIRTUAL_HEAP_BEGIN - HIGHER_HALF - PAGE_SIZE, kernel_page_directory)),
 	m_heap_space(kstd::Arc<VMSpace>::make(KERNEL_VIRTUAL_HEAP_BEGIN, ~0x0 - KERNEL_VIRTUAL_HEAP_BEGIN + 1 - PAGE_SIZE, kernel_page_directory))
 {
 	if(_inst)

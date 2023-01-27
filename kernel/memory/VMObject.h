@@ -19,11 +19,12 @@ public:
 	virtual ~VMObject();
 
 	virtual bool is_anonymous() const { return false; }
+	virtual bool is_inode() const { return false; }
 
 	size_t size() const { return m_size; }
 	virtual PhysicalPage& physical_page(size_t index) const;
 
-private:
+protected:
 	kstd::vector<PageIndex> m_physical_pages;
 	size_t m_size;
 };

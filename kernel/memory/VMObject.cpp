@@ -13,7 +13,8 @@ VMObject::VMObject(kstd::vector<PageIndex> physical_pages):
 
 VMObject::~VMObject() {
 	for(size_t i = 0; i < m_physical_pages.size(); i++)
-		MemoryManager::inst().get_physical_page(m_physical_pages[i]).unref();
+		if(m_physical_pages[i])
+			MemoryManager::inst().get_physical_page(m_physical_pages[i]).unref();
 }
 
 PhysicalPage& VMObject::physical_page(size_t index) const {

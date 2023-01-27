@@ -6,6 +6,9 @@
 #include "../memory/AnonymousVMObject.h"
 #include "../kstd/KLog.h"
 #include "../api/mmap.h"
+#include "../filesystem/FileDescriptor.h"
+#include "../filesystem/InodeFile.h"
+#include "../memory/InodeVMObject.h"
 
 int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm> s) {
 	auto object_res = AnonymousVMObject::alloc(size);
@@ -127,6 +130,15 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 	// First, create an appropriate object
 	if(args.flags & MAP_ANONYMOUS) {
 		vm_object = TRY(AnonymousVMObject::alloc(args.length));
+	} else {
+		// TODO: Shared file mappings
+		if(args.fd >= _file_descriptors.size() || !_file_descriptors[args.fd])
+			return Result(EBADF);
+		auto file = _file_descriptors[args.fd]->file();
+		if(!file || !file->is_inode())
+			return Result(EBADF);
+		auto inode = kstd::static_pointer_cast<InodeFile>(file)->inode();
+		vm_object = InodeVMObject::make_for_inode(inode);
 	}
 
 	if(!vm_object)
@@ -134,11 +146,11 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 
 	// Then, map it appropriately
 	if(args.addr && (args.flags & MAP_FIXED)) {
-		region = TRY(_vm_space->map_object(vm_object, prot, VirtualRange { (VirtualAddress) args.addr, vm_object->size() }));
+		region = TRY(_vm_space->map_object(vm_object, prot, VirtualRange { (VirtualAddress) args.addr, args.length }, args.offset));
 	} else {
 		if(args.addr)
 			KLog::warn("mmap", "mmap requested address without MAP_FIXED!");
-		region = TRY(_vm_space->map_object(vm_object, prot));
+		region = TRY(_vm_space->map_object(vm_object, prot, VirtualRange { 0, args.length }, args.offset));
 	}
 
 	if(!region)

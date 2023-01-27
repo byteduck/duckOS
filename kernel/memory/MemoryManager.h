@@ -137,6 +137,19 @@ public:
 	 */
 	kstd::Arc<VMRegion> map_object(kstd::Arc<VMObject> object);
 
+	/**
+	 * Temporarily maps a physical page into memory and calls a function with it mapped.
+	 * @param page The physical page to map.
+	 * @param callback A callback that takes a void* pointer to the mapped memory of the page.
+	 */
+	template<typename F>
+	void with_quickmapped(PageIndex page, F&& callback) {
+		LOCK(m_quickmap_lock);
+		kernel_page_directory.map_page(KERNEL_QUICKMAP_PAGE / PAGE_SIZE, page, VMProt::RW);
+		callback((void*) KERNEL_QUICKMAP_PAGE);
+		kernel_page_directory.unmap_page(KERNEL_QUICKMAP_PAGE / PAGE_SIZE);
+	}
+
 	kstd::Arc<VMSpace> kernel_space() { return m_kernel_space; }
 	kstd::Arc<VMSpace> heap_space() { return m_heap_space; }
 
@@ -193,6 +206,8 @@ private:
 	kstd::vector<PhysicalRegion*> m_physical_regions;
 	kstd::Arc<VMSpace> m_kernel_space;
 	kstd::Arc<VMSpace> m_heap_space;
+
+	SpinLock m_quickmap_lock;
 };
 
 void liballoc_lock();

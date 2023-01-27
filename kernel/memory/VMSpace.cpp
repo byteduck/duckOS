@@ -5,6 +5,7 @@
 #include "MemoryManager.h"
 #include "AnonymousVMObject.h"
 #include "../kstd/cstring.h"
+#include "InodeVMObject.h"
 
 const VMProt VMSpace::default_prot = {
 	.read = true,
@@ -68,6 +69,9 @@ kstd::Arc<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<kst
 					new_region->vmRegion = new_vmRegion.get();
 					regions_vec.push_back(new_vmRegion);
 				}
+			} else if(region->object()->is_inode()) {
+				ASSERT(false);
+				// TODO: We need to handle this.
 			} else {
 				ASSERT(false);
 			}
@@ -206,6 +210,7 @@ Result VMSpace::try_pagefault(VirtualAddress error_pos) {
 			auto vmRegion = cur_region->vmRegion;
 			if(!vmRegion)
 				return Result(EINVAL);
+
 			// Check if the region is CoW.
 			if(vmRegion->is_cow() && vmRegion->object()->is_anonymous()) {
 				// TODO: Check if we're mapped first? We should be.
@@ -217,6 +222,41 @@ Result VMSpace::try_pagefault(VirtualAddress error_pos) {
 				m_page_directory.map(*vmRegion);
 				return Result(SUCCESS);
 			}
+
+			// Check if the region is a mapped inode.
+			if(vmRegion->object()->is_inode()) {
+				auto inode_object = kstd::static_pointer_cast<InodeVMObject>(vmRegion->object());
+				PageIndex error_page = (error_pos - vmRegion->start()) / PAGE_SIZE;
+
+				// Check to see if it needs to be read in
+				LOCK_N(inode_object->lock(), inode_locker);
+				auto& physical_page_index = inode_object->physical_page_index(error_page);
+				if(physical_page_index)
+					return Result(EINVAL);
+
+				// Read the appropriate part of the file into the buffer.
+				auto inode = inode_object->inode().lock();
+				if(!inode)
+					return Result(EINVAL); // Something happened to the inode?
+				kstd::Arc<uint8_t> buf((uint8_t*) kmalloc(PAGE_SIZE));
+				ssize_t nread = inode->read(error_page * PAGE_SIZE + vmRegion->object_start(), PAGE_SIZE, KernelPointer<uint8_t>(buf.get()), nullptr);
+				if(nread < 0)
+					return Result(-nread);
+
+				// Allocate a new physical page.
+				physical_page_index = TRY(MM.alloc_physical_page());
+
+				// Read the contents of the buffer into the newly allocated physical page.
+				MM.with_quickmapped(physical_page_index, [&](void* page_buf) {
+					memcpy(page_buf, buf.get(), PAGE_SIZE);
+				});
+
+				// Remap the page.
+				m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
+
+				return Result(SUCCESS);
+			}
+
 			return Result(EINVAL);
 		}
 		cur_region = cur_region->next;

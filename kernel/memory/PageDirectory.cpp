@@ -156,6 +156,9 @@ void PageDirectory::map(VMRegion& region, VirtualRange range) {
 	ASSERT(range.start + range.size <= region.end());
 
 	for(size_t page_index = start_index; page_index < end_index; page_index++) {
+		auto& page = region.object()->physical_page(page_index);
+		if(!page.index())
+			continue;
 		if(map_page(start_vpage + page_index, region.object()->physical_page(page_index).index(), prot).is_error())
 			return;
 	}
