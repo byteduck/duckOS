@@ -23,20 +23,24 @@
 #include <libduck/FileStream.h>
 #include "libui/widget/Image.h"
 #include <libui/widget/Cell.h>
+#include <sys/utsname.h>
 
 int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
-	auto window = UI::Window::make();
-	window->set_title("About duckOS");
+	utsname uname_buf;
+	if(uname(&uname_buf))
+		exit(-1);
 
-	auto version_file = Duck::FileInputStream("/etc/ver");
-	std::string ver;
-	version_file >> ver;
+	Duck::StringOutputStream version_stream;
+	version_stream << "Version " << uname_buf.release << "-" << uname_buf.version << " (" << uname_buf.machine << ")";
+
+	auto window = UI::Window::make();
+	window->set_title("About " + std::string(uname_buf.sysname));
 
 	auto text_layout = UI::FlexLayout::make(UI::FlexLayout::VERTICAL);
 
-	auto title_label = UI::Label::make("duckOS");
+	auto title_label = UI::Label::make(uname_buf.sysname);
 	title_label->set_font(UI::pond_context->get_font("gohu-14"));
 	title_label->set_sizing_mode(UI::PREFERRED);
 	text_layout->add_child(title_label);
@@ -46,7 +50,7 @@ int main(int argc, char** argv, char** envp) {
 	duck->set_sizing_mode(UI::FILL);
 	text_layout->add_child(duck);
 
-	auto ver_label = UI::Label::make("Version " + ver);
+	auto ver_label = UI::Label::make(version_stream.string());
 	ver_label->set_color(RGB(150, 150, 150));
 	ver_label->set_sizing_mode(UI::PREFERRED);
 	text_layout->add_child(ver_label);

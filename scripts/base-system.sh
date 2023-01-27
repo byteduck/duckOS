@@ -52,7 +52,4 @@ chmod 777 "$FS_DIR"/sock
 msg "Setting up /etc/..."
 chown -R 0:0 "$FS_DIR"/etc
 
-msg "Making version file..."
-echo "0.0-$(git rev-parse --short HEAD)" > "$FS_DIR/etc/ver"
-
 success "Done setting up root filesystem!"
