@@ -134,7 +134,10 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 		// TODO: Shared file mappings
 		if(args.fd >= _file_descriptors.size() || !_file_descriptors[args.fd])
 			return Result(EBADF);
-		auto file = _file_descriptors[args.fd]->file();
+		auto file_desc = _file_descriptors[args.fd];
+		if((!file_desc->readable() && prot.read) || (!file_desc->writable() && prot.write))
+			return Result(EPERM);
+		auto file = file_desc->file();
 		if(!file || !file->is_inode())
 			return Result(EBADF);
 		auto inode = kstd::static_pointer_cast<InodeFile>(file)->inode();
@@ -190,7 +193,7 @@ int Process::sys_mprotect(void* addr, size_t length, int prot_flags) {
 
 	// Find the region
 	for(size_t i = 0; i < _vm_regions.size(); i++) {
-		if(_vm_regions[i]->start() == (VirtualAddress) addr && _vm_regions[i]->size() == length) {
+		if(_vm_regions[i]->start() == (VirtualAddress) addr) {
 			_vm_regions[i]->set_prot(prot);
 			_page_directory->map(*_vm_regions[i]);
 			return SUCCESS;
