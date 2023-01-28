@@ -131,7 +131,6 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 	if(args.flags & MAP_ANONYMOUS) {
 		vm_object = TRY(AnonymousVMObject::alloc(args.length));
 	} else {
-		// TODO: Shared file mappings
 		if(args.fd >= _file_descriptors.size() || !_file_descriptors[args.fd])
 			return Result(EBADF);
 		auto file_desc = _file_descriptors[args.fd];
@@ -141,8 +140,10 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 		if(!file || !file->is_inode())
 			return Result(EBADF);
 		auto inode = kstd::static_pointer_cast<InodeFile>(file)->inode();
-		auto type = args.flags & MAP_SHARED ? InodeVMObject::Type::Shared : InodeVMObject::Type::Private;
-		vm_object = InodeVMObject::make_for_inode(inode, type);
+		if(args.flags & MAP_SHARED)
+			vm_object = inode->shared_vm_object();
+		else
+			vm_object = InodeVMObject::make_for_inode(inode, InodeVMObject::Type::Private);
 	}
 
 	if(!vm_object)

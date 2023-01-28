@@ -31,8 +31,9 @@ class DirectoryEntry;
 class Filesystem;
 class LinkedInode;
 class FileDescriptor;
+class InodeVMObject;
 
-class Inode {
+class Inode: public kstd::ArcSelf<Inode> {
 public:
 	Filesystem& fs;
 	ino_t id;
@@ -61,9 +62,12 @@ public:
 
 	virtual InodeMetadata metadata();
 
+	kstd::Arc<InodeVMObject> shared_vm_object();
+
 protected:
 	InodeMetadata _metadata;
 	SpinLock lock;
+	kstd::Arc<InodeVMObject> m_shared_vm_object;
 	bool _exists = true;
 };
 

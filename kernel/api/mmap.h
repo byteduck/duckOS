@@ -11,14 +11,14 @@
 #define PROT_NONE	0x0
 
 #define MAP_SHARED	0x1
-#define MAP_PRIVATE	0x2
+#define MAP_PRIVATE	0x0
 
-#define MAP_ANONYMOUS	0x1
+#define MAP_ANONYMOUS	0x2
 #define MAP_ANON		MAP_ANONYMOUS
 #define MAP_EXECUTABLE	0x0
 #define MAP_FILE		0x0
-#define MAP_FIXED		0x2
-#define MAP_GROWSDOWN	0x4
+#define MAP_FIXED		0x4
+#define MAP_GROWSDOWN	0x8
 
 #define MAP_FAILED ((void*) -1)
 

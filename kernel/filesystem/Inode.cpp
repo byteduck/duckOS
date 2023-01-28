@@ -21,6 +21,7 @@
 #include "Filesystem.h"
 #include "VFS.h"
 #include <kernel/kstd/string.h>
+#include "../memory/InodeVMObject.h"
 
 Inode::Inode(Filesystem& fs, ino_t id): fs(fs), id(id) {
 }
@@ -75,4 +76,10 @@ bool Inode::can_read(const FileDescriptor& fd) {
 
 bool Inode::can_write(const FileDescriptor& fd) {
 	return true;
+}
+
+kstd::Arc<InodeVMObject> Inode::shared_vm_object() {
+	if(!m_shared_vm_object)
+		m_shared_vm_object = InodeVMObject::make_for_inode(self(), InodeVMObject::Type::Shared);
+	return m_shared_vm_object;
 }
