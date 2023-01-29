@@ -215,20 +215,16 @@ public:
 	int load(char* name_cstr, bool is_main_executable);
 	int calculate_memsz();
 	int read_header();
-	int read_pheaders();
 	int read_dynamic_table();
 	int load_sections();
 	void mprotect_sections();
-	int read_sheaders();
 	int read_copy_relocations();
 	int read_symbols();
 	int relocate();
 
 	std::string name;
 	int fd = 0;
-	elf32_ehdr header;
-	std::vector<elf32_pheader> pheaders;
-	std::vector<elf32_sheader> sheaders;
+	elf32_ehdr* header = nullptr;
 	size_t memsz = 0;
 	size_t memloc = 0;
 	size_t calculated_base = 0;
@@ -244,6 +240,17 @@ public:
 	void (*init_func)() = nullptr;
 
 	std::vector<char*> required_libraries;
+	uint8_t* mapped_file = nullptr;
+	size_t mapped_size = 0;
+
+private:
+	elf32_pheader& get_pheader(size_t i) {
+		return *((elf32_pheader*) (mapped_file + header->e_phoff + i * header->e_phentsize));
+	}
+
+	elf32_sheader& get_sheader(size_t i) {
+		return *((elf32_sheader*) (mapped_file + header->e_shoff + i * header->e_shentsize));
+	}
 };
 
 std::string find_library(char* library_name);

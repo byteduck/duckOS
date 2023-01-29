@@ -55,6 +55,17 @@ int main(int argc, char** argv, char** envp) {
 		return errno;
 	}
 
+	// Map the executable
+	struct stat statbuf;
+	fstat(executable->fd, &statbuf);
+	executable->mapped_size = ((statbuf.st_size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+	auto* mapped_file = mmap(nullptr, executable->mapped_size, PROT_READ, MAP_SHARED, executable->fd, 0);
+	if(mapped_file == MAP_FAILED) {
+		perror("ld-duckos.so");
+		return errno;
+	}
+	executable->mapped_file = (uint8_t*) mapped_file;
+
 	//Load the executable and its dependencies
 	if(executable->load(argv[1], true) < 0)
 		return errno;
@@ -67,6 +78,9 @@ int main(int argc, char** argv, char** envp) {
 		rev_it++;
 	}
 
+	// Grab the location of the main entry point before we unmap the header
+	auto main = reinterpret_cast<main_t>(executable->header->e_entry);
+
 	//Relocate the libraries and executable and close their file descriptors
 	rev_it = objects.rbegin();
 	while(rev_it != objects.rend()) {
@@ -74,6 +88,8 @@ int main(int argc, char** argv, char** envp) {
 		object->relocate();
 		object->mprotect_sections();
 		close(object->fd);
+		if(munmap(object->mapped_file, object->mapped_size) < 0)
+			Duck::Log::warnf("ld: Failed to unmap object {}!", object->name);
 		rev_it++;
 	}
 
@@ -104,10 +120,10 @@ int main(int argc, char** argv, char** envp) {
 		rev_it++;
 	}
 
-	//Finally, jump to the executable's entry point!
 	if(debug)
-		Log::dbgf("Calling entry point {#x}", executable->header.e_entry);
-	auto main = reinterpret_cast<main_t>(executable->header.e_entry);
+		Log::dbgf("Calling entry point for {} {#x}", executable->name, (size_t) main);
+
+	// Finally, jump to the executable's entry point!
 	main(argc - 2, argv + 2, envp);
 	return 0;
 }
@@ -121,12 +137,6 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 	//Read the header
 	if(read_header() < 0) {
 		Log::err("Failed to read header of ", name_cstr, ": ", strerror(errno));
-		return -1;
-	}
-
-	//Read the program headers
-	if(read_pheaders() < 0) {
-		Log::err("Failed to read segment headers of ", name_cstr, ": ", strerror(errno));
 		return -1;
 	}
 
@@ -158,12 +168,6 @@ int Object::load(char* name_cstr, bool is_main_executable) {
 	//Read the dynamic table and figure out the required libraries
 	if(read_dynamic_table() < 0) {
 		Log::err("Failed to read dynamic table of ", name_cstr, ": ", strerror(errno));
-		return -1;
-	}
-
-	//Read the shared header table
-	if(read_sheaders() < 0) {
-		Log::err("Failed to read sheaders of ", name_cstr, ": ", strerror(errno));
 		return -1;
 	}
 
@@ -208,23 +212,30 @@ Object* Object::open_library(char* library_name) {
 	int fd = open(library_loc.c_str(), O_RDONLY);
 	if(fd < 0)
 		return nullptr;
+	struct stat statbuf;
+	fstat(fd, &statbuf);
+	size_t mapped_size = ((statbuf.st_size + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+	auto* mapped_file = mmap(nullptr, mapped_size, PROT_READ, MAP_SHARED, fd, 0);
+	if(mapped_file == MAP_FAILED) {
+		close(fd);
+		return nullptr;
+	}
 
 	//Add it to the objects map
 	auto* object = new Object();
 	objects[library_name] = object;
 	object->fd = fd;
 	object->name = library_name;
+	object->mapped_file = (uint8_t*) mapped_file;
+	object->mapped_size = mapped_size;
 
 	return object;
 }
 
 int Object::read_header() {
-	lseek(fd, 0, SEEK_SET);
-	if(read(fd, &header, sizeof(elf32_ehdr)) < 0) {
-		return -1;
-	}
+	header = (elf32_ehdr*) mapped_file;
 
-	if(*((uint32_t*)header.e_ident) != ELF_MAGIC) {
+	if(*((uint32_t*)header->e_ident) != ELF_MAGIC) {
 		errno = ENOEXEC;
 		return -1;
 	}
@@ -235,7 +246,8 @@ int Object::read_header() {
 int Object::calculate_memsz() {
 	size_t base = -1;
 	size_t brk = 0;
-	for(auto & pheader : pheaders) {
+	for(size_t i = 0; i < header->e_phnum; i++) {
+		auto& pheader = get_pheader(i);
 		switch(pheader.p_type) {
 			case PT_LOAD:
 				if(pheader.p_vaddr < base)
@@ -254,37 +266,19 @@ int Object::calculate_memsz() {
 	return 0;
 }
 
-int Object::read_pheaders() {
-	uint32_t pheader_loc = header.e_phoff;
-	uint32_t pheader_size = header.e_phentsize;
-	uint32_t num_pheaders = header.e_phnum;
-
-	//Seek to the pheader_loc
-	if(lseek(fd, pheader_loc, SEEK_SET) < -1)
-		return -1;
-
-	//Create the segment header vector and read the headers into it
-	pheaders.resize(num_pheaders);
-	if(read(fd, (uint8_t*) pheaders.data(), pheader_size * num_pheaders) < 0)
-		return -1;
-
-	return 0;
-}
-
 int Object::read_dynamic_table() {
 	bool did_read = false;
-	for(auto & pheader : pheaders) {
+	for(size_t i = 0; i < header->e_phnum; i++) {
+		auto& pheader = get_pheader(i);
 		if(pheader.p_type == PT_DYNAMIC) {
 			//Read the dynamic table
 			did_read = true;
-			std::vector<elf32_dynamic> dynamic_table(pheader.p_filesz / sizeof(elf32_dynamic));
-			if(lseek(fd, pheader.p_offset, SEEK_SET) < 0)
-				return -1;
-			if(read(fd, dynamic_table.data(), pheader.p_filesz) < 0)
-				return -1;
+			auto dynamic_table = (elf32_dynamic*) (mapped_file + pheader.p_offset);
+			size_t num_dynamic = pheader.p_filesz / sizeof(elf32_dynamic);
 
 			//Iterate over dynamic table entries
-			for(auto & dynamic : dynamic_table) {
+			for(size_t d = 0; d < num_dynamic; d++) {
+				auto& dynamic = dynamic_table[d];
 				if(dynamic.d_tag == DT_NULL) break;
 				switch(dynamic.d_tag) {
 					case DT_HASH:
@@ -321,10 +315,10 @@ int Object::read_dynamic_table() {
 
 			//Now that the string table is loaded, we can iterate again and find the required libraries
 			required_libraries.resize(0);
-			for(auto & dynamic : dynamic_table) {
-				if(dynamic.d_tag == DT_NEEDED) {
+			for(size_t d = 0; d < num_dynamic; d++) {
+				auto& dynamic = dynamic_table[d];
+				if(dynamic.d_tag == DT_NEEDED)
 					required_libraries.push_back(string_table + dynamic.d_val);
-				}
 			}
 		}
 	}
@@ -336,8 +330,9 @@ int Object::read_dynamic_table() {
 }
 
 int Object::load_sections() {
-	for(auto & pheader : pheaders) {
-			switch(pheader.p_type) {
+	for(size_t i = 0; i < header->e_phnum; i++) {
+		auto& pheader = get_pheader(i);
+		switch(pheader.p_type) {
 			case PT_LOAD: {
 				// Allocate memory for the section
 				size_t vaddr_mod = pheader.p_vaddr % PAGE_SIZE;
@@ -347,10 +342,17 @@ int Object::load_sections() {
 					Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
 
 				// Load the section into memory
-				if(lseek(fd, pheader.p_offset, SEEK_SET) < 0)
-					return -1;
-				if(read(fd, (void*) (memloc + pheader.p_vaddr), pheader.p_filesz) < 0)
-					return -1;
+				memcpy((void*) (memloc + pheader.p_vaddr), mapped_file + pheader.p_offset, pheader.p_filesz);
+
+				// Map the section into memory
+				// TODO: Why is this slower?
+//				size_t round_offset = pheader.p_offset - vaddr_mod;
+//				size_t round_filesz = ((pheader.p_filesz + vaddr_mod + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+//				if(mmap((void*) round_memloc, round_filesz, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, fd, round_offset) == MAP_FAILED)
+//					Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
+//				if(pheader.p_memsz != pheader.p_filesz)
+//					if(mmap((void*) (round_memloc + round_filesz), round_size - round_filesz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED, 0, 0) == MAP_FAILED)
+//						Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
 
 				// Zero out the remaining bytes
 				size_t bytes_left = pheader.p_memsz - pheader.p_filesz;
@@ -364,7 +366,8 @@ int Object::load_sections() {
 }
 
 void Object::mprotect_sections() {
-	for(auto & pheader : pheaders) {
+	for(size_t i = 0; i < header->e_phnum; i++) {
+		auto& pheader = get_pheader(i);
 		if(pheader.p_type == PT_LOAD) {
 			size_t vaddr_mod = pheader.p_vaddr % PAGE_SIZE;
 			size_t round_memloc = memloc + pheader.p_vaddr - vaddr_mod;
@@ -378,19 +381,10 @@ void Object::mprotect_sections() {
 	}
 }
 
-int Object::read_sheaders() {
-	//Read shared headers into a vector
-	sheaders.resize(header.e_shnum);
-	if(lseek(fd, header.e_shoff, SEEK_SET) < 0)
-		return -1;
-	if(read(fd, sheaders.data(), sizeof(elf32_sheader) * header.e_shnum) < 0)
-		return -1;
-	return 0;
-}
-
 int Object::read_copy_relocations() {
 	//In the relocation table, find all of the copy relocations (ELF32_R_TYPE == STT_COMMON) and put them in the global symbols
-	for(auto & shdr : sheaders) {
+	for(size_t sheader_index = 0; sheader_index < header->e_shnum; sheader_index++) {
+		auto& shdr = get_sheader(sheader_index);
 		if(shdr.sh_type == SHT_REL) {
 			auto* rel_table = (elf32_rel*) (shdr.sh_addr + memloc);
 			for(size_t i = 0; i < shdr.sh_size / sizeof(elf32_rel); i++) {
@@ -420,7 +414,8 @@ int Object::read_symbols() {
 
 int Object::relocate() {
 	//Relocate the symbols
-	for(auto & shdr : sheaders) {
+	for(size_t sheader_index = 0; sheader_index < header->e_shnum; sheader_index++) {
+		auto& shdr = get_sheader(sheader_index);
 		if(shdr.sh_type == SHT_REL) {
 			auto* rel_table = (elf32_rel*) (shdr.sh_addr + memloc);
 			for(size_t i = 0; i < shdr.sh_size / sizeof(elf32_rel); i++) {
