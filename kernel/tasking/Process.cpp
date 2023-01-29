@@ -50,8 +50,6 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 
 	//If there's an interpreter, we need to change the arguments accordingly
 	if(info.interpreter.length()) {
-		KLog::dbg("Process", "Executable %s requesting interpreter %s", executable_loc.c_str(), info.interpreter.c_str());
-
 		//Get the full path of the program we're trying to run
 		auto resolv = VFS::inst().resolve_path((kstd::string&) executable_loc, args->working_dir, file_open_user);
 		if(resolv.is_error())
