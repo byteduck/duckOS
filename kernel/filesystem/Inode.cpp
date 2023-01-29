@@ -79,7 +79,15 @@ bool Inode::can_write(const FileDescriptor& fd) {
 }
 
 kstd::Arc<InodeVMObject> Inode::shared_vm_object() {
-	if(!m_shared_vm_object)
-		m_shared_vm_object = InodeVMObject::make_for_inode(self(), InodeVMObject::Type::Shared);
-	return m_shared_vm_object;
+	LOCK(m_vmobject_lock);
+
+	kstd::Arc<InodeVMObject> ret;
+	if(!m_shared_vm_object) {
+		ret = InodeVMObject::make_for_inode(self(), InodeVMObject::Type::Shared);
+		m_shared_vm_object = ret;
+	} else {
+		ret = m_shared_vm_object.lock();
+	}
+
+	return ret;
 }

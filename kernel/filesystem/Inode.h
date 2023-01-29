@@ -66,8 +66,8 @@ public:
 
 protected:
 	InodeMetadata _metadata;
-	SpinLock lock;
-	kstd::Arc<InodeVMObject> m_shared_vm_object;
+	SpinLock lock, m_vmobject_lock;
+	kstd::Weak<InodeVMObject> m_shared_vm_object;
 	bool _exists = true;
 };
 

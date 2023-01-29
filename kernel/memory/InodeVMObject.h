@@ -19,7 +19,7 @@ public:
 		return m_physical_pages[index];
 	};
 
-	kstd::Weak<Inode> inode() const { return m_inode; }
+	kstd::Arc<Inode> inode() const { return m_inode; }
 	SpinLock& lock() { return m_lock; }
 	Type type() const { return m_type; }
 	bool is_inode() const override { return true; }
@@ -33,7 +33,7 @@ public:
 private:
 	explicit InodeVMObject(kstd::vector<PageIndex> physical_pages, kstd::Arc<Inode> inode, Type type);
 
-	kstd::Weak<Inode> m_inode;
+	kstd::Arc<Inode> m_inode;
 	SpinLock m_lock;
 	Type m_type;
 };

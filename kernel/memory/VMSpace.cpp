@@ -208,6 +208,16 @@ Result VMSpace::try_pagefault(PageFault fault) {
 			if(!vmRegion)
 				return Result(EINVAL);
 
+			// First, sanity check. If the region doesn't have the proper permissions, we can just fail here.
+			auto prot = vmRegion->prot();
+			if(
+				(!prot.read && fault.type == PageFault::Type::Read) ||
+				(!prot.write && fault.type == PageFault::Type::Write) ||
+				(!prot.execute && fault.type == PageFault::Type::Execute)
+			) {
+				return Result(EINVAL);
+			}
+
 			// Check if the region is CoW and writeable.
 			if(vmRegion->is_cow() && vmRegion->prot().write) {
 				vmRegion->m_object = TRY(vmRegion->object()->copy_on_write());
@@ -224,11 +234,14 @@ Result VMSpace::try_pagefault(PageFault fault) {
 				// Check to see if it needs to be read in
 				LOCK_N(inode_object->lock(), inode_locker);
 				auto& physical_page_index = inode_object->physical_page_index(error_page);
-				if(physical_page_index)
-					return Result(EINVAL);
+				if(physical_page_index) {
+					// We may have encountered a race where the page was created by another thread after the fault.
+					m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
+					return Result(SUCCESS);
+				}
 
 				// Read the appropriate part of the file into the buffer.
-				auto inode = inode_object->inode().lock();
+				auto inode = inode_object->inode();
 				if(!inode)
 					return Result(EINVAL); // Something happened to the inode?
 				kstd::Arc<uint8_t> buf((uint8_t*) kmalloc(PAGE_SIZE));

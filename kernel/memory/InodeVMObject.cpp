@@ -31,7 +31,7 @@ ResultRet<kstd::Arc<VMObject>> InodeVMObject::copy_on_write() {
 	}
 
 	// Create the new object with the pages
-	auto new_object = kstd::Arc<InodeVMObject>(new InodeVMObject(new_pages, m_inode.lock(), m_type));
+	auto new_object = kstd::Arc<InodeVMObject>(new InodeVMObject(new_pages, m_inode, m_type));
 	return kstd::static_pointer_cast<VMObject>(new_object);
 }
 
