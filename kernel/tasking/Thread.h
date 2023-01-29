@@ -88,7 +88,7 @@ public:
 	void* signal_stack_top();
 
 	//Misc
-	void handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction_pointer);
+	void handle_pagefault(PageFault fault);
 
 	//Thread queue
 	void enqueue_thread(Thread* thread);

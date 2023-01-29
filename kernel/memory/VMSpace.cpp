@@ -199,11 +199,11 @@ Result VMSpace::reserve_region(VirtualAddress start, size_t size) {
 	return alloc_space_at(size, start).result();
 }
 
-Result VMSpace::try_pagefault(VirtualAddress error_pos) {
+Result VMSpace::try_pagefault(PageFault fault) {
 	LOCK(m_lock);
 	auto cur_region = m_region_map;
 	while(cur_region) {
-		if(cur_region->contains(error_pos)) {
+		if(cur_region->contains(fault.address)) {
 			auto vmRegion = cur_region->vmRegion;
 			if(!vmRegion)
 				return Result(EINVAL);
@@ -219,7 +219,7 @@ Result VMSpace::try_pagefault(VirtualAddress error_pos) {
 			// Check if the region is a mapped inode.
 			if(vmRegion->object()->is_inode()) {
 				auto inode_object = kstd::static_pointer_cast<InodeVMObject>(vmRegion->object());
-				PageIndex error_page = (error_pos - vmRegion->start()) / PAGE_SIZE;
+				PageIndex error_page = (fault.address - vmRegion->start()) / PAGE_SIZE;
 
 				// Check to see if it needs to be read in
 				LOCK_N(inode_object->lock(), inode_locker);

@@ -42,3 +42,12 @@ public:
 	[[nodiscard]] VirtualAddress end() const { return start + size; }
 	[[nodiscard]] bool contains(VirtualAddress address) const { return address >= start && address < end(); }
 };
+
+struct PageFault {
+public:
+	VirtualAddress address;
+	VirtualAddress instruction_pointer;
+	enum class Type {
+		Read, Write, Execute, Unknown
+	} type;
+};

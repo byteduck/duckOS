@@ -89,7 +89,17 @@ namespace Interrupt {
 					} else {
 						size_t err_pos;
 						asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-						TaskManager::current_thread()->handle_pagefault(err_pos, r->eip);
+						PageFault::Type type;
+						if(r->err_code == FAULT_USER_READ)
+							type = PageFault::Type::Read;
+						else if(r->err_code == FAULT_USER_WRITE)
+							type = PageFault::Type::Write;
+						else
+							type = PageFault::Type::Unknown;
+						TaskManager::current_thread()->handle_pagefault({
+							err_pos,
+							r->eip,
+						});
 					}
 					break;
 

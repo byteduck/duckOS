@@ -475,20 +475,22 @@ void* Thread::signal_stack_top() {
 	return (void*) _signal_stack_top;
 }
 
-void Thread::handle_pagefault(VirtualAddress err_pos, VirtualAddress instruction_pointer) {
+void Thread::handle_pagefault(PageFault fault) {
+	ASSERT(fault.type != PageFault::Type::Unknown);
+
 	//If the fault is at the fake signal return address, exit the signal handler
-	if(_in_signal && err_pos == SIGNAL_RETURN_FAKE_ADDR) {
+	if(_in_signal && fault.address == SIGNAL_RETURN_FAKE_ADDR) {
 		_just_finished_signal = true;
 		ASSERT(TaskManager::yield());
 	}
 
 
 	//Otherwise, try CoW and kill the process if it doesn't work
-	if(m_vm_space->try_pagefault(err_pos).is_error()) {
-		if(instruction_pointer > HIGHER_HALF) {
-			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, err_pos, instruction_pointer);
+	if(m_vm_space->try_pagefault(fault).is_error()) {
+		if(fault.instruction_pointer > HIGHER_HALF) {
+			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, fault.address, fault.instruction_pointer);
 		}
-		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, err_pos, instruction_pointer);
+		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, fault.address, fault.instruction_pointer);
 		_process->kill(SIGSEGV);
 	}
 }

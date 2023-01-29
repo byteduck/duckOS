@@ -25,6 +25,7 @@
 #include "MemoryManager.h"
 #include <kernel/multiboot.h>
 #include "AnonymousVMObject.h"
+#include <kernel/interrupt/isr.h>
 #include <kernel/device/DiskDevice.h>
 #include <kernel/tasking/Thread.h>
 #include <kernel/tasking/TaskManager.h>
@@ -152,21 +153,21 @@ void MemoryManager::page_fault_handler(struct Registers *r) {
 	uint32_t err_pos;
 	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
 	switch (r->err_code) {
-		case 0:
+		case FAULT_KERNEL_READ:
 			PANIC("KRNL_READ_NONPAGED_AREA", "0x%x", err_pos);
-		case 1:
+		case FAULT_KERNEL_READ_GPF:
 			PANIC("KRNL_READ_PROTECTION_FAULT", "0x%x", err_pos);
-		case 2:
+		case FAULT_KERNEL_WRITE:
 			PANIC("KRNL_WRITE_NONPAGED_AREA", "0x%x", err_pos);
-		case 3:
+		case FAULT_KERNEL_WRITE_GPF:
 			PANIC("KRNL_WRITE_PROTECTION_FAULT", "0x%x", err_pos);
-		case 4:
+		case FAULT_USER_READ:
 			PANIC("USR_READ_NONPAGED_AREA", "0x%x", err_pos);
-		case 5:
+		case FAULT_USER_READ_GPF:
 			PANIC("USR_READ_PROTECTION_FAULT", "0x%x", err_pos);
-		case 6:
+		case FAULT_USER_WRITE:
 			PANIC("USR_WRITE_NONPAGED_AREA", "0x%x", err_pos);
-		case 7:
+		case FAULT_USER_WRITE_GPF:
 			PANIC("USR_WRITE_PROTECTION_FAULT", "0x%x", err_pos);
 		default:
 			PANIC("UNKNOWN_PAGE_FAULT", "0x%x", err_pos);

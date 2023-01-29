@@ -82,11 +82,11 @@ public:
 	Result reserve_region(VirtualAddress start, size_t size);
 
 	/**
-	 * Tries gracefully handling a pagefault at a given error position.
-	 * @param error_pos The address of the pagefault.
+	 * Tries gracefully handling a pagefault.
+	 * @param fault The page fault.
 	 * @return A result indicating whether the pagefault could be gracefully handled.
 	 */
-	Result try_pagefault(VirtualAddress error_pos);
+	Result try_pagefault(PageFault fault);
 
 	/**
 	 * Finds a region in the space that has at least `size` bytes free.
