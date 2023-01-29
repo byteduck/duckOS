@@ -134,7 +134,7 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 		if(args.fd >= _file_descriptors.size() || !_file_descriptors[args.fd])
 			return Result(EBADF);
 		auto file_desc = _file_descriptors[args.fd];
-		if((!file_desc->readable() && prot.read) || (!file_desc->writable() && prot.write))
+		if((!file_desc->readable() && prot.read) || (!file_desc->writable() && prot.write && (args.flags & MAP_SHARED)))
 			return Result(EPERM);
 		auto file = file_desc->file();
 		if(!file || !file->is_inode())
