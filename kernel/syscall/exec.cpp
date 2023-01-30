@@ -86,16 +86,3 @@ int Process::sys_execve(UserspacePointer<char> filename, UserspacePointer<char*>
 	}
 	return exec(filename.str(), args);
 }
-
-int Process::sys_open(UserspacePointer<char> filename, int options, int mode) {
-	kstd::string path = filename.str();
-	mode &= 04777; //We just want the permission bits
-	auto fd_or_err = VFS::inst().open(path, options, mode & (~_umask), _user, _cwd);
-	if(fd_or_err.is_error())
-		return fd_or_err.code();
-	_file_descriptors.push_back(fd_or_err.value());
-	fd_or_err.value()->set_owner(_self_ptr);
-	fd_or_err.value()->set_path(path);
-	fd_or_err.value()->set_id((int) _file_descriptors.size() - 1);
-	return (int)_file_descriptors.size() - 1;
-}
