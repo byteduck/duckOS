@@ -123,7 +123,7 @@ kstd::Arc<DiskDevice::BlockCacheRegion> DiskDevice::get_cache_region(size_t bloc
 	auto reg_opt = _cache_regions.get(block_cache_region_start(block));
 	if(reg_opt) {
 		_cache_lock.release();
-		return reg_opt.move_value();
+		return reg_opt.value();
 	}
 
 	//Create a new cache region

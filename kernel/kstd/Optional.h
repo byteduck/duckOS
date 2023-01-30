@@ -65,13 +65,6 @@ namespace kstd {
 			return *m_value;
 		}
 
-		[[nodiscard]] T&& move_value() {
-			ASSERT(m_value);
-			auto val = m_value;
-			m_value = nullptr;
-			return kstd::move(*val);
-		}
-
 		Optional<T>& operator =(const Optional<T>& other) {
 			if(&other == this)
 				return *this;
