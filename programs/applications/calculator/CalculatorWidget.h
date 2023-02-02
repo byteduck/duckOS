@@ -34,6 +34,8 @@ private:
 	void add_digit(int digit);
 	void do_op(const std::string& op);
 	void disp_num(double disp);
+	void disp_error();
+	void reset();
 
 	Duck::Ptr<UI::GridLayout> button_grid;
 	Duck::Ptr<UI::Label> display;
