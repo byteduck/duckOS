@@ -21,30 +21,10 @@
 #define DUCKOS_LIBC_INPUT_H
 
 #include <sys/types.h>
+#include <kernel/api/hid.h>
 
 __DECL_BEGIN
-
 #include <sys/keyboard.h>
-
-struct mouse_event {
-	int x, y, z;
-	uint8_t buttons;
-};
-
-struct keyboard_event {
-	uint16_t scancode;
-	uint8_t key;
-	uint8_t character;
-	uint8_t modifiers;
-};
-
 __DECL_END
-
-#ifdef __cplusplus
-
-typedef struct mouse_event MouseEvent;
-typedef struct keyboard_event KeyboardEvent;
-
-#endif
 
 #endif //DUCKOS_LIBC_INPUT_H

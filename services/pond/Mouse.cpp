@@ -54,8 +54,15 @@ bool Mouse::update() {
 
 	for(int i = 0; i < num_events; i++) {
 		Gfx::Point new_pos = rect().position();
-		new_pos.x += events[i].x;
-		new_pos.y -= events[i].y;
+		if(events[i].absolute) {
+			auto disp_dimensions = Display::inst().dimensions();
+			FloatPoint float_pos = {events[i].x / (float) 0xFFFF, events[i].y / (float) 0xFFFF};
+			new_pos.x = float_pos.x * disp_dimensions.width;
+			new_pos.y = float_pos.y * disp_dimensions.height;
+		} else {
+			new_pos.x += events[i].x;
+			new_pos.y -= events[i].y;
+		}
 		new_pos = new_pos.constrain(parent()->rect());
 		Gfx::Point delta_pos = new_pos - rect().position();
 		set_position(new_pos);

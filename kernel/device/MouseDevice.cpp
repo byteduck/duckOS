@@ -22,6 +22,7 @@
 #include <kernel/IO.h>
 #include "MouseDevice.h"
 #include "I8042.h"
+#include "../VMWare.h"
 #include <kernel/kstd/cstring.h>
 #include <kernel/kstd/KLog.h>
 
@@ -73,6 +74,10 @@ MouseDevice::MouseDevice(): CharacterDevice(13, 1), event_buffer(128), IRQHandle
 	}
 
 	KLog::dbg("I8042/Mouse", "Mouse initialized!");
+
+	// Enable VMWare absolute mouse if present
+	if(VMWare::inst().present())
+		VMWare::inst().enable_absolute_mouse();
 }
 
 ssize_t MouseDevice::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
@@ -98,28 +103,41 @@ void MouseDevice::handle_irq(Registers *regs) {
 }
 
 void MouseDevice::handle_byte(uint8_t byte) {
-	packet_data[packet_state] = byte;
-	switch(packet_state) {
-		case 0:
-			if(!(byte & 0x8u)) break;
-			packet_state++;
-			break;
-		case 1:
-			packet_state++;
-			break;
-		case 2:
-			if(has_scroll_wheel) {
+	if(VMWare::inst().using_absolute_mouse()) {
+		// If we're using absolute mouse input, ignore the byte and read from VMWare instead
+		handle_vmware_bytes();
+	} else {
+		packet_data[packet_state] = byte;
+		switch(packet_state) {
+			case 0:
+				if(!(byte & 0x8u)) break;
 				packet_state++;
 				break;
-			}
-			handle_packet();
-			break;
-		case 3:
-			handle_packet();
-			break;
+			case 1:
+				packet_state++;
+				break;
+			case 2:
+				if(has_scroll_wheel) {
+					packet_state++;
+					break;
+				}
+				handle_packet();
+				break;
+			case 3:
+				handle_packet();
+				break;
+		}
 	}
 
 	TaskManager::yield_if_idle();
+}
+
+void MouseDevice::handle_vmware_bytes() {
+	while(VMWare::inst().mouse_queue_size() >= 4) {
+		if(event_buffer.size() == event_buffer.capacity())
+			event_buffer.pop_front();
+		event_buffer.push_back(VMWare::inst().read_mouse_event());
+	}
 }
 
 bool MouseDevice::can_read(const FileDescriptor& fd) {
@@ -155,5 +173,5 @@ void MouseDevice::handle_packet() {
 
 	if(event_buffer.size() == event_buffer.capacity())
 		event_buffer.pop_front();
-	event_buffer.push_back({x, y, z, (uint8_t) (packet_data[0] & 0x7u)});
+	event_buffer.push_back({x, y, z, (uint8_t) (packet_data[0] & 0x7u), false});
 }

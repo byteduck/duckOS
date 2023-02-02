@@ -22,6 +22,7 @@
 #include <kernel/interrupt/IRQHandler.h>
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/kstd/circular_queue.hpp>
+#include <kernel/api/hid.h>
 
 #define I8042_BUFFER 0x60u
 #define I8042_STATUS 0x64u
@@ -45,13 +46,6 @@
 #define MOUSE_INTELLIMOUSE_ID 0x03u
 #define MOUSE_INTELLIMOUSE_EXPLORER_ID 0x04u
 
-struct MouseEvent {
-	int x;
-	int y;
-	int z;
-	uint8_t buttons;
-};
-
 class MouseDevice: public CharacterDevice, public IRQHandler {
 public:
 	static MouseDevice* inst();
@@ -72,6 +66,7 @@ public:
 
 private:
 	void handle_packet();
+	void handle_vmware_bytes();
 
 	static MouseDevice* instance;
 	bool present = false;

@@ -19,6 +19,7 @@
 
 #include "kmain.h"
 #include "kernel/device/AC97Device.h"
+#include "VMWare.h"
 #include <kernel/kstd/kstdio.h>
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/memory/gdt.h>
@@ -77,6 +78,7 @@ int kmain(uint32_t mbootptr){
 	Memory::load_gdt();
 	Interrupt::init();
 	MemoryManager::inst().setup_paging();
+	VMWare::detect();
 	Device::init();
 
 	//Try setting up VGA

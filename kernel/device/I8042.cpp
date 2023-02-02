@@ -22,6 +22,7 @@
 #include <kernel/kstd/kstdio.h>
 #include "KeyboardDevice.h"
 #include "MouseDevice.h"
+#include "kernel/VMWare.h"
 #include <kernel/kstd/KLog.h>
 
 I8042* I8042::_inst = nullptr;
