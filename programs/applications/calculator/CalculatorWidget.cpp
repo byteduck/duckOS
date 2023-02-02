@@ -105,11 +105,7 @@ void CalculatorWidget::do_op(const std::string& op) {
 		disp_num(num);
 		return;
 	} else if(op == "c") {
-		just_hit_equ = false;
-		num = 0;
-		prev_num = 0;
-		cur_op = "";
-		hit_dec = false;
+		reset();
 		disp_num(num);
 		return;
 	} else if(op == "ce") {
@@ -132,7 +128,13 @@ void CalculatorWidget::do_op(const std::string& op) {
 		} else if(cur_op == "sub") {
 			prev_num -= num;
 		} else if(cur_op == "div") {
-			prev_num /= num;
+			if (num != 0) {
+				prev_num /= num;
+			} else {
+				disp_error();
+				reset();
+				return;
+			}
 		} else if(cur_op == "mul") {
 			prev_num *= num;
 		}
@@ -148,6 +150,18 @@ void CalculatorWidget::do_op(const std::string& op) {
 	} else {
 		just_hit_equ = true;
 	}
+}
+
+void CalculatorWidget::disp_error() {
+	display->set_label("Can't divide by zero.");
+}
+
+void CalculatorWidget::reset() {
+	just_hit_equ = false;
+	num = 0;
+	prev_num = 0;
+	cur_op = "";
+	hit_dec = false;
 }
 
 void CalculatorWidget::disp_num(double disp) {
