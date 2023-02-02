@@ -4,10 +4,6 @@
 
 A hobby UNIX-like OS with a graphical window manager and applications for x86-based computers.
 
-### NEW! duckOS Discord
-
-duckOS now has an [official Discord server](https://discord.gg/VMyxGT4fez)! Discuss development, ask questions, and chat.
-
 ### Try duckOS
 
 A disk image of duckOS can be downloaded from the artifacts of the duckOS GitHub [workflow](https://github.com/byteduck/duckOS/actions/workflows/build-os.yml). This can then be virtualized or emulated using QEMU or your software of choice.
