@@ -153,7 +153,7 @@ void CalculatorWidget::do_op(const std::string& op) {
 }
 
 void CalculatorWidget::disp_error() {
-	display->set_label("Can't divide by zero.");
+	display->set_label("NaN");
 }
 
 void CalculatorWidget::reset() {
