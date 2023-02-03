@@ -113,12 +113,12 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffe
 
 		//Create the buffer descriptor
 		auto* descriptor = &m_output_buffer_descriptors[m_current_buffer_descriptor];
-		descriptor->data_addr = m_output_buffer_region->object()->size() + PAGE_SIZE * m_current_output_buffer_page;
+		descriptor->data_addr = m_output_buffer_region->object()->physical_page(m_current_output_buffer_page).paddr();
 		descriptor->num_samples = num_bytes / sizeof(uint16_t);
 		descriptor->flags = {false, true};
 
 		//Set the buffer descriptor list address and last valid index in the channel registers
-		IO::outl(m_output_channel + ChannelRegisters::BUFFER_LIST_ADDR, (PhysicalAddress) m_output_buffer_descriptor_region->object()->physical_page(0).ptr());
+		IO::outl(m_output_channel + ChannelRegisters::BUFFER_LIST_ADDR, m_output_buffer_descriptor_region->object()->physical_page(0).paddr());
 		IO::outb(m_output_channel + ChannelRegisters::LAST_VALID_INDEX, m_current_buffer_descriptor);
 
 		//If the output DMA is not enabled already, enable it
