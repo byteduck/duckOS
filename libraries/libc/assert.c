@@ -21,6 +21,10 @@
 #include <stdlib.h>
 
 void __assert_failed(const char* file, int line, const char* func, const char* expr) {
-	fprintf(stderr, "Assertion failed in %s:%s (line %d): %s\n", file, func, line, expr);
+	FILE* klog = fopen("/dev/klog", "w");
+	FILE* stream = klog ? klog : stderr;
+	const char* prefix = klog ? "\01" : "";
+	fprintf(stream, "%sAssertion failed in %s:%s (line %d): %s\n", prefix, file, func, line, expr);
+	fflush(stream);
 	abort();
 }
