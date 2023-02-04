@@ -78,6 +78,7 @@ void KeyboardDevice::handle_irq(Registers *regs) {
 }
 
 void KeyboardDevice::handle_byte(uint8_t byte) {
+	send_eoi();
 	auto scancode = byte;
 	auto key = scancode & 0x7fu;
 	bool key_pressed = !(scancode & KBD_IS_PRESSED);
