@@ -23,11 +23,11 @@
 
 namespace Sound {
 	struct Sample {
-		double left = 0.0;
-		double right = 0.0;
+		float left = 0.0;
+		float right = 0.0;
 
 		static inline Sample from_16bit_lpcm(uint32_t pcm) {
-			return {(int16_t) (pcm & 0xffff) / 32767.0, (int16_t) ((pcm >> 16) & 0xffff) / 32767.0};
+			return {(int16_t) (pcm & 0xffff) / 32767.0f, (int16_t) ((pcm >> 16) & 0xffff) / 32767.0f};
 		}
 
 		inline uint32_t as_16bit_lpcm() {
@@ -36,8 +36,8 @@ namespace Sound {
 
 		inline Sample operator+(const Sample& other) const {
 			return {
-				std::clamp(left + other.left, -1.0, 1.0),
-				std::clamp(right + other.right, -1.0, 1.0)
+				std::clamp(left + other.left, -1.0f, 1.0f),
+				std::clamp(right + other.right, -1.0f, 1.0f)
 			};
 		}
 
@@ -46,14 +46,14 @@ namespace Sound {
 			return *this;
 		}
 
-		inline Sample operator*(const double scalar) const {
+		inline Sample operator*(const float scalar) const {
 			return {
-				std::clamp(left * scalar, -1.0, 1.0),
-				std::clamp(right * scalar, -1.0, 1.0)
+				std::clamp(left * scalar, -1.0f, 1.0f),
+				std::clamp(right * scalar, -1.0f, 1.0f)
 			};
 		}
 
-		inline Sample operator*=(const double scalar)  {
+		inline Sample operator*=(const float scalar)  {
 			*this = *this * scalar;
 			return *this;
 		}

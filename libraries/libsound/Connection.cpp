@@ -35,28 +35,31 @@ Duck::ResultRet<std::shared_ptr<Connection>> Connection::create() {
 	return std::shared_ptr<Connection>(new Connection(endpoint_res.value()));
 }
 
-void Connection::queue_samples(const SampleBuffer& passed_buffer) {
-	//If we have to resample, do so
-	SampleBuffer buffer = passed_buffer;
-	if(buffer.sample_rate() != m_server_samplerate) {
-		auto resamp_res = buffer.resample(m_server_samplerate);
-		if(resamp_res.is_error()) {
-			Duck::Log::err("Couldn't resample queued buffer: ", resamp_res.message());
-			return;
-		}
-		buffer = resamp_res.value();
-	}
+void Connection::queue_samples(Duck::Ptr<SampleBuffer> buffer) {
+	// If we don't have a buffer, silently fail.
+	if(!m_buffer.buffer())
+		return;
 
-	buffer.shared_buffer().allow(m_server_pid, true, false);
-	while(!server_queue_samples(buffer.shared_buffer().id(), buffer.num_samples()))
-		usleep(100);
+	//If we have to resample, do so
+	if(buffer->sample_rate() != m_server_samplerate)
+		buffer = buffer->resample(m_server_samplerate);
+
+	// Queue the samples
+	for(size_t i = 0; i < buffer->num_samples(); i++)
+		m_buffer.push_wait(buffer->samples()[i]);
 }
 
 Connection::Connection(std::shared_ptr<River::Endpoint> endpoint): m_endpoint(std::move(endpoint)) {
-	m_endpoint->get_function(server_queue_samples);
 	m_endpoint->get_function(get_server_sample_rate);
-	m_endpoint->get_function(get_server_pid);
+	m_endpoint->get_function(server_request_buffer);
 
-	m_server_pid = get_server_pid();
 	m_server_samplerate = get_server_sample_rate();
+
+	auto shared_sample_buffer_res = Duck::SharedBuffer::adopt(server_request_buffer());
+	if(shared_sample_buffer_res.is_error()) {
+		Duck::Log::errf("libsound: Could not request buffer: {}", shared_sample_buffer_res.result());
+		return;
+	}
+
+	m_buffer = Duck::AtomicCircularQueue<Sample, LIBSOUND_QUEUE_SIZE>::attach(shared_sample_buffer_res.value());
 }

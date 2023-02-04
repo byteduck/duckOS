@@ -21,44 +21,37 @@
 #include "Log.h"
 using namespace Duck;
 
-ResultRet<SharedBuffer> SharedBuffer::create(size_t size) {
+ResultRet<Duck::Ptr<SharedBuffer>> SharedBuffer::alloc(size_t size) {
 	shm shm_info;
 	if(shmcreate(nullptr, size, &shm_info))
 		return Result(errno);
-	return SharedBuffer {shm_info};
+	return Ptr<SharedBuffer>(new SharedBuffer(shm_info));
 }
 
-ResultRet<SharedBuffer> SharedBuffer::attach(int id) {
+ResultRet<Duck::Ptr<SharedBuffer>> SharedBuffer::adopt(int id) {
 	shm shm_info;
 	if(shmattach(id, nullptr, &shm_info))
 		return Result(errno);
-	return SharedBuffer {shm_info};
+	return Ptr<SharedBuffer>(new SharedBuffer(shm_info));
 }
 
-SharedBuffer::SharedBuffer(shm shm_info): m_shm(std::shared_ptr<ShmRef>(new ShmRef {shm_info})) {
+SharedBuffer::SharedBuffer(shm shm_info): m_shm(shm_info) {
 
 }
 
-ResultRet<SharedBuffer> SharedBuffer::copy() const {
-	auto cpy_res = create(m_shm->shm_info.size);
+SharedBuffer::~SharedBuffer() noexcept {
+	if(shmdetach(m_shm.id) < 0)
+		Duck::Log::warnf("Duck::SharedBuffer: Failed to detach shm: {}", strerror(errno));
+}
+
+ResultRet<Duck::Ptr<SharedBuffer>> SharedBuffer::copy() const {
+	auto cpy_res = alloc(m_shm.size);
 	if(cpy_res.is_error())
 		return cpy_res.result();
-	memcpy(cpy_res.value().ptr(), ptr(), m_shm->shm_info.size);
+	memcpy(cpy_res.value()->ptr(), ptr(), m_shm.size);
 	return std::move(cpy_res.value());
 }
 
 int SharedBuffer::allow(int pid, bool read, bool write) {
-	return shmallow(m_shm->shm_info.id, pid, (read ? SHM_READ : 0) | (write ? SHM_WRITE : 0));
-}
-
-void* SharedBuffer::ptr() const {
-	return m_shm->shm_info.ptr;
-}
-
-size_t SharedBuffer::size() const {
-	return m_shm->shm_info.size;
-}
-
-int SharedBuffer::id() const {
-	return m_shm->shm_info.id;
+	return shmallow(m_shm.id, pid, (read ? SHM_READ : 0) | (write ? SHM_WRITE : 0));
 }

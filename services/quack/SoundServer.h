@@ -24,15 +24,16 @@
 #include "Client.h"
 #include <libduck/File.h>
 
+#define SOUNDCARD_BUFFER_SIZE 512
+
 class SoundServer {
 public:
 	explicit SoundServer();
 	void pump();
 
 private:
-    pid_t server_pid(sockid_t id);
     uint32_t get_sample_rate(sockid_t id);
-    bool queue_samples(sockid_t id, int shm_id, size_t num_samples);
+	int request_buffer(sockid_t id);
 
 	River::BusServer* m_bus;
 	std::shared_ptr<River::BusConnection> m_connection;

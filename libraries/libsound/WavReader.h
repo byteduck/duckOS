@@ -53,8 +53,8 @@ namespace Sound {
 		static Duck::ResultRet<WavReader> open_wav(const Duck::Path& path);
 		static Duck::ResultRet<WavReader> read_wav(Duck::File& file);
 
-		Duck::ResultRet<SampleBuffer> read_samples(size_t num_samples);
-		Duck::ResultRet<size_t> read_samples(SampleBuffer& buffer);
+		Duck::ResultRet<Duck::Ptr<SampleBuffer>> read_samples(size_t num_samples);
+		Duck::ResultRet<size_t> read_samples(Duck::Ptr<SampleBuffer> buffer);
 
 		[[nodiscard]] uint32_t sample_rate() const { return m_header.sample_rate; }
 

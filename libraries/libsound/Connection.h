@@ -22,25 +22,27 @@
 #include <libduck/Result.h>
 #include <libriver/river.h>
 #include "SampleBuffer.h"
+#include <libduck/AtomicCircularQueue.h>
+
+#define LIBSOUND_QUEUE_SIZE 4096
 
 namespace Sound {
 	class Connection {
 	public:
 		static Duck::ResultRet<std::shared_ptr<Connection>> create();
 
-		void queue_samples(const SampleBuffer& buffer);
+		void queue_samples(Duck::Ptr<SampleBuffer> buffer);
 
 	private:
 		explicit Connection(std::shared_ptr<River::Endpoint> endpoint);
 
 		std::shared_ptr<River::Endpoint> m_endpoint;
-		pid_t m_server_pid;
 		uint32_t m_server_samplerate;
+		Duck::AtomicCircularQueue<Sample, LIBSOUND_QUEUE_SIZE> m_buffer;
 
 		//RIVER FUNCTIONS
-		River::Function<bool, int, size_t> server_queue_samples = {"queue_samples"};
+		River::Function<int> server_request_buffer = {"request_buffer"};
 		River::Function<uint32_t> get_server_sample_rate = {"get_sample_rate"};
-		River::Function<pid_t> get_server_pid = {"get_server_pid"};
 	};
 }
 

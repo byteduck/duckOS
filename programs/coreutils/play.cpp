@@ -49,13 +49,7 @@ int main(int argc, char** argv) {
 	}
 	auto conn = conn_res.value();
 
-	auto buf_res = Sound::SampleBuffer::create(wav.sample_rate(), 512);
-	if(buf_res.is_error()) {
-		Stream::std_err << "play: Couldn't create sound buffer: " << buf_res.strerror() << "\n";
-		return buf_res.code();
-	}
-	auto& buf = buf_res.value();
-
+	auto buf = Sound::SampleBuffer::make(wav.sample_rate(), 512);
 	while(true) {
 		auto res = wav.read_samples(buf);
 		if(res.is_error() || res.value() == 0)

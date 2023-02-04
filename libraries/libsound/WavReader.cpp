@@ -54,7 +54,7 @@ WavReader::WavReader(Duck::File& file, WavHeader header): m_file(file), m_header
 
 }
 
-Duck::ResultRet<SampleBuffer> WavReader::read_samples(size_t num_samples) {
+Duck::ResultRet<Duck::Ptr<SampleBuffer>> WavReader::read_samples(size_t num_samples) {
 	//First, read the samples from the file
 	const size_t buf_size = (m_header.bits_per_sample / 8) * m_header.num_channels * num_samples;
 	auto* buffer = new uint8_t[buf_size];
@@ -66,21 +66,18 @@ Duck::ResultRet<SampleBuffer> WavReader::read_samples(size_t num_samples) {
 	num_samples = (read_res.value() / (m_header.bits_per_sample / 8)) / m_header.num_channels;
 
 	//Create the sample buffer
-	auto sample_buf_res = SampleBuffer::create(m_header.sample_rate, num_samples);
-	if(sample_buf_res.is_error())
-		return sample_buf_res.result();
-	auto& sample_buf = sample_buf_res.value();
+	auto sample_buf = SampleBuffer::make(m_header.sample_rate, num_samples);
 
 	//Load in the samples
 	for(size_t i = 0; i < num_samples; i++)
-		sample_buf[i] = Sample::from_16bit_lpcm(((uint32_t*)buffer)[i]);
+		sample_buf->samples()[i] = Sample::from_16bit_lpcm(((uint32_t*)buffer)[i]);
 	delete[] buffer;
 
 	return sample_buf;
 }
 
-ResultRet<size_t> WavReader::read_samples(SampleBuffer& sample_buf) {
-	size_t num_samples = sample_buf.sample_capacity();
+ResultRet<size_t> WavReader::read_samples(Duck::Ptr<SampleBuffer> sample_buf) {
+	size_t num_samples = sample_buf->num_samples();
 
 	//First, read the samples from the file
 	const size_t buf_size = (m_header.bits_per_sample / 8) * m_header.num_channels * num_samples;
@@ -93,10 +90,10 @@ ResultRet<size_t> WavReader::read_samples(SampleBuffer& sample_buf) {
 	num_samples = (read_res.value() / (m_header.bits_per_sample / 8)) / m_header.num_channels;
 
 	//Load in the samples
-	sample_buf.set_sample_rate(m_header.sample_rate);
-	sample_buf.set_num_samples(num_samples);
+	sample_buf->set_sample_rate(m_header.sample_rate);
+	sample_buf->set_num_samples(num_samples);
 	for(size_t i = 0; i < num_samples; i++)
-		sample_buf[i] = Sample::from_16bit_lpcm(((uint32_t*) buffer)[i]);
+		sample_buf->samples()[i] = Sample::from_16bit_lpcm(((uint32_t*) buffer)[i]);
 	delete[] buffer;
 
 	return num_samples;

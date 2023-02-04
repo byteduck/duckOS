@@ -23,24 +23,25 @@
 #include <queue>
 #include <libsound/SampleBuffer.h>
 #include <libduck/SpinLock.h>
+#include <libduck/Object.h>
+#include <libsound/Connection.h>
 
 class Client {
 public:
 	Client() = default;
-	explicit Client(sockid_t id);
+	explicit Client(sockid_t id, pid_t pid);
 
 	[[nodiscard]] sockid_t id() const;
-	[[nodiscard]] bool has_sample() const;
-	[[nodiscard]] size_t waiting_samples() const;
-	[[nodiscard]] double volume() const;
-	void set_volume(double volume);
-	size_t mix_samples(Sound::Sample buffer[], size_t max_samples);
-	bool push_samples(const Sound::SampleBuffer& samples);
+	[[nodiscard]] float volume() const;
+	[[nodiscard]] Duck::AtomicCircularQueue<Sound::Sample, LIBSOUND_QUEUE_SIZE>& sample_buffer() { return m_buffer; };
+	void set_volume(float volume);
+	bool mix_samples(Sound::Sample buffer[], size_t max_samples);
 
 private:
 	sockid_t m_id;
-	std::queue<Sound::Sample> m_queue;
-	double m_volume = 1.0;
+	pid_t m_pid;
+	Duck::AtomicCircularQueue<Sound::Sample, LIBSOUND_QUEUE_SIZE> m_buffer;
+	float m_volume = 1.0;
 };
 
 

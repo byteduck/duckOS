@@ -21,55 +21,32 @@
 #include <libduck/Log.h>
 
 using namespace Sound;
-using Duck::SharedBuffer, Duck::Result, Duck::Log;
+using Duck::SharedBuffer, Duck::Result, Duck::Log, Duck::Ptr, Duck::ResultRet;
 
-Duck::ResultRet<SampleBuffer> SampleBuffer::create(size_t sample_rate, size_t num_samples) {
-	auto buf_res = SharedBuffer::create(num_samples * sizeof(Sample));
-	if(buf_res.is_error())
-		return buf_res.result();
-	return SampleBuffer(buf_res.value(), sample_rate, num_samples);
+SampleBuffer::SampleBuffer(size_t sample_rate, size_t num_samples):
+	m_sample_rate(sample_rate),
+	m_num_samples(num_samples),
+	m_samples((Sample*) malloc(sizeof(Sample) * num_samples))
+{}
+
+SampleBuffer::~SampleBuffer() noexcept {
+	free(m_samples);
 }
 
-SampleBuffer::SampleBuffer(SharedBuffer buffer, size_t sample_rate, size_t num_samples):
-	m_buffer(std::move(buffer)), m_sample_rate(sample_rate), m_num_samples(num_samples)
-{
-	if(m_buffer.size() < num_samples * sizeof(Sample))
-		m_num_samples = m_buffer.size() / sizeof(Sample);
-}
-
-void SampleBuffer::set_samples(Duck::SharedBuffer buffer, uint32_t sample_rate, size_t num_samples) {
-	m_buffer = std::move(buffer);
-	m_sample_rate = sample_rate;
-	m_num_samples = num_samples;
-}
-
-Duck::ResultRet<SampleBuffer> SampleBuffer::resample(uint32_t sample_rate) const {
+Ptr<SampleBuffer> SampleBuffer::resample(uint32_t sample_rate) const {
 	if(sample_rate == m_sample_rate)
 		return copy();
-
-	double ratio = (double) sample_rate / (double) m_sample_rate;
+	float ratio = (float) sample_rate / (float) m_sample_rate;
 	auto new_num_samples = (size_t) (m_num_samples * ratio);
-
-	auto new_buffer_res = SharedBuffer::create(sizeof(Sample) * new_num_samples);
-	if(new_buffer_res.is_error())
-		return new_buffer_res.result();
-	auto& new_buffer = new_buffer_res.value();
-
-	auto* old_samples = (Sample*) m_buffer.ptr();
-	auto* new_samples = (Sample*) new_buffer.ptr();
-	for(size_t i = 0; i < new_num_samples; i++) {
-		new_samples[i] = old_samples[(int) (i / ratio)];
-	}
-
-	return SampleBuffer(new_buffer, sample_rate, new_num_samples);
-}
-
-SharedBuffer SampleBuffer::shared_buffer() const {
-	return m_buffer;
+	auto new_buffer = SampleBuffer::make(sample_rate, new_num_samples);
+	auto new_samples = new_buffer->samples();
+	for(size_t i = 0; i < new_num_samples; i++)
+		new_samples[i] = m_samples[(int) (i / ratio)];
+	return new_buffer;
 }
 
 Sample* SampleBuffer::samples() const {
-	return (Sample*) m_buffer.ptr();
+	return m_samples;
 }
 
 uint32_t SampleBuffer::sample_rate() const {
@@ -80,25 +57,16 @@ size_t SampleBuffer::num_samples() const {
 	return m_num_samples;
 }
 
-size_t SampleBuffer::sample_capacity() const {
-	return m_buffer.size() / sizeof(Sample);
-}
-
-Sample& SampleBuffer::operator[](size_t index) const {
-	return ((Sample*) m_buffer.ptr())[index];
-}
-
 void SampleBuffer::set_sample_rate(uint32_t sample_rate) {
 	m_sample_rate = sample_rate;
 }
 
 void SampleBuffer::set_num_samples(uint32_t num_samples) {
-	m_num_samples = std::min(num_samples, sample_capacity());
+	realloc(m_samples, num_samples * sizeof(Sample));
 }
 
-Duck::ResultRet<SampleBuffer> SampleBuffer::copy() const {
-	auto shcopy = m_buffer.copy();
-	if(shcopy.is_error())
-		return shcopy.result();
-	return SampleBuffer(shcopy.value(), m_sample_rate, m_num_samples);
+ResultRet<Ptr<SampleBuffer>> SampleBuffer::copy() const {
+	auto new_buf = SampleBuffer::make(m_sample_rate, m_num_samples);
+	memcpy(new_buf->samples(), m_samples, sizeof(Sample) * m_num_samples);
+	return new_buf;
 }

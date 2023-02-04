@@ -20,33 +20,32 @@
 #pragma once
 
 #include <libduck/SharedBuffer.h>
+#include <libduck/Object.h>
 #include "Sample.h"
 
 namespace Sound {
-	class SampleBuffer {
+	class SampleBuffer: public Duck::Object {
 	public:
-		static Duck::ResultRet<SampleBuffer> create(size_t sample_rate, size_t num_samples);
-		explicit SampleBuffer(Duck::SharedBuffer buffer, size_t sample_rate, size_t num_samples);
+		DUCK_OBJECT_DEF(SampleBuffer);
 
-		void set_samples(Duck::SharedBuffer buffer, uint32_t sample_rate, uint32_t num_samples);
-		[[nodiscard]] Duck::ResultRet<SampleBuffer> resample(uint32_t sample_rate) const;
+		~SampleBuffer() noexcept;
+
+		[[nodiscard]] Duck::Ptr<SampleBuffer> resample(uint32_t sample_rate) const;
 		void set_sample_rate(uint32_t sample_rate); //Does NOT resample
 		void set_num_samples(uint32_t num_samples); //Does NOT resize buffer
 
-		[[nodiscard]] Duck::SharedBuffer shared_buffer() const;
 		[[nodiscard]] Sample* samples() const;
 		[[nodiscard]] uint32_t sample_rate() const;
 		[[nodiscard]] size_t num_samples() const;
-		[[nodiscard]] size_t sample_capacity() const;
 
-		[[nodiscard]] Duck::ResultRet<SampleBuffer> copy() const;
-
-		Sample& operator[](size_t index) const;
+		[[nodiscard]] Duck::ResultRet<Duck::Ptr<SampleBuffer>> copy() const;
 
 	private:
-		Duck::SharedBuffer m_buffer;
+		explicit SampleBuffer(size_t sample_rate, size_t num_samples);
+
 		uint32_t m_sample_rate;
 		size_t m_num_samples;
+		Sample* m_samples;
 	};
 }
 

@@ -21,44 +21,32 @@
 
 using namespace Sound;
 
-Client::Client(sockid_t id): m_id(id) {
+Client::Client(sockid_t id, pid_t pid): m_id(id), m_pid(pid) {
+	auto buffer_res = Duck::AtomicCircularQueue<Sample, LIBSOUND_QUEUE_SIZE>::alloc();
+	if(buffer_res.is_error()) {
+		Duck::Log::errf("libsound: Could not allocate buffer for client: {}", buffer_res.result());
+		return;
+	}
+	m_buffer = buffer_res.value();
+	m_buffer.buffer()->allow(pid, true, true);
 }
 
 sockid_t Client::id() const {
 	return m_id;
 }
 
-bool Client::has_sample() const {
-	return !m_queue.empty();
+bool Client::mix_samples(Sound::Sample buffer[], size_t max_samples) {
+	if(m_buffer.empty())
+		return false;
+	for(size_t i = 0; i < max_samples; i++)
+		buffer[i] += m_buffer.pop().value_or(Sample{});
+	return true;
 }
 
-size_t Client::waiting_samples() const {
-	return m_queue.size();
-}
-
-size_t Client::mix_samples(Sound::Sample buffer[], size_t max_samples) {
-	auto n_samples = std::min(max_samples, m_queue.size());
-	for(size_t i = 0; i < n_samples; i++) {
-		buffer[i] += m_queue.front() * m_volume;
-		m_queue.pop();
-	}
-	return n_samples;
-}
-
-double Client::volume() const {
+float Client::volume() const {
 	return m_volume;
 }
 
-void Client::set_volume(double volume) {
-	m_volume = std::clamp(volume, 0.0, 1.0);
-}
-
-bool Client::push_samples(const SampleBuffer& samples) {
-	if((m_queue.size() + samples.num_samples()) > 4096)
-		return false;
-
-	for(int i = 0; i < samples.num_samples(); i++)
-		m_queue.push(samples.samples()[i]);
-
-	return true;
+void Client::set_volume(float volume) {
+	m_volume = std::clamp(volume, 0.0f, 1.0f);
 }

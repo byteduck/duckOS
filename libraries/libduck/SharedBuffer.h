@@ -22,29 +22,35 @@
 #include <sys/shm.h>
 #include <memory>
 #include "Result.h"
+#include "Object.h"
+#include "Serializable.h"
 
 namespace Duck {
-	class SharedBuffer {
+	class SharedBuffer: public Duck::Object {
 	public:
-		static ResultRet<SharedBuffer> create(size_t size);
-		static ResultRet<SharedBuffer> attach(int id);
+		DUCK_OBJECT_DEF(SharedBuffer);
 
-		explicit SharedBuffer(struct shm shm_info);
+		~SharedBuffer() noexcept;
 
-		[[nodiscard]] ResultRet<SharedBuffer> copy() const;
+		static ResultRet<Duck::Ptr<SharedBuffer>> alloc(size_t size);
+		static ResultRet<Duck::Ptr<SharedBuffer>> adopt(int id);
+
+		[[nodiscard]] ResultRet<Duck::Ptr<SharedBuffer>> copy() const;
 		int allow(int pid, bool read = true, bool write = true);
-		[[nodiscard]] void* ptr() const;
-		[[nodiscard]] size_t size() const;
-		[[nodiscard]] int id() const;
+
+		[[nodiscard]] void* ptr() const { return m_shm.ptr; }
+		[[nodiscard]] size_t size() const { return m_shm.size; }
+		[[nodiscard]] int id() const { return m_shm.id; }
+
+		template<typename T>
+		[[nodiscard]] T* ptr() const { return (T*) m_shm.ptr; }
+		template<typename T>
+		[[nodiscard]] size_t size() const { return size() / sizeof(T); }
 
 	private:
-		class ShmRef {
-		public:
-			~ShmRef() { shmdetach(shm_info.id); }
-			struct shm shm_info;
-		};
+		explicit SharedBuffer(struct shm shm_info);
 
-		std::shared_ptr<ShmRef> m_shm;
+		struct shm m_shm = {nullptr, 0, 0};
 	};
 }
 

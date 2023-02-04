@@ -58,57 +58,44 @@ SoundServer::SoundServer() {
 	m_endpoint = endpoint_res.value();
 
 	m_endpoint->on_client_connect = [&](sockid_t sockid, pid_t pid) {
-		m_clients[sockid] = std::make_shared<Client>(sockid);
+		m_clients[sockid] = std::make_shared<Client>(sockid, pid);
 	};
 
 	m_endpoint->on_client_disconnect = [&](sockid_t sockid, pid_t pid) {
 		m_clients.erase(sockid);
 	};
 
-	m_endpoint->bind_function<pid_t>("get_server_pid", &SoundServer::server_pid, this);
 	m_endpoint->bind_function<uint32_t>("get_sample_rate", &SoundServer::get_sample_rate, this);
-	m_endpoint->bind_function<bool, int, size_t>("queue_samples", &SoundServer::queue_samples, this);
+	m_endpoint->bind_function<int>("request_buffer", &SoundServer::request_buffer, this);
 }
 
 void SoundServer::pump() {
-	m_connection->read_and_handle_packets(true);
-	Sound::Sample mixed_samples[1024];
-	size_t num_samples = 0;
-
-	//If we don't have a soundcard, we don't have anything to do
-	if(!m_soundcard.is_open())
+	//If we don't have a sound card, we don't have anything to do
+	if(!m_soundcard.is_open()) {
+		m_connection->read_and_handle_packets(true);
 		return;
-
-	for (auto& client: m_clients)
-		num_samples = std::max(client.second->mix_samples(mixed_samples, 1024), num_samples);
-
-	if (num_samples) {
-		uint32_t pcm_samples[num_samples];
-		for (int i = 0; i < num_samples; i++)
-			pcm_samples[i] = mixed_samples[i].as_16bit_lpcm();
-		m_soundcard.write(pcm_samples, num_samples * sizeof(uint32_t));
 	}
+	m_connection->read_and_handle_packets(false);
+
+	// Mix samples together from client queues
+	Sound::Sample mixed_samples[SOUNDCARD_BUFFER_SIZE];
+	bool did_mix = false;
+	for (auto& client: m_clients)
+		did_mix |= client.second->mix_samples(mixed_samples, SOUNDCARD_BUFFER_SIZE);
+	if(!did_mix)
+		usleep(100);
+
+	// Write PCM samples to card
+	uint32_t pcm_samples[SOUNDCARD_BUFFER_SIZE];
+	for (int i = 0; i < SOUNDCARD_BUFFER_SIZE; i++)
+		pcm_samples[i] = mixed_samples[i].as_16bit_lpcm();
+	m_soundcard.write(pcm_samples, SOUNDCARD_BUFFER_SIZE * sizeof(uint32_t));
 }
 
-pid_t SoundServer::server_pid(sockid_t id) {
-    return getpid();
-}
-
-uint32_t SoundServer::get_sample_rate(sockid_t id) {
+uint32_t SoundServer::get_sample_rate(sockid_t) {
     return m_sample_rate;
 }
 
-bool SoundServer::queue_samples(sockid_t id, int shm_id, size_t num_samples) {
-	//If we don't have a soundcard, we don't have anything to do
-	if(!m_soundcard.is_open())
-		return true;
-
-    auto shbuf_res = SharedBuffer::attach(shm_id);
-	if(shbuf_res.is_error())
-		return false;
-    return m_clients[id]->push_samples(Sound::SampleBuffer(
-            shbuf_res.value(),
-            48000,
-            num_samples
-    ));
+int SoundServer::request_buffer(sockid_t id) {
+	return m_clients[id]->sample_buffer().buffer()->id();
 }
