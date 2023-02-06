@@ -19,56 +19,39 @@
 
 // A program that lists the contents of a directory.
 
-#include <cstdio>
 #include <libduck/Args.h>
 #include <libduck/Path.h>
+#include <libduck/FormatStream.h>
+
 #include <unistd.h>
 
-std::string dir_name = ".";
-bool no_color = false;
-bool colorize = false;
-bool show_all = false;
+int main(int argc, char** argv) {
+	std::string g_dir_name = ".";
+	bool g_no_color = false;
+	bool g_colorize = false;
+	bool g_show_all = false;
 
-const char* REG_FORMAT = "\033[39m";
-const char* DIR_FORMAT = "\033[36m";
-const char* BLK_FORMAT = "\033[33m";
-const char* CHR_FORMAT = "\033[32m";
-const char* LNK_FORMAT = "\033[34m";
-
-int main(int argc, char **argv, char **env) {
 	Duck::Args args;
-	args.add_positional(dir_name, false, "DIR", "The directory to list.");
-	args.add_named(no_color, "n", "no-color", "Do not colorize the output.");
-	args.add_named(colorize, std::nullopt, "color", "Colorize the output.");
-	args.add_named(show_all, "a", "all", "Show entries starting with \".\".");
+	args.add_positional(g_dir_name, false, "DIR", "The directory to list.");
+	args.add_named(g_no_color, "n", "no-color", "Do not g_colorize the output.");
+	args.add_named(g_colorize, std::nullopt, "color", "Colorize the output.");
+	args.add_named(g_show_all, "a", "all", "Show entries starting with \".\".");
 	args.parse(argc, argv);
 
-	if(!isatty(STDOUT_FILENO))
-		no_color = true;
+	if(!isatty(STDOUT_FILENO)) {
+		g_no_color = true;
+	}
 
-	auto dirs_res = Duck::Path(dir_name).get_directory_entries();
+	auto dirs_res = Duck::Path(g_dir_name).get_directory_entries();
 	if(dirs_res.is_error()) {
-		fprintf(stderr, "ls: cannot access %s: %s\n", dir_name.c_str(), dirs_res.strerror());
+		Duck::printerrln("ls: cannot access {}: {}", g_dir_name, dirs_res.strerror());
 		return dirs_res.code();
 	}
 
-	for(auto& entry : dirs_res.value()) {
-		const char* color = "";
-		if(!no_color || colorize) {
-			color = REG_FORMAT;
-			if(entry.type() == Duck::DirectoryEntry::DIRECTORY)
-				color = DIR_FORMAT;
-			else if(entry.type() == Duck::DirectoryEntry::BLOCKDEVICE)
-				color = BLK_FORMAT;
-			else if(entry.type() == Duck::DirectoryEntry::CHARDEVICE)
-				color = CHR_FORMAT;
-			else if(entry.type() == Duck::DirectoryEntry::SYMLINK)
-				color = LNK_FORMAT;
+	for(auto& entry: dirs_res.value()) {
+		if (entry.name().at(0) != '.' || g_show_all) {
+			Duck::println("{}", entry.as_fmt_string(!g_no_color || g_colorize));
 		}
-
-		auto entry_name = std::string(entry.name());
-		if(entry_name[0] != '.' || show_all)
-			printf("%s%s\n", color, entry_name.c_str());
 	}
 
 	return 0;

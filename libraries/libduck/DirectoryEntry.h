@@ -43,6 +43,8 @@ namespace Duck {
 		[[nodiscard]] std::string_view name() const { return m_name; }
 		[[nodiscard]] Type type() const { return m_type; }
 		[[nodiscard]] ino_t inode() const { return m_inode; }
+		[[nodiscard]] off_t size() const { return m_size; }
+		[[nodiscard]] mode_t mode() const { return m_mode; }
 		[[nodiscard]] const Path& path() const { return m_path; }
 
 		[[nodiscard]] bool is_regular() const { return m_type == REGULAR; }
@@ -53,10 +55,14 @@ namespace Duck {
 		[[nodiscard]] bool is_socket() const { return m_type == SOCKET; }
 		[[nodiscard]] bool is_symlink() const { return m_type == SYMLINK; }
 
+		[[nodiscard]] std::string as_fmt_string(bool colorize) const;
+
 	private:
 		ino_t m_inode;
 		Type m_type;
 		std::string m_name;
+		off_t m_size;
+		mode_t m_mode;
 		Path m_path;
 	};
 }
