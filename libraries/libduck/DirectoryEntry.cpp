@@ -19,7 +19,17 @@
 
 #include "DirectoryEntry.h"
 
+#include <sys/stat.h>
+#include <sstream>
+#include <iomanip>
+
 using namespace Duck;
 
-DirectoryEntry::DirectoryEntry(const Path& parent_path, const struct dirent* entry):
-	m_path(parent_path / entry->d_name), m_inode(entry->d_ino), m_type((Type) entry->d_type), m_name(entry->d_name) {}
+DirectoryEntry::DirectoryEntry(const Path& parent_path, const struct dirent* entry) :
+		m_path(parent_path / entry->d_name), m_inode(entry->d_ino), m_type((Type) entry->d_type),
+		m_name(entry->d_name) {
+	struct stat st;
+	stat(m_path.string().c_str(), &st);
+	m_size = st.st_size;
+	m_mode = st.st_mode;
+}

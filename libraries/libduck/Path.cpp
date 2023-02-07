@@ -22,15 +22,15 @@
 
 using namespace Duck;
 
-Path::Path(std::string string): m_is_absolute(string[0] == '/') {
+Path::Path(std::string string) : m_is_absolute(string[0] == '/') {
 	//If the string is empty, then use "." as the path.
 	if(string.empty())
 		string = ".";
 
 	//Split the string into parts
 	std::vector<std::string> temp_parts;
-    std::size_t end;
-    do {
+	std::size_t end;
+	do {
 		end = string.find('/');
 		auto part = string.substr(0, end);
 		if(end != std::string::npos)
@@ -50,17 +50,17 @@ Path::Path(std::string string): m_is_absolute(string[0] == '/') {
 			}
 		}
 
-        temp_parts.push_back(part);
-    } while(end != std::string::npos);
+		temp_parts.push_back(part);
+	} while(end != std::string::npos);
 
 	//If we have no parts, then we should just use "."
-	if(temp_parts.empty() && !m_is_absolute) 
+	if(temp_parts.empty() && !m_is_absolute)
 		temp_parts.push_back(".");
 
 	//Then, build a path out of the parts
 	if(m_is_absolute)
 		m_path = "/";
-	for(auto& part : temp_parts)
+	for(auto& part: temp_parts)
 		m_path += part + (&part != &temp_parts.back() ? "/" : "");
 
 	rebuild_parts();
@@ -78,10 +78,10 @@ ResultRet<std::vector<DirectoryEntry>> Path::get_directory_entries() const {
 	std::vector<DirectoryEntry> entries;
 
 	struct dirent* entry;
-	while((entry = readdir(dir)) != NULL)
+	while((entry = readdir(dir)) != NULL) {
 		if(std::string(entry->d_name) != "." && std::string(entry->d_name) != "..")
 			entries.emplace_back(*this, entry);
-
+	}
 	closedir(dir);
 
 	return std::move(entries);
@@ -93,7 +93,7 @@ void Path::rebuild_parts() {
 	//Then, create parts out of that path
 	std::string_view path_view(m_path);
 	std::size_t end;
-    do {
+	do {
 		end = path_view.find('/');
 		auto part = path_view.substr(0, end);
 		if(end != std::string_view::npos)
@@ -101,7 +101,7 @@ void Path::rebuild_parts() {
 
 		if(part.empty())
 			continue;
-		
+
 		m_parts.push_back(std::string(part));
 	} while(end != std::string_view::npos);
 
