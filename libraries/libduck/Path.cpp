@@ -20,8 +20,6 @@
 #include "Path.h"
 #include "DirectoryEntry.h"
 
-#include <algorithm>
-
 using namespace Duck;
 
 Path::Path(std::string string) : m_is_absolute(string[0] == '/') {
@@ -85,13 +83,6 @@ ResultRet<std::vector<DirectoryEntry>> Path::get_directory_entries() const {
 			entries.emplace_back(*this, entry);
 	}
 	closedir(dir);
-
-	std::sort(entries.begin(), entries.end(), [](auto const& lhs, auto const& rhs) {
-		return lhs.name() < rhs.name();
-	});
-	std::sort(entries.begin(), entries.end(), [](auto const& lhs, auto const& rhs) {
-		return lhs.type() > rhs.type();
-	});
 
 	return std::move(entries);
 }

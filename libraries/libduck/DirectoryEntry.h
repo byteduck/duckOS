@@ -55,8 +55,6 @@ namespace Duck {
 		[[nodiscard]] bool is_socket() const { return m_type == SOCKET; }
 		[[nodiscard]] bool is_symlink() const { return m_type == SYMLINK; }
 
-		[[nodiscard]] std::string as_fmt_string(bool colorize) const;
-
 	private:
 		ino_t m_inode;
 		Type m_type;
