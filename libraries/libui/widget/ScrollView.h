@@ -37,6 +37,7 @@ namespace UI {
 
 		//Widget
 		Gfx::Dimensions preferred_size() override;
+		Gfx::Dimensions minimum_size() override;
 		void do_repaint(const UI::DrawContext& ctx) override;
 		bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 		bool on_mouse_scroll(Pond::MouseScrollEvent evt) override;

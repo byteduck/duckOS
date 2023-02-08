@@ -569,9 +569,9 @@ Gfx::Rect Display::calculate_resize_rect() {
 		case NONE:
 			break;
 	}
-	if(new_dims.height < 1)
-		new_dims.height = 1;
-	if(new_dims.width < 1)
-		new_dims.width = 1;
+	new_dims = {
+		std::max(new_dims.width, _resize_window->minimum_size().width),
+		std::max(new_dims.height, _resize_window->minimum_size().height)
+	};
 	return {new_pos.x, new_pos.y, new_dims.width, new_dims.height};
 }

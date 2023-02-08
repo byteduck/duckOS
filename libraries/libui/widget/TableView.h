@@ -36,6 +36,7 @@ namespace UI {
 		void calculate_layout() override;
 		void do_repaint(const DrawContext& ctx) override;
 		Gfx::Dimensions preferred_size() override;
+		Gfx::Dimensions minimum_size() override;
 
 		// Object
 		void initialize() override;

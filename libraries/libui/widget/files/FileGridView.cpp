@@ -105,3 +105,7 @@ void FileGridView::clicked_entry(Duck::DirectoryEntry entry) {
 			delegate.lock()->fv_did_select_files(m_selected);
 	}
 }
+
+Gfx::Dimensions FileGridView::minimum_size() {
+	return { 92, 92 };
+}

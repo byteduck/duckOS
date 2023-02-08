@@ -27,8 +27,6 @@
 #include <libgraphics/Image.h>
 #include <sys/time.h>
 
-#define WINDOW_RESIZE_BORDER 4
-
 class Window;
 class Mouse;
 class Display {

@@ -88,6 +88,7 @@ Context::Context(std::shared_ptr<Endpoint> endpt): endpoint(std::move(endpt)) {
 	GET_FUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt, get_display_info);
 	GET_FUNC(set_app_info, void, App::Info, set_app_info);
 	GET_FUNC(focus_window, void, WindowFocusPkt, focus_window);
+	GET_FUNC(set_minimum_size, void, WindowMinSizePkt, set_minimum_size);
 }
 
 void Context::read_events(bool block) {

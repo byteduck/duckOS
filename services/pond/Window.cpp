@@ -139,11 +139,10 @@ Gfx::Rect Window::absolute_shadow_rect() const {
 void Window::set_dimensions(const Gfx::Dimensions& new_dims, bool notify_client) {
 	if(new_dims.width == _rect.dimensions().width && new_dims.height == _rect.dimensions().height)
 		return;
-	Gfx::Dimensions dims = new_dims;
-	if(dims.width < 1)
-		dims.width = 1;
-	if(dims.height < 1)
-		dims.height = 1;
+	Gfx::Dimensions dims = {
+		std::max(_minimum_size.width, new_dims.width),
+		std::max(_minimum_size.height, new_dims.height)
+	};
 	invalidate();
 	_rect = {_rect.x, _rect.y, dims.width, dims.height};
 	alloc_framebuffer();
@@ -165,10 +164,10 @@ void Window::set_position(const Gfx::Point& position, bool notify_client) {
 void Window::set_rect(const Gfx::Rect& rect, bool notify_client) {
 	invalidate();
 	_rect = rect;
-	if(_rect.width < 1)
-		_rect.width = 1;
-	if(_rect.height < 1)
-		_rect.height = 1;
+	_rect.set_dimensions({
+		std::max(_rect.width, _minimum_size.width),
+		std::max(_rect.height, _minimum_size.height)
+	});
 	alloc_framebuffer();
 	recalculate_rects();
 	invalidate();
@@ -418,5 +417,12 @@ void Window::set_has_shadow(bool shadow) {
 	_draws_shadow = shadow;
 	recalculate_rects();
 	invalidate();
+}
+
+void Window::set_minimum_size(Gfx::Dimensions minimum) {
+	_minimum_size = {
+		std::max(minimum.width, WINDOW_RESIZE_BORDER * 2),
+		std::max(minimum.height, WINDOW_RESIZE_BORDER * 2)
+	};
 }
 

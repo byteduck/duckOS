@@ -58,6 +58,7 @@ public:
 	void set_app_info(App::Info& info);
 	const App::Info& get_app_info();
 	void focus_window(Pond::WindowFocusPkt& pkt);
+	void set_minimum_size(Pond::WindowMinSizePkt& pkt);
 
 private:
 	Server* server;

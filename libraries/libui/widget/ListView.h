@@ -63,6 +63,7 @@ namespace UI {
 		int _prev_first_visible = 0;
 		int _prev_last_visible = 0;
 		Gfx::Dimensions _item_dims = {-1, -1};
+		Gfx::Dimensions _min_dims = {-1, -1};
 		int _num_per_row = 1;
 		Layout _layout;
 	};

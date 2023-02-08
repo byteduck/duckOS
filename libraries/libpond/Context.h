@@ -133,6 +133,7 @@ namespace Pond {
 		PONDFUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt);
 		PONDFUNC(set_app_info, void, App::Info);
 		PONDFUNC(focus_window, void, WindowFocusPkt);
+		PONDFUNC(set_minimum_size, void, WindowMinSizePkt);
 	};
 }
 

@@ -66,17 +66,15 @@ Gfx::Dimensions GridLayout::cells() {
 }
 
 Gfx::Dimensions GridLayout::preferred_size() {
-	Gfx::Dimensions max_dims = {1, 1};
-	for(auto& child : children) {
-		auto sz = child->preferred_size();
-		if(sz.width > max_dims.width)
-			max_dims.width = sz.width;
-		if(sz.height > max_dims.height)
-			max_dims.height = sz.height;
-	}
+	return calculate_total_dimensions([&](Duck::Ptr<Widget> widget) -> Gfx::Dimensions {
+		return widget->preferred_size();
+	});
+}
 
-	Gfx::Dimensions actual_num_cells = calculate_num_cells();
-	return {max_dims.width * actual_num_cells.width, max_dims.height * actual_num_cells.height};
+Gfx::Dimensions GridLayout::minimum_size() {
+	return calculate_total_dimensions([&](Duck::Ptr<Widget> widget) -> Gfx::Dimensions {
+		return widget->minimum_size();
+	});
 }
 
 Gfx::Dimensions GridLayout::calculate_num_cells() {
@@ -88,15 +86,13 @@ Gfx::Dimensions GridLayout::calculate_num_cells() {
 		Gfx::Dimensions max_dims = {1, 1};
 		for(auto& child : children) {
 			auto sz = child->preferred_size();
-			if(sz.width > max_dims.width)
-				max_dims.width = sz.width;
-			if(sz.height > max_dims.height)
-				max_dims.height = sz.height;
+			max_dims = {
+				std::max(sz.width, max_dims.width),
+				std::max(sz.height, max_dims.height)
+			};
 		}
 
-		int width = parent_dims.width / max_dims.width;
-		if(width == 0)
-			width = 1;
+		int width = std::max(1, parent_dims.width / max_dims.width);
 		return {
 			width,
 			((int) children.size() + width - 1) / width
@@ -105,8 +101,22 @@ Gfx::Dimensions GridLayout::calculate_num_cells() {
 
 	Gfx::Dimensions actual_num_cells = _num_cells;
 	if(_num_cells.width == 0)
-		actual_num_cells.width = ((int) children.size() + _num_cells.height - 1) / _num_cells.height;
+		actual_num_cells.width = std::max(1, ((int) children.size() + _num_cells.height - 1) / std::max(1, _num_cells.height));
 	if(_num_cells.height == 0)
-		actual_num_cells.height = ((int) children.size() + _num_cells.width - 1) / _num_cells.width;
+		actual_num_cells.height = std::max(1, ((int) children.size() + _num_cells.width - 1) / std::max(1, _num_cells.width));
 	return actual_num_cells;
+}
+
+Gfx::Dimensions GridLayout::calculate_total_dimensions(std::function<Gfx::Dimensions(Duck::Ptr<Widget>)> dim_func) {
+	Gfx::Dimensions max_dims = {1, 1};
+	for(auto& child : children) {
+		auto sz = dim_func(child);
+		if(sz.width > max_dims.width)
+			max_dims.width = sz.width;
+		if(sz.height > max_dims.height)
+			max_dims.height = sz.height;
+	}
+
+	Gfx::Dimensions actual_num_cells = calculate_num_cells();
+	return {max_dims.width * actual_num_cells.width, max_dims.height * actual_num_cells.height};
 }

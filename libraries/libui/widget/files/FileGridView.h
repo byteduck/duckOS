@@ -26,6 +26,9 @@ namespace UI {
 		// FileGridView
 		void clicked_entry(Duck::DirectoryEntry entry);
 
+		// Widget
+		Gfx::Dimensions minimum_size() override;
+
 	protected:
 		void initialize() override;
 

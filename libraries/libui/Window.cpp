@@ -29,7 +29,9 @@ using namespace UI;
 #define UI_WINDOW_BORDER_SIZE 0
 #define UI_WINDOW_PADDING 2
 
-Window::Window(): _window(pond_context->create_window(nullptr, {-1, -1, -1, -1}, true)) {
+Window::Window():
+	_window(pond_context->create_window(nullptr, {-1, -1, -1, -1}, true))
+{
 	_window->set_draggable(true);
 }
 
@@ -367,10 +369,35 @@ void Window::on_focus(bool focused) {
 }
 
 void Window::calculate_layout() {
-	if(_contents)
-		_contents->set_layout_bounds(contents_rect());
-	if(_titlebar_accessory)
-		_titlebar_accessory->set_layout_bounds(accessory_rect());
+	Gfx::Rect min_rect = {0, 0, 0, 0};
+
+	if(_decorated) {
+		min_rect = {
+			0, 0,
+			64,
+			64,
+		};
+	}
+
+	if(_contents) {
+		auto crect = contents_rect();
+		_contents->set_layout_bounds(crect);
+		min_rect = min_rect.combine({
+			 crect.position(),
+			 _contents->minimum_size()
+		});
+	}
+
+	if(_titlebar_accessory) {
+		auto arect = accessory_rect();
+		_titlebar_accessory->set_layout_bounds(arect);
+		min_rect = min_rect.combine({
+			arect.position(),
+			_titlebar_accessory->minimum_size()
+		});
+	}
+
+	_window->set_minimum_size(min_rect.dimensions());
 }
 
 void Window::blit_widget(Duck::PtrRef<Widget> widget) {

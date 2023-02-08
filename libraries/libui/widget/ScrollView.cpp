@@ -95,6 +95,10 @@ Gfx::Dimensions ScrollView::preferred_size() {
 	return size + Gfx::Dimensions{15, 0};
 }
 
+Gfx::Dimensions ScrollView::minimum_size() {
+	return Gfx::Dimensions {16, 1};
+}
+
 void ScrollView::do_repaint(const DrawContext& ctx) {
 	//Draw the background and scrollbar
 	ctx.fill({0, 0, ctx.width(), ctx.height()}, Theme::bg());

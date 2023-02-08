@@ -35,6 +35,7 @@ namespace UI {
 
 		//Widget
 		virtual Gfx::Dimensions preferred_size() override;
+		virtual Gfx::Dimensions minimum_size() override;
 		void calculate_layout() override;
 
 	protected:
@@ -42,6 +43,7 @@ namespace UI {
 		int spacing = 0;
 		Direction direction;
 
+		Gfx::Dimensions calculate_total_dimensions(std::function<Gfx::Dimensions(Duck::Ptr<Widget>)> dim_func);
 	};
 }
 

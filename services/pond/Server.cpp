@@ -103,6 +103,7 @@ Server::Server() {
 	REGISTER_FUNC(get_display_info, DisplayInfoPkt, GetDisplayInfoPkt, get_display_info);
 	REGISTER_FUNC(set_app_info, void, App::Info, set_app_info);
 	REGISTER_FUNC(focus_window, void, WindowFocusPkt, focus_window);
+	REGISTER_FUNC(set_minimum_size, void, WindowMinSizePkt, set_minimum_size);
 
 	/** Messages (server --> client) **/
 	REGISTER_MSG(window_moved, WindowMovePkt);

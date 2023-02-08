@@ -212,3 +212,9 @@ void Client::focus_window(Pond::WindowFocusPkt& pkt) {
 	if(window)
 		window->focus();
 }
+
+void Client::set_minimum_size(Pond::WindowMinSizePkt& pkt) {
+	auto* window = windows[pkt.window_id];
+	if(window)
+		window->set_minimum_size(pkt.minimum_size);
+}

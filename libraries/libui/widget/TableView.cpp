@@ -104,6 +104,10 @@ Gfx::Dimensions TableView::preferred_size() {
 	return m_list_view->preferred_size() + Gfx::Dimensions {0, 16};
 }
 
+Gfx::Dimensions TableView::minimum_size() {
+	return m_list_view->minimum_size() + Gfx::Dimensions {0, 16};
+}
+
 void TableView::initialize() {
 	Widget::initialize();
 	m_list_view->delegate = self();

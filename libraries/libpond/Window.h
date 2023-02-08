@@ -198,6 +198,9 @@ namespace Pond {
 		 */
 		void set_has_shadow(bool shadow);
 
+		/** Sets the minimum size of the window. */
+		void set_minimum_size(Gfx::Dimensions dimensions);
+
 	private:
 		friend class Context;
 

@@ -26,23 +26,15 @@ UI::BoxLayout::BoxLayout(Direction direction, int spacing): direction(direction)
 }
 
 Gfx::Dimensions UI::BoxLayout::preferred_size() {
-	int max_dim = 0;
-	int current_pos = 0;
-	for(auto& child : children) {
-		auto sz = child->preferred_size();
-		if(direction == HORIZONTAL) {
-			current_pos += sz.width + spacing;
-			if(sz.height > max_dim)
-				max_dim = sz.height;
-		} else if(direction == VERTICAL) {
-			current_pos += sz.height + spacing;
-			if(sz.width > max_dim)
-				max_dim = sz.width;
-		}
-	}
-	if(current_pos >= spacing)
-		current_pos -= spacing;
-	return direction == HORIZONTAL ? Gfx::Dimensions {current_pos, max_dim} : Gfx::Dimensions {max_dim, current_pos};
+	return calculate_total_dimensions([&](Duck::Ptr<Widget> widget) -> Gfx::Dimensions {
+		return widget->preferred_size();
+	});
+}
+
+Gfx::Dimensions UI::BoxLayout::minimum_size() {
+	return calculate_total_dimensions([&](Duck::Ptr<Widget> widget) -> Gfx::Dimensions {
+		return widget->minimum_size();
+	});
 }
 
 void UI::BoxLayout::set_spacing(int new_spacing) {
@@ -78,4 +70,24 @@ void UI::BoxLayout::calculate_layout() {
 
 		i++;
 	}
+}
+
+Gfx::Dimensions UI::BoxLayout::calculate_total_dimensions(std::function<Gfx::Dimensions(Duck::Ptr<Widget>)> dim_func) {
+	int max_dim = 0;
+	int current_pos = 0;
+	for(auto& child : children) {
+		auto sz = dim_func(child);
+		if(direction == HORIZONTAL) {
+			current_pos += sz.width + spacing;
+			if(sz.height > max_dim)
+				max_dim = sz.height;
+		} else if(direction == VERTICAL) {
+			current_pos += sz.height + spacing;
+			if(sz.width > max_dim)
+				max_dim = sz.width;
+		}
+	}
+	if(current_pos >= spacing)
+		current_pos -= spacing;
+	return direction == HORIZONTAL ? Gfx::Dimensions {current_pos, max_dim} : Gfx::Dimensions {max_dim, current_pos};
 }

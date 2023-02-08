@@ -46,8 +46,6 @@ void Window::resize(Gfx::Dimensions dims) {
 	auto resp = _context->__river_resize_window({_id, dims});
 	Event evt;
 	_context->handle_window_resized(resp, evt);
-	_rect.width = dims.width;
-	_rect.height = dims.height;
 }
 
 void Window::resize(int width, int height) {
@@ -144,4 +142,8 @@ void Window::focus() {
 
 void Window::set_has_shadow(bool shadow) {
 	_context->__river_set_hint({_id, PWINDOW_HINT_SHADOW, (int) shadow});
+}
+
+void Window::set_minimum_size(Gfx::Dimensions dimensions) {
+	_context->__river_set_minimum_size({_id, dimensions});
 }

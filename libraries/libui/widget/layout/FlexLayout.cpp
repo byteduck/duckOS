@@ -30,26 +30,15 @@ void UI::FlexLayout::set_spacing(int spacing) {
 }
 
 Gfx::Dimensions UI::FlexLayout::preferred_size() {
-	int main_dim = 0;
-	int max_other_dim = 0;
-	for(auto& child : children) {
-		auto sz = child->preferred_size();
-		if(direction == HORIZONTAL) {
-			main_dim += sz.width;
-			max_other_dim = std::max(max_other_dim, sz.height);
-		} else if(direction == VERTICAL) {
-			main_dim += sz.height;
-			max_other_dim = std::max(max_other_dim, sz.width);
-		}
-	}
+	return calculate_total_dimensions([&](Duck::Ptr<Widget> widget) -> Gfx::Dimensions {
+		return widget->preferred_size();
+	});
+}
 
-	if(!children.empty())
-		main_dim += (children.size() - 1) * m_spacing;
-
-	if(direction == HORIZONTAL)
-		return Gfx::Dimensions {main_dim, max_other_dim};
-	else
-		return Gfx::Dimensions {max_other_dim, main_dim};
+Gfx::Dimensions UI::FlexLayout::minimum_size() {
+	return calculate_total_dimensions([&](Duck::Ptr<Widget> widget) -> Gfx::Dimensions {
+		return widget->minimum_size();
+	});
 }
 
 void UI::FlexLayout::calculate_layout() {
@@ -86,4 +75,27 @@ void UI::FlexLayout::calculate_layout() {
 			cur_pos += cell_size + m_spacing;
 		}
 	}
+}
+
+Gfx::Dimensions UI::FlexLayout::calculate_total_dimensions(std::function<Gfx::Dimensions(Duck::Ptr<Widget>)> dim_func) {
+	int main_dim = 0;
+	int max_other_dim = 0;
+	for(auto& child : children) {
+		auto sz = dim_func(child);
+		if(direction == HORIZONTAL) {
+			main_dim += sz.width;
+			max_other_dim = std::max(max_other_dim, sz.height);
+		} else if(direction == VERTICAL) {
+			main_dim += sz.height;
+			max_other_dim = std::max(max_other_dim, sz.width);
+		}
+	}
+
+	if(!children.empty())
+		main_dim += (children.size() - 1) * m_spacing;
+
+	if(direction == HORIZONTAL)
+		return Gfx::Dimensions {main_dim, max_other_dim};
+	else
+		return Gfx::Dimensions {max_other_dim, main_dim};
 }

@@ -132,6 +132,11 @@ namespace Pond {
 		int window_id;
 		bool focused;
 	};
+
+	struct WindowMinSizePkt {
+		int window_id;
+		Gfx::Dimensions minimum_size;
+	};
 }
 
 
