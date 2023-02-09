@@ -89,6 +89,11 @@ namespace Duck {
 	 * OutputStream primitives
 	 */
 
+	OutputStream& operator<<(OutputStream& stream, char chr) {
+		stream.write(&chr, 1);
+		return stream;
+	}
+
 	OutputStream& operator<<(OutputStream& stream, const uint8_t& byte) {
 		stream.write(&byte, 1);
 		return stream;
