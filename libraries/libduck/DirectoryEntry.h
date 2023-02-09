@@ -23,6 +23,7 @@
 #include <dirent.h>
 #include <string_view>
 #include <vector>
+#include "DataSize.h"
 
 namespace Duck {
 	class DirectoryEntry {
@@ -43,7 +44,7 @@ namespace Duck {
 		[[nodiscard]] std::string_view name() const { return m_name; }
 		[[nodiscard]] Type type() const { return m_type; }
 		[[nodiscard]] ino_t inode() const { return m_inode; }
-		[[nodiscard]] off_t size() const { return m_size; }
+		[[nodiscard]] DataSize size() const { return m_size; }
 		[[nodiscard]] mode_t mode() const { return m_mode; }
 		[[nodiscard]] const Path& path() const { return m_path; }
 
@@ -59,7 +60,7 @@ namespace Duck {
 		ino_t m_inode;
 		Type m_type;
 		std::string m_name;
-		off_t m_size;
+		DataSize m_size;
 		mode_t m_mode;
 		Path m_path;
 	};
