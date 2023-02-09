@@ -53,33 +53,3 @@ ResultRet<Mem::Info> Mem::get_info() {
 	Duck::FileInputStream mem_stream(mem_file);
 	return get_info(mem_stream);
 }
-
-#define GiB 1073742000
-#define MiB 1048576
-#define KiB 1024
-
-double get_human_size(unsigned long bytes) {
-	if(bytes > GiB) {
-		return bytes / (double) GiB;
-	} else if(bytes > MiB) {
-		return bytes / (double) MiB;
-	} else if(bytes > KiB) {
-		return bytes / (double) KiB;
-	} else return bytes;
-}
-
-const char* get_human_suffix(unsigned long bytes) {
-	if(bytes > GiB) {
-		return "GiB";
-	} else if(bytes > MiB) {
-		return "MiB";
-	} else if(bytes > KiB) {
-		return "KiB";
-	} else return "bytes";
-}
-
-std::string Mem::Amount::readable() const {
-	char buf[512];
-	snprintf(buf, 512, "%.2f %s", get_human_size(bytes), get_human_suffix(bytes));
-	return buf;
-}

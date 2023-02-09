@@ -2,6 +2,7 @@ SET(SOURCES
         Args.cpp
         ByteBuffer.cpp
         Config.cpp
+        DataSize.cpp
         DirectoryEntry.cpp
         File.cpp
         FileStream.cpp

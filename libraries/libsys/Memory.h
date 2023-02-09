@@ -22,33 +22,10 @@
 #include <sys/types.h>
 #include <libduck/Stream.h>
 #include <libduck/Result.h>
+#include <libduck/DataSize.h>
 
 namespace Sys::Mem {
-	class Amount {
-	public:
-		static const size_t KiB = 1024;
-		static const size_t MiB = 1048576;
-		static const size_t GiB = 1073742000;
-
-		size_t bytes;
-		std::string readable() const;
-
-		inline double kib() const {
-			return bytes / (double) KiB;
-		}
-
-		inline double mib() const {
-			return bytes / (double) MiB;
-		}
-
-		inline double gib() const {
-			return bytes / (double) GiB;
-		}
-
-		inline operator size_t() const {
-			return bytes;
-		}
-	};
+	using Amount = Duck::DataSize;
 
 	class Info {
 	public:
