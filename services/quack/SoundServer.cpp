@@ -70,8 +70,8 @@ SoundServer::SoundServer() {
 }
 
 void SoundServer::pump() {
-	//If we don't have a sound card, we don't have anything to do
-	if(!m_soundcard.is_open()) {
+	// If we don't have a sound card or any connected clients, we don't have anything to do, so we can block
+	if(!m_soundcard.is_open() || m_clients.empty()) {
 		m_connection->read_and_handle_packets(true);
 		return;
 	}
