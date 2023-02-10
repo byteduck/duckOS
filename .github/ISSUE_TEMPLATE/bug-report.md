@@ -2,7 +2,7 @@
 name: Bug Report
 about: A bug or crash occurred.
 title: "[BUG] "
-labels: bug, suggestion
+labels: bug
 assignees: ''
 
 ---
