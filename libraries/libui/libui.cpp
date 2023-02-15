@@ -153,8 +153,10 @@ void UI::run_while(std::function<bool()> predicate) {
 			auto* timer = timer_it->second;
 
 			//If the timer in question isn't enabled, skip it
-			if(!timer->enabled())
+			if(!timer->enabled()) {
+				timer_it++;
 				continue;
+			}
 
 			long millis = timer->millis_until_ready();
 
