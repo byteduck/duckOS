@@ -186,7 +186,8 @@ void Window::repaint_now() {
 
 		//Title bar text
 		auto title_rect = titlebar_rect.inset(4, button_size + 4, 4, title_xpos);
-		ctx.draw_text(_title.c_str(), title_rect, CENTER, CENTER, Theme::font(), Theme::window_title());
+		auto title_color = _focused ? Theme::window_title() : Theme::window_title_unfocused();
+		ctx.draw_text(_title.c_str(), title_rect, CENTER, CENTER, Theme::font(), title_color);
 
 		//Buttons
 		_close_button.area = {
@@ -215,13 +216,15 @@ void Window::close() {
 }
 
 void Window::show() {
-	// Center window on first show
+	// Center and focus window on first show
 	if(_center_on_show) {
+		_center_on_show = false;
 		auto display_dims = UI::pond_context->get_display_dimensions();
 		set_position({
 			display_dims.width / 2 - dimensions().width / 2,
 			display_dims.height / 2 - dimensions().height / 2
 		});
+		_window->focus();
 	}
 
 	_window->set_hidden(false);
@@ -364,6 +367,7 @@ void Window::on_resize(const Gfx::Rect& old_rect) {
 
 void Window::on_focus(bool focused) {
 	_focused = focused;
+	repaint();
 	if(delegate.lock())
 		delegate.lock()->window_focus_changed(self(), focused);
 }

@@ -57,6 +57,7 @@ namespace UI {
 		static Gfx::Color accent();
 		static Gfx::Color window();
 		static Gfx::Color window_title();
+		static Gfx::Color window_title_unfocused();
 		static Gfx::Color window_titlebar_a();
 		static Gfx::Color window_titlebar_b();
 		static Gfx::Color shadow_1();

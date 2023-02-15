@@ -198,6 +198,10 @@ Gfx::Color Theme::window_title() {
 	return current()->colors["window-title"];
 }
 
+Gfx::Color Theme::window_title_unfocused() {
+	return current()->colors["window-title-unfocused"];
+}
+
 Gfx::Color Theme::window_titlebar_a() {
 	return current()->colors["window-titlebar-a"];
 }
