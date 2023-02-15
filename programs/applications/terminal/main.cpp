@@ -33,6 +33,7 @@ int main(int argc, char** argv, char** envp) {
 	auto termwidget = TerminalWidget::make();
 	termwidget->run("/bin/dsh");
 	window->set_contents(termwidget);
+	window->delegate = termwidget;
 
 	//Show the window
 	window->show();

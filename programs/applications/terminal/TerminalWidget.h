@@ -22,7 +22,7 @@
 #include <libui/libui.h>
 #include <libterm/Terminal.h>
 
-class TerminalWidget: public UI::Widget, public Term::Listener {
+class TerminalWidget: public UI::Widget, public Term::Listener, public UI::WindowDelegate {
 public:
 	WIDGET_DEF(TerminalWidget)
 
@@ -55,6 +55,9 @@ public:
 	void on_scroll(int lines) override;
 	void on_resize(const Term::Size& old_size, const Term::Size& new_size) override;
 	void emit(const uint8_t* data, size_t size);
+
+	//UI::WindowDelegate
+	void window_focus_changed(Duck::PtrRef<UI::Window> window, bool focused) override;
 
 private:
 	TerminalWidget();

@@ -321,3 +321,13 @@ void TerminalWidget::on_resize(const Term::Size& old_size, const Term::Size& new
 void TerminalWidget::emit(const uint8_t* data, size_t size) {
 	write(pty_fd, data, size);
 }
+
+void TerminalWidget::window_focus_changed(const std::shared_ptr<UI::Window>& window, bool focused) {
+	if(focused) {
+		blink_timer->start();
+	} else {
+		blink_timer->stop();
+		blink_on = true;
+		repaint();
+	}
+}
