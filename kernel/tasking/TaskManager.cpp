@@ -295,8 +295,6 @@ bool TaskManager::in_critical() {
 	return g_critical_count.load();
 }
 
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 void TaskManager::preempt(){
 	if(!tasking_enabled)
 		return;
@@ -387,7 +385,6 @@ void TaskManager::preempt(){
 
 	preempt_finish();
 }
-#pragma GCC pop_options
 
 void TaskManager::preempt_finish() {
 	ASSERT(g_tasking_lock.times_locked() == 1);
