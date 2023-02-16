@@ -88,7 +88,7 @@ void epoch_to_tm(time_t epoch, struct tm& time) {
 	}
 
 	// Determine day, hour, minute, second
-	time.tm_mday = get_epoch_component(epoch, DAY) + 1;
+	time.tm_mday = get_epoch_component(epoch, DAY);
 	time.tm_hour = get_epoch_component(epoch, HOUR);
 	time.tm_min = get_epoch_component(epoch, MINUTE);
 	time.tm_sec = (int) epoch;
