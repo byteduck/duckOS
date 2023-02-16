@@ -1,2 +1,0 @@
-state-v5.bin.zst filter=lfs diff=lfs merge=lfs -text
-duckOS-v5.img filter=lfs diff=lfs merge=lfs -text
