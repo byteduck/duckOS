@@ -213,6 +213,7 @@ private:
 
 	//Threads
 	kstd::map<tid_t, kstd::Arc<Thread>> _threads;
+	kstd::map<tid_t, void*> _thread_return_values;
 	kstd::vector<tid_t> _tids;
 	tid_t _last_active_thread = 1;
 	SpinLock _thread_lock;

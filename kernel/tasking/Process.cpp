@@ -393,6 +393,7 @@ void Process::insert_thread(const kstd::Arc<Thread>& thread) {
 
 void Process::remove_thread(const kstd::Arc<Thread>& thread) {
 	LOCK(_thread_lock);
+	_thread_return_values[thread->_tid] = thread->_return_value;
 	_threads.erase(thread->_tid);
 	for(size_t i = 0; i < _tids.size(); i++) {
 		if(_tids[i] == thread->_tid) {

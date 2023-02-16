@@ -22,8 +22,16 @@ int Process::sys_gettid() {
 int Process::sys_threadjoin(tid_t tid, UserspacePointer<void*> retp) {
 	auto cur_thread = TaskManager::current_thread();
 	auto thread = get_thread(tid);
-	if(tid > _threads.size() || !thread)
-		return -ESRCH;
+	if(!thread) {
+		// See if the thread died already.
+		LOCK(_thread_lock);
+		auto return_val = _thread_return_values.find_node(tid);
+		if(!return_val)
+			return -ESRCH;
+		if(retp)
+			retp.set(return_val->data.second);
+		return SUCCESS;
+	}
 	Result result = cur_thread->join(cur_thread, thread, retp);
 	if(result.is_success()) {
 		ASSERT(thread->state() == Thread::DEAD);
