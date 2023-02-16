@@ -1,0 +1,46 @@
+<html>
+	<head>
+		<script src="xterm.js" rel="javascript"></script>
+		<script src="libv86.js" rel="javascript"></script>
+		<script src="demo.js?ver=02-15-2023" rel="javascript"></script>
+		<link rel="stylesheet" href="style.css">
+		<title>duckOS demo</title>
+	</head>
+	<body>
+		<div id="main_container">
+			<h1>duckOS Demo</h1>
+			<span id="links">
+				<a href="https://github.com/byteduck/duckOS">duckOS on GitHub</a>
+				|
+				<a href="https://github.com/copy/v86">Made with v86</a>
+			</span>
+			<p style="text-align: center;">
+				This demo runs duckOS on an emulated x86 CPU in your browser.
+				<br>
+				Thus, it will be slower than emulating or virtualizing it through conventional methods.
+				<br>
+				The build of duckOS in this demo was last updated on: <b>Jan 15, 2023</b>.
+			</p>
+			<div id="progress_container">
+				<label for="progress" id="progress_label">Loading...</label>
+				<progress id="progress"></progress>
+			</div>
+			<div id="emulator" style="visibility: default;">
+				<div id="button_container">
+					<button onclick="emulator.restart()">Reset</button>
+					<button onclick="fullscreen()">Go Fullscreen</button>
+					<div id="load-indicator"></div>
+					<br>
+				</div>
+				<p style="font-size: 0.75em; max-width: 80%; text-align: center;" >
+				The disk image is streamed in 5KB chunks from the server as needed; opening applications and files for the first time may be slow. The orange activity light above indicates disk activity. Additionally, the date and time may not be accurate.
+				</p>
+				<div id="screen_container">
+					<div style="white-space: pre; font: 14px monospace; line-height: 14px"></div>
+					<canvas style="display: none"></canvas>
+				</div>
+				<div id="serial" width="640"></div>
+			</div>
+		</div>
+	</body>
+</html>
