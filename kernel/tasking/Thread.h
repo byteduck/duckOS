@@ -111,7 +111,7 @@ private:
 	tid_t _tid;
 	State _state = ALIVE;
 	void* _return_value = nullptr;
-	int _in_critical = 0;
+	int _in_critical = 1; // _in_critical starts as 1 since we leave critical after the first preemption
 	bool _waiting_to_die = false;
 
 	//Memory

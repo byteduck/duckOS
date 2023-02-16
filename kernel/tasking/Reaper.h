@@ -14,7 +14,7 @@ public:
 	Reaper();
 	static Reaper& inst();
 
-	void reap(const kstd::Arc<Thread>& thread);
+	void reap(kstd::Weak<Thread> thread);
 
 protected:
 	friend void kreaper_entry();

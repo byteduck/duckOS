@@ -256,11 +256,13 @@ void Process::kill(int signal) {
 		}
 
 		if(severity >= Signal::KILL && !signal_actions[signal].action) {
-			//If the signal has no handler and is KILL or FATAL, then kill all threads
-			TaskManager::current_thread()->enter_critical();
+			// If the signal has no handler and is KILL or FATAL, then kill all threads
+			// Get the current thread as a raw pointer, so that if the current thread is part of this process the reference doesn't stay around
+			auto cur_thread = TaskManager::current_thread().get();
+			cur_thread->enter_critical();
 			for(auto tid : _tids)
 				get_thread(tid)->kill();
-			TaskManager::current_thread()->leave_critical();
+			cur_thread->leave_critical();
 		} else if(signal_actions[signal].action) {
 			// We have a signal handler for this.
 			if(TaskManager::current_thread()->process() == this) {

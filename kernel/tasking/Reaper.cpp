@@ -21,11 +21,17 @@ Reaper& Reaper::inst() {
 	return *s_inst;
 }
 
-void Reaper::reap(const kstd::Arc<Thread>& thread) {
+void Reaper::reap(kstd::Weak<Thread> thread_weak) {
+	// Since the thread may not finish the execution of this function after we leave critical, we need a weak reference.
+	auto thread = thread_weak.lock();
 	m_lock.acquire();
 	m_queue.push_back(thread);
+	TaskManager::enter_critical();
+	thread->_state = Thread::DEAD;
 	m_lock.release();
 	m_blocker.set_ready(true);
+	thread.reset();
+	TaskManager::leave_critical();
 }
 
 void Reaper::start() {

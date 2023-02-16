@@ -228,8 +228,7 @@ void Thread::kill() {
 		_waiting_to_die = true;
 		leave_critical();
 	} else {
-		_state = DEAD;
-		Reaper::inst().reap(self());
+		Reaper::inst().reap(m_weak_self);
 	}
 }
 
@@ -250,11 +249,11 @@ void Thread::enter_critical() {
 }
 
 void Thread::leave_critical() {
+	ASSERT(_in_critical);
 	_in_critical--;
 	if(_waiting_to_die && !_in_critical) {
 		_waiting_to_die = false;
-		Reaper::inst().reap(self());
-		_state = DEAD;
+		Reaper::inst().reap(m_weak_self);
 		ASSERT(TaskManager::yield());
 	}
 }
@@ -321,7 +320,7 @@ Result Thread::join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& 
 		ScopedLocker __locker2(_join_lock);
 
 		//Check if the other thread has been joined already
-		if (other->_joined || other->_state == DEAD)
+		if (other->_joined)
 			return Result(-EINVAL);
 
 		//Check if the other thread joined this thread
@@ -337,8 +336,7 @@ Result Thread::join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& 
 	block(blocker);
 
 	{
-		//Reap the joined thread and set the return status
-		Reaper::inst().reap(other);
+		//Set the return status
 		if(retp)
 			retp.set(other->return_value());
 

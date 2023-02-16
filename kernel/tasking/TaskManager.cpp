@@ -378,6 +378,7 @@ void TaskManager::preempt(){
 
 		cur_thread = next_thread;
 		next_thread.reset();
+		old_thread.reset();
 
 		asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
 		preempt_asm(old_esp, new_esp, cur_thread->page_directory()->entries_physaddr());
