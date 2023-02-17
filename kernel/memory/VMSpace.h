@@ -8,6 +8,7 @@
 #include "../Result.hpp"
 #include "../tasking/SpinLock.h"
 #include "PageDirectory.h"
+#include "../kstd/map.hpp"
 
 /**
  * This class represents a virtual memory address space and all of the regions it contains. It's used to allocate and
@@ -109,25 +110,9 @@ public:
 	SpinLock& lock() { return m_lock; }
 
 private:
-	struct VMSpaceRegion {
-		VirtualAddress start;
-		size_t size;
-		bool used;
-		VMSpaceRegion* next;
-		VMSpaceRegion* prev;
-		VMRegion* vmRegion;
-
-		size_t end() const { return start + size; }
-		bool contains(VirtualAddress address) const { return start <= address && end() > address; }
-	};
-
-	ResultRet<VMSpaceRegion*> alloc_space(size_t size);
-	ResultRet<VMSpaceRegion*> alloc_space_at(size_t size, VirtualAddress address);
-	Result free_region(VMSpaceRegion* region);
-
 	VirtualAddress m_start;
 	size_t m_size;
-	VMSpaceRegion* m_region_map;
+	kstd::map<ComparableVirtualRange, VMRegion*> m_region_map;
 	size_t m_used = 0;
 	SpinLock m_lock;
 	PageDirectory& m_page_directory;
