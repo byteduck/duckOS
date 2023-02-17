@@ -7,29 +7,25 @@
 VMProt VMProt::R = {
 		.read = true,
 		.write = false,
-		.execute = false,
-		.cow = false
+		.execute = false
 };
 
 VMProt VMProt::RW = {
 		.read = true,
 		.write = true,
-		.execute = false,
-		.cow = false
+		.execute = false
 };
 
 VMProt VMProt::RX = {
 		.read = true,
 		.write = false,
-		.execute = true,
-		.cow = false
+		.execute = true
 };
 
 VMProt VMProt::RWX = {
 		.read = true,
 		.write = true,
-		.execute = true,
-		.cow = false
+		.execute = true
 };
 
 VMRegion::VMRegion(kstd::Arc<VMObject> object, kstd::Arc<VMSpace> space, VirtualRange range, size_t object_start, VMProt prot):
@@ -47,10 +43,6 @@ VMRegion::~VMRegion() {
 		auto unmap_res = space->unmap_region(*this);
 		ASSERT(unmap_res.is_success());
 	});
-}
-
-void VMRegion::set_cow(bool cow) {
-	m_prot.cow = cow;
 }
 
 void VMRegion::set_prot(VMProt prot) {

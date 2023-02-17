@@ -19,7 +19,7 @@ AnonymousVMObject::~AnonymousVMObject() {
 ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
 	auto pages = TRY(MemoryManager::inst().alloc_physical_pages(num_pages));
-	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(pages));
+	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(pages, false));
 	auto tmp_mapped = MM.map_object(object);
 	memset((void*) tmp_mapped->start(), 0, object->size());
 	return object;
@@ -28,7 +28,7 @@ ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size) {
 ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc_contiguous(size_t size) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
 	auto pages = TRY(MemoryManager::inst().alloc_contiguous_physical_pages(num_pages));
-	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(pages));
+	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(pages, false));
 	auto tmp_mapped = MM.map_object(object);
 	memset((void*) tmp_mapped->start(), 0, object->size());
 	return object;
@@ -51,7 +51,7 @@ ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::map_to_physical(Physi
 		pages.push_back(start_page + i);
 	}
 
-	auto object = new AnonymousVMObject(kstd::move(pages));
+	auto object = new AnonymousVMObject(kstd::move(pages), false);
 	object->m_fork_action = ForkAction::Share;
 	return kstd::Arc<AnonymousVMObject>(object);
 }
@@ -68,7 +68,7 @@ ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::get_shared(int id) {
 }
 
 void AnonymousVMObject::share(pid_t pid, VMProt prot) {
-	LOCK(m_lock);
+	LOCK(m_page_lock);
 	if(!m_is_shared) {
 		LOCK_N(s_shared_lock, shared_lock);
 		m_shared_owner = pid;
@@ -82,20 +82,20 @@ void AnonymousVMObject::share(pid_t pid, VMProt prot) {
 
 
 ResultRet<VMProt> AnonymousVMObject::get_shared_permissions(pid_t pid) {
-	LOCK(m_lock);
+	LOCK(m_page_lock);
 	auto node = m_shared_permissions.find_node(pid);
 	if(!node)
 		return Result(ENOENT);
 	return node->data.second;
 }
 
-ResultRet<kstd::Arc<VMObject>> AnonymousVMObject::copy_on_write() {
-	auto new_object = TRY(AnonymousVMObject::alloc(m_size));
-	auto mapped_new_object = MM.map_object(new_object);
-	auto mapped_self = MM.map_object(self());
-	memcpy((void*) mapped_new_object->start(), (void*) mapped_self->start(), new_object->size());
+ResultRet<kstd::Arc<VMObject>> AnonymousVMObject::clone() {
+	LOCK(m_page_lock);
+	ASSERT(!is_shared());
+	become_cow_and_ref_pages();
+	auto new_object = kstd::Arc(new AnonymousVMObject(m_physical_pages, true));
 	return kstd::static_pointer_cast<VMObject>(new_object);
 }
 
-AnonymousVMObject::AnonymousVMObject(kstd::vector<PageIndex> physical_pages):
-		VMObject(kstd::move(physical_pages)) {}
+AnonymousVMObject::AnonymousVMObject(kstd::vector<PageIndex> physical_pages, bool cow):
+	VMObject(kstd::move(physical_pages), cow) {}

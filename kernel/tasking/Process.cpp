@@ -357,7 +357,7 @@ void Process::check_ptr(const void *ptr, bool write) {
 		kill(SIGSEGV);
 	}
 	auto prot = region.value()->prot();
-	if((!write && !prot.read) || (!(prot.write || prot.cow) && write)) {
+	if((!write && !prot.read) || (!prot.write && write)) {
 		KLog::dbg("Process", "Pointer check at 0x%x failed for %s(%d): Insufficient permissions", ptr, _name.c_str(), _pid);
 		kill(SIGSEGV);
 	}

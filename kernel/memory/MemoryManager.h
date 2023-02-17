@@ -64,6 +64,8 @@ struct multiboot_mmap_entry;
 
 #define MM MemoryManager::inst()
 
+static_assert(PAGE_SIZE % sizeof(uint32_t) == 0, "Page size is not uint32_t-aligned!");
+
 class MemoryManager {
 public:
 	PageDirectory kernel_page_directory { PageDirectory::DirectoryType::KERNEL };
@@ -171,6 +173,9 @@ public:
 		kernel_page_directory.unmap_page(KERNEL_QUICKMAP_PAGE_B / PAGE_SIZE);
 		m_is_quickmapping = false;
 	}
+
+	/** Copies the contents of one physical page to another. **/
+	void copy_page(PageIndex src, PageIndex dest);
 
 	kstd::Arc<VMSpace> kernel_space() { return m_kernel_space; }
 	kstd::Arc<VMSpace> heap_space() { return m_heap_space; }

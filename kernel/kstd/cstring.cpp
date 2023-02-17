@@ -56,6 +56,12 @@ extern "C" void *memcpy(void *dest, const void *src, size_t count){
 	return odest;
 }
 
+void* memcpy_uint32(uint32_t* d, uint32_t* s, size_t n) {
+	void* od = d;
+	asm volatile("rep movsl\n" : "+S"(s), "+D"(d), "+c"(n)::"memory");
+	return od;
+}
+
 int strlen(const char *str){
 	const char *s;
 

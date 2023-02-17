@@ -20,20 +20,19 @@ public:
 	};
 
 	kstd::Arc<Inode> inode() const { return m_inode; }
-	SpinLock& lock() { return m_lock; }
+	SpinLock& lock() { return m_page_lock; }
 	Type type() const { return m_type; }
 	bool is_inode() const override { return true; }
 	ForkAction fork_action() const override {
 		return m_type == Type::Private ? ForkAction::BecomeCoW : ForkAction::Share;
 	}
-	ResultRet<kstd::Arc<VMObject>> copy_on_write() override;
+	ResultRet<kstd::Arc<VMObject>> clone() override;
 
 	// TODO: Syncing
 
 private:
-	explicit InodeVMObject(kstd::vector<PageIndex> physical_pages, kstd::Arc<Inode> inode, Type type);
+	explicit InodeVMObject(kstd::vector<PageIndex> physical_pages, kstd::Arc<Inode> inode, Type type, bool cow);
 
 	kstd::Arc<Inode> m_inode;
-	SpinLock m_lock;
 	Type m_type;
 };

@@ -6,12 +6,12 @@
 #include "AnonymousVMObject.h"
 #include "../kstd/cstring.h"
 #include "InodeVMObject.h"
+#include "../kstd/KLog.h"
 
 const VMProt VMSpace::default_prot = {
 	.read = true,
 	.write = true,
-	.execute = true,
-	.cow = false
+	.execute = true
 };
 
 VMSpace::VMSpace(VirtualAddress start, size_t size, PageDirectory& page_directory):
@@ -52,15 +52,22 @@ kstd::Arc<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<kst
 		// Clone the vmRegion
 		if(cur_region->vmRegion) {
 			auto region = cur_region->vmRegion;
+			kstd::Arc<VMObject> new_object = region->object();
 			// Mark as CoW / share if necessary
 			switch(region->object()->fork_action()) {
-				case VMObject::ForkAction::BecomeCoW:
-					region->set_cow(true);
+				case VMObject::ForkAction::BecomeCoW: {
+					auto new_object_res = region->object()->clone();
 					m_page_directory.map(*region);
+					if(new_object_res.is_error()) {
+						KLog::err("VMSpace", "Could not clone a VMObject: %d!", new_object_res.code());
+						break;
+					}
+					new_object = new_object_res.value();
 					[[fallthrough]];
+				}
 				case VMObject::ForkAction::Share: {
 					auto new_vmRegion = kstd::Arc<VMRegion>::make(
-							region->object(),
+							new_object,
 							new_space,
 							region->range(), region->object_start(),
 							region->prot());
@@ -218,23 +225,23 @@ Result VMSpace::try_pagefault(PageFault fault) {
 				return Result(EINVAL);
 			}
 
-			// Check if the region is CoW and writeable.
-			if(vmRegion->is_cow() && vmRegion->prot().write) {
-				vmRegion->m_object = TRY(vmRegion->object()->copy_on_write());
-				vmRegion->set_cow(false);
-				m_page_directory.map(*vmRegion);
-				return Result(SUCCESS);
-			}
+			PageIndex error_page = (fault.address - vmRegion->start()) / PAGE_SIZE;
 
 			// Check if the region is a mapped inode.
 			if(vmRegion->object()->is_inode()) {
 				auto inode_object = kstd::static_pointer_cast<InodeVMObject>(vmRegion->object());
-				PageIndex error_page = (fault.address - vmRegion->start()) / PAGE_SIZE;
 
 				// Check to see if it needs to be read in
 				LOCK_N(inode_object->lock(), inode_locker);
 				if(inode_object->physical_page_index(error_page)) {
-					// We may have encountered a race where the page was created by another thread after the fault.
+					// This page may be marked CoW, so copy it if it is
+					if(vmRegion->prot().write && inode_object->page_is_cow(error_page)) {
+						auto res = vmRegion->m_object->try_cow_page(error_page);
+						if(res.is_error())
+							return res;
+					}
+
+					// Or, we may have encountered a race where the page was created by another thread after the fault.
 					m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
 					return Result(SUCCESS);
 				}
@@ -248,9 +255,7 @@ Result VMSpace::try_pagefault(PageFault fault) {
 				PageIndex shared_page_index = error_page + (vmRegion->object_start() / PAGE_SIZE);
 				auto shared_page = shared_object->physical_page_index(shared_page_index);
 				if(shared_object != inode_object && shared_page) {
-					MM.with_dual_quickmapped(new_page, shared_page, [&](void* new_buf, void* shared_buf){
-						memcpy(new_buf, shared_buf, PAGE_SIZE);
-					});
+					MM.copy_page(shared_page, new_page);
 				} else {
 					// Read the appropriate part of the file into the buffer.
 					kstd::Arc<uint8_t> buf((uint8_t*) kmalloc(PAGE_SIZE));
@@ -260,7 +265,7 @@ Result VMSpace::try_pagefault(PageFault fault) {
 
 					// Read the contents of the buffer into the newly allocated physical page.
 					MM.with_quickmapped(new_page, [&](void* page_buf) {
-						memcpy(page_buf, buf.get(), PAGE_SIZE);
+						memcpy_uint32((uint32_t*) page_buf, (uint32_t*) buf.get(), PAGE_SIZE / sizeof(uint32_t));
 					});
 				}
 
@@ -269,6 +274,14 @@ Result VMSpace::try_pagefault(PageFault fault) {
 				m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
 
 				return Result(SUCCESS);
+			}
+
+			// CoW if the region is writeable.
+			if(vmRegion->prot().write) {
+				auto result = vmRegion->m_object->try_cow_page(error_page);
+				if(result.is_success())
+					m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
+				return result;
 			}
 
 			return Result(EINVAL);

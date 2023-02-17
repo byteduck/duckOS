@@ -159,7 +159,16 @@ void PageDirectory::map(VMRegion& region, VirtualRange range) {
 		auto& page = region.object()->physical_page(page_index);
 		if(!page.index())
 			continue;
-		if(map_page(start_vpage + page_index, region.object()->physical_page(page_index).index(), prot).is_error())
+
+		auto vpage = start_vpage + page_index;
+		auto ppage = region.object()->physical_page(page_index).index();
+		VMProt page_prot = {
+			.read = prot.read,
+			.write = region.object()->page_is_cow(page_index) ? false : prot.write,
+			.execute = prot.execute
+		};
+
+		if(map_page(vpage, ppage, page_prot).is_error())
 			return;
 	}
 }
@@ -302,7 +311,7 @@ Result PageDirectory::map_page(PageIndex vpage, PageIndex ppage, VMProt prot) {
 	}
 
 	entry->data.present = true;
-	entry->data.read_write = prot.write && !prot.cow;
+	entry->data.read_write = prot.write;
 	entry->data.user = true;
 	entry->data.set_address(ppage * PAGE_SIZE);
 	MemoryManager::inst().invlpg((void *) (vpage * PAGE_SIZE));

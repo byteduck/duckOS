@@ -99,8 +99,7 @@ void MemoryManager::setup_paging() {
 	VMProt pages_prot = {
 		.read = true,
 		.write = true,
-		.execute = false,
-		.cow = false
+		.execute = false
 	};
 	for(size_t i = 0; i < page_array_num_pages; i++) {
 		if(kernel_page_directory.map_page(kstd::ceil_div(KERNEL_DATA_END, PAGE_SIZE) + i, page_array_start_page + i, pages_prot).is_error())
@@ -368,6 +367,12 @@ kstd::Arc<VMRegion> MemoryManager::map_object(kstd::Arc<VMObject> object) {
 	return res.value();
 }
 
+void MemoryManager::copy_page(PageIndex src, PageIndex dest) {
+	MM.with_dual_quickmapped(src, dest, [](void* src_ptr, void* dest_ptr) {
+		memcpy_uint32((uint32_t*) dest_ptr, (uint32_t*) src_ptr, PAGE_SIZE / sizeof(uint32_t));
+	});
+}
+
 void MemoryManager::free_physical_page(PageIndex page) const {
 	ASSERT(get_physical_page(page).allocated.ref_count.load(MemoryOrder::Relaxed) == 0);
 
@@ -399,8 +404,7 @@ ResultRet<VirtualAddress> MemoryManager::alloc_heap_pages(size_t num_pages) {
 		kernel_page_directory.map_page(start_vpage + i, m_heap_pages[i], VMProt{
 			.read = true,
 			.write = true,
-			.execute = false,
-			.cow = false
+			.execute = false
 		});
 	}
 

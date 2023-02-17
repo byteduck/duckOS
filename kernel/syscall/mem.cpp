@@ -107,8 +107,7 @@ int Process::sys_shmallow(int id, pid_t pid, int perms) {
 	object_res.value()->share(pid, VMProt {
 			.read = (bool) (perms & SHM_READ),
 			.write = (bool) (perms & SHM_WRITE),
-			.execute = false,
-			.cow = false
+			.execute = false
 	});
 
 	return SUCCESS;
@@ -123,8 +122,7 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 	VMProt prot = {
 		.read = (bool) (args.prot & PROT_READ),
 		.write = (bool) (args.prot & PROT_WRITE),
-		.execute = (bool) (args.prot & PROT_EXEC),
-		.cow = false
+		.execute = (bool) (args.prot & PROT_EXEC)
 	};
 
 	// First, create an appropriate object
@@ -188,8 +186,7 @@ int Process::sys_mprotect(void* addr, size_t length, int prot_flags) {
 	VMProt prot = {
 			.read = (bool) (prot_flags & PROT_READ),
 			.write = (bool) (prot_flags & PROT_WRITE),
-			.execute = (bool) (prot_flags & PROT_EXEC),
-			.cow = false
+			.execute = (bool) (prot_flags & PROT_EXEC)
 	};
 
 	// Find the region

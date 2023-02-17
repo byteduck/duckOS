@@ -65,18 +65,18 @@ public:
 	// VMObject
 	bool is_anonymous() const override { return true; }
 	ForkAction fork_action() const override { return m_fork_action; }
-	ResultRet<kstd::Arc<VMObject>> copy_on_write() override;
+	ResultRet<kstd::Arc<VMObject>> clone() override;
+
 
 private:
 	friend class MemoryManager;
 
-	explicit AnonymousVMObject(kstd::vector<PageIndex> physical_pages);
+	explicit AnonymousVMObject(kstd::vector<PageIndex> physical_pages, bool cow);
 
 	static SpinLock s_shared_lock;
 	static int s_cur_shm_id;
 	static kstd::map<int, kstd::Weak<AnonymousVMObject>> s_shared_objects;
 
-	SpinLock m_lock;
 	kstd::map<pid_t, VMProt> m_shared_permissions;
 	bool m_is_shared = false;
 	ForkAction m_fork_action = ForkAction::BecomeCoW;

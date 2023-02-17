@@ -6,18 +6,28 @@
 #include "types.h"
 #include "../memory/kliballoc.h"
 #include "kstdio.h"
+#include "cstring.h"
 
 namespace kstd {
 	class Bitmap {
 	public:
 		Bitmap():
-			m_bits(nullptr) {}
+			m_bits(nullptr),
+			m_num_bits(0) {}
 
-		Bitmap(size_t num_bits):
-			m_bits((uint8_t*) kcalloc((num_bits + 7) / 8, 1)) {}
+		Bitmap(size_t num_bits, bool default_value = false):
+			m_bits((uint8_t*) kmalloc((num_bits + 7) / 8)),
+			m_num_bits(num_bits)
+		{
+			set_all(default_value);
+		}
 
-		Bitmap(Bitmap&& other): m_bits(other.m_bits) {
+		Bitmap(Bitmap&& other):
+			m_bits(other.m_bits),
+			m_num_bits(other.m_num_bits)
+		{
 			other.m_bits = nullptr;
+			other.m_num_bits = 0;
 		}
 
 		Bitmap(const Bitmap& other) {}
@@ -48,8 +58,13 @@ namespace kstd {
 				m_bits[index / 8] &= ~(1 << (index % 8));
 		}
 
+		inline void set_all(bool value) {
+			memset(m_bits, value ? (~0) : 0, (m_num_bits + 7) / 8);
+		}
+
 	private:
 		uint8_t* m_bits = nullptr;
+		size_t m_num_bits;
 	};
 }
 

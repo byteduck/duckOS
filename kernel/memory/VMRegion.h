@@ -15,7 +15,6 @@ struct VMProt {
 	bool read : 1;
 	bool write : 1;
 	bool execute : 1;
-	bool cow : 1;
 };
 
 class VMSpace;
@@ -41,11 +40,8 @@ public:
 	VirtualAddress end() const { return m_range.end(); }
 	size_t size() const { return m_range.size; }
 	bool is_kernel() const { return m_range.start >= HIGHER_HALF; }
-	bool is_cow() const { return m_prot.cow; }
 	bool contains(VirtualAddress address) const { return m_range.contains(address); }
 	VMProt prot() const { return m_prot; }
-
-	void set_cow(bool cow);
 	void set_prot(VMProt prot);
 
 private:
