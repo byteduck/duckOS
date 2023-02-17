@@ -25,7 +25,7 @@ using TestMap = kstd::map<int, TestValue>;
 using IntMap = kstd::map<int, int>;
 using IntPairVector = kstd::vector<kstd::pair<int, int>>;
 
-KERNEL_TEST(insert) {
+KERNEL_TEST(map_insert) {
 	IntMap map;
 	for(int i = 0; i < 1000; i++) {
 		map[i] = i * 2;
@@ -36,7 +36,7 @@ KERNEL_TEST(insert) {
 	}
 }
 
-KERNEL_TEST(remove) {
+KERNEL_TEST(map_remove) {
 	IntMap map;
 	for(int i = 0; i < 1000; i++) {
 		map[i] = i * 2;
@@ -55,7 +55,7 @@ KERNEL_TEST(remove) {
 	}
 }
 
-KERNEL_TEST(constructors_destructors) {
+KERNEL_TEST(map_constructors_destructors) {
 	num_constructed = 0;
 	num_destructed = 0;
 	{
@@ -100,7 +100,7 @@ void check_values(IntMap& map, IntPairVector& in_map) {
 	}
 }
 
-KERNEL_TEST(random_insert_remove) {
+KERNEL_TEST(map_random_insert_remove) {
 	IntMap map;
 	IntPairVector in_map; // A vector containing the pairs that should be in the map
 
@@ -119,4 +119,33 @@ KERNEL_TEST(random_insert_remove) {
 	// Populate map and check values again
 	randomly_populate(map, in_map);
 	check_values(map, in_map);
+}
+
+KERNEL_TEST(map_iterator) {
+	IntMap map;
+	IntPairVector in_map;
+	randomly_populate(map, in_map);
+
+	// Test forward iterator
+	size_t count = 0;
+	int last;
+	for(auto val : map) {
+		if(count)
+			ENSURE(val.first > last);
+		count++;
+		last = val.first;
+	}
+
+	// Test backward iterator
+	count = 0;
+	auto iter = map.end();
+	while(iter != map.begin()) {
+		iter--;
+		if(count)
+			ENSURE(iter->first < last);
+		count++;
+		last = iter->first;
+	}
+
+	ENSURE_EQ(count, map.size());
 }
