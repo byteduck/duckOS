@@ -33,6 +33,7 @@
 #define PWINDOW_HINT_RESIZABLE 0x5
 #define PWINDOW_HINT_WINDOWTYPE 0x6
 #define PWINDOW_HINT_SHADOW 0x7
+#define PWINDOW_HINT_BLURBEHIND 0x8
 
 /**
  * A window Object representing a window in the Pond window system.
@@ -200,6 +201,9 @@ namespace Pond {
 
 		/** Sets the minimum size of the window. */
 		void set_minimum_size(Gfx::Dimensions dimensions);
+
+		/** Sets whether the window should blur screen contents behind it. */
+		void set_blur_behind(bool blur);
 
 	private:
 		friend class Context;

@@ -86,13 +86,6 @@ namespace Gfx {
 		 */
 		void copy_blitting_flipped(const Framebuffer& other, Rect other_area, const Point& pos, bool flip_h, bool flip_v) const;
 
-		/*
-		 * Blurs an area of this framebuffer with an approximated gaussian blur.
-		 * @param area The area to blur.
-		 * @param radius The blur radius.
-		 */
-		void blur(Rect area, int radius = 4) const;
-
 		/**
 		 * Identical to ::copy(), but will tile the Image.
 		 */

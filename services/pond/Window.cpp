@@ -391,6 +391,9 @@ void Window::set_hint(int hint, int value) {
 		case PWINDOW_HINT_SHADOW:
 			set_has_shadow(value);
 			break;
+		case PWINDOW_HINT_BLURBEHIND:
+			set_blur_behind(value);
+			break;
 		default:
 			Duck::Log::warn("Unknown window hint ", hint);
 	}
@@ -417,6 +420,15 @@ void Window::set_has_shadow(bool shadow) {
 	_draws_shadow = shadow;
 	recalculate_rects();
 	invalidate();
+}
+
+void Window::set_blur_behind(bool blur) {
+	_blur_behind = blur;
+	invalidate();
+}
+
+bool Window::blurs_behind() const {
+	return _blur_behind;
 }
 
 void Window::set_minimum_size(Gfx::Dimensions minimum) {

@@ -46,6 +46,15 @@ public:
 		return *this = *this * other;
 	}
 
+	[[nodiscard]] constexpr Color operator+(Color other) const {
+		return {
+				(uint8_t)(r + other.r),
+				(uint8_t)(g + other.g),
+				(uint8_t)(b + other.b),
+				(uint8_t)(a + other.a)
+		};
+	}
+
 	[[nodiscard]] constexpr Color lightened(float amount = 0.25) const {
 		return darkened(1 + amount);
 	}
