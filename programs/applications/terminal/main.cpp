@@ -28,6 +28,8 @@ int main(int argc, char** argv, char** envp) {
 	//Make window
 	auto window = UI::Window::make();
 	window->set_title("Terminal");
+	window->set_uses_alpha(true);
+	window->pond_window()->set_blur_behind(true);
 
 	//Create terminal widget
 	auto termwidget = TerminalWidget::make();
