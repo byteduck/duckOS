@@ -34,6 +34,8 @@
 using namespace Gfx;
 using Duck::Log, Duck::Config, Duck::ResultRet;
 
+constexpr int BLUR_RADIUS = 4;
+
 Display* Display::_inst = nullptr;
 
 Display::Display(): _dimensions({0, 0, 0, 0}) {
@@ -159,7 +161,7 @@ void Display::remove_window(Window* window) {
 	}
 }
 
-void Display::invalidate(const Gfx::Rect& rect) {
+void Display::invalidate(Gfx::Rect rect) {
 	if(!rect.empty())
 		invalid_areas.push_back(rect);
 }
@@ -183,9 +185,15 @@ void Display::repaint() {
 
 	auto& fb = _buffer_mode == BufferMode::Single ? _framebuffer : _root_window->framebuffer();
 
-	//Combine areas that overlap
+	// Combine areas that overlap
 	auto it = invalid_areas.begin();
 	while(it != invalid_areas.end()) {
+		// If the area collides with a window that blurs behind it, we need to redraw that entire window's area
+		for(auto& window : _windows) {
+			if(window->blurs_behind() && it->collides(window->absolute_shadow_rect()))
+				*it = it->combine(window->absolute_shadow_rect());
+		}
+
 		bool remove_area = false;
 		for(auto & other_area : invalid_areas) {
 			if(&*it != &other_area && it->collides(other_area)) {
@@ -227,7 +235,7 @@ void Display::repaint() {
 				auto transformed_overlap = overlap_abs.transform({-window_abs.x, -window_abs.y});
 				if(window->uses_alpha()) {
 					if(window->blurs_behind())
-						fb.blur(overlap_abs);
+						fb.blur(overlap_abs, BLUR_RADIUS);
 					fb.copy_blitting(window->framebuffer(), transformed_overlap, overlap_abs.position());
 				} else {
 					fb.copy(window->framebuffer(), transformed_overlap, overlap_abs.position());

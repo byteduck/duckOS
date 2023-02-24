@@ -74,9 +74,9 @@ public:
 
 	/**
 	 * Marks a portion of the display to be redrawn
-	 * @param Gfx::Rect the absolute rect to be redrawn
+	 * @param rect the absolute rect to be redrawn
 	 */
-	void invalidate(const Gfx::Rect& rect);
+	void invalidate(Gfx::Rect rect);
 
 	/**
 	 * Repaints the needed areas of the screen to the hidden screen buffer.
