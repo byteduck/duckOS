@@ -126,7 +126,6 @@ void Framebuffer::copy_blitting(const Framebuffer& other, Rect other_area, const
 	}
 }
 
-<<<<<<< HEAD
 void Framebuffer::copy_blitting_flipped(const Framebuffer& other, Rect other_area, const Point& pos, bool flip_h, bool flip_v) const {
 	//Make sure self_area is in bounds of the framebuffer
 	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};
@@ -150,15 +149,13 @@ void Framebuffer::copy_blitting_flipped(const Framebuffer& other, Rect other_are
 			this_val = this_val.blended(other_val);
 		}
 	}
-=======
-inline int math_mod(int a, int b) {
-	return (a % b + b) % b;
 }
 
 void Framebuffer::blur(Gfx::Rect area, int radius) const {
 	int window_size = radius * 2 + 1;
+	area = area.overlapping_area(Rect {0, 0, width, height});
 
-	auto do_pass = [&]() { ;
+	auto do_pass = [&]() {
 		// First, apply blur horizontally.
 		for(int y = area.y; y < area.y + area.height; y++) {
 			int window[3] = {0, 0, 0};
@@ -180,11 +177,11 @@ void Framebuffer::blur(Gfx::Rect area, int radius) const {
 						(uint8_t) (window[1] / window_size),
 						(uint8_t) (window[2] / window_size),
 				};
-				auto window_add = data[(std::min(x + 5, width - 1)) + y * width];
+				auto window_add = data[(std::min(x + radius + 1, width - 1)) + y * width];
 				auto window_sub = window_preblur[preblur_index];
+				window_preblur[preblur_index] = window_add;
 				preblur_index++;
 				preblur_index %= window_size;
-				window_preblur[((preblur_index - 1) % window_size + window_size) % window_size] = window_add;
 				window[0] += (int) window_add.r - (int) window_sub.r;
 				window[1] += (int) window_add.g - (int) window_sub.g;
 				window[2] += (int) window_add.b - (int) window_sub.b;
@@ -199,7 +196,7 @@ void Framebuffer::blur(Gfx::Rect area, int radius) const {
 
 			// Populate window
 			for(int i = -radius; i <= radius; i++) {
-				auto color = data[(x + std::min(std::max(area.y + i, 0), height - 1)) * width];
+				auto color = data[x + (std::min(std::max(area.y + i, 0), height - 1)) * width];
 				window_preblur[i + radius] = color;
 				window[0] += color.r;
 				window[1] += color.g;
@@ -212,11 +209,11 @@ void Framebuffer::blur(Gfx::Rect area, int radius) const {
 						(uint8_t) (window[1] / window_size),
 						(uint8_t) (window[2] / window_size),
 				};
-				auto window_add = data[x + (std::min(y + 5, height - 1)) * width];
+				auto window_add = data[x + (std::min(y + radius + 1, height - 1)) * width];
 				auto window_sub = window_preblur[preblur_index];
+				window_preblur[preblur_index] = window_add;
 				preblur_index++;
 				preblur_index %= window_size;
-				window_preblur[((preblur_index - 1) % window_size + window_size) % window_size] = window_add;
 				window[0] += (int) window_add.r - (int) window_sub.r;
 				window[1] += (int) window_add.g - (int) window_sub.g;
 				window[2] += (int) window_add.b - (int) window_sub.b;
@@ -226,7 +223,6 @@ void Framebuffer::blur(Gfx::Rect area, int radius) const {
 
 	for(int i = 0; i < 3; i++)
 		do_pass();
->>>>>>> fb5c657 (Pond: Allow windows to blur what's behind them)
 }
 
 void Framebuffer::copy_tiled(const Framebuffer& other, Rect other_area, const Point& pos) const {
