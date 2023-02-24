@@ -77,6 +77,16 @@ namespace Gfx {
 		void copy_blitting(const Framebuffer& other, Rect other_area, const Point& pos) const;
 
 		/**
+		 * Copies a part of another Image to this one, with alpha blending, flipped horizontally.
+		 * @param other The other Image to copy from.
+		 * @param other_area The area of the other Image to copy.
+		 * @param pos The position of this Image to copy to.
+		 * @param flip_h Whether to flip vertically.
+		 * @param flip_v Whether to flip horizontally.
+		 */
+		void copy_blitting_flipped(const Framebuffer& other, Rect other_area, const Point& pos, bool flip_h, bool flip_v) const;
+
+		/**
 		 * Identical to ::copy(), but will tile the Image.
 		 */
 		void copy_tiled(const Framebuffer& other, Rect other_area, const Point& pos) const;

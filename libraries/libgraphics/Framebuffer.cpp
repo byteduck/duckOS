@@ -126,6 +126,31 @@ void Framebuffer::copy_blitting(const Framebuffer& other, Rect other_area, const
 	}
 }
 
+void Framebuffer::copy_blitting_flipped(const Framebuffer& other, Rect other_area, const Point& pos, bool flip_h, bool flip_v) const {
+	//Make sure self_area is in bounds of the framebuffer
+	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};
+	self_area = self_area.overlapping_area({0, 0, width, height});
+	if(self_area.empty())
+		return;
+
+	//Update other area with the changes made to self_area
+	other_area.x += self_area.x - pos.x;
+	other_area.y += self_area.y - pos.y;
+	other_area.width = self_area.width;
+	other_area.height = self_area.height;
+
+	for(int y = 0; y < self_area.height; y++) {
+		for(int x = 0; x < self_area.width; x++) {
+			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
+			auto& other_val = other.data[
+				 other_area.x + (flip_h ? other_area.width - x - 1 : x) +
+				(other_area.y + (flip_v ? other_area.height - y - 1 : y)) * other.width
+			];
+			this_val = this_val.blended(other_val);
+		}
+	}
+}
+
 void Framebuffer::copy_tiled(const Framebuffer& other, Rect other_area, const Point& pos) const {
 	//Make sure self_area is in bounds of the framebuffer
 	Rect self_area = {pos.x, pos.y, other_area.width, other_area.height};
