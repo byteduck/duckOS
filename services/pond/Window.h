@@ -260,9 +260,9 @@ public:
 	void set_has_shadow(bool shadow);
 
 	/**
-	 * Gets the shadow framebuffer for drawing shadows.
+	 * Gets the shadow framebuffers for drawing shadows.
 	 */
-	Gfx::Framebuffer& shadow_buffer() { return _shadow_buffer; }
+	Gfx::Framebuffer* shadow_buffers() { return _shadow_buffers; }
 
 	/** Sets the minimum size of the window. */
 	void set_minimum_size(Gfx::Dimensions minimum);
@@ -297,7 +297,7 @@ private:
 	bool _destructing = false;
 	bool _draws_shadow = true;
 	Pond::WindowType _type = Pond::DEFAULT;
-	Gfx::Framebuffer _shadow_buffer = {nullptr, 0, 0};
+	Gfx::Framebuffer _shadow_buffers[4];
 	Gfx::Dimensions _minimum_size = {WINDOW_RESIZE_BORDER * 2, WINDOW_RESIZE_BORDER * 2};
 
 	static int current_id;

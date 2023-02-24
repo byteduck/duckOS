@@ -318,30 +318,30 @@ void Window::alloc_framebuffer() {
 	_framebuffer = {(Gfx::Color*) _framebuffer_shm.ptr, _rect.width, _rect.height};
 
 	// Now, allocate and draw the shadow buffer
-	_shadow_buffer = Gfx::Framebuffer(_rect.width + SHADOW_SIZE * 2, _rect.height + SHADOW_SIZE * 2);
+	_shadow_buffers[0] = Gfx::Framebuffer(_rect.width + SHADOW_SIZE * 2, SHADOW_SIZE); // Top
+	_shadow_buffers[1] = Gfx::Framebuffer(_rect.width + SHADOW_SIZE * 2, SHADOW_SIZE); // Bottom
+	_shadow_buffers[2] = Gfx::Framebuffer(SHADOW_SIZE, _rect.height); // Left
+	_shadow_buffers[3] = Gfx::Framebuffer(SHADOW_SIZE, _rect.height); // Right
 
 	// Poor man's box-shadow :)
-	Rect shadow_rect = {0, 0, _shadow_buffer.width, _shadow_buffer.height};
-	_shadow_buffer.fill(shadow_rect, RGBA(0,0,0,0));
-	Rect window_rect = shadow_rect.inset(SHADOW_SIZE);
-	auto box_blur_rect = [&](Gfx::Rect rect) {
-		for(int y = rect.y; y < rect.height + rect.y; y++) {
-			for(int x = rect.x; x < rect.width + rect.x; x++) {
-				auto sample_rect = Rect {x - SHADOW_SIZE + 1, y - SHADOW_SIZE + 1, SHADOW_SIZE * 2 - 2, SHADOW_SIZE * 2 - 2}.overlapping_area(shadow_rect);
+	auto make_shadow_buffer = [&](Gfx::Framebuffer& buffer, Gfx::Rect window_rect) {
+		for(int y = 0; y < buffer.height; y++) {
+			for(int x = 0; x < buffer.width; x++) {
+				auto sample_rect = Rect {x - SHADOW_SIZE + 1, y - SHADOW_SIZE + 1, SHADOW_SIZE * 2 - 2, SHADOW_SIZE * 2 - 2};
 				int alph = 0;
 				for(int sample_y = sample_rect.y; sample_y < sample_rect.height + sample_rect.y; sample_y++)
 					for(int sample_x = sample_rect.x; sample_x < sample_rect.width + sample_rect.x; sample_x++)
 						if(Point {sample_x, sample_y}.in(window_rect))
 							alph += SHADOW_ALPH;
-				*_shadow_buffer.at({x, y}) = RGBA(0,0,0,alph);
+				*buffer.at({x, y}) = RGBA(0,0,0,alph);
 			}
 		}
 	};
 
-	box_blur_rect({SHADOW_SIZE, 0, _shadow_buffer.width - SHADOW_SIZE * 2, SHADOW_SIZE});
-	box_blur_rect({SHADOW_SIZE, _shadow_buffer.height - SHADOW_SIZE, _shadow_buffer.width - SHADOW_SIZE * 2, SHADOW_SIZE});
-	box_blur_rect({0, 0, SHADOW_SIZE, _shadow_buffer.height});
-	box_blur_rect({_shadow_buffer.width - SHADOW_SIZE, 0, SHADOW_SIZE, _shadow_buffer.height});
+	make_shadow_buffer(_shadow_buffers[0], { SHADOW_SIZE, SHADOW_SIZE, _rect.width, _rect.height });
+	make_shadow_buffer(_shadow_buffers[1], { SHADOW_SIZE, -_rect.height, _rect.width, _rect.height });
+	make_shadow_buffer(_shadow_buffers[2], { SHADOW_SIZE, 0, _rect.width, _rect.height });
+	make_shadow_buffer(_shadow_buffers[3], { -_rect.width, 0, _rect.width, _rect.height });
 }
 
 void Window::recalculate_rects() {
