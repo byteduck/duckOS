@@ -6,6 +6,8 @@
 #include <libui/widget/layout/FlexLayout.h>
 #include <libui/widget/Button.h>
 #include "AppMenu.h"
+#include "modules/Module.h"
+#include <libui/Timer.h>
 
 class SandbarWidget: public UI::Widget {
 public:
@@ -21,4 +23,6 @@ private:
 	Duck::Ptr<UI::FlexLayout> m_layout;
 	Duck::Ptr<UI::Button> m_duck_button;
 	Duck::Ptr<AppMenu> m_app_menu;
+	std::vector<Duck::Ptr<Module>> m_modules;
+	Duck::Ptr<UI::Timer> m_module_timer;
 };

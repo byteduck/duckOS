@@ -1,19 +1,16 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright © 2016-2023 Byteduck */
 
-#include "TimeWidget.h"
-#include "Sandbar.h"
+#include "TimeModule.h"
+#include "../Sandbar.h"
 #include <libui/libui.h>
 #include <libui/widget/Cell.h>
 
-TimeWidget::TimeWidget() {
-	m_timer = UI::set_interval([this] {
-		repaint();
-	}, 1000);
+TimeModule::TimeModule() {
 	set_uses_alpha(true);
 }
 
-void TimeWidget::do_repaint(const UI::DrawContext& ctx) {
+void TimeModule::do_repaint(const UI::DrawContext& ctx) {
 	char stringbuf[30];
 	time_t epoch = time(nullptr);
 	tm cur_time = *localtime(&epoch);
@@ -28,6 +25,10 @@ void TimeWidget::do_repaint(const UI::DrawContext& ctx) {
 	ctx.draw_text(stringbuf, ctx.rect(), UI::TextAlignment::CENTER, UI::TextAlignment::CENTER, UI::Theme::font(), UI::Theme::fg());
 }
 
-Gfx::Dimensions TimeWidget::preferred_size() {
+Gfx::Dimensions TimeModule::preferred_size() {
 	return {75, Sandbar::HEIGHT};
+}
+
+void TimeModule::update() {
+	repaint();
 }
