@@ -6,18 +6,19 @@
 #include <libui/widget/Widget.h>
 #include <libui/widget/Label.h>
 #include <libui/Timer.h>
+#include "Module.h"
 
-class TimeWidget: public UI::Widget {
+class TimeModule: public Module {
 public:
-	WIDGET_DEF(TimeWidget)
+	WIDGET_DEF(TimeModule)
 
 	Gfx::Dimensions preferred_size() override;
+
+	void update() override;
 
 protected:
 	void do_repaint(const UI::DrawContext& ctx) override;
 
 private:
-	TimeWidget();
-
-	Duck::Ptr<UI::Timer> m_timer;
+	TimeModule();
 };
