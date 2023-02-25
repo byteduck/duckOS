@@ -74,7 +74,7 @@ Duck::Ptr<Widget> FileGridView::lv_create_entry(int index) {
 }
 
 Gfx::Dimensions FileGridView::lv_preferred_item_dimensions() {
-	return { 70, 70 };
+	return { 96, 70 };
 }
 
 int FileGridView::lv_num_items() {
