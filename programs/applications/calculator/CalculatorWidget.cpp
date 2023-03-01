@@ -19,11 +19,14 @@
 
 #include "CalculatorWidget.h"
 #include <libui/libui.h>
+#include <libui/widget/Cell.h>
 
 using namespace UI;
 
 #define NUM_BUTTON(x) \
-	auto btn_##x = Button::make(#x); \
+	auto lbl_##x = Label::make(#x); \
+	lbl_##x->set_font(font); \
+	auto btn_##x = Button::make(Cell::make(lbl_##x, 8)); \
 	btn_##x->on_pressed = [&] { \
 		add_digit(x); \
 	}; \
@@ -37,9 +40,13 @@ using namespace UI;
 	button_grid->add_child(btn_##op);
 
 CalculatorWidget::CalculatorWidget(): BoxLayout(VERTICAL) {
+	auto font = UI::pond_context->get_font("gohu-14");
+	if(!font)
+		font = UI::Theme::font();
+
 	display = Label::make("0");
 	display->set_alignment(UI::CENTER, UI::END);
-	display->set_font(UI::pond_context->get_font("gohu-14"));
+	display->set_font(font);
 	display->set_padding({8, 8});
 	add_child(display);
 
