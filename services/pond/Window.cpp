@@ -137,19 +137,7 @@ Gfx::Rect Window::absolute_shadow_rect() const {
 }
 
 void Window::set_dimensions(const Gfx::Dimensions& new_dims, bool notify_client) {
-	if(new_dims.width == _rect.dimensions().width && new_dims.height == _rect.dimensions().height)
-		return;
-	Gfx::Dimensions dims = {
-		std::max(_minimum_size.width, new_dims.width),
-		std::max(_minimum_size.height, new_dims.height)
-	};
-	invalidate();
-	_rect = {_rect.x, _rect.y, dims.width, dims.height};
-	alloc_framebuffer();
-	recalculate_rects();
-	invalidate();
-	if(notify_client && _client)
-		_client->window_resized(this);
+	set_rect({_rect.position(), new_dims}, notify_client);
 }
 
 void Window::set_position(const Gfx::Point& position, bool notify_client) {
@@ -302,17 +290,23 @@ void Window::set_flipped(bool flipped) {
 }
 
 void Window::alloc_framebuffer() {
-	if(_framebuffer.data) {
-		//Deallocate the old framebuffer since there is one
-		if(shmdetach(_framebuffer_shm.id) < 0) {
+	// Only reallocate if we need more space in the buffer
+	auto new_buffer_size = IMGSIZE(_rect.width, _rect.height) * 2;
+	if(!_framebuffer.data || new_buffer_size > _framebuffer_shm.size) {
+		//Deallocate the old framebuffer if there is one
+		if(_framebuffer.data && shmdetach(_framebuffer_shm.id) < 0) {
 			perror("Failed to deallocate framebuffer for window");
 			return;
 		}
-	}
 
-	if(shmcreate(NULL, IMGSIZE(_rect.width, _rect.height) * 2, &_framebuffer_shm) < 0) {
-		perror("Failed to allocate framebuffer for window");
-		return;
+		// Allocate the new framebuffer
+		if(shmcreate(NULL, new_buffer_size, &_framebuffer_shm) < 0) {
+			perror("Failed to allocate framebuffer for window");
+			return;
+		}
+	} else {
+		// Clear out the old framebuffer
+		memset(_framebuffer_shm.ptr, 0, _framebuffer_shm.size);
 	}
 
 	_framebuffer = {(Gfx::Color*) _framebuffer_shm.ptr, _rect.width, _rect.height};
