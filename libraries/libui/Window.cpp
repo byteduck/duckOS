@@ -40,15 +40,7 @@ void Window::initialize() {
 }
 
 void Window::resize(Gfx::Dimensions dims) {
-	if(_decorated) {
-		int accessory_height = _titlebar_accessory ? _titlebar_accessory->preferred_size().height + UI_WINDOW_PADDING * 2 : 0;
-		_window->resize({
-			UI_WINDOW_BORDER_SIZE * 2 + dims.width,
-			UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + dims.height + accessory_height
-		});
-	} else {
-		_window->resize({dims.width, dims.height});
-	}
+	_window->resize({dims.width, dims.height});
 	if(_contents)
 		_contents->update_layout();
 	repaint();
@@ -236,7 +228,15 @@ void Window::hide() {
 
 void Window::resize_to_contents() {
 	Gfx::Dimensions contents_size = _contents ? _contents->preferred_size() : Gfx::Dimensions {10, 10};
-	resize(contents_size);
+	if(_decorated) {
+		int accessory_height = _titlebar_accessory ? _titlebar_accessory->preferred_size().height + UI_WINDOW_PADDING * 2 : 0;
+		resize({
+			UI_WINDOW_BORDER_SIZE * 2 + contents_size.width,
+			UI_WINDOW_BORDER_SIZE * 2 + UI_TITLEBAR_HEIGHT + contents_size.height + accessory_height
+		});
+	} else {
+		resize(contents_size);
+	}
 }
 
 void Window::set_uses_alpha(bool uses_alpha) {
