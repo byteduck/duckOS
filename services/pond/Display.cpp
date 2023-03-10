@@ -219,8 +219,10 @@ void Display::repaint() {
 			if(window == _mouse_window || window->hidden())
 				continue;
 
+			auto window_old_rect = window->old_absolute_shadow_rect();
 			auto window_shabs = window->absolute_shadow_rect();
-			if(window_shabs.collides(area)) {
+			auto window_collision_rect = window_old_rect.empty() ? window_shabs : window_old_rect;
+			if(window_collision_rect.collides(area)) {
 				//If it does, redraw the intersection of the window in question and the invalid area
 				Gfx::Rect window_abs = window->absolute_rect();
 				Gfx::Rect overlap_abs = area.overlapping_area(window_abs);

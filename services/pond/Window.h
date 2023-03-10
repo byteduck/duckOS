@@ -75,6 +75,11 @@ public:
 	Gfx::Rect absolute_shadow_rect() const;
 
 	/**
+	 * The absolute rect of the window before its pending resize, or empty if there is no pending resize
+	 */
+	Gfx::Rect old_absolute_shadow_rect() const;
+
+	/**
 	 * Sets the rect of the window to the rect given, constrained to fit inside the parent.
 	 * The framebuffer will most likely change!
 	 */
@@ -274,13 +279,17 @@ public:
 private:
 	friend class Mouse;
 	void alloc_framebuffer();
+	void alloc_shadow_buffers();
 	void recalculate_rects();
+	void finalize_resize();
 
 	Gfx::Framebuffer _framebuffer = {nullptr, 0, 0};
 	shm _framebuffer_shm;
 	Gfx::Rect _rect;
 	Gfx::Rect _absolute_rect;
 	Gfx::Rect _absolute_shadow_rect;
+	// The old absolute rect of the window to invalidate once the window has been invalidated after a resize
+	Gfx::Rect _pending_resize_invalidation_rect = {0, 0, 0, 0};
 	Window* _parent;
 	Display* _display;
 	std::vector<Window*> _children;

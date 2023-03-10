@@ -38,6 +38,7 @@ Window::Window(Window* parent, const Gfx::Rect& rect, bool hidden): _parent(pare
 	if(_rect.height < 1)
 		_rect.height = 1;
 	alloc_framebuffer();
+	alloc_shadow_buffers();
 	_parent->_children.push_back(this);
 	_display->add_window(this);
 	recalculate_rects();
@@ -46,6 +47,7 @@ Window::Window(Window* parent, const Gfx::Rect& rect, bool hidden): _parent(pare
 
 Window::Window(Display* display): _parent(nullptr), _rect(display->dimensions()), _display(display), _id(++current_id) {
 	alloc_framebuffer();
+	alloc_shadow_buffers();
 	_display->set_root_window(this);
 	recalculate_rects();
 	invalidate();
@@ -136,6 +138,10 @@ Gfx::Rect Window::absolute_shadow_rect() const {
 	return _absolute_shadow_rect;
 }
 
+Gfx::Rect Window::old_absolute_shadow_rect() const {
+	return _pending_resize_invalidation_rect;
+}
+
 void Window::set_dimensions(const Gfx::Dimensions& new_dims, bool notify_client) {
 	set_rect({_rect.position(), new_dims}, notify_client);
 }
@@ -150,7 +156,17 @@ void Window::set_position(const Gfx::Point& position, bool notify_client) {
 }
 
 void Window::set_rect(const Gfx::Rect& rect, bool notify_client) {
-	invalidate();
+	if(!hidden()) {
+		if(!_pending_resize_invalidation_rect.empty()) {
+			_display->invalidate(_pending_resize_invalidation_rect);
+			Duck::Log::warnf("Window {} resized again before pending resize finished!", _id);
+		}
+		if(_parent)
+			_pending_resize_invalidation_rect = _absolute_shadow_rect.overlapping_area(_parent->_absolute_rect);
+		else
+			_pending_resize_invalidation_rect = _absolute_shadow_rect.overlapping_area(_display->dimensions());
+	}
+
 	_rect = rect;
 	_rect.set_dimensions({
 		std::max(_rect.width, _minimum_size.width),
@@ -158,12 +174,12 @@ void Window::set_rect(const Gfx::Rect& rect, bool notify_client) {
 	});
 	alloc_framebuffer();
 	recalculate_rects();
-	invalidate();
 	if(notify_client && _client)
 		_client->window_resized(this);
 }
 
 void Window::invalidate() {
+	finalize_resize();
 	if(!hidden()) {
 		if(_parent)
 			_display->invalidate(_absolute_shadow_rect.overlapping_area(_parent->_absolute_rect));
@@ -173,6 +189,7 @@ void Window::invalidate() {
 }
 
 void Window::invalidate(const Gfx::Rect& area) {
+	finalize_resize();
 	if(hidden())
 		return;
 	if(_parent)
@@ -311,7 +328,10 @@ void Window::alloc_framebuffer() {
 
 	_framebuffer = {(Gfx::Color*) _framebuffer_shm.ptr, _rect.width, _rect.height};
 
-	// Now, allocate and draw the shadow buffer
+	alloc_shadow_buffers();
+}
+
+void Window::alloc_shadow_buffers() {
 	_shadow_buffers[0] = Gfx::Framebuffer(_rect.width + SHADOW_SIZE * 2, SHADOW_SIZE); // Top
 	_shadow_buffers[1] = Gfx::Framebuffer(_rect.width + SHADOW_SIZE * 2, SHADOW_SIZE); // Bottom
 	_shadow_buffers[2] = Gfx::Framebuffer(SHADOW_SIZE, _rect.height); // Left
@@ -343,6 +363,13 @@ void Window::recalculate_rects() {
 	_absolute_shadow_rect = _absolute_rect.inset(_draws_shadow ? -SHADOW_SIZE : 0);
 	for(auto child : _children)
 		child->recalculate_rects();
+}
+
+void Window::finalize_resize() {
+	if(_pending_resize_invalidation_rect.empty())
+		return;
+	_display->invalidate(_pending_resize_invalidation_rect);
+	_pending_resize_invalidation_rect = { 0, 0, 0, 0 };
 }
 
 shm Window::framebuffer_shm() {
