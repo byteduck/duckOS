@@ -87,6 +87,8 @@ size_t DiskDevice::free_pages(size_t num_pages) {
 		for(size_t i = 0; i < s_disk_devices.size(); i++) {
 			auto device = s_disk_devices[i];
 			LOCK_N(device->_cache_lock, device_lock);
+			if(device->_cache_regions.empty())
+				continue;
 			auto device_lru = device->_cache_regions.lru_unsafe();
 			auto time = device_lru.second->last_used;
 			if(time < lru_time) {
