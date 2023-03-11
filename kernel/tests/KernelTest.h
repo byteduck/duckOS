@@ -30,14 +30,14 @@ public:
 	inline void ensure(const char* file_name, int line_no, bool assertion) {
 		if(!assertion) {
 			m_passing = false;
-			KLog::err("KernelTests", "Ensure failed on line %d in %s!", line_no, file_name);
+			KLog::err(m_current_test->name, "Ensure failed on line %d in %s!", line_no, file_name);
 		}
 	}
 
 	inline void ensure(const char* file_name, int line_no, bool assertion, const char* message) {
 		if(!assertion) {
 			m_passing = false;
-			KLog::err("KernelTests", "Ensure failed on line %d in %s: %s", line_no, file_name, message);
+			KLog::err(m_current_test->name, "Ensure failed on line %d in %s: %s", line_no, file_name, message);
 		}
 	}
 
@@ -46,12 +46,13 @@ public:
 		if(param_a != param_b) {
 			m_passing = false;
 			// TODO: This is really only useful with ints
-			KLog::err("KernelTests", "Ensure failed on line %d in %s: %d != %d", line_no, file_name, param_a, param_b);
+			KLog::err(m_current_test->name, "Ensure failed on line %d in %s: %d != %d", line_no, file_name, param_a, param_b);
 		}
 	}
 
 private:
 	static KernelTestRegistry* m_instance;
 	kstd::vector<KernelTest> m_tests;
+	KernelTest* m_current_test = nullptr;
 	bool m_passing = true;
 };
