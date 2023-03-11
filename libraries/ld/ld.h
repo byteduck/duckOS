@@ -214,8 +214,9 @@ public:
 
 	int load(char* name_cstr, bool is_main_executable);
 	int calculate_memsz();
-	int read_header();
-	int read_dynamic_table();
+	int read_headers();
+	int load_dynamic_table();
+	void read_dynamic_table();
 	int load_sections();
 	void mprotect_sections();
 	int read_copy_relocations();
@@ -238,19 +239,14 @@ public:
 	void (**init_array)() = nullptr;
 	size_t init_array_size = 0;
 	void (*init_func)() = nullptr;
+	main_t entry;
 
 	std::vector<char*> required_libraries;
 	uint8_t* mapped_file = nullptr;
 	size_t mapped_size = 0;
-
-private:
-	elf32_pheader& get_pheader(size_t i) {
-		return *((elf32_pheader*) (mapped_file + header->e_phoff + i * header->e_phentsize));
-	}
-
-	elf32_sheader& get_sheader(size_t i) {
-		return *((elf32_sheader*) (mapped_file + header->e_shoff + i * header->e_shentsize));
-	}
+	std::vector<elf32_pheader> pheaders;
+	std::vector<elf32_sheader> sheaders;
+	std::vector<elf32_dynamic> dynamic_table;
 };
 
 std::string find_library(char* library_name);
