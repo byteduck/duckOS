@@ -149,3 +149,35 @@ KERNEL_TEST(map_iterator) {
 
 	ENSURE_EQ(count, map.size());
 }
+
+int calculate_height(kstd::map<int,int>::Node* node) {
+	int left_height = node->left ? calculate_height(node->left) : 0;
+	int right_height = node->right ? calculate_height(node->right) : 0;
+	return max(left_height, right_height) + 1;
+}
+
+KERNEL_TEST(map_height_and_balance) {
+	IntMap map;
+	IntPairVector in_map;
+	randomly_populate(map, in_map);
+
+	auto check_balance = [&]() {
+		for(auto val : map) {
+			auto node = map.find_node(val.first);
+			ENSURE(node);
+			ENSURE_EQ(node->height, calculate_height(node));
+			ENSURE(node->balance_factor() > -2 && node->balance_factor() < 2);
+		}
+	};
+
+	// Ensure the initial tree is properly balanced
+	check_balance();
+
+	// Remove half of the values randomly and check again
+	for(int i = 0; i < in_map.size() / 2; i++) {
+		int idx = rand() % in_map.size();
+		map.erase(in_map[idx].first);
+		in_map.erase(idx);
+	}
+	check_balance();
+}
