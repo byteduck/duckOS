@@ -288,7 +288,8 @@ namespace kstd {
 						} else {
 							m_root = nullptr;
 						}
-						cur_node->parent->update_height_and_balance(this);
+						if(cur_node->parent)
+							cur_node->parent->update_height_and_balance(this);
 						delete cur_node;
 					} else if(cur_node == m_root || cur_node == prev_node->right) {
 						// If we're deleting the root or a node that's the right child, replace it with the successor
