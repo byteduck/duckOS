@@ -27,6 +27,7 @@ namespace kstd {
 	template<typename MapType>
 	class MapIterator;
 
+	/** An implementation of a map using an AVL tree. **/
 	template<typename K, typename V>
 	class map {
 	public:
@@ -37,10 +38,13 @@ namespace kstd {
 		public:
 			Node(const pair<Key, Val>& data): data(data) {}
 
+			using MapType = map<Key, Val>;
+
 			pair<Key, Val> data;
 			Node* left = nullptr;
 			Node* right = nullptr;
 			Node* parent = nullptr;
+			int height = 1;
 
 			Node* inorder_predecessor() {
 				// Predecessor is in left subtree
@@ -83,7 +87,20 @@ namespace kstd {
 					cur_node = cur_node->left;
 				return cur_node;
 			}
-			
+
+			/** Calculates the balance factor of this node. **/
+			int balance_factor() const {
+				int bf = 0;
+				if(left)
+					bf -= left->height;
+				if(right)
+					bf += right->height;
+				return bf;
+			}
+
+		private:
+			friend MapType;
+
 			void delete_children() {
 				if(left) {
 					left->delete_children();
@@ -93,6 +110,94 @@ namespace kstd {
 					right->delete_children();
 					delete right;
 				}
+			}
+
+			/** Updates a node and its parents' heights. **/
+			void update_height_and_balance(MapType* map) {
+				auto cur_node = this;
+				while(cur_node) {
+					cur_node->update_own_height();
+					cur_node->balance(map);
+					cur_node = cur_node->parent;
+				}
+			}
+
+			/** Balances this node if needed. **/
+			void balance(MapType* map) {
+				int bfc = balance_factor();
+				if(bfc > -2 && bfc < 2)
+					return;
+				if(bfc < -1) {
+					ASSERT(left);
+					// Left-heavy. If left node is right-heavy, we need to rotate that left first
+					if(left->balance_factor() > 0)
+						left->rotate_left(map);
+					rotate_right(map);
+				} else {
+					// Right-heavy. If right node is left-heavy, we need to rotate that right first
+					ASSERT(right);
+					if(right->balance_factor() < 0)
+						right->rotate_right(map);
+					rotate_left(map);
+				}
+			}
+
+			/** Performs a left AVL rotation on this and the right node. **/
+			void rotate_left(MapType* map) {
+				// Perform rotation
+				auto old_right = right;
+				auto old_right_left = right->left;
+				right->left = this;
+				right = old_right_left;
+				old_right->parent = parent;
+				if(parent) {
+					if(parent->left == this)
+						parent->left = old_right;
+					else
+						parent->right = old_right;
+				}
+				parent = old_right;
+				if(right)
+					right->parent = this;
+
+				// Update heights
+				update_own_height();
+				old_right->update_own_height();
+
+				// Update root of tree if needed
+				if(map->m_root == this)
+					map->m_root = old_right;
+			}
+
+			/** Performs a right AVL rotation on this and the right node. **/
+			void rotate_right(MapType* map) {
+//				// Perform rotation
+				auto old_left = left;
+				auto old_left_right = left->right;
+				left->right = this;
+				left = old_left_right;
+				old_left->parent = parent;
+				if(parent) {
+					if(parent->left == this)
+						parent->left = old_left;
+					else
+						parent->right = old_left;
+				}
+				parent = old_left;
+				if(left)
+					left->parent = this;
+
+				// Update heights
+				update_own_height();
+				old_left->update_own_height();
+
+				// Update root of tree if needed
+				if(map->m_root == this)
+					map->m_root = old_left;
+			}
+
+			inline void update_own_height() {
+				height = max(right ? right->height : 0, left ? left->height : 0) + 1;
 			}
 		};
 
@@ -128,41 +233,44 @@ namespace kstd {
 		}
 
 		Node* insert(const pair<Key, Val>& elem) {
-			// TODO: Balance on insertion
 			if(!m_root) {
 				m_root = new Node(elem);
 				m_size++;
 				return m_root;
 			}
 
+			auto insert_at = [&] (Node* node, Node*& slot) -> Node* {
+				auto new_node = new Node(elem);
+				slot = new_node;
+				slot->parent = node;
+				m_size++;
+				if(node->height == 1)
+					node->update_height_and_balance(this); // slot may be invalid after rebalancing
+				return new_node;
+			};
+
 			auto* cur_node = m_root;
 			while(true) {
 				if(cur_node->data.first == elem.first) {
+					// We already have this element
 					return nullptr;
 				} else if(elem.first < cur_node->data.first) {
-					if(cur_node->left) {
+					// Go left or insert left
+					if(cur_node->left)
 						cur_node = cur_node->left;
-					} else {
-						cur_node->left = new Node(elem);
-						cur_node->left->parent = cur_node;
-						m_size++;
-						return cur_node->left;
-					}
+					else
+						return insert_at(cur_node, cur_node->left);
 				} else {
-					if(cur_node->right) {
+					// Go right or insert right
+					if(cur_node->right)
 						cur_node = cur_node->right;
-					} else {
-						cur_node->right = new Node(elem);
-						cur_node->right->parent = cur_node;
-						m_size++;
-						return cur_node->right;
-					}
+					else
+						return insert_at(cur_node, cur_node->right);
 				}
 			}
 		}
 
 		void erase(const Key& key) {
-			// TODO: Balance on erase
 			if(!m_root)
 				return;
 
@@ -180,6 +288,7 @@ namespace kstd {
 						} else {
 							m_root = nullptr;
 						}
+						cur_node->parent->update_height_and_balance(this);
 						delete cur_node;
 					} else if(cur_node == m_root || cur_node == prev_node->right) {
 						// If we're deleting the root or a node that's the right child, replace it with the successor
@@ -190,10 +299,12 @@ namespace kstd {
 								cur_node->right = successor->right;
 								if(cur_node->right)
 									cur_node->right->parent = cur_node;
+								cur_node->update_height_and_balance(this);
 							} else {
 								successor->parent->left = successor->right;
 								if(successor->parent->left)
 									successor->parent->left->parent = successor->parent;
+								successor->parent->update_height_and_balance(this);
 							}
 							delete successor;
 						} else {
@@ -206,6 +317,7 @@ namespace kstd {
 							cur_node->left = cur_node->left->left;
 							if(cur_node->left)
 								cur_node->left->parent = cur_node;
+							cur_node->update_height_and_balance(this);
 							delete old_left;
 						}
 					} else {
@@ -217,10 +329,12 @@ namespace kstd {
 								cur_node->left = predecessor->left;
 								if(cur_node->left)
 									cur_node->left->parent = cur_node;
+								cur_node->update_height_and_balance(this);
 							} else {
 								predecessor->parent->right = predecessor->left;
 								if(predecessor->parent->right)
 									predecessor->parent->right->parent = predecessor->parent;
+								predecessor->parent->update_height_and_balance(this);
 							}
 							delete predecessor;
 						} else {
@@ -233,6 +347,7 @@ namespace kstd {
 							cur_node->right = cur_node->right->right;
 							if(cur_node->right)
 								cur_node->right->parent = cur_node;
+							cur_node->update_height_and_balance(this);
 							delete old_right;
 						}
 					}
