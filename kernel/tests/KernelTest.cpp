@@ -23,6 +23,7 @@ void KernelTestRegistry::run_tests() {
 	for(size_t i = 0; i < m_tests.size(); i++) {
 		m_passing = true;
 		auto& test = m_tests[i];
+		m_current_test = &test;
 		KLog::info("KernelTests", "(%d/%d) Testing %s...", i + 1, m_tests.size(), test.name);
 		m_tests[i].func();
 		if(m_passing) {
