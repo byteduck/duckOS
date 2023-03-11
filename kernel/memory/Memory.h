@@ -5,6 +5,7 @@
 
 #include "../kstd/kstddef.h"
 #include "../api/page_size.h"
+#include "../kstd/kstdlib.h"
 
 #define PAGING_4KiB 0
 #define PAGING_4MiB 1
@@ -41,6 +42,22 @@ public:
 	size_t size;
 	[[nodiscard]] VirtualAddress end() const { return start + size; }
 	[[nodiscard]] bool contains(VirtualAddress address) const { return address >= start && address < end(); }
+	[[nodiscard]] bool overlaps(VirtualRange range) const { return max(start, range.start) < min(end(), range.end()); }
+};
+
+/** A struct to be used for the keys in memory maps. **/
+struct ComparableVirtualRange: public VirtualRange {
+	ComparableVirtualRange(VirtualAddress start, size_t size): VirtualRange(start, size) {}
+	ComparableVirtualRange(VirtualAddress start): VirtualRange(start, 1) {}
+	ComparableVirtualRange(VirtualRange range): VirtualRange(range.start, range.size) {}
+
+	bool operator<(ComparableVirtualRange other) const {
+		return start < other.start;
+	}
+
+	bool operator==(ComparableVirtualRange other) const {
+		return overlaps(other);
+	}
 };
 
 struct PageFault {
