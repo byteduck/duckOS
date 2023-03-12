@@ -14,11 +14,13 @@ namespace TUI {
 		LineEditor();
 
 		std::string get_line();
+		std::string buffer() const { return m_buffer; }
 
 		void set_line(const std::string& line);
 
 		std::function<void(void)> up_pressed = nullptr;
 		std::function<void(void)> down_pressed = nullptr;
+		std::function<void(void)> tab_pressed = nullptr;
 	private:
 		termios m_termios;
 

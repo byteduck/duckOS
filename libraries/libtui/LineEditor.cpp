@@ -124,6 +124,12 @@ void LineEditor::handle_regular_char(char ch) {
 		return;
 	}
 
+	if(ch == '\t') {
+		if(tab_pressed)
+			tab_pressed();
+		return;
+	}
+
 	m_buffer.insert(m_buffer.begin() + m_cursor, ch);
 	move_cursor(1);
 	reprint_line();
