@@ -37,7 +37,7 @@ namespace TUI {
 		void handle_escape_char(char ch);
 
 		std::string m_buffer;
-		std::string::iterator m_cursor;
+		int m_cursor;
 		State m_state;
 	};
 

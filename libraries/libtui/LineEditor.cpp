@@ -6,6 +6,15 @@
 
 using namespace TUI;
 
+int main() {
+	LineEditor editor;
+	while(true) {
+		printf("Type: ");
+		fflush(stdout);
+		printf("You typed: '%s'\n", editor.get_line().c_str());
+	}
+}
+
 LineEditor::LineEditor() {
 	// Get the termios and set it up, we want to turn off canonical mode and echoing
 	tcgetattr(STDIN_FILENO, &m_termios);
@@ -19,24 +28,24 @@ std::string LineEditor::get_line() {
 	tcsetattr(STDIN_FILENO, TCSANOW, &m_termios);
 
 	m_buffer.clear();
-	m_cursor = m_buffer.end();
+	m_cursor = m_buffer.size();
 	m_state = REGULAR;
 
 	while(m_state != DONE) {
 		char ch = std::getchar();
 
 		switch(m_state) {
-		case REGULAR:
-			handle_regular_char(ch);
-			break;
-		case ESCAPE_START:
-			m_state = ch == '[' ? ESCAPE : REGULAR;
-			break;
-		case ESCAPE:
-			handle_escape_char(ch);
-			break;
-		case DONE:
-			break; // Shouldn't happen
+			case REGULAR:
+				handle_regular_char(ch);
+				break;
+			case ESCAPE_START:
+				m_state = ch == '[' ? ESCAPE : REGULAR;
+				break;
+			case ESCAPE:
+				handle_escape_char(ch);
+				break;
+			case DONE:
+				break; // Shouldn't happen
 		}
 	}
 
@@ -58,14 +67,12 @@ void LineEditor::set_line(const std::string& line) {
 void LineEditor::clear_line() {
 	m_buffer = "";
 	reprint_line();
-	m_cursor = m_buffer.end();
+	m_cursor = m_buffer.size();
 }
 
 void LineEditor::reprint_line() {
 	// Clear line
-	int cursor = m_cursor - m_buffer.begin();
-	while(cursor-- > 0)
-		putchar('\b');
+	printf("\033[%dD", m_cursor);
 	printf("\033[K");
 
 	// Reprint line
@@ -73,8 +80,8 @@ void LineEditor::reprint_line() {
 		printf("%s", m_buffer.c_str());
 
 	// Move cursor back to where it was
-	if(m_buffer.end() - m_cursor)
-		printf("\033[%dD", m_buffer.end() - m_cursor);
+	if(m_buffer.size() - m_cursor)
+		printf("\033[%dD", m_buffer.size() - m_cursor);
 
 	fflush(stdout);
 }
@@ -83,10 +90,10 @@ void LineEditor::move_cursor(int amount) {
 	if(!amount)
 		return;
 	m_cursor += amount;
-	if(m_cursor < m_buffer.begin())
-		m_cursor = m_buffer.begin();
-	else if(m_cursor > m_buffer.end())
-		m_cursor = m_buffer.end();
+	if(m_cursor < 0)
+		m_cursor = 0;
+	else if(m_cursor > m_buffer.size())
+		m_cursor = m_buffer.size();
 	else {
 		char control_char = 'C';
 		if(amount < 0) {
@@ -104,7 +111,7 @@ void LineEditor::handle_regular_char(char ch) {
 		return;
 	}
 
-	if(ch == '\b') {
+	if(ch == '\b' || ch == 0x7f) {
 		move_cursor(-1);
 		if(!m_buffer.empty())
 			m_buffer.erase(m_cursor);
@@ -117,7 +124,7 @@ void LineEditor::handle_regular_char(char ch) {
 		return;
 	}
 
-	m_buffer.insert(m_cursor, ch);
+	m_buffer.insert(m_buffer.begin() + m_cursor, ch);
 	move_cursor(1);
 	reprint_line();
 }
@@ -135,12 +142,12 @@ void LineEditor::handle_escape_char(char ch) {
 				down_pressed();
 			break;
 		case 'C': // Right arrow
-			if(m_cursor < m_buffer.end())
+			if(m_cursor < m_buffer.size())
 				move_cursor(1);
 			m_state = REGULAR;
 			break;
 		case 'D': // Left arrow
-			if(m_cursor >= m_buffer.begin())
+			if(m_cursor >= 0)
 				move_cursor(-1);
 			m_state = REGULAR;
 			break;
