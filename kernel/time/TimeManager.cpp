@@ -21,18 +21,33 @@
 #include "TimeManager.h"
 #include "PIT.h"
 #include "RTC.h"
+#include <kernel/kstd/KLog.h>
 
 TimeManager* TimeManager::_inst = nullptr;
+
+inline uint64_t read_tsc() {
+	uint32_t low, high;
+	asm volatile ("rdtsc" : "=a"(low), "=d"(high));
+	return ((uint64_t) high << 32) | (uint64_t) low;
+}
+
+extern uint64_t initial_tsc;
+extern uint64_t final_tsc;
 
 void TimeManager::init() {
 	if(_inst)
 		return;
+
 	_inst = new TimeManager();
 	_inst->_keeper->enable();
 }
 
 TimeManager::TimeManager(): _keeper(new RTC(this)) {
-	_epoch.tv_sec = RTC::timestamp();
+	// Measure the tsc speed in MHz for accurate time measurement by using the PIT.
+	_boot_epoch = RTC::timestamp();
+	measure_tsc_speed();
+	_tsc_speed = (final_tsc - initial_tsc) / 10000;
+	KLog::dbg("TimeManager", "TSC speed measured at %dMHz", (uint32_t) _tsc_speed);
 }
 
 TimeManager& TimeManager::inst() {
@@ -57,17 +72,11 @@ void TimeManager::tick() {
 	idle_ticks.push_back(TaskManager::is_idle());
 	TaskManager::tick();
 
-	if(_ticks == _keeper->frequency()) {
-		_ticks = 0;
-		_uptime.tv_sec++;
-		_uptime.tv_usec = 0;
-		_epoch.tv_sec++;
-		_epoch.tv_usec = 0;
-	}
-
-	long usec = 1000000 / _keeper->frequency();;
-	_epoch.tv_usec += usec;
-	_uptime.tv_usec += usec;
+	auto uptime_us = (read_tsc() - initial_tsc) / _tsc_speed;
+	_uptime.tv_usec = (long) (uptime_us % 1000000);
+	_uptime.tv_sec = (long) (uptime_us / 1000000);
+	_epoch.tv_sec = _boot_epoch + _uptime.tv_sec;
+	_epoch.tv_usec = _uptime.tv_usec;
 }
 
 double TimeManager::percent_idle() {

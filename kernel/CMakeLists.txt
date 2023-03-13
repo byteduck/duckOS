@@ -5,7 +5,7 @@
 set(CMAKE_CXX_STANDARD 20)
 
 ENABLE_LANGUAGE(ASM_NASM)
-SET_SOURCE_FILES_PROPERTIES(asm/startup.s asm/tasking.s asm/int.s asm/syscall.s asm/gdt.s PROPERTIES LANGUAGE ASM_NASM)
+SET_SOURCE_FILES_PROPERTIES(asm/startup.s asm/tasking.s asm/int.s asm/syscall.s asm/gdt.s asm/timing.s PROPERTIES LANGUAGE ASM_NASM)
 
 SET(CMAKE_CXX_FLAGS "-ffreestanding -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
 
@@ -29,6 +29,7 @@ SET(KERNEL_SRCS
         asm/int.s
         asm/syscall.s
         asm/gdt.s
+        asm/timing.s
         kmain.cpp
         time/CMOS.cpp
         time/PIT.cpp
