@@ -46,6 +46,7 @@
 #include <kernel/tasking/ProcessArgs.h>
 #include <kernel/kstd/KLog.h>
 #include <kernel/tests/KernelTest.h>
+#include "bootlogo.h"
 
 uint8_t boot_disk;
 
@@ -90,7 +91,18 @@ int kmain(uint32_t mbootptr){
 			PANIC("MBOOT_TEXTMODE", "duckOS doesn't support textmode.");
 	}
 
+	// Clear screen and draw boot logo
 	clearScreen();
+	size_t logo_pos[2] = {
+		VGADevice::inst().get_display_width() / 2 - (BOOT_LOGO_WIDTH * BOOT_LOGO_SCALE) / 2,
+		VGADevice::inst().get_display_height() / 2 - (BOOT_LOGO_HEIGHT * BOOT_LOGO_SCALE) / 2
+	};
+	for(size_t y = 0; y < BOOT_LOGO_HEIGHT * BOOT_LOGO_SCALE; y++) {
+		for(size_t x = 0; x < BOOT_LOGO_WIDTH * BOOT_LOGO_SCALE; x++) {
+			VGADevice::inst().set_pixel(logo_pos[0] + x, logo_pos[1] + y, boot_logo[(x / BOOT_LOGO_SCALE) + (y / BOOT_LOGO_SCALE) * BOOT_LOGO_WIDTH]);
+		}
+	}
+
 #ifdef DEBUG
 	KLog::info("kinit", "Debug mode is enabled.");
 #endif
