@@ -24,3 +24,23 @@ InodeVMObject::InodeVMObject(kstd::vector<PageIndex> physical_pages, kstd::Arc<I
 	m_inode(kstd::move(inode)),
 	m_type(type)
 {}
+
+ResultRet<bool> InodeVMObject::read_page_if_needed(size_t index) {
+	if(index >= m_physical_pages.size())
+		return Result(ERANGE);
+	if(m_physical_pages[index])
+		return false;
+
+	auto new_page = TRY(MM.alloc_physical_page());
+	ssize_t nread;
+	MM.with_quickmapped(new_page, [&](void* buf) {
+		nread = m_inode->read(index * PAGE_SIZE, PAGE_SIZE, KernelPointer<uint8_t>((uint8_t*) buf), nullptr);
+	});
+	if(nread < 0) {
+		MM.free_physical_page(new_page);
+		return Result(-nread);
+	}
+	m_physical_pages[index] = new_page;
+
+	return true;
+}

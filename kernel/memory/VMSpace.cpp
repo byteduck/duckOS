@@ -229,49 +229,29 @@ Result VMSpace::try_pagefault(PageFault fault) {
 
 			// Check if the region is a mapped inode.
 			if(vmRegion->object()->is_inode()) {
+				PageIndex inode_page = error_page + (vmRegion->object_start() / PAGE_SIZE);
 				auto inode_object = kstd::static_pointer_cast<InodeVMObject>(vmRegion->object());
 
 				// Check to see if it needs to be read in
 				LOCK_N(inode_object->lock(), inode_locker);
-				if(inode_object->physical_page_index(error_page)) {
+				if(inode_object->physical_page_index(inode_page)) {
 					// This page may be marked CoW, so copy it if it is
-					if(vmRegion->prot().write && inode_object->page_is_cow(error_page)) {
-						auto res = vmRegion->m_object->try_cow_page(error_page);
+					if(vmRegion->prot().write && inode_object->page_is_cow(inode_page)) {
+						auto res = vmRegion->m_object->try_cow_page(inode_page);
 						if(res.is_error())
 							return res;
 					}
 
 					// Or, we may have encountered a race where the page was created by another thread after the fault.
-					m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
+					m_page_directory.map(*vmRegion, VirtualRange { inode_page * PAGE_SIZE, PAGE_SIZE });
 					return Result(SUCCESS);
 				}
 
-				// Allocate a new physical page.
-				auto new_page = TRY(MM.alloc_physical_page());
-
-				// We read directly from the shared VMObject if this page exists in it.
-				auto inode = inode_object->inode();
-				auto shared_object = inode->shared_vm_object();
-				PageIndex shared_page_index = error_page + (vmRegion->object_start() / PAGE_SIZE);
-				auto shared_page = shared_object->physical_page_index(shared_page_index);
-				if(shared_object != inode_object && shared_page) {
-					MM.copy_page(shared_page, new_page);
-				} else {
-					// Read the appropriate part of the file into the buffer.
-					kstd::Arc<uint8_t> buf((uint8_t*) kmalloc(PAGE_SIZE));
-					ssize_t nread = inode->read(error_page * PAGE_SIZE + vmRegion->object_start(), PAGE_SIZE, KernelPointer<uint8_t>(buf.get()), nullptr);
-					if(nread < 0)
-						return Result(-nread);
-
-					// Read the contents of the buffer into the newly allocated physical page.
-					MM.with_quickmapped(new_page, [&](void* page_buf) {
-						memcpy_uint32((uint32_t*) page_buf, (uint32_t*) buf.get(), PAGE_SIZE / sizeof(uint32_t));
-					});
-				}
-
-				// Remap the page.
-				inode_object->physical_page_index(error_page) = new_page;
-				m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
+				// Otherwise, read in the page and map it
+				auto did_read = TRY(inode_object->read_page_if_needed(inode_page));
+				ASSERT(inode_object->physical_page_index(inode_page));
+				if(did_read)
+					m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
 
 				return Result(SUCCESS);
 			}

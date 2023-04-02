@@ -19,6 +19,13 @@ public:
 		return m_physical_pages[index];
 	};
 
+	/**
+	 * Reads in the page at the given index if it isn't allocated yet.
+	 * @param index The index of the page to read in.
+	 * @return A successful result if the index is in range and could be read. True if read, false if already exists.
+	 */
+	ResultRet<bool> read_page_if_needed(size_t index);
+
 	kstd::Arc<Inode> inode() const { return m_inode; }
 	SpinLock& lock() { return m_page_lock; }
 	Type type() const { return m_type; }
