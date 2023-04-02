@@ -107,7 +107,7 @@ ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, V
 	auto vmRegion = kstd::make_shared<VMRegion>(
 			object,
 			self(),
-			VirtualRange {region->start, object->size()},
+			VirtualRange {region->start, range.size},
 			object_start,
 			prot);
 	region->vmRegion = vmRegion.get();

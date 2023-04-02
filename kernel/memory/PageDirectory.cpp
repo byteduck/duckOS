@@ -149,6 +149,7 @@ void PageDirectory::map(VMRegion& region, VirtualRange range) {
 	PageIndex start_vpage = region.start() / PAGE_SIZE;
 	PageIndex start_index = range.start / PAGE_SIZE;
 	PageIndex end_index = (range.start + range.size) / PAGE_SIZE;
+	PageIndex page_offset = region.object_start() / PAGE_SIZE;
 	auto prot = region.prot();
 	ASSERT(prot.read);
 	ASSERT(range.start % PAGE_SIZE == 0);
@@ -156,12 +157,12 @@ void PageDirectory::map(VMRegion& region, VirtualRange range) {
 	ASSERT(range.start + range.size <= region.end());
 
 	for(size_t page_index = start_index; page_index < end_index; page_index++) {
-		auto& page = region.object()->physical_page(page_index);
+		auto& page = region.object()->physical_page(page_index + page_offset);
 		if(!page.index())
 			continue;
 
 		auto vpage = start_vpage + page_index;
-		auto ppage = region.object()->physical_page(page_index).index();
+		auto ppage = region.object()->physical_page(page_index + page_offset).index();
 		VMProt page_prot = {
 			.read = prot.read,
 			.write = region.object()->page_is_cow(page_index) ? false : prot.write,
