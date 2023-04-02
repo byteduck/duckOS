@@ -137,7 +137,7 @@ public:
 	 * @param object The object to map.
 	 * @return The region the object was mapped to.
 	 */
-	kstd::Arc<VMRegion> map_object(kstd::Arc<VMObject> object);
+	kstd::Arc<VMRegion> map_object(kstd::Arc<VMObject> object, VirtualRange range = {0, 0});
 
 	/**
 	 * Temporarily maps a physical page into memory and calls a function with it mapped.

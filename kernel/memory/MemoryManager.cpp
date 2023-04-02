@@ -360,8 +360,8 @@ kstd::Arc<VMRegion> MemoryManager::alloc_mapped_region(PhysicalAddress start, si
 	return res.value();
 }
 
-kstd::Arc<VMRegion> MemoryManager::map_object(kstd::Arc<VMObject> object) {
-	auto res = m_kernel_space->map_object(object, VMProt::RW);
+kstd::Arc<VMRegion> MemoryManager::map_object(kstd::Arc<VMObject> object, VirtualRange range) {
+	auto res = m_kernel_space->map_object(object, VMProt::RW, {0, range.size}, range.start);
 	if(res.is_error())
 		PANIC("ALLOC_MAPPED_FAIL", "Could not map an existing object into kernel space.");
 	return res.value();
