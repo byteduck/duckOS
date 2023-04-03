@@ -54,6 +54,7 @@ SET(KERNEL_SRCS
         device/Device.cpp
         device/BlockDevice.cpp
         filesystem/Inode.cpp
+        filesystem/CachedFilesystemInode.cpp
         device/PartitionDevice.cpp
         filesystem/Filesystem.cpp
         filesystem/LinkedInode.cpp

@@ -44,3 +44,10 @@ ResultRet<bool> InodeVMObject::read_page_if_needed(size_t index) {
 
 	return true;
 }
+
+ResultRet<kstd::Arc<VMRegion>> InodeVMObject::map_pages_in_kernel(PageIndex start_page, size_t num_pages) {
+	bool read = false;
+	for(auto page = start_page; page < start_page + num_pages; page++)
+		read |= TRY(read_page_if_needed(page));
+	return MM.map_object(self(), {start_page * PAGE_SIZE, num_pages * PAGE_SIZE});
+}

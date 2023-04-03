@@ -129,11 +129,6 @@ ssize_t ProcFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buff
 			itoa((int) MM.kernel_heap(), numbuf, 10);
 			str += numbuf;
 
-			str += "\nkcache = ";
-			itoa((int) DiskDevice::used_cache_memory(), numbuf, 10);
-			str += numbuf;
-			str += "\n";
-
 			if(start >= str.length())
 				return 0;
 			if(start + length > str.length())

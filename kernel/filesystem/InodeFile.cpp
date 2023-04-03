@@ -32,18 +32,21 @@ kstd::Arc<Inode> InodeFile::inode() {
 }
 
 ssize_t InodeFile::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
-	if(_inode->metadata().exists() && _inode->metadata().is_directory()) return -EISDIR;
-	return _inode->read(offset, count, buffer, &fd);;
+	if(_inode->metadata().exists() && _inode->metadata().is_directory())
+		return -EISDIR;
+	return _inode->read_cached(offset, count, buffer, &fd);;
 }
 
 ssize_t InodeFile::read_dir_entry(FileDescriptor &fd, size_t offset, SafePointer<DirectoryEntry> buffer) {
-	if(_inode->metadata().exists() && !_inode->metadata().is_directory()) return -ENOTDIR;
+	if(_inode->metadata().exists() && !_inode->metadata().is_directory())
+		return -ENOTDIR;
 	return _inode->read_dir_entry(offset, buffer, &fd);
 }
 
 ssize_t InodeFile::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
-	if(_inode->metadata().exists() && _inode->metadata().is_directory()) return -EISDIR;
-	return _inode->write(offset, count, buffer, &fd);
+	if(_inode->metadata().exists() && _inode->metadata().is_directory())
+		return -EISDIR;
+	return _inode->write_cached(offset, count, buffer, &fd);
 }
 
 void InodeFile::open(FileDescriptor& fd, int options) {

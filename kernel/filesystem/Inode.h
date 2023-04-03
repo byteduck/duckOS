@@ -63,6 +63,8 @@ public:
 	virtual InodeMetadata metadata();
 
 	kstd::Arc<InodeVMObject> shared_vm_object();
+	virtual ssize_t read_cached(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd);
+	virtual ssize_t write_cached(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd);
 
 protected:
 	InodeMetadata _metadata;

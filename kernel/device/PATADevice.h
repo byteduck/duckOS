@@ -49,8 +49,8 @@ public:
 
 
 	//BlockDevice
-	Result read_uncached_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
-	Result write_uncached_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override;
+	Result read_blocks(uint32_t block, uint32_t count, uint8_t *buffer) override;
+	Result write_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) override;
 	size_t block_size() override;
 
 	//File
