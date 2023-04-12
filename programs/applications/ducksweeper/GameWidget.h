@@ -18,7 +18,7 @@
 */
 
 #pragma once
-#include "Minesweeper.h"
+#include "Ducksweeper.h"
 #include <libui/widget/Widget.h>
 #include <libgraphics/Graphics.h>
 #include <libapp/App.h>
@@ -32,16 +32,17 @@
 #define CELL_SIZE 24
 #define IMAGE_SIZE 16
 
-class GameWidget: public UI::Widget {
+class GameWidget : public UI::Widget
+{
 public:
 	WIDGET_DEF(GameWidget)
 
 	void reset();
 	std::function<void()> on_stop = nullptr;
 
-	//Widget
+	// Widget
 	Gfx::Dimensions preferred_size() override;
-	void do_repaint(const UI::DrawContext& ctx) override;
+	void do_repaint(const UI::DrawContext &ctx) override;
 	bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 	bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 
@@ -55,6 +56,5 @@ private:
 	int click_x = -1;
 	int click_y = -1;
 	Duck::Ptr<const Gfx::Image> flag;
-	Duck::Ptr<const Gfx::Image> bomb;
+	Duck::Ptr<const Gfx::Image> duck;
 };
-

@@ -24,13 +24,14 @@
 #include <libui/widget/Button.h>
 #include <libui/widget/Cell.h>
 
-int main(int argc, char** argv, char** envp) {
-	//Init LibUI
+int main(int argc, char **argv, char **envp)
+{
+	// Init LibUI
 	UI::init(argv, envp);
 
-	//Make window
+	// Make window
 	auto window = UI::Window::make();
-	window->set_title("Minesweeper");
+	window->set_title("Ducksweeper");
 
 	auto mainview = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL, 2);
 	auto toolbar = UI::BoxLayout::make(UI::BoxLayout::VERTICAL, 2);
@@ -42,24 +43,26 @@ int main(int argc, char** argv, char** envp) {
 	toolbar->add_child(elapsed_widget);
 
 	auto gamewidget = GameWidget::make();
-	new_button->on_pressed = [&]{
+	new_button->on_pressed = [&]
+	{
 		gamewidget->reset();
 		elapsed_widget->reset();
 	};
 
-	gamewidget->on_stop = [&]{
+	gamewidget->on_stop = [&]
+	{
 		elapsed_widget->stop();
 	};
 
 	mainview->add_child(gamewidget);
 	mainview->add_child(toolbar);
 
-	//Show the main window
+	// Show the main window
 	window->set_contents(UI::Cell::make(mainview));
 	window->show();
 	window->set_resizable(false);
 
-	//Run event loop
+	// Run event loop
 	UI::run();
 
 	return 0;
