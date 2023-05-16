@@ -11,7 +11,7 @@ A disk image of duckOS can be downloaded from the artifacts of the duckOS GitHub
 Alternatively, thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can try a version of duckOS in your browser. This is a lot slower running it locally, and the build will usually be a bit out-of-date. You can try it [here](https://aaron.sonin.me/duckOS)!
 
 ### Screenshots
-![Screenshot](docs/screenshot-2023-05-16.png)
+![Screenshot](docs/screenshots/screenshot-2023-05-16.png)
 
 ### What's working
 - Booting off of the primary master IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
@@ -118,6 +118,9 @@ Ports can be installed by running [ports.sh](ports/ports.sh) supplied with the d
 
 ### Building / Running
 - See [INSTRUCTIONS.md](INSTRUCTIONS.md) for instructions.
+
+### Contributing
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for information on how to contribute to duckOS.
 
 ### Credits
 - [blanham's mirror of liballoc 1.1](https://github.com/blanham/liballoc) for the kernel heap allocation implementation (it's open domain, so if you want to use it, I highly recommend it)

@@ -1,0 +1,23 @@
+﻿---
+BasedOnStyle: WebKit
+AlignAfterOpenBracket: Align
+AllowAllConstructorInitializersOnNextLine: true
+AlwaysBreakTemplateDeclarations: 'Yes'
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBraces: Attach
+BreakConstructorInitializers: AfterColon
+ColumnLimit: 120
+Cpp11BracedListStyle: true
+IndentCaseLabels: true
+IndentWidth: 4
+NamespaceIndentation: All
+SpaceAfterCStyleCast: true
+SpaceAfterTemplateKeyword: false
+SpaceBeforeCtorInitializerColon: false
+SpaceBeforeInheritanceColon: false
+SpaceBeforeParens: Never
+TabWidth: 4
+UseTab: Always
+
+...
