@@ -1,3 +1,3 @@
 SET(SOURCES Ducksweeper.cpp GameWidget.cpp ElapsedWidget.cpp main.cpp)
-MAKE_APP(Ducksweeper)
-TARGET_LINK_LIBRARIES(Ducksweeper libui)
+MAKE_APP(ducksweeper)
+TARGET_LINK_LIBRARIES(ducksweeper libui)
