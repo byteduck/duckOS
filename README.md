@@ -11,7 +11,7 @@ A disk image of duckOS can be downloaded from the artifacts of the duckOS GitHub
 Alternatively, thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can try a version of duckOS in your browser. This is a lot slower running it locally, and the build will usually be a bit out-of-date. You can try it [here](https://aaron.sonin.me/duckOS)!
 
 ### Screenshots
-![Screenshot](docs/screenshot-2022-11-08.png)
+![Screenshot](docs/screenshot-2023-05-16.png)
 
 ### What's working
 - Booting off of the primary master IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
