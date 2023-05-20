@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright © 2023 Chaziz */
 
-#include <kernel/api/sgtty.h>
+#include "sgtty.h"
 
 /* It's just stubs for now. */
 
