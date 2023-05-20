@@ -58,6 +58,12 @@ public:
 	 */
 	ResultRet<VMProt> get_shared_permissions(pid_t pid);
 
+	/**
+	 * Sets the fork action of this object. Only use if you know what you're doing.
+	 * @param action The action to take when forking a VMSpace with this object.
+	 */
+	void set_fork_action(ForkAction action) { m_fork_action = action; }
+
 	bool is_shared() const { return m_is_shared; }
 	pid_t shared_owner() const { return m_shared_owner; }
 	int shm_id() const { return m_shm_id; }

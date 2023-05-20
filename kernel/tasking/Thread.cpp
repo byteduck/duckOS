@@ -385,9 +385,10 @@ bool Thread::call_signal_handler(int signal) {
 		return true;
 
 	//Allocate a userspace stack
-	auto alloc_user_stack = [&]() -> Result {
+	auto alloc_user_stack = [this]() -> Result {
 		if(!_sighandler_ustack_region) {
 			auto user_stack = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
+			user_stack->set_fork_action(VMObject::ForkAction::Ignore);
 			_sighandler_ustack_region = TRY(m_vm_space->map_object(user_stack, VMProt::RW));
 		}
 		return Result(SUCCESS);
@@ -399,6 +400,7 @@ bool Thread::call_signal_handler(int signal) {
 	}
 
 	// Map the user stack into kernel space
+	// FIXME: We panic here after the second time this is called. Why?
 	auto k_ustack = MM.map_object(_sighandler_ustack_region->object());
 
 	//Allocate a kernel stack
