@@ -15,7 +15,7 @@
 	along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
 
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
-	Copyright (c) ChazizGRKB 2022.
+	Copyright (c) Chaziz 2022.
 */
 
 #include "Display.h"

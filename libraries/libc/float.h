@@ -15,7 +15,7 @@
     along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
     
     Copyright (c) Byteduck 2016-2020. All rights reserved.
-    Copyright (c) ChazizGRKB 2022.
+    Copyright (c) Chaziz 2022.
 */
 
 #ifndef DUCKOS_LIBC_FLOAT_H
