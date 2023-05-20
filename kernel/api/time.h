@@ -16,7 +16,6 @@ __DECL_BEGIN
 #define CLOCK_REALTIME_COARSE 4
 #define CLOCK_MONOTONIC_COARSE 5
 
-typedef uint32_t clock_t;
 typedef int clockid_t;
 typedef int64_t time_t;
 

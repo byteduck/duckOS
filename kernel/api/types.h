@@ -25,6 +25,8 @@ typedef long blkcnt_t;
 typedef long suseconds_t;
 typedef unsigned long useconds_t;
 
+typedef long clock_t;
+
 typedef uint8_t u_char;
 typedef uint16_t u_short;
 typedef uint32_t u_int;
