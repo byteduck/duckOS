@@ -270,7 +270,7 @@ int usleep(useconds_t usec) {
 }
 
 int gethostname(char* name, size_t len) {
-	return syscall3(SYS_GETHOSTNAME, (int) buf, (int) size);
+	return syscall3(SYS_GETHOSTNAME, (int) name, (int) len);
 }
 
 pid_t tcgetpgrp(int fd) {
