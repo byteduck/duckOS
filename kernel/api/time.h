@@ -47,4 +47,6 @@ struct timezone {
 	int tz_dsttime;
 };
 
+#define USEC_PER_SEC    1000000L
+
 __DECL_END

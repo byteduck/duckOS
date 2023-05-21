@@ -1,7 +1,18 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright © 2016-2023 Byteduck */
+/* Copyright © 2023 Chaziz */
 
 #pragma once
+#include "ioctl-types.h"
+
+struct sgttyb
+{
+    char sg_ispeed;
+    char sg_ospeed;
+    char sg_erase;
+    char sg_kill;
+    short int sg_flags;
+};
 
 #define TIOCSCTTY 	1
 #define TIOCGPGRP	2
@@ -16,3 +27,6 @@
 #define TIOCNOTTY	11
 #define TIOSGFX		12
 #define TIOSNOGFX	13
+#define TIOCGETP    14
+#define TIOCSETP    15
+#define TIOCSETN    16

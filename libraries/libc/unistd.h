@@ -28,6 +28,9 @@
 
 __DECL_BEGIN
 
+#define _POSIX_VERSION      200809L
+#define	_POSIX2_C_VERSION   200809L
+
 #define STDIN_FILENO	0
 #define STDOUT_FILENO	1
 #define STDERR_FILENO	2
@@ -97,6 +100,8 @@ char* getwd(char* buf);
 
 int sleep(unsigned secs);
 int usleep(useconds_t usec);
+
+int gethostname(char*, size_t);
 
 pid_t tcgetpgrp(int fd);
 int tcsetpgrp(int fd, pid_t pgid);

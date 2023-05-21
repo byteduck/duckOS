@@ -186,8 +186,10 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return cur_proc->sys_mprotect((void*) arg1, (size_t) arg2, arg3);
 		case SYS_UNAME:
 			return cur_proc->sys_uname((struct utsname*) arg1);
-
+			
 		//TODO: Implement these syscalls
+		case SYS_GETHOSTNAME:
+			return -1;
 		case SYS_TIMES:
 			return -1;
 

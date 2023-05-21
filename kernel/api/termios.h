@@ -4,6 +4,7 @@
 #pragma once
 #include "cdefs.h"
 #include "stdint.h"
+#include "ioctl-types.h"
 
 __DECL_BEGIN
 
@@ -21,13 +22,6 @@ struct termios {
 	cc_t c_cc[NCCS];
 	tcflag_t c_ispeed;
 	tcflag_t c_ospeed;
-};
-
-struct winsize {
-	unsigned short ws_row;
-	unsigned short ws_col;
-	unsigned short ws_xpixel;
-	unsigned short ws_ypixel;
 };
 
 //c_iflag
@@ -82,7 +76,7 @@ struct winsize {
 #define XCASE	0x4
 #define ECHO	0x8
 #define ECHOE	0x10
-#define EHCOK	0x20
+#define ECHOK	0x20
 #define ECHONL	0x40
 #define ECHOCTL	0x80
 #define ECHOPRT	0x100

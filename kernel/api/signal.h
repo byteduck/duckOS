@@ -44,9 +44,15 @@ __DECL_BEGIN
 #define SIG_ERR ((sighandler_t)1)
 #define SIG_IGN ((sighandler_t)2)
 
+#define SIGSET_WORDS (1024 / (8 * sizeof (unsigned long int)))
+
+typedef struct
+{
+  unsigned long int val[SIGSET_WORDS];
+} sigset_t;
+
 typedef uint32_t sig_atomic_t;
 typedef void (*sighandler_t)(int);
-typedef unsigned long sigset_t;
 typedef struct sigaction {
 	sighandler_t sa_sigaction;
 	sigset_t sa_mask;

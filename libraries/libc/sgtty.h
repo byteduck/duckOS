@@ -7,8 +7,6 @@
 
 __DECL_BEGIN
 
-struct sgttyb;
-
 extern int gtty(int fd, struct sgttyb *params);
 extern int stty(int fd, struct sgttyb *params);
 
