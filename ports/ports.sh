@@ -85,6 +85,7 @@ build_port() {
   export INSTALL_ARGS=("install")
   export DEPENDENCIES=()
   export GIT_URL=""
+  export CONFIGURE_PATH=""
   source "$PORT_DIR/build.sh"
 
   install_dependencies
@@ -98,7 +99,10 @@ build_port() {
   fi
   if [ "$USE_CONFIGURE" = "true" ]; then
     msg "Configuring port $DUCKOS_PORT_NAME..."
-    "$DOWNLOAD_FILE/configure" --host="i686-pc-duckos" "${CONFIGURE_ARGS[@]}" || return 1
+    if [ -z "$CONFIGURE_PATH" ]; then
+      CONFIGURE_PATH="$DOWNLOAD_FILE/configure"
+    fi
+    "$CONFIGURE_PATH" --host="i686-pc-duckos" "${CONFIGURE_ARGS[@]}" || return 1
   fi
   msg "Building port $DUCKOS_PORT_NAME..."
   make "-j$NUM_JOBS" "${MAKE_ARGS[@]}" || return 1
