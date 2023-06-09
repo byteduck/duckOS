@@ -280,6 +280,34 @@ void Framebuffer::fill_gradient_v(Rect area, Color color_a, Color color_b) const
 		fill({area.x, area.y + y, area.width, 1}, color_a.mixed(color_b, (float) y / area.height));
 }
 
+void Framebuffer::invert(Gfx::Rect area) const {
+	//Make sure area is in the bounds of the framebuffer
+	area = area.overlapping_area({0, 0, width, height});
+	if(area.empty())
+		return;
+
+	for(int y = 0; y < area.height; y++) {
+		for(int x = 0; x < area.width; x++) {
+			auto& color = data[x + area.x + (area.y + y) * width];
+			color = color.inverted();
+		}
+	}
+}
+
+void Framebuffer::invert_checkered(Gfx::Rect area) const {
+	//Make sure area is in the bounds of the framebuffer
+	area = area.overlapping_area({0, 0, width, height});
+	if(area.empty())
+		return;
+
+	for(int y = 0; y < area.height; y++) {
+		for(int x = y % 2; x < area.width; x+=2) {
+			auto& color = data[x + area.x + (area.y + y) * width];
+			color = color.inverted();
+		}
+	}
+}
+
 void Framebuffer::outline(Rect area, Color color) const {
 	fill({area.x + 1, area.y, area.width - 2, 1}, color);
 	fill({area.x + 1, area.y + area.height - 1, area.width - 2, 1}, color);
@@ -292,6 +320,20 @@ void Framebuffer::outline_blitting(Rect area, Color color) const {
 	fill_blitting({area.x + 1, area.y + area.height - 1, area.width - 2, 1}, color);
 	fill_blitting({area.x, area.y, 1, area.height}, color);
 	fill_blitting({area.x + area.width - 1, area.y, 1, area.height}, color);
+}
+
+void Framebuffer::outline_inverting(Gfx::Rect area) const {
+	invert({area.x + 1, area.y, area.width - 2, 1});
+	invert({area.x + 1, area.y + area.height - 1, area.width - 2, 1});
+	invert({area.x, area.y, 1, area.height});
+	invert({area.x + area.width - 1, area.y, 1, area.height});
+}
+
+void Framebuffer::outline_inverting_checkered(Gfx::Rect area) const {
+	invert_checkered({area.x + 1, area.y, area.width - 2, 1});
+	invert_checkered({area.x + 1, area.y + area.height - 1, area.width - 2, 1});
+	invert_checkered({area.x, area.y, 1, area.height});
+	invert_checkered({area.x + area.width - 1, area.y, 1, area.height});
 }
 
 void Framebuffer::draw_text(const char* str, const Point& pos, Font* font, Color color) const {

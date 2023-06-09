@@ -145,6 +145,18 @@ namespace Gfx {
 		void fill_gradient_v(Rect area, Color color_a, Color color_b) const;
 
 		/**
+		 * Inverts an area of the Image.
+		 * @param area The area to invert.
+		 */
+		void invert(Rect area) const;
+
+		/**
+		 * Inverts an area of the Image with a checkered pattern.
+		 * @param area The area to invert.
+		 */
+		void invert_checkered(Rect area) const;
+
+		/**
 		 * Draws the outline of an area on the Image.
 		 * @param area The rect of the area to outline.
 		 * @param color The color to draw the outline in.
@@ -157,6 +169,18 @@ namespace Gfx {
 		 * @param color The color to draw the outline in.
 		 */
 		void outline_blitting(Rect area, Color color) const;
+
+		/**
+		 * Outlines an area on the Framebuffer by inverting the colors.
+		 * @param area The area to outline.
+		 */
+		void outline_inverting(Rect area) const;
+
+		/**
+		 * Outlines an area on the Framebuffer by inverting the colors with a checker pattern.
+		 * @param area The area to outline.
+		 */
+		void outline_inverting_checkered(Rect area) const;
 
 		/**
 		 * Draws text on the Image with a certain color.
@@ -187,6 +211,13 @@ namespace Gfx {
 		 * Returns a pointer to the Image buffer at a certain position. Returns NULL if outside the constraints.
 		 */
 		Color* at(const Point& position) const;
+
+		/**
+		 * Returns a reference to the Image buffer at a certain position without bounds checking.
+		 */
+		inline constexpr Color& ref_at(const Point& position) const {
+			return data[position.x + position.y * width];
+		}
 
 		/// Serializable
 		size_t serialized_size() const override;

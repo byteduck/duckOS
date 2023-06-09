@@ -64,6 +64,10 @@ public:
 		);
 	}
 
+	[[nodiscard]] constexpr Color inverted() const {
+		return Color(255 - r, 255 - g, 255 - b, a);
+	}
+
 } Color;
 }
 
