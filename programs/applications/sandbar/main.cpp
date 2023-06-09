@@ -40,8 +40,5 @@ int main(int argc, char** argv, char** envp) {
 	auto sandbar = Sandbar::make();
 	UI::run();
 
-	//Run event loop
-	UI::run();
-
 	return 0;
 }
