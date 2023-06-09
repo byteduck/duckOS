@@ -181,6 +181,10 @@ void Display::repaint() {
 		return;
 	gettimeofday(&paint_time, NULL);
 
+	//If we're resizing a window, always invalidate the resize rect so we don't screw up the inverted outline effect
+	if(_resize_window)
+		invalidate(_resize_rect);
+
 	auto& fb = _buffer_mode == BufferMode::Single ? _framebuffer : _root_window->framebuffer();
 
 	//Combine areas that overlap
@@ -254,7 +258,7 @@ void Display::repaint() {
 
 	//If we're resizing a window, draw the outline
 	if(_resize_window)
-		fb.outline(_resize_rect, RGB(255, 255, 255));
+		fb.outline_inverting_checkered(_resize_rect);
 
 	//Draw the mouse.
 	fb.draw_image(_mouse_window->framebuffer(), {0, 0, _mouse_window->rect().width, _mouse_window->rect().height},
