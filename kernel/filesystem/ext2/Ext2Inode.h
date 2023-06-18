@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include <kernel/filesystem/Inode.h>
+#include <kernel/filesystem/CachedFilesystemInode.h>
 #include <kernel/kstd/vector.hpp>
 
 class Ext2Filesystem;
-class Ext2Inode: public Inode {
+class Ext2Inode: public CachedFilesystemInode {
 public:
 	typedef struct __attribute__((packed)) Raw {
 		uint16_t mode = 0;

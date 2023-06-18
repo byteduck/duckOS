@@ -26,6 +26,13 @@ public:
 	 */
 	ResultRet<bool> read_page_if_needed(size_t index);
 
+	/**
+	 * Maps the given range of pages into the kernel, reading them in as needed.
+	 * @param start_page The page to start the mapping at.
+	 * @param num_pages The number of pages to map.
+	 */
+	ResultRet<kstd::Arc<VMRegion>> map_pages_in_kernel(PageIndex start_page, size_t num_pages);
+
 	kstd::Arc<Inode> inode() const { return m_inode; }
 	SpinLock& lock() { return m_page_lock; }
 	Type type() const { return m_type; }

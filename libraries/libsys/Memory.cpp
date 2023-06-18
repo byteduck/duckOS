@@ -41,7 +41,7 @@ ResultRet<Mem::Info> Mem::get_info(Duck::InputStream& file) {
 		strtoul(cfg["kvirt"].c_str(), nullptr, 0),
 		strtoul(cfg["kphys"].c_str(), nullptr, 0),
 		strtoul(cfg["kheap"].c_str(), nullptr, 0),
-		strtoul(cfg["kcache"].c_str(), nullptr, 0)
+		0
 	};
 }
 

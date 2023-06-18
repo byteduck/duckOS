@@ -24,7 +24,7 @@
 #include <kernel/filesystem/DirectoryEntry.h>
 #include <kernel/kstd/KLog.h>
 
-Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id) {
+Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): CachedFilesystemInode(filesystem, id) {
 	//Get the block group
 	Ext2BlockGroup* bg = ext2fs().get_block_group(block_group());
 
@@ -44,7 +44,7 @@ Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t id): Inode(filesystem, id
 		read_block_pointers();
 }
 
-Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw &raw, kstd::vector<uint32_t>& block_pointers, ino_t parent): Inode(filesystem, i), block_pointers(block_pointers), raw(raw) {
+Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw &raw, kstd::vector<uint32_t>& block_pointers, ino_t parent): CachedFilesystemInode(filesystem, i), block_pointers(block_pointers), raw(raw) {
 	create_metadata();
 	if(IS_DIR(raw.mode)) {
 		kstd::vector<DirectoryEntry> entries;

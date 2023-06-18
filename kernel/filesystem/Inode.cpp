@@ -91,3 +91,11 @@ kstd::Arc<InodeVMObject> Inode::shared_vm_object() {
 
 	return ret;
 }
+
+ssize_t Inode::read_cached(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) {
+	return read(start, length, buffer, fd);
+}
+
+ssize_t Inode::write_cached(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) {
+	return write(start, length, buffer, fd);
+}
