@@ -47,6 +47,7 @@
 #include <kernel/kstd/KLog.h>
 #include <kernel/tests/KernelTest.h>
 #include "bootlogo.h"
+#include "Processor.h"
 
 uint8_t boot_disk;
 
@@ -71,6 +72,7 @@ int kmain(uint32_t mbootptr){
 
 	clearScreen();
 	KLog::info("kinit", "Starting duckOS...");
+	Processor::init();
 
 	new (__mem_manager_storage) MemoryManager;
 

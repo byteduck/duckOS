@@ -25,6 +25,7 @@
 #include "Process.h"
 #include "Thread.h"
 #include "Reaper.h"
+#include <kernel/Processor.h>
 #include <kernel/kstd/KLog.h>
 
 TSS TaskManager::tss;
@@ -282,12 +283,12 @@ Atomic<int, MemoryOrder::SeqCst> g_critical_count = 0;
 
 void TaskManager::enter_critical() {
 	asm volatile("cli");
-	g_critical_count.add(1);
+	g_critical_count.add(1, MemoryOrder::Acquire);
 }
 
 void TaskManager::leave_critical() {
 	ASSERT(g_critical_count.load() > 0);
-	if(g_critical_count.sub(1) == 1)
+	if(g_critical_count.sub(1, MemoryOrder::Release) == 1)
 		asm volatile("sti");
 }
 
@@ -376,11 +377,12 @@ void TaskManager::preempt(){
 
 		cur_thread = next_thread;
 		next_thread.reset();
+
+		Processor::save_fpu_state((void*&) old_thread->fpu_state);
 		old_thread.reset();
 
-		asm volatile("fxsave %0" : "=m"(cur_thread->fpu_state));
 		preempt_asm(old_esp, new_esp, cur_thread->page_directory()->entries_physaddr());
-		asm volatile("fxrstor %0" ::"m"(cur_thread->fpu_state));
+		Processor::load_fpu_state((void*&) cur_thread->fpu_state);
 	}
 
 	preempt_finish();

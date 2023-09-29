@@ -168,7 +168,8 @@ SET(KERNEL_SRCS
         syscall/truncate.cpp
         syscall/waitpid.cpp
         syscall/uname.cpp
-        VMWare.cpp)
+        VMWare.cpp
+        Processor.cpp)
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h"
