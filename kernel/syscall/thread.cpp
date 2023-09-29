@@ -34,7 +34,7 @@ int Process::sys_threadjoin(tid_t tid, UserspacePointer<void*> retp) {
 	}
 	Result result = cur_thread->join(cur_thread, thread, retp);
 	if(result.is_success()) {
-		ASSERT(thread->state() == Thread::DEAD);
+		ASSERT(thread->state() == Thread::DEAD || thread->_waiting_to_die);
 		thread.reset();
 	}
 	return result.code();
@@ -42,6 +42,7 @@ int Process::sys_threadjoin(tid_t tid, UserspacePointer<void*> retp) {
 
 int Process::sys_threadexit(void* return_value) {
 	TaskManager::current_thread()->exit(return_value);
+	TaskManager::current_thread()->leave_critical(); /* Leave critical early, since we enter it in the syscall handler */
 	ASSERT(false);
 	return -1;
 }

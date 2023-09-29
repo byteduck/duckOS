@@ -28,6 +28,7 @@ void Reaper::reap(kstd::Weak<Thread> thread_weak) {
 	m_queue.push_back(thread);
 	TaskManager::enter_critical();
 	thread->_state = Thread::DEAD;
+	thread->_waiting_to_die = false;
 	m_lock.release();
 	m_blocker.set_ready(true);
 	thread.reset();
