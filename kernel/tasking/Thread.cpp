@@ -57,7 +57,7 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 	}
 
 	//Setup registers
-	registers.eflags = 0x2;
+	registers.eflags = 0x202;
 	registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
 	registers.eip = entry_point;
 	registers.eax = 0;
@@ -134,7 +134,7 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 	}
 
 	//Setup registers
-	registers.eflags = 0x2;
+	registers.eflags = 0x202;
 	registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
 	registers.eip = (size_t) entry_func;
 	registers.eax = 0;
@@ -252,7 +252,6 @@ void Thread::leave_critical() {
 	ASSERT(_in_critical);
 	_in_critical--;
 	if(_waiting_to_die && !_in_critical) {
-		_waiting_to_die = false;
 		Reaper::inst().reap(m_weak_self);
 		ASSERT(TaskManager::yield());
 	}
@@ -416,7 +415,7 @@ bool Thread::call_signal_handler(int signal) {
 	user_stack.push_sizet(SIGNAL_RETURN_FAKE_ADDR);
 
 	//Setup signal registers
-	signal_registers.eflags = 0x2;
+	signal_registers.eflags = 0x202;
 	signal_registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
 	signal_registers.eip = signal_loc;
 	signal_registers.eax = 0;
@@ -539,10 +538,10 @@ void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Regi
 
 	if(_process->pid() != 0 || _tid != 0) {
 		kernel_stack.push_sizet((size_t) TaskManager::proc_first_preempt);
-		kernel_stack.push32(regs.eflags);
-		kernel_stack.push32(regs.ebx);
-		kernel_stack.push32(regs.esi);
-		kernel_stack.push32(regs.edi);
+		kernel_stack.push32(0x2u); /* Kernel eflags: We don't want interrupts enabled */
+		kernel_stack.push32(regs.ebx); /* Kernel ebx */
+		kernel_stack.push32(regs.esi); /* Kernel esi */
+		kernel_stack.push32(regs.edi); /* Kernel edi */
 		kernel_stack.push32(0); //Fake popped EBP
 	}
 
