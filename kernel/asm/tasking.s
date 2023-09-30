@@ -57,4 +57,5 @@ proc_first_preempt:
 	out 0x20, al
 	out 0xA0, al
 	pop eax
+	fninit
     iret
