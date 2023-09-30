@@ -15,11 +15,11 @@
         return self;												\
 	}																\
 	inline Duck::Ptr<name> self() {									\
-		return std::static_pointer_cast<name>(shared_from_this());	\
+		return std::static_pointer_cast<name>(this->shared_from_this());	\
 	}																\
-	template<typename T>											\
-	inline Duck::Ptr<T> self() {									\
-		return std::static_pointer_cast<T>(self());					\
+	template<typename __T>											\
+	inline Duck::Ptr<__T> self() {									\
+		return std::static_pointer_cast<__T>(self());				\
 	}                                      							\
 	inline virtual std::string object_name() override { return #name; }
 

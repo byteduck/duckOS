@@ -60,7 +60,7 @@ namespace Duck::Serialization {
 				std::is_pod<T>() ||
 				is_vector<T>() ||
 				std::is_same<T, std::string>() ||
-				std::is_same<T, Duck::ByteBuffer>() ||
+				std::is_same<T, Duck::Ptr<Duck::ByteBuffer>>() ||
 				std::is_base_of<Duck::Serializable, T>() ||
 				is_serializable_struct<T>()
 			> {};
@@ -81,7 +81,7 @@ namespace Duck::Serialization {
 			return sizeof(size_t) + sizeof(typename ParamT::value_type) * first.size() + buffer_size(rest...);
 		else if constexpr(std::is_same<ParamT, std::string>())
 			return first.size() + 1 + buffer_size(rest...);
-		else if constexpr(std::is_same<ParamT, Duck::ByteBuffer>())
+		else if constexpr(std::is_same<ParamT, Duck::Ptr<Duck::ByteBuffer>>())
 			return sizeof(size_t) + first.size() + buffer_size(rest...);
 		else if constexpr(std::is_base_of<Duck::Serializable, ParamT>())
 			return first.serialized_size() + buffer_size(rest...);
@@ -110,7 +110,7 @@ namespace Duck::Serialization {
 			//If it's a string, we can just push the bytes of the string
 			strcpy((char*) buf, first.data());
 			buf += first.size() + 1;
-		} else if constexpr(std::is_same<ParamT, Duck::ByteBuffer>()) {
+		} else if constexpr(std::is_same<ParamT, Duck::Ptr<Duck::ByteBuffer>>()) {
 			*((size_t*) buf) = first.size();
 			buf += sizeof(size_t);
 			memcpy((char*) buf, first.template data<void>(), first.size());
@@ -145,7 +145,7 @@ namespace Duck::Serialization {
 			//If it's a string, just copy from the buffer until we hit a null terminator
 			first = std::string((char*)buf);
 			buf += first.size() + 1;
-		} else if constexpr(std::is_same<ParamT, Duck::ByteBuffer>()) {
+		} else if constexpr(std::is_same<ParamT, Duck::Ptr<Duck::ByteBuffer>>()) {
 			size_t size = *((size_t*) buf); //TODO Sanity check?
 			buf += sizeof(size_t);
 			first = Duck::ByteBuffer::copy(buf, size);

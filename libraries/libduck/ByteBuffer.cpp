@@ -21,37 +21,40 @@
 
 using namespace Duck;
 
-ByteBuffer::ByteBuffer(size_t size): m_ptr(std::make_shared<BufferRef>(malloc(size))), m_size(size) {}
-ByteBuffer::ByteBuffer(void* ptr, size_t size): m_ptr(std::make_shared<BufferRef>(ptr)), m_size(size) {}
+ByteBuffer::ByteBuffer(size_t size): m_ptr(new uint8_t[size]), m_size(size), m_free_on_destroy(true) {}
+ByteBuffer::ByteBuffer(void* ptr, size_t size): m_ptr(ptr), m_size(size), m_free_on_destroy(true) {}
 
-ByteBuffer ByteBuffer::adopt(void* ptr, size_t size) {
-	return ByteBuffer(ptr, size);
+ByteBuffer::~ByteBuffer() noexcept {
+	if (m_free_on_destroy)
+		free(m_ptr);
 }
 
-ByteBuffer ByteBuffer::copy(const void* ptr, size_t size) {
-	ByteBuffer buf = ByteBuffer(size);
-	memcpy(buf.data<void>(), ptr, size);
+Ptr<ByteBuffer> ByteBuffer::adopt(void* ptr, size_t size) {
+	return make(ptr, size);
+}
+
+Ptr<ByteBuffer> ByteBuffer::copy(const void* ptr, size_t size) {
+	auto buf = make(size);
+	memcpy(buf->data<void>(), ptr, size);
 	return buf;
 }
 
-ByteBuffer ByteBuffer::clone() const {
-	auto buf = ByteBuffer(m_size);
-	memcpy(buf.data<void>(), data<void>(), m_size);
+Ptr<ByteBuffer> ByteBuffer::clone() const {
+	auto buf = make(m_size);
+	memcpy(buf->data<void>(), data<void>(), m_size);
 	return buf;
 }
 
-ByteBuffer ByteBuffer::shadow(void* ptr, size_t size) {
-	ByteBuffer ret(ptr, size);
-	ret.m_ptr->free_on_destroy = false;
+Ptr<ByteBuffer> ByteBuffer::shadow(void* ptr, size_t size) {
+	auto ret = make(ptr, size);
+	ret->m_free_on_destroy = false;
 	return ret;
+}
+
+void* ByteBuffer::data() const {
+	return m_ptr;
 }
 
 size_t ByteBuffer::size() const {
 	return m_size;
-}
-
-ByteBuffer::BufferRef::BufferRef(void* ptr): ptr(ptr) {}
-ByteBuffer::BufferRef::~BufferRef() {
-	if(free_on_destroy)
-		free(ptr);
 }

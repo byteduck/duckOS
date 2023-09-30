@@ -19,15 +19,14 @@
 #pragma once
 
 #include <memory>
+#include "Buffer.h"
 
 namespace Duck {
-	class ByteBuffer {
+	class ByteBuffer: public Buffer {
 	public:
-		/**
-		 * Allocates a new ByteBuffer. Copies will point to the same memory - use clone() to create a copy.
-		 * @param size The size, in bytes, of the buffer.
-		 */
-		explicit ByteBuffer(size_t size);
+		DUCK_OBJECT_DEF(ByteBuffer);
+
+		~ByteBuffer() noexcept;
 
 		/**
 		 * Creates a new ByteBuffer that points to existing memory.
@@ -35,7 +34,7 @@ namespace Duck {
 		 * @param size The size, in bytes, of the buffer.
 		 * @return The new ByteBuffer.
 		 */
-		static ByteBuffer adopt(void* ptr, size_t size);
+		static Ptr<ByteBuffer> adopt(void* ptr, size_t size);
 
 		/**
 		 * Creates a new ByteBuffer from a copy of existing memory.
@@ -43,7 +42,7 @@ namespace Duck {
 		 * @param size The size, in bytes, of the buffer.
 		 * @return The new ByteBuffer.
 		 */
-		static ByteBuffer copy(const void* ptr, size_t size);
+		static Ptr<ByteBuffer> copy(const void* ptr, size_t size);
 
 		/**
 		 * Creates a new ByteBuffer from existing memory, which will not be freed on destruction.
@@ -51,13 +50,13 @@ namespace Duck {
 		 * @param size The size, in bytes, of the buffer.
 		 * @return The new ByteBuffer.
 		 */
-		static ByteBuffer shadow(void* ptr, size_t size);
+		static Ptr<ByteBuffer> shadow(void* ptr, size_t size);
 
 		/**
 		 * Creates a clone of the ByteBuffer.
 		 * @return A new, cloned ByteBuffer.
 		 */
-		[[nodiscard]] ByteBuffer clone() const;
+		[[nodiscard]] Ptr<ByteBuffer> clone() const;
 
 		/**
 		 * Gets a pointer to the memory in the buffer.
@@ -66,38 +65,43 @@ namespace Duck {
 		 */
 		template<typename T>
 		[[nodiscard]] T* data() const {
-			return (T*) m_ptr->ptr;
+			return (T*) data();
 		}
-
-		/**
-		 * Gets the size of the buffer.
-		 * @return The size, in bytes, of the buffer.
-		 */
-		[[nodiscard]] size_t size() const;
 
 		/**
 		 * Gets the size, in terms of a type, of the buffer.
 		 * @tparam T The type to get the size in terms of.
 		 * @return The size, in Ts, of the buffer.
 		 */
-		 template<typename T>
+		template<typename T>
 		[[nodiscard]] size_t size() const {
-			return m_size / sizeof(T);
+			return size() / sizeof(T);
 		}
+
+		/**
+		 * Gets a pointer to the memory in the buffer.
+		 * @return The pointer.
+		 */
+		[[nodiscard]] void* data() const override;
+
+		/**
+		 * Gets the size of the buffer.
+		 * @return The size, in bytes, of the buffer.
+		 */
+		[[nodiscard]] size_t size() const override;
 
 	private:
 		explicit ByteBuffer(void* ptr, size_t size);
 
-		class BufferRef {
-		public:
-			explicit BufferRef(void* ptr);
-			~BufferRef();
-			void* ptr;
-			bool free_on_destroy = true;
-		};
+		/**
+		 * Allocates a new ByteBuffer. Copies will point to the same memory - use clone() to create a copy.
+		 * @param size The size, in bytes, of the buffer.
+		 */
+		explicit ByteBuffer(size_t size);
 
-		std::shared_ptr<BufferRef> m_ptr;
+		void* m_ptr;
 		size_t m_size;
+		bool m_free_on_destroy;
 	};
 }
 

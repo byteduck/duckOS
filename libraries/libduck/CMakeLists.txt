@@ -8,6 +8,7 @@ SET(SOURCES
         FileStream.cpp
         FormatStream.cpp
         Log.cpp
+        MappedBuffer.cpp
         Object.cpp
         Path.cpp
         Result.cpp
