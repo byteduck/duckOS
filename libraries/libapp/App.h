@@ -42,6 +42,7 @@ namespace App {
 		Info(Duck::Path app_directory, std::string name, std::string exec);
 
 		[[nodiscard]] Duck::Ptr<const Gfx::Image> icon();
+		[[nodiscard]] Duck::Ptr<const Gfx::Image> icon_for_file(Duck::Path file);
 		[[nodiscard]] const std::string& name() const;
 		[[nodiscard]] const std::string exec() const;
 		Duck::Result run(const std::vector<std::string>& args = {}, bool fork = true) const;
@@ -68,6 +69,7 @@ namespace App {
 		bool _hidden = false;
 		std::shared_ptr<Gfx::Image> _icon = nullptr;
 		std::map<std::string, std::shared_ptr<Gfx::Image>> _images;
+		std::map<std::string, std::string> _filetype_icons;
 	};
 
 

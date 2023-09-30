@@ -37,7 +37,7 @@ ResultRet<Info> Info::from_app_directory(const Path& app_directory) {
 		auto has_exec = app_config.find("exec") != app_config.end();
 		if(!has_name || !has_exec)
 			return Result(EINVAL);
-		auto info = Info(app_directory, app_config["name"],  app_config["exec"]);
+		auto info = Info(app_directory, app_config["name"], app_config["exec"]);
 		info._hidden = app_config["hidden"] == "true";
 
 		// Read supported file extensions
@@ -51,6 +51,11 @@ ResultRet<Info> Info::from_app_directory(const Path& app_directory) {
 				in.erase(0, in.find_first_not_of(" \t"));
 				info._extensions.insert(in);
 			}
+		}
+
+		// Get filetype icons
+		if(cfg.has_section("filetype_icons")) {
+			info._filetype_icons = cfg.section("filetype_icons");
 		}
 
 		return info;
@@ -86,6 +91,13 @@ Duck::Ptr<const Gfx::Image> Info::icon() {
 		_icon->set_size({16, 16});
 	}
 	return _icon;
+}
+
+Duck::Ptr<const Gfx::Image> Info::icon_for_file(Duck::Path file) {
+	auto icon_idx = _filetype_icons.find(file.extension());
+	if (icon_idx == _filetype_icons.end())
+		return icon();
+	return resource_image((*icon_idx).second);
 }
 
 const std::string& Info::name() const {
