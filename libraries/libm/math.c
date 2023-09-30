@@ -32,3 +32,15 @@ float sqrtf(float x) {
 	asm("fsqrt" : "=t"(result) : "0"(x));
 	return result;
 }
+
+float sinf(float x) {
+	float result;
+	asm("fsin" : "=t"(result) : "0"(x));
+	return result;
+}
+
+float cosf(float x) {
+	float result;
+	asm("fcos" : "=t"(result) : "0"(x));
+	return result;
+}
