@@ -33,6 +33,8 @@ Window::Window():
 	_window(pond_context->create_window(nullptr, {-1, -1, -1, -1}, true))
 {
 	_window->set_draggable(true);
+	if(UI::app_info().exists() && UI::app_info().icon())
+		_icon = UI::app_info().icon();
 }
 
 void Window::initialize() {
@@ -117,6 +119,11 @@ std::string Window::title() {
 	return _title;
 }
 
+void Window::set_icon(Duck::Ptr<const Gfx::Image> icon) {
+	_icon = icon;
+	repaint();
+}
+
 void Window::set_resizable(bool resizable) {
 	_resizable = resizable;
 	_window->set_resizable(resizable);
@@ -164,14 +171,13 @@ void Window::repaint_now() {
 
 		//Title bar icon
 		int title_xpos = 4;
-		if(UI::app_info().exists() && UI::app_info().icon()) {
-			auto icon = UI::app_info().icon();
+		if(_icon) {
 			Gfx::Rect icon_rect {
-				titlebar_rect.position() + Gfx::Point {2, titlebar_rect.height / 2 - icon->size().width / 2},
+				titlebar_rect.position() + Gfx::Point {2, titlebar_rect.height / 2 - 8},
 				{16, 16}
 			};
-			ctx.draw_image(icon, icon_rect);
-			title_xpos += 2 + icon->size().width;
+			ctx.draw_image(_icon, icon_rect);
+			title_xpos += 18;
 		}
 
 		int button_size = titlebar_rect.height - 4;
@@ -220,6 +226,7 @@ void Window::show() {
 	}
 
 	_window->set_hidden(false);
+	repaint_now();
 }
 
 void Window::hide() {

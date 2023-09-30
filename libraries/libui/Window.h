@@ -47,6 +47,7 @@ namespace UI {
 		std::shared_ptr<Widget> contents();
 		void set_title(const std::string& title);
 		std::string title();
+		void set_icon(Duck::Ptr<const Gfx::Image> icon);
 		void set_resizable(bool resizable);
 		bool resizable();
 		bool is_focused();
@@ -101,6 +102,7 @@ namespace UI {
 		std::string _title;
 		Gfx::Point _mouse;
 		Gfx::Point _abs_mouse;
+		Duck::Ptr<const Gfx::Image> _icon;
 		bool _decorated = true;
 		bool _uses_alpha = false;
 		bool _resizable = false;

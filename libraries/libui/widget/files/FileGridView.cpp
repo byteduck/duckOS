@@ -34,7 +34,7 @@ private:
 		if(!image) {
 			auto app = App::app_for_file(path);
 			if(app.has_value())
-				image = app.value().icon();
+				image = app.value().icon_for_file(path);
 			else
 				image = UI::icon(entry.is_directory() ? "/filetypes/folder" : "/filetypes/default");
 		}
