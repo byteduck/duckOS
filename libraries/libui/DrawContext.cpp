@@ -283,10 +283,12 @@ void UI::DrawContext::draw_vertical_scrollbar(Gfx::Rect area, Gfx::Rect handle_a
 
 void UI::DrawContext::draw_progressbar(Gfx::Rect area, double progress) const {
 	draw_inset_rect(area);
-	fb->fill({
-		area.x + 2,
-		area.y + 2,
-		(int)((area.width - 4) * progress),
-		area.height - 3
-	}, UI::Theme::accent());
+	if(progress != 0) {
+		fb->fill({
+			area.x + 2,
+			area.y + 2,
+			(int) ((area.width - 4) * progress),
+			area.height - 3
+		}, UI::Theme::accent());
+	}
 }
