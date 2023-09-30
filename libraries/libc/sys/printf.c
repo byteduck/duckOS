@@ -259,7 +259,7 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 				uppercase = true;
 			case 'f': //Double
 			{
-				double val = (double) va_arg(arg, double);
+				double val = (double) va_arg (arg, double);
 
 				//Print sign if necessary
 				if(val < 0) {
@@ -289,7 +289,7 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 					if ((int) (val * 100000.0) % 100000 == 0 && d != 0)
 						break;
 					val *= 10.0;
-					*buf++ = "0123456789"[((int) val) % 10];
+					*buf++ = "0123456789"[((long long) val) % 10];
 					len++;
 				}
 

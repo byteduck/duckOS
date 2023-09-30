@@ -22,12 +22,14 @@
 
 #include <sys/cdefs.h>
 #include <stddef.h>
+#include <limits.h>
 
 __DECL_BEGIN
 
 #define EXIT_SUCCESS	0
 #define EXIT_FAILURE	1
 #define MB_CUR_MAX		1
+#define RAND_MAX    	INT_MAX
 
 //String <-> Number conversions
 double atof(const char* nptr);
