@@ -163,7 +163,7 @@ public:
 	int sys_threadjoin(tid_t tid, UserspacePointer<void*> retp);
 	int sys_threadexit(void* return_value);
 	int sys_access(UserspacePointer<char> pathname, int mode);
-	ResultRet<void*> sys_mmap(UserspacePointer<struct mmap_args> args);
+	Result sys_mmap(UserspacePointer<struct mmap_args> args);
 	int sys_munmap(void* addr, size_t length);
 	int sys_mprotect(void* addr, size_t length, int prot);
 	int sys_uname(UserspacePointer<struct utsname> buf);

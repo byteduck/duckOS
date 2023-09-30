@@ -113,9 +113,11 @@ int Process::sys_shmallow(int id, pid_t pid, int perms) {
 	return SUCCESS;
 }
 
-ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) {
+Result Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) {
 	mmap_args args = args_ptr.get();
 	LOCK(m_mem_lock);
+
+	args.length = kstd::ceil_div(args.length, PAGE_SIZE) * PAGE_SIZE;
 
 	kstd::Arc<VMObject> vm_object;
 	kstd::Arc<VMRegion> region;
@@ -161,7 +163,8 @@ ResultRet<void*> Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) 
 
 	m_used_pmem += region->size();
 	_vm_regions.push_back(region);
-	return (void*) region->start();
+	UserspacePointer<void*>(args.addr_p).set((void*) region->start());
+	return Result(SUCCESS);
 }
 
 int Process::sys_munmap(void* addr, size_t length) {
@@ -169,13 +172,14 @@ int Process::sys_munmap(void* addr, size_t length) {
 	LOCK(m_mem_lock);
 	// Find the region
 	for(size_t i = 0; i < _vm_regions.size(); i++) {
-		if(_vm_regions[i]->start() == (VirtualAddress) addr && _vm_regions[i]->size() == length) {
+		/* TODO: Size mismatch? */
+		if(_vm_regions[i]->start() == (VirtualAddress) addr /* && _vm_regions[i]->size() == length*/) {
 			m_used_pmem -= _vm_regions[i]->size();
 			_vm_regions.erase(i);
 			return SUCCESS;
 		}
 	}
-	KLog::warn("Process", "memrelease() for %s(%d) failed.", _name.c_str(), _pid);
+	KLog::warn("Process", "munmap() for %s(%d) failed.", _name.c_str(), _pid);
 	return ENOENT;
 }
 

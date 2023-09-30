@@ -144,12 +144,8 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 			return cur_proc->sys_fchown((int)arg1, (uid_t)arg2, (gid_t)arg3);
 		case SYS_LCHOWN:
 			return cur_proc->sys_lchown((char*)arg1, (uid_t)arg2, (gid_t)arg3);
-		case SYS_MMAP: {
-			auto res = cur_proc->sys_mmap((struct mmap_args*) arg1);
-			if(res.is_error())
-				return -res.code();
-			return (int) res.value();
-		}
+		case SYS_MMAP:
+			return -cur_proc->sys_mmap((struct mmap_args*) arg1).code();
 		case SYS_MUNMAP:
 			return cur_proc->sys_munmap((void*) arg1, (size_t) arg2);
 		case SYS_IOCTL:

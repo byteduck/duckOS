@@ -31,6 +31,7 @@ struct mmap_args {
 	int flags;
 	int fd;
 	off_t offset;
+	void** addr_p;
 };
 
 __DECL_END
