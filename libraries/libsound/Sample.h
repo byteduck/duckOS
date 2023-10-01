@@ -26,8 +26,20 @@ namespace Sound {
 		float left = 0.0;
 		float right = 0.0;
 
-		static inline Sample from_16bit_lpcm(uint32_t pcm) {
-			return {(int16_t) (pcm & 0xffff) / 32767.0f, (int16_t) ((pcm >> 16) & 0xffff) / 32767.0f};
+		Sample(float left, float right): left(left), right(right) {}
+		Sample(float value): left(value), right(value) {}
+		Sample(): left(0), right(0) {}
+
+		static inline Sample from_16bit_lpcm(uint16_t*& pcm, int num_channels) {
+			switch(num_channels) {
+			case 1:
+				return {(int16_t) (*(pcm++) & 0xffff) / 32767.0f};
+			case 2:
+				pcm += 2; /* We cannot count on arguments being evaluated in order */
+				return {(int16_t) (*(pcm - 2) & 0xffff) / 32767.0f, (int16_t) (*(pcm - 1) & 0xffff) / 32767.0f};
+			default:
+				return {0, 0};
+			}
 		}
 
 		inline uint32_t as_16bit_lpcm() {
@@ -38,6 +50,13 @@ namespace Sound {
 			return {
 				std::clamp(left + other.left, -1.0f, 1.0f),
 				std::clamp(right + other.right, -1.0f, 1.0f)
+			};
+		}
+
+		inline Sample operator-(const Sample& other) const {
+			return {
+				std::clamp(left - other.left, -1.0f, 1.0f),
+				std::clamp(right - other.right, -1.0f, 1.0f)
 			};
 		}
 

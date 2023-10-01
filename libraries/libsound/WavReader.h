@@ -23,6 +23,8 @@
 #include <libduck/Path.h>
 #include <libduck/File.h>
 #include "SampleBuffer.h"
+#include <libduck/MappedBuffer.h>
+#include <libduck/SpinLock.h>
 
 #define WAV_RIFF_MAGIC 0x46464952
 #define WAV_WAV_MAGIC 0x45564157
@@ -32,8 +34,10 @@
 #define WAV_FMT_FLOAT 0x3
 
 namespace Sound {
-	class WavReader {
+	class WavReader: public Duck::Object {
 	public:
+		DUCK_OBJECT_DEF(WavReader);
+
 		struct WavHeader {
 			uint32_t riff_magic; //RIFF
 			uint32_t file_size;
@@ -50,18 +54,28 @@ namespace Sound {
 			uint32_t chunk2_size;
 		};
 
-		static Duck::ResultRet<WavReader> open_wav(const Duck::Path& path);
-		static Duck::ResultRet<WavReader> read_wav(Duck::File& file);
+		static Duck::ResultRet<Duck::Ptr<WavReader>> open_wav(const Duck::Path& path);
+		static Duck::ResultRet<Duck::Ptr<WavReader>> read_wav(Duck::File& file);
 
 		Duck::ResultRet<Duck::Ptr<SampleBuffer>> read_samples(size_t num_samples);
 		Duck::ResultRet<size_t> read_samples(Duck::Ptr<SampleBuffer> buffer);
 
 		[[nodiscard]] uint32_t sample_rate() const { return m_header.sample_rate; }
+		[[nodiscard]] WavHeader header() const { return m_header; }
+
+		[[nodiscard]] float cur_time() const;
+		[[nodiscard]] float total_time() const;
+		void seek(float time);
 
 	private:
-		WavReader(Duck::File& file, WavHeader header);
+		WavReader(Duck::File& file, Duck::Ptr<Duck::MappedBuffer> mapped_file);
+
+		size_t bytes_per_sample() const;
 
 		Duck::File m_file;
-		WavHeader m_header;
+		Duck::Ptr<Duck::MappedBuffer> m_mapped_file;
+		WavHeader& m_header;
+		size_t m_offset;
+		Duck::SpinLock m_lock;
 	};
 }

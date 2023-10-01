@@ -32,6 +32,7 @@ namespace Sound {
 		static Duck::ResultRet<std::shared_ptr<Connection>> create();
 
 		void queue_samples(Duck::Ptr<SampleBuffer> buffer);
+		[[nodiscard]] uint32_t server_sample_rate() const { return m_server_samplerate; }
 
 	private:
 		explicit Connection(std::shared_ptr<River::Endpoint> endpoint);

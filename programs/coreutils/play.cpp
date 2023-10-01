@@ -25,14 +25,19 @@
 #include <libsound/Connection.h>
 #include <libsound/WavReader.h>
 #include <libduck/FormatStream.h>
+#include <libsound/Sound.h>
 
 using Duck::File, Duck::Args, Duck::Stream, Duck::ResultRet;
 
 std::string filename;
+bool verbose = false;
+int start = 0;
 
 int main(int argc, char** argv) {
 	Args args;
 	args.add_positional(filename, true, "FILE", "The file to play.");
+	args.add_flag(verbose, "v", "verbose", "Shows more information about the audio file.");
+	args.add_named(start, "s", "start", "The time to start at.");
 	args.parse(argc, argv);
 
 	auto wav_res = Sound::WavReader::open_wav(filename);
@@ -42,20 +47,20 @@ int main(int argc, char** argv) {
 	}
 	auto& wav = wav_res.value();
 
-	auto conn_res = Sound::Connection::create();
-	if(conn_res.is_error()) {
-		Stream::std_err << "play: Couldn't create sound server connection: " << conn_res.strerror() << "\n";
-		return conn_res.code();
+	if(verbose) {
+		printf("Sample Rate:  %ld\n", wav->sample_rate());
+		printf("Channels:     %d\n",  wav->header().num_channels);
+		printf("Format:       %d\n",  wav->header().audio_fmt);
+		printf("Format Size:  %ld\n", wav->header().fmt_size);
 	}
-	auto conn = conn_res.value();
 
-	auto buf = Sound::SampleBuffer::make(wav.sample_rate(), 512);
-	while(true) {
-		auto res = wav.read_samples(buf);
-		if(res.is_error() || res.value() == 0)
-			break;
-		conn->queue_samples(buf);
-	}
+	auto init_res = Sound::init();
+	if(init_res.is_error())
+		return init_res.code();
+
+	wav->seek(start);
+	auto src = Sound::add_source(wav);
+	Sound::wait();
 
 	return 0;
 }

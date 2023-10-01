@@ -34,15 +34,27 @@ SampleBuffer::~SampleBuffer() noexcept {
 }
 
 Ptr<SampleBuffer> SampleBuffer::resample(uint32_t sample_rate) const {
-	if(sample_rate == m_sample_rate)
-		return copy();
 	float ratio = (float) sample_rate / (float) m_sample_rate;
-	auto new_num_samples = (size_t) (m_num_samples * ratio);
-	auto new_buffer = SampleBuffer::make(sample_rate, new_num_samples);
-	auto new_samples = new_buffer->samples();
-	for(size_t i = 0; i < new_num_samples; i++)
-		new_samples[i] = m_samples[(int) (i / ratio)];
-	return new_buffer;
+	size_t new_num_samples = (size_t) (m_num_samples * ratio);
+	auto new_buf = SampleBuffer::make(sample_rate, new_num_samples);
+	resample_mix_into(sample_rate, new_buf, m_num_samples, 1);
+	return new_buf;
+}
+
+void SampleBuffer::resample_mix_into(uint32_t sample_rate, Duck::Ptr<SampleBuffer> buffer, size_t n_samples, float factor) const {
+	float ratio = (float) sample_rate / (float) m_sample_rate;
+	for(size_t i = 0; i < buffer->m_num_samples; i++) {
+		float sample_pos = (float) i / ratio;
+		size_t sample_pos_int = (size_t) sample_pos;
+		if (sample_pos_int >= n_samples)
+			break;
+		float sample_pos_frac = sample_pos - sample_pos_int;
+		Sample sample = m_samples[sample_pos_int];
+		if(sample_pos_int + 1 < m_num_samples) {
+			sample += (m_samples[sample_pos_int + 1] - sample) * sample_pos_frac;
+		}
+		buffer->m_samples[i] += sample * factor;
+	}
 }
 
 Sample* SampleBuffer::samples() const {

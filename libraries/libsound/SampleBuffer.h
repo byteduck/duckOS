@@ -31,6 +31,7 @@ namespace Sound {
 		~SampleBuffer() noexcept;
 
 		[[nodiscard]] Duck::Ptr<SampleBuffer> resample(uint32_t sample_rate) const;
+		void resample_mix_into(uint32_t sample_rate, Duck::Ptr<SampleBuffer>, size_t n_samples, float factor) const;
 		void set_sample_rate(uint32_t sample_rate); //Does NOT resample
 		void set_num_samples(uint32_t num_samples); //Does NOT resize buffer
 
