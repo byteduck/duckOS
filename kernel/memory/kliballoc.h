@@ -21,8 +21,6 @@
 
 #include <kernel/kstd/types.h>
 
-typedef uint32_t uintptr_t;
-
 /** \defgroup ALLOCHOOKS liballoc hooks
  *
  * These are the OS specific functions which need to

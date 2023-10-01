@@ -2,7 +2,6 @@
 set -e
 
 source "./toolchain-common.sh"
-source "../scripts/duckos.sh"
 
 build_binutils () {
   pushd .

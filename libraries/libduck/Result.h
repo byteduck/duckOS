@@ -22,6 +22,7 @@
 #include <cassert>
 #include <optional>
 #include <cstring>
+#include <string>
 
 #define TRY(expr) \
 	({ \

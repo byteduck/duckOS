@@ -1,4 +1,5 @@
 #!/bin/bash
+source "../scripts/duckos.sh"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LIBC_LOC=$(realpath "$DIR"/../libraries/libc)
@@ -15,11 +16,11 @@ source "$DIR/../scripts/duckos.sh"
 
 GNU_MIRROR="https://mirrors.ocf.berkeley.edu/gnu"
 
-BINUTILS_VERSION="2.34"
+BINUTILS_VERSION="2.41"
 BINUTILS_FILE="binutils-$BINUTILS_VERSION"
 BINUTILS_URL="$GNU_MIRROR/binutils/$BINUTILS_FILE.tar.gz"
 
-GCC_VERSION="9.3.0"
+GCC_VERSION="13.2.0"
 GCC_FILE="gcc-$GCC_VERSION"
 GCC_URL="$GNU_MIRROR/gcc/gcc-$GCC_VERSION/$GCC_FILE.tar.gz"
 
@@ -33,20 +34,20 @@ fi
 download-binutils () {
   if [ ! -d "$BINUTILS_FILE" ]; then
     msg "Downloading binutils $BINUTILS_VERSION..."
-    curl "$BINUTILS_URL" > "$BINUTILS_FILE.tar.gz" || exit 1
+    curl "$BINUTILS_URL" > "$BINUTILS_FILE.tar.gz" || fail "Could not download binutils"
     msg "Extracting binutils..."
-    tar -xzf "$BINUTILS_FILE.tar.gz" || exit 1
+    tar -xzf "$BINUTILS_FILE.tar.gz" || fail "Could not extract binutils"
     rm "$BINUTILS_FILE.tar.gz"
 
-    cd "$BINUTILS_FILE" || exit 1
+    cd "$BINUTILS_FILE" || fail "Could not find binutils directory"
     msg "Patching binutils..."
     if [ "$1" == "use-git" ]; then
-      git init . > /dev/null || exit 1
-      git add -A > /dev/null || exit 1
-      git commit -m "First commit" > /dev/null || exit 1
-      git apply "$DIR/binutils-$BINUTILS_VERSION.patch" > /dev/null || exit 1
+      git init . || fail "Could not initialize git repository for binutils (init)"
+      git add -A || fail "Could not initialize git repository for binutils (add)"
+      git commit -m "First commit" || fail "Could not create commit for binutils"
+      git apply "$DIR/binutils-$BINUTILS_VERSION.patch" || fail "Could not apply patch for binutils"
     else
-      patch -p1 < "$DIR/binutils-$BINUTILS_VERSION.patch" > /dev/null || exit 1
+      patch -p1 < "$DIR/binutils-$BINUTILS_VERSION.patch" || fail "Could not patch binutils"
     fi
     success "Pathed binutils!"
     cd ..

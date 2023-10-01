@@ -1,0 +1,210 @@
+diff --git a/config.sub b/config.sub
+index 38f3d037a..b69483137 100755
+--- a/config.sub
++++ b/config.sub
+@@ -1719,6 +1719,7 @@ case $os in
+ 	# The portable systems comes first.
+ 	# Each alternative MUST end in a * to match a version number.
+ 	gnu* | android* | bsd* | mach* | minix* | genix* | ultrix* | irix* \
++             | duckos* \
+ 	     | *vms* | esix* | aix* | cnk* | sunos | sunos[34]* \
+ 	     | hpux* | unos* | osf* | luna* | dgux* | auroraux* | solaris* \
+ 	     | sym* |  plan9* | psp* | sim* | xray* | os68k* | v88r* \
+diff --git a/fixincludes/mkfixinc.sh b/fixincludes/mkfixinc.sh
+index df90720b7..2b5a287a1 100755
+--- a/fixincludes/mkfixinc.sh
++++ b/fixincludes/mkfixinc.sh
+@@ -20,6 +20,7 @@ case $machine in
+     powerpcle-*-eabisim* | \
+     powerpcle-*-eabi* | \
+     *-*-vxworks7* | \
++    *-duckos* | \
+     *-musl* )
+ 	#  IF there is no include fixing,
+ 	#  THEN create a no-op fixer and exit
+diff --git a/gcc/config.gcc b/gcc/config.gcc
+index 648b3dc21..ad7e8c0c5 100644
+--- a/gcc/config.gcc
++++ b/gcc/config.gcc
+@@ -690,6 +690,14 @@ x86_cpus="generic intel"
+ 
+ # Common parts for widely ported systems.
+ case ${target} in
++*-*-duckos*)
++  gas=yes
++  gnu_ld=yes
++  default_use_cxa_ataexit=yes
++  extra_options="${extra_options} duckos.opt"
++  tmake_file="t-slibgcc"
++  ;;
++  
+ *-*-darwin*)
+   tmake_file="t-darwin "
+   tm_file="${tm_file} darwin.h"
+@@ -1126,6 +1134,12 @@ case ${target} in
+ esac
+ 
+ case ${target} in
++i[34567]86-*-duckos*)
++	tm_file="${tm_file} i386/unix.h i386/att.h elfos.h glibc-stdint.h i386/i386elf.h duckos.h i386/duckos.h"
++	;;
++x86_64-*-duckos*)
++	tm_file="${tm_file} i386/unix.h i386/att.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h duckos.h i386/duckos.h"
++	;;
+ aarch64*-*-elf | aarch64*-*-fuchsia* | aarch64*-*-rtems*)
+ 	tm_file="${tm_file} elfos.h newlib-stdint.h"
+ 	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-errata.h aarch64/aarch64-elf-raw.h"
+diff --git a/gcc/config/duckos.h b/gcc/config/duckos.h
+new file mode 100644
+index 000000000..d2a2eabf7
+--- /dev/null
++++ b/gcc/config/duckos.h
+@@ -0,0 +1,35 @@
++/* Useful if you wish to make target-specific GCC changes. */
++#undef TARGET_DUCKOS
++#define TARGET_DUCKOS 1
++
++/* Default arguments you want when running your
++   i686-duckos-gcc/x86_64-duckos-gcc toolchain */
++#undef LIB_SPEC
++#define LIB_SPEC "-lc" /* link against C standard library */
++
++/* Files that are linked before user code.
++   The %s tells GCC to look for these files in the library directory. */
++#undef STARTFILE_SPEC
++#define STARTFILE_SPEC "%{!shared: %{!pg:crt0.o%s}} crti.o%s %{!shared:crtbegin.o%s}"
++
++/* Files that are linked after user code. */
++#undef ENDFILE_SPEC
++#define ENDFILE_SPEC "%{!shared:crtend.o%s} crtn.o%s"
++
++/* How to link. */
++#undef LINK_SPEC
++#define LINK_SPEC "%{shared:-shared} %{static:-static} %{!shared: %{!static: %{rdynamic:-export-dynamic} %{!dynamic-linker:-dynamic-linker /lib/ld-duckos.so}}}"
++
++#define USE_LD_AS_NEEDED 1
++
++/* Additional predefined macros. */
++#undef TARGET_OS_CPP_BUILTINS
++#define TARGET_OS_CPP_BUILTINS()      \
++  do {                                \
++    builtin_define ("__duckos__");      \
++    builtin_define ("__unix__");      \
++    builtin_assert ("system=duckos");   \
++    builtin_assert ("system=unix");   \
++    builtin_assert ("system=posix");   \
++  } while(0);
++
+diff --git a/gcc/config/duckos.opt b/gcc/config/duckos.opt
+new file mode 100644
+index 000000000..f04d5509d
+--- /dev/null
++++ b/gcc/config/duckos.opt
+@@ -0,0 +1,12 @@
++; duckOS options.
++
++posix
++Driver
++
++; pthread
++; Driver
++
++rdynamic
++Driver
++
++; This comment is to ensure we retain the blank line above.
+diff --git a/gcc/config/i386/duckos.h b/gcc/config/i386/duckos.h
+new file mode 100644
+index 000000000..06cb0325e
+--- /dev/null
++++ b/gcc/config/i386/duckos.h
+@@ -0,0 +1,5 @@
++#undef SIZE_TYPE
++#define SIZE_TYPE (TARGET_64BIT ? "long unsigned int" : "unsigned int")
++
++#undef PTRDIFF_TYPE
++#define PTRDIFF_TYPE (TARGET_64BIT ? "long int" : "int")
+diff --git a/libgcc/config.host b/libgcc/config.host
+index 9d7212028..91d06887b 100644
+--- a/libgcc/config.host
++++ b/libgcc/config.host
+@@ -1525,6 +1525,14 @@ nvptx-*)
+ 	tmake_file="$tmake_file nvptx/t-nvptx"
+ 	extra_parts="crt0.o"
+ 	;;
++i[34567]86-*-duckos*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic t-slibgcc"
++	;;
++x86_64-*-duckos*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic t-slibgcc" 
++	;;
+ *)
+ 	echo "*** Configuration ${host} not supported" 1>&2
+ 	exit 1
+diff --git a/libgcc/config/t-slibgcc b/libgcc/config/t-slibgcc
+index 29765bce8..3f18082dd 100644
+--- a/libgcc/config/t-slibgcc
++++ b/libgcc/config/t-slibgcc
+@@ -26,7 +26,6 @@ SHLIB_MAP = @shlib_map_file@
+ SHLIB_OBJS = @shlib_objs@
+ SHLIB_DIR = @multilib_dir@
+ SHLIB_SLIBDIR_QUAL = @shlib_slibdir_qual@
+-SHLIB_LC = -lc
+ SHLIB_MAKE_SOLINK = $(LN_S) $(SHLIB_SONAME) $(SHLIB_DIR)/$(SHLIB_SOLINK)
+ SHLIB_INSTALL_SOLINK = $(LN_S) $(SHLIB_SONAME) \
+ 	$(DESTDIR)$(slibdir)$(SHLIB_SLIBDIR_QUAL)/$(SHLIB_SOLINK)
+diff --git a/libgcc/unwind-dw2-fde-dip.c b/libgcc/unwind-dw2-fde-dip.c
+index 28ea0e64e..1018e32f7 100644
+--- a/libgcc/unwind-dw2-fde-dip.c
++++ b/libgcc/unwind-dw2-fde-dip.c
+@@ -57,6 +57,13 @@
+ # define USE_PT_GNU_EH_FRAME
+ #endif
+ 
++// We don't have dl_iterate_phdr yet, so this won't do anything
++#if !defined(inhibit_libc) && defined(HAVE_LD_EH_FRAME_HDR) \
++    && defined(TARGET_DL_ITERATE_PHDR) \
++    && defined(__duckos__)
++# define USE_PT_GNU_EH_FRAME
++#endif
++
+ #if !defined(inhibit_libc) && defined(HAVE_LD_EH_FRAME_HDR) \
+     && defined(TARGET_DL_ITERATE_PHDR) \
+     && defined(__linux__)
+diff --git a/libstdc++-v3/acinclude.m4 b/libstdc++-v3/acinclude.m4
+index 49cb0623e..1394817f2 100644
+--- a/libstdc++-v3/acinclude.m4
++++ b/libstdc++-v3/acinclude.m4
+@@ -1403,6 +1403,12 @@ AC_DEFUN([GLIBCXX_ENABLE_LIBSTDCXX_TIME], [
+         ac_has_nanosleep=yes
+         ac_has_sched_yield=yes
+         ;;
++      duckos*)
++        ac_has_clock_monotonic=yes
++        ac_has_clock_realtime=yes
++        ac_has_nanosleep=yes
++        ac_has_sched_yield=ys
++	;;
+       openbsd*)
+         ac_has_clock_monotonic=yes
+         ac_has_clock_realtime=yes
+diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
+index b3269cb88..5caa59b75 100644
+--- a/libstdc++-v3/crossconfig.m4
++++ b/libstdc++-v3/crossconfig.m4
+@@ -5,6 +5,13 @@ dnl
+ AC_DEFUN([GLIBCXX_CROSSCONFIG],[
+ # Base decisions on target environment.
+ case "${host}" in
++  *-duckos*)
++    GLIBCXX_CHECK_COMPILER_FEATURES
++    GLIBCXX_CHECK_LINKER_FEATURES
++    GLIBCXX_CHECK_MATH_SUPPORT
++    GLIBCXX_CHECK_STDLIB_SUPPORT
++    ;;
++
+   arm*-*-symbianelf*)
+     # This is a freestanding configuration; there is nothing to do here.
+     ;;

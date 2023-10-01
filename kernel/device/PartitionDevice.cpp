@@ -20,7 +20,7 @@
 #include <kernel/kstd/kstdio.h>
 #include "PartitionDevice.h"
 
-PartitionDevice::PartitionDevice(unsigned major, unsigned minor, const kstd::Arc<BlockDevice> &parent, uint32_t offset_blocks):
+PartitionDevice::PartitionDevice(unsigned major, unsigned minor, const kstd::Arc<BlockDevice> &parent, size_t offset_blocks):
 BlockDevice(major, minor), _parent(parent), _offset(offset_blocks * parent->block_size()) {
 
 }

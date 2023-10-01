@@ -19,6 +19,10 @@ fi
 rsync -auH --inplace "${SOURCE_DIR}/base/"* "$FS_DIR" || (echo "Couldn't copy base." && exit 1)
 rsync -auH --inplace "root/"* "$FS_DIR"/ || (echo "Couldn't copy root." && exit 1)
 
+msg "Copying toolchain libs and headers..."
+rsync -aH --update -t -r "${SOURCE_DIR}/toolchain/tools/i686-pc-duckos/lib/"* "$FS_DIR"/lib || (echo "Couldn't copy libs." && exit 1)
+rsync -aH --update -t -r "${SOURCE_DIR}/toolchain/tools/i686-pc-duckos/include/"* "$FS_DIR"/usr/include || (echo "Couldn't copy headers." && exit 1)
+
 msg "Setting up root filesystem..."
 msg "Setting up devices..."
 if [ -d "$FS_DIR"/dev ]; then

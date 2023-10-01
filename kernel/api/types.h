@@ -8,7 +8,7 @@
 
 __DECL_BEGIN
 
-typedef uint32_t size_t;
+typedef __SIZE_TYPE__ size_t;
 typedef int32_t ssize_t;
 typedef int pid_t;
 typedef int tid_t;

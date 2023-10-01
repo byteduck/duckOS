@@ -74,7 +74,7 @@ void SampleBuffer::set_sample_rate(uint32_t sample_rate) {
 }
 
 void SampleBuffer::set_num_samples(uint32_t num_samples) {
-	realloc(m_samples, num_samples * sizeof(Sample));
+	m_samples = (Sample*) realloc(m_samples, num_samples * sizeof(Sample));
 }
 
 ResultRet<Ptr<SampleBuffer>> SampleBuffer::copy() const {

@@ -135,7 +135,7 @@ namespace PCI {
 		return slot == 0 && function == 0 && bus == 0;
 	}
 
-	bool ID::operator==(ID &other) const {
+	bool ID::operator==(const ID &other) const {
 		return other.device == device && other.vendor == vendor;
 	}
 }

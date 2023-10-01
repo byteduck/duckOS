@@ -41,7 +41,7 @@ namespace Duck {
 
 		//Conversion and operators
 		operator std::string() const;
-		Path operator/(const Path& other) const { return std::move(Path(string() + "/" + other.string())); }
+		Path operator/(const Path& other) const { return Path(string() + "/" + other.string()); }
 		Path operator/(const std::string& other) const { return operator/(Path(other)); }
 		Path operator/(const char* other) const { return operator/(Path(other)); }
 		bool operator==(const Path& other) const { return m_path == other.m_path; }

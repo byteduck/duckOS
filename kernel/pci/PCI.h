@@ -131,7 +131,7 @@ namespace PCI {
 	public:
 		uint16_t vendor;
 		uint16_t device;
-		bool operator==(ID& other) const;
+		bool operator==(const ID& other) const;
 	};
 
 	typedef void (*PCIEnumerationCallback)(Address addr, ID id, uint16_t type, void* dataPtr);

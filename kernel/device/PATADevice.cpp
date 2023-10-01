@@ -127,7 +127,7 @@ void PATADevice::wait_ready() {
 		status = IO::inb(_control_base);
 }
 
-Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *buf) {
+Result PATADevice::read_sectors_dma(uint32_t lba, uint8_t num_sectors, uint8_t *buf) {
 	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
 	LOCK(_lock);
 
@@ -173,7 +173,7 @@ Result PATADevice::read_sectors_dma(size_t lba, uint8_t num_sectors, uint8_t *bu
 	return Result(SUCCESS);
 }
 
-Result PATADevice::write_sectors_dma(size_t lba, uint8_t num_sectors, const uint8_t *buf) {
+Result PATADevice::write_sectors_dma(uint32_t lba, uint8_t num_sectors, const uint8_t *buf) {
 	ASSERT(num_sectors <= ATA_MAX_SECTORS_AT_ONCE);
 	LOCK(_lock);
 
