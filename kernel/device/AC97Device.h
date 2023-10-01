@@ -26,7 +26,7 @@
 
 #define AC97_PCI_CLASS 0x4u
 #define AC97_PCI_SUBCLASS 0x1u
-#define AC97_OUTPUT_BUFFER_PAGES 32
+#define AC97_OUTPUT_BUFFER_PAGES 4
 #define AC97_NUM_BUFFER_DESCRIPTORS 32
 
 class AC97Device: public CharacterDevice, public IRQHandler {
