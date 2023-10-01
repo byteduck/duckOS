@@ -22,17 +22,10 @@
 #include <kernel/kstd/kstddef.h>
 #include "../api/stdarg.h"
 
-#ifdef DEBUG
 #define ASSERT(cond) \
 if(!(cond)) { \
   PANIC("Assertion failed:", __FILE__ " at line " STR(__LINE__)); \
 }
-#else
-#define ASSERT(cond) \
-if(!(cond)) { \
-  printf("[kernel] CRITICAL: Assertion failed: %s\n", __FILE__ " at line " STR(__LINE__)); \
-}
-#endif
 
 void putch(char c);
 void serial_putch(char c);
