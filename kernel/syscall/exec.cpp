@@ -64,7 +64,7 @@ int Process::exec(const kstd::string& filename, ProcessArgs* args) {
 		TaskManager::add_process(new_proc);
 	}
 
-	kill(SIGKILL);
+	die();
 	return -1;
 }
 

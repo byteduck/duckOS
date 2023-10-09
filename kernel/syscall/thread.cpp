@@ -8,10 +8,7 @@ int Process::sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void
 	auto thread = kstd::make_shared<Thread>(_self_ptr, TaskManager::get_new_pid(), entry_func, thread_func, arg);
 	recalculate_pmem_total();
 	insert_thread(thread);
-	{
-		CRITICAL_LOCK(TaskManager::g_tasking_lock);
-		TaskManager::queue_thread(thread);
-	}
+	TaskManager::queue_thread(thread);
 	return thread->tid();
 }
 

@@ -43,7 +43,8 @@ public:
 		ALIVE = 0,
 		ZOMBIE = 1,
 		DEAD = 2,
-		BLOCKED = 3
+		BLOCKED = 3,
+		STOPPED = 4
 	};
 
 	Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args);
@@ -59,7 +60,7 @@ public:
 	const char* state_name();
 	bool is_kernel_mode();
 	void* return_value();
-	void kill();
+	void die();
 	bool waiting_to_die();
 	bool can_be_run();
 
@@ -69,6 +70,10 @@ public:
 	//Critical
 	void enter_critical();
 	void leave_critical();
+	bool in_critical();
+	void enter_syscall();
+	void leave_syscall();
+	bool in_syscall();
 
 	//Blocking and Joining
 	void block(Blocker& blocker);
@@ -80,12 +85,11 @@ public:
 	void released_lock(SpinLock* lock);
 
 	//Signals
-	bool call_signal_handler(int sig);
 	bool& in_signal_handler();
-	bool in_critical();
 	bool& ready_to_handle_signal();
 	bool& just_finished_signal();
 	void* signal_stack_top();
+	void handle_pending_signal();
 
 	//Misc
 	void handle_pagefault(PageFault fault);
@@ -106,13 +110,20 @@ private:
 	void exit(void* return_value);
 	void reap();
 
+	bool handle_signal(int signal);
+	bool call_signal_handler(int sig);
+	void die_from_signal(int signal);
+	void dispatch_signal(int signal);
+
 	//Thread stuff
 	Process* _process;
 	tid_t _tid;
 	State _state = ALIVE;
+	State _before_stop_state;
 	void* _return_value = nullptr;
-	int _in_critical = 1; // _in_critical starts as 1 since we leave critical after the first preemption
+	int _in_critical = 0; // _in_critical starts as 1 since we leave critical after the first preemption
 	bool _waiting_to_die = false;
+	bool _in_syscall = false;
 
 	//Memory
 	kstd::Arc<VMSpace> m_vm_space;
@@ -136,6 +147,7 @@ private:
 	size_t _signal_stack_top = 0;
 	kstd::Arc<VMRegion> _sighandler_ustack_region;
 	kstd::Arc<VMRegion> _sighandler_kstack_region;
+	uint32_t _pending_signals = 0x0;
 
 	// Thread queue
 	Thread* m_next = nullptr;

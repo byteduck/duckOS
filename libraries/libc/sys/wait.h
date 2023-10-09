@@ -23,6 +23,7 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
+#include <kernel/api/wait.h>
 
 __DECL_BEGIN
 

@@ -65,7 +65,9 @@ std::string Process::state_name() const {
 		case DEAD:
 			return "Dead";
 		case BLOCKED:
-			return "Sleeping";
+			return "Blocked";
+		case STOPPED:
+			return "Stopped";
 		default:
 			return "Unknown";
 	}

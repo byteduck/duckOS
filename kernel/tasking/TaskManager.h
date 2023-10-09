@@ -98,8 +98,6 @@ namespace TaskManager {
 		bool m_done = false;
 	};
 
-	void notify_current(uint32_t sig);
-
 	pid_t get_new_pid();
 	kstd::Arc<Thread> pick_next_thread();
 

@@ -5,5 +5,6 @@
 
 void Process::sys_exit(int status) {
 	_exit_status = status;
+	_died_gracefully = true;
 	kill(SIGKILL);
 }

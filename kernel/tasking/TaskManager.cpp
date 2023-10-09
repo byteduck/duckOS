@@ -41,7 +41,6 @@ Atomic<int> next_pid = 0;
 bool tasking_enabled = false;
 bool yield_async = false;
 bool preempting = false;
-static uint8_t quantum_counter = 0;
 
 void kidle(){
 	tasking_enabled = true;
@@ -134,8 +133,6 @@ pid_t TaskManager::get_new_pid(){
 
 void TaskManager::init(){
 	KLog::dbg("TaskManager", "Initializing tasking...");
-	g_tasking_lock.acquire();
-
 	processes = new kstd::vector<Process*>();
 
 	//Create kernel process
@@ -173,7 +170,6 @@ int TaskManager::add_process(Process* proc){
 	processes->push_back(proc);
 	g_process_lock.release();
 
-	CRITICAL_LOCK(g_tasking_lock);
 	auto& threads = proc->threads();
 	for(const auto& tid : threads)
 		queue_thread(proc->get_thread(tid));
@@ -192,8 +188,6 @@ void TaskManager::remove_process(Process* proc) {
 }
 
 void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
-	ASSERT(g_tasking_lock.held_by_current_thread());
-
 	if(!thread) {
 		KLog::warn("TaskManager", "Tried queueing null thread!");
 		return;
@@ -207,14 +201,11 @@ void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
 		return;
 	}
 
+	ScopedCritical crit;
 	if(g_next_thread)
 		g_next_thread->enqueue_thread(thread.get());
 	else
 		g_next_thread = thread.get();
-}
-
-void TaskManager::notify_current(uint32_t sig){
-	cur_thread->process()->kill(sig);
 }
 
 kstd::Arc<Thread> TaskManager::pick_next_thread() {
@@ -242,7 +233,6 @@ kstd::Arc<Thread> TaskManager::pick_next_thread() {
 
 bool TaskManager::yield() {
 	ASSERT(!preempting);
-	quantum_counter = 0;
 	if(Interrupt::in_irq()) {
 		// We can't yield in an interrupt. Instead, we'll yield immediately after we exit the interrupt
 		yield_async = true;
@@ -302,13 +292,12 @@ void TaskManager::preempt(){
 	ASSERT(!g_critical_count.load());
 
 	g_tasking_lock.acquire_and_enter_critical();
-	cur_thread->enter_critical();
 	preempting = true;
 
 	// Try unblocking threads that are blocked
 	if(g_process_lock.try_acquire()) {
 		for(auto& process : *processes) {
-			if(process->state() != Process::ALIVE)
+			if(process->state() != Process::ALIVE && process->state() != Process::STOPPED)
 				continue;
 			for(auto& tid : process->threads()) {
 				auto thread = process->get_thread(tid);
@@ -324,7 +313,6 @@ void TaskManager::preempt(){
 	// Pick a new thread
 	auto old_thread = cur_thread;
 	auto next_thread = pick_next_thread();
-	quantum_counter = 1; //Every process has a quantum of 1 for now
 
 	bool should_preempt = old_thread != next_thread;
 
@@ -392,8 +380,5 @@ void TaskManager::preempt_finish() {
 	ASSERT(g_tasking_lock.times_locked() == 1);
 	g_tasking_lock.release();
 	leave_critical();
-	// Handle a pending signal.
-	if(cur_thread->tid() != kernel_process->pid())
-		cur_thread->process()->handle_pending_signal();
-	cur_thread->leave_critical();
+	cur_thread->handle_pending_signal();
 }

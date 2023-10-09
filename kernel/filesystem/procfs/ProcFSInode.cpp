@@ -32,7 +32,7 @@
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/device/DiskDevice.h>
 
-const char* PROC_STATE_NAMES[] = {"Running", "Zombie", "Dead", "Sleeping"};
+const char* PROC_STATE_NAMES[] = {"Running", "Zombie", "Dead", "Sleeping", "Stopped"};
 
 ProcFSInode::ProcFSInode(ProcFS& fs, ProcFSEntry& entry): Inode(fs, entry.dir_entry.id), procfs(fs), pid(entry.pid), type(entry.type), parent(entry.parent) {
 	switch(entry.dir_entry.type) {

@@ -46,7 +46,8 @@ public:
 	enum State {
 		ALIVE = 0, //The process has not exited yet
 		ZOMBIE = 1, //The process has exited and needs to be reaped
-		DEAD = 2 //The process has been reaped and needs to be removed from the process table
+		DEAD = 2, //The process has been reaped and needs to be removed from the process table
+		STOPPED = 4, //The process has been stopped by a signal or debugger
 	};
 
 	~Process();
@@ -80,8 +81,7 @@ public:
 
 	//Signals and death
 	void kill(int signal);
-	void handle_pending_signal();
-	bool has_pending_signals();
+	void die();
 
 	//Memory
 	PageDirectory* page_directory();
@@ -100,7 +100,6 @@ public:
 	pid_t sys_fork(Registers& regs);
 	int exec(const kstd::string& filename, ProcessArgs* args);
 	int sys_execve(UserspacePointer<char> filename, UserspacePointer<char*> argv, UserspacePointer<char*> envp);
-	int sys_execvp(UserspacePointer<char> filename, UserspacePointer<char*> argv);
 	int sys_open(UserspacePointer<char> filename, int options, int mode);
 	int sys_close(int file);
 	int sys_chdir(UserspacePointer<char> path);
@@ -179,6 +178,22 @@ private:
 	void insert_thread(const kstd::Arc<Thread>& thread);
 	void remove_thread(const kstd::Arc<Thread>& thread);
 
+	template<typename F>
+	void for_each_thread(F&& callback) {
+		LOCK(_thread_lock);
+		for (auto tid : _tids) {
+			auto thread = get_thread(tid);
+			if(!thread)
+				continue;
+			if(!callback(thread))
+				break;
+		}
+	}
+
+	void reap();
+	void stop_thread(Thread* thread);
+	void alert_thread_continued(Thread* thread);
+
 	//Identifying info and state
 	kstd::string _name = "";
 	kstd::string _exe = "";
@@ -191,8 +206,10 @@ private:
 	mode_t _umask = 022;
 	int _exit_status = 0;
 	State _state;
+	bool _died_gracefully = false;
 	bool _kernel_mode = false;
 	bool _is_destroying = false;
+	bool _was_reaped = false;
 
 	//Memory
 	kstd::Arc<VMSpace> _vm_space;
@@ -208,7 +225,6 @@ private:
 
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
-	kstd::queue<int> pending_signals;
 	SpinLock m_signal_lock;
 
 	//Threads

@@ -28,6 +28,7 @@
 #include <kernel/memory/SafePointer.h>
 #include "../memory/AnonymousVMObject.h"
 #include "Reaper.h"
+#include "WaitBlocker.h"
 
 Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args):
 	_tid(tid),
@@ -185,9 +186,10 @@ void* Thread::kernel_stack_top() {
 }
 
 Thread::State Thread::state() {
-	if(process()->state() != Process::ALIVE)
-		return (State) process()->state();
-	return _state;
+	auto proc_state = process()->state();
+	if (proc_state == Process::ALIVE)
+		return _state;
+	return (State) proc_state;
 }
 
 const char* Thread::state_name() {
@@ -200,6 +202,8 @@ const char* Thread::state_name() {
 			return "Dead";
 		case BLOCKED:
 			return "Blocked";
+		case STOPPED:
+			return "Stopped";
 		default:
 			return "Unknown";
 	}
@@ -213,7 +217,7 @@ void* Thread::return_value() {
 	return _return_value;
 }
 
-void Thread::kill() {
+void Thread::die() {
 	if(is_blocked()) {
 		if (_blocker->can_be_interrupted()) {
 			_blocker->interrupt();
@@ -223,13 +227,9 @@ void Thread::kill() {
 		}
 	}
 
-	if(TaskManager::current_thread().get() == this) {
-		enter_critical();
-		_waiting_to_die = true;
-		leave_critical();
-	} else {
-		Reaper::inst().reap(m_weak_self);
-	}
+	TaskManager::current_thread()->enter_critical();
+	_waiting_to_die = true;
+	TaskManager::current_thread()->leave_critical();
 }
 
 bool Thread::waiting_to_die() {
@@ -245,16 +245,39 @@ PageDirectory* Thread::page_directory() const {
 }
 
 void Thread::enter_critical() {
+	ASSERT(TaskManager::current_thread().get() == this);
 	_in_critical++;
 }
 
 void Thread::leave_critical() {
 	ASSERT(_in_critical);
+	ASSERT(TaskManager::current_thread().get() == this);
 	_in_critical--;
-	if(_waiting_to_die && !_in_critical) {
-		Reaper::inst().reap(m_weak_self);
-		ASSERT(TaskManager::yield());
+	if(!_in_critical) {
+		ASSERT(!_in_syscall);
+		if(_waiting_to_die) {
+			Reaper::inst().reap(m_weak_self);
+			ASSERT(TaskManager::yield());
+		}
+		handle_pending_signal();
 	}
+
+}
+
+void Thread::enter_syscall() {
+	ASSERT(!_in_syscall);
+	enter_critical();
+	_in_syscall = true;
+}
+
+void Thread::leave_syscall() {
+	ASSERT(_in_syscall);
+	_in_syscall = false;
+	leave_critical();
+}
+
+bool Thread::in_syscall() {
+	return _in_syscall;
 }
 
 void Thread::block(Blocker& blocker) {
@@ -265,6 +288,15 @@ void Thread::block(Blocker& blocker) {
 	// Check if the blocker is already ready. If so, unblock immediately
 	if(blocker.is_ready())
 		return;
+
+	// If we have a pending signal and we can interrupt this, we should do so.
+	{
+		LOCK(_process->m_signal_lock);
+		if (_pending_signals && blocker.can_be_interrupted()) {
+			blocker.interrupt();
+			return;
+		}
+	}
 
 	// Check for deadlock
 	// TODO: This will only detect if 2 threads are directly deadlocking each other. This will not detect deadlocks involving more than 2 threads.
@@ -295,10 +327,7 @@ void Thread::unblock() {
 	_blocker = nullptr;
 	if(_state == BLOCKED)
 		_state = ALIVE;
-	{
-		CRITICAL_LOCK(TaskManager::g_tasking_lock);
-		TaskManager::queue_thread(self());
-	}
+	TaskManager::queue_thread(self());
 }
 
 bool Thread::is_blocked() {
@@ -358,6 +387,7 @@ void Thread::acquired_lock(SpinLock* lock) {
 void Thread::released_lock(SpinLock* lock) {
 	TaskManager::ScopedCritical crit;
 	if(lock != &MM.liballoc_spinlock && lock != &TaskManager::g_tasking_lock) {
+		ASSERT(_held_locks.size());
 		// Ensure locks are acquired and released in the correct order
 		auto last_held = _held_locks.pop_back();
 		ASSERT(last_held == lock);
@@ -365,23 +395,16 @@ void Thread::released_lock(SpinLock* lock) {
 }
 
 bool Thread::call_signal_handler(int signal) {
-	if(_ready_to_handle_signal || _in_signal || _just_finished_signal)
-		return false;
+	_process->m_signal_lock.acquire();
+	ASSERT(!_in_critical);
 
-	if(is_blocked()) {
-		if(_blocker->can_be_interrupted()) {
-			_blocker->interrupt();
-			unblock();
-		} else {
-			return false;
-		}
-	}
-
-	if(signal < 1 || signal >= 32)
-		return true;
+	TaskManager::ScopedCritical crit;
 	auto signal_loc = (size_t) _process->signal_actions[signal].action;
-	if(!signal_loc || signal_loc >= HIGHER_HALF)
-		return true;
+	if(_ready_to_handle_signal || _in_signal || _just_finished_signal) {
+		_process->m_signal_lock.release();
+		return false;
+	}
+	crit.exit();
 
 	//Allocate a userspace stack
 	auto alloc_user_stack = [this]() -> Result {
@@ -395,6 +418,7 @@ bool Thread::call_signal_handler(int signal) {
 
 	if(alloc_user_stack().is_error()) {
 		KLog::crit("Thread", "Could not allocate userspace stack for signal handler!");
+		_process->m_signal_lock.release();
 		return true;
 	}
 
@@ -441,11 +465,12 @@ bool Thread::call_signal_handler(int signal) {
 	setup_kernel_stack(kernel_stack, user_stack.real_stackptr(), signal_registers);
 
 	//Queue this thread
+	TaskManager::enter_critical();
 	_ready_to_handle_signal = true;
-	{
-		CRITICAL_LOCK(TaskManager::g_tasking_lock);
-		TaskManager::queue_thread(self());
-	}
+	_process->m_signal_lock.release();
+	TaskManager::leave_critical();
+
+	TaskManager::queue_thread(self());
 
 	// If this thread is the current thread, do a context switch
 	if(TaskManager::current_thread().get() == this)
@@ -495,7 +520,7 @@ void Thread::handle_pagefault(PageFault fault) {
 }
 
 void Thread::enqueue_thread(Thread* thread) {
-	ASSERT(TaskManager::g_tasking_lock.held_by_current_thread());
+	ASSERT(TaskManager::in_critical());
 	if(thread == this)
 		return;
 	if(m_next) {
@@ -551,7 +576,7 @@ void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Regi
 
 void Thread::exit(void* return_value) {
 	_return_value = return_value;
-	kill();
+	die();
 }
 
 void Thread::reap() {
@@ -563,4 +588,114 @@ void Thread::reap() {
 		m_prev->m_next = m_next;
 	if(m_next)
 		m_next->m_prev = this;
+}
+
+void Thread::handle_pending_signal() {
+	ASSERT(TaskManager::current_thread().get() == this);
+	if(_process->m_signal_lock.held_by_current_thread())
+		return; // We were preempted while calling this last time we context switched... Don't do it again.
+
+	int sig = 0;
+	{
+		LOCK(_process->m_signal_lock);
+		if(!_pending_signals)
+			return;
+		for(int i = 0; i < NSIG; i++) {
+			if(_pending_signals & (1 << i)) {
+				_pending_signals &= ~(1 << i);
+				sig = i;
+				break;
+			}
+		}
+	}
+	handle_signal(sig);
+}
+
+bool Thread::handle_signal(int signal) {
+	ASSERT(signal > 0 && signal < NSIG);
+
+	_process->m_signal_lock.acquire();
+	auto sigaction = _process->signal_actions[signal];
+	_process->m_signal_lock.release();
+
+	if (!sigaction.action) {
+		// If this is a severe signal and we don't have a handler for it, die now.
+		if(Signal::signal_severities[signal] >= Signal::KILL) {
+			die_from_signal(signal);
+		}
+
+		// No handler, let's not worry about it.
+		if(signal != SIGSTOP && signal != SIGTSTP && signal != SIGCONT) {
+			return true;
+		}
+	}
+
+	if(TaskManager::current_thread().get() != this || in_critical()) {
+		{
+			LOCK(_process->m_signal_lock);
+			_pending_signals |= (1 << signal);
+		}
+
+		if(in_critical() && is_blocked() && _blocker->can_be_interrupted()) {
+			_blocker->interrupt();
+			unblock();
+		}
+
+		TaskManager::ScopedCritical crit;
+		if(_state == STOPPED && signal == SIGCONT) {
+			_state = _before_stop_state;
+			_process->alert_thread_continued(this);
+			TaskManager::queue_thread(self());
+		}
+	} else {
+		dispatch_signal(signal);
+	}
+
+	return true;
+}
+
+void Thread::dispatch_signal(int signal) {
+	ASSERT(!in_critical() && TaskManager::current_thread().get() == this);
+
+	_process->m_signal_lock.acquire();
+	const auto sigaction = _process->signal_actions[signal];
+	const auto severity = Signal::signal_severities[signal];
+	_process->m_signal_lock.release();
+
+	if(severity >= Signal::KILL && !sigaction.action) {
+		die_from_signal(signal);
+	}
+
+	if (sigaction.action) {
+		call_signal_handler(signal);
+		return;
+	}
+
+	switch(signal) {
+		case SIGSTOP:
+		case SIGTSTP: {
+			_before_stop_state = _state;
+			_process->stop_thread(this);
+			TaskManager::yield();
+			break;
+		}
+		case SIGCONT:
+		default:
+			break;
+	}
+}
+
+void Thread::die_from_signal(int signal) {
+	if(Signal::signal_severities[signal] == Signal::FATAL)
+		KLog::warn("Process", "PID %d exiting with fatal signal %s", _process->_pid, Signal::signal_names[signal]);
+
+	// Notify relevant waiters
+	if (signal == SIGKILL && _process->_died_gracefully)
+		WaitBlocker::notify_all(_process, WaitBlocker::Exited, _process->_exit_status);
+	else
+		WaitBlocker::notify_all(_process, WaitBlocker::Signalled, signal);
+
+	// If the signal has no handler and is KILL or FATAL, then kill all threads
+	// Get the current thread as a raw pointer, so that if the current thread is part of this process the reference doesn't stay around
+	_process->die();
 }

@@ -31,7 +31,8 @@ namespace Sys {
 			ALIVE = 0,
 			ZOMBIE = 1,
 			DEAD = 2,
-			BLOCKED = 3
+			BLOCKED = 3,
+			STOPPED = 4
 		};
 
 		static std::map<pid_t, Process> get_all();

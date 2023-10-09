@@ -4,18 +4,21 @@
 #include "../tasking/Process.h"
 #include "../memory/SafePointer.h"
 #include "../tasking/WaitBlocker.h"
+#include "../api/wait.h"
 
 int Process::sys_waitpid(pid_t pid, UserspacePointer<int> status, int flags) {
 	//TODO: Flags
-	WaitBlocker blocker(TaskManager::current_thread(), pid);
-	TaskManager::current_thread()->block(blocker);
-	if(blocker.was_interrupted())
+	auto blocker = WaitBlocker::make(TaskManager::current_thread(), pid, flags);
+	TaskManager::current_thread()->block(*blocker);
+	if(blocker->was_interrupted())
 		return -EINTR;
-	if(blocker.error())
-		return blocker.error();
+	if(blocker->error())
+		return blocker->error();
 	if(status)
-		status.set(blocker.exit_status());
-	if(blocker.waited_process())
-		delete blocker.waited_process();
-	return blocker.waited_pid();
+		status.set(blocker->status());
+	ASSERT(blocker->waited_process());
+	pid_t ret = blocker->waited_process()->pid();
+	if(WIFEXITED(blocker->status()) || WIFSIGNALED(blocker->status()))
+		blocker->waited_process()->reap();
+	return ret;
 }

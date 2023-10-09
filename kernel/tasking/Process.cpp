@@ -28,6 +28,7 @@
 #include "Thread.h"
 #include "../kstd/KLog.h"
 #include "../filesystem/procfs/ProcFS.h"
+#include "WaitBlocker.h"
 
 Process* Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::Arc<LinkedInode>(nullptr));
@@ -247,68 +248,33 @@ Process::~Process() {
 }
 
 void Process::kill(int signal) {
-	if(signal >= 0 && signal <= 32) {
-		Signal::SignalSeverity severity = Signal::signal_severities[signal];
-
-		//Print signal if unhandled and fatal
-		if(severity == Signal::FATAL && !signal_actions[signal].action) {
-			KLog::warn("Process", "PID %d exiting with fatal signal %s", _pid, Signal::signal_names[signal]);
-		}
-
-		if(severity >= Signal::KILL && !signal_actions[signal].action) {
-			// If the signal has no handler and is KILL or FATAL, then kill all threads
-			// Get the current thread as a raw pointer, so that if the current thread is part of this process the reference doesn't stay around
-			auto cur_thread = TaskManager::current_thread().get();
-			cur_thread->enter_critical();
-			for(auto tid : _tids)
-				get_thread(tid)->kill();
-			cur_thread->leave_critical();
-		} else if(signal_actions[signal].action) {
-			// We have a signal handler for this.
-			if(TaskManager::current_thread()->process() == this) {
-				// We are a thread from this process - try to handle the signal immediately.
-				if(!TaskManager::current_thread()->call_signal_handler(signal)) {
-					// We couldn't handle it - push it back to the queue.
-					LOCK(m_signal_lock);
-					pending_signals.push_back(signal);
-				}
-			} else {
-				// We are a thread from another process. Interrupt a thread if needed and queue the signal.
-				ScopedLocker thread_locker(_thread_lock);
-				ScopedLocker signal_locker(m_signal_lock);
-				pending_signals.push_back(signal);
-				TaskManager::ScopedCritical critical;
-				for(auto& tid : _tids) {
-					auto thread = get_thread(tid);
-					if(thread->state() == Thread::ALIVE)
-						break;
-					if(thread->is_blocked() && thread->_blocker->can_be_interrupted()) {
-						thread->_blocker->interrupt();
-						thread->unblock();
-						break;
-					}
-				}
-			}
-		}
+	ASSERT(_state == ALIVE || _state == STOPPED);
+	if (signal <= 0 || signal >= NSIG) {
+		KLog::err("Process", "Invalid signal %d sent to %d!", signal, _pid);
+		return;
 	}
+
+	LOCK(m_signal_lock);
+	bool did_handle = false;
+	TaskManager::current_thread()->enter_critical();
+	for_each_thread([&did_handle, signal] (const kstd::Arc<Thread>& thread) -> bool {
+		did_handle = thread->handle_signal(signal);
+		return !did_handle || Signal::dispatch_to_every_thread[signal];
+	});
+	TaskManager::current_thread()->leave_critical();
+
+	if (!did_handle)
+		KLog::err("Process", "No available thread for pid %d to handle signal %s", _pid, Signal::signal_names[signal]);
 }
 
-void Process::handle_pending_signal() {
-	// We have to enter critical while holding the lock, or else if the process has multiple threads
-	m_signal_lock.acquire_and_enter_critical();
-	if(!pending_signals.empty()) {
-		int sig = pending_signals.pop_front();
-		m_signal_lock.release();
-		TaskManager::leave_critical();
-		kill(sig);
-	} else {
-		m_signal_lock.release();
-		TaskManager::leave_critical();
-	}
-}
-
-bool Process::has_pending_signals() {
-	return !pending_signals.empty();
+void Process::die() {
+	auto cur_thread = TaskManager::current_thread().get();
+	cur_thread->enter_critical();
+	for_each_thread([&] (const kstd::Arc<Thread>& thread) -> bool {
+		thread->die();
+		return true;
+	});
+	cur_thread->leave_critical();
 }
 
 PageDirectory* Process::page_directory() {
@@ -378,6 +344,8 @@ void Process::alert_thread_died(kstd::Arc<Thread> thread) {
 		}
 		TaskManager::reparent_orphans(this);
 		_state = ZOMBIE;
+		if (_was_reaped)
+			delete this;
 	}
 }
 
@@ -403,4 +371,35 @@ void Process::remove_thread(const kstd::Arc<Thread>& thread) {
 			break;
 		}
 	}
+}
+
+void Process::reap() {
+	_was_reaped = true;
+	if (_state == ZOMBIE)
+		delete this;
+}
+
+void Process::stop_thread(Thread* stopped_thread) {
+	ASSERT(!TaskManager::in_critical());
+
+	bool all_blocked = true;
+	for_each_thread([&] (kstd::Arc<Thread>& thread) -> bool {
+		if(thread && thread.get() != stopped_thread && thread->state() != Thread::STOPPED)
+			all_blocked = false;
+		return all_blocked;
+	});
+
+	if(all_blocked)
+		WaitBlocker::notify_all(this, WaitBlocker::Stopped, 0);
+
+	const TaskManager::ScopedCritical crit;
+	stopped_thread->_state = Thread::STOPPED;
+	if(all_blocked)
+		_state = STOPPED;
+}
+
+void Process::alert_thread_continued(Thread* thread) {
+	if(_state != STOPPED)
+		return;
+	_state = ALIVE;
 }

@@ -68,7 +68,7 @@ namespace Interrupt {
 		if(!TaskManager::enabled() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()){
 			PANIC(err, panic_msg);
 		} else {
-			TaskManager::notify_current(sig);
+			TaskManager::current_process()->kill(sig);
 		}
 	}
 

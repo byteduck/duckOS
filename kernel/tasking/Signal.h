@@ -31,4 +31,5 @@ namespace Signal {
     enum SignalSeverity { NOKILL, KILL, FATAL };
     extern const char* signal_names[];
     extern SignalSeverity signal_severities[];
+	extern bool dispatch_to_every_thread[];
 }

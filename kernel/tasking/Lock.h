@@ -19,8 +19,8 @@
 
 #pragma once
 
-#define LOCK(lock) ScopedLocker __locker((lock))
-#define LOCK_N(lock, name) ScopedLocker name((lock))
+#define LOCK(lock) const ScopedLocker __locker((lock))
+#define LOCK_N(lock, name) const ScopedLocker name((lock))
 
 class Lock;
 
