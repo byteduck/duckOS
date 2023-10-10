@@ -346,20 +346,19 @@ int Object::load_sections() {
 		size_t vaddr_mod = pheader.p_vaddr % PAGE_SIZE;
 		size_t round_memloc = memloc + pheader.p_vaddr - vaddr_mod;
 		size_t round_size = ((pheader.p_memsz + vaddr_mod + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
-		if(mmap((void*) round_memloc, round_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED, 0, 0) == MAP_FAILED)
-			Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
-		lseek(fd, pheader.p_offset, SEEK_SET);
-		read(fd, (void*) (memloc + pheader.p_vaddr), pheader.p_filesz);
+//		if(mmap((void*) round_memloc, round_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED, 0, 0) == MAP_FAILED)
+//			Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
+//		lseek(fd, pheader.p_offset, SEEK_SET);
+//		read(fd, (void*) (memloc + pheader.p_vaddr), pheader.p_filesz);
 
 		// Map the section into memory
-		// TODO: Why is this slower?
-//		size_t round_offset = pheader.p_offset - vaddr_mod;
-//		size_t round_filesz = ((pheader.p_filesz + vaddr_mod + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
-//		if(mmap((void*) round_memloc, round_filesz, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, fd, round_offset) == MAP_FAILED)
-//			Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
-//		if(pheader.p_memsz != pheader.p_filesz)
-//			if(mmap((void*) (round_memloc + round_filesz), round_size - round_filesz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED, 0, 0) == MAP_FAILED)
-//				Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
+		size_t round_offset = pheader.p_offset - vaddr_mod;
+		size_t round_filesz = ((pheader.p_filesz + vaddr_mod + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
+		if(mmap((void*) round_memloc, round_filesz, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_PRIVATE, fd, round_offset) == MAP_FAILED)
+			Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
+		if(pheader.p_memsz != pheader.p_filesz)
+			if(mmap_named((void*) (round_memloc + round_filesz), round_size - round_filesz, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_FIXED, 0, 0, name.c_str()) == MAP_FAILED)
+				Duck::Log::errf("ld: Failed to allocate memory for section at {#x}->{#x}: {}", pheader.p_vaddr, pheader.p_vaddr + pheader.p_memsz, strerror(errno));
 
 		// Zero out the remaining bytes
 		size_t bytes_left = pheader.p_memsz - pheader.p_filesz;
