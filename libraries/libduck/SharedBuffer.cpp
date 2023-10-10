@@ -21,9 +21,9 @@
 #include "Log.h"
 using namespace Duck;
 
-ResultRet<Duck::Ptr<SharedBuffer>> SharedBuffer::alloc(size_t size) {
+ResultRet<Duck::Ptr<SharedBuffer>> SharedBuffer::alloc(size_t size, std::string name) {
 	shm shm_info;
-	if(shmcreate(nullptr, size, &shm_info))
+	if(shmcreate_named(nullptr, size, &shm_info, name.c_str()))
 		return Result(errno);
 	return Ptr<SharedBuffer>(new SharedBuffer(shm_info));
 }
@@ -44,8 +44,8 @@ SharedBuffer::~SharedBuffer() noexcept {
 		Duck::Log::warnf("Duck::SharedBuffer: Failed to detach shm: {}", strerror(errno));
 }
 
-ResultRet<Duck::Ptr<SharedBuffer>> SharedBuffer::copy() const {
-	auto cpy_res = alloc(m_shm.size);
+ResultRet<Duck::Ptr<SharedBuffer>> SharedBuffer::copy(std::string name) const {
+	auto cpy_res = alloc(m_shm.size, std::move(name));
 	if(cpy_res.is_error())
 		return cpy_res.result();
 	memcpy(cpy_res.value()->ptr(), ptr(), m_shm.size);

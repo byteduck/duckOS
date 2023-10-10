@@ -22,8 +22,8 @@ namespace Duck {
 			return AtomicCircularQueue(buffer);
 		}
 
-		static ResultRet<AtomicCircularQueue> alloc() {
-			auto buffer = TRY(SharedBuffer::alloc(sizeof(AtomicCircularQueueStruct)));
+		static ResultRet<AtomicCircularQueue> alloc(std::string name) {
+			auto buffer = TRY(SharedBuffer::alloc(sizeof(AtomicCircularQueueStruct), std::move(name)));
 			new (buffer->ptr<AtomicCircularQueueStruct>()) AtomicCircularQueueStruct;
 			return AtomicCircularQueue(buffer);
 		}

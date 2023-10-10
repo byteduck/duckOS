@@ -317,7 +317,9 @@ void Window::alloc_framebuffer() {
 		}
 
 		// Allocate the new framebuffer
-		if(shmcreate(NULL, new_buffer_size, &_framebuffer_shm) < 0) {
+		char namebuf[32];
+		snprintf(namebuf, 64, "Pond::Window %d", _id);
+		if(shmcreate_named(NULL, new_buffer_size, &_framebuffer_shm, namebuf) < 0) {
 			perror("Failed to allocate framebuffer for window");
 			return;
 		}

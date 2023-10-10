@@ -22,7 +22,7 @@
 using namespace Sound;
 
 Client::Client(sockid_t id, pid_t pid): m_id(id), m_pid(pid) {
-	auto buffer_res = Duck::AtomicCircularQueue<Sample, LIBSOUND_QUEUE_SIZE>::alloc();
+	auto buffer_res = Duck::AtomicCircularQueue<Sample, LIBSOUND_QUEUE_SIZE>::alloc("Quack::AudioQueue");
 	if(buffer_res.is_error()) {
 		Duck::Log::errf("libsound: Could not allocate buffer for client: {}", buffer_res.result());
 		return;

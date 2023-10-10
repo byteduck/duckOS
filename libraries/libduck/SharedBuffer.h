@@ -32,10 +32,10 @@ namespace Duck {
 
 		~SharedBuffer() noexcept;
 
-		static ResultRet<Duck::Ptr<SharedBuffer>> alloc(size_t size);
+		static ResultRet<Duck::Ptr<SharedBuffer>> alloc(size_t size, std::string name);
 		static ResultRet<Duck::Ptr<SharedBuffer>> adopt(int id);
 
-		[[nodiscard]] ResultRet<Duck::Ptr<SharedBuffer>> copy() const;
+		[[nodiscard]] ResultRet<Duck::Ptr<SharedBuffer>> copy(std::string name) const;
 		int allow(int pid, bool read = true, bool write = true);
 
 		[[nodiscard]] void* ptr() const { return m_shm.ptr; }

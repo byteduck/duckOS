@@ -176,7 +176,7 @@ Font* Font::load_bdf_shm(const char* path) {
 
 		//Close the file & allocate shared memory for the font data
 		fclose(file);
-		if(shmcreate(nullptr, total_memsz, &fontshm) < 0) {
+		if(shmcreate_named(nullptr, total_memsz, &fontshm, "Gfx::Font") < 0) {
 			perror("Couldn't load font: Couldn't create shared memory region");
 			return nullptr;
 		}
