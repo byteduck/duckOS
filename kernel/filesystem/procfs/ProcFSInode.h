@@ -50,6 +50,8 @@ public:
 	void close(FileDescriptor& fd) override;
 
 private:
+	ResultRet<kstd::string> get_string_contents();
+
 	ProcFS& procfs;
 	pid_t pid;
 	ProcFSInodeType type;

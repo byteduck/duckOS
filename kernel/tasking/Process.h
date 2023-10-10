@@ -27,6 +27,7 @@
 #include <kernel/User.h>
 #include <kernel/kstd/string.h>
 #include "../api/poll.h"
+#include "../api/mmap.h"
 
 class FileDescriptor;
 class Blocker;
@@ -150,7 +151,7 @@ public:
 	int sys_fchown(int fd, uid_t uid, gid_t gid);
 	int sys_lchown(UserspacePointer<char> file, uid_t uid, gid_t gid);
 	int sys_ioctl(int fd, unsigned request, UserspacePointer<void*> argp);
-	int sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm> s);
+	int sys_shmcreate(UserspacePointer<shmcreate_args> args_p);
 	int sys_shmattach(int id, void* addr, UserspacePointer<struct shm> s);
 	int sys_shmdetach(int id);
 	int sys_shmallow(int id, pid_t pid, int perms);

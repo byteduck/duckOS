@@ -44,7 +44,7 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 
 	if(!is_kernel_mode()) {
 		auto do_create_stack = [&]() -> Result {
-			auto stack_object = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
+			auto stack_object = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE, "stack"));
 			_stack_region = TRY(m_vm_space->map_stack(stack_object));
 			mapped_user_stack_region = MM.map_object(stack_object);
 			return Result(SUCCESS);
@@ -120,7 +120,7 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 
 	if(!is_kernel_mode()) {
 		auto do_create_stack = [&]() -> Result {
-			auto stack_object = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
+			auto stack_object = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE, "stack"));
 			_stack_region = TRY(m_vm_space->map_stack(stack_object));
 			mapped_user_stack_region = MM.map_object(stack_object);
 			return Result(SUCCESS);
@@ -409,7 +409,7 @@ bool Thread::call_signal_handler(int signal) {
 	//Allocate a userspace stack
 	auto alloc_user_stack = [this]() -> Result {
 		if(!_sighandler_ustack_region) {
-			auto user_stack = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE));
+			auto user_stack = TRY(AnonymousVMObject::alloc(THREAD_STACK_SIZE, "stack"));
 			user_stack->set_fork_action(VMObject::ForkAction::Ignore);
 			_sighandler_ustack_region = TRY(m_vm_space->map_object(user_stack, VMProt::RW));
 		}

@@ -120,6 +120,7 @@ SET(KERNEL_SRCS
         filesystem/procfs/ProcFS.cpp
         filesystem/procfs/ProcFSInode.cpp
         filesystem/procfs/ProcFSEntry.cpp
+        filesystem/procfs/ProcFSContent.cpp
         filesystem/socketfs/SocketFS.cpp
         filesystem/socketfs/SocketFSInode.cpp
         filesystem/ptyfs/PTYFS.cpp
@@ -169,7 +170,8 @@ SET(KERNEL_SRCS
         syscall/waitpid.cpp
         syscall/uname.cpp
         VMWare.cpp
-        Processor.cpp)
+        Processor.cpp
+        StackWalker.cpp)
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h"

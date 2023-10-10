@@ -8,6 +8,7 @@
 #include "../Result.hpp"
 #include "../tasking/SpinLock.h"
 #include "PageDirectory.h"
+#include <kernel/kstd/Iteration.h>
 
 /**
  * This class represents a virtual memory address space and all of the regions it contains. It's used to allocate and
@@ -101,6 +102,11 @@ public:
 	 * Calculates the total non-shared, anonymous memory in the space.
 	 */
 	size_t calculate_regular_anonymous_total();
+
+	/**
+	 * Iterates over all VMRegions in the space.
+	 */
+	void iterate_regions(kstd::IterationFunc<VMRegion*> callback);
 
 	VirtualAddress start() const { return m_start; }
 	size_t size() const { return m_size; }

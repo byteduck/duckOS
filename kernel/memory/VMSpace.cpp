@@ -301,6 +301,16 @@ size_t VMSpace::calculate_regular_anonymous_total() {
 	return total;
 }
 
+void VMSpace::iterate_regions(kstd::IterationFunc<VMRegion*> callback) {
+	LOCK(m_lock);
+	auto cur_region = m_region_map;
+	while(cur_region) {
+		if(cur_region->used)
+			ITER_BREAK(callback(cur_region->vmRegion));
+		cur_region = cur_region->next;
+	}
+}
+
 ResultRet<VMSpace::VMSpaceRegion*> VMSpace::alloc_space(size_t size) {
 	ASSERT(size % PAGE_SIZE == 0);
 

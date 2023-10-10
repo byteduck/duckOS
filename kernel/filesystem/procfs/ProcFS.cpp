@@ -35,6 +35,7 @@ ProcFS::ProcFS() {
 
 	entries.push_back(ProcFSEntry(Root, 0));
 	entries.push_back(ProcFSEntry(RootCurProcEntry, 0));
+	entries.push_back(ProcFSEntry(RootSidProcEntry, 0));
 	entries.push_back(ProcFSEntry(RootCmdLine, 0));
 	entries.push_back(ProcFSEntry(RootMemInfo, 0));
 	entries.push_back(ProcFSEntry(RootUptime, 0));
@@ -64,6 +65,8 @@ void ProcFS::proc_add(Process* proc) {
 	entries.push_back(ProcFSEntry(ProcExe, pid));
 	entries.push_back(ProcFSEntry(ProcCwd, pid));
 	entries.push_back(ProcFSEntry(ProcStatus, pid));
+	entries.push_back(ProcFSEntry(ProcStacks, pid));
+	entries.push_back(ProcFSEntry(ProcVMSpace, pid));
 }
 
 void ProcFS::proc_remove(Process* proc) {
@@ -85,6 +88,8 @@ ResultRet<kstd::Arc<Inode>> ProcFS::get_inode(ino_t id) {
 		return static_cast<kstd::Arc<Inode>>(root_inode);
 	else if(id == id_for_entry(0, RootCurProcEntry))
 		return static_cast<kstd::Arc<Inode>>(kstd::make_shared<ProcFSInode>(*this, ProcFSEntry(RootProcEntry, TaskManager::current_process()->pid())));
+	else if(id == id_for_entry(0, RootSidProcEntry))
+		return static_cast<kstd::Arc<Inode>>(kstd::make_shared<ProcFSInode>(*this, ProcFSEntry(RootProcEntry, TaskManager::current_process()->sid())));
 
 	LOCK(lock);
 	for(size_t i = 0; i < entries.size(); i++) {

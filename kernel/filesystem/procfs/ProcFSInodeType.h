@@ -25,6 +25,7 @@ enum ProcFSInodeType {
 
 	//Root Entries
 	RootCurProcEntry,
+	RootSidProcEntry,
 	RootProcEntry,
 	RootMemInfo,
 	RootCmdLine,
@@ -34,6 +35,8 @@ enum ProcFSInodeType {
 	//Process entries
 	ProcExe,
 	ProcCwd,
-	ProcStatus
+	ProcStatus,
+	ProcStacks,
+	ProcVMSpace
 };
 

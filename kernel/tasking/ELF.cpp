@@ -23,6 +23,7 @@
 #include <kernel/filesystem/FileDescriptor.h>
 #include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/KLog.h>
+#include <kernel/memory/AnonymousVMObject.h>
 
 bool ELF::is_valid_elf_header(elf32_header* header) {
 	return header->magic == ELF_MAGIC;
@@ -121,7 +122,8 @@ ResultRet<kstd::vector<kstd::Arc<VMRegion>>> ELF::load_sections(FileDescriptor& 
 			size_t loadsize_pagealigned = header.p_memsz + (header.p_vaddr % PAGE_SIZE);
 
 			//Allocate a kernel memory region to load the section into
-			auto tmp_region = MM.alloc_kernel_region(loadsize_pagealigned);
+			auto object = TRY(AnonymousVMObject::alloc(loadsize_pagealigned, fd.path()));
+			auto tmp_region = MM.map_object(object);
 
 			//Read the section into the region
 			fd.seek(header.p_offset, SEEK_SET);
@@ -133,7 +135,7 @@ ResultRet<kstd::vector<kstd::Arc<VMRegion>>> ELF::load_sections(FileDescriptor& 
 				.write = (bool) (header.p_flags & ELF_PF_W),
 				.execute = (bool) (header.p_flags & ELF_PF_X)
 			};
-			auto vmem_region = TRY(vm_space->map_object(tmp_region->object(), prot, VirtualRange { loadloc_pagealigned, tmp_region->size() }));
+			auto vmem_region = TRY(vm_space->map_object(object, prot, VirtualRange { loadloc_pagealigned, tmp_region->size() }));
 			regions.push_back(vmem_region);
 		}
 	}
@@ -171,6 +173,7 @@ ResultRet<ELF::ElfInfo> ELF::read_info(const kstd::Arc<FileDescriptor>& fd, User
 		if(interp_fd_or_err.is_error())
 			return Result(interp_fd_or_err.code());
 		auto interp_fd = interp_fd_or_err.value();
+		interp_fd->set_path(interp_or_err.value());
 
 		//Read the interpreter's info
 		return read_info(interp_fd, user, interp_or_err.value());

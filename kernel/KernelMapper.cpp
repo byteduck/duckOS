@@ -63,12 +63,14 @@ void KernelMapper::load_map() {
 
 		//Figure out how long the name is and copy it to the symbol
 		size_t name_len = 0;
-		while(filebuf[current_byte + name_len] != '\n')
+		while(filebuf[current_byte + name_len] != '\n' && filebuf[current_byte + name_len] != '(')
 			name_len++;
 		symbol.name = new char[name_len + 1];
 		memcpy(symbol.name, &filebuf[current_byte], name_len);
 		symbol.name[name_len] = '\0';
-		current_byte += name_len + 1;
+		while (filebuf[current_byte] != '\n')
+			current_byte++;
+		current_byte++;
 
 		//Finally, add the symbol to the vector
 		symbols->push_back(symbol);

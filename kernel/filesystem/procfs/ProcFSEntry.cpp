@@ -44,6 +44,12 @@ ProcFSEntry::ProcFSEntry(ProcFSInodeType type, pid_t pid): type(type), pid(pid) 
 			parent = 1;
 			break;
 
+		case RootSidProcEntry:
+			name = "$$";
+			dirent_type = TYPE_DIR;
+			parent = 1;
+			break;
+
 		case RootProcEntry:
 			char buf[12];
 			name = itoa(pid, buf, 10);
@@ -89,6 +95,18 @@ ProcFSEntry::ProcFSEntry(ProcFSInodeType type, pid_t pid): type(type), pid(pid) 
 
 		case ProcStatus:
 			name = "status";
+			dirent_type = TYPE_FILE;
+			parent = ProcFS::id_for_entry(pid, RootProcEntry);
+			break;
+
+		case ProcStacks:
+			name = "stacks";
+			dirent_type = TYPE_FILE;
+			parent = ProcFS::id_for_entry(pid, RootProcEntry);
+			break;
+
+		case ProcVMSpace:
+			name = "vmspace";
 			dirent_type = TYPE_FILE;
 			parent = ProcFS::id_for_entry(pid, RootProcEntry);
 			break;

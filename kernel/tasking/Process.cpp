@@ -42,6 +42,7 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 	if(fd_or_error.is_error())
 		return fd_or_error.result();
 	auto fd = fd_or_error.value();
+	fd->set_path(executable_loc);
 
 	//Read info
 	auto info_or_err = ELF::read_info(fd, file_open_user);
