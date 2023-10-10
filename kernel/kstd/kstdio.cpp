@@ -27,7 +27,9 @@
 #include <kernel/KernelMapper.h>
 #include <kernel/interrupt/interrupt.h>
 #include "cstring.h"
+#include <kernel/device/VGADevice.h>
 #include <kernel/filesystem/FileDescriptor.h>
+#include <kernel/bootlogo.h>
 
 kstd::Arc<FileDescriptor> tty_desc(nullptr);
 kstd::Arc<VirtualTTY> tty(nullptr);
@@ -157,8 +159,28 @@ bool panicked = false;
 		tty->set_graphical(false);
 
 	printf("\033[41;97m\033[2J"); //Red BG, bright white FG
+
+	// Draw logo
+	auto disp_width = VGADevice::inst().get_display_width();
+	auto disp_height = VGADevice::inst().get_display_height();
+	for(size_t y = 0; y < BOOT_LOGO_HEIGHT * BOOT_LOGO_SCALE; y++) {
+		for(size_t x = 0; x < BOOT_LOGO_WIDTH * BOOT_LOGO_SCALE; x++) {
+			auto color = boot_logo[(x / BOOT_LOGO_SCALE) + (y / BOOT_LOGO_SCALE) * BOOT_LOGO_WIDTH];
+			if (color)
+				VGADevice::inst().set_pixel(
+					x + disp_width - BOOT_LOGO_WIDTH * BOOT_LOGO_SCALE - 5,
+					y + disp_height - BOOT_LOGO_HEIGHT * BOOT_LOGO_SCALE - 5,
+					color);
+		}
+	}
+
 	print("Whoops! Something terrible happened.\nIf you weren't expecting this, please open an issue on GitHub to report it.\nHere are the details:\n");
 	printf("%s\n", error);
+	auto cur_thread = TaskManager::current_thread();
+	if(cur_thread && cur_thread->process())
+		printf("In pid: %d (%s) tid: %d\n", cur_thread->process()->pid(), cur_thread->process()->name().c_str(), cur_thread->tid());
+	else
+		printf("[No thread info]\n");
 
 	va_list list;
 	va_start(list, msg);

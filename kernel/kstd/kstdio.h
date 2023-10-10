@@ -24,7 +24,7 @@
 
 #define ASSERT(cond) \
 if(!(cond)) { \
-  PANIC("Assertion failed:", __FILE__ " at line " STR(__LINE__)); \
+  PANIC("Assertion failed: " #cond, __FILE__ " at line " STR(__LINE__)); \
 }
 
 void putch(char c);
