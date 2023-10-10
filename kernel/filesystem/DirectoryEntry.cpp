@@ -26,6 +26,6 @@ DirectoryEntry::DirectoryEntry(ino_t id, uint8_t type, const kstd::string &ent_n
 	name[name_length] = '\0';
 }
 
-size_t DirectoryEntry::entry_length() {
+size_t DirectoryEntry::entry_length() const {
 	return sizeof(id) + sizeof(type) + sizeof(name_length) + sizeof(char) * name_length;
 }

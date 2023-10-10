@@ -43,7 +43,7 @@ public:
 	ino_t find_id(const kstd::string& name) override;
 	ssize_t read(size_t start, size_t length, SafePointer<uint8_t> buf, FileDescriptor* fd) override;
 	ResultRet<kstd::Arc<LinkedInode>> resolve_link(const kstd::Arc<LinkedInode>& base, const User& user, kstd::Arc<LinkedInode>* parent_storage, int options, int recursion_level) override;
-	ssize_t read_dir_entry(size_t start, SafePointer<DirectoryEntry> buf, FileDescriptor* fd) override;
+	void iterate_entries(kstd::IterationFunc<const DirectoryEntry&> callback) override;
 	ssize_t write(size_t start, size_t length, SafePointer<uint8_t> buf, FileDescriptor* fd) override;
 	Result add_entry(const kstd::string& name, Inode& inode) override;
 	ResultRet<kstd::Arc<Inode>> create_entry(const kstd::string& name, mode_t mode, uid_t uid, gid_t gid) override;

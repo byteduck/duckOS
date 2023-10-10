@@ -61,16 +61,6 @@ InodeMetadata ProcFSInode::metadata() {
 	_metadata.gid = user.gid;
 	_metadata.inode_id = id;
 	_metadata.size = 0;
-
-	if(_metadata.is_directory()) {
-		_metadata.size = PROCFS_CDIR_ENTRY_SIZE + PROCFS_PDIR_ENTRY_SIZE;
-		for (size_t i = 0; i < procfs.entries.size(); i++) {
-			auto& entry = procfs.entries[i];
-			if (entry.parent == id)
-				_metadata.size += procfs.entries[i].dir_entry.entry_length();
-		}
-	}
-
 	return _metadata;
 }
 
@@ -269,32 +259,15 @@ ResultRet<kstd::Arc<LinkedInode>> ProcFSInode::resolve_link(const kstd::Arc<Link
 	return VFS::inst().resolve_path(loc, base, user, parent_storage, options, recursion_level);
 }
 
-ssize_t ProcFSInode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) {
-	if(!_metadata.is_directory()) return -ENOTDIR;
+void ProcFSInode::iterate_entries(kstd::IterationFunc<const DirectoryEntry&> callback) {
 	LOCK(procfs.lock);
-
-	if(start == 0) {
-		DirectoryEntry ent(id, TYPE_DIR, ".");
-		buffer.set(ent);
-		return PROCFS_CDIR_ENTRY_SIZE;
-	} else if(start == PROCFS_CDIR_ENTRY_SIZE) {
-		DirectoryEntry ent(parent, TYPE_DIR, "..");
-		buffer.set(ent);
-		return PROCFS_PDIR_ENTRY_SIZE;
+	ITER_RET(callback(DirectoryEntry(id, TYPE_DIR, ".")));
+	ITER_RET(callback(DirectoryEntry(parent, TYPE_DIR, "..")));
+	for(auto& entry : procfs.entries) {
+		if (entry.parent != id)
+			continue;
+		ITER_BREAK(callback(entry.dir_entry));
 	}
-
-	size_t cur_index = PROCFS_CDIR_ENTRY_SIZE + PROCFS_PDIR_ENTRY_SIZE;
-	for(size_t i = 0; i < procfs.entries.size(); i++) {
-		auto& e = procfs.entries[i];
-		if(e.parent == id) {
-			if(cur_index >= start) {
-				buffer.set(e.dir_entry);
-				return e.dir_entry.entry_length();
-			}
-			cur_index += e.dir_entry.entry_length();
-		}
-	}
-	return 0;
 }
 
 ssize_t ProcFSInode::write(size_t start, size_t length, SafePointer<uint8_t> buf, FileDescriptor* fd) {

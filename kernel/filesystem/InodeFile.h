@@ -29,7 +29,7 @@ public:
 	bool is_inode() override;
 	kstd::Arc<Inode> inode();
 	ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
-	ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, SafePointer<DirectoryEntry> buffer) override;
+	ssize_t read_dir_entries(FileDescriptor& fd, size_t bufsz, SafePointer<uint8_t> buffer) override;
 	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 	void open(FileDescriptor& fd, int options) override;
 	void close(FileDescriptor& fd) override;

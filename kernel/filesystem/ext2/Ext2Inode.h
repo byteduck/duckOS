@@ -65,7 +65,7 @@ public:
 	void free_all_blocks();
 
 	ssize_t read(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) override;
-	ssize_t read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) override;
+	void iterate_entries(kstd::IterationFunc<const DirectoryEntry&> callback) override;
 	ssize_t write(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) override;
 	ino_t find_id(const kstd::string& name) override;
 	Result add_entry(const kstd::string& name, Inode& inode) override;

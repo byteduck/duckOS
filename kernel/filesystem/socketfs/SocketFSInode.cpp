@@ -55,16 +55,7 @@ SocketFSInode::~SocketFSInode() {
 }
 
 InodeMetadata SocketFSInode::metadata() {
-	if(id != 1)
-		return _metadata;
-
-	LOCK(fs.lock);
-	InodeMetadata ret = _metadata;
-	ret.size = SOCKETFS_PDIR_ENTRY_SIZE + SOCKETFS_CDIR_ENTRY_SIZE;
-	for(size_t i = 0; i < fs.sockets.size(); i++)
-		ret.size += fs.sockets[i]->dir_entry.entry_length();
-
-	return ret;
+	return _metadata;
 }
 
 ino_t SocketFSInode::find_id(const kstd::string& find_name) {
@@ -109,35 +100,16 @@ ResultRet<kstd::Arc<LinkedInode>> SocketFSInode::resolve_link(const kstd::Arc<Li
 	return Result(-ENOLINK);
 }
 
-ssize_t SocketFSInode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) {
-	if(id != 1)
-		return -ENOTDIR;
-
-	if(start == 0) {
-		DirectoryEntry ent(id, TYPE_DIR, ".");
-		buffer.set(ent);
-		return SOCKETFS_CDIR_ENTRY_SIZE;
-	} else if(start == SOCKETFS_CDIR_ENTRY_SIZE) {
-		DirectoryEntry ent(0, TYPE_DIR, "..");
-		buffer.set(ent);
-		return SOCKETFS_PDIR_ENTRY_SIZE;
-	}
-
-	size_t cur_index = SOCKETFS_CDIR_ENTRY_SIZE + SOCKETFS_PDIR_ENTRY_SIZE;
+void SocketFSInode::iterate_entries(kstd::IterationFunc<const DirectoryEntry&> callback) {
+	ASSERT(id == 1);
 	LOCK(fs.lock);
-
-	for(size_t i = 0; i < fs.sockets.size(); i++) {
-		auto& e = fs.sockets[i];
-		if(e->is_open) {
-			if(cur_index >= start) {
-				buffer.set(e->dir_entry);
-				return e->dir_entry.entry_length();
-			}
-			cur_index += e->dir_entry.entry_length();
-		}
+	ITER_RET(callback(DirectoryEntry(id, TYPE_DIR, ".")));
+	ITER_RET(callback(DirectoryEntry(0, TYPE_DIR, "..")));
+	for(auto& socket : fs.sockets) {
+		if (!socket->is_open)
+			continue;
+		ITER_BREAK(callback(socket->dir_entry));
 	}
-
-	return 0;
 }
 
 ssize_t SocketFSInode::write(size_t start, size_t length, SafePointer<uint8_t> buf, FileDescriptor* fd) {

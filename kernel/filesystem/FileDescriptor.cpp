@@ -208,39 +208,13 @@ size_t FileDescriptor::offset() const {
 	return _seek;
 }
 
-ssize_t FileDescriptor::read_dir_entry(SafePointer<DirectoryEntry> buffer) {
-	if(!_readable) return -EBADF;
-	LOCK(lock);
-	if(!metadata().is_directory()) return -ENOTDIR;
-	ssize_t nbytes = _file->read_dir_entry(*this, offset(), buffer);
-	if(nbytes > 0) {
-		if(_can_seek) _seek += nbytes;
-		return sizeof(DirectoryEntry) + buffer.get().name_length;
-	}
-	return nbytes;
-}
-
 ssize_t FileDescriptor::read_dir_entries(SafePointer<char> buffer, size_t len) {
-	if(!_readable) return -EBADF;
+	if(!_readable)
+		return -EBADF;
 	LOCK(lock);
-	if(!metadata().is_directory()) return -ENOTDIR;
-	ssize_t nbytes = 0;
-	DirectoryEntry dirbuf;
-	while(true) {
-		ssize_t read = _file->read_dir_entry(*this, offset(), KernelPointer<DirectoryEntry>(&dirbuf));
-		if(read > 0) {
-			if(_can_seek) _seek += read;
-			if(read + nbytes > len) break;
-			size_t entry_len = dirbuf.entry_length();
-			buffer.write((const char*) &dirbuf, nbytes, entry_len);
-			nbytes += entry_len;
-		} else if(read == 0) {
-			break; //Nothing left to read
-		} else {
-			return read; //Error
-		}
-	}
-	return nbytes;
+	if(!metadata().is_directory())
+		return -ENOTDIR;
+	return _file->read_dir_entries(*this, len, buffer);
 }
 
 ssize_t FileDescriptor::write(SafePointer<uint8_t> buffer, size_t count) {

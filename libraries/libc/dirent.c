@@ -46,28 +46,25 @@ DIR *opendir(const char *name) {
 	return dirp;
 }
 
-int __read_dir(int file, char *ptr, size_t len) {
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(SYS_READDIR), "b"(file), "c"(ptr), "d"(len));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	return ret;
-}
-
 struct dirent *readdir(DIR *dirp) {
 	//If the buffer hasn't been initialized yet, initialize and read
 	if(!dirp->dd_buf) {
-		struct stat st;
-		fstat(dirp->dd_fd, &st);
-		size_t dirsize = st.st_size;
-		dirp->dd_buf = (char*)malloc(dirsize);
-		ssize_t res = __read_dir(dirp->dd_fd, dirp->dd_buf, dirsize);
-		dirp->dd_len = res;
+		size_t dirsize = 4096; /* Reasonable size */
+		ssize_t res;
+		do {
+			if (dirp->dd_buf)
+				free(dirp->dd_buf);
+			dirp->dd_buf = (char*) malloc(dirsize);
+			res = syscall4_noerr(SYS_READDIR, dirp->dd_fd, (int) dirp->dd_buf, (int) dirsize);
+			dirsize *= 2;
+		} while (res == -ENOSPC);
 		if(res < 0) {
 			errno = -res;
 			free(dirp->dd_buf);
 			dirp->dd_buf = 0;
 			return 0;
 		}
+		dirp->dd_len = res;
 	}
 
 	//If the next entry would be out of the bounds of the buffer, return 0

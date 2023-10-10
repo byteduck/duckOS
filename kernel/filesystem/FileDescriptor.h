@@ -56,7 +56,6 @@ public:
 
 	int seek(off_t offset, int whence);
 	ssize_t read(SafePointer<uint8_t> buffer, size_t count);
-	ssize_t read_dir_entry(SafePointer<DirectoryEntry> buffer);
 	ssize_t read_dir_entries(SafePointer<char> buffer, size_t len);
 	ssize_t write(SafePointer<uint8_t> buffer, size_t count);
 	size_t offset() const;

@@ -31,7 +31,7 @@ public:
 	virtual bool is_inode();
 	virtual ssize_t read(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count);
 	virtual ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count);
-	virtual ssize_t read_dir_entry(FileDescriptor& fd, size_t offset, SafePointer<DirectoryEntry> buffer);
+	virtual ssize_t read_dir_entries(FileDescriptor& fd, size_t bufsz, SafePointer<uint8_t> buffer);
 	virtual bool is_tty();
 	virtual bool is_pty_controller();
 	virtual bool is_pty_mux();

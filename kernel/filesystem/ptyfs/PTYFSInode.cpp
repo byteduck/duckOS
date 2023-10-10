@@ -58,15 +58,7 @@ kstd::Arc<PTYDevice> PTYFSInode::pty() {
 }
 
 InodeMetadata PTYFSInode::metadata() {
-	if(type != ROOT) return _metadata;
-
-	LOCK(ptyfs._lock);
-	InodeMetadata ret = _metadata;
-	ret.size = PTYFS_PDIR_ENTRY_SIZE + PTYFS_CDIR_ENTRY_SIZE;
-	for(size_t i = 1; i < ptyfs._entries.size(); i++)
-		ret.size += ptyfs._entries[i]->dir_entry.entry_length();
-
-	return ret;
+	return _metadata;
 }
 
 ino_t PTYFSInode::find_id(const kstd::string& name) {
@@ -83,33 +75,13 @@ ssize_t PTYFSInode::read(size_t start, size_t length, SafePointer<uint8_t> buffe
 	return _pty->read(*fd, start, buffer, length);
 }
 
-ssize_t PTYFSInode::read_dir_entry(size_t start, SafePointer<DirectoryEntry> buffer, FileDescriptor* fd) {
-	if(type != ROOT)
-		return -ENOTDIR;
-
-	if(start == 0) {
-		DirectoryEntry ent(id, TYPE_DIR, ".");
-		buffer.set(ent);
-		return PTYFS_CDIR_ENTRY_SIZE;
-	} else if(start == PTYFS_CDIR_ENTRY_SIZE) {
-		DirectoryEntry ent(0, TYPE_DIR, "..");
-		buffer.set(ent);
-		return PTYFS_PDIR_ENTRY_SIZE;
-	}
-
-	size_t cur_index = PTYFS_CDIR_ENTRY_SIZE + PTYFS_PDIR_ENTRY_SIZE;
+void PTYFSInode::iterate_entries(kstd::IterationFunc<const DirectoryEntry&> callback) {
+	ASSERT(type == ROOT);
 	LOCK(ptyfs._lock);
-
-	for(size_t i = 1; i < ptyfs._entries.size(); i++) {
-		auto& e = ptyfs._entries[i];
-		if(cur_index >= start) {
-			buffer.set(e->dir_entry);
-			return e->dir_entry.entry_length();
-		}
-		cur_index += e->dir_entry.entry_length();
-	}
-
-	return 0;
+	ITER_RET(callback(DirectoryEntry(id, TYPE_DIR, ".")));
+	ITER_RET(callback(DirectoryEntry(0, TYPE_DIR, "..")));
+	for(auto& entry : ptyfs._entries)
+		ITER_BREAK(callback(entry->dir_entry));
 }
 
 ssize_t PTYFSInode::write(size_t start, size_t length, SafePointer<uint8_t> buffer, FileDescriptor* fd) {

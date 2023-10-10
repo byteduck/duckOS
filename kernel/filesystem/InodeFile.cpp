@@ -19,6 +19,7 @@
 
 #include "InodeFile.h"
 #include "Inode.h"
+#include "DirectoryEntry.h"
 
 InodeFile::InodeFile(kstd::Arc<Inode> inode): _inode(inode) {
 }
@@ -36,9 +37,25 @@ ssize_t InodeFile::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> 
 	return _inode->read(offset, count, buffer, &fd);;
 }
 
-ssize_t InodeFile::read_dir_entry(FileDescriptor &fd, size_t offset, SafePointer<DirectoryEntry> buffer) {
-	if(_inode->metadata().exists() && !_inode->metadata().is_directory()) return -ENOTDIR;
-	return _inode->read_dir_entry(offset, buffer, &fd);
+ssize_t InodeFile::read_dir_entries(FileDescriptor &fd, size_t bufsz, SafePointer<uint8_t> buffer) {
+	if(_inode->metadata().exists() && !_inode->metadata().is_directory())
+		return -ENOTDIR;
+	size_t count = 0;
+	bool no_spc = false;
+	_inode->iterate_entries([&](const DirectoryEntry& ent) -> kstd::IterationAction {
+		size_t len = ent.entry_length();
+		if (bufsz < len) {
+			no_spc = true;
+			return kstd::IterationAction::Break;
+		}
+		buffer.write((uint8_t*) &ent, count, len);
+		count += len;
+		bufsz -= len;
+		return kstd::IterationAction::Continue;
+	});
+	if (no_spc)
+		return -ENOSPC; // We want to read *all* of the entries at once.
+	return count;
 }
 
 ssize_t InodeFile::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {

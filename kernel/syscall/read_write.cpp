@@ -32,10 +32,6 @@ int Process::sys_lseek(int file, off_t off, int whence) {
 
 int Process::sys_open(UserspacePointer<char> filename, int options, int mode) {
 	kstd::string path = filename.str();
-	if(path == "/hello.c") {
-		_cwd->inode()->find_id("hello.c");
-		return -1;
-	}
 	mode &= 04777; //We just want the permission bits
 	auto fd_or_err = VFS::inst().open(path, options, mode & (~_umask), _user, _cwd);
 	if(fd_or_err.is_error())
