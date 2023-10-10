@@ -10,14 +10,19 @@
 #include "../filesystem/InodeFile.h"
 #include "../memory/InodeVMObject.h"
 
-int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm> s) {
-	auto object_res = AnonymousVMObject::alloc(size);
+int Process::sys_shmcreate(UserspacePointer<shmcreate_args> args_p) {
+	auto args = args_p.get();
+
+	kstd::string name = "shared";
+	if (args.name)
+		name = UserspacePointer<const char>(args.name).str();
+	auto object_res = AnonymousVMObject::alloc(args.size, name);
 	if(object_res.is_error())
 		return object_res.code();
 	auto object = object_res.value();
 
 	object->share(_pid, VMProt::RW);
-	auto region_res = addr ? map_object(object, (VirtualAddress) addr, VMProt::RW) : map_object(object, VMProt::RW);
+	auto region_res = args.addr ? map_object(object, (VirtualAddress) args.addr, VMProt::RW) : map_object(object, VMProt::RW);
 	if(region_res.is_error())
 		return region_res.code();
 	auto region = region_res.value();
@@ -30,7 +35,7 @@ int Process::sys_shmcreate(void* addr, size_t size, UserspacePointer<struct shm>
 	ret.size = region->size();
 	ret.ptr = (void*) region->start();
 	ret.id = object->shm_id();
-	s.set(ret);
+	UserspacePointer<struct shm>(args.shm).set(ret);
 
 	return SUCCESS;
 }
@@ -129,7 +134,10 @@ Result Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) {
 
 	// First, create an appropriate object
 	if(args.flags & MAP_ANONYMOUS) {
-		vm_object = TRY(AnonymousVMObject::alloc(args.length));
+		kstd::string name = "anonymous";
+		if (args.name)
+			name = UserspacePointer<const char>(args.name).str();
+		vm_object = TRY(AnonymousVMObject::alloc(args.length, name));
 	} else {
 		if(args.fd >= _file_descriptors.size() || !_file_descriptors[args.fd])
 			return Result(EBADF);
@@ -141,9 +149,9 @@ Result Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) {
 			return Result(EBADF);
 		auto inode = kstd::static_pointer_cast<InodeFile>(file)->inode();
 		if(args.flags & MAP_SHARED)
-			vm_object = inode->shared_vm_object();
+			vm_object = inode->shared_vm_object(file_desc->path());
 		else
-			vm_object = InodeVMObject::make_for_inode(inode, InodeVMObject::Type::Private);
+			vm_object = InodeVMObject::make_for_inode(file_desc->path(), inode, InodeVMObject::Type::Private);
 	}
 
 	if(!vm_object)

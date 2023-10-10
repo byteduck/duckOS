@@ -22,7 +22,16 @@
 #include <kernel/api/mmap.h>
 
 int shmcreate(void* addr, size_t size, struct shm* s) {
-	return syscall4(SYS_SHMCREATE, (int) addr, (int) size, (int) s);
+	return shmcreate_named(addr, size, s, 0);
+}
+
+int shmcreate_named(void* addr, size_t size, struct shm* s, const char* name) {
+	struct shmcreate_args args;
+	args.addr = addr;
+	args.size = size;
+	args.shm = s;
+	args.name = name;
+	return syscall2(SYS_SHMCREATE, (int) &args);
 }
 
 int shmattach(int id, void* addr, struct shm* s) {

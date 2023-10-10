@@ -34,7 +34,7 @@ void liballoc_unlock() {
 }
 
 void* liballoc_alloc(int pages) {
-	return mmap(NULL, pages * PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0);
+	return mmap_named(NULL, pages * PAGE_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS, 0, 0, "heap");
 }
 
 extern void	liballoc_free(void* ptr, int pages) {

@@ -32,6 +32,14 @@ struct mmap_args {
 	int fd;
 	off_t offset;
 	void** addr_p;
+	const char* name;
+};
+
+struct shmcreate_args {
+	void* addr;
+	size_t size;
+	struct shm *shm;
+	const char* name;
 };
 
 __DECL_END

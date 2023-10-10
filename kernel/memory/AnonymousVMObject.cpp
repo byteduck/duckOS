@@ -16,19 +16,19 @@ AnonymousVMObject::~AnonymousVMObject() {
 	}
 }
 
-ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size) {
+ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size, kstd::string name) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
 	auto pages = TRY(MemoryManager::inst().alloc_physical_pages(num_pages));
-	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(pages, false));
+	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(name, pages, false));
 	auto tmp_mapped = MM.map_object(object);
 	memset((void*) tmp_mapped->start(), 0, object->size());
 	return object;
 }
 
-ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc_contiguous(size_t size) {
+ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc_contiguous(size_t size, kstd::string name) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
 	auto pages = TRY(MemoryManager::inst().alloc_contiguous_physical_pages(num_pages));
-	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(pages, false));
+	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(name, pages, false));
 	auto tmp_mapped = MM.map_object(object);
 	memset((void*) tmp_mapped->start(), 0, object->size());
 	return object;
@@ -51,7 +51,7 @@ ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::map_to_physical(Physi
 		pages.push_back(start_page + i);
 	}
 
-	auto object = new AnonymousVMObject(kstd::move(pages), false);
+	auto object = new AnonymousVMObject("Physical Mapping", kstd::move(pages), false);
 	object->m_fork_action = ForkAction::Share;
 	return kstd::Arc<AnonymousVMObject>(object);
 }
@@ -93,9 +93,9 @@ ResultRet<kstd::Arc<VMObject>> AnonymousVMObject::clone() {
 	LOCK(m_page_lock);
 	ASSERT(!is_shared());
 	become_cow_and_ref_pages();
-	auto new_object = kstd::Arc(new AnonymousVMObject(m_physical_pages, true));
+	auto new_object = kstd::Arc(new AnonymousVMObject(m_name, m_physical_pages, true));
 	return kstd::static_pointer_cast<VMObject>(new_object);
 }
 
-AnonymousVMObject::AnonymousVMObject(kstd::vector<PageIndex> physical_pages, bool cow):
-	VMObject(kstd::move(physical_pages), cow) {}
+AnonymousVMObject::AnonymousVMObject(kstd::string name, kstd::vector<PageIndex> physical_pages, bool cow):
+	VMObject(kstd::move(name), kstd::move(physical_pages), cow) {}

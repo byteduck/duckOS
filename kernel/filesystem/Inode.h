@@ -63,7 +63,7 @@ public :
 
 	virtual InodeMetadata metadata();
 
-	kstd::Arc<InodeVMObject> shared_vm_object();
+	kstd::Arc<InodeVMObject> shared_vm_object(kstd::string name);
 
 protected:
 	InodeMetadata _metadata;

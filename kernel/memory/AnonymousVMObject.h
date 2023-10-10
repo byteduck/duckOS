@@ -20,14 +20,14 @@ public:
 	 * @param size The minimum size, in bytes, of the object.
 	 * @return The newly allocated object, if successful.
 	 */
-	static ResultRet<kstd::Arc<AnonymousVMObject>> alloc(size_t size);
+	static ResultRet<kstd::Arc<AnonymousVMObject>> alloc(size_t size, kstd::string name = "anonymous");
 
 	/**
 	 * Allocates a new anonymous VMObject backed by contiguous physical pages.
 	 * @param size The minimum size, in bytes, of the object.
 	 * @return The newly allocated object, if successful.
 	 */
-	static ResultRet<kstd::Arc<AnonymousVMObject>> alloc_contiguous(size_t size);
+	static ResultRet<kstd::Arc<AnonymousVMObject>> alloc_contiguous(size_t size, kstd::string name = "anonymous");
 
 	/**
 	 * Creates an anonymous VMObject backed by existing physical pages.
@@ -77,7 +77,7 @@ public:
 private:
 	friend class MemoryManager;
 
-	explicit AnonymousVMObject(kstd::vector<PageIndex> physical_pages, bool cow);
+	explicit AnonymousVMObject(kstd::string name, kstd::vector<PageIndex> physical_pages, bool cow);
 
 	static SpinLock s_shared_lock;
 	static int s_cur_shm_id;

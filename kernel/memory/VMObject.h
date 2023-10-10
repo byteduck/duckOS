@@ -10,6 +10,7 @@
 #include "../api/errno.h"
 #include "../kstd/Bitmap.h"
 #include "../tasking/SpinLock.h"
+#include <kernel/kstd/string.h>
 
 /**
  * This is a base class to describe a (contiguous) object in virtual memory. This object may be shared across multiple
@@ -22,13 +23,14 @@ public:
 		BecomeCoW, Share, Ignore
 	};
 
-	explicit VMObject(kstd::vector<PageIndex> physical_pages, bool all_cow = false);
+	explicit VMObject(kstd::string name,  kstd::vector<PageIndex> physical_pages, bool all_cow = false);
 	VMObject(const VMObject& other) = delete;
 	virtual ~VMObject();
 
 	virtual bool is_anonymous() const { return false; }
 	virtual bool is_inode() const { return false; }
 
+	kstd::string name() const { return m_name; }
 	size_t size() const { return m_size; }
 	/** Gets the physical page at the given index in the object. **/
 	virtual PhysicalPage& physical_page(size_t index) const;
@@ -46,6 +48,7 @@ protected:
 	/** Marks every page in this object as CoW, and increases the reference count of all pages by 1. **/
 	void become_cow_and_ref_pages();
 
+	kstd::string m_name;
 	kstd::vector<PageIndex> m_physical_pages;
 	kstd::Bitmap m_cow_pages;
 	size_t m_size;

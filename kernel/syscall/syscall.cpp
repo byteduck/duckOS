@@ -153,7 +153,7 @@ int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2,
 		case SYS_GETPPID:
 			return cur_proc->ppid();
 		case SYS_SHMCREATE:
-			return cur_proc->sys_shmcreate((void*) arg1, (size_t) arg2, (struct shm*) arg3);
+			return cur_proc->sys_shmcreate((shmcreate_args*) arg1);
 		case SYS_SHMATTACH:
 			return cur_proc->sys_shmattach((int) arg1, (void*) arg2, (struct shm*) arg3);
 		case SYS_SHMDETACH:

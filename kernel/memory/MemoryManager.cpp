@@ -329,7 +329,7 @@ ResultRet<kstd::vector<PageIndex>> MemoryManager::alloc_contiguous_physical_page
 
 kstd::Arc<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
 	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
-		auto object = TRY(AnonymousVMObject::alloc(size));
+		auto object = TRY(AnonymousVMObject::alloc(size, "kernel"));
 		return TRY(m_kernel_space->map_object(object, VMProt::RW));
 	};
 	auto res = do_alloc();
@@ -340,7 +340,7 @@ kstd::Arc<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
 
 kstd::Arc<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
 	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
-		auto object = TRY(AnonymousVMObject::alloc_contiguous(size));
+		auto object = TRY(AnonymousVMObject::alloc_contiguous(size, "dma"));
 		return TRY(m_kernel_space->map_object(object, VMProt::RW));
 	};
 	auto res = do_alloc();
@@ -424,7 +424,7 @@ void MemoryManager::finalize_heap_pages() {
 
 	// Now, officially map the pages in the "correct" way.
 	m_heap_pages.resize(m_num_heap_pages);
-	auto object = kstd::Arc<VMObject>(new VMObject(m_heap_pages));
+	auto object = kstd::Arc<VMObject>(new VMObject("kheap", m_heap_pages));
 	auto res = m_heap_space->map_object(object, VMProt::RW, VirtualRange {m_last_heap_loc, object->size() });
 	if(res.is_error())
 		PANIC("KHEAP_FINALIZE_FAIL", "We weren't able to map the new heap region where the VMSpace said we could.");

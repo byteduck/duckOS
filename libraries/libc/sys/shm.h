@@ -31,6 +31,16 @@ __DECL_BEGIN
  * @param addr NULL or a specific address that the memory should be allocated at.
  * @param size he minimum amount of memory to be allocated (after the start address, if specified)
  * @param s A pointer to a struct shm where information about the allocated memory will be stored.
+ * @param name A name to described the shared region.
+ * @return 0 if successful, -1 if not.
+ */
+int shmcreate_named(void* addr, size_t size, struct shm* s, const char* name);
+
+/**
+ * Allocates an area of memory that can be shared. Child processes created with fork() will automatically have access.
+ * @param addr NULL or a specific address that the memory should be allocated at.
+ * @param size he minimum amount of memory to be allocated (after the start address, if specified)
+ * @param s A pointer to a struct shm where information about the allocated memory will be stored.
  * @return 0 if successful, -1 if not.
  */
 int shmcreate(void* addr, size_t size, struct shm* s);

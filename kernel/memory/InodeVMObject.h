@@ -12,7 +12,7 @@ public:
 		Shared, Private
 	};
 
-	static kstd::Arc<InodeVMObject> make_for_inode(kstd::Arc<Inode> inode, Type type);
+	static kstd::Arc<InodeVMObject> make_for_inode(kstd::string name, kstd::Arc<Inode> inode, Type type);
 
 
 	PageIndex& physical_page_index(size_t index) const {
@@ -38,7 +38,7 @@ public:
 	// TODO: Syncing
 
 private:
-	explicit InodeVMObject(kstd::vector<PageIndex> physical_pages, kstd::Arc<Inode> inode, Type type, bool cow);
+	explicit InodeVMObject(kstd::string name, kstd::vector<PageIndex> physical_pages, kstd::Arc<Inode> inode, Type type, bool cow);
 
 	kstd::Arc<Inode> m_inode;
 	Type m_type;
