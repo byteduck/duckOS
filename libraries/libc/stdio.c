@@ -428,10 +428,8 @@ int vsnprintf(char* s, size_t n, const char* format, va_list arg) {
 //Character input/output
 int fgetc(FILE* stream) {
 	char buf[1];
-	if(fread(buf, 1, 1, stream) != 1) {
-		stream->eof = 1;
+	if(fread(buf, 1, 1, stream) != 1)
 		return EOF;
-	}
 	return (unsigned char) *buf;
 }
 
