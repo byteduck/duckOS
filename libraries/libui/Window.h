@@ -55,6 +55,7 @@ namespace UI {
 
 		///Window management
 		void bring_to_front();
+		void focus();
 		void repaint();
 		void repaint_now();
 		void close();

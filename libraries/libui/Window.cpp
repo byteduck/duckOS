@@ -145,6 +145,11 @@ void Window::bring_to_front() {
 	_window->bring_to_front();
 }
 
+void Window::focus() {
+	_focused = true;
+	_window->focus();
+}
+
 void Window::repaint() {
 	_needs_repaint = true;
 }

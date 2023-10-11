@@ -6,7 +6,7 @@
 
 #define MAX_MENU_WIDTH 200
 #define ITEM_HEIGHT 20
-#define ITEM_PADDING_X 4
+#define ITEM_PADDING_X 8
 #define ITEM_PADDING_Y 2
 #define MENU_PADDING_Y 2
 #define MENU_PADDING_RIGHT 16
@@ -86,14 +86,8 @@ Gfx::Dimensions MenuWidget::preferred_size() {
 }
 
 Duck::Ptr<MenuWidget> MenuWidget::open_menu(Duck::Ptr<Menu> menu, Gfx::Point location) {
-	auto window = UI::Window::make();
-	window->pond_window()->set_type(Pond::MENU);
-	auto menu_widget = UI::MenuWidget::make(menu, window);
-	window->set_contents(menu_widget);
-	window->set_decorated(false);
-	window->set_position(location);
-	window->show();
-	window->pond_window()->focus();
+	auto menu_widget = create_menu(menu, location, false);
+	menu_widget->open();
 	return menu_widget;
 }
 
@@ -109,7 +103,7 @@ void MenuWidget::do_repaint(const DrawContext& ctx) {
 	for(auto& item : m_menu->items()) {
 		if(item == MenuItem::Separator) {
 			Gfx::Rect separator_rect = {ITEM_PADDING_X, item_rect.y + SEPARATOR_ITEM_HEIGHT / 2, ctx.width() - ITEM_PADDING_X * 2, 1};
-			ctx.fill(separator_rect, UI::Theme::fg());
+			ctx.fill(separator_rect, UI::Theme::highlight());
 			item_rect.y += SEPARATOR_ITEM_HEIGHT;
 			continue;
 		}
@@ -128,8 +122,9 @@ void MenuWidget::open_child_window(Duck::Ptr<Menu> item, Gfx::Rect item_rect) {
 	if(m_child_menu.lock())
 		m_child_menu.lock()->close();
 	auto window_position = item_rect.position() + Gfx::Point {item_rect.width, -MENU_PADDING_Y} + root_window()->position();
-	m_child_menu = open_menu(item, window_position);
+	m_child_menu = create_menu(item, window_position, true);
 	m_child_menu.lock()->m_parent = self();
+	m_child_menu.lock()->open();
 }
 
 Duck::WeakPtr<MenuWidget> MenuWidget::root_menu() {
@@ -154,6 +149,67 @@ bool MenuWidget::any_are_focused() {
 void MenuWidget::close() {
 	if(m_child_menu.lock())
 		m_child_menu.lock()->close();
-	if(m_window.lock())
-		m_window.lock()->close();
+	if(m_window.lock()) {
+		release_menu_window(m_window.lock());
+		m_window.reset();
+	}
+}
+
+void MenuWidget::open() {
+	auto window = m_window.lock();
+	if (!window)
+		return;
+	window->bring_to_front();
+	window->focus();
+	window->show();
+}
+
+Duck::Ptr<MenuWidget> MenuWidget::create_menu(Duck::Ptr<Menu> menu, Gfx::Point location, bool submenu) {
+	// If this is a new main menu, release all of our windows first
+	if (!submenu)
+		release_all_menu_windows();
+
+	auto window = acquire_menu_window();
+	auto menu_widget = UI::MenuWidget::make(menu, window);
+	window->set_contents(menu_widget);
+	window->set_position(location);
+	return menu_widget;
+}
+
+std::vector<MenuWidget::MenuWindow> MenuWidget::s_windows;
+
+Duck::Ptr<Window> MenuWidget::acquire_menu_window() {
+	for (auto& window : s_windows) {
+		if(!window.used) {
+			window.used = true;
+			return window.window;
+		}
+	}
+
+	auto window = UI::Window::make();
+	window->pond_window()->set_type(Pond::MENU);
+	window->set_decorated(false);
+	window->pond_window()->set_has_shadow(true);
+	s_windows.push_back({window, true});
+	return window;
+}
+
+void MenuWidget::release_menu_window(Duck::PtrRef<Window> rel_window) {
+	rel_window->hide();
+	rel_window->set_contents(UI::Widget::make());
+	for (auto& window : s_windows) {
+		if(window.window == rel_window) {
+			window.used = false;
+		}
+	}
+}
+
+void MenuWidget::release_all_menu_windows() {
+	for (auto& window : s_windows) {
+		if(window.used) {
+			window.window->hide();
+			window.window->set_contents(UI::Widget::make());
+			window.used = false;
+		}
+	}
 }

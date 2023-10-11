@@ -154,6 +154,10 @@ bool Widget::remove_child(const std::shared_ptr<Widget>& child) {
 	return true;
 }
 
+const std::vector<Duck::Ptr<Widget>>& Widget::get_children() {
+	return children;
+}
+
 void Widget::set_position(const Gfx::Point& position) {
 	_absolute_position = position;
 	update_layout();

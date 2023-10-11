@@ -20,7 +20,6 @@ void MenuBar::set_menu(Duck::Ptr<Menu> menu) {
 		button->on_pressed = [btn_weak, item] {
 			if(item->submenu()) {
 				auto rect = btn_weak.lock()->current_absolute_rect().transform(btn_weak.lock()->root_window()->position());
-				Duck::Log::dbgf("Open menu at {}", rect.position() + Gfx::Point { 0, rect.height });
 				MenuWidget::open_menu(item->submenu(), rect.position() + Gfx::Point { 0, rect.height });
 			} else if(item->action()) {
 				item->action()();

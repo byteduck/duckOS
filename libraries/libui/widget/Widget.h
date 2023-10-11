@@ -172,6 +172,11 @@ namespace UI {
 		bool remove_child(Duck::PtrRef<Widget> child);
 
 		/**
+		 * Gets the children of the widget.
+		 */
+		const std::vector<Duck::Ptr<Widget>>& get_children();
+
+		/**
 		 * Sets the position of the widget.
 		 * The behavior of this depends on the positioning mode of the widget and the parent's layout specifications.
 		 * @param position The new position of the widget.
