@@ -6,29 +6,6 @@
 
 using namespace UI;
 
-class TableViewCell: public Widget {
-public:
-	WIDGET_DEF(TableViewCell)
-
-	Gfx::Dimensions preferred_size() override {
-		return m_preferred_size;
-	}
-
-	void do_repaint(const DrawContext& ctx) override {
-		ctx.fill(ctx.rect(), m_color);
-	}
-
-private:
-	TableViewCell(Gfx::Dimensions size, Gfx::Color color, Duck::Ptr<Widget> widget): m_preferred_size(size), m_color(color) {
-		set_uses_alpha(true);
-		widget->set_sizing_mode(UI::FILL);
-		add_child(widget);
-	}
-
-	Gfx::Dimensions m_preferred_size;
-	Gfx::Color m_color;
-};
-
 TableView::TableView(int num_cols): m_num_cols(num_cols) {
 	set_sizing_mode(UI::FILL);
 	for(int i = 0; i < num_cols; i++) {
@@ -55,15 +32,20 @@ void TableView::set_delegate(Duck::Ptr<TableViewDelegate> delegate) {
 Duck::Ptr<Widget> TableView::lv_create_entry(int index) {
 	if(m_delegate.expired())
 		return nullptr;
+
+	auto color = index % 2 == 0 ? Theme::shadow_1() : Theme::shadow_2();
+	auto row = TableViewRow::make(color, self(), index);
 	auto delegate = m_delegate.lock();
-	auto layout = BoxLayout::make(BoxLayout::HORIZONTAL);
 	auto widths = calculate_column_widths();
 
 	for(int i = 0; i < m_num_cols; i++) {
-		auto color = index % 2 == 0 ? Theme::shadow_1() : Theme::shadow_2();
-		layout->add_child(TableViewCell::make(Gfx::Dimensions{widths[i], m_row_height}, color, delegate->tv_create_entry(index, i)));
+		row->add_child(TableViewCell::make(
+			Gfx::Dimensions{widths[i], m_row_height},
+			delegate->tv_create_entry(index, i)
+		));
 	}
-	return layout;
+
+	return row;
 }
 
 Gfx::Dimensions TableView::lv_preferred_item_dimensions() {
@@ -151,4 +133,84 @@ std::vector<int> TableView::calculate_column_widths() {
 			width = stretchy_width + (std::max(stretchy_remainder--, 0) ? 1 : 0);
 
 	return ret;
+}
+
+bool TableView::row_clicked(Duck::Ptr<TableViewRow> row, Pond::MouseButtonEvent evt) {
+	auto delegate = m_delegate.lock();
+	if (!delegate)
+		return false;
+
+	if (!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
+		make_row_selection(row);
+		return true;
+	} else if (!(evt.old_buttons & POND_MOUSE2) && (evt.new_buttons & POND_MOUSE2)) {
+		make_row_selection(row);
+		open_row_menu(row);
+		return true;
+	}
+
+	return false;
+}
+
+void TableView::open_row_menu(Duck::Ptr<TableViewRow> row) {
+	auto delegate = m_delegate.lock();
+	auto menu = delegate->tv_entry_menu(row->m_row);
+	if (menu)
+		open_menu(menu);
+}
+
+void TableView::make_row_selection(Duck::Ptr<TableViewRow> row) {
+	auto delegate = m_delegate.lock();
+	auto mode = delegate->tv_selection_mode();
+	if (mode == NONE)
+		return;
+
+	m_selected_items.clear();
+	m_selected_items.insert(row->m_row);
+	delegate->tv_selection_changed(m_selected_items);
+
+	for (auto& child : m_list_view->get_children())
+		child->repaint();
+}
+
+/** TableViewCell **/
+
+TableViewCell::TableViewCell(Gfx::Dimensions size, Duck::Ptr<Widget> widget):
+		m_preferred_size(size)
+{
+	set_uses_alpha(true);
+	widget->set_sizing_mode(UI::FILL);
+	add_child(widget);
+}
+
+Gfx::Dimensions TableViewCell::preferred_size()  {
+	return m_preferred_size;
+}
+
+/** TableViewRow **/
+
+TableViewRow::TableViewRow(Gfx::Color color, Duck::Ptr<TableView> table_view, int row):
+	BoxLayout(HORIZONTAL),
+	m_color(color),
+	m_table_view(table_view),
+	m_row(row)
+{}
+
+void TableViewRow::do_repaint(const DrawContext& ctx) {
+	if (selected())
+		ctx.fill(ctx.rect(), UI::Theme::accent());
+	else
+		ctx.fill(ctx.rect(), m_color);
+}
+
+bool TableViewRow::on_mouse_button(Pond::MouseButtonEvent evt) {
+	auto table = m_table_view.lock();
+	if (!table)
+		return false;
+	return table->row_clicked(self(), evt);
+}
+
+bool TableViewRow::selected() {
+	auto& selected_items = m_table_view.lock()->m_selected_items;
+	return selected_items.find(m_row) != selected_items.end();
 }

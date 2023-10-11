@@ -6,8 +6,17 @@
 #include "Widget.h"
 #include "layout/FlexLayout.h"
 #include "ListView.h"
+#include "layout/BoxLayout.h"
 
 namespace UI {
+	enum TableViewSelectionMode {
+		NONE,
+		SINGLE
+	};
+
+	class TableViewCell;
+	class TableViewRow;
+
 	class TableViewDelegate {
 	public:
 		virtual Duck::Ptr<Widget> tv_create_entry(int row, int col) = 0;
@@ -15,6 +24,9 @@ namespace UI {
 		virtual int tv_num_entries() = 0;
 		virtual int tv_row_height() = 0;
 		virtual int tv_column_width(int col) = 0;
+		virtual TableViewSelectionMode tv_selection_mode() { return SINGLE; }
+		virtual void tv_selection_changed(const std::set<int>& selection) {}
+		virtual Duck::Ptr<Menu> tv_entry_menu(int row) { return nullptr; }
 	};
 
 	class TableView: public Widget, public ListViewDelegate {
@@ -27,6 +39,11 @@ namespace UI {
 		void set_delegate(Duck::Ptr<TableViewDelegate> delegate);
 
 	protected:
+		// TableView
+		friend class TableViewCell;
+		friend class TableViewRow;
+		bool row_clicked(Duck::Ptr<UI::TableViewRow> row, Pond::MouseButtonEvent evt);
+
 		// ListViewDelegate
 		Duck::Ptr<Widget> lv_create_entry(int index) override;
 		Gfx::Dimensions lv_preferred_item_dimensions() override;
@@ -46,6 +63,8 @@ namespace UI {
 
 		void update_columns();
 		std::vector<int> calculate_column_widths();
+		void make_row_selection(Duck::Ptr<TableViewRow> row);
+		void open_row_menu(Duck::Ptr<TableViewRow> row);
 
 		Duck::Ptr<ListView> m_list_view = ListView::make(ListView::VERTICAL);
 		const int m_num_cols;
@@ -53,6 +72,36 @@ namespace UI {
 		std::vector<std::string> m_header_labels;
 		std::vector<int> m_column_widths;
 		int m_row_height = 1;
+		std::set<int> m_selected_items;
+	};
+
+	class TableViewCell: public Widget {
+	public:
+		WIDGET_DEF(TableViewCell)
+		Gfx::Dimensions preferred_size() override;
+
+	private:
+		friend class TableView;
+		TableViewCell(Gfx::Dimensions size, Duck::Ptr<Widget> widget);
+		Gfx::Dimensions m_preferred_size;
+	};
+
+	class TableViewRow: public BoxLayout {
+	public:
+		WIDGET_DEF(TableViewRow);
+
+	protected:
+		bool on_mouse_button(Pond::MouseButtonEvent evt) override;
+		void do_repaint(const DrawContext& ctx) override;
+
+	private:
+		friend class TableView;
+		TableViewRow(Gfx::Color color, Duck::Ptr<TableView> table_view, int row);
+		bool selected();
+
+		Gfx::Color m_color;
+		int m_row;
+		Duck::WeakPtr<TableView> m_table_view;
 	};
 }
 
