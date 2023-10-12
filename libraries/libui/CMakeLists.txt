@@ -16,6 +16,7 @@ SET(SOURCES
         widget/Label.cpp
         widget/ProgressBar.cpp
         widget/Stack.cpp
+        widget/NamedCell.cpp
 
         widget/files/FileGridView.cpp
         widget/files/FileViewBase.cpp
