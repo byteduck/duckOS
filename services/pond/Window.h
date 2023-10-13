@@ -265,7 +265,17 @@ public:
 	void set_has_shadow(bool shadow);
 
 	/**
-	 * Gets the shadow framebuffers for drawing shadows.
+	 * Sets whether the window should blur contents behind it.
+	 */
+	void set_blur_behind(bool blur);
+
+	/**
+	 * Returns whether the window blurs contents behind it.
+	 */
+	bool blurs_behind() const;
+
+	/**
+	 * Gets the shadow framebuffer for drawing shadows.
 	 */
 	Gfx::Framebuffer* shadow_buffers() { return _shadow_buffers; }
 
@@ -305,6 +315,7 @@ private:
 	bool _uses_alpha = false;
 	bool _destructing = false;
 	bool _draws_shadow = true;
+	bool _blur_behind = false;
 	Pond::WindowType _type = Pond::DEFAULT;
 	Gfx::Framebuffer _shadow_buffers[4];
 	Gfx::Dimensions _minimum_size = {WINDOW_RESIZE_BORDER * 2, WINDOW_RESIZE_BORDER * 2};

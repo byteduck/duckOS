@@ -163,10 +163,11 @@ void Window::repaint_now() {
 	auto framebuffer = _window->framebuffer();
 	auto ctx = DrawContext(framebuffer);
 	if(_decorated) {
-		Gfx::Color color = Theme::window();
-
 		//Window background
-		ctx.fill({0, 0, ctx.width(), ctx.height()}, color);
+		if(_uses_alpha)
+			ctx.fill({0, 0, ctx.width(), ctx.height()}, Gfx::Color(0, 0, 0, 0));
+		else
+			ctx.fill({0, 0, ctx.width(), ctx.height()}, Theme::window());
 
 		//Title bar
 		Gfx::Rect titlebar_rect = {0, 0, ctx.width(), UI_TITLEBAR_HEIGHT};

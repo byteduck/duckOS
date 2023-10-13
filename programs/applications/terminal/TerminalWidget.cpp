@@ -26,7 +26,7 @@
 #include <libui/widget/MenuWidget.h>
 
 static const uint32_t color_palette[] = {
-		0xFF000000,
+		0x99000000,
 		0xFFAA0000,
 		0xFF00AA00,
 		0xFFAA5500,
@@ -47,6 +47,7 @@ static const uint32_t color_palette[] = {
 TerminalWidget::TerminalWidget() {
 	font = UI::Theme::font_mono();
 	term = new Term::Terminal({1, 1}, *this);
+	set_uses_alpha(true);
 
 	//Setup PTY
 	pty_fd = posix_openpt(O_RDWR | O_CLOEXEC);
