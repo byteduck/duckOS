@@ -26,6 +26,7 @@
 #include <libsys/CPU.h>
 #include "ProcessListWidget.h"
 #include "MemoryUsageWidget.h"
+#include "ProcessManager.h"
 #include <libui/widget/Cell.h>
 #include <libduck/FileStream.h>
 
@@ -69,6 +70,7 @@ Duck::Result update() {
 	cpu_bar->set_progress(cpu_info.utilization / 100.0);
 	cpu_bar->set_label("CPU: " + std::to_string(cpu_info.utilization) + "%");
 
+	ProcessManager::inst().update();
 	proc_list->update();
 
 	return Duck::Result::SUCCESS;
@@ -108,7 +110,7 @@ int main(int argc, char** argv, char** envp) {
 	layout->add_child(UI::Cell::make(mem_label));
 
 	proc_list = ProcessListWidget::make();
-	layout->add_child(proc_list);
+	layout->add_child(UI::Cell::make(proc_list));
 
 	//Show window
 	update();
@@ -116,9 +118,6 @@ int main(int argc, char** argv, char** envp) {
 	window->set_resizable(true);
 	window->show();
 
-	//Loop
-	while(!UI::ready_to_exit()) {
-		update();
-		UI::update(UPDATE_FREQ);
-	}
+	auto timer = UI::set_interval(update, UPDATE_FREQ);
+	UI::run();
 }

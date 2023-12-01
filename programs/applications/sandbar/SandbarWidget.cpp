@@ -7,6 +7,8 @@
 #include "modules/CPUModule.h"
 #include "modules/MemoryModule.h"
 #include <libui/widget/Cell.h>
+#include <libui/widget/Stack.h>
+#include <libui/widget/Image.h>
 #include <libui/libui.h>
 
 using namespace UI;
@@ -18,9 +20,9 @@ SandbarWidget::SandbarWidget(Duck::Ptr<AppMenu> app_menu):
 {
 	add_child(Cell::make(m_layout));
 
-	m_duck_button = UI::Button::make(UI::icon("/duck"));
+	m_duck_button = UI::Button::make(UI::Stack::make(UI::Stack::HORIZONTAL, 4, UI::Image::make("/duck"), UI::Label::make("Apps ")));
 	m_duck_button->set_sizing_mode(UI::PREFERRED);
-	m_duck_button->set_style(ButtonStyle::INSET);
+	m_duck_button->set_style(ButtonStyle::RAISED);
 	m_duck_button->on_pressed = [&] {
 		m_app_menu->toggle();
 	};

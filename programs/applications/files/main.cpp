@@ -51,7 +51,7 @@ protected:
 		window->set_contents(main_flex);
 		window->set_resizable(true);
 		window->set_title("Files");
-		window->resize({300, 300});
+		window->resize({306, 300});
 		window->show();
 	}
 

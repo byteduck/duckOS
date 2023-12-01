@@ -34,6 +34,9 @@ protected:
 	int tv_num_entries() override;
 	int tv_row_height() override;
 	int tv_column_width(int col) override;
+	UI::TableViewSelectionMode tv_selection_mode() override { return UI::TableViewSelectionMode::SINGLE; }
+	void tv_selection_changed(const std::set<int>& selected_items) override;
+	Duck::Ptr<UI::Menu> tv_entry_menu(int row) override;
 
 	// Object
 	void initialize() override;
@@ -41,6 +44,6 @@ protected:
 private:
 	ProcessListWidget();
 	std::vector<Sys::Process> _processes;
-	Duck::Ptr<UI::TableView> _table_view = UI::TableView::make(7);
+	Duck::Ptr<UI::TableView> _table_view = UI::TableView::make(7, true);
 };
 

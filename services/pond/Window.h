@@ -232,10 +232,9 @@ public:
 	Gfx::Rect calculate_absolute_rect(const Gfx::Rect& rect);
 
 	/**
-	 * Sets whether or not the framebuffer is flipped.
-	 * @param flipped Whether or not the framebuffer has been flipped.
+	 * Flips the window's buffer.
 	 */
-	void set_flipped(bool flipped);
+	bool flip();
 
 	/**
 	 * Gets the type of the window.
@@ -275,6 +274,8 @@ public:
 	/** Gets the minimum size of the window. */
 	Gfx::Dimensions minimum_size() const { return _minimum_size; }
 
+	/** Whether the window uses alpha for hit testing. */
+	bool alpha_hit_testing() const { return _alpha_hit_testing; }
 
 private:
 	friend class Mouse;
@@ -284,6 +285,8 @@ private:
 	void finalize_resize();
 
 	Gfx::Framebuffer _framebuffer = {nullptr, 0, 0};
+	bool _flipped = false;
+	bool _pending_flip = false;
 	shm _framebuffer_shm;
 	Gfx::Rect _rect;
 	Gfx::Rect _absolute_rect;
@@ -305,6 +308,7 @@ private:
 	bool _uses_alpha = false;
 	bool _destructing = false;
 	bool _draws_shadow = true;
+	bool _alpha_hit_testing = false;
 	Pond::WindowType _type = Pond::DEFAULT;
 	Gfx::Framebuffer _shadow_buffers[4];
 	Gfx::Dimensions _minimum_size = {WINDOW_RESIZE_BORDER * 2, WINDOW_RESIZE_BORDER * 2};

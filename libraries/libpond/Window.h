@@ -33,6 +33,7 @@
 #define PWINDOW_HINT_RESIZABLE 0x5
 #define PWINDOW_HINT_WINDOWTYPE 0x6
 #define PWINDOW_HINT_SHADOW 0x7
+#define PWINDOW_HINT_ALPHA_HITTEST 0x8
 
 /**
  * A window Object representing a window in the Pond window system.
@@ -151,6 +152,12 @@ namespace Pond {
 		 * @param alpha_blending Whether or not the window should use alpha blending.
 		 */
 		void set_uses_alpha(bool alpha_blending);
+
+		/**
+		 * Sets whether the window will use alpha for hit testing.
+		 * @param hit_testing Whether to use alpha for hit testing (i.e. transparency will fall through)
+		 */
+		void set_uses_alpha_hit_testing(bool alpha_hit_testing);
 
 		/**
 		 * Gets the ID of the window.

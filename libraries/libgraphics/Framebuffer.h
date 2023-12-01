@@ -219,6 +219,11 @@ namespace Gfx {
 			return data[position.x + position.y * width];
 		}
 
+		/**
+		 * Puts a pixel at a point.
+		 */
+		void put(Gfx::Point point, Gfx::Color color) const;
+
 		/// Serializable
 		size_t serialized_size() const override;
 		void serialize(uint8_t*& buf) const override;

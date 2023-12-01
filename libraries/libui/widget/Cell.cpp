@@ -31,10 +31,16 @@ void Cell::do_repaint(const UI::DrawContext& ctx) {
 		ctx.fill(ctx.rect(), m_background);
 		break;
 	case Style::INSET:
-		ctx.draw_inset_rect(ctx.rect(), m_background);
+		if (m_background.a == 0)
+			ctx.draw_inset_rect(ctx.rect(), m_background, Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
+		else
+			ctx.draw_inset_rect(ctx.rect(), m_background);
 		break;
 	case Style::OUTSET:
-		ctx.draw_outset_rect(ctx.rect(), m_background);
+		if (m_background.a == 0)
+			ctx.draw_outset_rect(ctx.rect(), m_background, Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
+		else
+			ctx.draw_outset_rect(ctx.rect(), m_background);
 		break;
 	}
 }

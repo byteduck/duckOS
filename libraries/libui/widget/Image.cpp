@@ -7,11 +7,13 @@
 
 using namespace UI;
 
-Image::Image(Duck::Ptr<const Gfx::Image> image, Image::ScalingMode mode): _image(image), _scaling_mode(mode) {
+Image::Image(Duck::Ptr<const Gfx::Image> image, Image::ScalingMode mode, Gfx::Dimensions preferred_size):
+	_image(image), _scaling_mode(mode), _preferred_size(preferred_size) {
 	set_uses_alpha(true);
 }
 
-Image::Image(std::string name, UI::Image::ScalingMode mode): _image(UI::icon(name)), _scaling_mode(mode) {
+Image::Image(std::string name, UI::Image::ScalingMode mode, Gfx::Dimensions preferred_size):
+	_image(UI::icon(name)), _scaling_mode(mode), _preferred_size(preferred_size) {
 	set_uses_alpha(true);
 }
 

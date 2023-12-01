@@ -60,7 +60,10 @@ namespace Pond {
 	struct WindowInvalidatePkt {
 		int window_id;
 		Gfx::Rect area;
-		bool flipped;
+	};
+
+	struct WindowFlipPkt {
+		int window_id;
 	};
 
 	struct MouseMovePkt {

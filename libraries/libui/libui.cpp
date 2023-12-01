@@ -195,6 +195,9 @@ void UI::run() {
 }
 
 void UI::update(int timeout) {
+	// Handle pending pond events
+	handle_pond_events();
+
 	//Perform needed repaints
 	for(auto window : windows) {
 		if(window.second)

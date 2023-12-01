@@ -6,7 +6,10 @@
 
 using namespace UI;
 
-TableView::TableView(int num_cols): m_num_cols(num_cols) {
+TableView::TableView(int num_cols, bool shows_tabs):
+	m_num_cols(num_cols),
+	m_show_tabs(shows_tabs)
+{
 	set_sizing_mode(UI::FILL);
 	for(int i = 0; i < num_cols; i++) {
 		m_header_labels.push_back("");
@@ -66,16 +69,24 @@ int TableView::lv_num_items() {
 
 void TableView::calculate_layout() {
 	auto dims = current_size();
-	m_list_view->set_layout_bounds({0, 16, dims.width, dims.height - 16});
+	auto tab_height = m_show_tabs ? c_tab_height : 0;
+	m_list_view->set_layout_bounds({
+		c_padding_tl,
+		tab_height + c_padding_tl,
+		dims.width - c_padding_tl - c_padding_br,
+		dims.height - tab_height - c_padding_tl - c_padding_br});
 	update_data();
 }
 
 void TableView::do_repaint(const DrawContext& ctx) {
-	int x = 0;
+	ctx.draw_inset_outline(ctx.rect());
+	if (!m_show_tabs)
+		return;
+	int x = c_padding_tl;
 	auto widths = calculate_column_widths();
 	for(int col = 0; col < m_num_cols; col++) {
-		auto width = col == m_num_cols - 1 ? current_size().width - x : widths[col];
-		auto col_rect = Gfx::Rect {x, 0, width, 16};
+		auto width = col == m_num_cols - 1 ? current_size().width - c_padding_br - x : widths[col];
+		auto col_rect = Gfx::Rect {x, c_padding_tl, width, c_tab_height};
 		ctx.draw_outset_rect(col_rect, Theme::bg());
 		ctx.draw_text(m_header_labels[col].c_str(), col_rect.inset(0, 4, 0, 4), BEGINNING, CENTER, Theme::font(), Theme::fg());
 		x += width;
@@ -83,11 +94,13 @@ void TableView::do_repaint(const DrawContext& ctx) {
 }
 
 Gfx::Dimensions TableView::preferred_size() {
-	return m_list_view->preferred_size() + Gfx::Dimensions {0, 16};
+	auto tab_height = m_show_tabs ? c_tab_height : 0;
+	return m_list_view->preferred_size() + Gfx::Dimensions { c_padding_tl + c_padding_br, c_padding_tl + c_padding_br + tab_height};
 }
 
 Gfx::Dimensions TableView::minimum_size() {
-	return m_list_view->minimum_size() + Gfx::Dimensions {0, 16};
+	auto tab_height = m_show_tabs ? c_tab_height : 0;
+	return m_list_view->minimum_size() + Gfx::Dimensions {c_padding_tl + c_padding_br, c_padding_tl + c_padding_br + tab_height};
 }
 
 void TableView::initialize() {
@@ -119,7 +132,7 @@ std::vector<int> TableView::calculate_column_widths() {
 	}
 
 	// Figure out width of stretchy columns
-	auto remaining_width = current_size().width - 12 - total_width;
+	auto remaining_width = current_size().width - 12 - c_padding_tl - c_padding_br - total_width;
 	if(num_stretchy)
 		stretchy_width = std::max(16, remaining_width / num_stretchy);
 

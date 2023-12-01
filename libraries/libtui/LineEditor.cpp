@@ -32,7 +32,9 @@ std::string LineEditor::get_line() {
 	m_state = REGULAR;
 
 	while(m_state != DONE) {
-		char ch = std::getchar();
+		int ch = std::getchar();
+		if (ch == EOF)
+			continue;
 
 		switch(m_state) {
 			case REGULAR:

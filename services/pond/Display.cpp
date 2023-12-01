@@ -236,6 +236,10 @@ void Display::repaint() {
 				else
 					fb.copy(window->framebuffer(), transformed_overlap, overlap_abs.position());
 
+				// If the client is unresponsive, dim the window
+				if (window->client()->is_unresponsive())
+					fb.fill_blitting(overlap_abs, {0, 0, 0, 180});
+
 				// Draw the shadow
 				if(window->has_shadow()) {
 					auto draw_shadow = [&](Gfx::Framebuffer& shadow_buffer, Rect rect) {
@@ -376,11 +380,14 @@ void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t 
 		return;
 
 	//If we have a mousedown window and released the mouse button, stop sending events to it
-	if(_mousedown_window && !(buttons & 1))
+	if(_mousedown_window && !(buttons & 1)) {
+		if(!mouse.in(_mousedown_window->absolute_rect()))
+			_mousedown_window->set_mouse_buttons(buttons);
 		_mousedown_window = nullptr;
+	}
 
 	//If we are holding the mouse down, keep sending mouse events to the window we initially clicked
-	if(_mousedown_window && !_mousedown_window->gets_global_mouse()) {
+	if(_mousedown_window && !_mousedown_window->gets_global_mouse() && !mouse.in(_mousedown_window->absolute_rect())) {
 		_mousedown_window->mouse_moved(delta, mouse - _mousedown_window->absolute_rect().position(), mouse);
 		if(prev_mouse_buttons != buttons)
 			_mousedown_window->set_mouse_buttons(buttons);
@@ -435,9 +442,15 @@ void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t 
 
 		//Otherwise, if it's in the window, create the appropriate events
 		if(mouse.in(window->absolute_rect())) {
+			auto window_rel_pos = mouse - window->absolute_rect().position();
+
+			// If the window uses alpha hit testing, check if the pixel the mouse is on is transparent
+			if (window->alpha_hit_testing() && (window->framebuffer().at(window_rel_pos)->a == 0))
+				continue;
+
 			event_window = window;
 			if(!window->gets_global_mouse()) {
-				window->mouse_moved(delta, mouse - window->absolute_rect().position(), mouse);
+				window->mouse_moved(delta, window_rel_pos, mouse);
 				if(prev_mouse_buttons != buttons)
 					window->set_mouse_buttons(buttons);
 				if(scroll)

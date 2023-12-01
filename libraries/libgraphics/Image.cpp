@@ -26,7 +26,7 @@ using namespace Gfx;
 using namespace Duck;
 
 Image::Image(std::map<std::pair<int, int>, Duck::Ptr<Framebuffer>> framebuffers, Dimensions size):
-	m_framebuffers(std::move(framebuffers)), m_size(std::move(size)) {}
+	m_framebuffers(std::move(framebuffers)), m_size(size) {}
 
 Duck::ResultRet<Duck::Ptr<Image>> Image::load(Duck::Path path) {
 	auto dir_res = path.get_directory_entries();
@@ -77,28 +77,8 @@ void Image::draw(const Framebuffer& buffer, Rect rect) const {
 	if(m_framebuffers.empty())
 		return;
 
-	// Find the best size to draw (closest euclidean distance to the requested size)
-	std::pair<int, int> best_size = m_framebuffers.begin()->first;
-	double best_distance = DBL_MAX;
-	for(auto& pair : m_framebuffers) {
-		auto size = pair.first;
-
-		// Exact match
-		if(size.first == rect.width && size.second == rect.height) {
-			best_size = size;
-			break;
-		}
-
-		// Calulate distance to requested size
-		auto distance = Point {size.first, size.second}.distance_to({rect.width, rect.height});
-		if(distance < best_distance) {
-			best_size = size;
-			best_distance = distance;
-		}
-	}
-
-	// Draw the image
-	buffer.draw_image_scaled(*m_framebuffers.find(best_size)->second, rect);
+	// Draw the image at the correct scale
+	buffer.draw_image_scaled(*framebuffer(rect.dimensions()), rect);
 }
 
 void Image::draw(const Framebuffer& buffer, Point point) const {
@@ -111,4 +91,29 @@ void Image::multiply(Color color) {
 	for(auto& framebuffer : m_framebuffers) {
 		framebuffer.second->multiply(color);
 	}
+}
+
+Duck::Ptr<const Framebuffer> Image::framebuffer(Dimensions dims) const {
+	if (dims.width == -1 && dims.height == -1)
+		dims = m_size;
+
+	std::pair<int, int> best_size = m_framebuffers.begin()->first;
+	double best_distance = DBL_MAX;
+	for(auto& pair : m_framebuffers) {
+		auto size = pair.first;
+
+		// Exact match
+		if(size.first == dims.width && size.second == dims.height) {
+			best_size = size;
+			break;
+		}
+
+		// Calulate distance to requested size
+		auto distance = Point {size.first, size.second}.distance_to({dims.width, dims.height});
+		if(distance < best_distance) {
+			best_size = size;
+			best_distance = distance;
+		}
+	}
+	return m_framebuffers.find(best_size)->second;
 }

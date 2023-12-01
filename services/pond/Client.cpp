@@ -30,8 +30,13 @@ using Duck::Log;
 #define SEND_MESSAGE(name, data) { \
 auto __msgsend_res = server->endpoint()->send_message(name, id, data); \
 if(__msgsend_res.is_error()) { \
-	Log::err("Failed to send message ", name, " to client ", id, ": ", River::error_str(__msgsend_res.code())); \
-}} \
+    if (__msgsend_res.code() == ENOSPC) \
+        set_unresponsive(true); \
+    else \
+		Log::err("Failed to send message ", name, " to client ", id, ": ", River::error_str(__msgsend_res.code())); \
+} else { \
+	set_unresponsive(false); \
+}}
 
 Client::Client(Server* server, sockid_t id, pid_t pid): server(server), id(id), pid(pid) {
 
@@ -154,12 +159,18 @@ WindowResizedPkt Client::resize_window(WindowResizePkt& params) {
 void Client::invalidate_window(WindowInvalidatePkt& params) {
 	auto window = windows.find(params.window_id);
 	if(window != windows.end()) {
-		window->second->set_flipped(params.flipped);
 		if(params.area.x < 0 || params.area.y < 0)
 			window->second->invalidate();
 		else
 			window->second->invalidate(params.area);
 	}
+}
+
+bool Client::flip_window(Pond::WindowFlipPkt& params) {
+	auto window = windows.find(params.window_id);
+	if(window != windows.end())
+		return window->second->flip();
+	return false;
 }
 
 FontResponsePkt Client::get_font(GetFontPkt& params) {
@@ -217,4 +228,12 @@ void Client::set_minimum_size(Pond::WindowMinSizePkt& pkt) {
 	auto* window = windows[pkt.window_id];
 	if(window)
 		window->set_minimum_size(pkt.minimum_size);
+}
+
+void Client::set_unresponsive(bool new_val) {
+	if(unresponsive == new_val)
+		return;
+	unresponsive = new_val;
+	for(auto window : windows)
+		window.second->invalidate();
 }

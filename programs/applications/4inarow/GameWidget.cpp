@@ -73,9 +73,12 @@ void GameWidget::do_repaint(const UI::DrawContext& ctx) {
 						break;
 				}
 			}
-			ctx.fill({
-					col * CELL_SIZE + 4, row * CELL_SIZE + 4, CELL_SIZE - 4, CELL_SIZE - 4
-				}, color);
+			Gfx::Rect rect = {col * CELL_SIZE + 4, row * CELL_SIZE + 4, CELL_SIZE - 4, CELL_SIZE - 4};
+			if(color != EMPTY_COLOR) {
+				ctx.draw_outset_rect(rect, color);
+			} else {
+				ctx.fill(rect, color);
+			}
 		}
 	}
 	ctx.draw_text(status.c_str(), {2, ROWS * CELL_SIZE + 6}, UI::Theme::font(), UI::Theme::fg());

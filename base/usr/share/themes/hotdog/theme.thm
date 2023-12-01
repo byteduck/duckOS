@@ -4,16 +4,11 @@ Color fg = #000000
 Color accent = #ffff00
 Color window = #ff0000
 Color window-title = #ffffff
-Color window-titlebar-a = #bb0000
-Color window-titlebar-b = #dd0000
-Color shadow-1 = #dd9900
-Color shadow-2 = #bb6600
-Color highlight = #ff8844
 Color button = #ffff00
 Color button-text = #000000
 Color scrollbar-bg = #dd0000
-Color scrollbar-handle = #ff0000
-Color scrollbar-handle-disabled = #ff4444
+Color scrollbar-handle = #ffff00
+Color scrollbar-handle-disabled = #ffffaa
 
 # Values
 Value button-padding = 5

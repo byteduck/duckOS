@@ -31,8 +31,6 @@ namespace UI {
 	class Theme {
 	public:
 		Duck::Ptr<Gfx::Image> get_image(const std::string& key);
-		int get_value(const std::string& key);
-		Gfx::Color get_color(const std::string& key);
 		std::string get_string(const std::string& key);
 		Gfx::Font* get_font();
 		Gfx::Font* get_font_mono();
@@ -43,8 +41,6 @@ namespace UI {
 		static void load_config(std::map<std::string, std::string>& config);
 
 		static Duck::Ptr<Gfx::Image> image(const std::string& key);
-		static int value(const std::string& key);
-		static Gfx::Color color(const std::string& key);
 		static std::string string(const std::string& key);
 
 		//Standard fonts
@@ -58,13 +54,14 @@ namespace UI {
 		static Gfx::Color window();
 		static Gfx::Color window_title();
 		static Gfx::Color window_title_unfocused();
-		static Gfx::Color window_titlebar_a();
-		static Gfx::Color window_titlebar_b();
 		static Gfx::Color shadow_1();
 		static Gfx::Color shadow_2();
 		static Gfx::Color highlight();
 		static Gfx::Color button();
 		static Gfx::Color button_text();
+		static Gfx::Color scrollbar_bg();
+		static Gfx::Color scrollbar_handle();
+		static Gfx::Color scrollbar_handle_disabled();
 
 		//Standard values
 		static int button_padding();
@@ -89,6 +86,11 @@ namespace UI {
 		std::string _font = "gohu-11";
 		std::string _font_mono = "gohu-11";
 		Duck::Ptr<Gfx::Image> blank_image = Gfx::Image::empty();
+
+		Gfx::Color m_bg, m_fg, m_accent, m_window, m_window_title, m_window_title_unfocused, m_shadow_1, m_shadow_2,
+		           m_highlight, m_button, m_button_text, m_scrollbar_bg, m_scrollbar_handle, m_scrollbar_handle_disabled;
+
+		int m_button_padding, m_progress_bar_height;
 	};
 }
 

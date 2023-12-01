@@ -49,6 +49,7 @@ public:
 	void move_window(Pond::WindowMovePkt& packet);
 	Pond::WindowResizedPkt resize_window(Pond::WindowResizePkt& packet);
 	void invalidate_window(Pond::WindowInvalidatePkt& packet);
+	bool flip_window(Pond::WindowFlipPkt& packet);
 	Pond::FontResponsePkt get_font(Pond::GetFontPkt& packet);
 	void set_title(Pond::SetTitlePkt& packet);
 	void reparent(Pond::WindowReparentPkt& packet);
@@ -60,13 +61,18 @@ public:
 	void focus_window(Pond::WindowFocusPkt& pkt);
 	void set_minimum_size(Pond::WindowMinSizePkt& pkt);
 
+	bool is_unresponsive() const { return unresponsive; }
+
 private:
+	void set_unresponsive(bool new_val);
+
 	Server* server;
 	sockid_t id;
 	pid_t pid;
 	std::map<int, Window*> windows;
 	bool disconnected = false;
 	App::Info app_info;
+	bool unresponsive = false;
 };
 
 

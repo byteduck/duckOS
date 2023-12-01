@@ -159,7 +159,6 @@ void Window::set_rect(const Gfx::Rect& rect, bool notify_client) {
 	if(!hidden()) {
 		if(!_pending_resize_invalidation_rect.empty()) {
 			_display->invalidate(_pending_resize_invalidation_rect);
-			Duck::Log::warnf("Window {} resized again before pending resize finished!", _id);
 		}
 		if(_parent)
 			_pending_resize_invalidation_rect = _absolute_shadow_rect.overlapping_area(_parent->_absolute_rect);
@@ -298,12 +297,14 @@ Gfx::Rect Window::calculate_absolute_rect(const Gfx::Rect& rect) {
 		return rect;
 }
 
-void Window::set_flipped(bool flipped) {
+bool Window::flip() {
+	_flipped = !_flipped;
 	_framebuffer = {
-			(Gfx::Color*) _framebuffer_shm.ptr + (flipped ? _rect.width * _rect.height : 0),
+			(Gfx::Color*) _framebuffer_shm.ptr + (_flipped ? _rect.width * _rect.height : 0),
 			_rect.width,
 			_rect.height
 	};
+	return _flipped;
 }
 
 void Window::alloc_framebuffer() {
@@ -328,7 +329,7 @@ void Window::alloc_framebuffer() {
 		memset(_framebuffer_shm.ptr, 0, _framebuffer_shm.size);
 	}
 
-	_framebuffer = {(Gfx::Color*) _framebuffer_shm.ptr, _rect.width, _rect.height};
+	_framebuffer = {(Gfx::Color*) _framebuffer_shm.ptr + (_flipped ? _rect.width * _rect.height : 0), _rect.width, _rect.height};
 
 	alloc_shadow_buffers();
 }
@@ -414,6 +415,9 @@ void Window::set_hint(int hint, int value) {
 		case PWINDOW_HINT_SHADOW:
 			set_has_shadow(value);
 			break;
+		case PWINDOW_HINT_ALPHA_HITTEST:
+			_alpha_hit_testing = value;
+			break;
 		default:
 			Duck::Log::warn("Unknown window hint ", hint);
 	}
@@ -438,6 +442,7 @@ bool Window::has_shadow() const {
 
 void Window::set_has_shadow(bool shadow) {
 	_draws_shadow = shadow;
+	invalidate();
 	recalculate_rects();
 	invalidate();
 }

@@ -21,7 +21,7 @@ AppMenu::AppMenu():
 		if(app.hidden())
 			continue;
 		auto btn_layout = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL, 4);
-		btn_layout->add_child(UI::Image::make(app.icon()));
+		btn_layout->add_child(UI::Image::make(app.icon(), UI::Image::FIT, Gfx::Dimensions {16, 16}));
 		auto btn_label = UI::Label::make(app.name());
 		btn_label->set_alignment(UI::CENTER, UI::BEGINNING);
 		btn_layout->add_child(btn_label);

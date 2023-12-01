@@ -24,6 +24,10 @@
 using namespace Gfx;
 using namespace Duck;
 
+#define highlighted(col) ((col).lightened(0.3))
+#define shadow1(col) ((col).darkened(0.4))
+#define shadow2(col) ((col).darkened(0.5))
+
 UI::DrawContext::DrawContext(const Framebuffer& framebuffer): fb(&framebuffer) {
 
 }
@@ -200,10 +204,7 @@ void UI::DrawContext::draw_image(const std::string& name, Gfx::Point pos) const 
 	draw_image(Theme::image(name), pos);
 }
 
-void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const {
-	//Background
-	fb->fill({rect.x, rect.y, rect.width, rect.height}, bg);
-
+void UI::DrawContext::draw_inset_outline(Gfx::Rect rect, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const {
 	//Shadow
 	fb->fill({rect.x, rect.y, rect.width, 1}, shadow_1);
 	fb->fill({rect.x, rect.y + 1, 1, rect.height - 1}, shadow_1);
@@ -215,17 +216,37 @@ void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color 
 	fb->fill({rect.x + rect.width - 1, rect.y + 1, 1, rect.height - 1}, highlight);
 }
 
+void UI::DrawContext::draw_inset_outline(Gfx::Rect rect) const {
+	draw_inset_outline(rect, Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
+}
+
+void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Gfx::Color bg1, Gfx::Color bg2, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const {
+	fb->fill_gradient_v(rect, bg1, bg2);
+	draw_inset_outline(rect, shadow_1, shadow_2, highlight);
+}
+
+void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const {
+	draw_inset_rect(rect, bg, bg, shadow_1, shadow_2, highlight);
+}
+
+void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Gfx::Color bg1, Gfx::Color bg2) const {
+	draw_inset_rect(rect, bg1, bg2, shadow1(bg1), shadow2(bg1), highlighted(bg1));
+}
+
 void UI::DrawContext::draw_inset_rect(Gfx::Rect rect, Gfx::Color bg) const {
-	draw_inset_rect(rect, bg, Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
+	draw_inset_rect(rect, bg, shadow1(bg), shadow2(bg), highlighted(bg));
 }
 
 void UI::DrawContext::draw_inset_rect(Gfx::Rect rect) const {
 	draw_inset_rect(rect, Theme::bg(), Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
 }
 
-void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const {
+void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Gfx::Color bg1, Gfx::Color bg2, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const {
 	//Background
-	fb->fill({rect.x, rect.y, rect.width, rect.height}, bg);
+	if((rect.width * 2) > rect.height)
+		fb->fill_gradient_v(rect, bg1, bg2);
+	else
+		fb->fill_gradient_h(rect, bg1, bg2);
 
 	//Shadow
 	fb->fill({rect.x, rect.y + rect.height - 1, rect.width - 1, 1}, shadow_2);
@@ -238,8 +259,16 @@ void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color
 	fb->fill({rect.x, rect.y + 1, 1, rect.height - 2}, highlight);
 }
 
+void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Gfx::Color bg, Gfx::Color shadow_1, Gfx::Color shadow_2, Gfx::Color highlight) const {
+	draw_outset_rect(rect, bg, bg.darkened(), shadow_1, shadow_2, highlight);
+}
+
+void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Gfx::Color bg1, Gfx::Color bg2) const {
+	draw_outset_rect(rect, bg1, bg2, shadow1(bg1), shadow2(bg1), highlighted(bg1));
+}
+
 void UI::DrawContext::draw_outset_rect(Gfx::Rect rect, Gfx::Color bg) const {
-	draw_outset_rect(rect, bg, Theme::shadow_1(), Theme::shadow_2(), Theme::highlight());
+	draw_outset_rect(rect, bg, shadow1(bg), shadow2(bg), highlighted(bg));
 }
 
 void UI::DrawContext::draw_outset_rect(Gfx::Rect rect) const {
@@ -247,10 +276,14 @@ void UI::DrawContext::draw_outset_rect(Gfx::Rect rect) const {
 }
 
 void UI::DrawContext::draw_button_base(Gfx::Rect button, bool pressed) const {
+	draw_button_base(button, pressed, Theme::button());
+}
+
+void UI::DrawContext::draw_button_base(Gfx::Rect button, bool pressed, Gfx::Color color) const {
 	if(pressed) {
-		draw_inset_rect(button, Theme::button());
+		draw_inset_rect(button, color);
 	} else {
-		draw_outset_rect(button, Theme::button());
+		draw_outset_rect(button, color);
 	}
 }
 
@@ -277,14 +310,21 @@ void UI::DrawContext::draw_button(Gfx::Rect rect, Duck::Ptr<const Image> img, bo
 }
 
 void UI::DrawContext::draw_vertical_scrollbar(Gfx::Rect area, Gfx::Rect handle_area, bool enabled) const {
-	fb->fill(area, UI::Theme::color("scrollbar-bg"));
-	draw_outset_rect(handle_area, enabled ? UI::Theme::color("scrollbar-handle") : UI::Theme::color("scrollbar-handle-disabled"));
+	fb->fill(area, Theme::scrollbar_bg());
+	auto handle_color = enabled ? Theme::scrollbar_handle() : Theme::scrollbar_handle_disabled();
+	auto notch_color = handle_color.darkened(0.5);
+	draw_outset_rect(handle_area, handle_color);
+	if (enabled) {
+		fill({handle_area.x + 2, handle_area.y + handle_area.height / 2 - 2, handle_area.width - 5, 1}, notch_color);
+		fill({handle_area.x + 2, handle_area.y + handle_area.height / 2, handle_area.width - 5, 1}, notch_color);
+		fill({handle_area.x + 2, handle_area.y + handle_area.height / 2 + 2, handle_area.width - 5, 1}, notch_color);
+	}
 }
 
 void UI::DrawContext::draw_progressbar(Gfx::Rect area, double progress) const {
 	draw_inset_rect(area);
 	if(progress != 0) {
-		fb->fill({
+		draw_outset_rect({
 			area.x + 2,
 			area.y + 2,
 			(int) ((area.width - 4) * progress),
