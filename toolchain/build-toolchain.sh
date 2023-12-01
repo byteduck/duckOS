@@ -67,10 +67,18 @@ build_gcc () {
     download-gcc
   fi
 
+  extra_config_args=()
+  if [ "$SYS_NAME" = "Darwin" ]; then
+    for library in gmp mpfr mpc; do
+	  [ "$library" = "mpc" ] && brew_formula="libmpc" || brew_formula="$library"
+	  extra_config_args+=("--with-$library=$(brew --prefix --installed "$brew_formula")")
+	done
+  fi
+
   msg "Configuring gcc..."
   mkdir -p "gcc-$GCC_VERSION-build"
   cd "gcc-$GCC_VERSION-build"
-  "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --with-newlib --enable-shared || exit 1
+  "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --with-newlib --enable-shared "${extra_config_args[@]}" || exit 1
 
   msg "Making gcc..."
   make -j "$NUM_JOBS" all-gcc all-target-libgcc || exit 1
@@ -93,7 +101,11 @@ build_gcc () {
 mkdir -p "$BUILD"
 
 if [ "$1" ]; then
-  if [ "$1" == "edited-binutils" ]; then
+  if [ "$1" == "gcc" ]; then
+    build_gcc
+  elif [ "$1" == "binutils" ]; then
+    build_binutils
+  elif [ "$1" == "edited-binutils" ]; then
     build_binutils edited
   elif [ "$1" == "edited-gcc" ]; then
     build_gcc edited

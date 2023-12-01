@@ -56,6 +56,10 @@ extern "C" void *memcpy(void *dest, const void *src, size_t count){
 	return odest;
 }
 
+extern "C" void* memmove(void* dest, const void* src, size_t n) {
+	return __builtin_memmove(dest, src, n);
+}
+
 void* memcpy_uint32(uint32_t* d, uint32_t* s, size_t n) {
 	void* od = d;
 	asm volatile("rep movsl\n" : "+S"(s), "+D"(d), "+c"(n)::"memory");

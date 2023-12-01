@@ -25,6 +25,7 @@
 #define _TERM_VECTOR_TYPE kstd::vector
 #else
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 #define _TERM_VECTOR_TYPE std::vector
 #endif

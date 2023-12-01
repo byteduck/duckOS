@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: toolchain/tools
-          key: ${{ runner.os }}-toolchain-${{ hashFiles('toolchain/*.patch') }}
+          key: ${{ runner.os }}-toolchain-${{ hashFiles('toolchain/*.patch') }}-${{ hashFiles('toolchain/*.sh') }}
       
       - name: Build toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
