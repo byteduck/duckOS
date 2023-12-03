@@ -24,64 +24,31 @@
 class Stack {
 public:
 	Stack(void* stackptr, size_t real_stackptr):
-		_stackptr(stackptr),
-		_stackptr8(reinterpret_cast<uint8_t*&>(_stackptr)),
-		_stackptr16(reinterpret_cast<uint16_t*&>(_stackptr)),
-		_stackptr32(reinterpret_cast<uint32_t*&>(_stackptr)),
-		_stackptrsizet(reinterpret_cast<size_t*&>(_stackptr)),
-		_stackptrint(reinterpret_cast<int*&>(_stackptr)),
+		_stackptr((size_t) stackptr),
 		_real_stackptr(real_stackptr) {}
 
 	Stack(void* stackptr): Stack(stackptr, (size_t) stackptr) {}
 
 	Stack(const Stack& other):
 		_stackptr(other._stackptr),
-		_stackptr8(reinterpret_cast<uint8_t*&>(_stackptr)),
-		_stackptr16(reinterpret_cast<uint16_t*&>(_stackptr)),
-		_stackptr32(reinterpret_cast<uint32_t*&>(_stackptr)),
-		_stackptrsizet(reinterpret_cast<size_t*&>(_stackptr)),
-		_stackptrint(reinterpret_cast<int*&>(_stackptr)),
 		_real_stackptr(other._real_stackptr) {}
 
 	inline Stack& operator=(const Stack& other) noexcept {
 		_stackptr = other._stackptr;
-		_stackptr8 = reinterpret_cast<uint8_t*&>(_stackptr);
-		_stackptr16 = reinterpret_cast<uint16_t*&>(_stackptr);
-		_stackptr32 = reinterpret_cast<uint32_t*&>(_stackptr);
-		_stackptrsizet = reinterpret_cast<size_t*&>(_stackptr);
-		_stackptrint = reinterpret_cast<int*&>(_stackptr);
 		_real_stackptr = other._real_stackptr;
 		return *this;
 	}
 
-	inline void push8(uint8_t val) {
-		*--_stackptr8 = val;
-		_real_stackptr -= sizeof(uint8_t);
-	}
-
-	inline void push16(uint16_t val) {
-		*--_stackptr16 = val;
-		_real_stackptr -= sizeof(uint16_t);
-	}
-
-	inline void push32(uint32_t val) {
-		*--_stackptr32 = val;
-		_real_stackptr -= sizeof(uint32_t);
-	}
-
-	inline void push_sizet(size_t val) {
-		*--_stackptrsizet = val;
-		_real_stackptr -= sizeof(size_t);
-	}
-
-	inline void push_int(int val) {
-		*--_stackptrint = val;
-		_real_stackptr -= sizeof(int);
+	template<typename T>
+	inline void push(T val) {
+		_stackptr -= sizeof(val);
+		_real_stackptr -= sizeof(T);
+		*((T*) _stackptr) = val;
 	}
 
 	inline void push_string(const char* str) {
 		size_t len = strlen(str) + 1;
-		_stackptr8 -= len;
+		_stackptr -= len;
 		_real_stackptr -= sizeof(char) * len;
 		strcpy((char*)_stackptr, str);
 	}
@@ -91,16 +58,11 @@ public:
 	}
 
 	inline void* stackptr() const {
-		return _stackptr;
+		return (void*) _stackptr;
 	}
 
 private:
 	size_t _real_stackptr;
-	void* _stackptr;
-	uint8_t*& _stackptr8;
-	uint16_t*& _stackptr16;
-	uint32_t*& _stackptr32;
-	size_t*& _stackptrsizet;
-	int*& _stackptrint;
+	size_t _stackptr;
 };
 

@@ -95,3 +95,5 @@ toolchain/sysroot
 toolchain/edit
 
 user/
+compile_commands.json
+.cache/

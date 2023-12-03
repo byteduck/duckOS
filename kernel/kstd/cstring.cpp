@@ -57,7 +57,15 @@ extern "C" void *memcpy(void *dest, const void *src, size_t count){
 }
 
 extern "C" void* memmove(void* dest, const void* src, size_t n) {
-	return __builtin_memmove(dest, src, n);
+	if (dest < src) 
+		return memcpy(dest, src, n);
+
+	uint8_t* dest8 = (uint8_t*) dest;
+	const uint8_t* src8 = (const uint8_t*) src;
+	for (dest8 += n, src8 += n; n--;)
+		*--dest8 = *--src8;
+
+	return dest;
 }
 
 void* memcpy_uint32(uint32_t* d, uint32_t* s, size_t n) {
