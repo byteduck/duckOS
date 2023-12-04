@@ -45,7 +45,7 @@ std::vector<Duck::Path> FilePicker::pick() {
 	window->set_contents(flex);
 	window->set_titlebar_accessory(m_bar);
 	window->set_resizable(true);
-	window->resize({300, 300});
+	window->resize({306, 300});
 	window->set_title("Open File");
 	window->show();
 

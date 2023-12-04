@@ -159,6 +159,12 @@ namespace UI {
 		std::shared_ptr<Window> root_window();
 
 		/**
+		 * The widget seen at the position within this widget.
+		 * @param pos The relative position within this widget to test at.
+		 */
+		std::shared_ptr<Widget> widget_at(Gfx::Point pos);
+
+		/**
 		 * Adds a child to the widget.
 		 * @param child The child to add.
 		 */
@@ -227,6 +233,16 @@ namespace UI {
 		 * @param menu The menu to open.
 		 */
 		virtual void open_menu(Duck::Ptr<UI::Menu> menu);
+
+		/**
+		 * Whether the widget can be used to drag the window.
+		 */
+		virtual bool window_draggable() const;
+
+		/**
+		 * Set whether the widget can be used to drag the window.
+		 */
+		void set_window_draggable(bool draggable);
 
 	protected:
 		explicit Widget() = default;
@@ -351,6 +367,7 @@ namespace UI {
 		bool _hidden = false;
 		bool _dirty = false;
 		bool _first_layout_done = false;
+		bool _window_draggable = false;
 		PositioningMode _positioning_mode = AUTO;
 		SizingMode _sizing_mode = PREFERRED;
 		Gfx::Framebuffer _framebuffer;

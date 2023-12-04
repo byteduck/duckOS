@@ -41,21 +41,21 @@ void MemoryUsageWidget::do_repaint(const DrawContext& ctx) {
 	int disk = (int)(((double) m_mem_info.kernel_disk_cache / m_mem_info.usable) * bar_area.width);
 	int kernel = (int)(((double) (m_mem_info.kernel_phys - m_mem_info.kernel_disk_cache) / m_mem_info.usable) * bar_area.width);
 
-	ctx.fill({
+	ctx.draw_outset_rect({
 		bar_area.x,
 		bar_area.y,
 		kernel,
 		bar_area.height
 	}, UI::Theme::accent());
 
-	ctx.fill({
+	ctx.draw_outset_rect({
 		bar_area.x + kernel,
 		bar_area.y,
 		disk,
 		bar_area.height
 	}, RGB(219, 112, 147));
 
-	ctx.fill({
+	ctx.draw_outset_rect({
 		bar_area.x + kernel + disk,
 		bar_area.y,
 		user,

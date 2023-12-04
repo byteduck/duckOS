@@ -158,9 +158,9 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 	}
 
 	//Set up the user stack for the thread arguments
-	user_stack.push_sizet((size_t) arg);
-	user_stack.push_sizet((size_t) thread_func);
-	user_stack.push_sizet(0);
+	user_stack.push<size_t>((size_t) arg);
+	user_stack.push<size_t>((size_t) thread_func);
+	user_stack.push<size_t>(0);
 
 	//Setup the kernel stack with register states
 	if(is_kernel_mode())
@@ -435,8 +435,8 @@ bool Thread::call_signal_handler(int signal) {
 	_signal_stack_top = _sighandler_kstack_region->end();
 
 	//Push signal number and fake return address to the stack
-	user_stack.push_int(signal);
-	user_stack.push_sizet(SIGNAL_RETURN_FAKE_ADDR);
+	user_stack.push<int>(signal);
+	user_stack.push<size_t>(SIGNAL_RETURN_FAKE_ADDR);
 
 	//Setup signal registers
 	signal_registers.eflags = 0x202;
@@ -539,35 +539,35 @@ Thread* Thread::next_thread() {
 
 void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Registers& regs) {
 	//If usermode, push ss and useresp
-	if(!is_kernel_mode()) {
-		kernel_stack.push32(0x23);
-		kernel_stack.push_sizet(user_stack_ptr);
+	if(__builtin_expect(!is_kernel_mode(), true)) {
+		kernel_stack.push<uint32_t>(0x23);
+		kernel_stack.push(user_stack_ptr);
 	}
 
 	//Push EFLAGS, CS, and EIP for iret
-	kernel_stack.push32(regs.eflags); // eflags
-	kernel_stack.push32(regs.cs); // cs
-	kernel_stack.push32(regs.eip); // eip
+	kernel_stack.push<uint32_t>(regs.eflags); // eflags
+	kernel_stack.push<uint32_t>(regs.cs); // cs
+	kernel_stack.push<uint32_t>(regs.eip); // eip
 
-	kernel_stack.push32(regs.eax);
-	kernel_stack.push32(regs.ebx);
-	kernel_stack.push32(regs.ecx);
-	kernel_stack.push32(regs.edx);
-	kernel_stack.push32(regs.ebp);
-	kernel_stack.push32(regs.edi);
-	kernel_stack.push32(regs.esi);
-	kernel_stack.push32(regs.ds);
-	kernel_stack.push32(regs.es);
-	kernel_stack.push32(regs.fs);
-	kernel_stack.push32(regs.gs);
+	kernel_stack.push<uint32_t>(regs.eax);
+	kernel_stack.push<uint32_t>(regs.ebx);
+	kernel_stack.push<uint32_t>(regs.ecx);
+	kernel_stack.push<uint32_t>(regs.edx);
+	kernel_stack.push<uint32_t>(regs.ebp);
+	kernel_stack.push<uint32_t>(regs.edi);
+	kernel_stack.push<uint32_t>(regs.esi);
+	kernel_stack.push<uint32_t>(regs.ds);
+	kernel_stack.push<uint32_t>(regs.es);
+	kernel_stack.push<uint32_t>(regs.fs);
+	kernel_stack.push<uint32_t>(regs.gs);
 
 	if(_process->pid() != 0 || _tid != 0) {
-		kernel_stack.push_sizet((size_t) TaskManager::proc_first_preempt);
-		kernel_stack.push32(0x2u); /* Kernel eflags: We don't want interrupts enabled */
-		kernel_stack.push32(regs.ebx); /* Kernel ebx */
-		kernel_stack.push32(regs.esi); /* Kernel esi */
-		kernel_stack.push32(regs.edi); /* Kernel edi */
-		kernel_stack.push32(0); //Fake popped EBP
+		kernel_stack.push<size_t>((size_t) TaskManager::proc_first_preempt);
+		kernel_stack.push<uint32_t>(0x2u); /* Kernel eflags: We don't want interrupts enabled */
+		kernel_stack.push<uint32_t>(regs.ebx); /* Kernel ebx */
+		kernel_stack.push<uint32_t>(regs.esi); /* Kernel esi */
+		kernel_stack.push<uint32_t>(regs.edi); /* Kernel edi */
+		kernel_stack.push<uint32_t>(0); //Fake popped EBP
 	}
 
 	regs.esp = (size_t) kernel_stack.stackptr();

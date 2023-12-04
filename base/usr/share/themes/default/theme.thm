@@ -5,15 +5,10 @@ Color accent = #1e5f74
 Color window = #323232
 Color window-title = #ffffff
 Color window-title-unfocused = #999999
-Color window-titlebar-a = #1a1a1a
-Color window-titlebar-b = #2d2d2d
-Color shadow-1 = #202020
-Color shadow-2 = #141414
-Color highlight = #494949
 Color button = #323232
 Color button-text = #ffffff
-Color scrollbar-bg = #525252
-Color scrollbar-handle = #323232
+Color scrollbar-bg = #202020
+Color scrollbar-handle = #3a3a3a
 Color scrollbar-handle-disabled = #2a2a2a
 
 # Values

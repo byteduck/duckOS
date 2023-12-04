@@ -88,7 +88,6 @@ Duck::Ptr<const Gfx::Image> Info::icon() {
 		if(icon_res.is_error())
 			icon_res = Gfx::Image::empty({16, 16});
 		_icon = icon_res.value();
-		_icon->set_size({16, 16});
 	}
 	return _icon;
 }

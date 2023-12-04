@@ -59,12 +59,16 @@ namespace UI {
 		void initialize() override;
 
 	private:
-		TableView(int num_cols);
+		TableView(int num_cols, bool shows_tabs);
 
 		void update_columns();
 		std::vector<int> calculate_column_widths();
 		void make_row_selection(Duck::Ptr<TableViewRow> row);
 		void open_row_menu(Duck::Ptr<TableViewRow> row);
+
+		static constexpr int c_padding_tl = 2;
+		static constexpr int c_padding_br = 1;
+		static constexpr int c_tab_height = 16;
 
 		Duck::Ptr<ListView> m_list_view = ListView::make(ListView::VERTICAL);
 		const int m_num_cols;
@@ -73,6 +77,7 @@ namespace UI {
 		std::vector<int> m_column_widths;
 		int m_row_height = 1;
 		std::set<int> m_selected_items;
+		bool m_show_tabs = true;
 	};
 
 	class TableViewCell: public Widget {

@@ -4,10 +4,6 @@
 
 A hobby UNIX-like OS with a graphical window manager and applications for x86-based computers.
 
-### Notice
-
-I will be on a brief hiatus from duckOS from late June-September this year due to a summer internship. [Read the announcement here.](https://github.com/byteduck/duckOS/discussions/64)
-
 ### Try duckOS
 
 A disk image of duckOS can be downloaded from the artifacts of the duckOS GitHub [workflow](https://github.com/byteduck/duckOS/actions/workflows/build-os.yml). This can then be virtualized or emulated using QEMU or your software of choice.
@@ -15,7 +11,7 @@ A disk image of duckOS can be downloaded from the artifacts of the duckOS GitHub
 Alternatively, thanks to the [v86 project](https://github.com/copy/v86) by [copy](https://copy.sh), you can try a version of duckOS in your browser. This is a lot slower running it locally, and the build will usually be a bit out-of-date. You can try it [here](https://aaron.sonin.me/duckOS)!
 
 ### Screenshots
-![Screenshot](docs/screenshots/screenshot-2023-05-16.png)
+![Screenshot](docs/screenshots/screenshot-2023-12-01.png)
 
 ### What's working
 - Booting off of the primary master IDE (PATA) hard drive on both emulators and real hardware (tested on a Dell Optiplex 320 with a Pentium D)
@@ -69,6 +65,7 @@ The code for these can be found in [programs](/programs)
 - Sandbar (/bin/sandbar): A basic "taskbar" that displays a row of buttons at the bottom of the screen to launch applications.
 - Files (/apps/files.app): A rudimentary file explorer application.
 - Viewer (apps/viewer.app): A basic image viewer.
+- Lib3d Demo (apps/3demo.app): A demo for the lib3d library. Displays a cube by default; can be used to view obj files.
  
 ### CLI Programs
 

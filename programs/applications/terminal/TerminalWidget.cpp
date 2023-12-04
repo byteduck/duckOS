@@ -257,9 +257,9 @@ void TerminalWidget::run(const char* command) {
 			exit(errno);
 		}
 
-		//Set the pgid appropriately
-		if(setpgid(pid, pid) < 0) {
-			perror("setpgid");
+		//Set the sid appropriately
+		if(setsid() < 0) {
+			perror("setsid");
 			exit(errno);
 		}
 

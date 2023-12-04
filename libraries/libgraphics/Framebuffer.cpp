@@ -433,3 +433,9 @@ void Framebuffer::deserialize(const uint8_t*& buf) {
 	should_free = true;
 	buf += serialized_size();
 }
+
+void Framebuffer::put(Gfx::Point point, Gfx::Color color) const {
+	if(point.x >= width || point.y >= height || point.x < 0 || point.y < 0)
+		return;
+	ref_at(point) = color;
+}

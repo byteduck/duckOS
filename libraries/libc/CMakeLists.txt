@@ -16,6 +16,7 @@ SET(SOURCES
         sys/ioctl.c
         sys/shm.c
         sys/printf.c
+        sys/ptrace.c
         sys/liballoc.cpp
         sys/scanf.c
         sys/socketfs.c

@@ -95,6 +95,7 @@ Server::Server() {
 	REGISTER_FUNC(move_window, void, WindowMovePkt, move_window);
 	REGISTER_FUNC(resize_window, WindowResizedPkt, WindowResizePkt, resize_window);
 	REGISTER_FUNC(invalidate_window, void, WindowInvalidatePkt, invalidate_window);
+	REGISTER_FUNC(flip_window, bool, WindowFlipPkt, flip_window);
 	REGISTER_FUNC(get_font, FontResponsePkt, GetFontPkt, get_font);
 	REGISTER_FUNC(set_title, void, SetTitlePkt, set_title);
 	REGISTER_FUNC(reparent, void, WindowReparentPkt, reparent);

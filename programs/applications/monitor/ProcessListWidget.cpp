@@ -18,14 +18,17 @@
 */
 
 #include "ProcessListWidget.h"
-#include <libui/widget/layout/FlexLayout.h>
+#include "ProcessManager.h"
+#include "ProcessInspectorWidget.h"
 #include <libui/widget/Image.h>
 #include <libui/widget/Label.h>
+#include <libui/Window.h>
+#include <csignal>
 
 void ProcessListWidget::update() {
 	auto old_procs = _processes;
 	_processes.resize(0);
-	auto procs = Sys::Process::get_all();
+	auto procs = ProcessManager::inst().processes();
 	int i = 0;
 	for(auto& proc : procs) {
 		_processes.push_back(proc.second);
@@ -126,4 +129,30 @@ int ProcessListWidget::tv_column_width(int col) {
 			return 60;
 	}
 	return 0;
+}
+
+void ProcessListWidget::tv_selection_changed(const std::set<int>& selected_items) {
+
+}
+
+Duck::Ptr<UI::Menu> ProcessListWidget::tv_entry_menu(int row) {
+	auto process = _processes[row];
+	return UI::Menu::make({
+		UI::MenuItem::make("Kill", [process] {
+			kill(process.pid(), SIGKILL);
+		}),
+		UI::MenuItem::make("Stop", [process] {
+			kill(process.pid(), SIGSTOP);
+		}),
+		UI::MenuItem::make("Continue", [process] {
+			kill(process.pid(), SIGCONT);
+		}),
+		UI::MenuItem::Separator,
+		UI::MenuItem::make("Inspect", [process] {
+			auto window = UI::Window::make();
+			window->set_contents(ProcessInspectorWidget::make(process));
+			window->set_title(process.name() + "(" + std::to_string(process.pid()) + ")");
+			window->show();
+		})
+	});
 }

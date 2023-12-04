@@ -160,7 +160,8 @@ Result River::send_packet(int fd, sockid_t recipient, const RiverPacket& packet)
 		memcpy(raw_packet->data + full_name.length() + 1, packet.data.data(), packet.data.size());
 
 	if(::write_packet(fd, recipient, sizeof(RawPacket) + n_bytes, raw_packet)) {
-		Log::err("[River] Error writing packet: ", strerror(errno));
+		if (errno != ENOSPC)
+			Log::err("[River] Error writing packet: ", strerror(errno));
 		free(raw_packet);
 		return Result(errno);
 	}

@@ -64,6 +64,7 @@ namespace UI {
 		void resize_to_contents();
 		void set_uses_alpha(bool uses_alpha);
 		void set_decorated(bool decorated);
+		bool decorated() const { return _decorated; }
 
 		///Pond
 		Pond::Window* pond_window();
@@ -105,7 +106,7 @@ namespace UI {
 		Gfx::Point _abs_mouse;
 		Duck::Ptr<const Gfx::Image> _icon;
 		bool _decorated = true;
-		bool _uses_alpha = false;
+		bool _uses_alpha = true;
 		bool _resizable = false;
 		bool _needs_repaint = false;
 		bool _focused = false;

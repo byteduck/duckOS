@@ -64,14 +64,6 @@ Duck::Ptr<Image> Theme::image(const std::string& key) {
 	return current()->get_image(key);
 }
 
-int Theme::value(const std::string& key) {
-	return current()->get_value(key);
-}
-
-Gfx::Color Theme::color(const std::string& key) {
-	return current()->get_color(key);
-}
-
 std::string Theme::string(const std::string& key) {
 	return current()->get_string(key);
 }
@@ -87,14 +79,6 @@ Font* Theme::font_mono() {
 Duck::Ptr<Image> Theme::get_image(const std::string& key) {
 	auto ret = images[key];
 	return ret ? ret : blank_image;
-}
-
-Gfx::Color Theme::get_color(const std::string& key) {
-	return colors[key];
-}
-
-int Theme::get_value(const std::string& key) {
-	return values[key];
 }
 
 std::string Theme::get_string(const std::string& key) {
@@ -175,65 +159,88 @@ bool Theme::load() {
 	}
 
 	fclose(theme_info);
+
+	m_bg = colors["bg"];
+	m_fg = colors["fg"];
+	m_accent = colors["accent"];
+	m_window = colors["window"];
+	m_window_title = colors["window-title"];
+	m_window_title_unfocused = colors["window-title-unfocused"];
+	m_shadow_1 = m_bg.darkened(0.3);
+	m_shadow_2 = m_bg.darkened(0.4);
+	m_highlight = m_bg.lightened(0.25);
+	m_button = colors["button"];
+	m_button_text = colors["button-text"];
+	m_scrollbar_bg = colors["scrollbar-bg"];
+	m_scrollbar_handle = colors["scrollbar-handle"];
+	m_scrollbar_handle_disabled = colors["scrollbar-handle-disabled"];
+
+	m_button_padding = values["button-padding"];
+	m_progress_bar_height = values["progress-bar-height"];
+
 	return true;
 }
 
 Gfx::Color Theme::bg() {
-	return current()->colors["bg"];
+	return current()->m_bg;
 }
 
 Gfx::Color Theme::fg() {
-	return current()->colors["fg"];
+	return current()->m_fg;
 }
 
 Gfx::Color Theme::accent() {
-	return current()->colors["accent"];
+	return current()->m_accent;
 }
 
 Gfx::Color Theme::window() {
-	return current()->colors["window"];
+	return current()->m_window;
 }
 
 Gfx::Color Theme::window_title() {
-	return current()->colors["window-title"];
+	return current()->m_window_title;
 }
 
 Gfx::Color Theme::window_title_unfocused() {
-	return current()->colors["window-title-unfocused"];
-}
-
-Gfx::Color Theme::window_titlebar_a() {
-	return current()->colors["window-titlebar-a"];
-}
-
-Gfx::Color Theme::window_titlebar_b() {
-	return current()->colors["window-titlebar-b"];
+	return current()->m_window_title_unfocused;
 }
 
 Gfx::Color Theme::shadow_1() {
-	return current()->colors["shadow-1"];
+	return current()->m_shadow_1;
 }
 
 Gfx::Color Theme::shadow_2() {
-	return current()->colors["shadow-2"];
+	return current()->m_shadow_2;
 }
 
 Gfx::Color Theme::highlight() {
-	return current()->colors["highlight"];
+	return current()->m_highlight;
 }
 
 Gfx::Color Theme::button() {
-	return current()->colors["button"];
+	return current()->m_button;
 }
 
 Gfx::Color Theme::button_text() {
-	return current()->colors["button-text"];
+	return current()->m_button_text;
+}
+
+Gfx::Color Theme::scrollbar_bg() {
+	return current()->m_scrollbar_bg;
+}
+
+Gfx::Color Theme::scrollbar_handle() {
+	return current()->m_scrollbar_handle;
+}
+
+Gfx::Color Theme::scrollbar_handle_disabled() {
+	return current()->m_scrollbar_handle_disabled;
 }
 
 int Theme::button_padding() {
-	return current()->values["button-padding"];
+	return current()->m_button_padding;
 }
 
 int Theme::progress_bar_height() {
-	return current()->values["progress-bar-height"];
+	return current()->m_progress_bar_height;
 }

@@ -80,6 +80,7 @@ Context::Context(std::shared_ptr<Endpoint> endpt): endpoint(std::move(endpt)) {
 	GET_FUNC(move_window, void, WindowMovePkt, move_window);
 	GET_FUNC(resize_window, WindowResizedPkt, WindowResizePkt, resize_window);
 	GET_FUNC(invalidate_window, void, WindowInvalidatePkt, invalidate_window);
+	GET_FUNC(flip_window, bool, WindowFlipPkt, flip_window)
 	GET_FUNC(get_font, FontResponsePkt, GetFontPkt, get_font);
 	GET_FUNC(set_title, void, SetTitlePkt, set_title);
 	GET_FUNC(reparent, void, WindowReparentPkt, reparent);
@@ -223,7 +224,6 @@ void Context::handle_window_resized(const WindowResizedPkt& pkt, Event& event) {
 				event.window_create.window = NULL;
 				return;
 			}
-			window->_flipped = false;
 			window->_shm = shm;
 		}
 	} else {

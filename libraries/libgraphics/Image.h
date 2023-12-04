@@ -41,6 +41,8 @@ namespace Gfx {
 		Dimensions size() const { return m_size; }
 		void set_size(Dimensions size) { m_size = size; }
 
+		Duck::Ptr<const Framebuffer> framebuffer(Dimensions size = {-1, -1}) const;
+
 	private:
 		Image(std::map<std::pair<int, int>, Duck::Ptr<Framebuffer>> framebuffers, Dimensions size);
 		void initialize() override {};

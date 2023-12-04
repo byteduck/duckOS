@@ -78,6 +78,7 @@
 #define SYS_ACCESS 75
 #define SYS_MPROTECT 76
 #define SYS_UNAME 77
+#define SYS_PTRACE 78
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

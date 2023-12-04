@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <algorithm>
 
 namespace Gfx {
 typedef union Color {
@@ -16,7 +17,7 @@ public:
 	} __attribute((packed));
 	uint32_t value;
 
-	inline Color(): b(0), g(0), r(0), a(0) {}
+	constexpr Color(): b(0), g(0), r(0), a(0) {}
 	constexpr Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a): b(b), g(g), r(r), a(a) {}
 	constexpr Color(uint8_t r, uint8_t g, uint8_t b): b(b), g(g), r(r), a(255) {}
 	constexpr Color(uint32_t raw_value): value(raw_value) {}
@@ -46,12 +47,20 @@ public:
 		return *this = *this * other;
 	}
 
-	[[nodiscard]] constexpr Color lightened(float amount = 0.25) const {
-		return darkened(1 + amount);
+	[[nodiscard]] constexpr Color lightened(float amount = 0.2) const {
+		amount = 1 + amount;
+		return Color((uint8_t) std::min(((float) r * amount), 255.0f),
+					 (uint8_t) std::min(((float) g * amount), 255.0f),
+					 (uint8_t) std::min(((float) b * amount), 255.0f),
+					 a);
 	}
 
-	[[nodiscard]] constexpr Color darkened(float amount = 0.25) const {
-		return Color(r * amount, g * amount, b * amount, a * amount);
+	[[nodiscard]] constexpr Color darkened(float amount = 0.2) const {
+		amount = 1 - amount;
+		return Color((uint8_t) std::min(((float) r * amount), 255.0f),
+					 (uint8_t) std::min(((float) g * amount), 255.0f),
+					 (uint8_t) std::min(((float) b * amount), 255.0f),
+					 a);
 	}
 
 	[[nodiscard]] constexpr Color mixed(Color other, float percent) const {

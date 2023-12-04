@@ -59,7 +59,7 @@ void Button::set_label(std::string new_label) {
 
 void Button::set_style(ButtonStyle new_style) {
 	m_style = new_style;
-	set_uses_alpha(m_style == ButtonStyle::FLAT || m_style == ButtonStyle::DISCREET);
+	set_uses_alpha(m_style == ButtonStyle::FLAT || m_style == ButtonStyle::DISCREET || m_style == ButtonStyle::INSET);
 	calculate_layout();
 	repaint();
 }
@@ -102,8 +102,7 @@ bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 	if(m_hovered) {
 		m_hovered = false;
-		if(m_style == ButtonStyle::FLAT || m_style == ButtonStyle::DISCREET)
-			repaint();
+		repaint();
 	}
 	if(m_pressed && m_type == ButtonType::PRESS) {
 		m_pressed = false;
@@ -115,8 +114,7 @@ void Button::on_mouse_leave(Pond::MouseLeaveEvent evt) {
 bool Button::on_mouse_move(Pond::MouseMoveEvent evt) {
 	if(!m_hovered) {
 		m_hovered = true;
-		if(m_style == ButtonStyle::FLAT || m_style == ButtonStyle::DISCREET)
-			repaint();
+		repaint();
 	}
 	return false;
 }
@@ -150,7 +148,7 @@ void Button::do_repaint(const DrawContext& ctx) {
 			break;
 		}
 		case ButtonStyle::RAISED:
-			ctx.draw_button_base(ctx.rect(), m_pressed);
+			ctx.draw_button_base(ctx.rect(), m_pressed, m_hovered ? Theme::button().lightened() : Theme::button());
 			break;
 		case ButtonStyle::DISCREET:
 			if(m_pressed)
