@@ -149,7 +149,7 @@ void TaskManager::init(){
 
 	//Preempt
 	cur_thread = kernel_process->get_thread(kernel_process->pid());
-	preempt_init_asm(cur_thread->registers.esp);
+	preempt_init_asm(cur_thread->registers.gp.esp);
 }
 
 kstd::vector<Process*>* TaskManager::process_list() {
@@ -317,14 +317,14 @@ void TaskManager::preempt(){
 	bool should_preempt = old_thread != next_thread;
 
 	//If we were just in a signal handler, don't save the esp to old_proc->registers
-	unsigned int* old_esp;
-	unsigned int dummy_esp;
+	uint32_t* old_esp;
+	uint32_t dummy_esp;
 	if(!old_thread) {
 		old_esp = &dummy_esp;
 	} if(old_thread->in_signal_handler()) {
-		old_esp = &old_thread->signal_registers.esp;
+		old_esp = &old_thread->signal_registers.gp.esp;
 	} else {
-		old_esp = &old_thread->registers.esp;
+		old_esp = &old_thread->registers.gp.esp;
 	}
 
 	//If we just finished handling a signal, set in_signal_handler to false.
@@ -342,12 +342,12 @@ void TaskManager::preempt(){
 	}
 
 	//If we're switching to a process in a signal handler, use the esp from signal_registers
-	unsigned int* new_esp;
+	uint32_t* new_esp;
 	if(next_thread->in_signal_handler()) {
-		new_esp = &next_thread->signal_registers.esp;
+		new_esp = &next_thread->signal_registers.gp.esp;
 		tss.esp0 = (size_t) next_thread->signal_stack_top();
 	} else {
-		new_esp = &next_thread->registers.esp;
+		new_esp = &next_thread->registers.gp.esp;
 		tss.esp0 = (size_t) next_thread->kernel_stack_top();
 	}
 

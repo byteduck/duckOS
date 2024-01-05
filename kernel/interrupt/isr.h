@@ -20,6 +20,7 @@
 #pragma once
 
 #include <kernel/kstd/kstddef.h>
+#include <kernel/arch/i386/registers.h>
 
 #define FAULT_KERNEL_READ 0
 #define FAULT_KERNEL_READ_GPF 1
@@ -66,7 +67,5 @@ namespace Interrupt {
 
 	void isr_init();
 
-	extern "C" void fault_handler(struct Registers *r);
+	extern "C" void fault_handler(ISRRegisters *r);
 }
-
-void print_regs(struct Registers *r);

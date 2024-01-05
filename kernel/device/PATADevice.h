@@ -58,7 +58,7 @@ public:
 	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 
 	//IRQHandler
-	void handle_irq(Registers* regs) override;
+	void handle_irq(IRQRegisters* regs) override;
 
 private:
 	PATADevice(PCI::Address addr, Channel channel, DriveType drive, bool use_pio);

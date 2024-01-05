@@ -55,7 +55,7 @@ public:
 	static time_t timestamp();
 
 	///IRQHandler
-	void handle_irq(Registers* regs) override;
+	void handle_irq(IRQRegisters* regs) override;
 	bool mark_in_irq() override;
 
 	///TimeHandler

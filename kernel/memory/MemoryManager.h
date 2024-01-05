@@ -29,6 +29,7 @@
 #include "VMSpace.h"
 #include <kernel/tasking/SpinLock.h>
 #include "Memory.h"
+#include "kernel/arch/i386/registers.h"
 
 /**
  * The basic premise of how the memory allocation in duckOS is as follows:
@@ -96,7 +97,7 @@ public:
 	 * Called when the CPU encounters a page fault in the kernel.
 	 * @param r the Registers struct from the isr.
 	 */
-	void page_fault_handler(struct Registers *r);
+	void page_fault_handler(ISRRegisters* regs);
 
 	/** Gets a reference to the given physical page (indexed by page number, NOT address.) **/
 	PhysicalPage& get_physical_page(size_t page_number) const {

@@ -98,7 +98,7 @@ public:
 	void sys_exit(int status);
 	ssize_t sys_read(int fd, UserspacePointer<uint8_t> buf, size_t count);
 	ssize_t sys_write(int fd, UserspacePointer<uint8_t> buf, size_t count);
-	pid_t sys_fork(Registers& regs);
+	pid_t sys_fork(ThreadRegisters& regs);
 	int exec(const kstd::string& filename, ProcessArgs* args);
 	int sys_execve(UserspacePointer<char> filename, UserspacePointer<char*> argv, UserspacePointer<char*> envp);
 	int sys_open(UserspacePointer<char> filename, int options, int mode);
@@ -172,7 +172,7 @@ private:
 	friend class Thread;
 	friend class Reaper;
 	Process(const kstd::string& name, size_t entry_point, bool kernel, ProcessArgs* args, pid_t pid, pid_t ppid);
-	Process(Process* to_fork, Registers& regs);
+	Process(Process* to_fork, ThreadRegisters& regs);
 
 	void alert_thread_died(kstd::Arc<Thread> thread);
 	void recalculate_pmem_total();

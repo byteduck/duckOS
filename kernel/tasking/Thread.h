@@ -29,6 +29,7 @@
 #include "../memory/PageDirectory.h"
 #include "../kstd/queue.hpp"
 #include "kernel/kstd/circular_queue.hpp"
+#include <kernel/arch/i386/registers.h>
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
 #define THREAD_KERNEL_STACK_SIZE 524288 //512KiB
@@ -48,7 +49,7 @@ public:
 	};
 
 	Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args);
-	Thread(Process* process, tid_t tid, Registers& regs);
+	Thread(Process* process, tid_t tid, ThreadRegisters& regs);
 	Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg);
 	~Thread();
 
@@ -99,14 +100,14 @@ public:
 	Thread* next_thread();
 
 	uint8_t fpu_state[512] __attribute__((aligned(16)));
-	Registers registers = {};
-	Registers signal_registers = {};
+	ThreadRegisters registers = {};
+	ThreadRegisters signal_registers = {};
 
 private:
 	friend class Process;
 	friend class Reaper;
 
-	void setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Registers& regs);
+	void setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, ThreadRegisters& regs);
 	void exit(void* return_value);
 	void reap();
 

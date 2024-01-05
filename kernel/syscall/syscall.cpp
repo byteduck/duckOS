@@ -23,13 +23,13 @@
 #include <kernel/tasking/TaskManager.h>
 #include "kernel/memory/SafePointer.h"
 
-void syscall_handler(Registers& regs){
+void syscall_handler(ThreadRegisters& regs){
 	TaskManager::current_thread()->enter_syscall();
-	regs.eax = handle_syscall(regs, regs.eax, regs.ebx, regs.ecx, regs.edx);
+	regs.gp.eax = handle_syscall(regs, regs.gp.eax, regs.gp.ebx, regs.gp.ecx, regs.gp.edx);
 	TaskManager::current_thread()->leave_syscall();
 }
 
-int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+int handle_syscall(ThreadRegisters& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
 	auto cur_proc = TaskManager::current_thread()->process();
 	switch(call) {
 		case SYS_EXIT:

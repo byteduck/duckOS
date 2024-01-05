@@ -200,7 +200,7 @@ Process::Process(const kstd::string& name, size_t entry_point, bool kernel, Proc
 	insert_thread(kstd::Arc<Thread>(main_thread));
 }
 
-Process::Process(Process *to_fork, Registers &regs): _user(to_fork->_user), _self_ptr(this) {
+Process::Process(Process *to_fork, ThreadRegisters& regs): _user(to_fork->_user), _self_ptr(this) {
 	if(to_fork->_kernel_mode)
 		PANIC("KRNL_PROCESS_FORK", "Kernel processes cannot be forked.");
 

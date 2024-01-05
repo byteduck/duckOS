@@ -52,7 +52,7 @@ public:
 
 	//IRQHandler
 	void set_handler(KeyboardHandler* handler);
-	void handle_irq(Registers* regs) override;
+	void handle_irq(IRQRegisters* regs) override;
 
 	//I8042
 	void handle_byte(uint8_t byte);

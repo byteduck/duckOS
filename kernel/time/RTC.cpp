@@ -75,7 +75,7 @@ time_t RTC::timestamp() {
 	return secs;
 }
 
-void RTC::handle_irq(Registers* regs) {
+void RTC::handle_irq(IRQRegisters* regs) {
 	CMOS::read(0x8C);
 	TimeKeeper::tick();
 }

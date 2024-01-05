@@ -25,7 +25,7 @@ IRQHandler::IRQHandler() {
 
 }
 
-void IRQHandler::handle(Registers* regs) {
+void IRQHandler::handle(IRQRegisters* regs) {
 	_sent_eoi = false;
 	handle_irq(regs);
 }

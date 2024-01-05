@@ -139,7 +139,7 @@ ssize_t AC97Device::write(FileDescriptor& fd, size_t, SafePointer<uint8_t> buffe
 	return n_written;
 }
 
-void AC97Device::handle_irq(Registers *regs) {
+void AC97Device::handle_irq(IRQRegisters *regs) {
 	//Read the status
 	auto status_byte = IO::inw(m_output_channel + ChannelRegisters::STATUS);
 	BufferStatus status = {.value = status_byte};

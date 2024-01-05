@@ -420,7 +420,7 @@ ssize_t PATADevice::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t
 	return count;
 }
 
-void PATADevice::handle_irq(Registers *regs) {
+void PATADevice::handle_irq(IRQRegisters *regs) {
 	_post_irq_status = IO::inb(_io_base + ATA_STATUS);
 	_post_irq_bm_status = IO::inb(_bus_master_base + ATA_BM_STATUS);
 	if(!(_post_irq_bm_status & 0x4u))

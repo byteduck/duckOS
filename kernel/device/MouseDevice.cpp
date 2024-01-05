@@ -98,7 +98,7 @@ ssize_t MouseDevice::write(FileDescriptor &fd, size_t offset, SafePointer<uint8_
 	return 0;
 }
 
-void MouseDevice::handle_irq(Registers *regs) {
+void MouseDevice::handle_irq(IRQRegisters *regs) {
 	I8042::inst().handle_irq();
 }
 

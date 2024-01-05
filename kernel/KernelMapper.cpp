@@ -105,12 +105,16 @@ KernelMapper::Symbol* KernelMapper::get_symbol(size_t location) {
 	printf("Add -DADD_KERNEL_DEBUG_SYMBOLS:BOOL=ON to your CMake arguments to compile with debug symbols.\n");
 
 void KernelMapper::print_stacktrace() {
+	print_stacktrace((size_t) __builtin_frame_address(0));
+}
+
+void KernelMapper::print_stacktrace(size_t ebp) {
 #ifdef DUCKOS_KERNEL_DEBUG_SYMBOLS
 	if(!symbols)
 		printf("[Symbols not available yet]\n");
 
 	//Start walking the stack
-	auto* stk = (uint32_t*) __builtin_frame_address(0);
+	auto* stk = (uint32_t*) ebp;
 
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
 		if(!MM.kernel_page_directory.is_mapped((VirtualAddress) stk, false))

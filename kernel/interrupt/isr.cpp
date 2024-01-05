@@ -27,6 +27,8 @@
 #include <kernel/tasking/Signal.h>
 #include <kernel/tasking/Thread.h>
 #include <kernel/tasking/Process.h>
+#include <kernel/KernelMapper.h>
+#include <kernel/arch/i386/registers.h>
 
 namespace Interrupt {
 	void isr_init(){
@@ -64,57 +66,48 @@ namespace Interrupt {
 		idt_set_gate(31, (unsigned)isr31, 0x08, 0x8E);
 	}
 
-	void handle_fault(const char* err, const char* panic_msg, uint32_t sig){
-		if(!TaskManager::enabled() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()){
-			PANIC(err, panic_msg);
+	void handle_fault(const char* err, const char* panic_msg, uint32_t sig, ISRRegisters* regs) {
+		if(!TaskManager::enabled() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()) {
+			PANIC(err, "%s\nFault %d at 0x%x", panic_msg, regs->isr_num, regs->interrupt_frame.eip);
 		} else {
 			TaskManager::current_process()->kill(sig);
 		}
 	}
 
-	void fault_handler(struct Registers *r){
-		if(r->num < 32){
-			switch(r->num){
+	void fault_handler(ISRRegisters* regs){
+		if(regs->isr_num < 32){
+			switch(regs->isr_num){
 				case 0:
-					handle_fault("DIVIDE_BY_ZERO", "Please don't do that.", SIGILL);
+					handle_fault("DIVIDE_BY_ZERO", "Please don't do that.", SIGILL, regs);
 					break;
 
 				case 13: //GPF
-					handle_fault("GENERAL_PROTECTION_FAULT", "How did you manage to do that?", SIGILL);
+					handle_fault("GENERAL_PROTECTION_FAULT", "How did you manage to do that?", SIGILL, regs);
 					break;
 
 				case 14: //Page fault
 					if(!TaskManager::current_thread() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()) {
-						MemoryManager::inst().page_fault_handler(r);
+						MemoryManager::inst().page_fault_handler(regs);
 					} else {
 						size_t err_pos;
 						asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
 						PageFault::Type type;
-						if(r->err_code == FAULT_USER_READ)
+						if(regs->err_code == FAULT_USER_READ)
 							type = PageFault::Type::Read;
-						else if(r->err_code == FAULT_USER_WRITE)
+						else if(regs->err_code == FAULT_USER_WRITE)
 							type = PageFault::Type::Write;
 						else
 							type = PageFault::Type::Unknown;
 						TaskManager::current_thread()->handle_pagefault({
 							err_pos,
-							r->eip,
+							regs,
 						});
 					}
 					break;
 
 				default:
-					handle_fault("UNKNOWN_FAULT", "What did you do?", SIGILL);
+					handle_fault("UNKNOWN_FAULT", "What did you do?", SIGILL, regs);
 			}
 		}
 	}
-}
-
-void print_regs(struct Registers *r){
-	asm volatile("mov %%ss, %%eax":"=a"(r->ss));
-	printf("eip:0x%X err:%d\n", r->eip, r->err_code);
-	printf("cs:0x%X ds:0x%X es:0x%X gs:0x%X fs:0x%X ss:0x%X\n",r->cs,r->ds,r->es,r->gs,r->fs,r->ss);
-	printf("eax:0x%X ebx:0x%X ecx:0x%X edx:0x%X\n",r->eax,r->ebx,r->ecx,r->edx);
-	printf("edi: 0x%X esi: 0x%X ebp: 0x%X esp:0x%X\n",r->edi,r->esi,r->ebp,r->esp);
-	printf("EFLAGS: 0x%X",r->eflags);
 }

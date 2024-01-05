@@ -147,11 +147,11 @@ void MemoryManager::load_page_directory(PageDirectory& page_directory) {
 	asm volatile("movl %0, %%cr3" :: "r"(page_directory.entries_physaddr()));
 }
 
-void MemoryManager::page_fault_handler(struct Registers *r) {
+void MemoryManager::page_fault_handler(ISRRegisters* regs) {
 	TaskManager::ScopedCritical critical;
 	uint32_t err_pos;
 	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-	switch (r->err_code) {
+	switch (regs->err_code) {
 		case FAULT_KERNEL_READ:
 			PANIC("KRNL_READ_NONPAGED_AREA", "0x%x", err_pos);
 		case FAULT_KERNEL_READ_GPF:

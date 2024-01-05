@@ -73,7 +73,7 @@ void KeyboardDevice::set_handler(KeyboardHandler *handler) {
 	_handler = handler;
 }
 
-void KeyboardDevice::handle_irq(Registers *regs) {
+void KeyboardDevice::handle_irq(IRQRegisters *regs) {
 	I8042::inst().handle_irq();
 }
 

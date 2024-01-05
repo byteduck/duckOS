@@ -102,7 +102,7 @@ public:
 	ssize_t write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) override;
 
 	//IRQHandler
-	void handle_irq(Registers* regs) override;
+	void handle_irq(IRQRegisters* regs) override;
 
 private:
 	explicit AC97Device(PCI::Address address);

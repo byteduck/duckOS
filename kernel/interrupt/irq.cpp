@@ -80,19 +80,22 @@ namespace Interrupt {
 		idt_set_gate(47, (unsigned)irq15, 0x08, 0x8E);
 	}
 
-	void irq_handler(struct Registers *r){
-		auto handler = handlers[r->num - 0x20];
+	void irq_handler(IRQRegisters* regs){
+		regs->irq_num -= 0x20;
+		if (regs->irq_num >= (sizeof(handlers) / sizeof(handlers[0])))
+			PANIC("INVALID_IRQ", "Attempted to handle invalid IRQ %d", regs->irq_num);
+		auto handler = handlers[regs->irq_num];
 		if(handler) {
 			//Mark that we're in an interrupt so that yield will be async if it occurs
 			_in_interrupt = handler->mark_in_irq();
 
 			//Handle the IRQ
-			handler->handle(r);
+			handler->handle(regs);
 		}
 
 		//Send EOI if we haven't already
 		if(!handler || !handler->sent_eoi())
-			send_eoi(r->num - 0x20);
+			send_eoi(regs->irq_num);
 
 		//If we need to yield asynchronously after the interrupt because we called TaskManager::yield() during it, do so
 		TaskManager::do_yield_async();

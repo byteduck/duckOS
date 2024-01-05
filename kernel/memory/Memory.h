@@ -5,6 +5,7 @@
 
 #include "../kstd/kstddef.h"
 #include "../api/page_size.h"
+#include <kernel/arch/i386/registers.h>
 
 #define PAGING_4KiB 0
 #define PAGING_4MiB 1
@@ -46,7 +47,7 @@ public:
 struct PageFault {
 public:
 	VirtualAddress address;
-	VirtualAddress instruction_pointer;
+	ISRRegisters* registers;
 	enum class Type {
 		Read, Write, Execute, Unknown
 	} type;

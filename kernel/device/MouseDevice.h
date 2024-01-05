@@ -59,7 +59,7 @@ public:
 	bool can_write(const FileDescriptor& fd) override;
 
 	//IRQHandler
-	void handle_irq(Registers* regs) override;
+	void handle_irq(IRQRegisters* regs) override;
 
 	//I8042
 	void handle_byte(uint8_t byte);

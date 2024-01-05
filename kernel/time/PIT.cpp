@@ -36,7 +36,7 @@ PIT::PIT(TimeManager* manager): TimeKeeper(manager), IRQHandler(PIT_IRQ) {
 	write((divisor >> 8u) & 0xffu, 0);
 }
 
-void PIT::handle_irq(Registers* regs) {
+void PIT::handle_irq(IRQRegisters* regs) {
 	TimeKeeper::tick();
 }
 

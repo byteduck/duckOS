@@ -58,26 +58,26 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 	}
 
 	//Setup registers
-	registers.eflags = 0x202;
-	registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
-	registers.eip = entry_point;
-	registers.eax = 0;
-	registers.ebx = 0;
-	registers.ecx = 0;
-	registers.edx = 0;
-	registers.ebp = user_stack.real_stackptr();
-	registers.edi = 0;
-	registers.esi = 0;
+	registers.iret.eflags = 0x202;
+	registers.iret.cs = _process->_kernel_mode ? 0x8 : 0x1B;
+	registers.iret.eip = entry_point;
+	registers.gp.eax = 0;
+	registers.gp.ebx = 0;
+	registers.gp.ecx = 0;
+	registers.gp.edx = 0;
+	registers.gp.ebp = user_stack.real_stackptr();
+	registers.gp.edi = 0;
+	registers.gp.esi = 0;
 	if(_process->_kernel_mode) {
-		registers.ds = 0x10; // ds
-		registers.es = 0x10; // es
-		registers.fs = 0x10; // fs
-		registers.gs = 0x10; // gs
+		registers.seg.ds = 0x10; // ds
+		registers.seg.es = 0x10; // es
+		registers.seg.fs = 0x10; // fs
+		registers.seg.gs = 0x10; // gs
 	} else {
-		registers.ds = 0x23; // ds
-		registers.es = 0x23; // es
-		registers.fs = 0x23; // fs
-		registers.gs = 0x23; // gs
+		registers.seg.ds = 0x23; // ds
+		registers.seg.es = 0x23; // es
+		registers.seg.fs = 0x23; // fs
+		registers.seg.gs = 0x23; // gs
 	}
 
 	//Set up the user stack for the program arguments
@@ -90,7 +90,7 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 		setup_kernel_stack(kernel_stack, user_stack.real_stackptr(), registers);
 }
 
-Thread::Thread(Process* process, tid_t tid, Registers& regs):
+Thread::Thread(Process* process, tid_t tid, ThreadRegisters& regs):
 	_process(process),
 	_tid(tid),
 	registers(regs),
@@ -101,9 +101,9 @@ Thread::Thread(Process* process, tid_t tid, Registers& regs):
 	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
 
 	//Setup registers and stack
-	registers.eax = 0; // fork() in child returns zero
+	registers.gp.eax = 0; // fork() in child returns zero
 	Stack stack((void*) (_kernel_stack_region->start() + _kernel_stack_region->size()));
-	setup_kernel_stack(stack, regs.useresp, registers);
+	setup_kernel_stack(stack, regs.iret.esp, registers);
 }
 
 Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (* thread_func)(void*), void* arg):
@@ -135,26 +135,26 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 	}
 
 	//Setup registers
-	registers.eflags = 0x202;
-	registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
-	registers.eip = (size_t) entry_func;
-	registers.eax = 0;
-	registers.ebx = 0;
-	registers.ecx = 0;
-	registers.edx = 0;
-	registers.ebp = user_stack.real_stackptr();
-	registers.edi = 0;
-	registers.esi = 0;
+	registers.iret.eflags = 0x202;
+	registers.iret.cs = _process->_kernel_mode ? 0x8 : 0x1B;
+	registers.iret.eip = (size_t) entry_func;
+	registers.gp.eax = 0;
+	registers.gp.ebx = 0;
+	registers.gp.ecx = 0;
+	registers.gp.edx = 0;
+	registers.gp.ebp = user_stack.real_stackptr();
+	registers.gp.edi = 0;
+	registers.gp.esi = 0;
 	if(_process->_kernel_mode) {
-		registers.ds = 0x10; // ds
-		registers.es = 0x10; // es
-		registers.fs = 0x10; // fs
-		registers.gs = 0x10; // gs
+		registers.seg.ds = 0x10; // ds
+		registers.seg.es = 0x10; // es
+		registers.seg.fs = 0x10; // fs
+		registers.seg.gs = 0x10; // gs
 	} else {
-		registers.ds = 0x23; // ds
-		registers.es = 0x23; // es
-		registers.fs = 0x23; // fs
-		registers.gs = 0x23; // gs
+		registers.seg.ds = 0x23; // ds
+		registers.seg.es = 0x23; // es
+		registers.seg.fs = 0x23; // fs
+		registers.seg.gs = 0x23; // gs
 	}
 
 	//Set up the user stack for the thread arguments
@@ -439,26 +439,26 @@ bool Thread::call_signal_handler(int signal) {
 	user_stack.push<size_t>(SIGNAL_RETURN_FAKE_ADDR);
 
 	//Setup signal registers
-	signal_registers.eflags = 0x202;
-	signal_registers.cs = _process->_kernel_mode ? 0x8 : 0x1B;
-	signal_registers.eip = signal_loc;
-	signal_registers.eax = 0;
-	signal_registers.ebx = 0;
-	signal_registers.ecx = 0;
-	signal_registers.edx = 0;
-	signal_registers.ebp = user_stack.real_stackptr();
-	signal_registers.edi = 0;
-	signal_registers.esi = 0;
+	signal_registers.iret.eflags = 0x202;
+	signal_registers.iret.cs = _process->_kernel_mode ? 0x8 : 0x1B;
+	signal_registers.iret.eip = signal_loc;
+	signal_registers.gp.eax = 0;
+	signal_registers.gp.ebx = 0;
+	signal_registers.gp.ecx = 0;
+	signal_registers.gp.edx = 0;
+	signal_registers.gp.ebp = user_stack.real_stackptr();
+	signal_registers.gp.edi = 0;
+	signal_registers.gp.esi = 0;
 	if(_process->_kernel_mode) {
-		signal_registers.ds = 0x10; // ds
-		signal_registers.es = 0x10; // es
-		signal_registers.fs = 0x10; // fs
-		signal_registers.gs = 0x10; // gs
+		signal_registers.seg.ds = 0x10; // ds
+		signal_registers.seg.es = 0x10; // es
+		signal_registers.seg.fs = 0x10; // fs
+		signal_registers.seg.gs = 0x10; // gs
 	} else {
-		signal_registers.ds = 0x23; // ds
-		signal_registers.es = 0x23; // es
-		signal_registers.fs = 0x23; // fs
-		signal_registers.gs = 0x23; // gs
+		signal_registers.seg.ds = 0x23; // ds
+		signal_registers.seg.es = 0x23; // es
+		signal_registers.seg.fs = 0x23; // fs
+		signal_registers.seg.gs = 0x23; // gs
 	}
 
 	//Set up the stack
@@ -511,10 +511,10 @@ void Thread::handle_pagefault(PageFault fault) {
 
 	//Otherwise, try CoW and kill the process if it doesn't work
 	if(m_vm_space->try_pagefault(fault).is_error()) {
-		if(fault.instruction_pointer > HIGHER_HALF) {
-			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, fault.address, fault.instruction_pointer);
+		if(fault.registers->interrupt_frame.eip > HIGHER_HALF) {
+			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, fault.address, fault.registers->interrupt_frame.eip);
 		}
-		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, fault.address, fault.instruction_pointer);
+		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, fault.address, fault.registers->interrupt_frame.eip);
 		_process->kill(SIGSEGV);
 	}
 }
@@ -537,41 +537,41 @@ Thread* Thread::next_thread() {
 	return next;
 }
 
-void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Registers& regs) {
+void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, ThreadRegisters& regs) {
 	//If usermode, push ss and useresp
 	if(__builtin_expect(!is_kernel_mode(), true)) {
-		kernel_stack.push<uint32_t>(0x23);
-		kernel_stack.push(user_stack_ptr);
+		kernel_stack.push<uint32_t>(0x23); //ss
+		kernel_stack.push(user_stack_ptr); //esp
 	}
 
 	//Push EFLAGS, CS, and EIP for iret
-	kernel_stack.push<uint32_t>(regs.eflags); // eflags
-	kernel_stack.push<uint32_t>(regs.cs); // cs
-	kernel_stack.push<uint32_t>(regs.eip); // eip
+	kernel_stack.push<uint32_t>(regs.iret.eflags); // eflags
+	kernel_stack.push<uint32_t>(regs.iret.cs); // cs
+	kernel_stack.push<uint32_t>(regs.iret.eip); // eip
 
-	kernel_stack.push<uint32_t>(regs.eax);
-	kernel_stack.push<uint32_t>(regs.ebx);
-	kernel_stack.push<uint32_t>(regs.ecx);
-	kernel_stack.push<uint32_t>(regs.edx);
-	kernel_stack.push<uint32_t>(regs.ebp);
-	kernel_stack.push<uint32_t>(regs.edi);
-	kernel_stack.push<uint32_t>(regs.esi);
-	kernel_stack.push<uint32_t>(regs.ds);
-	kernel_stack.push<uint32_t>(regs.es);
-	kernel_stack.push<uint32_t>(regs.fs);
-	kernel_stack.push<uint32_t>(regs.gs);
+	kernel_stack.push<uint32_t>(regs.gp.eax);
+	kernel_stack.push<uint32_t>(regs.gp.ebx);
+	kernel_stack.push<uint32_t>(regs.gp.ecx);
+	kernel_stack.push<uint32_t>(regs.gp.edx);
+	kernel_stack.push<uint32_t>(regs.gp.ebp);
+	kernel_stack.push<uint32_t>(regs.gp.edi);
+	kernel_stack.push<uint32_t>(regs.gp.esi);
+	kernel_stack.push<uint32_t>(regs.seg.ds);
+	kernel_stack.push<uint32_t>(regs.seg.es);
+	kernel_stack.push<uint32_t>(regs.seg.fs);
+	kernel_stack.push<uint32_t>(regs.seg.gs);
 
 	if(_process->pid() != 0 || _tid != 0) {
 		kernel_stack.push<size_t>((size_t) TaskManager::proc_first_preempt);
 		kernel_stack.push<uint32_t>(0x2u); /* Kernel eflags: We don't want interrupts enabled */
-		kernel_stack.push<uint32_t>(regs.ebx); /* Kernel ebx */
-		kernel_stack.push<uint32_t>(regs.esi); /* Kernel esi */
-		kernel_stack.push<uint32_t>(regs.edi); /* Kernel edi */
+		kernel_stack.push<uint32_t>(regs.gp.ebx); /* Kernel ebx */
+		kernel_stack.push<uint32_t>(regs.gp.esi); /* Kernel esi */
+		kernel_stack.push<uint32_t>(regs.gp.edi); /* Kernel edi */
 		kernel_stack.push<uint32_t>(0); //Fake popped EBP
 	}
 
-	regs.esp = (size_t) kernel_stack.stackptr();
-	regs.useresp = (size_t) user_stack_ptr;
+	regs.gp.esp = (size_t) kernel_stack.stackptr();
+	regs.iret.esp = (size_t) user_stack_ptr;
 }
 
 void Thread::exit(void* return_value) {

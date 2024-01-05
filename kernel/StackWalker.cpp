@@ -12,7 +12,7 @@ StackWalker::Frame* StackWalker::walk_stack(const kstd::Arc<Thread>& thread, uin
 	else if (thread == TaskManager::current_thread())
 		cur_frame = (Frame*) __builtin_frame_address(0);
 	else
-		cur_frame = ((Frame*) (thread->in_signal_handler() ? thread->signal_registers.esp : thread->registers.esp))->next_frame;
+		cur_frame = ((Frame*) (thread->in_signal_handler() ? thread->signal_registers.gp.esp : thread->registers.gp.esp))->next_frame;
 
 	size_t count = 0;
 

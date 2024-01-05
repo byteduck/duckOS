@@ -20,15 +20,16 @@
 #pragma once
 
 #include <kernel/kstd/kstddef.h>
+#include <kernel/arch/i386/registers.h>
 
 class IRQHandler {
 public:
-	void handle(Registers* regs);
+	void handle(IRQRegisters* regs);
 	bool sent_eoi();
 	virtual bool mark_in_irq();
 
 protected:
-	virtual void handle_irq(Registers* regs) = 0;
+	virtual void handle_irq(IRQRegisters* regs) = 0;
 	explicit IRQHandler();
 	IRQHandler(int irq);
 	void set_irq(int irq);

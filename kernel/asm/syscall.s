@@ -2,8 +2,6 @@
 [extern syscall_handler]
 global asm_syscall_handler
 asm_syscall_handler:
-    push 0 ;fake num and err_code in Registers struct
-    push 0
     pusha
     push ds
     push es
@@ -22,5 +20,4 @@ asm_syscall_handler:
     pop es
     pop ds
     popa
-    add esp, 8
     iret

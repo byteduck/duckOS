@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include <kernel/arch/i386/registers.h>
+
 #define PIC1 0x20
 #define PIC2 0xA0
 #define PIC1_COMMAND PIC1
@@ -45,7 +47,7 @@ namespace Interrupt {
 	extern "C" void irq13();
 	extern "C" void irq14();
 	extern "C" void irq15();
-	extern "C" void irq_handler(struct Registers *r);
+	extern "C" void irq_handler(IRQRegisters* regs);
 
 	void irq_set_handler(int irq, IRQHandler* handler);
 	void irq_remove_handler(int irq);

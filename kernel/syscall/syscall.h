@@ -19,8 +19,9 @@
 
 #pragma once
 
-#include "syscall_numbers.h"
 #include "../kstd/kstddef.h"
+#include "syscall_numbers.h"
+#include "../arch/i386/registers.h"
 
-extern "C" void syscall_handler(Registers& regs);
-int handle_syscall(Registers& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+extern "C" void syscall_handler(ThreadRegisters& regs);
+int handle_syscall(ThreadRegisters& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);
