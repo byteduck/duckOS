@@ -31,6 +31,10 @@
 #include <kernel/arch/i386/registers.h>
 
 namespace Interrupt {
+	TSS fault_tss;
+
+	[[noreturn]] void double_fault();
+
 	void isr_init(){
 		idt_set_gate(0, (unsigned)isr0, 0x08, 0x8E);
 		idt_set_gate(1, (unsigned)isr1, 0x08, 0x8E);
@@ -40,7 +44,8 @@ namespace Interrupt {
 		idt_set_gate(5, (unsigned)isr5, 0x08, 0x8E);
 		idt_set_gate(6, (unsigned)isr6, 0x08, 0x8E);
 		idt_set_gate(7, (unsigned)isr7, 0x08, 0x8E);
-		idt_set_gate(8, (unsigned)isr8, 0x08, 0x8E);
+		// Special case for double-fault; we want to use a separate TSS so we can be sure we have a clean stack to work with.
+		idt_set_gate(8, 0, 0x30, 0x85);
 		idt_set_gate(9, (unsigned)isr9, 0x08, 0x8E);
 		idt_set_gate(10, (unsigned)isr10, 0x08, 0x8E);
 		idt_set_gate(11, (unsigned)isr11, 0x08, 0x8E);
@@ -64,6 +69,32 @@ namespace Interrupt {
 		idt_set_gate(29, (unsigned)isr29, 0x08, 0x8E);
 		idt_set_gate(30, (unsigned)isr30, 0x08, 0x8E);
 		idt_set_gate(31, (unsigned)isr31, 0x08, 0x8E);
+
+		// Setup the double-fault TSS and a stack for it
+		memset(&fault_tss, 0, sizeof(TSS));	
+		fault_tss.ss0 = 0x10;
+		fault_tss.cs = 0x08;
+		fault_tss.ss = 0x10;
+		fault_tss.ds = 0x10;
+		fault_tss.es = 0x10;
+		fault_tss.fs = 0x10;
+		fault_tss.gs = 0x10;
+		fault_tss.ss = 0x10;
+		fault_tss.eflags = 0x2;
+		fault_tss.cr3 = MM.kernel_page_directory.entries_physaddr();
+		fault_tss.esp0 = MM.inst().alloc_kernel_stack_region(PAGE_SIZE * 2)->end();
+		fault_tss.esp = fault_tss.esp0;
+		fault_tss.eip = (size_t) double_fault;
+	}
+
+	[[noreturn]] void double_fault() {
+		PANIC_NOHLT("DOUBLE_FAULT", "A double fault occurred. Something has gone horribly wrong.");
+		if (!MM.kernel_page_directory.is_mapped(TaskManager::tss.esp + sizeof(void*), false)) {
+			printf("Looks like a stack overflow occurred in the kernel. Hold on, this is gonna be a doozy:\n");
+		}
+		KernelMapper::print_stacktrace(TaskManager::tss.ebp);
+		asm volatile("cli; hlt");
+		while(1);
 	}
 
 	void handle_fault(const char* err, const char* panic_msg, uint32_t sig, ISRRegisters* regs) {

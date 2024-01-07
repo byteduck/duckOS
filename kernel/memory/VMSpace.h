@@ -40,6 +40,14 @@ public:
 	ResultRet<kstd::Arc<VMRegion>> map_object(kstd::Arc<VMObject> object, VMProt prot, VirtualRange range = VirtualRange::null, VirtualAddress object_start = 0);
 
 	/**
+	 * Allocates a new region for the given object with sentinel pages on either side.
+	 * @param object The object to allocate a region for.
+	 * @param prot The protection to use.
+	 * @return The newly created region.
+	 */
+	ResultRet<kstd::Arc<VMRegion>> map_object_with_sentinel(kstd::Arc<VMObject> object, VMProt prot);
+
+	/**
 	 * Allocates a new region for the given object near the end of the memory space.
 	 * @param object The object to allocate a region for.
 	 * @return The newly created region.

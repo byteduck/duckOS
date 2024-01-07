@@ -26,10 +26,9 @@ preempt_asm:
     push esi
     push edi
     push ebp
-    mov ebp, esp
-    mov eax, [ebp+24] ;old_esp
-    mov ecx, [ebp+28] ;new_esp
-    mov edx, [ebp+32] ;new_cr3
+    mov eax, [esp+24] ;old_esp
+    mov ecx, [esp+28] ;new_esp
+    mov edx, [esp+32] ;new_cr3
     mov [eax], esp
     mov cr3, edx
     mov esp, [ecx]

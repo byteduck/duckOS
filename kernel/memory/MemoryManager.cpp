@@ -338,6 +338,17 @@ kstd::Arc<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
 	return res.value();
 }
 
+kstd::Arc<VMRegion> MemoryManager::alloc_kernel_stack_region(size_t size) {
+	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
+		auto object = TRY(AnonymousVMObject::alloc(size, "kernel_stack"));
+		return TRY(m_kernel_space->map_object_with_sentinel(object, VMProt::RW));
+	};
+	auto res = do_alloc();
+	if(res.is_error())
+		PANIC("ALLOC_KERNEL_REGION_FAIL", "Could not allocate a new anonymous memory region for the kernel.");
+	return res.value();
+}
+
 kstd::Arc<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
 	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
 		auto object = TRY(AnonymousVMObject::alloc_contiguous(size, "dma"));

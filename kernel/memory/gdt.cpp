@@ -19,9 +19,9 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/memory/gdt.h>
-#include <kernel/tasking/TSS.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/kstd/cstring.h>
+#include <kernel/interrupt/isr.h>
 
 Memory::GDTEntry gdt[GDT_ENTRIES];
 Memory::GDTPointer gp;
@@ -49,42 +49,31 @@ void Memory::gdt_set_gate(uint32_t num, uint32_t limit, uint32_t base, bool read
 	gdt[num].access.bits.ring = ring;
 }
 
-void Memory::setup_tss(){
-	uint32_t base = (uint32_t) &TaskManager::tss;
-	uint32_t limit = sizeof(TaskManager::tss) - 1;
+void Memory::setup_tss(int slot, TSS& tss){
+	uint32_t base = (uint32_t) &tss;
+	uint32_t limit = sizeof(tss);
 
 	// Now, add our TSS descriptor's address to the GDT.
-	gdt[5].limit_low = limit & 0xFFFFu;
-	gdt[5].base_low = (base & 0xFFFFu);
-	gdt[5].base_middle = (base >> 16u) & 0xFFu;
-	gdt[5].base_high = (base >> 24u) & 0xFFu;
-	gdt[5].access.bits.accessed = true; //This indicates it's a TSS and not a LDT. This is a changed meaning
-	gdt[5].access.bits.read_write = false; //This indicates if the TSS is busy or not. 0 for not busy
-	gdt[5].access.bits.direction = false; //always 0 for TSS
-	gdt[5].access.bits.executable = true; //For TSS this is 1 for 32bit usage, or 0 for 16bit.
-	gdt[5].access.bits.type = false; //indicate it is a TSS
-	gdt[5].access.bits.ring = 3; //same meaning
-	gdt[5].access.bits.present = true; //same meaning
-	gdt[5].flags_and_limit.bits.limit_high = (limit >> 16u) & 0xFu; //isolate top nibble
-	gdt[5].flags_and_limit.bits.zero = 0;
-	gdt[5].flags_and_limit.bits.size = false; //should leave zero according to manuals. No effect
-	gdt[5].flags_and_limit.bits.granularity = false; //so that our computed GDT limit is in bytes, not pages
-
-	memset(&TaskManager::tss, 0, sizeof(TSS));
-
-	TaskManager::tss.ss0 = 0x10;
-
-	TaskManager::tss.cs = 0x0b;
-	TaskManager::tss.ss = 0x13;
-	TaskManager::tss.ds = 0x13;
-	TaskManager::tss.es = 0x13;
-	TaskManager::tss.fs = 0x13;
-	TaskManager::tss.gs = 0x13;
+	gdt[slot].limit_low = limit & 0xFFFFu;
+	gdt[slot].base_low = (base & 0xFFFFu);
+	gdt[slot].base_middle = (base >> 16u) & 0xFFu;
+	gdt[slot].base_high = (base >> 24u) & 0xFFu;
+	gdt[slot].access.bits.accessed = true; //This indicates it's a TSS and not a LDT. This is a changed meaning
+	gdt[slot].access.bits.read_write = false; //This indicates if the TSS is busy or not. 0 for not busy
+	gdt[slot].access.bits.direction = false; //always 0 for TSS
+	gdt[slot].access.bits.executable = true; //For TSS this is 1 for 32bit usage, or 0 for 16bit.
+	gdt[slot].access.bits.type = false; //indicate it is a TSS
+	gdt[slot].access.bits.ring = 0; //same meaning
+	gdt[slot].access.bits.present = true; //same meaning
+	gdt[slot].flags_and_limit.bits.limit_high = (limit >> 16u) & 0xFu; //isolate top nibble
+	gdt[slot].flags_and_limit.bits.zero = 0;
+	gdt[slot].flags_and_limit.bits.size = false; //should leave zero according to manuals. No effect
+	gdt[slot].flags_and_limit.bits.granularity = false; //so that our computed GDT limit is in bytes, not pages
 }
 
 void Memory::load_gdt(){
-	gp.limit = (sizeof(GDTEntry) * GDT_ENTRIES) - 1;
-	gp.base = (uint32_t)&gdt;
+	gp.limit = (sizeof(GDTEntry) * GDT_ENTRIES);
+	gp.base = (uint32_t) &gdt;
 
 	gdt_set_gate(0, 0, 0, false, false, false, 0, false); //Null
 	gdt_set_gate(1, 0xFFFFF, 0, true, true, true, 0); //Kernel Code
@@ -92,8 +81,9 @@ void Memory::load_gdt(){
 	gdt_set_gate(3, 0xFFFFF, 0, true, true, true, 3); //User code
 	gdt_set_gate(4, 0xFFFFF, 0, true, false, true, 3); //User data
 
-	setup_tss();
+	setup_tss(5, TaskManager::tss);
+	setup_tss(6, Interrupt::fault_tss);
 
 	gdt_flush();
-	asm volatile("ltr %0": : "r"((uint16_t)0x2B));
+	asm volatile("ltr %0": : "r"((uint16_t)0x28));
 }

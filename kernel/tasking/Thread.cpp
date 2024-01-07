@@ -37,7 +37,7 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 	m_page_directory(process->_page_directory)
 {
 	//Create the kernel stack
-	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
+	_kernel_stack_region = MM.alloc_kernel_stack_region(THREAD_KERNEL_STACK_SIZE);
 	kstd::Arc<VMRegion> mapped_user_stack_region;
 	Stack user_stack(nullptr, 0);
 	Stack kernel_stack((void*) _kernel_stack_region->end());
@@ -98,7 +98,7 @@ Thread::Thread(Process* process, tid_t tid, ThreadRegisters& regs):
 	m_page_directory(process->_page_directory)
 {
 	//Allocate kernel stack
-	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
+	_kernel_stack_region = MM.alloc_kernel_stack_region(THREAD_KERNEL_STACK_SIZE);
 
 	//Setup registers and stack
 	registers.gp.eax = 0; // fork() in child returns zero
@@ -113,7 +113,7 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 	m_page_directory(process->_page_directory)
 {
 	//Create the kernel stack
-	_kernel_stack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
+	_kernel_stack_region = MM.alloc_kernel_stack_region(THREAD_KERNEL_STACK_SIZE);
 	kstd::Arc<VMRegion> mapped_user_stack_region;
 	Stack user_stack(nullptr, 0);
 	Stack kernel_stack((void*) (_kernel_stack_region->end()));
@@ -428,7 +428,7 @@ bool Thread::call_signal_handler(int signal) {
 
 	//Allocate a kernel stack
 	if(!_sighandler_kstack_region)
-		_sighandler_kstack_region = MM.alloc_kernel_region(THREAD_KERNEL_STACK_SIZE);
+		_sighandler_kstack_region = MM.alloc_kernel_stack_region(THREAD_KERNEL_STACK_SIZE);
 
 	Stack user_stack((void*) k_ustack->end(), _sighandler_ustack_region->end());
 	Stack kernel_stack((void*) _sighandler_kstack_region->end());

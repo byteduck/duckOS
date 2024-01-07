@@ -120,6 +120,13 @@ public:
 	kstd::Arc<VMRegion> alloc_kernel_region(size_t size);
 
 	/**
+	 * Allocates a new stack region in kernel space.
+	 * This will allocate sentinel pages on either size of the region which will trigger a fault when accessed.
+	 * @param size The minimum size, in bytes, of the new region.
+	 */
+	kstd::Arc<VMRegion> alloc_kernel_stack_region(size_t size);
+
+	/**
 	 * Allocates a new contiguous anonymous region in kernel space.
 	 * @param size The minimum size, in bytes, of the new region.
 	 */

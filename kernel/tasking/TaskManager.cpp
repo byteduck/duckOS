@@ -135,6 +135,16 @@ void TaskManager::init(){
 	KLog::dbg("TaskManager", "Initializing tasking...");
 	processes = new kstd::vector<Process*>();
 
+	//Setup TSS
+	memset(&tss, 0, sizeof(TSS));
+	tss.ss0 = 0x10;
+	tss.cs = 0x0b;
+	tss.ss = 0x13;
+	tss.ds = 0x13;
+	tss.es = 0x13;
+	tss.fs = 0x13;
+	tss.gs = 0x13;
+
 	//Create kernel process
 	kernel_process = Process::create_kernel("[kernel]", kidle);
 	processes->push_back(kernel_process);
@@ -368,10 +378,10 @@ void TaskManager::preempt(){
 
 		Processor::save_fpu_state((void*&) old_thread->fpu_state);
 		old_thread.reset();
-
 		preempt_asm(old_esp, new_esp, cur_thread->page_directory()->entries_physaddr());
 		Processor::load_fpu_state((void*&) cur_thread->fpu_state);
 	}
+
 
 	preempt_finish();
 }

@@ -20,8 +20,9 @@
 #pragma once
 
 #include <kernel/kstd/types.h>
+#include <kernel/tasking/TSS.h>
 
-#define GDT_ENTRIES 6
+#define GDT_ENTRIES 7
 
 namespace Memory {
 	union GDTEntryAccessByte {
@@ -63,7 +64,7 @@ namespace Memory {
 
 	void gdt_set_gate(uint32_t num, uint32_t limit, uint32_t base, bool read_write, bool executable, bool type, uint8_t ring, bool present = true, bool accessed = false);
 
-	void setup_tss();
+	void setup_tss(int slot, TSS& tss);
 	extern "C" void load_gdt();
 	extern "C" void gdt_flush();
 }

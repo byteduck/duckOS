@@ -32,6 +32,7 @@ void serial_putch(char c);
 void vprintf(const char* fmt, va_list list);
 void printf(const char* fmt, ...);
 void print(const char* str);
+void PANIC_NOHLT(const char *error, const char *msg, ...);
 [[noreturn]] void PANIC(const char *error, const char *msg, ...);
 void clearScreen();
 void setup_tty();

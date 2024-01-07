@@ -21,6 +21,7 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/arch/i386/registers.h>
+#include <kernel/tasking/TSS.h>
 
 #define FAULT_KERNEL_READ 0
 #define FAULT_KERNEL_READ_GPF 1
@@ -32,6 +33,7 @@
 #define FAULT_USER_WRITE_GPF 7
 
 namespace Interrupt {
+	extern TSS fault_tss;
 	extern "C" void isr0();
 	extern "C" void isr1();
 	extern "C" void isr2();

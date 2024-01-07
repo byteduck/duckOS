@@ -150,7 +150,7 @@ void vprintf(const char* fmt, va_list argp){
 
 bool panicked = false;
 
-[[noreturn]] void PANIC(const char* error, const char* msg, ...){
+void panic_inner(const char* error, const char* msg, va_list list) {
 	TaskManager::enter_critical();
 	Interrupt::NMIDisabler disabler;
 
@@ -182,10 +182,7 @@ bool panicked = false;
 	else
 		printf("[No thread info]\n");
 
-	va_list list;
-	va_start(list, msg);
 	vprintf(msg, list);
-	va_end(list);
 
 	//Printing the stacktrace may panic if done early in kernel initialization. Don't print stacktrace in a nested panic.
 #ifdef DEBUG
@@ -195,7 +192,20 @@ bool panicked = false;
 		KernelMapper::print_stacktrace();
 	}
 #endif
+}
 
+void PANIC_NOHLT(const char *error, const char *msg, ...) {
+	va_list list;
+	va_start(list, msg);
+	panic_inner(error, msg, list);
+	va_end(list);
+}
+
+[[noreturn]] void PANIC(const char* error, const char* msg, ...) {
+	va_list list;
+	va_start(list, msg);
+	panic_inner(error, msg, list);
+	va_end(list);
 	asm volatile("cli; hlt");
 	while(1);
 }

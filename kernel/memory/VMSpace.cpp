@@ -115,6 +115,20 @@ ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object(kstd::Arc<VMObject> object, V
 	return vmRegion;
 }
 
+ResultRet<kstd::Arc<VMRegion>> VMSpace::map_object_with_sentinel(kstd::Arc<VMObject> object, VMProt prot) {
+	// Create and map the region
+	VMSpaceRegion* region = TRY(alloc_space(object->size() + PAGE_SIZE * 2));
+	auto vmRegion = kstd::make_shared<VMRegion>(
+			object,
+			self(),
+			VirtualRange {region->start + PAGE_SIZE, object->size()},
+			0,
+			prot);
+	region->vmRegion = vmRegion.get();
+	m_page_directory.map(*vmRegion);
+	return vmRegion;
+}
+
 ResultRet<kstd::Arc<VMRegion>> VMSpace::map_stack(kstd::Arc<VMObject> object, VMProt prot) {
 	LOCK(m_lock);
 

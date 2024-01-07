@@ -79,8 +79,8 @@ int kmain(uint32_t mbootptr){
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
 	CommandLine cmd_line(mboot_header);
 	Memory::load_gdt();
-	Interrupt::init();
 	MemoryManager::inst().setup_paging();
+	Interrupt::init();
 	VMWare::detect();
 	Device::init();
 
