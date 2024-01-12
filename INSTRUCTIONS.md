@@ -3,7 +3,7 @@
 ## Prerequisites
 
 ### Dependencies
-- A Linux environment (WSL will work, but WSL2 is preferred because it is much faster than WSL1)
+- A Linux environment (WSL2 will work)
 - GCC
 - Nasm
 - Make
