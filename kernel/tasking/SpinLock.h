@@ -48,7 +48,8 @@ public:
 	[[nodiscard]] int times_locked() const { return m_times_locked.load(); }
 
 private:
-	inline bool acquire_with_mode(AcquireMode mode);
+	template<AcquireMode mode>
+	inline bool acquire_with_mode();
 
 	Atomic<tid_t, MemoryOrder::SeqCst> m_holding_thread = -1;
 	Atomic<int, MemoryOrder::SeqCst> m_times_locked = 0;
