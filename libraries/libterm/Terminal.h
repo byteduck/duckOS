@@ -55,6 +55,7 @@ namespace Term {
 		void evaluate_clear_escape();
 		void evaluate_clear_line_escape();
 		void evaluate_cursor_escape();
+		void set_prevent_scroll(bool prevent_scroll);
 
 	private:
 		enum EscapeStatus {
@@ -74,6 +75,7 @@ namespace Term {
 		size_t escape_parameter_index = 0;
 		size_t escape_parameter_char_index = 0;
 		uint32_t current_escape_codepoint = 0;
+		bool prevent_scroll = false;
 	};
 }
 

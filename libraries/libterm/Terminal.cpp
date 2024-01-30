@@ -246,7 +246,8 @@ void Terminal::write_codepoint(uint32_t codepoint) {
 	}
 
 	if(new_cursor_pos.line >= dimensions.lines) {
-		scroll(new_cursor_pos.line + 1 - dimensions.lines);
+		if(!prevent_scroll)
+			scroll(new_cursor_pos.line + 1 - dimensions.lines);
 		new_cursor_pos.line = dimensions.lines - 1;
 	}
 
@@ -456,4 +457,8 @@ void Terminal::evaluate_cursor_escape() {
 				regress_cursor();
 			break;
 	}
+}
+
+void Terminal::set_prevent_scroll(bool prevent_scroll) {
+	this->prevent_scroll = prevent_scroll;
 }

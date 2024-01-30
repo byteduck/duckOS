@@ -155,8 +155,10 @@ void panic_inner(const char* error, const char* msg, va_list list) {
 	Interrupt::NMIDisabler disabler;
 
 	g_panicking = true;
-	if(did_setup_tty)
+	if(did_setup_tty) {
 		tty->set_graphical(false);
+		tty->get_terminal()->set_prevent_scroll(true);
+	}
 
 	printf("\033[41;97m\033[2J"); //Red BG, bright white FG
 
