@@ -597,9 +597,12 @@ void Thread::handle_pending_signal() {
 
 	int sig = 0;
 	{
-		LOCK(_process->m_signal_lock);
-		if(!_pending_signals)
+		if(!_process->m_signal_lock.try_acquire())
 			return;
+		if(!_pending_signals) {
+			_process->m_signal_lock.release();
+			return;
+		}
 		for(int i = 0; i < NSIG; i++) {
 			if(_pending_signals & (1 << i)) {
 				_pending_signals &= ~(1 << i);
@@ -607,6 +610,7 @@ void Thread::handle_pending_signal() {
 				break;
 			}
 		}
+		_process->m_signal_lock.release();
 	}
 	handle_signal(sig);
 }
