@@ -19,7 +19,7 @@
 
 #pragma once
 
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include <kernel/filesystem/FileBasedFilesystem.h>
 #include <kernel/Result.hpp>
 #include <kernel/kstd/vector.hpp>
@@ -81,7 +81,7 @@ public:
 	size_t block_pointers_per_block;
 
 private:
-	SpinLock ext2lock;
+	Mutex ext2lock {"Ext2Filesystem"};
 
 	//Block stuff
 	Ext2BlockGroup** block_groups = nullptr;

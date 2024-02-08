@@ -9,7 +9,7 @@
 #include "../Result.hpp"
 #include "../api/errno.h"
 #include "../kstd/Bitmap.h"
-#include "../tasking/SpinLock.h"
+#include "../tasking/Mutex.h"
 #include <kernel/kstd/string.h>
 
 /**
@@ -52,5 +52,5 @@ protected:
 	kstd::vector<PageIndex> m_physical_pages;
 	kstd::Bitmap m_cow_pages;
 	size_t m_size;
-	SpinLock m_page_lock;
+	Mutex m_page_lock {"VMObject::Page"};
 };

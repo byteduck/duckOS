@@ -31,7 +31,7 @@
 #include <kernel/kstd/KLog.h>
 
 kstd::vector<kstd::Arc<Device>> Device::_devices;
-SpinLock Device::_lock;
+Mutex Device::_lock("Device");
 
 void Device::init() {
 	new ZeroDevice();

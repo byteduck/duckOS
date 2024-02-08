@@ -22,7 +22,7 @@
 #include <kernel/kstd/circular_queue.hpp>
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/kstd/unix_types.h>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include "../api/termios.h"
 
 #define NUM_TTYS 8
@@ -46,7 +46,7 @@ public:
 private:
 	kstd::circular_queue<uint8_t> _input_buffer;
 	BooleanBlocker _buffer_blocker;
-	SpinLock _input_lock;
+	Mutex _input_lock {"TTYDevice::Input"};
 	pid_t _pgid = -1;
 	termios _termios;
 	winsize _winsize;

@@ -20,7 +20,7 @@
 #pragma once
 
 #include <kernel/kstd/unix_types.h>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include <kernel/Result.hpp>
 #include "Memory.h"
 #include "VMRegion.h"
@@ -162,6 +162,6 @@ private:
 	// An array of u16s that stores the number of pages mapped in each page table, used to deallocate a page table once no longer needed
 	int m_page_tables_num_mapped[1024] = {0};
 	// A lock used to prevent race conditions.
-	SpinLock m_lock;
+	Mutex m_lock {"PageDirectory"};
 };
 

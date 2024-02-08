@@ -6,7 +6,7 @@
 #include "../kstd/Arc.h"
 #include "VMRegion.h"
 #include "../Result.hpp"
-#include "../tasking/SpinLock.h"
+#include "../tasking/Mutex.h"
 #include "PageDirectory.h"
 #include <kernel/kstd/Iteration.h>
 
@@ -120,7 +120,7 @@ public:
 	size_t size() const { return m_size; }
 	VirtualAddress end() const { return m_start + m_size; }
 	size_t used() const { return m_used; }
-	SpinLock& lock() { return m_lock; }
+	Mutex& lock() { return m_lock; }
 
 private:
 	struct VMSpaceRegion {
@@ -143,6 +143,6 @@ private:
 	size_t m_size;
 	VMSpaceRegion* m_region_map;
 	size_t m_used = 0;
-	SpinLock m_lock;
+	Mutex m_lock {"VMSpace"};
 	PageDirectory& m_page_directory;
 };

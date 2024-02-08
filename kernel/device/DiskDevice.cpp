@@ -25,7 +25,7 @@
 
 size_t DiskDevice::s_used_cache_memory = 0;
 kstd::vector<DiskDevice*> DiskDevice::s_disk_devices;
-SpinLock DiskDevice::s_disk_devices_lock;
+Mutex DiskDevice::s_disk_devices_lock("DiskDevices");
 
 DiskDevice::DiskDevice(unsigned int major, unsigned int minor): BlockDevice(major, minor) {
 	s_disk_devices.push_back(this);

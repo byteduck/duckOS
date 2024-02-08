@@ -6,7 +6,7 @@
 #include "../kstd/unix_types.h"
 #include "BuddyZone.h"
 #include "../kstd/vector.hpp"
-#include "../tasking/SpinLock.h"
+#include "../tasking/Mutex.h"
 
 class PhysicalRegion {
 public:
@@ -44,7 +44,7 @@ protected:
 	void init();
 
 private:
-	SpinLock m_lock;
+	Mutex m_lock {"PhysicalRegion"};
 	kstd::vector<BuddyZone*> m_zones;
 	PageIndex m_start_page;
 	size_t m_num_pages;

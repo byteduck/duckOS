@@ -28,7 +28,7 @@
 
 class Process;
 class Thread;
-class SpinLock;
+class Mutex;
 struct TSS;
 
 namespace TaskManager {
@@ -39,10 +39,10 @@ namespace TaskManager {
 	 *  the CRITICAL_LOCK macro to acquire g_tasking_lock and enter a critical state which will automatically be
 	 *  released after leaving the scope.
      */
-	extern SpinLock g_tasking_lock;
+	extern Mutex g_tasking_lock;
 
 	/** This lock is acquired while editing the process list. **/
-	extern SpinLock g_process_lock;
+	extern Mutex g_process_lock;
 
 	/** This is the thread at the beginning of the thread queue. The thread queue is updated on calls to `queue_thread`
 	 *  and in Thread::reap (which ensures that the reaped thread is removed from the queue.

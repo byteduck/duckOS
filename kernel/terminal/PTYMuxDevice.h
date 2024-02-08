@@ -20,7 +20,7 @@
 #pragma once
 
 #include <kernel/device/CharacterDevice.h>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 
 class PTYControllerDevice;
 class PTYMuxDevice: public CharacterDevice {
@@ -34,7 +34,7 @@ public:
 
 private:
 	unsigned int current_pty = 0;
-	SpinLock lock;
+	Mutex lock {"PTYMuxDevice"};
 };
 
 

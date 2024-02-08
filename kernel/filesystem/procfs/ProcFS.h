@@ -21,7 +21,7 @@
 
 #include <kernel/filesystem/Filesystem.h>
 #include "ProcFSInodeType.h"
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include <kernel/kstd/vector.hpp>
 
 #define PROCFS_FSID 1
@@ -50,7 +50,7 @@ private:
 	friend class ProcFSInode;
 	static ProcFS* _instance;
 
-	SpinLock lock;
+	Mutex lock {"ProcFS"};
 	kstd::vector<ProcFSEntry> entries;
 	kstd::Arc<ProcFSInode> root_inode;
 	ino_t cinode_id;

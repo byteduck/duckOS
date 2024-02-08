@@ -21,7 +21,6 @@
 
 #include <kernel/kstd/types.h>
 #include <kernel/kstd/vector.hpp>
-#include <kernel/tasking/SpinLock.h>
 #include "Result.hpp"
 #include <kernel/kstd/unix_types.h>
 

@@ -25,7 +25,7 @@
 #include <kernel/memory/Stack.h>
 #include <kernel/Result.hpp>
 #include "kernel/memory/VMRegion.h"
-#include "SpinLock.h"
+#include "Mutex.h"
 #include "../memory/PageDirectory.h"
 #include "../kstd/queue.hpp"
 #include "kernel/kstd/circular_queue.hpp"
@@ -82,8 +82,8 @@ public:
 	bool is_blocked();
 	bool should_unblock();
 	Result join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& other, UserspacePointer<void*> retp);
-	void acquired_lock(SpinLock* lock);
-	void released_lock(SpinLock* lock);
+	void acquired_lock(Mutex* lock);
+	void released_lock(Mutex* lock);
 
 	//Signals
 	bool& in_signal_handler();
@@ -137,9 +137,9 @@ private:
 	//Blocking and Joining
 	Blocker* _blocker = nullptr;
 	bool _joined = false;
-	SpinLock _join_lock;
+	Mutex _join_lock {"Thread::Join"};
 	kstd::Arc<Thread> _joined_thread;
-	kstd::circular_queue<SpinLock*> _held_locks { 100 };
+	kstd::circular_queue<Mutex*> _held_locks { 100 };
 
 	//Signals
 	bool _in_signal = false;

@@ -22,7 +22,7 @@
 #include <kernel/kstd/unix_types.h>
 #include <kernel/kstd/Arc.h>
 #include <kernel/Result.hpp>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include "InodeMetadata.h"
 #include <kernel/kstd/Iteration.h>
 #include <kernel/memory/SafePointer.h>
@@ -67,7 +67,7 @@ public :
 
 protected:
 	InodeMetadata _metadata;
-	SpinLock lock, m_vmobject_lock;
+	Mutex lock {"Inode"}, m_vmobject_lock {"Inode::VMObject"};
 	kstd::Weak<InodeVMObject> m_shared_vm_object;
 	bool _exists = true;
 };

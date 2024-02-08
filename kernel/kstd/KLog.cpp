@@ -1,9 +1,9 @@
 #include "KLog.h"
 #include "kstdio.h"
-#include "../tasking/SpinLock.h"
+#include "../tasking/Mutex.h"
 #include <kernel/time/TimeManager.h>
 
-extern SpinLock printf_lock;
+extern Mutex printf_lock;
 void klog_print(const char* component, const char* color, const char* type, const char* fmt, va_list list) {
 	auto time = TimeManager::uptime();
 	char* usec_buf = "0000000";

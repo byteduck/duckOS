@@ -83,7 +83,7 @@ SET(KERNEL_SRCS
         tasking/Process.cpp
         tasking/Thread.cpp
         tasking/Lock.cpp
-        tasking/SpinLock.cpp
+        tasking/Mutex.cpp
         tasking/ProcessArgs.cpp
         tasking/Blocker.cpp
         tasking/WaitBlocker.cpp

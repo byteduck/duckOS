@@ -66,7 +66,7 @@ ssize_t KernelLogDevice::write(FileDescriptor& fd, size_t offset, SafePointer<ui
 		}
 
 		auto* cur_proc = TaskManager::current_process();
-		extern SpinLock printf_lock;
+		extern Mutex printf_lock;
 
 		LOCK(printf_lock);
 		printf("%s[%d.%s] %s(%d) [%s] ", log_colors[log_level], (int)time.tv_sec, usec_buf, cur_proc->name().c_str(), cur_proc->pid(), log_names[log_level]);

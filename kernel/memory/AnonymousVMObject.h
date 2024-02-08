@@ -8,7 +8,7 @@
 #include "../Result.hpp"
 #include "../kstd/map.hpp"
 #include "../kstd/unix_types.h"
-#include "../tasking/SpinLock.h"
+#include "../tasking/Mutex.h"
 #include "VMRegion.h"
 
 class AnonymousVMObject: public VMObject {
@@ -79,7 +79,7 @@ private:
 
 	explicit AnonymousVMObject(kstd::string name, kstd::vector<PageIndex> physical_pages, bool cow);
 
-	static SpinLock s_shared_lock;
+	static Mutex s_shared_lock;
 	static int s_cur_shm_id;
 	static kstd::map<int, kstd::Weak<AnonymousVMObject>> s_shared_objects;
 

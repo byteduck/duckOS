@@ -20,7 +20,7 @@
 #pragma once
 
 #include "VGADevice.h"
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 
 class MultibootVGADevice: VGADevice {
 public:
@@ -50,7 +50,7 @@ private:
 	uint32_t framebuffer_height;
 	uint32_t framebuffer_bpp;
 	bool textmode;
-	SpinLock _lock;
+	Mutex _lock {"MultibootVGADevice"};
 };
 
 

@@ -24,7 +24,7 @@
 #include <kernel/kstd/Arc.h>
 #include <kernel/api/wait.h>
 #include <kernel/kstd/vector.hpp>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 
 class Thread;
 class WaitBlocker: public Blocker {
@@ -55,7 +55,7 @@ private:
 
 	static kstd::vector<kstd::Weak<WaitBlocker>> blockers;
 	static kstd::vector<Notification> unhandled_notifications;
-	static SpinLock lock;
+	static Mutex lock;
 
 	bool _ready = false;
 	int _err = 0;

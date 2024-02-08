@@ -22,7 +22,7 @@
 #include "Filesystem.h"
 #include "../kstd/LRUCache.h"
 #include <kernel/time/Time.h>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include <kernel/kstd/vector.hpp>
 
 class FileBasedFilesystem: public Filesystem {
@@ -61,7 +61,7 @@ protected:
 
 private:
 	kstd::LRUCache<ino_t, kstd::Arc<Inode>> m_inode_cache;
-	SpinLock m_inode_cache_lock;
+	Mutex m_inode_cache_lock {"InodeCache"};
 };
 
 

@@ -65,7 +65,7 @@ private:
 	[[nodiscard]] kstd::Arc<SocketFSClient> get_client(const FileDescriptor* fd) const;
 
 	kstd::vector<kstd::Arc<SocketFSClient>> m_clients;
-	mutable SpinLock m_clients_lock;
+	mutable Mutex m_clients_lock {"SocketFSInode::Clients"};
 
 	kstd::Arc<SocketFSClient> host;
 	DirectoryEntry dir_entry;

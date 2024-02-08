@@ -2,7 +2,7 @@
 /* Copyright © 2016-2022 Byteduck */
 
 #include "RefCount.h"
-#include "../../tasking/SpinLock.h"
+#include "../../tasking/Mutex.h"
 
 using namespace kstd;
 

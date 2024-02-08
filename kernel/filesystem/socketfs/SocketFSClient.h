@@ -22,7 +22,7 @@
 #include <kernel/kstd/Arc.h>
 #include <kernel/kstd/queue.hpp>
 #include <kernel/kstd/unix_types.h>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 
 class Process;
 class SocketFSClient {
@@ -32,7 +32,7 @@ public:
 	sockid_t id;
 	pid_t pid;
 	kstd::queue<uint8_t> data_queue;
-	SpinLock data_lock;
+	Mutex data_lock {"SocketFSClient"};
 	BooleanBlocker blocker;
 };
 

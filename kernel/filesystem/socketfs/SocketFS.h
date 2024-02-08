@@ -22,7 +22,7 @@
 #include <kernel/filesystem/Filesystem.h>
 #include "socketfs_defines.h"
 #include <kernel/kstd/vector.hpp>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 
 #define SOCKETFS_FSID 3
 
@@ -65,7 +65,7 @@ protected:
 	friend class SocketFSInode;
 	kstd::vector<kstd::Arc<SocketFSInode>> sockets;
 	kstd::Arc<SocketFSInode> root_entry;
-	SpinLock lock;
+	Mutex lock {"SocketFS"};
 
 };
 

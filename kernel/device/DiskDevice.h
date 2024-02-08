@@ -54,11 +54,11 @@ private:
 		size_t start_block;
 		Time last_used = Time::now();
 		bool dirty = false;
-		SpinLock lock;
+		Mutex lock {"BlockCacheRegion"};
 	};
 
 	// Static
-	static SpinLock s_disk_devices_lock;
+	static Mutex s_disk_devices_lock;
 	static size_t s_used_cache_memory;
 	static kstd::vector<DiskDevice*> s_disk_devices;
 
@@ -66,6 +66,6 @@ private:
 	kstd::Arc<BlockCacheRegion> get_cache_region(size_t block);
 	inline size_t blocks_per_cache_region() { return PAGE_SIZE / block_size(); }
 	inline size_t block_cache_region_start(size_t block) { return block - (block % blocks_per_cache_region()); }
-	SpinLock _cache_lock;
+	Mutex _cache_lock {"DiskDeviceCache"};
 };
 

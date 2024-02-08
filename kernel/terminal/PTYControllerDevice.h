@@ -21,7 +21,7 @@
 
 #include <kernel/device/CharacterDevice.h>
 #include <kernel/kstd/circular_queue.hpp>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include <kernel/kstd/Arc.h>
 
 class PTYDevice;
@@ -44,7 +44,7 @@ public:
 	kstd::Arc<PTYDevice> pty();
 
 private:
-	SpinLock _output_lock, _write_lock, _ref_lock;
+	Mutex _output_lock {"PTYController::Output"}, _write_lock {"PTYController::Write"}, _ref_lock {"PTYController::Ref"};
 	kstd::circular_queue<uint8_t> _output_buffer;
 	BooleanBlocker _buffer_blocker;
 	kstd::Arc<PTYDevice> _pty;

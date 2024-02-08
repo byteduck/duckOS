@@ -216,7 +216,7 @@ private:
 	kstd::Arc<VMSpace> _vm_space;
 	kstd::Arc<PageDirectory> _page_directory;
 	kstd::vector<kstd::Arc<VMRegion>> _vm_regions;
-	SpinLock m_mem_lock;
+	Mutex m_mem_lock {"Process::Memory"};
 	size_t m_used_pmem = 0;
 	size_t m_used_shmem = 0;
 
@@ -226,14 +226,14 @@ private:
 
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
-	SpinLock m_signal_lock;
+	Mutex m_signal_lock {"Process::Signal"};
 
 	//Threads
 	kstd::map<tid_t, kstd::Arc<Thread>> _threads;
 	kstd::map<tid_t, void*> _thread_return_values;
 	kstd::vector<tid_t> _tids;
 	tid_t _last_active_thread = 1;
-	SpinLock _thread_lock;
+	Mutex _thread_lock {"Process::Thread"};
 
 	Process* _self_ptr;
 };

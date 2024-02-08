@@ -27,7 +27,7 @@
 #include "PhysicalRegion.h"
 #include "BuddyZone.h"
 #include "VMSpace.h"
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include "Memory.h"
 #include "kernel/arch/i386/registers.h"
 
@@ -75,7 +75,7 @@ public:
 	PageTable::Entry kernel_early_page_table_entries1[1024] __attribute__((aligned(4096)));
 	PageTable::Entry kernel_early_page_table_entries2[1024] __attribute__((aligned(4096)));
 
-	SpinLock liballoc_spinlock;
+	Mutex liballoc_lock {"liballoc"};
 
 	MemoryManager();
 
@@ -242,7 +242,7 @@ private:
 	kstd::Arc<VMSpace> m_kernel_space;
 	kstd::Arc<VMSpace> m_heap_space;
 
-	SpinLock m_quickmap_lock;
+	Mutex m_quickmap_lock {"quickmap"};
 	bool m_is_quickmapping = false;
 };
 

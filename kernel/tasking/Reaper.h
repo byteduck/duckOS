@@ -5,7 +5,7 @@
 
 #include "BooleanBlocker.h"
 #include "kernel/kstd/queue.hpp"
-#include "SpinLock.h"
+#include "Mutex.h"
 
 void kreaper_entry();
 
@@ -21,7 +21,7 @@ protected:
 	void start();
 
 private:
-	SpinLock m_lock;
+	Mutex m_lock {"Reaper"};
 	BooleanBlocker m_blocker;
 	kstd::queue <kstd::Arc<Thread>> m_queue;
 	static Reaper* s_inst;

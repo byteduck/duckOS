@@ -22,7 +22,7 @@
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/filesystem/File.h>
 #include <kernel/kstd/circular_queue.hpp>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 
 #define PIPE_SIZE PAGE_SIZE
 
@@ -48,7 +48,7 @@ private:
 	size_t _readers = 0;
 	size_t _writers = 0;
 	BooleanBlocker _blocker;
-	SpinLock _lock;
+	Mutex _lock {"Pipe"};
 };
 
 

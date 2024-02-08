@@ -18,6 +18,7 @@
 */
 
 #pragma once
+#include <kernel/kstd/string.h>
 
 #define LOCK(lock) const ScopedLocker __locker((lock))
 #define LOCK_N(lock, name) const ScopedLocker name((lock))
@@ -34,6 +35,8 @@ private:
 
 class Lock {
 public:
+	explicit Lock(const kstd::string& name): m_name(name) {}
+
 	virtual bool locked() = 0;
 	virtual void acquire() = 0;
 	virtual void release() = 0;
@@ -43,5 +46,8 @@ public:
 		LOCK(*this);
 		return lambda();
 	}
+
+protected:
+	kstd::string m_name;
 };
 

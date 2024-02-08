@@ -17,21 +17,20 @@
     Copyright (c) Byteduck 2016-2020. All rights reserved.
 */
 
-#include "SpinLock.h"
-#include "Thread.h"
+#include "Mutex.h"
 #include "TaskManager.h"
 
 extern bool g_panicking;
 
-SpinLock::SpinLock() = default;
+Mutex::Mutex(const kstd::string& name): Lock(name) {}
 
-SpinLock::~SpinLock() = default;
+Mutex::~Mutex() = default;
 
-bool SpinLock::locked() {
+bool Mutex::locked() {
 	return m_holding_thread.load(MemoryOrder::SeqCst) != -1;
 }
 
-void SpinLock::release() {
+void Mutex::release() {
 	if(!TaskManager::enabled() || g_panicking)
 		return;
 
@@ -44,21 +43,21 @@ void SpinLock::release() {
 	}
 }
 
-void SpinLock::acquire() {
+void Mutex::acquire() {
 	acquire_with_mode<AcquireMode::Normal>();
 	ASSERT(!TaskManager::in_critical() || g_panicking);
 }
 
-bool SpinLock::try_acquire() {
+bool Mutex::try_acquire() {
 	return acquire_with_mode<AcquireMode::Try>();
 }
 
-void SpinLock::acquire_and_enter_critical() {
+void Mutex::acquire_and_enter_critical() {
 	acquire_with_mode<AcquireMode::EnterCritical>();
 }
 
-template<SpinLock::AcquireMode mode>
-inline bool SpinLock::acquire_with_mode() {
+template<Mutex::AcquireMode mode>
+inline bool Mutex::acquire_with_mode() {
 	auto cur_thread = TaskManager::current_thread();
 	if(!TaskManager::enabled() || !cur_thread || g_panicking)
 		return true; //Tasking isn't initialized yet
@@ -97,12 +96,12 @@ inline bool SpinLock::acquire_with_mode() {
 	return true;
 }
 
-bool SpinLock::held_by_current_thread() {
+bool Mutex::held_by_current_thread() {
 	auto cur_thread = TaskManager::current_thread();
 	return !cur_thread || cur_thread->tid() == m_holding_thread.load(MemoryOrder::SeqCst);
 }
 
-ScopedCriticalLocker::ScopedCriticalLocker(SpinLock& lock): m_lock(lock) {
+ScopedCriticalLocker::ScopedCriticalLocker(Mutex& lock): m_lock(lock) {
 	m_lock.acquire_and_enter_critical();
 }
 

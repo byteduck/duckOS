@@ -477,11 +477,11 @@ size_t MemoryManager::kernel_heap() const {
 }
 
 void liballoc_lock() {
-	MemoryManager::inst().liballoc_spinlock.acquire();
+	MemoryManager::inst().liballoc_lock.acquire();
 }
 
 void liballoc_unlock() {
-	MemoryManager::inst().liballoc_spinlock.release();
+	MemoryManager::inst().liballoc_lock.release();
 }
 
 void *liballoc_alloc(int pages) {

@@ -5,7 +5,7 @@
 #include "MemoryManager.h"
 #include "../kstd/cstring.h"
 
-SpinLock AnonymousVMObject::s_shared_lock;
+Mutex AnonymousVMObject::s_shared_lock {"AnonymousVMObject::Shared"};
 int AnonymousVMObject::s_cur_shm_id = 1;
 kstd::map<int, kstd::Weak<AnonymousVMObject>> AnonymousVMObject::s_shared_objects;
 

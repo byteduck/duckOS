@@ -27,7 +27,7 @@ public:
 	ResultRet<bool> read_page_if_needed(size_t index);
 
 	kstd::Arc<Inode> inode() const { return m_inode; }
-	SpinLock& lock() { return m_page_lock; }
+	Mutex& lock() { return m_page_lock; }
 	Type type() const { return m_type; }
 	bool is_inode() const override { return true; }
 	ForkAction fork_action() const override {

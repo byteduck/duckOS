@@ -25,7 +25,7 @@
 #include <kernel/interrupt/IRQHandler.h>
 #include "ATA.h"
 #include "DiskDevice.h"
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include <kernel/memory/MemoryManager.h>
 
 #define ATA_MAX_SECTORS_AT_ONCE (PAGE_SIZE / 512)
@@ -87,7 +87,7 @@ private:
 	volatile bool _got_irq = false;
 
 	//Lock
-	SpinLock _lock;
+	Mutex _lock {"PATADevice"};
 };
 
 

@@ -29,8 +29,8 @@
 #include <kernel/kstd/KLog.h>
 
 TSS TaskManager::tss;
-SpinLock TaskManager::g_tasking_lock;
-SpinLock TaskManager::g_process_lock;
+Mutex TaskManager::g_tasking_lock {"Tasking"};
+Mutex TaskManager::g_process_lock {"Process"};
 
 kstd::Arc<Thread> cur_thread;
 Process* kernel_process;

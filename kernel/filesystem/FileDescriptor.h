@@ -21,7 +21,7 @@
 
 #include <kernel/kstd/Arc.h>
 #include <kernel/kstd/string.h>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include <kernel/kstd/unix_types.h>
 #include "File.h"
 #include <kernel/memory/SafePointer.h>
@@ -81,7 +81,7 @@ private:
 	off_t _seek {0};
 	bool _is_fifo_writer = false;
 
-	SpinLock lock;
+	Mutex lock {"FileDescriptor"};
 };
 
 

@@ -21,7 +21,7 @@
 
 #include "VGADevice.h"
 #include <kernel/pci/PCI.h>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 
 #define VBE_DISPI_INDEX_ID 0
 #define VBE_DISPI_INDEX_XRES 1
@@ -84,7 +84,7 @@ private:
 	uint16_t display_width = VBE_DEFAULT_WIDTH;
 	uint16_t display_height = VBE_DEFAULT_HEIGHT;
 
-	SpinLock _lock;
+	Mutex _lock = Mutex("BochsVGADevice");
 };
 
 

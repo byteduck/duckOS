@@ -24,7 +24,7 @@
 
 kstd::vector<kstd::Weak<WaitBlocker>> WaitBlocker::blockers;
 kstd::vector<WaitBlocker::Notification> WaitBlocker::unhandled_notifications;
-SpinLock WaitBlocker::lock;
+Mutex WaitBlocker::lock {"WaitBlocker"};
 
 kstd::Arc<WaitBlocker> WaitBlocker::make(kstd::Arc<Thread>& thread, pid_t wait_for, int options) {
 	auto new_blocker = kstd::Arc<WaitBlocker>(new WaitBlocker(thread, wait_for, options));

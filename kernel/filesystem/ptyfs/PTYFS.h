@@ -20,7 +20,7 @@
 #pragma once
 
 #include <kernel/filesystem/Filesystem.h>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 #include <kernel/kstd/vector.hpp>
 
 #define PTYFS_FSID 4
@@ -44,7 +44,7 @@ public:
 private:
 	friend class PTYFSInode;
 	kstd::vector<kstd::Arc<PTYFSInode>> _entries;
-	SpinLock _lock;
+	Mutex _lock {"PTYFS"};
 };
 
 

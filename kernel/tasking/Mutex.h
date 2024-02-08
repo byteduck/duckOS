@@ -28,7 +28,7 @@
 #define CRITICAL_LOCK(lock) ScopedCriticalLocker __locker((lock));
 
 class Thread;
-class SpinLock: public Lock {
+class Mutex: public Lock {
 public:
 	enum class AcquireMode {
 		EnterCritical, ///< The CPU will enter critical mode while acquiring the lock, and will not leave once acquired.
@@ -36,8 +36,8 @@ public:
 		Try ///< The CPU will try to acquire the lock, but will return if it is already locked.
 	};
 
-	SpinLock();
-	~SpinLock();
+	explicit Mutex(const kstd::string& name);
+	~Mutex();
 	bool locked() override;
 	void acquire() override;
 	bool try_acquire();
@@ -57,11 +57,11 @@ private:
 
 class ScopedCriticalLocker {
 public:
-	ScopedCriticalLocker(SpinLock& lock);
+	ScopedCriticalLocker(Mutex& lock);
 	~ScopedCriticalLocker();
 	void release();
 
 private:
-	SpinLock& m_lock;
+	Mutex& m_lock;
 	bool m_released = false;
 };

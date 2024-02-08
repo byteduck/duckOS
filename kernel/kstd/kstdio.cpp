@@ -80,7 +80,7 @@ void print(const char* str){
 		serial_putch(*(str++));
 }
 
-SpinLock printf_lock;
+Mutex printf_lock {"printf"};
 void printf(const char* fmt, ...) {
 	va_list list;
 	va_start(list, fmt);

@@ -21,7 +21,7 @@
 
 #include "TTYDevice.h"
 #include <kernel/kstd/string.h>
-#include <kernel/tasking/SpinLock.h>
+#include <kernel/tasking/Mutex.h>
 
 class PTYControllerDevice;
 class PTYFS;
@@ -46,7 +46,7 @@ private:
 	kstd::Arc<PTYControllerDevice> _controller;
 	kstd::string _name;
 	unsigned int num_refs = 1;
-	SpinLock _lock;
+	Mutex _lock {"PTYDevice"};
 };
 
 
