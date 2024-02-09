@@ -40,6 +40,7 @@ ProcFS::ProcFS() {
 	entries.push_back(ProcFSEntry(RootMemInfo, 0));
 	entries.push_back(ProcFSEntry(RootUptime, 0));
 	entries.push_back(ProcFSEntry(RootCpuInfo, 0));
+	entries.push_back(ProcFSEntry(RootLockInfo, 0));
 
 	root_inode = kstd::make_shared<ProcFSInode>(*this, entries[0]);
 }

@@ -22,6 +22,7 @@
 #include "utility.h"
 #include "pair.hpp"
 #include "Optional.h"
+#include <kernel/kstd/kstdlib.h>
 
 namespace kstd {
 	template<typename MapType>

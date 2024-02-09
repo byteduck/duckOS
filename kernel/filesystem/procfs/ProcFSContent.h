@@ -14,4 +14,5 @@ namespace ProcFSContent {
 	ResultRet<kstd::string> status(pid_t pid);
 	ResultRet<kstd::string> stacks(pid_t pid);
 	ResultRet<kstd::string> vmspace(pid_t pid);
+	ResultRet<kstd::string> lock_info();
 };

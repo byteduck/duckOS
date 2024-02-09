@@ -59,7 +59,15 @@ uint8_t parse_hex_char(char c) {
 	return 0;
 }
 
-char *itoa(int i, char *p, int base){
+char* itoa(int i, char* p, int base) {
+	return lltoa(i, p, base);
+}
+
+char* ltoa(long i, char* p, int base) {
+	return lltoa(i, p, base);
+}
+
+char *lltoa(long long i, char *p, int base) {
 	char const digit[] = "0123456789";
 	int nbcount = 0;
 	bool flag = 0;

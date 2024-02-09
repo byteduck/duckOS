@@ -75,6 +75,8 @@ ResultRet<kstd::string> ProcFSInode::get_string_contents() {
 			return ProcFSContent::uptime();
 		case RootCpuInfo:
 			return ProcFSContent::cpu_info();
+		case RootLockInfo:
+			return ProcFSContent::lock_info();
 		case ProcStatus:
 			return ProcFSContent::status(pid);
 		case ProcStacks:

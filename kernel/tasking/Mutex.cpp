@@ -79,6 +79,10 @@ inline bool Mutex::acquire_with_mode() {
 		if(expected == cur_tid)
 			break;
 
+#ifdef DEBUG
+		m_contest_count.add(1, MemoryOrder::Relaxed);
+#endif
+
 		if constexpr(mode == AcquireMode::Try) {
 			return false;
 		}

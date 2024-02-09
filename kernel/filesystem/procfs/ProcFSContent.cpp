@@ -214,3 +214,26 @@ ResultRet<kstd::string> ProcFSContent::vmspace(pid_t pid) {
 	});
 	return string;
 }
+
+#ifdef DEBUG
+extern kstd::map<Lock*, int> g_lock_registry;
+#endif
+
+ResultRet<kstd::string> ProcFSContent::lock_info() {
+#ifdef DEBUG
+	kstd::string string;
+	char numbuf[32];
+	for (auto pair : g_lock_registry) {
+		if (pair.first->contest_count() == 0)
+			continue;
+		string += pair.first->name();
+		string += "\t";
+		lltoa(pair.first->contest_count(), numbuf, 10);
+		string += numbuf;
+		string += "\n";
+	}
+	return string;
+#else
+	return "";
+#endif
+}

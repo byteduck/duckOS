@@ -38,5 +38,7 @@ int abs(float x);
 char nibble_to_hex(uint8_t num);
 uint8_t parse_hex_char(char c);
 char *itoa(int i, char *p, int base);
+char *ltoa(long i, char *p, int base);
+char *lltoa(long long i, char *p, int base);
 void to_upper(char *str);
 

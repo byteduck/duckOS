@@ -18,6 +18,33 @@
 */
 
 #include "Lock.h"
+#include "Mutex.h"
+#include "TaskManager.h"
+#include <kernel/kstd/map.hpp>
+
+#ifdef DEBUG
+// Hmm, I need a simple set type, don't I.
+Mutex g_lock_registry_lock {"LockRegistry"};
+kstd::map<Lock*, int> g_lock_registry;
+#endif
+
+Lock::Lock(const kstd::string& name): m_name(name) {
+#ifdef DEBUG
+	if (__builtin_expect(this != &g_lock_registry_lock, true)) {
+		if (__builtin_expect(TaskManager::enabled(), true)) {
+			LOCK(g_lock_registry_lock);
+			g_lock_registry[this] = 1;
+		} else {
+			g_lock_registry[this] = 1;
+		}
+	}
+#endif
+}
+
+Lock::~Lock() {
+	LOCK(g_lock_registry_lock);
+	g_lock_registry.erase(this);
+}
 
 ScopedLocker::ScopedLocker(Lock& lock): _lock(lock) {
 	_lock.acquire();
