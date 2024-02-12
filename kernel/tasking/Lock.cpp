@@ -41,10 +41,14 @@ Lock::Lock(const kstd::string& name): m_name(name) {
 #endif
 }
 
+#ifdef DEBUG
 Lock::~Lock() {
 	LOCK(g_lock_registry_lock);
 	g_lock_registry.erase(this);
 }
+#else
+Lock::~Lock() = default;
+#endif
 
 ScopedLocker::ScopedLocker(Lock& lock): _lock(lock) {
 	_lock.acquire();

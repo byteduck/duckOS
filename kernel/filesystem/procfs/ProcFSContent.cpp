@@ -234,6 +234,6 @@ ResultRet<kstd::string> ProcFSContent::lock_info() {
 	}
 	return string;
 #else
-	return "";
+	return kstd::string("");
 #endif
 }
