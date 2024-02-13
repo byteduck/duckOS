@@ -6,7 +6,10 @@ set -e
 if [ -z "$USE_KVM" ]; then
 	USE_KVM="0"
 	if [ -e /dev/kvm ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
-		USE_KVM="1"
+		ARCH="$(arch)"
+		if [[ "$ARCH" == "x86_64" ]] || [[ "$ARCH" =~ i[3-6]86 ]]; then
+			USE_KVM="1"
+		fi
 	fi
 fi
 
