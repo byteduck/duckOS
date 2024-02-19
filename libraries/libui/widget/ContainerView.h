@@ -30,6 +30,7 @@ namespace UI {
 		void on_scroll(Gfx::Point new_position) override;
 		Gfx::Dimensions scrollable_area() override;
 		void set_contents(Duck::Ptr<Widget> contents);
+		void set_show_scrollbar(bool show_scrollbar) override;
 
 		//Widget
 		void calculate_layout() override;

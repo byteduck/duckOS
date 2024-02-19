@@ -34,6 +34,7 @@ namespace UI {
 		Gfx::Point scroll_position();
 		Gfx::Rect content_area();
 		void recalculate_scrollbar();
+		virtual void set_show_scrollbar(bool show_scrollbar);
 
 		//Widget
 		Gfx::Dimensions preferred_size() override;
@@ -46,13 +47,14 @@ namespace UI {
 		virtual bool needs_layout_on_child_change() override;
 
 	protected:
-		ScrollView();
+		ScrollView(bool show_scrollbar = true);
 
 	private:
 		Gfx::Point _scroll_position = {0, 0};
 		Gfx::Rect scrollbar_area;
 		Gfx::Rect handle_area;
 		bool dragging_scrollbar = false;
+		bool show_scrollbar = true;
 	};
 }
 

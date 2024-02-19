@@ -90,94 +90,41 @@ void UI::DrawContext::fill_rounded_rect(Gfx::Rect rect, Gfx::Color color, int ra
 	fill_ellipse({rect.position() + Point { rect.width - radius * 2, rect.height - radius * 2 }, corner_dims}, color);
 }
 
-void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Gfx::Color color, TruncationMode truncation) const {
-	// First, split up the text into lines
-	struct Line {
-		std::string text;
-		Dimensions bounds;
-	};
-
-	Point cur_pos = rect.position();
-	std::vector<Line> lines;
-	Line cur_line;
-	Dimensions total_dimensions {0, 0};
-
-	auto finalize_line = [&] {
-		cur_line.bounds = { font->size_of(cur_line.text.c_str()).width, font->bounding_box().height };
-		lines.push_back(cur_line);
-		cur_line.text.clear();
-		total_dimensions.width = std::max(cur_line.bounds.width, total_dimensions.width);
-		total_dimensions.height += cur_line.bounds.height;
-		cur_pos = {rect.x, cur_pos.y + font->bounding_box().height};
-	};
-
-	auto rect_for_glyph = [&](FontGlyph* glyph) {
-		return Rect {
-				glyph->base_x - font->bounding_box().base_x + cur_pos.x,
-				(font->bounding_box().base_y - glyph->base_y) + (font->size() - glyph->height) + cur_pos.y,
-				glyph->width,
-				glyph->height
-		};
-	};
-
-	while(*str) {
-		auto glyph = font->glyph(*str);
-		if(*str == '\n' || !rect_for_glyph(glyph).inside(rect)) {
-			// We ran out of space on the line, try line wrapping
-			finalize_line();
-			if(!rect_for_glyph(glyph).inside(rect)) {
-				// If we need ellipsis, add them
-				if(truncation == TruncationMode::ELLIPSIS && !lines.empty()) {
-					auto& last_line = lines[lines.size() - 1];
-					while(!last_line.text.empty() && font->size_of((last_line.text + "...").c_str()).width > rect.width)
-						last_line.text.erase(last_line.text.end() - 1);
-					last_line.text += "...";
-					last_line.bounds = { font->size_of(last_line.text.c_str()).width, font->bounding_box().height };
-					if(last_line.bounds.width > rect.width)
-						lines.erase(lines.end() - 1);
-				}
-				break;
-			}
-		}
-
-		cur_line.text += *str;
-		auto off = font->glyph(*str)->next_offset;
-		cur_pos += {off.x, off.y};
-		str++;
-	}
-
-	if(!cur_line.text.empty())
-		finalize_line();
-
+void UI::DrawContext::draw_text(const UI::TextLayout& layout, Gfx::Rect rect, UI::TextAlignment h_align, UI::TextAlignment v_align, Gfx::Color color) const {
 	// Next, apply vertical alignment
 	Point text_pos = rect.position();
 	switch(v_align) {
 		case BEGINNING:
 			break;
 		case CENTER:
-			text_pos.y = rect.y + rect.height / 2 - total_dimensions.height / 2;
+			text_pos.y = rect.y + rect.dimensions().height / 2 - layout.dimensions().height / 2;
 			break;
 		case END:
-			text_pos.y = rect.y + rect.height - total_dimensions.height;
+			text_pos.y = rect.y + rect.dimensions().height - layout.dimensions().height;
 			break;
 	}
 
 	// Then, draw all the lines
-	for(auto& line : lines) {
-		switch(h_align) {
-			case BEGINNING:
-				break;
-			case CENTER:
-				text_pos.x = rect.x + rect.width / 2 - line.bounds.width / 2;
-				break;
-			case END:
-				text_pos.x = rect.x + rect.width - line.bounds.width;
-				break;
+	for(auto& line : layout.lines()) {
+		if ((text_pos.y + layout.font()->bounding_box().height) >= 0 && text_pos.y < (rect.y + rect.height)) {
+			switch(h_align) {
+				case BEGINNING:
+					break;
+				case CENTER:
+					text_pos.x = rect.x + rect.dimensions().width / 2 - line.bounds.width / 2;
+					break;
+				case END:
+					text_pos.x = rect.x + rect.dimensions().width - line.bounds.width;
+					break;
+			}
+			fb->draw_text(line.text.c_str(), text_pos, layout.font(), color);
 		}
-
-		fb->draw_text(line.text.c_str(), text_pos, font, color);
-		text_pos = {rect.position().x, text_pos.y + font->bounding_box().height};
+		text_pos = {rect.x, text_pos.y + layout.font()->bounding_box().height};
 	}
+}
+
+void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Gfx::Color color, TruncationMode truncation) const {
+	draw_text(TextLayout(str, rect.dimensions(), font, truncation, TextLayout::BreakMode::WORD), rect, h_align, v_align, color);
 }
 
 void UI::DrawContext::draw_text(const char* str, Gfx::Point point, Font* font, Gfx::Color color) const {

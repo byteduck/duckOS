@@ -22,14 +22,11 @@
 #include "Theme.h"
 #include <libgraphics/Image.h>
 #include <libgraphics/Graphics.h>
+#include "TextLayout.h"
 
 namespace UI {
 	enum TextAlignment {
 		BEGINNING, CENTER, END
-	};
-
-	enum class TruncationMode {
-		CUT, ELLIPSIS
 	};
 
 	class DrawContext {
@@ -50,6 +47,9 @@ namespace UI {
 		void fill_ellipse(Gfx::Rect rect, Gfx::Color color) const;
 		void fill_rounded_rect(Gfx::Rect rect, Gfx::Color color, int radius = 5) const;
 
+		using TruncationMode = TextLayout::TruncationMode;
+
+		void draw_text(const TextLayout& layout, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Color color) const;
 		void draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Gfx::Font* font, Gfx::Color color, TruncationMode truncation = TruncationMode::ELLIPSIS) const;
 		void draw_text(const char* str, Gfx::Point pos, Gfx::Font* font, Gfx::Color color) const;
 		void draw_text(const char* str, Gfx::Point pos, Gfx::Color color) const;

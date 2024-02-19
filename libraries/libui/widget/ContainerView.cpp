@@ -42,6 +42,11 @@ void ContainerView::set_contents(Duck::Ptr<Widget> contents) {
 	update_layout();
 }
 
+void ContainerView::set_show_scrollbar(bool show_scrollbar) {
+	ScrollView::set_show_scrollbar(show_scrollbar);
+	calculate_layout();
+}
+
 void ContainerView::calculate_layout() {
 	if(_contents) {
 		auto usable_area = content_area();
