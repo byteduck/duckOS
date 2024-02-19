@@ -4,6 +4,7 @@
 #include <libui/widget/Label.h>
 #include <libui/widget/Image.h>
 #include <libui/bits/FilePicker.h>
+#include <libui/widget/TextView.h>
 #include "ViewerWidget.h"
 #include "ViewerAudioWidget.h"
 #include <libui/widget/Cell.h>
@@ -29,6 +30,22 @@ Result open_audio(Duck::Ptr<UI::Window> window, Duck::Path file_path) {
 	return Result::SUCCESS;
 }
 
+Result open_text(Duck::Ptr<UI::Window> window, Duck::Path file_path) {
+	auto file = TRY(File::open(file_path, "r"));
+	FileInputStream stream(file);
+	std::string contents;
+	while (true) {
+		char read;
+		if (stream.read(&read, 1) != 1 || contents.size() > (1024 * 1024))
+			break;
+		if (read)
+			contents += read;
+	}
+	window->set_contents(UI::TextView::make(contents));
+	window->set_resizable(true);
+	return Result::SUCCESS;
+}
+
 int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
 
@@ -49,6 +66,8 @@ int main(int argc, char** argv, char** envp) {
 		result = open_image(window, file_path);
 	} else if(file_path.extension() == "wav") {
 		result = open_audio(window, file_path);
+	} else {
+		result = open_text(window, file_path);
 	}
 
 	if (result.is_error()) {
