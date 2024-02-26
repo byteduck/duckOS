@@ -31,6 +31,7 @@ namespace UI {
 		virtual Gfx::Dimensions scrollable_area() = 0;
 		void scroll(Gfx::Point scroll_amount);
 		void scroll_to(Gfx::Point position);
+		void scroll_into_view(Gfx::Rect rect);
 		Gfx::Point scroll_position();
 		Gfx::Rect content_area();
 		void recalculate_scrollbar();

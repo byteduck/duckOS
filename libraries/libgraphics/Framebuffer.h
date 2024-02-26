@@ -189,7 +189,17 @@ namespace Gfx {
 		 * @param font The font to use.
 		 * @param color The color to draw in.
 		 */
-		void draw_text(const char* str, const Point& pos, Font* font, Color color) const;
+		Point draw_text(const char* str, const Point& pos, Font* font, Color color) const;
+
+		/**
+		 * Draws text on the Image with a certain color.
+		 * @param str The string to draw. Does not need to be zero-terminated.
+		 * @param len The length of the string to draw.
+		 * @param pos The top-left position of where to draw.
+		 * @param font The font to use.
+		 * @param color The color to draw in.
+		 */
+		Point draw_text(const char* str, size_t len, const Point& pos, Font* font, Color color) const;
 
 		/**
 		 * Draws a glyph on the Image with a certain color.

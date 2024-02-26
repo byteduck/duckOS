@@ -6,7 +6,7 @@
 #include <libgraphics/Font.h>
 
 namespace UI {
-	class TextView : public ScrollView {
+	class TextView : public ScrollView, public TextStorage {
 	public:
 		WIDGET_DEF(TextView);
 
@@ -15,12 +15,14 @@ namespace UI {
 		Gfx::Dimensions scrollable_area() override;
 
 		// TextView
-		const std::string& contents();
-		void set_contents(std::string contents);
+		std::string_view text() override;
+		void set_text(std::string_view contents) override;
 
 		// Widget
 		void on_layout_change(const Gfx::Rect &old_rect) override;
 		void do_repaint(const UI::DrawContext &ctx) override;
+		bool on_mouse_button(Pond::MouseButtonEvent evt) override;
+		bool on_keyboard(Pond::KeyEvent evt) override;
 
 	private:
 		explicit TextView(std::string contents = "", bool multi_line = true);
@@ -28,10 +30,11 @@ namespace UI {
 
 		void calculate_text_layout();
 
-		bool m_multi_line;
-		std::string m_contents;
+		bool m_multi_line = true;
+		bool m_editable = true;
 		Gfx::Dimensions m_padding = {0, 0};
 		Gfx::Font* m_font;
-		TextLayout m_layout {Gfx::Dimensions {200, 200}};
+		TextLayout m_layout {};
+		std::string m_text;
 	};
 }

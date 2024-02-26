@@ -105,26 +105,32 @@ void UI::DrawContext::draw_text(const UI::TextLayout& layout, Gfx::Rect rect, UI
 	}
 
 	// Then, draw all the lines
+	auto text = layout.storage()->text();
 	for(auto& line : layout.lines()) {
 		if ((text_pos.y + layout.font()->bounding_box().height) >= 0 && text_pos.y < (rect.y + rect.height)) {
 			switch(h_align) {
 				case BEGINNING:
 					break;
 				case CENTER:
-					text_pos.x = rect.x + rect.dimensions().width / 2 - line.bounds.width / 2;
+					text_pos.x = rect.x + rect.dimensions().width / 2 - line.rect.width / 2;
 					break;
 				case END:
-					text_pos.x = rect.x + rect.dimensions().width - line.bounds.width;
+					text_pos.x = rect.x + rect.dimensions().width - line.rect.width;
 					break;
 			}
-			fb->draw_text(line.text.c_str(), text_pos, layout.font(), color);
+			auto substr = text.substr(line.index, line.length);
+			auto pos = fb->draw_text(substr.data(), line.length, text_pos, layout.font(), color);
+			if (line.ellipsis)
+				fb->draw_text("...", pos, layout.font(), color);
 		}
-		text_pos = {rect.x, text_pos.y + layout.font()->bounding_box().height};
+		text_pos = {rect.x, text_pos.y + line.rect.height};
 	}
 }
 
 void UI::DrawContext::draw_text(const char* str, Gfx::Rect rect, TextAlignment h_align, TextAlignment v_align, Font* font, Gfx::Color color, TruncationMode truncation) const {
-	draw_text(TextLayout(str, rect.dimensions(), font, truncation, TextLayout::BreakMode::WORD), rect, h_align, v_align, color);
+	BasicTextStorage storage {str};
+	auto storage_ptr = Duck::Ptr<BasicTextStorage>(&storage, [](BasicTextStorage* ){});
+	draw_text(TextLayout(storage_ptr, rect.dimensions(), font, truncation, TextLayout::BreakMode::WORD), rect, h_align, v_align, color);
 }
 
 void UI::DrawContext::draw_text(const char* str, Gfx::Point point, Font* font, Gfx::Color color) const {

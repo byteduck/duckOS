@@ -72,7 +72,7 @@ namespace Gfx {
 
 		FontGlyph* glyph(uint32_t codepoint);
 
-		Dimensions size_of(const char* string);
+		Dimensions size_of(std::string_view string);
 
 	private:
 		explicit Font(shm fontshm);

@@ -336,12 +336,24 @@ void Framebuffer::outline_inverting_checkered(Gfx::Rect area) const {
 	invert_checkered({area.x + area.width - 1, area.y, 1, area.height});
 }
 
-void Framebuffer::draw_text(const char* str, const Point& pos, Font* font, Color color) const {
+Point Framebuffer::draw_text(const char* str, const Gfx::Point& pos, Gfx::Font* font, Gfx::Color color) const {
 	Point current_pos = pos;
 	while(*str) {
 		current_pos = draw_glyph(font, *str, current_pos, color);
 		str++;
 	}
+	return current_pos;
+}
+
+Point Framebuffer::draw_text(const char* str, size_t len, const Point& pos, Font* font, Color color) const {
+	if(!len)
+		return pos;
+	Point current_pos = pos;
+	while(len--) {
+		current_pos = draw_glyph(font, *str, current_pos, color);
+		str++;
+	}
+	return current_pos;
 }
 
 Point Framebuffer::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph_pos, Color color) const {

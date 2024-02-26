@@ -3,14 +3,15 @@
 
 #include "TextView.h"
 #include "../libui.h"
+#include <libkeyboard/Keyboard.h>
 
 using namespace UI;
 
 TextView::TextView(std::string contents, bool multi_line):
 	ScrollView(multi_line),
 	m_multi_line(multi_line),
-	m_contents(contents),
-	m_font(Theme::font())
+	m_font(Theme::font()),
+	m_text(std::move(contents))
 {
 }
 
@@ -27,13 +28,14 @@ Gfx::Dimensions TextView::scrollable_area() {
 	return ret;
 }
 
-const std::string& TextView::contents() {
-	return m_contents;
+std::string_view TextView::text() {
+	return m_text;
 }
 
-void TextView::set_contents(std::string contents) {
-	m_contents = std::move(contents);
+void TextView::set_text(std::string_view contents) {
+	m_text = std::move(contents);
 	calculate_text_layout();
+	repaint();
 }
 
 void TextView::on_layout_change(const Gfx::Rect& old_rect) {
@@ -42,10 +44,77 @@ void TextView::on_layout_change(const Gfx::Rect& old_rect) {
 }
 
 void TextView::calculate_text_layout() {
-	m_layout = TextLayout(m_contents.c_str(), {content_area().width, -1}, m_font, TextLayout::TruncationMode::ELLIPSIS, TextLayout::BreakMode::WORD);
+	m_layout = {self(), {content_area().width, -1}, m_font, TextLayout::TruncationMode::ELLIPSIS, TextLayout::BreakMode::WORD};
 }
 
 void TextView::do_repaint(const UI::DrawContext& ctx) {
 	ScrollView::do_repaint(ctx);
 	ctx.draw_text(m_layout, {scroll_position() * -1, content_area().width, m_layout.dimensions().height}, BEGINNING, BEGINNING, Theme::fg());
+	auto cursor = m_layout.get_cursor();
+	if (cursor != TextLayout::CursorPos::none) {
+		ctx.fill({cursor.pos + content_area().position() - scroll_position(), {1, m_layout.font()->bounding_box().height}}, Theme::fg());
+	}
+}
+
+bool TextView::on_mouse_button(Pond::MouseButtonEvent evt) {
+	if (!mouse_position().in(content_area()))
+		return ScrollView::on_mouse_button(evt);
+
+	if ((evt.new_buttons & POND_MOUSE1) && !(evt.old_buttons & POND_MOUSE1)) {
+		m_layout.set_cursor(mouse_position() + scroll_position() - content_area().position());
+		repaint();
+		return true;
+	}
+
+	return false;
+}
+
+bool TextView::on_keyboard(Pond::KeyEvent evt) {
+	auto cursor = m_layout.get_cursor();
+	if (cursor == TextLayout::CursorPos::none)
+		return false;
+
+	if(!KBD_ISPRESSED(evt))
+		return true;
+
+	auto line_rect = m_layout.lines()[cursor.line].rect;
+	switch((Keyboard::Key) evt.key) {
+	case Keyboard::Left:
+		if (cursor.index > 0)
+			m_layout.set_cursor(cursor.index - 1);
+		break;
+	case Keyboard::Right:
+		m_layout.set_cursor(cursor.index + 1);
+		break;
+	case Keyboard::Up:
+		m_layout.set_cursor({cursor.desired_pos.x, line_rect.position().y - 1});
+		break;
+	case Keyboard::Down:
+		m_layout.set_cursor({cursor.desired_pos.x, line_rect.position().y + line_rect.height});
+		break;
+	default:
+		switch (evt.character) {
+		case '\0':
+			break;
+		case '\b':
+			if (cursor.index <= 0)
+				break;
+			m_text.erase(cursor.index - 1, 1);
+			m_layout.recalculate_layout();
+			m_layout.set_cursor(cursor.index - 1);
+			break;
+		default:
+			m_text.insert(cursor.index, (const char*) &evt.character, 1);
+			m_layout.recalculate_layout();
+			m_layout.set_cursor(cursor.index + 1);
+			break;
+		}
+	}
+
+	cursor = m_layout.get_cursor();
+	scroll_into_view({cursor.pos, {1, m_layout.lines()[cursor.line].rect.height}});
+
+	repaint();
+
+	return true;
 }

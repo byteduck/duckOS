@@ -255,11 +255,11 @@ FontGlyph* Font::glyph(uint32_t codepoint) {
 	return glyph ? glyph : unknown_glyph;
 }
 
-Dimensions Font::size_of(const char* string) {
+Dimensions Font::size_of(std::string_view string) {
 	Rect bounding_box = {0, 0, 0, this->bounding_box().height};
 	Point cpos = {0, 0};
-	while(*string) {
-		auto glph = glyph(*string);
+	for (auto ch : string) {
+		auto glph = glyph(ch);
 		Point offset = {
 			glph->base_x - data->bounding_box.base_x,
 			(data->bounding_box.base_y - glph->base_y) + (data->size - glph->height)
@@ -270,7 +270,6 @@ Dimensions Font::size_of(const char* string) {
 		};
 		bounding_box = bounding_box.combine(glyph_box);
 		cpos = cpos + Point {glph->next_offset.x, glph->next_offset.y};
-		string++;
 	}
 	return bounding_box.dimensions();
 }

@@ -6,6 +6,7 @@ SET(SOURCES
         Timer.cpp
         UIException.cpp
         TextLayout.cpp
+        TextStorage.cpp
 
         bits/FilePicker.cpp
 

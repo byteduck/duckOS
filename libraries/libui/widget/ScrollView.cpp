@@ -48,6 +48,16 @@ void ScrollView::scroll_to(Gfx::Point position) {
 	repaint();
 }
 
+void ScrollView::scroll_into_view(Gfx::Rect rect) {
+	const Gfx::Rect displayed_rect {scroll_position(), content_area().dimensions()};
+	if (!displayed_rect.contains(rect)) {
+		if ((rect.y < displayed_rect.y))
+			scroll_to({0, rect.y});
+		else
+			scroll_to({0, rect.y + rect.height - displayed_rect.height});
+	}
+}
+
 Gfx::Point ScrollView::scroll_position() {
 	return _scroll_position;
 }
