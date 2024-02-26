@@ -66,7 +66,8 @@ The code for these can be found in [programs](/programs)
 - Files (/apps/files.app): A rudimentary file explorer application.
 - Viewer (apps/viewer.app): A basic image viewer.
 - Lib3d Demo (apps/3demo.app): A demo for the lib3d library. Displays a cube by default; can be used to view obj files.
- 
+- Editor (/apps/editor.app): A basic app to edit text files. 
+
 ### CLI Programs
 
 The code for these can be found in [programs](programs/).
@@ -108,6 +109,8 @@ Programs that take arguments will provide you with the correct usage when you ru
 - [libapp](/libraries/libapp): A library providing methods to retrieve information about installed and running applications.
 - [libsys](/libraries/libsys): Provides higher-level C++ abstractions for retrieving system information, namely from procFS.
 - [libsound](/libraries/libsound): Provides a framework for audio applications and interfacing with the sound server, Quack.
+- [lib3d](/libraries/lib3d): Provides basic software 3D rendering functionality.
+- [libmatrix](/libraries/libmatrix): Provides matrix math utilities.
 
 ### Ports
 
