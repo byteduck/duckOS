@@ -211,7 +211,7 @@ int parse_str_options(const char* mode) {
 				options = O_RDWR;
 				break;
 			case O_WRONLY | O_CREAT:
-				options = O_RDWR | O_CREAT;
+				options = O_RDWR | O_CREAT | O_TRUNC;
 				break;
 			case O_WRONLY | O_APPEND:
 				options = O_RDWR | O_APPEND;
