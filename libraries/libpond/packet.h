@@ -62,10 +62,6 @@ namespace Pond {
 		Gfx::Rect area;
 	};
 
-	struct WindowFlipPkt {
-		int window_id;
-	};
-
 	struct MouseMovePkt {
 		int window_id;
 		Gfx::Point delta;

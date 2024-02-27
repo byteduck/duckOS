@@ -213,11 +213,6 @@ namespace Pond {
 
 		Window(int id, Gfx::Rect rect, struct shm shm, Context* ctx);
 
-		/**
-		 * Flips the framebuffer.
-		 */
-		void flip_buffer();
-
 		int _id = -1; ///< The ID of the window.
 		Gfx::Rect _rect; ///< The rect of the window.
 		struct shm _shm; ///< The shared memory object for the window's framebuffer.

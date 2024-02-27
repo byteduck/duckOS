@@ -156,20 +156,15 @@ WindowResizedPkt Client::resize_window(WindowResizePkt& params) {
 	return {window->id(), window->framebuffer_shm().id, window->rect()};
 }
 
-void Client::invalidate_window(WindowInvalidatePkt& params) {
+bool Client::invalidate_window(WindowInvalidatePkt& params) {
 	auto window = windows.find(params.window_id);
 	if(window != windows.end()) {
 		if(params.area.x < 0 || params.area.y < 0)
 			window->second->invalidate();
 		else
 			window->second->invalidate(params.area);
-	}
-}
-
-bool Client::flip_window(Pond::WindowFlipPkt& params) {
-	auto window = windows.find(params.window_id);
-	if(window != windows.end())
 		return window->second->flip();
+	}
 	return false;
 }
 

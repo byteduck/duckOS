@@ -48,8 +48,7 @@ public:
 	void destroy_window(Pond::WindowDestroyPkt& packet);
 	void move_window(Pond::WindowMovePkt& packet);
 	Pond::WindowResizedPkt resize_window(Pond::WindowResizePkt& packet);
-	void invalidate_window(Pond::WindowInvalidatePkt& packet);
-	bool flip_window(Pond::WindowFlipPkt& packet);
+	bool invalidate_window(Pond::WindowInvalidatePkt& packet);
 	Pond::FontResponsePkt get_font(Pond::GetFontPkt& packet);
 	void set_title(Pond::SetTitlePkt& packet);
 	void reparent(Pond::WindowReparentPkt& packet);

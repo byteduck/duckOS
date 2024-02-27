@@ -124,8 +124,7 @@ namespace Pond {
 		PONDFUNC(destroy_window, void, WindowDestroyPkt);
 		PONDFUNC(move_window, void, WindowMovePkt);
 		PONDFUNC(resize_window, WindowResizedPkt, WindowResizePkt);
-		PONDFUNC(invalidate_window, void, WindowInvalidatePkt);
-		PONDFUNC(flip_window, bool, WindowFlipPkt);
+		PONDFUNC(invalidate_window, bool, WindowInvalidatePkt);
 		PONDFUNC(get_font, FontResponsePkt, GetFontPkt);
 		PONDFUNC(set_title, void, SetTitlePkt);
 		PONDFUNC(reparent, void, WindowReparentPkt);
