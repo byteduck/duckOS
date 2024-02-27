@@ -408,7 +408,7 @@ void Display::create_mouse_events(int delta_x, int delta_y, int scroll, uint8_t 
 
 		//If it's near the border, see if we can resize it
 		static bool was_near_border = false;
-		if(!_resize_window && window->resizable() && mouse.near_border(window->absolute_rect(), WINDOW_RESIZE_BORDER)) {
+		if(!_resize_window && window->resizable() && (window != _mousedown_window) && mouse.near_border(window->absolute_rect(), WINDOW_RESIZE_BORDER)) {
 			was_near_border = true;
 			_resize_mode = get_resize_mode(window->absolute_rect(), mouse);
 			switch(_resize_mode) {

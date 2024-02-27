@@ -355,18 +355,25 @@ void Window::on_mouse_move(Pond::MouseMoveEvent event) {
 
 	do_widget(_contents);
 	do_widget(_titlebar_accessory);
+	if(_focused_widget && _focused_widget->receives_drag_events() && !event.new_pos.in(_focused_widget->_absolute_rect)) {
+		auto evt = event;
+		evt.new_pos = evt.new_pos - _focused_widget->_absolute_rect.position();
+		_focused_widget->evt_mouse_move(evt);
+	}
 	_window->set_draggable(draggable);
 }
 
 void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
-	if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
+	bool pressed_mouse1 = !(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1);
+	bool released_mouse1 = (evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1);
+	if(pressed_mouse1) {
 		_window->bring_to_front();
 		if(_mouse.in(_close_button.area)) {
 			_close_button.pressed = true;
 			_window->set_draggable(false);
 			repaint();
 		}
-	} else if((evt.old_buttons & POND_MOUSE1) && !(evt.new_buttons & POND_MOUSE1)) {
+	} else if(released_mouse1) {
 		if(_close_button.pressed) {
 			close();
 		}
@@ -376,6 +383,10 @@ void Window::on_mouse_button(Pond::MouseButtonEvent evt) {
 		_contents->evt_mouse_button(evt);
 	if(_titlebar_accessory && _mouse.in(_titlebar_accessory->_rect))
 		_titlebar_accessory->evt_mouse_button(evt);
+
+	if(_focused_widget && _focused_widget->receives_drag_events() && (pressed_mouse1 || released_mouse1)) {
+		_focused_widget->evt_mouse_button(evt);
+	}
 }
 
 void Window::on_mouse_scroll(Pond::MouseScrollEvent evt) {

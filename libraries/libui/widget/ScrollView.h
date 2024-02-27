@@ -45,7 +45,8 @@ namespace UI {
 		bool on_mouse_scroll(Pond::MouseScrollEvent evt) override;
 		bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 		void on_layout_change(const Gfx::Rect& old_rect) override;
-		virtual bool needs_layout_on_child_change() override;
+		bool needs_layout_on_child_change() override;
+		bool receives_drag_events() override;
 
 	protected:
 		ScrollView(bool show_scrollbar = true);

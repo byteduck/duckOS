@@ -244,6 +244,11 @@ namespace UI {
 		 */
 		void set_window_draggable(bool draggable);
 
+		/**
+		 * Whether the widget should receive mouse movement events while being dragged even if the mouse is outside of the widget
+		 */
+		virtual bool receives_drag_events();
+
 	protected:
 		explicit Widget() = default;
 

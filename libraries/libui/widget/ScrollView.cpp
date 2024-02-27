@@ -173,3 +173,7 @@ void ScrollView::on_layout_change(const Gfx::Rect& old_rect) {
 bool ScrollView::needs_layout_on_child_change() {
 	return false;
 }
+
+bool ScrollView::receives_drag_events() {
+	return true;
+}

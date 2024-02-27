@@ -231,6 +231,10 @@ void Widget::set_window_draggable(bool draggable) {
 	_window_draggable = draggable;
 }
 
+bool Widget::receives_drag_events() {
+	return false;
+}
+
 void Widget::set_window(Duck::PtrRef<Window> window) {
 	if(_parent || _parent_window)
 		return;

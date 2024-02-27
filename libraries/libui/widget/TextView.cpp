@@ -63,8 +63,8 @@ void TextView::do_repaint(const UI::DrawContext& ctx) {
 }
 
 bool TextView::on_mouse_button(Pond::MouseButtonEvent evt) {
-	if (!mouse_position().in(content_area()))
-		return ScrollView::on_mouse_button(evt);
+	if (ScrollView::on_mouse_button(evt))
+		return true;
 
 	if ((evt.new_buttons & POND_MOUSE1) && !(evt.old_buttons & POND_MOUSE1)) {
 		m_layout.set_cursor(mouse_position() + scroll_position() - content_area().position());
