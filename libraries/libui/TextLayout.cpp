@@ -134,7 +134,11 @@ void TextLayout::recalculate_layout() {
 
 	while(*cur_char) {
 		auto glyph = m_font->glyph(*cur_char);
-		if(*cur_char == ' ') {
+		if((*cur_char >= ' ' && *cur_char <= '/') ||
+			(*cur_char >= ':' && *cur_char <= '@') ||
+			(*cur_char >= '[' && *cur_char <= '`') ||
+			(*cur_char >= '{' && *cur_char <= '~'))
+		{
 			last_word = cur_char;
 		}
 		auto fits = rect_for_glyph(glyph).inside(rect);
