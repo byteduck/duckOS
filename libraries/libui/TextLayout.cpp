@@ -98,6 +98,18 @@ void TextLayout::recalculate_layout() {
 	const char* last_word_break = contents.data();
 	const char* line_begin = contents.data();
 
+	// If our text is empty, create one empty line.
+	if (contents.empty()) {
+		m_lines.push_back({
+			.index = 0,
+			.length = 0,
+			.rect = {0, 0, 1, m_font->bounding_box().height},
+			.ellipsis = false
+		});
+		m_dimensions = m_lines[0].rect.dimensions();
+		return;
+	}
+
 	auto finalize_line = [&] {
 		cur_line.ellipsis = false;
 		cur_line.index = line_begin - contents.data();
