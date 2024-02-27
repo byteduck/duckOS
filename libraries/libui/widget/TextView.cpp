@@ -35,8 +35,11 @@ std::string_view TextView::text() {
 void TextView::set_text(std::string_view contents) {
 	m_text = std::move(contents);
 	calculate_text_layout();
-	recalculate_scrollbar();
-	repaint();
+}
+
+void TextView::set_break_mode(TextLayout::BreakMode break_mode) {
+	m_break_mode = break_mode;
+	calculate_text_layout();
 }
 
 void TextView::on_layout_change(const Gfx::Rect& old_rect) {
@@ -45,7 +48,9 @@ void TextView::on_layout_change(const Gfx::Rect& old_rect) {
 }
 
 void TextView::calculate_text_layout() {
-	m_layout = {self(), {content_area().width, -1}, m_font, TextLayout::TruncationMode::ELLIPSIS, TextLayout::BreakMode::WORD};
+	m_layout = {self(), {content_area().width, -1}, m_font, TextLayout::TruncationMode::ELLIPSIS, m_break_mode};
+	recalculate_scrollbar();
+	repaint();
 }
 
 void TextView::do_repaint(const UI::DrawContext& ctx) {

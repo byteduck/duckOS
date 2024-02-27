@@ -14,9 +14,12 @@ namespace UI {
 		void on_scroll(Gfx::Point new_position) override;
 		Gfx::Dimensions scrollable_area() override;
 
-		// TextView
+		// TextStorage
 		std::string_view text() override;
 		void set_text(std::string_view contents) override;
+
+		// TextView
+		void set_break_mode(TextLayout::BreakMode break_mode);
 
 		// Widget
 		void on_layout_change(const Gfx::Rect &old_rect) override;
@@ -36,5 +39,6 @@ namespace UI {
 		Gfx::Font* m_font;
 		TextLayout m_layout {};
 		std::string m_text;
+		TextLayout::BreakMode m_break_mode = TextLayout::BreakMode::WORD;
 	};
 }
