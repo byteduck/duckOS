@@ -22,5 +22,5 @@ FileNavigationBar::FileNavigationBar(Duck::Ptr<UI::FileViewBase> file_view): UI:
 	location_label->set_sizing_mode(UI::FILL);
 	location_label->set_alignment(UI::CENTER, UI::BEGINNING);
 	add_child(back_button);
-	add_child(Cell::make(location_label, Cell::default_padding, Cell::default_background, Cell::Style::INSET));
+	add_child(Cell::make(location_label, Cell::default_padding, UI::Theme::bg(), Cell::Style::INSET));
 }

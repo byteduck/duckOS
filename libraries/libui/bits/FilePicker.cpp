@@ -37,10 +37,14 @@ std::vector<Duck::Path> FilePicker::pick() {
 		btn;
 	}));
 
+	auto buttons_cell = UI::Cell::make(buttons_flex, Cell::default_padding, Cell::default_background, Cell::Style::OUTSET);
+	buttons_cell->set_sizing_mode(UI::PREFERRED);
+
 	// Main flex layout
 	auto flex = FlexLayout::make(FlexLayout::VERTICAL);
+	flex->set_spacing(0);
 	flex->add_child(file_view);
-	flex->add_child(buttons_flex);
+	flex->add_child(buttons_cell);
 
 	window->set_contents(flex);
 	window->set_titlebar_accessory(m_bar);
