@@ -18,6 +18,7 @@
 */
 
 #include "ListView.h"
+#include <libkeyboard/Keyboard.h>
 
 using namespace UI;
 
@@ -134,10 +135,16 @@ Duck::Ptr<Widget> ListView::setup_entry(int index) {
 }
 
 Gfx::Rect ListView::item_rect(int index) {
-	return {
-		Gfx::Point {(index % _num_per_row) * _item_dims.width, (index / _num_per_row) * _item_dims.height} - scroll_position(),
-		_item_dims
+	Gfx::Rect ret = {
+			Gfx::Point {(index % _num_per_row) * _item_dims.width, (index / _num_per_row) * _item_dims.height} - scroll_position(),
+			_item_dims
 	};
+	if (_num_per_row > 1 && _item_dims.width != -1) {
+		// Center items if we have more than 1 per row
+		auto extra_width = content_area().width - (_item_dims.width * _num_per_row);
+		ret.x += (extra_width / (_num_per_row - 1)) * (index % _num_per_row);
+	}
+	return ret;
 }
 
 ListView::ListView(ListView::Layout layout): _layout(layout) {
