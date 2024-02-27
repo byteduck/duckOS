@@ -330,8 +330,12 @@ void Display::focus(Window* window) {
 	_focused_window = window;
 	if(_focused_window)
 		_focused_window->notify_focus(true);
-	if(old_focused)
-		old_focused->notify_focus(false);
+	if (old_focused) {
+		if(old_focused != _focused_window->menu_parent()) {
+			old_focused->notify_focus(false);
+		}
+	}
+
 }
 
 

@@ -76,7 +76,17 @@ Window* Window::parent() const {
 	return _parent;
 }
 
+Window* Window::menu_parent() const {
+	return _menu_parent;
+}
+
 void Window::reparent(Window* new_parent) {
+	//If this is a menu window, don't set the graphical parent; just note which window this is a menu for
+	if (_type == Pond::MENU) {
+		_menu_parent = new_parent;
+		return;
+	}
+
 	//If we have a parent, remove ourself from its children
 	if(_parent) {
 		for(auto it = _parent->_children.begin(); it < _parent->_children.end(); it++) {

@@ -159,6 +159,9 @@ void MenuWidget::open() {
 	auto window = m_window.lock();
 	if (!window)
 		return;
+	auto last_focused = UI::last_focused_window().lock();
+	if (last_focused)
+		window->pond_window()->reparent(last_focused->pond_window());
 	window->bring_to_front();
 	window->focus();
 	window->show();

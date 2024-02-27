@@ -51,6 +51,7 @@ public:
 	~Window();
 
 	Window* parent() const;
+	Window* menu_parent() const;
 	void reparent(Window* new_parent);
 	void remove_child(Window* child);
 	Client* client() const;
@@ -294,6 +295,7 @@ private:
 	// The old absolute rect of the window to invalidate once the window has been invalidated after a resize
 	Gfx::Rect _pending_resize_invalidation_rect = {0, 0, 0, 0};
 	Window* _parent;
+	Window* _menu_parent = nullptr;
 	Display* _display;
 	std::vector<Window*> _children;
 	Client* _client = nullptr;

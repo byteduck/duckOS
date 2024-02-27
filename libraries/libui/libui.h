@@ -38,6 +38,7 @@ namespace UI {
 	void run_while(std::function<bool()> predicate);
 	void update(int timeout);
 	bool ready_to_exit();
+	Duck::WeakPtr<Window> last_focused_window();
 
 	void set_timeout(std::function<void()> func, int interval);
 	Duck::Ptr<Timer> set_interval(std::function<void()> func, int interval);

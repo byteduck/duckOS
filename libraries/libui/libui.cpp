@@ -32,6 +32,7 @@ Pond::Context* UI::pond_context = nullptr;
 std::vector<pollfd> pollfds;
 std::map<int, Poll> polls;
 std::map<int, std::shared_ptr<Window>> windows;
+std::weak_ptr<Window> _last_focused_window;
 int cur_timeout = 0;
 std::map<int, Timer*> timers;
 int num_windows = 0;
@@ -136,6 +137,8 @@ void handle_pond_events() {
 				auto& evt = event.window_focus;
 				auto window = find_window(evt.window->id());
 				if(window) {
+					if (evt.focused && window->pond_window()->type() != Pond::MENU)
+						_last_focused_window = window;
 					window->on_focus(evt.focused);
 				}
 			}
@@ -219,6 +222,10 @@ void UI::update(int timeout) {
 
 bool UI::ready_to_exit() {
 	return should_exit;
+}
+
+Duck::WeakPtr<Window> UI::last_focused_window() {
+	return _last_focused_window;
 }
 
 void UI::set_timeout(std::function<void()> func, int interval) {
