@@ -56,6 +56,12 @@ int main(int argc, char** argv, char** envp) {
 		UI::MenuItem::make("File", nullptr, UI::Menu::make({
 			UI::MenuItem::make("Open...", open_picker),
 			UI::MenuItem::make("Save", save)
+		})),
+		UI::MenuItem::make("View", nullptr, UI::Menu::make({
+			UI::MenuItem::make("Line Breaks", nullptr, UI::Menu::make({
+				UI::MenuItem::make("Word", [&]() { text_view->set_break_mode(UI::TextLayout::BreakMode::WORD); }),
+				UI::MenuItem::make("Character", [&]() { text_view->set_break_mode(UI::TextLayout::BreakMode::CHARACTER); })
+			}))
 		}))
 	});
 
