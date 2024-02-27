@@ -6,10 +6,11 @@
 #include "../Image.h"
 #include "../../libui.h"
 #include "../Cell.h"
+#include "../layout/FlexLayout.h"
 
 using namespace UI;
 
-class FileView: public UI::BoxLayout {
+class FileView: public UI::FlexLayout {
 public:
 	WIDGET_DEF(FileView)
 protected:
@@ -23,7 +24,7 @@ protected:
 
 private:
 	FileView(const Duck::DirectoryEntry& dir_entry, Duck::WeakPtr<FileGridView> dir_widget):
-		BoxLayout(VERTICAL), entry(dir_entry), dir_widget(std::move(dir_widget))
+		FlexLayout(VERTICAL), entry(dir_entry), dir_widget(std::move(dir_widget))
 	{
 		Duck::Ptr<const Gfx::Image> image;
 		auto path = entry.path();
@@ -41,11 +42,13 @@ private:
 
 		auto ui_image = UI::Image::make(image);
 		ui_image->set_preferred_size({32, 32});
+		ui_image->set_sizing_mode(UI::PREFERRED);
 
-		add_child(Cell::make(ui_image));
+		add_child(ui_image);
 
 		auto label = UI::Label::make(entry.name());
-		label->set_alignment(BEGINNING, CENTER);
+		label->set_alignment(CENTER, CENTER);
+		label->set_sizing_mode(UI::FILL);
 		add_child(label);
 	}
 
@@ -74,7 +77,7 @@ Duck::Ptr<Widget> FileGridView::lv_create_entry(int index) {
 }
 
 Gfx::Dimensions FileGridView::lv_preferred_item_dimensions() {
-	return { 96, 70 };
+	return { 70, 70 };
 }
 
 int FileGridView::lv_num_items() {

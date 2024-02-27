@@ -5,7 +5,6 @@
 
 #include "../ListView.h"
 #include "../Widget.h"
-#include "../layout/BoxLayout.h"
 #include <libduck/DirectoryEntry.h>
 #include "FileViewDelegate.h"
 #include "FileViewBase.h"
