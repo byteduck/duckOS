@@ -44,6 +44,8 @@ namespace UI {
 		void set_type(ButtonType new_type);
 		[[nodiscard]] bool is_pressed();
 		void set_pressed(bool pressed);
+		void set_background(Gfx::Color bg);
+		void set_foreground(Gfx::Color fg);
 
 		//Widget
 		virtual bool on_mouse_button(Pond::MouseButtonEvent evt) override;
@@ -68,6 +70,7 @@ namespace UI {
 		int m_padding = 4;
 		ButtonStyle m_style = ButtonStyle::RAISED;
 		ButtonType m_type = ButtonType::PRESS;
+		Gfx::Color m_bg_color = UI::Theme::button();
 	};
 }
 

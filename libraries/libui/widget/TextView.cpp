@@ -35,6 +35,7 @@ std::string_view TextView::text() {
 void TextView::set_text(std::string_view contents) {
 	m_text = std::move(contents);
 	calculate_text_layout();
+	recalculate_scrollbar();
 	repaint();
 }
 

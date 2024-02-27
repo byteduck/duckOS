@@ -24,7 +24,9 @@ namespace UI {
 
 		// MenuWidget
 		static Duck::Ptr<MenuWidget> open_menu(Duck::Ptr<Menu> menu, Gfx::Point location);
+		void close();
 
+		std::function<void()> on_close = nullptr;
 	private:
 		explicit MenuWidget(Duck::Ptr<Menu> menu, Duck::PtrRef<Window> window);
 
@@ -36,7 +38,6 @@ namespace UI {
 		void open_child_window(Duck::Ptr<Menu> menu, Gfx::Rect item_rect);
 		Duck::WeakPtr<MenuWidget> root_menu();
 		bool any_are_focused();
-		void close();
 		void open();
 
 		//Windows

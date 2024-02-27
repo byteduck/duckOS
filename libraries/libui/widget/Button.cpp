@@ -77,6 +77,15 @@ void Button::set_pressed(bool pressed) {
 	repaint();
 }
 
+void Button::set_foreground(Gfx::Color fg) {
+	m_label->set_color(fg);
+}
+
+void Button::set_background(Gfx::Color bg) {
+	m_bg_color = bg;
+	repaint();
+}
+
 bool Button::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if(!(evt.old_buttons & POND_MOUSE1) && (evt.new_buttons & POND_MOUSE1)) {
 		if(m_type == ButtonType::PRESS)
@@ -142,19 +151,21 @@ void Button::do_repaint(const DrawContext& ctx) {
 		}
 		case ButtonStyle::INSET: {
 			if(m_pressed)
-				ctx.draw_inset_rect(ctx.rect(), Theme::button());
+				ctx.draw_inset_rect(ctx.rect(), m_bg_color);
+			else if(m_hovered)
+				ctx.fill(ctx.rect(), m_bg_color.lightened());
 			else
-				ctx.fill(ctx.rect(), Theme::bg());
+				ctx.fill(ctx.rect(), Gfx::Color());
 			break;
 		}
 		case ButtonStyle::RAISED:
-			ctx.draw_button_base(ctx.rect(), m_pressed, m_hovered ? Theme::button().lightened() : Theme::button());
+			ctx.draw_button_base(ctx.rect(), m_pressed, m_hovered ? m_bg_color.lightened() : m_bg_color);
 			break;
 		case ButtonStyle::DISCREET:
 			if(m_pressed)
-				ctx.draw_inset_rect(ctx.rect(), Theme::button());
+				ctx.draw_inset_rect(ctx.rect(), m_bg_color);
 			else if(m_hovered)
-				ctx.draw_outset_rect(ctx.rect(), Theme::button());
+				ctx.draw_outset_rect(ctx.rect(), m_bg_color);
 			else
 				ctx.fill(ctx.rect(), Gfx::Color());
 	}

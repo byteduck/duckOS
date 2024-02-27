@@ -2,12 +2,13 @@
 /* Copyright © 2016-2022 Byteduck */
 
 #include "MenuWidget.h"
+#include "../libui.h"
 #include <libgraphics/Font.h>
 
 #define MAX_MENU_WIDTH 200
 #define ITEM_HEIGHT 20
 #define ITEM_PADDING_X 8
-#define ITEM_PADDING_Y 2
+#define ITEM_PADDING_Y 1
 #define MENU_PADDING_Y 2
 #define MENU_PADDING_RIGHT 16
 #define SEPARATOR_ITEM_HEIGHT 5
@@ -110,7 +111,7 @@ void MenuWidget::do_repaint(const DrawContext& ctx) {
 
 		auto contents_rect = item_rect.inset(ITEM_PADDING_Y, ITEM_PADDING_X + 1, ITEM_PADDING_Y, ITEM_PADDING_X);
 		if(m_hovered_item == item || m_expanded_item == item)
-			ctx.fill(item_rect.inset(1, 2, 2, 1), UI::Theme::accent());
+			ctx.fill(item_rect.inset(0, 2, 0, 2), UI::Theme::highlight());
 		ctx.draw_text(item->title().c_str(), contents_rect, BEGINNING, CENTER, UI::Theme::font(), UI::Theme::fg());
 		if(item->submenu())
 			ctx.draw_text(">", contents_rect, END, CENTER, UI::Theme::font(), UI::Theme::fg());
@@ -153,6 +154,8 @@ void MenuWidget::close() {
 		release_menu_window(m_window.lock());
 		m_window.reset();
 	}
+	if (on_close)
+		on_close();
 }
 
 void MenuWidget::open() {

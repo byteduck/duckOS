@@ -5,6 +5,8 @@
 
 #include "layout/BoxLayout.h"
 #include "../Menu.h"
+#include "MenuWidget.h"
+#include "Button.h"
 
 namespace UI {
 	class MenuBar : public BoxLayout {
@@ -15,7 +17,9 @@ namespace UI {
 
 	private:
 		MenuBar(Duck::Ptr<Menu> menu);
+		void on_button_pressed(Duck::Ptr<UI::Button> button, Duck::Ptr<UI::MenuItem> item);
 
 		Duck::Ptr<Menu> m_menu;
+		Duck::Ptr<MenuWidget> m_opened_menu;
 	};
 }
