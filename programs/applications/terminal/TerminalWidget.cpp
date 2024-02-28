@@ -183,12 +183,12 @@ Duck::Ptr<UI::Menu> TerminalWidget::create_menu() {
 			term->clear();
 		}),
 		UI::MenuItem::Separator,
-		UI::MenuItem::make("Signals", nullptr, UI::Menu::make({
+		UI::MenuItem::make("Signals", UI::Menu::make({
 			 UI::MenuItem::make("Send SIGINT (^C)", [&] {
 				 term->handle_keypress(0, 'c', KBD_MOD_CTRL);
 			 })
 		})),
-		UI::MenuItem::make("Cursor Style", nullptr, UI::Menu::make({
+		UI::MenuItem::make("Cursor Style", UI::Menu::make({
 		   UI::MenuItem::make("Block", [&] {
 			   set_cursor_style(CursorStyle::Block);
 		   }),
@@ -200,7 +200,7 @@ Duck::Ptr<UI::Menu> TerminalWidget::create_menu() {
 		   })
 		}))
 	};
-	return UI::Menu::make(items);
+	return UI::Menu::make(std::move(items));
 }
 
 void TerminalWidget::set_cursor_style(CursorStyle style) {

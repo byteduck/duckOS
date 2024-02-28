@@ -4,15 +4,18 @@
 #include "MenuBar.h"
 #include "Button.h"
 #include "MenuWidget.h"
+#include <functional>
+#include <libkeyboard/Keyboard.h>
+#include <libui/libui.h>
 
 using namespace Duck;
 using namespace UI;
 
 void MenuBar::set_menu(Duck::Ptr<Menu> menu) {
 	m_menu = menu;
-	auto children_copy = children;
-	for(auto& child : children_copy)
-		remove_child(child);
+	for(auto& button : m_buttons)
+		remove_child(button.second);
+	m_buttons.clear();
 	for(auto& item : menu->items()) {
 		auto button = UI::Button::make(item->title());
 		button->set_style(ButtonStyle::INSET);
@@ -23,6 +26,7 @@ void MenuBar::set_menu(Duck::Ptr<Menu> menu) {
 			on_button_pressed(btn_weak.lock(), item);
 		};
 		add_child(button);
+		m_buttons[item] = button;
 	}
 }
 
@@ -46,4 +50,41 @@ void MenuBar::on_button_pressed(Duck::Ptr<UI::Button> button, Duck::Ptr<UI::Menu
 	} else if(item->action()) {
 		item->action()();
 	}
+}
+
+bool MenuBar::on_keyboard(Pond::KeyEvent evt) {
+	if(!KBD_ISPRESSED(evt)) {
+		return false;
+	}
+
+	Keyboard::Shortcut shortcut = {(Keyboard::Key) evt.key, (Keyboard::Modifier) evt.modifiers};
+
+	std::function<bool(Duck::Ptr<UI::MenuItem>)> do_item = [&](Duck::Ptr<UI::MenuItem> item) -> bool {
+		if (item->submenu()) {
+			for (auto& item : item->submenu()->items()) {
+				if (do_item(item))
+					return true;
+			}
+		} else if(item->shortcut() == shortcut) {
+			if (item->action())
+				item->action()();
+			return true;
+		}
+		return false;
+	};
+
+	for (auto& item : m_menu->items()) {
+		if (do_item(item)) {
+			auto button = m_buttons[item];
+			if (button) {
+				button->set_pressed(true);
+				UI::set_timeout([button]() {
+					button->set_pressed(false);
+				}, 100);
+			}
+			return true;
+		}
+	}
+
+	return false;
 }

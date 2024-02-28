@@ -318,8 +318,12 @@ Pond::Window* Window::pond_window() {
 }
 
 void Window::on_keyboard(Pond::KeyEvent evt) {
-	if(_focused_widget)
-		_focused_widget->on_keyboard(evt);
+	if(_focused_widget) {
+		if(!_focused_widget->on_keyboard(evt)) {
+			if(_titlebar_accessory)
+				_titlebar_accessory->on_keyboard(evt);
+		}
+	}
 }
 
 void Window::on_mouse_move(Pond::MouseMoveEvent event) {

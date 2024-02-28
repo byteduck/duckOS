@@ -7,6 +7,8 @@
 #include <libui/widget/MenuBar.h>
 
 using namespace Duck;
+using namespace UI;
+using namespace Keyboard;
 
 int main(int argc, char** argv, char** envp) {
 	UI::init(argv, envp);
@@ -53,16 +55,16 @@ int main(int argc, char** argv, char** envp) {
 	};
 
 	auto menu = UI::Menu::make({
-		UI::MenuItem::make("File", nullptr, UI::Menu::make({
-			UI::MenuItem::make("Open...", open_picker),
-			UI::MenuItem::make("Save", save)
-		})),
-		UI::MenuItem::make("View", nullptr, UI::Menu::make({
-			UI::MenuItem::make("Line Breaks", nullptr, UI::Menu::make({
-				UI::MenuItem::make("Word", [&]() { text_view->set_break_mode(UI::TextLayout::BreakMode::WORD); }),
-				UI::MenuItem::make("Character", [&]() { text_view->set_break_mode(UI::TextLayout::BreakMode::CHARACTER); })
-			}))
-		}))
+		MenuItem::make("File", std::vector {
+			MenuItem::make("Open...", open_picker, Shortcut {Key::O, Modifier::Ctrl}),
+			MenuItem::make("Save", save, Shortcut {Key::S, Modifier::Ctrl})
+		}),
+		MenuItem::make("View", std::vector {
+			MenuItem::make("Line Breaks", std::vector {
+				MenuItem::make("Word", [&]() { text_view->set_break_mode(UI::TextLayout::BreakMode::WORD); }),
+				MenuItem::make("Character", [&]() { text_view->set_break_mode(UI::TextLayout::BreakMode::CHARACTER); })
+			})
+		})
 	});
 
 	auto menu_bar = UI::MenuBar::make(menu);

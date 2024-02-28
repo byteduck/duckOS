@@ -8,12 +8,24 @@ using namespace Duck;
 
 const Duck::Ptr<MenuItem> MenuItem::Separator = MenuItem::make();
 
-MenuItem::MenuItem(std::string title, Action action, Duck::Ptr<Menu> submenu):
-		m_title(std::move(title)), m_action(std::move(action)), m_submenu(std::move(submenu))
+MenuItem::MenuItem(std::string title, Action action, Duck::Ptr<Menu> submenu, Keyboard::Shortcut shortcut):
+		m_title(std::move(title)), m_action(std::move(action)), m_submenu(std::move(submenu)), m_shortcut(shortcut)
 {
 	static int menu_id = 0;
 	m_id = ++menu_id;
 }
+
+MenuItem::MenuItem():
+	MenuItem("", nullptr, nullptr, {}) {}
+
+MenuItem::MenuItem(std::string title, Action action, Keyboard::Shortcut shortcut):
+	MenuItem(std::move(title), std::move(action), nullptr, shortcut) {}
+
+MenuItem::MenuItem(std::string title, Duck::Ptr<Menu> submenu):
+	MenuItem(std::move(title), nullptr, std::move(submenu), {}) {}
+
+MenuItem::MenuItem(std::string title, std::vector<Duck::Ptr<MenuItem>> submenu):
+	MenuItem(std::move(title), nullptr, std::move(UI::Menu::make(std::move(submenu))), {}) {}
 
 size_t MenuItem::serialized_size() const {
 	return Serialization::buffer_size(m_title, m_id) + sizeof(bool) + (m_submenu ? m_submenu->serialized_size() : 0);
@@ -59,6 +71,14 @@ void MenuItem::set_submenu(Duck::Ptr<Menu> submenu) {
 
 Duck::Ptr<Menu> MenuItem::submenu() const {
 	return m_submenu;
+}
+
+void MenuItem::set_shortcut(Keyboard::Shortcut shortcut) {
+	m_shortcut = shortcut;
+}
+
+Keyboard::Shortcut MenuItem::shortcut() {
+	return m_shortcut;
 }
 
 Duck::Ptr<Menu> Menu::make(std::vector<Duck::Ptr<MenuItem>> items) {

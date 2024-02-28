@@ -6,9 +6,14 @@
 #include <string>
 #include <functional>
 #include <memory>
+#include <utility>
 #include <vector>
 #include <libduck/Serializable.h>
 #include "libduck/Object.h"
+#include <libkeyboard/Keyboard.h>
+
+#define MENUITEM(title, action...) UI::MenuItem::make(title, action)
+#define SUBMENU(title, submenu) UI::MenuItem::make(title, UI::Menu::make(submenu))
 
 namespace UI {
 	class Menu;
@@ -36,13 +41,22 @@ namespace UI {
 		void set_submenu(Duck::Ptr<Menu> submenu);
 		Duck::Ptr<Menu> submenu() const;
 
+		void set_shortcut(Keyboard::Shortcut shortcut);
+		Keyboard::Shortcut shortcut();
+
 	private:
-		MenuItem(std::string title = "", Action action = nullptr, Duck::Ptr<Menu> submenu = nullptr);
+		explicit MenuItem();
+		MenuItem(std::string title, Action action, Duck::Ptr<Menu> submenu, Keyboard::Shortcut shortcut);
+		MenuItem(std::string title, Action action, Keyboard::Shortcut shortcut = {});
+		MenuItem(std::string title, Duck::Ptr<Menu> submenu);
+		MenuItem(std::string title, std::vector<Duck::Ptr<MenuItem>> submenu);
+
 		explicit MenuItem(const uint8_t*& buf);
 
 		std::string m_title; ///< The title of the menu item.
 		Action m_action; ///< The action performed when the item is selected.
 		Duck::Ptr<Menu> m_submenu; ///< The submenu for this menu item.
+		Keyboard::Shortcut m_shortcut;
 		int m_id;
 	};
 

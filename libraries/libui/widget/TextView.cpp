@@ -80,6 +80,9 @@ bool TextView::on_keyboard(Pond::KeyEvent evt) {
 	if (cursor == TextLayout::CursorPos::none)
 		return false;
 
+	if(evt.modifiers & KBD_MOD_CTRL)
+		return false;
+
 	if(!KBD_ISPRESSED(evt))
 		return true;
 
