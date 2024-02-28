@@ -19,6 +19,7 @@
 
 #include "Path.h"
 #include "DirectoryEntry.h"
+#include "Log.h"
 
 using namespace Duck;
 
@@ -119,4 +120,25 @@ void Path::rebuild_parts() {
 	} else {
 		m_filename = base;
 	}
+}
+
+ResultRet<struct stat> Path::stat() {
+	struct stat ret;
+	if(!::stat(m_path.c_str(), &ret))
+		return ret;
+	return Result(errno);
+}
+
+bool Path::exists() {
+	return !stat().is_error();
+}
+
+bool Path::is_regular_file() {
+	auto stat_res = stat();
+	return !stat_res.is_error() && S_ISREG(stat_res.value().st_mode);
+}
+
+bool Path::is_dir() {
+	auto stat_res = stat();
+	return !stat_res.is_error() && S_ISDIR(stat_res.value().st_mode);
 }

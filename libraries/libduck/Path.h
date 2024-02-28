@@ -21,7 +21,9 @@
 
 #include <string>
 #include <vector>
+#include <sys/stat.h>
 #include "Result.h"
+#include "Object.h"
 
 namespace Duck {
 	class DirectoryEntry;
@@ -38,6 +40,11 @@ namespace Duck {
 		[[nodiscard]] const std::string& string() const { return m_path; }
 		[[nodiscard]] const std::string& extension() const { return m_extension; }
 		[[nodiscard]] Path parent() const { return operator/(".."); }
+
+		[[nodiscard]] ResultRet<struct stat> stat();
+		[[nodiscard]] bool exists();
+		[[nodiscard]] bool is_regular_file();
+		[[nodiscard]] bool is_dir();
 
 		//Conversion and operators
 		operator std::string() const;
