@@ -18,13 +18,27 @@ int main(int argc, char** argv, char** envp) {
 	auto window = UI::Window::make();
 	auto text_view = UI::TextView::make("");
 
+	std::function<void()> save_as;
+
 	auto save = [&] () {
+		if (file_path.is_dir())
+			save_as();
+
 		auto file_res = File::open(file_path, "w+");
 		if (file_res.is_error())
 			return;
 		auto file = file_res.value();
 		file.write(text_view->text().data(), text_view->text().length());
 		file.close();
+	};
+
+	save_as = [&] () {
+		auto filename = FilePicker::make(FilePicker::Mode::SAVE, "/untitled.txt")->pick();
+		if (filename.empty())
+			return;
+		file_path = filename[0];
+		window->set_title("Editor: " + file_path.basename());
+		save();
 	};
 
 	auto open = [&] (Duck::Path path) {
@@ -57,7 +71,8 @@ int main(int argc, char** argv, char** envp) {
 	auto menu = UI::Menu::make({
 		MenuItem::make("File", std::vector {
 			MenuItem::make("Open...", open_picker, Shortcut {Key::O, Modifier::Ctrl}),
-			MenuItem::make("Save", save, Shortcut {Key::S, Modifier::Ctrl})
+			MenuItem::make("Save", save, Shortcut {Key::S, Modifier::Ctrl}),
+			MenuItem::make("Save As...", save_as, Shortcut {Key::S, Modifier::Ctrl | Modifier::Shift})
 		}),
 		MenuItem::make("View", std::vector {
 			MenuItem::make("Line Breaks", std::vector {
