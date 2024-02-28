@@ -86,6 +86,9 @@ int FileGridView::lv_num_items() {
 
 void FileGridView::did_set_directory(Duck::Path path) {
 	if(inited) {
+		m_selected.clear();
+		if(!delegate.expired())
+			delegate.lock()->fv_did_select_files(m_selected);
 		list_view->update_data();
 		list_view->scroll_to({0, 0});
 	}

@@ -13,26 +13,49 @@ std::vector<Duck::Path> FilePicker::pick() {
 	m_picked = false;
 	char cwdbuf[512];
 	getcwd(cwdbuf, 512);
+	auto old_focused = UI::last_focused_window();
 	auto window = UI::Window::make();
 
 	// File View
-	auto file_view = FileGridView::make(cwdbuf);
+	Duck::Path dir = m_default_path;
+	auto default_is_dir = m_default_path.is_dir();
+	if (!default_is_dir)
+		dir = m_default_path.parent();
+	if (!dir.exists())
+		dir = cwdbuf;
+	auto file_view = FileGridView::make(dir);
 	file_view->delegate = self();
 
 	// Navigation bar
 	m_bar = FileNavigationBar::make(file_view);
 
+	std::string confirm_text, title;
+	switch (m_mode) {
+		case OPEN_SINGLE:
+			confirm_text = "Open";
+			title = "Open File";
+			break;
+		case SAVE:
+			confirm_text = "Save";
+			title = "Save File";
+			break;
+	}
+
 	// Buttons
 	auto buttons_flex = FlexLayout::make(FlexLayout::HORIZONTAL);
 	buttons_flex->set_sizing_mode(UI::PREFERRED);
-	buttons_flex->add_child(Cell::make());
+
+	// Picker textbox
+	m_filename_box = TextView::make(default_is_dir ? "" : m_default_path.basename(), false, m_mode == SAVE);
+	buttons_flex->add_child(Cell::make(m_filename_box, Cell::default_padding, Cell::default_background, Cell::Style::INSET));
+
 	buttons_flex->add_child(({
 		auto btn = UI::Button::make("Cancel");
 		btn->on_pressed = [&] { window->close(); };
 		btn;
 	}));
 	buttons_flex->add_child(({
-		auto btn = UI::Button::make("Open");
+		auto btn = UI::Button::make(confirm_text);
 		btn->on_pressed = [&] { m_picked = true; };
 		btn;
 	}));
@@ -50,7 +73,7 @@ std::vector<Duck::Path> FilePicker::pick() {
 	window->set_titlebar_accessory(m_bar);
 	window->set_resizable(true);
 	window->resize({306, 300});
-	window->set_title("Open File");
+	window->set_title(title);
 	window->show();
 
 	UI::run_while([&] {
@@ -59,13 +82,29 @@ std::vector<Duck::Path> FilePicker::pick() {
 
 	window->close();
 
-	if(m_picked)
-		return file_view->selected_files();
+	if (old_focused.lock())
+		old_focused.lock()->focus();
+
+	switch (m_mode) {
+	case OPEN_SINGLE:
+		if(m_picked)
+			return file_view->selected_files();
+		return {};
+
+	case SAVE:
+		return {file_view->current_directory() / Duck::Path(std::string(m_filename_box->text()))};
+	}
+
 	return {};
 }
 
-void FilePicker::fv_did_select_files(std::vector<Duck::Path> selected) {
 
+
+void FilePicker::fv_did_select_files(std::vector<Duck::Path> selected) {
+	if (!selected.empty())
+		m_filename_box->set_text(selected[0].basename());
+	else
+		m_filename_box->set_text("");
 }
 
 void FilePicker::fv_did_double_click(Duck::DirectoryEntry entry) {
@@ -75,3 +114,6 @@ void FilePicker::fv_did_double_click(Duck::DirectoryEntry entry) {
 void FilePicker::fv_did_navigate(Duck::Path path) {
 	m_bar->fv_did_navigate(path);
 }
+
+FilePicker::FilePicker(FilePicker::Mode mode, Duck::Path default_path):
+	m_mode(mode), m_default_path(std::move(default_path)) {}

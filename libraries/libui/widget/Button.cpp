@@ -74,6 +74,7 @@ bool Button::is_pressed() {
 
 void Button::set_pressed(bool pressed) {
 	m_pressed = pressed;
+	calculate_layout();
 	repaint();
 }
 

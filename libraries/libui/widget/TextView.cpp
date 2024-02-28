@@ -7,11 +7,12 @@
 
 using namespace UI;
 
-TextView::TextView(std::string contents, bool multi_line):
+TextView::TextView(std::string contents, bool multi_line, bool editable):
 	ScrollView(multi_line),
 	m_multi_line(multi_line),
 	m_font(Theme::font()),
-	m_text(std::move(contents))
+	m_text(std::move(contents)),
+	m_editable(editable)
 {
 }
 
@@ -66,6 +67,9 @@ bool TextView::on_mouse_button(Pond::MouseButtonEvent evt) {
 	if (ScrollView::on_mouse_button(evt))
 		return true;
 
+	if (!m_editable)
+		return false;
+
 	if ((evt.new_buttons & POND_MOUSE1) && !(evt.old_buttons & POND_MOUSE1)) {
 		m_layout.set_cursor(mouse_position() + scroll_position() - content_area().position());
 		repaint();
@@ -77,7 +81,7 @@ bool TextView::on_mouse_button(Pond::MouseButtonEvent evt) {
 
 bool TextView::on_keyboard(Pond::KeyEvent evt) {
 	auto cursor = m_layout.get_cursor();
-	if (cursor == TextLayout::CursorPos::none)
+	if (!m_editable || cursor == TextLayout::CursorPos::none)
 		return false;
 
 	if(evt.modifiers & KBD_MOD_CTRL)
@@ -126,4 +130,10 @@ bool TextView::on_keyboard(Pond::KeyEvent evt) {
 	repaint();
 
 	return true;
+}
+
+Gfx::Dimensions TextView::preferred_size() {
+	if (m_multi_line)
+		return ScrollView::preferred_size();
+	return { m_layout.dimensions().width, m_font->bounding_box().height };
 }

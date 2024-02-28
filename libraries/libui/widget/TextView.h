@@ -26,9 +26,10 @@ namespace UI {
 		void do_repaint(const UI::DrawContext &ctx) override;
 		bool on_mouse_button(Pond::MouseButtonEvent evt) override;
 		bool on_keyboard(Pond::KeyEvent evt) override;
+		Gfx::Dimensions preferred_size() override;
 
 	private:
-		explicit TextView(std::string contents = "", bool multi_line = true);
+		explicit TextView(std::string contents = "", bool multi_line = true, bool editable = true);
 		void initialize() override;
 
 		void calculate_text_layout();
