@@ -276,7 +276,6 @@ Duck::Ptr<const Gfx::Image> UI::icon(Duck::Path path) {
 
 void UI::__register_window(const std::shared_ptr<Window>& window, int id) {
 	windows[id] = window;
-	num_windows++;
 }
 
 void UI::__deregister_window(int id) {
@@ -284,7 +283,11 @@ void UI::__deregister_window(int id) {
 
 	//Exit if all windows are closed
 	//TODO Add a way to override this behavior
-	if(!(--num_windows)) {
-		should_exit = true;
+	for (auto& window : windows) {
+		if (window.second->pond_window()->type() == Pond::DEFAULT) {
+			should_exit = false;
+			return;
+		}
 	}
+	should_exit = true;
 }
