@@ -1,28 +1,9 @@
-/*
-    This file is part of duckOS.
-    
-    duckOS is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-    
-    duckOS is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-    
-    You should have received a copy of the GNU General Public License
-    along with duckOS.  If not, see <https://www.gnu.org/licenses/>.
-    
-    Copyright (c) Byteduck 2016-2020. All rights reserved.
-*/
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2016-2024 Byteduck */
 
 #pragma once
 
-#include <vector>
-#include <unordered_map>
-#include <kernel/api/page_size.h>
-#include <string>
+#include <stdint.h>
 
 #define ELF_MAGIC 0x464C457F //0x7F followed by 'ELF'
 
@@ -135,8 +116,13 @@
 #define R_386_RELATIVE	8
 #define R_386_TLS_TPOFF	14
 
+#define STB_LOCAL	0
+#define STB_GLOBAL	1
+#define STB_WEAK	2
+
 #define ELF32_R_SYM(x) ((x) >> 8u)
 #define ELF32_R_TYPE(x) ((x) & 0xffu)
+#define ELF32_ST_BIND(info) ((info) >> 4)
 
 typedef struct {
 	unsigned char	e_ident[16];
@@ -203,52 +189,3 @@ typedef struct {
 	uint32_t	sh_addralign;
 	uint32_t	sh_entsize;
 } elf32_sheader;
-
-typedef int (*main_t)(int argc, char* argv[], char* envp[]);
-
-class Object {
-public:
-	Object() = default;
-	~Object() = default;
-
-	static Object* open_library(char* library_name);
-
-	int load(char* name_cstr, bool is_main_executable);
-	int calculate_memsz();
-	int read_headers();
-	int load_dynamic_table();
-	void read_dynamic_table();
-	int load_sections();
-	void mprotect_sections();
-	int read_copy_relocations();
-	int read_symbols();
-	int relocate();
-
-	std::string name;
-	int fd = 0;
-	elf32_ehdr* header = nullptr;
-	size_t memsz = 0;
-	size_t memloc = 0;
-	size_t calculated_base = 0;
-	bool loaded = false;
-
-	char* string_table = nullptr;
-	size_t string_table_size = 0;
-	elf32_sym* symbol_table = nullptr;
-	size_t symbol_table_size = 0;
-	uint32_t* hash = nullptr;
-	void (**init_array)() = nullptr;
-	size_t init_array_size = 0;
-	void (*init_func)() = nullptr;
-	main_t entry;
-
-	std::vector<char*> required_libraries;
-	uint8_t* mapped_file = nullptr;
-	size_t mapped_size = 0;
-	std::vector<elf32_pheader> pheaders;
-	std::vector<elf32_sheader> sheaders;
-	std::vector<elf32_dynamic> dynamic_table;
-};
-
-std::string find_library(char* library_name);
-

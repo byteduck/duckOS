@@ -4,6 +4,7 @@ SET(SOURCES
         ctype.c
         cxxabi.c
         dirent.c
+        dlfcn.cpp
         errno.c
         fcntl.c
         locale.c
