@@ -50,8 +50,11 @@ namespace Sound {
 			uint32_t data_rate;
 			uint16_t block_size;
 			uint16_t bits_per_sample;
-			uint32_t chunk2_header;
-			uint32_t chunk2_size;
+		};
+
+		struct RiffChunk {
+			uint32_t type;
+			uint32_t size;
 		};
 
 		static Duck::ResultRet<Duck::Ptr<WavReader>> open_wav(const Duck::Path& path);
@@ -68,7 +71,7 @@ namespace Sound {
 		void seek(float time);
 
 	private:
-		WavReader(Duck::File& file, Duck::Ptr<Duck::MappedBuffer> mapped_file);
+		WavReader(Duck::File& file, Duck::Ptr<Duck::MappedBuffer> mapped_file, size_t data_chunk_start);
 
 		size_t bytes_per_sample() const;
 

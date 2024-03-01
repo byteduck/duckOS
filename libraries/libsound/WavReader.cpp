@@ -34,21 +34,38 @@ ResultRet<Duck::Ptr<WavReader>> WavReader::read_wav(Duck::File& file) {
 	auto mapped_file = TRY(Duck::MappedBuffer::make_file(file, Duck::MappedBuffer::R, Duck::MappedBuffer::PrivateFile));
 	auto& header = *mapped_file->data<WavHeader>();
 
-	#define CHECK(condition) if(!(condition)) return Result(EINVAL, "Invalid WAV file header")
+	#define CHECK(condition) if(!(condition)) return Result(EINVAL, "Invalid WAV file header: Condition " #condition " failed")
 	#define CHECK_SUPPORTED(condition) if(!(condition)) return Result(EINVAL, "Unsupported WAV format!")
 
+	// Check RIFF / WAV header
 	CHECK(header.riff_magic == WAV_RIFF_MAGIC);
 	CHECK(header.wave_magic == WAV_WAV_MAGIC);
 	CHECK(header.fmt_header == WAV_FMT_HEADER);
 	CHECK_SUPPORTED(header.fmt_size == 16);
 	CHECK_SUPPORTED(header.audio_fmt == WAV_FMT_PCM);
-	CHECK(header.chunk2_header == WAV_DATA_HEADER);
 
-	return make(file, mapped_file);
+	// Find chunk with data
+	auto cur_chunk_off = sizeof(WavHeader);
+	bool found = false;
+	do {
+		auto cur_chunk = (RiffChunk*) ((size_t) mapped_file->data() + cur_chunk_off);
+		if (cur_chunk->type ==  WAV_DATA_HEADER) {
+			found = true;
+			break;
+		} else if (!cur_chunk->size) {
+			break;
+		}
+		cur_chunk_off += cur_chunk->size + sizeof(RiffChunk);
+	} while (cur_chunk_off + sizeof(RiffChunk) <= mapped_file->size());
+
+	if (!found)
+		return Result(EINVAL, "Could not find WAV data chunk");
+
+	return make(file, mapped_file, cur_chunk_off + sizeof(RiffChunk));
 }
 
-WavReader::WavReader(Duck::File& file, Duck::Ptr<Duck::MappedBuffer> mapped_file):
-	m_file(file), m_mapped_file(mapped_file), m_header(*mapped_file->data<WavHeader>()), m_offset(sizeof(WavHeader)) {}
+WavReader::WavReader(Duck::File& file, Duck::Ptr<Duck::MappedBuffer> mapped_file, size_t data_chunk_start):
+	m_file(file), m_mapped_file(mapped_file), m_header(*mapped_file->data<WavHeader>()), m_offset(data_chunk_start) {}
 
 Duck::ResultRet<Duck::Ptr<SampleBuffer>> WavReader::read_samples(size_t num_samples) {
 	if (m_offset >= m_mapped_file->size())
