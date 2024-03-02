@@ -26,14 +26,17 @@ namespace kstd {
 	public:
 		string();
 		string(const string& string);
+		string(string&& string) noexcept;
 		string(const char* string);
-		string(const char* string, size_t length);
 		~string();
 
 		string& operator=(const char* str);
 		string& operator=(const string& str);
+		string& operator=(string&& str) noexcept;
 		string& operator+=(const string& str);
+		string& operator+=(const char* str);
 		string operator+(const string& b) const;
+		string operator+(const char* str) const;
 		bool operator==(const string& str) const;
 		bool operator==(const char* str) const;
 		bool operator!=(const string& str) const;
@@ -50,7 +53,12 @@ namespace kstd {
 		size_t find_last_of(const string& str, size_t end = -1) const;
 		size_t find_last_of(const char* str, size_t end = -1) const;
 		size_t find_last_of(const char c, size_t end = -1) const;
+
 	private:
+		string(const char* a, size_t size_a, const char* b, size_t size_b);
+		void append(const char* str, size_t length);
+		void expand_to(size_t min_size);
+
 		size_t _size;
 		size_t _length;
 		char* _cstring;

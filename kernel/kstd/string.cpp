@@ -19,6 +19,7 @@
 
 #include "string.h"
 #include "cstring.h"
+#include "kstdlib.h"
 
 namespace kstd {
 	string::string(): _size(1), _length(0), _cstring(new char[1]) {
@@ -29,21 +30,33 @@ namespace kstd {
 		_length = string._length;
 		_size = string._size;
 		_cstring = new char[_size];
-		strcpy(_cstring, string._cstring);
+		memcpy(_cstring, string._cstring, _size);
+	}
+
+	string::string(string&& str) noexcept:
+		_length(str._length),
+		_size(str._size),
+		_cstring(str._cstring)
+	{
+		str._length = 0;
+		str._size = 0;
+		str._cstring = nullptr;
 	}
 
 	string::string(const char* str) {
 		_length = strlen(str);
 		_size = _length + 1;
 		_cstring = new char[_size];
-		strcpy(_cstring, str);
+		memcpy(_cstring, str, _size);
 	}
 
-	string::string(const char* str, size_t length): _length(length + 1) {
+	string::string(const char* a, size_t size_a, const char* b, size_t size_b) {
+		_length = size_a + size_b;
 		_size = _length + 1;
 		_cstring = new char[_size];
-		_cstring[_length - 1] = '\0';
-		memcpy(_cstring, str, _length - 1);
+		memcpy(_cstring, a, size_a);
+		memcpy(_cstring + size_a, b, size_b);
+		_cstring[_length] = '\0';
 	}
 
 	string::~string(){
@@ -64,29 +77,46 @@ namespace kstd {
 		return *this;
 	}
 
-	string& string::operator+=(const string& str) {
-		_length = _length + str._length;
-		_size = _length + 1;
+	string& string::operator=(kstd::string&& str) noexcept {
+		if (&str == this)
+			return *this;
 
-		char* buffer = new char[_size];
-		strcpy(buffer, _cstring);
-		strcat(buffer, str._cstring);
-
+		_length = str._length;
+		_size = str._size;
 		delete[] _cstring;
-		_cstring = buffer;
+		_cstring = str._cstring;
+
+		str._length = 0;
+		str._size = 0;
+		str._cstring = nullptr;
 
 		return *this;
 	}
 
+	string& string::operator+=(const string& str) {
+		append(str._cstring, str._length);
+		return *this;
+	}
+
+	string& string::operator+=(const char* str) {
+		append(str, strlen(str));
+		return *this;
+	}
+
+	void string::append(const char* str, size_t length) {
+		auto new_length = _length + length;
+		expand_to(new_length + 1);
+		memcpy(_cstring + _length, str, length);
+		_cstring[new_length] = '\0';
+		_length = new_length;
+	}
+
 	string string::operator+(const string& str) const {
-		char* buffer = new char[_length + str._length + 1];
-		strcpy(buffer, _cstring);
-		strcat(buffer, str._cstring);
+		return {_cstring, _length, str._cstring, str._length};
+	}
 
-		string ret = string(buffer);
-		delete[] buffer;
-
-		return ret;
+	string string::operator+(const char* str) const {
+		return {_cstring, _length, str, (size_t) strlen(str)};
 	}
 
 	string& string::operator=(const char* str) {
@@ -192,5 +222,15 @@ namespace kstd {
 
 	char *string::data() const {
 		return _cstring;
+	}
+
+	void string::expand_to(size_t min_size) {
+		if (min_size <= _size)
+			return;
+		_size = max(min_size, _size * 2);
+		if (_cstring)
+			_cstring = (char*) krealloc(_cstring, _size);
+		else
+			_cstring = new char[_size];
 	}
 }
