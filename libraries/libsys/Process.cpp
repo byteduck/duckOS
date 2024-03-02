@@ -21,6 +21,7 @@
 #include <libduck/Filesystem.h>
 #include <libduck/Config.h>
 #include <unistd.h>
+#include <libduck/File.h>
 
 using namespace Sys;
 using Duck::Result, Duck::ResultRet, Duck::Path;
@@ -105,4 +106,53 @@ Result Process::update() {
 	_shared_mem = {std::stoul(proc["shmem"])};
 
 	return Result::SUCCESS;
+}
+
+Duck::ResultRet<std::vector<Process::MemoryRegion>> Process::memory_regions() const {
+	auto file = TRY(Duck::File::open("/proc/" + std::to_string(_pid) + "/vmspace", "r"));
+	auto stream = Duck::FileInputStream(file);
+	std::vector<MemoryRegion> out;
+	while (!stream.eof()) {
+		std::string line;
+		stream >> line;
+		if (line.empty())
+			continue;
+		Duck::StringInputStream line_stream {line};
+		line_stream.set_delimeter('\t');
+		MemoryRegion reg;
+		int idx = 0;
+		while (!line_stream.eof() && idx <= 4) {
+			std::string part;
+			line_stream >> part;
+			switch (idx) {
+				case 0:
+					reg.start = strtoul(part.c_str(), nullptr, 0);
+					break;
+				case 1:
+					reg.size = strtoul(part.c_str(), nullptr, 0);
+					break;
+				case 2:
+					reg.object_start = strtoul(part.c_str(), nullptr, 0);
+					break;
+				case 3:
+					reg.prot.read = part.find('r') != std::string::npos;
+					reg.prot.write = part.find('w') != std::string::npos;
+					reg.prot.execute = part.find('x') != std::string::npos;
+					reg.shared = part.find('s') != std::string::npos;
+					reg.type = (part.find('A') != std::string::npos) ? MemoryRegion::Anonymous : MemoryRegion::Inode;
+					break;
+				case 4:
+					reg.name = part;
+					break;
+			}
+			idx++;
+		}
+		if (idx != 5) {
+			Duck::Log::warnf("libsys: Invalid memory region description for {}: {}", _pid, line);
+			continue;
+		}
+		out.push_back(reg);
+	}
+	out.shrink_to_fit();
+	return out;
 }

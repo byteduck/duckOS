@@ -35,6 +35,20 @@ namespace Sys {
 			STOPPED = 4
 		};
 
+		struct MemoryRegion {
+			size_t start;
+			Mem::Amount size;
+			size_t object_start;
+			struct Prot {
+				bool read, write, execute;
+			} prot;
+			enum Type {
+				Anonymous, Inode
+			} type;
+			bool shared;
+			std::string name;
+		};
+
 		static std::map<pid_t, Process> get_all();
 		static Duck::ResultRet<Process> get(pid_t pid);
 		static Duck::ResultRet<Process> self();
@@ -50,6 +64,7 @@ namespace Sys {
 		Mem::Amount physical_mem() const { return _physical_mem; }
 		Mem::Amount virtual_mem() const { return _virtual_mem; }
 		Mem::Amount shared_mem() const { return _shared_mem; }
+		Duck::ResultRet<std::vector<MemoryRegion>> memory_regions() const;
 
 		Duck::ResultRet<App::Info> app_info() const;
 
