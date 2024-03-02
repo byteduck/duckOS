@@ -10,7 +10,7 @@
 #include <libui/widget/NamedCell.h>
 
 ProcessInspectorWidget::ProcessInspectorWidget(const Sys::Process& process):
-	UI::BoxLayout(VERTICAL),
+	UI::FlexLayout(VERTICAL),
 	m_process(process)
 {
 	m_timer = UI::set_interval([this] {
@@ -25,7 +25,7 @@ ProcessInspectorWidget::ProcessInspectorWidget(const Sys::Process& process):
 void ProcessInspectorWidget::initialize() {
 	// Header
 	{
-		auto header = UI::BoxLayout::make(HORIZONTAL, 4);
+		auto header = UI::BoxLayout::make(UI::BoxLayout::HORIZONTAL, 4);
 		auto name = m_process.name();
 		Duck::Ptr<const Gfx::Image> image;
 		if (m_app_info.exists()) {
@@ -43,7 +43,7 @@ void ProcessInspectorWidget::initialize() {
 
 	// Status
 	{
-		auto stack = UI::BoxLayout::make(VERTICAL);
+		auto stack = UI::BoxLayout::make(UI::BoxLayout::VERTICAL);
 		stack->add_child(m_pid = UI::Label::make("PID: " + std::to_string(m_process.pid()), UI::BEGINNING));
 		stack->add_child(m_executable = UI::Label::make("Executable: " + m_process.exe(), UI::BEGINNING));
 		stack->add_child(m_parent = UI::Label::make("Parent: " + std::to_string(m_process.ppid()), UI::BEGINNING));
@@ -54,11 +54,19 @@ void ProcessInspectorWidget::initialize() {
 
 	// Memory info
 	{
-		auto stack = UI::BoxLayout::make(VERTICAL);
+		auto stack = UI::BoxLayout::make(UI::BoxLayout::VERTICAL);
 		stack->add_child(m_memory_phys = UI::Label::make("", UI::BEGINNING));
 		stack->add_child(m_memory_virt = UI::Label::make("", UI::BEGINNING));
 		stack->add_child(m_memory_shared = UI::Label::make("", UI::BEGINNING));
 		add_child(UI::NamedCell::make("Memory", stack));
+	}
+
+	// Memory layout
+	{
+		m_memory_layout = ProcessMemoryLayoutWidget::make(m_process);
+		auto cell = UI::NamedCell::make("Memory Layout", m_memory_layout);
+		cell->set_sizing_mode(UI::FILL);
+		add_child(cell);
 	}
 
 	update();
@@ -73,4 +81,5 @@ void ProcessInspectorWidget::update() {
 	m_memory_phys->set_label("Physical: " + m_process.physical_mem().readable());
 	m_memory_virt->set_label("Virtual: " + m_process.virtual_mem().readable());
 	m_memory_shared->set_label("Shared: " + m_process.shared_mem().readable());
+	m_memory_layout->update();
 }

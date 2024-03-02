@@ -7,8 +7,9 @@
 #include <libui/Timer.h>
 #include <libsys/Process.h>
 #include <libui/widget/Label.h>
+#include "ProcessMemoryLayoutWidget.h"
 
-class ProcessInspectorWidget: public UI::BoxLayout {
+class ProcessInspectorWidget: public UI::FlexLayout {
 public:
 	WIDGET_DEF(ProcessInspectorWidget);
 
@@ -33,4 +34,5 @@ private:
 	Duck::Ptr<UI::Label> m_memory_phys;
 	Duck::Ptr<UI::Label> m_memory_virt;
 	Duck::Ptr<UI::Label> m_memory_shared;
+	Duck::Ptr<ProcessMemoryLayoutWidget> m_memory_layout;
 };

@@ -152,6 +152,7 @@ Duck::Ptr<UI::Menu> ProcessListWidget::tv_entry_menu(int row) {
 			auto window = UI::Window::make();
 			window->set_contents(ProcessInspectorWidget::make(process));
 			window->set_title(process.name() + "(" + std::to_string(process.pid()) + ")");
+			window->set_resizable(true);
 			window->show();
 		})
 	});
