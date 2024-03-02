@@ -36,6 +36,7 @@ namespace Duck {
 
 		ResultRet<size_t> read(void* buffer, size_t n);
 		ResultRet<size_t> write(const void* buffer, size_t n);
+		ResultRet<std::string> read_all();
 
 		Result seek(long offset, Whence whence);
 		Result rewind();

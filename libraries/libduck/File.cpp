@@ -48,6 +48,22 @@ ResultRet<size_t> File::read(void* buffer, size_t n) {
 	}
 }
 
+ResultRet<std::string> File::read_all() {
+	if(!m_fileref->is_open())
+		return Result {EBADF};
+
+	size_t size = stat().st_size;
+	std::string buf;
+	buf.resize(size + 1);
+	auto res = fread((void*) buf.c_str(), 1, size, m_fileref->cfile);
+	if(int err = ferror(m_fileref->cfile)) {
+		clearerr(m_fileref->cfile);
+		return Result(err);
+	}
+	buf.resize(res + 1, '\0');
+	return buf;
+}
+
 ResultRet<size_t> File::write(const void* buffer, size_t n) {
 	if(!m_fileref->is_open())
 		return Result {EBADF};

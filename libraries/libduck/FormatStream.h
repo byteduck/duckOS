@@ -131,5 +131,12 @@ namespace Duck {
 	void printerrln(const char* fmt, T... args) {
 		sprintln(Stream::std_err, fmt, args...);
 	}
+
+	template<typename... T>
+	std::string format(const char* fmt, T... args) {
+		StringOutputStream out;
+		sprint(out, fmt, args...);
+		return out.string();
+	}
 }
 
