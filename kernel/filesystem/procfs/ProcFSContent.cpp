@@ -202,7 +202,7 @@ ResultRet<kstd::string> ProcFSContent::vmspace(pid_t pid) {
 			ASSERT(false);
 		}
 
-		string += " ";
+		string += "\t";
 		if (object->is_anonymous())
 			string += "[";
 		string += object->name();
