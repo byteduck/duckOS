@@ -95,7 +95,9 @@ void TableView::do_repaint(const DrawContext& ctx) {
 
 Gfx::Dimensions TableView::preferred_size() {
 	auto tab_height = m_show_tabs ? c_tab_height : 0;
-	return m_list_view->preferred_size() + Gfx::Dimensions { c_padding_tl + c_padding_br, c_padding_tl + c_padding_br + tab_height};
+	auto out = m_list_view->preferred_size() + Gfx::Dimensions { c_padding_tl + c_padding_br, c_padding_tl + c_padding_br + tab_height};
+	out.height = std::min(out.height, 300);
+	return out;
 }
 
 Gfx::Dimensions TableView::minimum_size() {
@@ -137,7 +139,7 @@ std::vector<int> TableView::calculate_column_widths() {
 		stretchy_width = std::max(16, remaining_width / num_stretchy);
 
 	// Add 1px to some stretchy columns if needed to make up for remainder
-	int stretchy_remainder = remaining_width % num_stretchy;
+	int stretchy_remainder = num_stretchy ? remaining_width % num_stretchy : 0;
 
 	// Calculate widths and return
 	std::vector<int> ret = m_column_widths;
