@@ -23,7 +23,11 @@ public:
 	constexpr Color(uint32_t raw_value): value(raw_value) {}
 	inline operator uint32_t() { return value; }
 
-	[[nodiscard]] constexpr Color blended(Color other) const {
+	[[nodiscard]] inline constexpr Color blended(Color other) const {
+		if (!other.value || !other.a)
+			return *this;
+		else if(other.a == 255)
+			return other;
 		unsigned int alpha = other.a + 1;
 		unsigned int inv_alpha = 256 - other.a;
 		return {
