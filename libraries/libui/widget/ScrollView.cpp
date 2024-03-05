@@ -28,22 +28,22 @@ ScrollView::ScrollView(bool show_scrollbar): show_scrollbar(show_scrollbar) {
 }
 
 void ScrollView::scroll(Gfx::Point scroll_amount) {
+	if (scroll_amount.x == 0 && scroll_amount.y == 0)
+		return;
 	scroll_to(_scroll_position + scroll_amount);
 }
 
 void ScrollView::scroll_to(Gfx::Point position) {
-	Gfx::Dimensions size = current_size();
+	if (position == _scroll_position)
+		return;
 	_scroll_position = position;
-	double scroll_percent = (double)_scroll_position.y / (double)(scrollable_area().height - size.height);
-	if(scroll_percent < 0) {
+	auto max_height = scrollable_area().height - current_size().height;
+	if(_scroll_position.y < 0)
 		_scroll_position.y = 0;
-		scroll_percent = 0;
-	} else if(scroll_percent > 1) {
-		_scroll_position.y = scrollable_area().height - size.height;
-		scroll_percent = 1;
-	}
+	else if(_scroll_position.y > max_height)
+		_scroll_position.y = max_height;
 	if (show_scrollbar)
-		handle_area.y = (int)(scroll_percent * (scrollbar_area.height - handle_area.height));
+		handle_area.y = (int)(((float) _scroll_position.y / (float) max_height) * (scrollbar_area.height - handle_area.height));
 	on_scroll(_scroll_position);
 	repaint();
 }
@@ -128,6 +128,8 @@ bool ScrollView::on_mouse_move(Pond::MouseMoveEvent evt) {
 	if(!dragging_scrollbar || !show_scrollbar)
 		return false;
 
+	auto old_pos = _scroll_position;
+
 	handle_area.y += evt.delta.y;
 	if(handle_area.y < 0)
 		handle_area.y = 0;
@@ -139,7 +141,8 @@ bool ScrollView::on_mouse_move(Pond::MouseMoveEvent evt) {
 	else
 		_scroll_position.y = 0;
 
-	on_scroll(_scroll_position);
+	if (old_pos != _scroll_position)
+		on_scroll(_scroll_position);
 
 	repaint();
 	return true;
