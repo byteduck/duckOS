@@ -363,12 +363,6 @@ Point Framebuffer::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph
 	Point pos = {glyph_pos.x + x_offset, glyph_pos.y + y_offset};
 	Rect glyph_area = {0, 0, glyph->width, glyph->height};
 
-	//Calculate the color multipliers
-	double r_mult = COLOR_R(color) / 255.0;
-	double g_mult = COLOR_G(color) / 255.0;
-	double b_mult = COLOR_B(color) / 255.0;
-	double alpha_mult = COLOR_A(color) / 255.0;
-
 	//Make sure self_area is in bounds of the framebuffer
 	Rect self_area = {pos.x, pos.y, glyph_area.width, glyph_area.height};
 	self_area = self_area.overlapping_area({0, 0, width, height});
@@ -385,14 +379,7 @@ Point Framebuffer::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph
 		for(int x = 0; x < self_area.width; x++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = glyph->bitmap[(glyph_area.x + x) + (glyph_area.y + y) * glyph->width];
-			double alpha = (COLOR_A(other_val) / 255.00) * alpha_mult;
-			if(alpha == 0)
-				continue;
-			double oneminusalpha = 1.00 - alpha;
-			this_val = RGB(
-					(uint8_t) (COLOR_R(this_val) * oneminusalpha + COLOR_R(other_val) * alpha * r_mult),
-					(uint8_t) (COLOR_G(this_val) * oneminusalpha + COLOR_G(other_val) * alpha * g_mult),
-					(uint8_t) (COLOR_B(this_val) * oneminusalpha + COLOR_B(other_val) * alpha * b_mult));
+			this_val = this_val.blended(other_val);
 		}
 	}
 
