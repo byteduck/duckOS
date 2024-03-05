@@ -16,6 +16,7 @@ ResultRet<kstd::Arc<VMObject>> InodeVMObject::clone() {
 	ASSERT(m_type == Type::Private);
 	become_cow_and_ref_pages();
 	auto new_object = kstd::Arc(new InodeVMObject(m_name, m_physical_pages, m_inode, m_type, m_type == Type::Private));
+	new_object->m_committed_pages = this->m_committed_pages;
 	return kstd::static_pointer_cast<VMObject>(new_object);
 }
 
@@ -41,6 +42,7 @@ ResultRet<bool> InodeVMObject::try_fault_in_page(size_t index) {
 		MM.free_physical_page(new_page);
 		return Result(-nread);
 	}
+	m_committed_pages++;
 	m_physical_pages[index] = new_page;
 
 	return true;

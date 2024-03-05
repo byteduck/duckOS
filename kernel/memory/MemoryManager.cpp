@@ -329,7 +329,7 @@ ResultRet<kstd::vector<PageIndex>> MemoryManager::alloc_contiguous_physical_page
 
 kstd::Arc<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
 	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
-		auto object = TRY(AnonymousVMObject::alloc(size, "kernel", true));
+		auto object = TRY(AnonymousVMObject::alloc(size, "kernel", false));
 		return TRY(m_kernel_space->map_object(object, VMProt::RW));
 	};
 	auto res = do_alloc();

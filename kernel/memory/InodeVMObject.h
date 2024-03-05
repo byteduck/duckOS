@@ -28,6 +28,7 @@ public:
 		return m_type == Type::Private ? ForkAction::BecomeCoW : ForkAction::Share;
 	}
 	ResultRet<kstd::Arc<VMObject>> clone() override;
+	size_t num_committed_pages() const override { return m_committed_pages; }
 
 	// TODO: Syncing
 
@@ -36,4 +37,5 @@ private:
 
 	kstd::Arc<Inode> m_inode;
 	Type m_type;
+	size_t m_committed_pages = 0;
 };

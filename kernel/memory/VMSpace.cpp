@@ -285,20 +285,16 @@ ResultRet<VirtualAddress> VMSpace::find_free_space(size_t size) {
 
 size_t VMSpace::calculate_regular_anonymous_total() {
 	LOCK(m_lock);
-	size_t total = 0;
+	size_t total_pages = 0;
 	auto cur_region = m_region_map;
 	while(cur_region) {
 		if(cur_region->used) {
-			auto& object = cur_region->vmRegion->m_object;
-			if(object->is_anonymous()) {
-				auto anon_object = kstd::static_pointer_cast<AnonymousVMObject>(object);
-				if(!anon_object->is_shared())
-					total += anon_object->size();
-			}
+			auto object = cur_region->vmRegion->m_object;
+			total_pages += object->num_committed_pages();
 		}
 		cur_region = cur_region->next;
 	}
-	return total;
+	return total_pages * PAGE_SIZE;
 }
 
 void VMSpace::iterate_regions(kstd::IterationFunc<VMRegion*> callback) {
