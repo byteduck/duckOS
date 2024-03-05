@@ -329,7 +329,7 @@ ResultRet<kstd::vector<PageIndex>> MemoryManager::alloc_contiguous_physical_page
 
 kstd::Arc<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
 	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
-		auto object = TRY(AnonymousVMObject::alloc(size, "kernel"));
+		auto object = TRY(AnonymousVMObject::alloc(size, "kernel", true));
 		return TRY(m_kernel_space->map_object(object, VMProt::RW));
 	};
 	auto res = do_alloc();
@@ -340,7 +340,7 @@ kstd::Arc<VMRegion> MemoryManager::alloc_kernel_region(size_t size) {
 
 kstd::Arc<VMRegion> MemoryManager::alloc_kernel_stack_region(size_t size) {
 	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
-		auto object = TRY(AnonymousVMObject::alloc(size, "kernel_stack"));
+		auto object = TRY(AnonymousVMObject::alloc(size, "kernel_stack", true));
 		return TRY(m_kernel_space->map_object_with_sentinel(object, VMProt::RW));
 	};
 	auto res = do_alloc();
@@ -357,6 +357,17 @@ kstd::Arc<VMRegion> MemoryManager::alloc_dma_region(size_t size) {
 	auto res = do_alloc();
 	if(res.is_error())
 		PANIC("ALLOC_DMA_REGION_FAIL", "Could not allocate a new anonymous memory region for DMA.");
+	return res.value();
+}
+
+kstd::Arc<VMRegion> MemoryManager::alloc_contiguous_kernel_region(size_t size) {
+	auto do_alloc = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
+		auto object = TRY(AnonymousVMObject::alloc_contiguous(size, "kernel_contig"));
+		return TRY(m_kernel_space->map_object(object, VMProt::RW));
+	};
+	auto res = do_alloc();
+	if(res.is_error())
+		PANIC("ALLOC_DMA_REGION_FAIL", "Could not allocate a new contiguous anonymous memory region.");
 	return res.value();
 }
 

@@ -175,7 +175,6 @@ private:
 	Process(Process* to_fork, ThreadRegisters& regs);
 
 	void alert_thread_died(kstd::Arc<Thread> thread);
-	void recalculate_pmem_total();
 	void insert_thread(const kstd::Arc<Thread>& thread);
 	void remove_thread(const kstd::Arc<Thread>& thread);
 
@@ -217,7 +216,6 @@ private:
 	kstd::Arc<PageDirectory> _page_directory;
 	kstd::vector<kstd::Arc<VMRegion>> _vm_regions;
 	Mutex m_mem_lock {"Process::Memory"};
-	size_t m_used_pmem = 0;
 	size_t m_used_shmem = 0;
 
 	//Files & Pipes

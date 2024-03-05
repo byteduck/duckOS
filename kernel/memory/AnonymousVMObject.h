@@ -18,9 +18,11 @@ public:
 	/**
 	 * Allocates a new anonymous VMObject.
 	 * @param size The minimum size, in bytes, of the object.
+	 * @param name The name of the object.
+	 * @param commit Whether to immediately commit physical pages.
 	 * @return The newly allocated object, if successful.
 	 */
-	static ResultRet<kstd::Arc<AnonymousVMObject>> alloc(size_t size, kstd::string name = "anonymous");
+	static ResultRet<kstd::Arc<AnonymousVMObject>> alloc(size_t size, kstd::string name = "anonymous", bool commit = false);
 
 	/**
 	 * Allocates a new anonymous VMObject backed by contiguous physical pages.
@@ -72,12 +74,15 @@ public:
 	bool is_anonymous() const override { return true; }
 	ForkAction fork_action() const override { return m_fork_action; }
 	ResultRet<kstd::Arc<VMObject>> clone() override;
+	ResultRet<bool> try_fault_in_page(PageIndex page) override;
+	size_t num_committed_pages() const override;
 
 
 private:
 	friend class MemoryManager;
 
 	explicit AnonymousVMObject(kstd::string name, kstd::vector<PageIndex> physical_pages, bool cow);
+	explicit AnonymousVMObject(kstd::string name, size_t n_pages, bool cow);
 
 	static Mutex s_shared_lock;
 	static int s_cur_shm_id;
@@ -88,4 +93,5 @@ private:
 	ForkAction m_fork_action = ForkAction::BecomeCoW;
 	pid_t m_shared_owner;
 	int m_shm_id = 0;
+	size_t m_num_committed_pages = 0;
 };

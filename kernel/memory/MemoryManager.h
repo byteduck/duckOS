@@ -133,6 +133,12 @@ public:
 	kstd::Arc<VMRegion> alloc_dma_region(size_t size);
 
 	/**
+	 * Allocates a new contiguous anonymous region in kernel space.
+	 * @param size The minimum size, in bytes, of the new region.
+	 */
+	kstd::Arc<VMRegion> alloc_contiguous_kernel_region(size_t size);
+
+	/**
 	 * Allocates a new virtual region in kernel space that is mapped to an existing range of physical pages.
 	 * @param start The start physical address to map to. Will be rounded down to a page boundary.
 	 * @param size The size (in bytes) to map to. Will be rounded up to a page boundary.
@@ -154,13 +160,19 @@ public:
 	 */
 	template<typename F>
 	void with_quickmapped(PageIndex page, F&& callback) {
-		LOCK(m_quickmap_lock);
-		ASSERT(!m_is_quickmapping);
-		m_is_quickmapping = true;
-		kernel_page_directory.map_page(KERNEL_QUICKMAP_PAGE_A / PAGE_SIZE, page, VMProt::RW);
-		callback((void*) KERNEL_QUICKMAP_PAGE_A);
-		kernel_page_directory.unmap_page(KERNEL_QUICKMAP_PAGE_A / PAGE_SIZE);
-		m_is_quickmapping = false;
+		size_t page_idx = -1;
+		for (int i = 0; i < MAX_QUICKMAP_PAGES; i++) {
+			bool expected = false;
+			if (m_quickmap_page[i].compare_exchange_strong(expected, true, MemoryOrder::Acquire)) {
+				page_idx = i;
+				break;
+			}
+		}
+		ASSERT(page_idx != -1);
+		kernel_page_directory.map_page((KERNEL_QUICKMAP_PAGES / PAGE_SIZE) + page_idx, page, VMProt::RW);
+		callback((void*) (KERNEL_QUICKMAP_PAGES + page_idx * PAGE_SIZE));
+		kernel_page_directory.unmap_page((KERNEL_QUICKMAP_PAGES / PAGE_SIZE) + page_idx);
+		m_quickmap_page[page_idx].store(false, MemoryOrder::Release);
 	}
 
 	/**
@@ -171,15 +183,28 @@ public:
 	 */
 	template<typename F>
 	void with_dual_quickmapped(PageIndex page_a, PageIndex page_b, F&& callback) {
-		LOCK(m_quickmap_lock);
-		ASSERT(!m_is_quickmapping);
-		m_is_quickmapping = true;
-		kernel_page_directory.map_page(KERNEL_QUICKMAP_PAGE_A / PAGE_SIZE, page_a, VMProt::RW);
-		kernel_page_directory.map_page(KERNEL_QUICKMAP_PAGE_B / PAGE_SIZE, page_b, VMProt::RW);
-		callback((void*) KERNEL_QUICKMAP_PAGE_A, (void*) KERNEL_QUICKMAP_PAGE_B);
-		kernel_page_directory.unmap_page(KERNEL_QUICKMAP_PAGE_A / PAGE_SIZE);
-		kernel_page_directory.unmap_page(KERNEL_QUICKMAP_PAGE_B / PAGE_SIZE);
-		m_is_quickmapping = false;
+		size_t page_idx_a = -1, page_idx_b = -1;
+		for (int i = 0; i < MAX_QUICKMAP_PAGES; i++) {
+			bool expected = false;
+			if (m_quickmap_page[i].compare_exchange_strong(expected, true, MemoryOrder::Acquire)) {
+				if (page_idx_a == -1) {
+					page_idx_a = i;
+				} else {
+					page_idx_b = i;
+					break;
+				}
+			}
+		}
+		ASSERT((page_idx_a != -1) && (page_idx_b != -1));
+		auto page_a_idx = (KERNEL_QUICKMAP_PAGES / PAGE_SIZE) + page_idx_a;
+		auto page_b_idx = (KERNEL_QUICKMAP_PAGES / PAGE_SIZE) + page_idx_b;
+		kernel_page_directory.map_page(page_a_idx, page_a, VMProt::RW);
+		kernel_page_directory.map_page(page_b_idx, page_b, VMProt::RW);
+		callback((void*) (page_a_idx * PAGE_SIZE), (void*) (page_b_idx * PAGE_SIZE));
+		kernel_page_directory.unmap_page(page_a_idx);
+		kernel_page_directory.unmap_page(page_b_idx);
+		m_quickmap_page[page_idx_a].store(false, MemoryOrder::Release);
+		m_quickmap_page[page_idx_b].store(false, MemoryOrder::Release);
 	}
 
 	/** Copies the contents of one physical page to another. **/
@@ -242,8 +267,7 @@ private:
 	kstd::Arc<VMSpace> m_kernel_space;
 	kstd::Arc<VMSpace> m_heap_space;
 
-	Mutex m_quickmap_lock {"quickmap"};
-	bool m_is_quickmapping = false;
+	Atomic<bool> m_quickmap_page[MAX_QUICKMAP_PAGES] {};
 };
 
 void liballoc_lock();

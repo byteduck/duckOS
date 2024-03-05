@@ -33,7 +33,7 @@ PageTable::PageTable(size_t vaddr, bool alloc_table):
 	_vaddr(vaddr)
 {
 	if(alloc_table) {
-		m_entries_region = MM.alloc_kernel_region(4096);
+		m_entries_region = MM.alloc_contiguous_kernel_region(4096);
 		_entries = (Entry*) m_entries_region->start();
 	}
 }

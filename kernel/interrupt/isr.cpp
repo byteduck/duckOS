@@ -117,24 +117,37 @@ namespace Interrupt {
 					break;
 
 				case 14: //Page fault
-					if(!TaskManager::current_thread() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()) {
-						MemoryManager::inst().page_fault_handler(regs);
-					} else {
-						size_t err_pos;
-						asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-						PageFault::Type type;
-						if(regs->err_code == FAULT_USER_READ)
+				{
+					size_t err_pos;
+					asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
+					PageFault::Type type;
+					switch (regs->err_code) {
+						case FAULT_USER_READ:
+						case FAULT_USER_READ_GPF:
+						case FAULT_KERNEL_READ:
+						case FAULT_KERNEL_READ_GPF:
 							type = PageFault::Type::Read;
-						else if(regs->err_code == FAULT_USER_WRITE)
+							break;
+						case FAULT_USER_WRITE:
+						case FAULT_USER_WRITE_GPF:
+						case FAULT_KERNEL_WRITE:
+						case FAULT_KERNEL_WRITE_GPF:
 							type = PageFault::Type::Write;
-						else
+							break;
+						default:
 							type = PageFault::Type::Unknown;
-						TaskManager::current_thread()->handle_pagefault({
-							err_pos,
-							regs,
-						});
+					}
+					const PageFault fault { err_pos, regs, type };
+					if(TaskManager::is_preempting() || fault.type == PageFault::Type::Unknown) {
+						// Never want to fault in the kernel or while preempting
+						MemoryManager::inst().page_fault_handler(regs);
+					} else if (err_pos >= HIGHER_HALF) {
+						MM.kernel_space()->try_pagefault(fault);
+					} else {
+						TaskManager::current_thread()->handle_pagefault(fault);
 					}
 					break;
+				}
 
 				default:
 					handle_fault("UNKNOWN_FAULT", "What did you do?", SIGILL, regs);

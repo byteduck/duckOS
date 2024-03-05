@@ -112,7 +112,7 @@ PageDirectory::PageDirectory(PageDirectory::DirectoryType type):
 	m_type(type)
 {
 	if(type == DirectoryType::USER) {
-		m_entries_region = MemoryManager::inst().alloc_kernel_region(sizeof(Entry) * 1024);
+		m_entries_region = MemoryManager::inst().alloc_contiguous_kernel_region(sizeof(Entry) * 1024);
 		m_entries = (Entry*) m_entries_region->start();
 		// Map the kernel into the directory
 		for(auto i = 768; i < 1024; i++) {
@@ -313,7 +313,7 @@ Result PageDirectory::map_page(PageIndex vpage, PageIndex ppage, VMProt prot) {
 
 	entry->data.present = true;
 	entry->data.read_write = prot.write;
-	entry->data.user = true;
+	entry->data.user = directory_index < 768;
 	entry->data.set_address(ppage * PAGE_SIZE);
 	MemoryManager::inst().invlpg((void *) (vpage * PAGE_SIZE));
 

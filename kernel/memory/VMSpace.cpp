@@ -240,45 +240,31 @@ Result VMSpace::try_pagefault(PageFault fault) {
 			}
 
 			PageIndex error_page = (fault.address - vmRegion->start()) / PAGE_SIZE;
+			PageIndex object_page = error_page + (vmRegion->object_start() / PAGE_SIZE);
+			auto object = vmRegion->object();
 
-			// Check if the region is a mapped inode.
-			if(vmRegion->object()->is_inode()) {
-				PageIndex inode_page = error_page + (vmRegion->object_start() / PAGE_SIZE);
-				auto inode_object = kstd::static_pointer_cast<InodeVMObject>(vmRegion->object());
-
-				// Check to see if it needs to be read in
-				LOCK_N(inode_object->lock(), inode_locker);
-				if(inode_object->physical_page_index(inode_page)) {
-					// This page may be marked CoW, so copy it if it is
-					if(vmRegion->prot().write && inode_object->page_is_cow(inode_page)) {
-						auto res = vmRegion->m_object->try_cow_page(inode_page);
-						if(res.is_error())
-							return res;
-					}
-
-					// Or, we may have encountered a race where the page was created by another thread after the fault.
-					m_page_directory.map(*vmRegion, VirtualRange { inode_page * PAGE_SIZE, PAGE_SIZE });
-					return Result(SUCCESS);
+			// Check to see if it needs to be read in
+			LOCK_N(object->lock(), object_locker);
+			if(object->physical_page_index(object_page)) {
+				// This page may be marked CoW, so copy it if it is
+				if(vmRegion->prot().write && object->page_is_cow(object_page)) {
+					auto res = vmRegion->m_object->try_cow_page(object_page);
+					if(res.is_error())
+						return res;
 				}
 
-				// Otherwise, read in the page and map it
-				auto did_read = TRY(inode_object->read_page_if_needed(inode_page));
-				ASSERT(inode_object->physical_page_index(inode_page));
-				if(did_read)
-					m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
-
+				// Or, we may have encountered a race where the page was created by another thread after the fault.
+				m_page_directory.map(*vmRegion, VirtualRange { object_page * PAGE_SIZE, PAGE_SIZE });
 				return Result(SUCCESS);
 			}
 
-			// CoW if the region is writeable.
-			if(vmRegion->prot().write) {
-				auto result = vmRegion->m_object->try_cow_page(error_page);
-				if(result.is_success())
-					m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
-				return result;
-			}
+			// Otherwise, read in the page and map it
+			auto did_read = TRY(object->try_fault_in_page(object_page));
+			ASSERT(object->physical_page_index(object_page));
+			if(did_read)
+				m_page_directory.map(*vmRegion, VirtualRange { error_page * PAGE_SIZE, PAGE_SIZE });
 
-			return Result(EINVAL);
+			return Result(SUCCESS);
 		}
 		cur_region = cur_region->next;
 	}

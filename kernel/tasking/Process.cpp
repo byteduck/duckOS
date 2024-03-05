@@ -77,8 +77,6 @@ ResultRet<Process*> Process::create_user(const kstd::string& executable_loc, Use
 	for(const auto& region : regions)
 		proc->_vm_regions.push_back(region);
 
-	proc->recalculate_pmem_total();
-
 	return proc->_self_ptr;
 }
 
@@ -214,7 +212,6 @@ Process::Process(Process *to_fork, ThreadRegisters& regs): _user(to_fork->_user)
 	_pgid = to_fork->_pgid;
 	_umask = to_fork->_umask;
 	_tty = to_fork->_tty;
-	m_used_pmem = to_fork->m_used_pmem;
 	m_used_shmem = to_fork->m_used_shmem;
 	_state = ALIVE;
 
@@ -302,7 +299,7 @@ ResultRet<kstd::Arc<VMRegion>> Process::map_object(kstd::Arc<VMObject> object, V
 }
 
 size_t Process::used_pmem() const {
-	return m_used_pmem;
+	return _vm_space->calculate_regular_anonymous_total();
 }
 
 size_t Process::used_vmem() const {
@@ -348,12 +345,6 @@ void Process::alert_thread_died(kstd::Arc<Thread> thread) {
 		if (_was_reaped)
 			delete this;
 	}
-}
-
-void Process::recalculate_pmem_total() {
-	if(_is_destroying || !_vm_space)
-		return;
-	m_used_pmem = _vm_space->calculate_regular_anonymous_total();
 }
 
 void Process::insert_thread(const kstd::Arc<Thread>& thread) {

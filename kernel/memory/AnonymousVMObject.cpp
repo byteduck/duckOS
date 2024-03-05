@@ -3,7 +3,6 @@
 
 #include "AnonymousVMObject.h"
 #include "MemoryManager.h"
-#include "../kstd/cstring.h"
 
 Mutex AnonymousVMObject::s_shared_lock {"AnonymousVMObject::Shared"};
 int AnonymousVMObject::s_cur_shm_id = 1;
@@ -16,8 +15,14 @@ AnonymousVMObject::~AnonymousVMObject() {
 	}
 }
 
-ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size, kstd::string name) {
+ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc(size_t size, kstd::string name, bool commit) {
 	size_t num_pages = kstd::ceil_div(size, PAGE_SIZE);
+
+	// If we requested uncommitted pages, don't allocate any physical pages yet.
+	if (!commit)
+		return kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(name, num_pages, false));
+
+	// If we requested committed pages, alloc them now.
 	auto pages = TRY(MemoryManager::inst().alloc_physical_pages(num_pages));
 	auto object = kstd::Arc<AnonymousVMObject>(new AnonymousVMObject(name, pages, false));
 	auto tmp_mapped = MM.map_object(object);
@@ -52,6 +57,7 @@ ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::map_to_physical(Physi
 	}
 
 	auto object = new AnonymousVMObject("Physical Mapping", kstd::move(pages), false);
+	object->m_num_committed_pages = 0; // Hack - but we don't want this counting towards our memory total.
 	object->m_fork_action = ForkAction::Share;
 	return kstd::Arc<AnonymousVMObject>(object);
 }
@@ -97,5 +103,26 @@ ResultRet<kstd::Arc<VMObject>> AnonymousVMObject::clone() {
 	return kstd::static_pointer_cast<VMObject>(new_object);
 }
 
+ResultRet<bool> AnonymousVMObject::try_fault_in_page(PageIndex page) {
+	LOCK(m_page_lock);
+	if (page > m_physical_pages.size())
+		return Result(EINVAL);
+	if (m_physical_pages[page])
+		return false;
+	m_physical_pages[page] = TRY(MM.alloc_physical_page());
+	m_num_committed_pages++;
+	MM.with_quickmapped(m_physical_pages[page], [](void* pagemem) {
+		memset(pagemem, 0, PAGE_SIZE);
+	});
+	return true;
+}
+
+size_t AnonymousVMObject::num_committed_pages() const {
+	return m_num_committed_pages;
+}
+
 AnonymousVMObject::AnonymousVMObject(kstd::string name, kstd::vector<PageIndex> physical_pages, bool cow):
-	VMObject(kstd::move(name), kstd::move(physical_pages), cow) {}
+		VMObject(kstd::move(name), kstd::move(physical_pages), cow), m_num_committed_pages(m_physical_pages.size()) {}
+
+AnonymousVMObject::AnonymousVMObject(kstd::string name, size_t n_pages, bool cow):
+	VMObject(kstd::move(name), kstd::vector(n_pages, (PageIndex) 0), cow) {}

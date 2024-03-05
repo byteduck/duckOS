@@ -37,12 +37,24 @@ public:
 	/** What the object should do when a memory space containing it is forked. **/
 	virtual ForkAction fork_action() const { return ForkAction::Share; }
 
+	/** Lock for manipulating the object. **/
+	Mutex& lock() { return m_page_lock; }
+
+	PageIndex& physical_page_index(size_t index) const {
+		return m_physical_pages[index];
+	};
+
 	/** Tries to copy the page at a given index if it is marked CoW. If it is not, EINVAL is returned. **/
 	Result try_cow_page(PageIndex page);
 	/** Returns whether a page in the object is marked CoW. **/
 	bool page_is_cow(PageIndex page) const { return m_cow_pages.get(page); };
 	/** Clones this VMObject using all the same physical pages and properties. **/
 	virtual ResultRet<kstd::Arc<VMObject>> clone();
+	/** Try to fault in an unmapped page in the object.
+	 * @return Returns true if a new page was mapped in, false if already mapped. **/
+	virtual ResultRet<bool> try_fault_in_page(PageIndex page) { return Result(EINVAL); };
+	/** The number of committed pages this VMObject is responsible for (i.e. memory usage) **/
+	virtual size_t num_committed_pages() const { return 0; };
 
 protected:
 	/** Marks every page in this object as CoW, and increases the reference count of all pages by 1. **/

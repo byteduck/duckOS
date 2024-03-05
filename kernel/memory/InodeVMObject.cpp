@@ -25,7 +25,8 @@ InodeVMObject::InodeVMObject(kstd::string name, kstd::vector<PageIndex> physical
 	m_type(type)
 {}
 
-ResultRet<bool> InodeVMObject::read_page_if_needed(size_t index) {
+ResultRet<bool> InodeVMObject::try_fault_in_page(size_t index) {
+	LOCK(m_page_lock);
 	if(index >= m_physical_pages.size())
 		return Result(ERANGE);
 	if(m_physical_pages[index])

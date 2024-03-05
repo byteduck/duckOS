@@ -6,7 +6,6 @@
 
 int Process::sys_threadcreate(void* (*entry_func)(void* (*)(void*), void*), void* (*thread_func)(void*), void* arg) {
 	auto thread = kstd::make_shared<Thread>(_self_ptr, TaskManager::get_new_pid(), entry_func, thread_func, arg);
-	recalculate_pmem_total();
 	insert_thread(thread);
 	TaskManager::queue_thread(thread);
 	return thread->tid();

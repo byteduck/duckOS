@@ -169,7 +169,6 @@ Result Process::sys_mmap(UserspacePointer<struct mmap_args> args_ptr) {
 	if(!region)
 		return Result(EINVAL);
 
-	m_used_pmem += region->size();
 	_vm_regions.push_back(region);
 	UserspacePointer<void*>(args.addr_p).set((void*) region->start());
 	return Result(SUCCESS);
@@ -182,7 +181,6 @@ int Process::sys_munmap(void* addr, size_t length) {
 	for(size_t i = 0; i < _vm_regions.size(); i++) {
 		/* TODO: Size mismatch? */
 		if(_vm_regions[i]->start() == (VirtualAddress) addr /* && _vm_regions[i]->size() == length*/) {
-			m_used_pmem -= _vm_regions[i]->size();
 			_vm_regions.erase(i);
 			return SUCCESS;
 		}
