@@ -131,16 +131,28 @@ void RenderContext::tri_barycentric(std::array<Vertex, 3> verts) {
 
 	const bool pixel = bbox_max.x() == bbox_min.x() && bbox_max.y() == bbox_min.y();
 
-	for(int y = bbox_min.y(); y <= bbox_max.y(); y++) {
-		for(int x = bbox_min.x(); x <= bbox_max.x(); x++) {
-			// Calculate barycentric coordinates in triangle
-			const Vec3f a {sstri[2].x() - sstri[0].x(), sstri[1].x() - sstri[0].x(), sstri[0].x() - (float) x};
-			const Vec3f b {sstri[2].y() - sstri[0].y(), sstri[1].y() - sstri[0].y(), sstri[0].y() - (float) y};
-			const Vec3f u = a^b;
+	const Vec3f a {sstri[2].x() - sstri[0].x(), sstri[1].x() - sstri[0].x(), sstri[0].x()};
+	const Vec3f b {sstri[2].y() - sstri[0].y(), sstri[1].y() - sstri[0].y(), sstri[0].y()};
+	const float abz = a.x() * b.y() - a.y() * b.x(); // z component of a^b
 
-			// Determine if we're within the triangle
-			if (!pixel && std::abs(u.z()) < 1)
-				continue;
+	// If the triangle isn't facing the screen, don't bother
+	if(!pixel && std::abs(abz) < 1)
+		return;
+
+	for(int y = bbox_min.y(); y <= bbox_max.y(); y++) {
+		const float bz = b.z() - y;
+		const float ax_x_bz = a.x() * bz;
+		const float ay_x_bz = a.y() * bz;
+		for(int x = bbox_min.x(); x <= bbox_max.x(); x++) {
+			// a^b, but without unnecessarily recalculating the z component
+			const float az = a.z() - x;
+			const Vec3f u = {
+					ay_x_bz - az * b.y(),
+					az * b.x() - ax_x_bz,
+					abz
+			};
+
+			// Calculate barycentric coordinates in triangle
 			const Vec3f bary = {1.0f - (u.x() + u.y()) / u.z(), u.y() / u.z(), u.x() / u.z()};
 			if (!pixel && (bary.x() < 0 || bary.y() < 0 || bary.z() < 0))
 				continue;
@@ -175,7 +187,7 @@ void RenderContext::tri_barycentric(std::array<Vertex, 3> verts) {
 
 			if (m_buffers.depth.at(x, y) < z) {
 				m_buffers.color.at(x, y) = color;
-				m_buffers.depth.set(x, y, z);
+				m_buffers.depth.at(x, y) = z;
 			}
 		}
 	}
