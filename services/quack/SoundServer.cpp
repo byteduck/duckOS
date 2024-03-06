@@ -73,7 +73,7 @@ Sound::Sample mixed_samples[SOUNDCARD_BUFFER_SIZE];
 uint32_t pcm_samples[SOUNDCARD_BUFFER_SIZE];
 
 void SoundServer::pump() {
-	m_connection->read_and_handle_packets(false);
+	m_connection->read_and_handle_packets(!m_soundcard.is_open());
 
 	// Mix samples together from client queues
 	memset(mixed_samples, 0, sizeof(Sound::Sample) * SOUNDCARD_BUFFER_SIZE);
