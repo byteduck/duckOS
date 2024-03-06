@@ -187,7 +187,7 @@ void panic_inner(const char* error, const char* msg, va_list list) {
 	vprintf(msg, list);
 
 	//Printing the stacktrace may panic if done early in kernel initialization. Don't print stacktrace in a nested panic.
-#ifdef DEBUG
+#ifdef DUCKOS_KERNEL_DEBUG_SYMBOLS
 	if(!panicked) {
 		panicked = true;
 		printf("\n\nStack trace:\n");

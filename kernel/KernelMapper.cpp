@@ -117,7 +117,7 @@ void KernelMapper::print_stacktrace(size_t ebp) {
 	auto* stk = (uint32_t*) ebp;
 
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
-		if(!MM.kernel_page_directory.is_mapped((VirtualAddress) stk, false))
+		if(!MM.kernel_page_directory.is_mapped((VirtualAddress) &stk[1], false))
 			break;
 
 		if(stk[1] < HIGHER_HALF)
