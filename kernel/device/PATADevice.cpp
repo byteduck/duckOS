@@ -225,7 +225,6 @@ void PATADevice::write_sectors_pio(uint32_t sector, uint8_t sectors, const uint8
 	for(auto j = 0; j < sectors; j++) {
 		TaskManager::current_thread()->block(_blocker);
 		_blocker.set_ready(false);
-		TaskManager::ScopedCritical critical;
 		IO::wait(10);
 		while(IO::inb(_io_base + ATA_STATUS) & ATA_STATUS_BSY || !(IO::inb(_io_base + ATA_STATUS) & ATA_STATUS_DRQ));
 		for(auto i = 0; i < 256; i++) {
@@ -244,7 +243,6 @@ void PATADevice::read_sectors_pio(uint32_t sector, uint8_t sectors, uint8_t *buf
 	for(auto j = 0; j < sectors; j++) {
 		TaskManager::current_thread()->block(_blocker);
 		_blocker.set_ready(false);
-		TaskManager::ScopedCritical critical;
 		for (auto i = 0; i < 256; i++) {
 			uint16_t tmp = IO::inw(_io_base + ATA_DATA);
 			buffer[i * 2] = (uint8_t) tmp;
@@ -303,6 +301,7 @@ Result PATADevice::read_uncached_blocks(uint32_t block, uint32_t count, uint8_t 
 }
 
 Result PATADevice::write_uncached_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
+	return Result(Result::Success);
 	if(!_use_pio) {
 		//DMA mode
 		size_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
