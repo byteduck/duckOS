@@ -73,7 +73,7 @@ Sound::Sample mixed_samples[SOUNDCARD_BUFFER_SIZE];
 uint32_t pcm_samples[SOUNDCARD_BUFFER_SIZE];
 
 void SoundServer::pump() {
-	m_connection->read_and_handle_packets(!m_soundcard.is_open());
+	m_connection->read_and_handle_packets(!m_soundcard.is_open() || m_clients.empty());
 
 	// Mix samples together from client queues
 	memset(mixed_samples, 0, sizeof(Sound::Sample) * SOUNDCARD_BUFFER_SIZE);
@@ -83,6 +83,7 @@ void SoundServer::pump() {
 	// Write PCM samples to card
 	for (int i = 0; i < SOUNDCARD_BUFFER_SIZE; i++)
 		pcm_samples[i] = mixed_samples[i].as_16bit_lpcm();
+
 	m_soundcard.write(pcm_samples, SOUNDCARD_BUFFER_SIZE * sizeof(uint32_t));
 }
 
