@@ -508,9 +508,10 @@ void Thread::handle_pagefault(PageFault fault) {
 		ASSERT(TaskManager::yield());
 	}
 
+	auto space = fault.address >= HIGHER_HALF ? MM.kernel_space() : m_vm_space;
 
 	//Otherwise, try CoW and kill the process if it doesn't work
-	if(m_vm_space->try_pagefault(fault).is_error()) {
+	if(space->try_pagefault(fault).is_error()) {
 		if(fault.registers->interrupt_frame.eip > HIGHER_HALF) {
 			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, fault.address, fault.registers->interrupt_frame.eip);
 		}

@@ -138,11 +138,9 @@ namespace Interrupt {
 							type = PageFault::Type::Unknown;
 					}
 					const PageFault fault { err_pos, regs, type };
-					if(TaskManager::is_preempting() || fault.type == PageFault::Type::Unknown) {
-						// Never want to fault in the kernel or while preempting
+					if(TaskManager::is_preempting() || fault.type == PageFault::Type::Unknown || !TaskManager::current_thread()) {
+						// Never want to fault while preempting
 						MemoryManager::inst().page_fault_handler(regs);
-					} else if (err_pos >= HIGHER_HALF) {
-						MM.kernel_space()->try_pagefault(fault);
 					} else {
 						TaskManager::current_thread()->handle_pagefault(fault);
 					}
