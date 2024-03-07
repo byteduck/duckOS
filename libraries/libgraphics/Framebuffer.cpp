@@ -379,7 +379,8 @@ Point Framebuffer::draw_glyph(Font* font, uint32_t codepoint, const Point& glyph
 		for(int x = 0; x < self_area.width; x++) {
 			auto& this_val = data[(self_area.x + x) + (self_area.y + y) * width];
 			auto& other_val = glyph->bitmap[(glyph_area.x + x) + (glyph_area.y + y) * glyph->width];
-			this_val = this_val.blended(other_val);
+			if (other_val)
+				this_val = this_val.blended(color);
 		}
 	}
 

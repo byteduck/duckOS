@@ -167,7 +167,7 @@ Font* Font::load_bdf_shm(const char* path) {
 					else if(nibble_char >= 'a' && nibble_char <= 'f')
 						nibble = 0xa + (nibble_char - 'a');
 
-					line[x] = nibble & (0x8u >> (x % 4)) ? 0xFFFFFFFF : 0x00000000;
+					line[x] = nibble & (0x8u >> (x % 4)) ? 0xFF : 0x00;
 				}
 			}
 
