@@ -86,10 +86,10 @@ void RenderContext::tri_barycentric(std::array<Vertex, 3> verts) {
 	Vec2i bbox_min = {m_viewport.width - 1, m_viewport.height - 1};
 	for(int i = 0; i < 3; i++) {
 		sstri[i] = screenspace(tri[i]);
-		bbox_min.x() = std::min(bbox_min.x(), f2i(sstri[i].x()));
-		bbox_min.y() = std::min(bbox_min.y(), f2i(sstri[i].y()));
-		bbox_max.x() = std::max(bbox_max.x(), f2i(sstri[i].x()));
-		bbox_max.y() = std::max(bbox_max.y(), f2i(sstri[i].y()));
+		bbox_min.x() = std::min(bbox_min.x(), f2i(sstri[i].x() + 0.5f));
+		bbox_min.y() = std::min(bbox_min.y(), f2i(sstri[i].y() + 0.5f));
+		bbox_max.x() = std::max(bbox_max.x(), f2i(sstri[i].x() + 0.5f));
+		bbox_max.y() = std::max(bbox_max.y(), f2i(sstri[i].y() + 0.5f));
 	}
 	bbox_min.x() = std::max(bbox_min.x(), 0);
 	bbox_min.y() = std::max(bbox_min.y(), 0);
