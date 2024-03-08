@@ -76,9 +76,11 @@ void RenderContext::tri_barycentric(std::array<Vertex, 3> verts) {
 
 	// Backface cull and lighting calculation
 	Vec3f norm = ((tri[2]-tri[0])^(tri[1]-tri[0])).normalize();
-	if (norm.z() < 0)
+	if (m_backface_culling && norm.z() < 0)
 		return;
-	const float light = norm * Vec3f(0, 0, 1);
+	const float light = m_backface_culling ?
+			norm * Vec3f(0, 0, 1) :
+			Vec3f(std::abs(norm.x()), std::abs(norm.y()), std::abs(norm.z())) * Vec3f(0, 0, 1);
 
 	// Then, transform into screenspace coordinates and calculate bounding box
 	std::array<Vec3f, 3> sstri;
@@ -170,18 +172,23 @@ void RenderContext::tri_barycentric(std::array<Vertex, 3> verts) {
 			}
 			was_inside = true;
 
-			if (m_buffers.depth.at(x, y) >= z)
-				continue;
+			if (m_depth_testing && m_buffers.depth.at(x, y) >= z)
+				goto done;
 
 			if (m_bound_texture) {
 				const Vec4f texcol = m_bound_texture->buffer().get(tex.x() * m_bound_texture->buffer().width(), tex.y() * m_bound_texture->buffer().height());
-				m_buffers.color.at(x, y) = {
+				const Vec4f sampled_color = {
 						color[0] * texcol[0],
 						color[1] * texcol[1],
 						color[2] * texcol[2],
 						color[3] * texcol[3]
 				};
+				if (m_alpha_testing && sampled_color.w() <= 0)
+					goto done;
+				m_buffers.color.at(x, y) = sampled_color;
 			} else {
+				if (m_alpha_testing && color.w() <= 0)
+					goto done;
 				m_buffers.color.at(x, y) = color;
 			}
 

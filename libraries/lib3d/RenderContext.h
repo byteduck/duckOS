@@ -44,6 +44,10 @@ namespace Lib3D {
 			m_premultmat = m_projmat * m_modelmat;
 		}
 
+		void set_depth_testing(bool depth_testing) { m_depth_testing = depth_testing; }
+		void set_backface_culling(bool backface_culling) { m_backface_culling = backface_culling; }
+		void set_alpha_testing(bool alpha_testing) { m_alpha_testing = alpha_testing; }
+
 		/// Various Stuff
 		void clear(Vec4f color);
 
@@ -66,5 +70,8 @@ namespace Lib3D {
 		Gfx::Rect m_viewport;
 		BufferSet m_buffers;
 		Texture* m_bound_texture = nullptr;
+		bool m_depth_testing = true;
+		bool m_backface_culling = true;
+		bool m_alpha_testing = false;
 	};
 }
