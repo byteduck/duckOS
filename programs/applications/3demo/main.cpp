@@ -27,7 +27,7 @@ int main(int argc, char** argv, char** envp) {
 	}
 
 	auto faces = Lib3D::ObjReader::read(fis);
-	auto widget = DemoWidget::make(faces);
+	auto widget = DemoWidget::make(faces, argc < 2);
 
 
 	window->set_contents(widget);

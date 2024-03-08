@@ -15,7 +15,7 @@ public:
 	bool on_mouse_move(Pond::MouseMoveEvent evt) override;
 
 private:
-	DemoWidget(std::vector<std::array<Lib3D::Vertex, 3>> faces);
+	DemoWidget(std::vector<std::array<Lib3D::Vertex, 3>> faces, bool texture);
 
 	void change_texture();
 
@@ -28,4 +28,5 @@ private:
 	bool do_rot = true;
 	unsigned int mouse = 0;
 	std::string last_app = "";
+	bool use_texture;
 };

@@ -7,8 +7,9 @@
 #include <libui/libui.h>
 #include <ctime>
 
-DemoWidget::DemoWidget(std::vector<std::array<Lib3D::Vertex, 3>> object):
-	faces(object)
+DemoWidget::DemoWidget(std::vector<std::array<Lib3D::Vertex, 3>> object, bool texture):
+	faces(object),
+	use_texture(texture)
 {
 	context = Lib3D::RenderContext::make(Gfx::Dimensions {250, 250});
 	viewport = Lib3D::ViewportWidget::make(context);
@@ -64,6 +65,8 @@ bool DemoWidget::on_mouse_move(Pond::MouseMoveEvent evt) {
 }
 
 void DemoWidget::change_texture() {
+	if (!use_texture)
+		return;
 	srand(std::time(nullptr));
 	auto apps = App::get_all_apps();
 	App::Info app;
