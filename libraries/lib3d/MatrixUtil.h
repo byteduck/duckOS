@@ -37,6 +37,32 @@ namespace Lib3D {
 				{0,0,0,1}};
 	}
 
+	Matrix4f constexpr scale(float x, float y, float z) {
+		return {
+			{x, 0, 0, 0},
+			{0, y, 0, 0},
+			{0, 0, z, 0},
+			{0, 0, 0, 1}
+		};
+	}
+
+	Matrix4f constexpr scale(Vec3f trans) {
+		return scale(trans.x(), trans.y(), trans.z());
+	}
+
+	Matrix4f constexpr translate(float x, float y, float z) {
+		return {
+				{1, 0, 0, x},
+				{0, 1, 0, y},
+				{0, 0, 1, z},
+				{0, 0, 0, 1}
+		};
+	}
+
+	Matrix4f constexpr translate(Vec3f trans) {
+		return translate(trans.x(), trans.y(), trans.z());
+	}
+
 	float constexpr det3f(Matrix3f mat) {
 		return mat[0][0] * (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1]) -
 		       mat[0][1] * (mat[1][0] * mat[2][2] - mat[1][2] * mat[2][0]) +

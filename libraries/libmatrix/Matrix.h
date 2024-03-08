@@ -22,7 +22,7 @@ public:
 		return m_rows[idx];
 	};
 
-	Matrix<T, N, M> constexpr transpose() {
+	Matrix<T, N, M> constexpr transpose() const {
 		Matrix<T, N, M> ret;
 		for(int i = 0; i < N; i++) {
 			auto& row = ret.m_rows[i];
@@ -33,8 +33,15 @@ public:
 		return ret;
 	}
 
+	Vec<T, M> constexpr col(int idx) const {
+		Vec<T, M> ret;
+		for(int i = 0; i < M; i++)
+			ret[i] = m_rows[i][idx];
+		return ret;
+	}
+
 	template<size_t P>
-	Matrix<T, M, P> constexpr operator*(Matrix<T, N, P> const& other) {
+	Matrix<T, M, P> constexpr operator*(Matrix<T, N, P> const& other) const {
 		Matrix<T, M, P> ret;
 		for(int i = 0; i < M; i++) {
 			auto& row = ret.m_rows[i];
@@ -63,7 +70,7 @@ public:
 		return ret;
 	}
 
-	Matrix<T, M, 1> constexpr operator*(Vec<T, M> const& vec) {
+	Matrix<T, M, 1> constexpr operator*(Vec<T, M> const& vec) const {
 		Matrix<T, M, 1> ret;
 		for(int i = 0; i < M; i++) {
 			auto& row = ret.m_rows[i][0];
@@ -73,21 +80,21 @@ public:
 		return ret;
 	}
 
-	Matrix<T, M, N> constexpr operator+(Matrix<T, M, N> const& other) {
+	Matrix<T, M, N> constexpr operator+(Matrix<T, M, N> const& other) const {
 		Matrix<T, M, N> ret;
 		for(int i = 0; i < M; i++)
 			ret[i] = m_rows[i] + other.m_rows[i];
 		return ret;
 	}
 
-	Matrix<T, M, N> constexpr operator-(Matrix<T, M, N> const& other) {
+	Matrix<T, M, N> constexpr operator-(Matrix<T, M, N> const& other) const {
 		Matrix<T, M, N> ret;
 		for(int i = 0; i < M; i++)
 			ret[i] = m_rows[i] + other.m_rows[i];
 		return ret;
 	}
 
-	Matrix<T, M, N> constexpr operator*(T scalar) {
+	Matrix<T, M, N> constexpr operator*(T scalar) const {
 		Matrix<T, M, N> ret;
 		for(int i = 0; i < M; i++)
 			ret[i] = m_rows[i] * scalar;
