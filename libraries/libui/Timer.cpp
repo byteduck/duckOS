@@ -35,7 +35,11 @@ Timer::~Timer() {
 }
 
 void Timer::calculate_trigger_time() {
-	m_trigger_time = Duck::Time::now() + Duck::Time::millis(m_delay);
+	auto now = Duck::Time::now();
+	if (!m_trigger_time.epoch())
+		m_trigger_time = Duck::Time::now();
+	while (m_trigger_time <= now)
+		m_trigger_time = m_trigger_time + Duck::Time::millis(m_delay);
 }
 
 [[nodiscard]] bool Timer::ready() const {
