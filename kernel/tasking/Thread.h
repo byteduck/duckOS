@@ -148,7 +148,7 @@ private:
 	size_t _signal_stack_top = 0;
 	kstd::Arc<VMRegion> _sighandler_ustack_region;
 	kstd::Arc<VMRegion> _sighandler_kstack_region;
-	uint32_t _pending_signals = 0x0;
+	Atomic<uint32_t> _pending_signals = 0x0;
 
 	// Thread queue
 	Thread* m_next = nullptr;

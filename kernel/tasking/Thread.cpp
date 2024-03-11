@@ -292,7 +292,7 @@ void Thread::block(Blocker& blocker) {
 	// If we have a pending signal and we can interrupt this, we should do so.
 	{
 		LOCK(_process->m_signal_lock);
-		if (_pending_signals && blocker.can_be_interrupted()) {
+		if (_pending_signals.load(MemoryOrder::Acquire) && blocker.can_be_interrupted()) {
 			blocker.interrupt();
 			return;
 		}
@@ -593,26 +593,22 @@ void Thread::reap() {
 
 void Thread::handle_pending_signal() {
 	ASSERT(TaskManager::current_thread().get() == this);
-	if(_process->m_signal_lock.held_by_current_thread())
-		return; // We were preempted while calling this last time we context switched... Don't do it again.
 
 	int sig = 0;
-	{
-		if(!_process->m_signal_lock.try_acquire())
+	uint32_t old_pending = _pending_signals.load(MemoryOrder::Acquire);
+	uint32_t new_pending;
+	do {
+		if(!old_pending)
 			return;
-		if(!_pending_signals) {
-			_process->m_signal_lock.release();
-			return;
-		}
-		for(int i = 0; i < NSIG; i++) {
-			if(_pending_signals & (1 << i)) {
-				_pending_signals &= ~(1 << i);
+		for(int i = 1; i < NSIG; i++) {
+			if(old_pending & (1 << i)) {
+				new_pending = old_pending & (~(1 << i));
 				sig = i;
 				break;
 			}
 		}
-		_process->m_signal_lock.release();
-	}
+	} while(!_pending_signals.compare_exchange_strong(old_pending, new_pending, MemoryOrder::Acquire));
+
 	handle_signal(sig);
 }
 
@@ -636,10 +632,11 @@ bool Thread::handle_signal(int signal) {
 	}
 
 	if(TaskManager::current_thread().get() != this || in_critical()) {
-		{
-			LOCK(_process->m_signal_lock);
-			_pending_signals |= (1 << signal);
-		}
+		uint32_t old_pending = _pending_signals.load(MemoryOrder::Acquire);
+		uint32_t new_pending;
+		do {
+			new_pending = old_pending | (1 << signal);
+		} while(!_pending_signals.compare_exchange_strong(old_pending, new_pending, MemoryOrder::Acquire));
 
 		if(in_critical() && is_blocked() && _blocker->can_be_interrupted()) {
 			_blocker->interrupt();
