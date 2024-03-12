@@ -26,4 +26,18 @@ namespace KLog {
 	void warn(const char* component, const char* fmt, ...);
 	void err(const char* component, const char* fmt, ...);
 	void crit(const char* component, const char* fmt, ...);
+
+#define KLOG_CONDITIONAL(method) \
+	template<bool C, typename... ArgTs> \
+	constexpr void method##_if(const char* component, const char* fmt, ArgTs... args) { \
+		if constexpr(C) \
+			method(component, fmt, args...); \
+	}
+
+	KLOG_CONDITIONAL(dbg);
+	KLOG_CONDITIONAL(info);
+	KLOG_CONDITIONAL(success);
+	KLOG_CONDITIONAL(warn);
+	KLOG_CONDITIONAL(err);
+	KLOG_CONDITIONAL(crit);
 }
