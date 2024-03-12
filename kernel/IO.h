@@ -20,6 +20,9 @@
 #pragma once
 
 #include <kernel/kstd/unix_types.h>
+#include "pci/PCI.h"
+#include "kstd/Arc.h"
+#include "memory/VMRegion.h"
 
 namespace IO {
 	void wait();
@@ -33,6 +36,63 @@ namespace IO {
 		while(us--)
 			inb(0x80);
 	}
+
+	class Window {
+	public:
+		enum Type {
+			Invalid, Mem16, Mem32, Mem64, IOSpace
+		};
+
+		Window() = default;
+		Window(PCI::Address addr, uint8_t bar);
+
+		template<typename T>
+		T in(size_t offset) {
+			ASSERT(m_type != Invalid);
+			if (m_type == Type::IOSpace) {
+				if constexpr(sizeof(T) == 1)
+					return inb(m_addr + offset);
+				else if constexpr(sizeof(T) == 2)
+					return inw(m_addr + offset);
+				else if constexpr(sizeof(T) == 4)
+					return inl(m_addr + offset);
+				static_assert(sizeof(T) <= 4 && sizeof(T) != 3);
+			} else {
+				return *((T*) (m_vm_region->start() + offset));
+			}
+		}
+
+		uint8_t in8(size_t offset) { return in<uint8_t>(offset); }
+		uint16_t in16(size_t offset) { return in<uint16_t>(offset); }
+		uint32_t in32(size_t offset) { return in<uint32_t>(offset); }
+
+		template<typename T>
+		void out(size_t offset, T& data) {
+			ASSERT(m_type != Invalid);
+			if (m_type == Type::IOSpace) {
+				if constexpr(sizeof(T) == 1)
+					outb(m_addr + offset, data);
+				else if constexpr(sizeof(T) == 2)
+					outw(m_addr + offset, data);
+				else if constexpr(sizeof(T) == 4)
+					outl(m_addr + offset, data);
+				static_assert(sizeof(T) <= 4 && sizeof(T) != 3);
+			} else {
+				*((T*) (m_vm_region->start() + offset)) = data;
+			}
+		}
+
+		void out8(size_t offset, uint8_t val) { return out<uint8_t>(offset, val); }
+		void out16(size_t offset, uint16_t val) { return out<uint16_t>(offset, val); }
+		void out32(size_t offset, uint32_t val) { return out<uint32_t>(offset, val); }
+
+	private:
+		Type m_type = Invalid;
+		size_t m_size = 0;
+		size_t m_addr = 0;
+		kstd::Arc<VMRegion> m_vm_region;
+		bool m_prefetchable = false;
+	};
 };
 
 

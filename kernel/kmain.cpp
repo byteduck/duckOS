@@ -48,6 +48,7 @@
 #include <kernel/tests/KernelTest.h>
 #include "bootlogo.h"
 #include "Processor.h"
+#include "net/NetworkAdapter.h"
 
 uint8_t boot_disk;
 
@@ -224,6 +225,9 @@ void kmain_late(){
 
 	//Try initializing the sound card
 	auto dev = AC97Device::detect();
+
+	//Try initializing network
+	NetworkAdapter::setup();
 
 	//If we're running tests, do so
 	if(CommandLine::inst().get_option_value("kernel-tests") == "true") {

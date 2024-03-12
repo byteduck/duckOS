@@ -171,7 +171,10 @@ SET(KERNEL_SRCS
         syscall/uname.cpp
         VMWare.cpp
         Processor.cpp
-        StackWalker.cpp)
+        StackWalker.cpp
+        net/NetworkAdapter.cpp
+        net/E1000Adapter.cpp
+        net/NetworkManager.cpp)
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h"
