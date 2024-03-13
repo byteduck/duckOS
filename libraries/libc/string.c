@@ -382,6 +382,10 @@ char* strerror(int errnum) {
 			return "No message of desired type";
 		case EIDRM:
 			return "Identifier removed";
+		case EADDRINUSE:
+			return "Address in use";
+		case ENOTSOCK:
+			return "File descriptor is not a socket";
 		default:
 			return "Unknown error";
 	}

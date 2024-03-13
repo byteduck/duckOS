@@ -1,4 +1,5 @@
 SET(SOURCES
+        arpa/inet.cpp
         assert.c
         crt0.c
         ctype.c
@@ -20,6 +21,7 @@ SET(SOURCES
         sys/ptrace.c
         sys/liballoc.cpp
         sys/scanf.c
+        sys/socket.c
         sys/socketfs.c
         sys/stat.c
         sys/status.c

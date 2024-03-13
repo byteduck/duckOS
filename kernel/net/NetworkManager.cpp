@@ -4,6 +4,8 @@
 #include "NetworkManager.h"
 #include "../kstd/KLog.h"
 #include "ICMP.h"
+#include "UDPSocket.h"
+#include "../api/udp.h"
 
 #define ARP_DEBUG 1
 
@@ -103,7 +105,11 @@ void NetworkManager::handle_ipv4(NetworkAdapter* adapter, const NetworkAdapter::
 			handle_icmp(adapter, packet);
 			break;
 		case IPv4Proto::TCP:
+			KLog::warn("NetworkManager", "Received TCP packet! Can't handle this yet!");
+			break;
 		case IPv4Proto::UDP:
+			handle_udp(adapter, packet);
+			break;
 		default:
 			KLog::warn("NetworkManager", "Received IPv4 packet with unknown protocol %d!", packet.proto);
 	}
@@ -115,4 +121,26 @@ void NetworkManager::handle_icmp(NetworkAdapter* adapter, const IPv4Packet& pack
 		return;
 	}
 	const auto& header= *((ICMPHeader*) packet.payload);
+}
+
+void NetworkManager::handle_udp(NetworkAdapter* adapter, const IPv4Packet& packet) {
+	if (packet.length < (sizeof(IPv4Packet) + sizeof(UDPPacket))) {
+		KLog::warn("NetworkManager", "Received UDP packet of invalid size!");
+		return;
+	}
+
+	auto* udp_pkt = (UDPPacket*) packet.payload;
+	if (udp_pkt->len < sizeof(UDPPacket)) {
+		KLog::warn("NetworkManager", "Received UDP packet of invalid size!");
+		return;
+	}
+
+	// Get the socket associated with the port
+	auto sock = UDPSocket::get_socket(udp_pkt->dest_port);
+	if (!sock) {
+		KLog::warn("NetworkManager", "Received UDP packet for port %d but no such port is bound.", udp_pkt->dest_port.val());
+		return;
+	}
+
+	sock->recv_packet((uint8_t*) &packet, packet.length.val());
 }

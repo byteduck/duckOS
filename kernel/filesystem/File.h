@@ -37,6 +37,7 @@ public:
 	virtual bool is_pty_mux();
 	virtual bool is_pty();
 	virtual bool is_fifo();
+	virtual bool is_socket();
 	virtual int ioctl(unsigned request, SafePointer<void*> argp);
 	virtual void open(FileDescriptor& fd, int options);
 	virtual void close(FileDescriptor& fd);

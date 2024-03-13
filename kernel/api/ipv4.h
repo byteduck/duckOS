@@ -11,6 +11,13 @@ class __attribute__((packed)) IPv4Address {
 public:
 	constexpr IPv4Address() = default;
 
+	constexpr IPv4Address(uint32_t addr) {
+		m_data[0] = addr >> 24;
+		m_data[1] = addr >> 16;
+		m_data[2] = addr >> 8;
+		m_data[3] = addr;
+	}
+
 	constexpr IPv4Address(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
 		m_data[0] = a;
 		m_data[1] = b;

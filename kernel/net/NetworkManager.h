@@ -22,6 +22,7 @@ private:
 	void handle_arp(NetworkAdapter* adapter, const NetworkAdapter::Packet* packet);
 	void handle_ipv4(NetworkAdapter* adapter, const NetworkAdapter::Packet* packet);
 	void handle_icmp(NetworkAdapter* adapter, const IPv4Packet& packet);
+	void handle_udp(NetworkAdapter* adapter, const IPv4Packet& packet);
 
 	static NetworkManager* s_inst;
 

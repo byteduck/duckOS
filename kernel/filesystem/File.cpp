@@ -52,6 +52,10 @@ bool File::is_fifo() {
 	return false;
 }
 
+bool File::is_socket() {
+	return false;
+}
+
 ssize_t File::read(FileDescriptor &fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
 	return 0;
 }

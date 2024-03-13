@@ -182,6 +182,18 @@ int handle_syscall(ThreadRegisters& regs, uint32_t call, uint32_t arg1, uint32_t
 			return cur_proc->sys_mprotect((void*) arg1, (size_t) arg2, arg3);
 		case SYS_UNAME:
 			return cur_proc->sys_uname((struct utsname*) arg1);
+		case SYS_SOCKET:
+			return cur_proc->sys_socket(arg1, arg2, arg3);
+		case SYS_BIND:
+			return cur_proc->sys_bind(arg1, (struct sockaddr*) arg2, arg3);
+		case SYS_SETSOCKOPT:
+			return cur_proc->sys_setsockopt((struct setsockopt_args*) arg1);
+		case SYS_GETSOCKOPT:
+			return cur_proc->sys_getsockopt((struct getsockopt_args*) arg1);
+		case SYS_SENDMSG:
+			return cur_proc->sys_sendmsg(arg1, (struct msghdr*) arg2, arg3);
+		case SYS_RECVMSG:
+			return cur_proc->sys_recvmsg(arg1, (struct msghdr*) arg2, arg3);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

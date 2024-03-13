@@ -167,6 +167,12 @@ public:
 	int sys_munmap(void* addr, size_t length);
 	int sys_mprotect(void* addr, size_t length, int prot);
 	int sys_uname(UserspacePointer<struct utsname> buf);
+	int sys_socket(int domain, int type, int protocol);
+	int sys_bind(int sockfd, UserspacePointer<struct sockaddr> addr, uint32_t addrlen);
+	int sys_setsockopt(UserspacePointer<struct setsockopt_args> ptr);
+	int sys_getsockopt(UserspacePointer<struct getsockopt_args> ptr);
+	int sys_recvmsg(int sockfd, UserspacePointer<struct msghdr> msg, int flags);
+	int sys_sendmsg(int sockfd, UserspacePointer<struct msghdr> msg, int flags);
 
 private:
 	friend class Thread;
@@ -219,6 +225,7 @@ private:
 	size_t m_used_shmem = 0;
 
 	//Files & Pipes
+	Mutex m_fd_lock { "Process::FileDescriptor" };
 	kstd::vector<kstd::Arc<FileDescriptor>> _file_descriptors;
 	kstd::Arc<LinkedInode> _cwd;
 

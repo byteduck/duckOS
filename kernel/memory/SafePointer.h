@@ -9,6 +9,7 @@
 template<typename T>
 class SafePointer {
 public:
+	SafePointer() = default;
 	explicit SafePointer(T* raw_ptr, bool is_user):
 		m_ptr(raw_ptr), m_is_user(is_user) {}
 	template<typename C> SafePointer(const SafePointer<C>& safe_ptr):
@@ -153,9 +154,14 @@ public:
 		});
 	}
 
+	template<typename R>
+	SafePointer<R> as() {
+		return SafePointer<R>((R*) m_ptr, m_is_user);
+	}
+
 private:
-	T* const m_ptr;
-	const bool m_is_user;
+	T* const m_ptr = nullptr;
+	const bool m_is_user = false;
 };
 
 template<typename T>

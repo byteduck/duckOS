@@ -164,6 +164,7 @@ SET(KERNEL_SRCS
         syscall/read_write.cpp
         syscall/sigaction.cpp
         syscall/sleep.cpp
+        syscall/socket.cpp
         syscall/stat.cpp
         syscall/thread.cpp
         syscall/truncate.cpp
@@ -174,7 +175,10 @@ SET(KERNEL_SRCS
         StackWalker.cpp
         net/NetworkAdapter.cpp
         net/E1000Adapter.cpp
-        net/NetworkManager.cpp)
+        net/NetworkManager.cpp
+        net/Socket.cpp
+        net/IPSocket.cpp
+        net/UDPSocket.cpp)
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h"
