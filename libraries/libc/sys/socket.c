@@ -49,14 +49,11 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *
 		return -1;
 	}
 
-	struct sockaddr_storage addr;
 	struct iovec iov = {buf, len};
-	struct msghdr msg = {src_addr ? &addr : NULL, src_addr ? sizeof(addr) : 0, &iov, 1, NULL, 0, 0};
+	struct msghdr msg = {src_addr, addrlen ? *addrlen : 0, &iov, 1, NULL, 0, 0};
 	ssize_t nread = recvmsg(sockfd, &msg, flags);
-	if (src_addr && nread >= 0) {
-		memcpy(src_addr, &addr, *addrlen < msg.msg_namelen ? *addrlen : msg.msg_namelen);
+	if (addrlen && nread >= 0)
 		*addrlen = msg.msg_namelen;
-	}
 	return nread;
 }
 
