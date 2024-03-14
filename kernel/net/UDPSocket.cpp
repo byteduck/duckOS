@@ -39,13 +39,28 @@ ResultRet<kstd::Arc<UDPSocket>> UDPSocket::make() {
 Result UDPSocket::do_bind() {
 	LOCK(s_sockets_lock);
 	if (m_bound)
-		return Result(EINVAL);
+		return Result(set_error(EINVAL));
 	if (s_sockets.contains(m_port))
-		return Result(EADDRINUSE);
+		return Result(set_error(EADDRINUSE));
 
 	KLog::dbg_if<UDP_DBG>("UDPSocket", "Binding to port %d", m_port);
 
-	// TODO: Device? IP?
+	if (m_port == 0) {
+		// If we didn't specify a port, we want an ephemeral port
+		// (Range suggested by IANA and RFC 6335)
+		uint16_t ephem;
+		for (ephem = 49152; ephem < 65535; ephem++) {
+			if (!s_sockets.contains(ephem))
+				break;
+		}
+
+		if (ephem == 65535) {
+			KLog::warn("UDPSocket", "Out of ephemeral ports!");
+			return Result(set_error(EADDRINUSE));
+		}
+
+		m_port = ephem;
+	}
 
 	s_sockets[m_port] = self();
 	m_bound = true;
