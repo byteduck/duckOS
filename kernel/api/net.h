@@ -21,13 +21,20 @@ public:
 		m_data[5] = f;
 	}
 
-	uint8_t operator[](size_t index) {
+	uint8_t operator[](size_t index) const {
 		return m_data[index];
 	}
 private:
 	uint8_t m_data[6] = {0};
 };
 
-#define MAC_ARGS(addr) (addr)[0], (addr)[1], (addr)[2], (addr)[3], (addr)[4], (addr)[5]
+#ifdef DUCKOS_KERNEL
+#include <kernel/kstd/KLog.h>
+namespace KLog {
+	inline void print_arg(const MACAddress& addr, FormatRules rules) {
+		printf("%x:%x:%x:%x:%x:%x", addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+	}
+}
+#endif
 
 #endif

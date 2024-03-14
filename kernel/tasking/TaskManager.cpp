@@ -209,7 +209,7 @@ void TaskManager::queue_thread(const kstd::Arc<Thread>& thread) {
 		return;
 	}
 	if(thread->state() != Thread::ALIVE) {
-		KLog::warn("TaskManager", "Tried queuing %s thread!", thread->state_name());
+		KLog::warn("TaskManager", "Tried queuing {} thread!", thread->state_name());
 		return;
 	}
 

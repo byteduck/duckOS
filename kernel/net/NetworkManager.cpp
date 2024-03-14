@@ -55,7 +55,7 @@ void NetworkManager::handle_packet(NetworkAdapter* adapter, NetworkAdapter::Pack
 			KLog::warn("NetworkManager", "Got IPv6 packet, can't handle this!");
 			break;
 		default:
-			KLog::warn("NetworkManager", "Unknown packet of type %d!", hdr->type);
+			KLog::warn("NetworkManager", "Unknown packet of type {}!", hdr->type);
 			break;
 	}
 }
@@ -69,7 +69,7 @@ void NetworkManager::handle_arp(NetworkAdapter* adapter, const NetworkAdapter::P
 
 	switch (packet.operation) {
 	case ARPOp::Req: {
-		KLog::dbg_if<ARP_DEBUG>("NetworkManager", "Got ARP request from %d.%d.%d.%d (%x:%x:%x:%x:%x:%x)", IPV4_ARGS(packet.sender_protoaddr), MAC_ARGS(packet.sender_hwaddr));
+		KLog::dbg_if<ARP_DEBUG>("NetworkManager", "Got ARP request from {} ({})", packet.sender_protoaddr, packet.sender_hwaddr);
 
 		ARPPacket resp;
 		resp.operation = ARPOp::Resp;
@@ -84,7 +84,7 @@ void NetworkManager::handle_arp(NetworkAdapter* adapter, const NetworkAdapter::P
 	case ARPOp::Resp:
 		break;
 	default:
-		KLog::warn("NetworkManager", "Got ARP packet with unknown operation %d!", packet.operation.val());
+		KLog::warn("NetworkManager", "Got ARP packet with unknown operation {}!", packet.operation.val());
 	}
 }
 
@@ -111,7 +111,7 @@ void NetworkManager::handle_ipv4(NetworkAdapter* adapter, const NetworkAdapter::
 			handle_udp(adapter, packet);
 			break;
 		default:
-			KLog::warn("NetworkManager", "Received IPv4 packet with unknown protocol %d!", packet.proto);
+			KLog::warn("NetworkManager", "Received IPv4 packet with unknown protocol {}!", packet.proto);
 	}
 }
 
@@ -138,7 +138,8 @@ void NetworkManager::handle_udp(NetworkAdapter* adapter, const IPv4Packet& packe
 	// Get the socket associated with the port
 	auto sock = UDPSocket::get_socket(udp_pkt->dest_port);
 	if (!sock) {
-		KLog::warn("NetworkManager", "Received UDP packet for port %d but no such port is bound.", udp_pkt->dest_port.val());
+		KLog::warn("NetworkManager", "Received UDP packet for port {} but no such port is bound.",
+					udp_pkt->dest_port.val());
 		return;
 	}
 

@@ -155,7 +155,7 @@ void E1000Adapter::get_mac_addr() {
 	MACAddress addr = {(uint8_t) (a & 0xff), (uint8_t) (a >> 8),
 					   (uint8_t) (b & 0xff), (uint8_t) (b >> 8),
 					   (uint8_t) (c & 0xff), (uint8_t) (c >> 8)};
-	KLog::dbg_if<E1000_DBG>("E1000", "%s MAC Address: %x:%x:%x:%x:%x:%x", name().c_str(), (int) addr[0], (int) addr[1], (int) addr[2], (int) addr[3], (int) addr[4], (int) addr[5], (int) addr[6]);
+	KLog::dbg_if<E1000_DBG>("E1000", "{} MAC Address: {}", name(), addr);
 	set_mac(addr);
 }
 
@@ -242,7 +242,7 @@ void E1000Adapter::init_irq() {
 	int irq = PCI::read_byte(m_pci_address, PCI_INTERRUPT_LINE);
 	set_irq(irq);
 	reinstall_irq();
-	KLog::dbg_if<E1000_DBG>("E1000", "%s Interrupt line: %d", name().c_str(), irq);
+	KLog::dbg_if<E1000_DBG>("E1000", "{} Interrupt line: {}", name(), irq);
 
 	m_window.out32(REG_ITHROTTLE, 5580);
 	m_window.out32(REG_IMASK, INT_LSC | INT_RXT0 | INT_RXO);
@@ -253,7 +253,7 @@ void E1000Adapter::init_irq() {
 void E1000Adapter::init_link() {
 	m_window.out32(REG_CTRL, m_window.in32(REG_CTRL) | ECTRL_SLU);
 	m_link = m_window.in32(REG_STATUS) & STATUS_LINKUP;
-	KLog::dbg_if<E1000_DBG>("E1000", "Link state: %s", m_link ? "UP" : "DOWN");
+	KLog::dbg_if<E1000_DBG>("E1000", "Link state: {}", m_link ? "UP" : "DOWN");
 }
 
 void E1000Adapter::receive() {
@@ -264,7 +264,7 @@ void E1000Adapter::receive() {
 		if (!(desc.status & 1))
 			break; // No more packets!
 		ASSERT(desc.length <= rx_buffer_size);
-		KLog::dbg_if<E1000_DBG>("E1000", "Received packet (%d bytes)", desc.length);
+		KLog::dbg_if<E1000_DBG>("E1000", "Received packet ({} bytes)", desc.length);
 		desc.status = 0;
 		{
 			TaskManager::ScopedCritical crit;
@@ -284,7 +284,7 @@ void E1000Adapter::send_bytes(SafePointer<uint8_t> bytes, size_t count) {
 	desc.status = 0;
 	desc.length = count;
 	desc.cmd = CMD_EOP | CMD_IFCS | CMD_RS;
-	KLog::dbg_if<E1000_DBG>("E1000", "Sending packet (%d bytes)", desc.length);
+	KLog::dbg_if<E1000_DBG>("E1000", "Sending packet ({} bytes)", desc.length);
 	TaskManager::enter_critical();
 	PCI::enable_interrupt(m_pci_address);
 	m_window.out32(REG_TXDESCTAIL, (cur_tx_desc + 1) % num_tx_descriptors);

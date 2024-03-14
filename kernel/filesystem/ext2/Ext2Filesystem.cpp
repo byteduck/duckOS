@@ -96,7 +96,7 @@ ResultRet<kstd::Arc<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, uid_
 	uint8_t inode_bitmap[block_size()];
 	Result rb_res = read_block(group.inode_bitmap_block, inode_bitmap);
 	if(rb_res.is_error()) {
-		KLog::err("ext2", "I/O error reading inode bitmap block for block group %d!", bg);
+		KLog::err("ext2", "I/O error reading inode bitmap block for block group {}!", bg);
 		ext2lock.release();
 		return rb_res;
 	}
@@ -118,7 +118,7 @@ ResultRet<kstd::Arc<Ext2Inode>> Ext2Filesystem::allocate_inode(mode_t mode, uid_
 	if(inode_index == 0) {
 		group.free_inodes = 0;
 		group.write();
-		KLog::warn("ext2", "Free inode count inconsistency in block group %d!", bg);
+		KLog::warn("ext2", "Free inode count inconsistency in block group {}!", bg);
 		ext2lock.release();
 		return Result(-ENOSPC);
 	}
@@ -166,7 +166,7 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	uint8_t block_buf[block_size()];
 	Result res = read_block(bg->inode_bitmap_block, block_buf);
 	if(res.is_error()) {
-		KLog::err("ext2", "Error while reading bitmap for block group %d!", ino.block_group());
+		KLog::err("ext2", "Error while reading bitmap for block group {}!", ino.block_group());
 		ext2lock.release();
 		return res;
 	}
@@ -174,7 +174,7 @@ Result Ext2Filesystem::free_inode(Ext2Inode& ino) {
 	set_bitmap_bit(block_buf, ino.index(), false);
 	res = write_block(bg->inode_bitmap_block, block_buf);
 	if(res.is_error()) {
-		KLog::err("ext2", "Error while writing bitmap for block group %d!", ino.block_group());
+		KLog::err("ext2", "Error while writing bitmap for block group {}!", ino.block_group());
 		ext2lock.release();
 		return res;
 	}
@@ -245,7 +245,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 
 	Result res = read_block(group->block_bitmap_block, block_buf);
 	if(res.is_error()) {
-		KLog::err("ext2", "Error %d reading block bitmap for group %d", res.code(), group->num);
+		KLog::err("ext2", "Error %d reading block bitmap for group {}", res.code(), group->num);
 		return res;
 	}
 
@@ -266,7 +266,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 	}
 
 	if(num_allocated != num_blocks) {
-		KLog::warn("ext2", "Free block count in block group %d was incorrect!", group->num);
+		KLog::warn("ext2", "Free block count in block group {} was incorrect!", group->num);
 		group->free_blocks = 0;
 	}
 
@@ -274,7 +274,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks_in_group(Ext2B
 	group->write();
 	res = write_block(group->block_bitmap_block, block_buf);
 	if(res.is_error()) {
-		KLog::err("ext2", "Error writing block bitmap for block group %d!", group->num);
+		KLog::err("ext2", "Error writing block bitmap for block group {}!", group->num);
 		return res;
 	}
 
@@ -295,7 +295,7 @@ ResultRet<kstd::vector<uint32_t>> Ext2Filesystem::allocate_blocks(uint32_t num_b
 	for(uint32_t bgi = 0; bgi < num_block_groups; bgi++) {
 		Ext2BlockGroup *bg = get_block_group(bgi);
 		if (!bg) {
-			KLog::err("ext2", "Error getting block group %d!", bgi);
+			KLog::err("ext2", "Error getting block group {}!", bgi);
 			break;
 		}
 		if (bg->free_blocks >= num_blocks) {
@@ -354,7 +354,7 @@ void Ext2Filesystem::free_block(uint32_t block) {
 	uint32_t group_index = (block - 1) / superblock.blocks_per_group;
 	Ext2BlockGroup* bg = get_block_group(group_index);
 	if(!bg) {
-		KLog::err("ext2", "Error getting block group %d!", group_index);
+		KLog::err("ext2", "Error getting block group {}!", group_index);
 		return;
 	}
 

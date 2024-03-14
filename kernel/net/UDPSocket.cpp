@@ -18,7 +18,7 @@ UDPSocket::~UDPSocket() {
 	LOCK(s_sockets_lock);
 	if (m_bound && s_sockets.contains(m_port)) {
 		s_sockets.erase(m_port);
-		KLog::dbg_if<UDP_DBG>("UDPSocket", "Unbinding from port %d", m_port);
+		KLog::dbg_if<UDP_DBG>("UDPSocket", "Unbinding from port {}", m_port);
 	}
 }
 
@@ -43,7 +43,7 @@ Result UDPSocket::do_bind() {
 	if (s_sockets.contains(m_port))
 		return Result(set_error(EADDRINUSE));
 
-	KLog::dbg_if<UDP_DBG>("UDPSocket", "Binding to port %d", m_port);
+	KLog::dbg_if<UDP_DBG>("UDPSocket", "Binding to port {}", m_port);
 
 	if (m_port == 0) {
 		// If we didn't specify a port, we want an ephemeral port

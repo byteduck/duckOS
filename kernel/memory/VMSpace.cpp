@@ -59,7 +59,7 @@ kstd::Arc<VMSpace> VMSpace::fork(PageDirectory& page_directory, kstd::vector<kst
 					auto new_object_res = region->object()->clone();
 					m_page_directory.map(*region);
 					if(new_object_res.is_error()) {
-						KLog::err("VMSpace", "Could not clone a VMObject: %d!", new_object_res.code());
+						KLog::err("VMSpace", "Could not clone a VMObject: {}!", new_object_res.code());
 						break;
 					}
 					new_object = new_object_res.value();

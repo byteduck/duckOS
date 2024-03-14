@@ -27,7 +27,7 @@ ResultRet<kstd::Arc<AC97Device>> AC97Device::detect() {
 	PCI::Address found_ac97 = {0, 0, 0};
 	PCI::enumerate_devices([](PCI::Address address, PCI::ID id, uint16_t type, void* dataPtr) {
 		if(PCI::get_class(address) == AC97_PCI_CLASS && PCI::get_subclass(address) == AC97_PCI_SUBCLASS) {
-			KLog::info("AC97", "Found AC97 sound card at %x:%x.%x", address.bus, address.slot, address.function);
+			KLog::info("AC97", "Found AC97 sound card at {x}:{x}.{x}", address.bus, address.slot, address.function);
 			*((PCI::Address*)dataPtr) = address;
 		}
 	}, &found_ac97);

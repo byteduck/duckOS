@@ -24,19 +24,19 @@ void KernelTestRegistry::run_tests() {
 		m_passing = true;
 		auto& test = m_tests[i];
 		m_current_test = &test;
-		KLog::info("KernelTests", "(%d/%d) Testing %s...", i + 1, m_tests.size(), test.name);
+		KLog::info("KernelTests", "({}/{}) Testing {}...", i + 1, m_tests.size(), test.name);
 		m_tests[i].func();
 		if(m_passing) {
-			KLog::success("KernelTests", "Test %s passed!", test.name);
+			KLog::success("KernelTests", "Test {} passed!", test.name);
 			n_pass++;
 		} else {
-			KLog::err("KernelTests", "Test %s failed!", test.name);
+			KLog::err("KernelTests", "Test {} failed!", test.name);
 		}
 	}
 
 	if(n_pass == m_tests.size()) {
-		KLog::success("KernelTests", "Finished tests! (All %d passed)", m_tests.size());
+		KLog::success("KernelTests", "Finished tests! (All {} passed)", m_tests.size());
 	} else {
-		KLog::err("KernelTests", "Finished tests with errors: (%d/%d passed)", n_pass, m_tests.size());
+		KLog::err("KernelTests", "Finished tests with errors: ({}/{} passed)", n_pass, m_tests.size());
 	}
 }

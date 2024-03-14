@@ -47,7 +47,7 @@ void PTYFS::remove_pty(const kstd::Arc<PTYDevice>& pty) {
 			return;
 		}
 	}
-	KLog::err("ptyfs", "Failed to remove PTY %d!", pty->id());
+	KLog::err("ptyfs", "Failed to remove PTY {}!", pty->id());
 }
 
 char* PTYFS::name() {

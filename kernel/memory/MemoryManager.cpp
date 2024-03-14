@@ -93,7 +93,8 @@ void MemoryManager::setup_paging() {
 	// Make sure we found a page
 	if(page_array_start_page == 0)
 		PANIC("PAGE_ARRAY_NOMEM", "Cannot find enough contiguous memory to store the physical page array.");
-	KLog::dbg("Memory", "Mapping physical page array to pages 0x%x -> 0x%x", page_array_start_page, page_array_start_page + page_array_num_pages - 1);
+	KLog::dbg("Memory", "Mapping physical page array to pages {#x} -> {#x}", page_array_start_page,
+			   page_array_start_page + page_array_num_pages - 1);
 
 	// Map the array to memory
 	VMProt pages_prot = {
@@ -194,11 +195,12 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 		}
 
 		if(size_pagealigned / PAGE_SIZE < 2) {
-			KLog::dbg("Memory", "Ignoring too-small memory region at 0x%x", addr);
+			KLog::dbg("Memory", "Ignoring too-small memory region at {#x}", addr);
 			return;
 		}
 
-		KLog::dbg("Memory", "Making memory region at page 0x%x of 0x%x pages (%s, %s)", addr_pagealigned / PAGE_SIZE, size_pagealigned / PAGE_SIZE, used ? "Used" : "Unused", reserved ? "Reserved" : "Unreserved");
+		KLog::dbg("Memory", "Making memory region at page {#x} of {#x} pages ({}, {})", addr_pagealigned / PAGE_SIZE,
+				   size_pagealigned / PAGE_SIZE, used ? "Used" : "Unused", reserved ? "Reserved" : "Unreserved");
 		auto region = new PhysicalRegion(
 			addr_pagealigned / PAGE_SIZE,
 			size_pagealigned / PAGE_SIZE,
@@ -229,14 +231,16 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 
 		m_physical_regions.push_back(region);
 
-		KLog::dbg("Memory", "Adding memory region at page 0x%x of 0x%x pages (%s, %s)", region->start_page(), region->num_pages(), !region->free_pages() ? "Used" : "Unused", region->reserved() ? "Reserved" : "Unreserved");
+		KLog::dbg("Memory", "Adding memory region at page {#x} of {#x} pages ({}, {})", region->start_page(),
+				   region->num_pages(), !region->free_pages() ? "Used" : "Unused",
+				   region->reserved() ? "Reserved" : "Unreserved");
 	};
 
 	while(mmap_offset < header->mmap_length) {
 		if(mmap_entry->addr_high || mmap_entry->len_high) {
 			//If the entry is in extended memory, ignore it
-			KLog::dbg("Memory", "Ignoring memory region above 4GiB (0x%x%x)",
-					mmap_entry->addr_high, mmap_entry->addr_low);
+			KLog::dbg("Memory", "Ignoring memory region above 4GiB (0x{x}{x})",
+					   mmap_entry->addr_high, mmap_entry->addr_low);
 		} else {
 			size_t addr = mmap_entry->addr_low;
 			size_t size = mmap_entry->len_low;
@@ -244,7 +248,8 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 
 			// Check if the kernel is contained inside of this region. If so, we need to bifurcate it.
 			if(KERNEL_DATA_END - HIGHER_HALF >= addr && KERNEL_DATA_END - HIGHER_HALF <= end) {
-				KLog::dbg("Memory", "Kernel is from pages 0x%x --> 0x%x", (KERNEL_TEXT - HIGHER_HALF) / PAGE_SIZE, (KERNEL_DATA_END - HIGHER_HALF) / PAGE_SIZE - 1);
+				KLog::dbg("Memory", "Kernel is from pages {#x} --> {#x}", (KERNEL_TEXT - HIGHER_HALF) / PAGE_SIZE,
+						   (KERNEL_DATA_END - HIGHER_HALF) / PAGE_SIZE - 1);
 				if(addr < KERNEL_TEXT - HIGHER_HALF) {
 					// Space in region before kernel
 					make_region(addr,
@@ -270,8 +275,8 @@ void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct
 		mmap_entry = (struct multiboot_mmap_entry*) ((size_t)mmap_entry + mmap_entry->size + sizeof(mmap_entry->size));
 	}
 
-	KLog::dbg("Memory", "Usable memory limits: 0x%x -> 0x%x", usable_lower_limt, usable_upper_limit);
-	KLog::dbg("Memory", "Total memory limits: 0x%x -> 0x%x", mem_lower_limit, mem_upper_limit);
+	KLog::dbg("Memory", "Usable memory limits: {#x} -> {#x}", usable_lower_limt, usable_upper_limit);
+	KLog::dbg("Memory", "Total memory limits: {#x} -> {#x}", mem_lower_limit, mem_upper_limit);
 }
 
 ResultRet<PageIndex> MemoryManager::alloc_physical_page() const {

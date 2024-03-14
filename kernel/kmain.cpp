@@ -159,14 +159,17 @@ void kmain_late(){
 	auto* ext2fs = new Ext2Filesystem(part_descriptor);
 	ext2fs->init();
 	if(ext2fs->superblock.version_major < 1){
-		KLog::crit("kinit", "Unsupported ext2 version %d.%d. Must be at least 1. Hanging.", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
+		KLog::crit("kinit", "Unsupported ext2 version {}.{}. Must be at least 1. Hanging.",
+					ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
 		while(true);
 	}
 
-	KLog::dbg("kinit", "Partition is ext2 %d.%d", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
+	KLog::dbg("kinit", "Partition is ext2 {}.{}", ext2fs->superblock.version_major, ext2fs->superblock.version_minor);
 
 	if(ext2fs->superblock.inode_size != 128){
-		KLog::crit("kinit", "Unsupported inode size %d. DuckOS only supports an inode size of 128 at this time. Hanging.", ext2fs->superblock.inode_size);
+		KLog::crit("kinit",
+					"Unsupported inode size {}. DuckOS only supports an inode size of 128 at this time. Hanging.",
+					ext2fs->superblock.inode_size);
 		while(1);
 	}
 
@@ -181,42 +184,42 @@ void kmain_late(){
 	auto root_user = User::root();
 	auto proc_or_err = VFS::inst().resolve_path("/proc", VFS::inst().root_ref(), root_user);
 	if(proc_or_err.is_error()) {
-		KLog::crit("kinit", "Failed to mount proc: %d", proc_or_err.code());
+		KLog::crit("kinit", "Failed to mount proc: {}", proc_or_err.code());
 		while(true);
 	}
 
 	auto* procfs = new ProcFS();
 	auto res = VFS::inst().mount(procfs, proc_or_err.value());
 	if(res.is_error()) {
-		KLog::crit("kinit", "Failed to mount proc: %d", res.code());
+		KLog::crit("kinit", "Failed to mount proc: {}", res.code());
 		while(true);
 	}
 
 	//Mount SocketFS
 	auto sock_or_err = VFS::inst().resolve_path("/sock", VFS::inst().root_ref(), root_user);
 	if(sock_or_err.is_error()) {
-		KLog::crit("kinit", "Failed to mount sock: %d", sock_or_err.code());
+		KLog::crit("kinit", "Failed to mount sock: {}", sock_or_err.code());
 		while(true);
 	}
 
 	auto* socketfs = new SocketFS();
 	res = VFS::inst().mount(socketfs, sock_or_err.value());
 	if(res.is_error()) {
-		KLog::crit("kinit", "Failed to mount sock: %d", res.code());
+		KLog::crit("kinit", "Failed to mount sock: {}", res.code());
 		while(true);
 	}
 
 	//Mount PTYFS
 	auto pts_or_err = VFS::inst().resolve_path("/dev/pts", VFS::inst().root_ref(), root_user);
 	if(pts_or_err.is_error()) {
-		KLog::crit("kinit", "Failed to mount pts: %d", pts_or_err.code());
+		KLog::crit("kinit", "Failed to mount pts: {}", pts_or_err.code());
 		while(true);
 	}
 
 	auto* ptyfs = new PTYFS();
 	res = VFS::inst().mount(ptyfs, pts_or_err.value());
 	if(res.is_error()) {
-		KLog::crit("kinit", "Failed to mount pts: %d", res.code());
+		KLog::crit("kinit", "Failed to mount pts: {}", res.code());
 		while(true);
 	}
 
@@ -253,7 +256,7 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 	//Check boot disk
 	if(header->flags & MULTIBOOT_INFO_BOOTDEV) {
 		boot_disk = (header->boot_device & 0xF0000000u) >> 28u;
-		KLog::dbg("kinit", "BIOS boot disk: 0x%x", boot_disk);
+		KLog::dbg("kinit", "BIOS boot disk: {#x}", boot_disk);
 	} else {
 		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have boot device info. Cannot boot.");
 	}

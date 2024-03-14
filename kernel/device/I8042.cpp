@@ -67,7 +67,7 @@ bool I8042::init() {
 	write_config(config);*/
 
 	bool dual_channel = config & I8042_CONFIG_CLOCK2;
-	KLog::dbg("I8042", "Found %s-channel controller", dual_channel ? "dual" : "single");
+	KLog::dbg("I8042", "Found {}-channel controller", dual_channel ? "dual" : "single");
 
 	bool keyboard_available = false, mouse_available = false;
 

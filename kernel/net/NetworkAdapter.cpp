@@ -12,7 +12,7 @@ kstd::vector<NetworkAdapter*> NetworkAdapter::s_interfaces;
 NetworkAdapter::NetworkAdapter(kstd::string name):
 	m_name(kstd::move(name))
 {
-	KLog::dbg("NetworkAdapter", "Registered network adapter %s", m_name.c_str());
+	KLog::dbg("NetworkAdapter", "Registered network adapter {}", m_name);
 	s_interfaces.push_back(this);
 }
 
@@ -53,7 +53,7 @@ void NetworkAdapter::receive_bytes(SafePointer<uint8_t> bytes, size_t count) {
 			break;
 	}
 	if (i == 32) {
-		KLog::warn("NetworkAdapter", "%s had to drop packet, no more space in buffer!", name().c_str());
+		KLog::warn("NetworkAdapter", "{} had to drop packet, no more space in buffer!", name());
 		return;
 	}
 

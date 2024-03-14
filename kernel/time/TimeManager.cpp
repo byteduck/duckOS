@@ -47,7 +47,7 @@ TimeManager::TimeManager(): _keeper(new RTC(this)) {
 	_boot_epoch = RTC::timestamp();
 	measure_tsc_speed();
 	_tsc_speed = (final_tsc - initial_tsc) / 10000;
-	KLog::dbg("TimeManager", "TSC speed measured at %dMHz", (uint32_t) _tsc_speed);
+	KLog::dbg("TimeManager", "TSC speed measured at {}MHz", (uint32_t) _tsc_speed);
 }
 
 TimeManager& TimeManager::inst() {

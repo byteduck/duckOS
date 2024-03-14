@@ -185,7 +185,7 @@ int Process::sys_munmap(void* addr, size_t length) {
 			return SUCCESS;
 		}
 	}
-	KLog::warn("Process", "munmap() for %s(%d) failed.", _name.c_str(), _pid);
+	KLog::warn("Process", "munmap() for {}({}) failed.", _name, _pid);
 	return ENOENT;
 }
 
@@ -208,6 +208,6 @@ int Process::sys_mprotect(void* addr, size_t length, int prot_flags) {
 		}
 	}
 
-	KLog::warn("Process", "mprotect() for %s(%d) failed.", _name.c_str(), _pid);
+	KLog::warn("Process", "mprotect() for {}({}) failed.", _name, _pid);
 	return ENOENT;
 }

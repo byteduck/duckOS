@@ -55,7 +55,7 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 			textmode = false;
 			break;
 		default:
-			KLog::err("VGA", "Unsupported multiboot framebuffer type %d!", mboot_header->framebuffer_type);
+			KLog::err("VGA", "Unsupported multiboot framebuffer type {}!", mboot_header->framebuffer_type);
 			return false;
 	}
 

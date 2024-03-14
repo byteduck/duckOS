@@ -57,8 +57,8 @@ bool BochsVGADevice::detect() {
 	set_resolution(VBE_DEFAULT_WIDTH, VBE_DEFAULT_HEIGHT);
 	framebuffer_region = MM.alloc_mapped_region(framebuffer_paddr, framebuffer_size() * 2);
 	framebuffer = (uint32_t*) framebuffer_region->start();
-	KLog::info("VGA", "Found a bochs-compatible VGA device at %x:%x.%x", address.bus, address.slot, address.function);
-	KLog::dbg("VGA", "virtual framebuffer mapped from 0x%x to 0x%x", framebuffer_paddr, framebuffer_region->start());
+	KLog::info("VGA", "Found a bochs-compatible VGA device at {x}:{x}.{x}", address.bus, address.slot, address.function);
+	KLog::dbg("VGA", "virtual framebuffer mapped from {#x} to {#x}", framebuffer_paddr, framebuffer_region->start());
 	return true;
 }
 

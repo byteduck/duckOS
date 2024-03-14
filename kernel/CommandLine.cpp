@@ -30,7 +30,7 @@ CommandLine::CommandLine(const struct multiboot_info& header) {
 	if(header.flags & MULTIBOOT_INFO_CMDLINE) {
 		cmdline = (char*) (header.cmdline + HIGHER_HALF);
 
-		KLog::info("CommandLine", "Command line options: '%s'", cmdline.c_str());
+		KLog::info("CommandLine", "Command line options: '{}'", cmdline);
 
 		kstd::string cmd = cmdline;
 		kstd::string part = "";

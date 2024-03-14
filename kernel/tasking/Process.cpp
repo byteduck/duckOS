@@ -248,7 +248,7 @@ Process::~Process() {
 void Process::kill(int signal) {
 	ASSERT(_state == ALIVE || _state == STOPPED);
 	if (signal <= 0 || signal >= NSIG) {
-		KLog::err("Process", "Invalid signal %d sent to %d!", signal, _pid);
+		KLog::err("Process", "Invalid signal {} sent to {}!", signal, _pid);
 		return;
 	}
 
@@ -262,7 +262,7 @@ void Process::kill(int signal) {
 	TaskManager::current_thread()->leave_critical();
 
 	if (!did_handle)
-		KLog::err("Process", "No available thread for pid %d to handle signal %s", _pid, Signal::signal_names[signal]);
+		KLog::err("Process", "No available thread for pid {} to handle signal {}", _pid, Signal::signal_names[signal]);
 }
 
 void Process::die() {
@@ -317,12 +317,12 @@ size_t Process::used_shmem() const {
 void Process::check_ptr(const void *ptr, bool write) {
 	auto region = _vm_space->get_region_containing((VirtualAddress) ptr);
 	if(region.is_error()) {
-		KLog::dbg("Process", "Pointer check at 0x%x failed for %s(%d): Not mapped", ptr, _name.c_str(), _pid);
+		KLog::dbg("Process", "Pointer check at {#x} failed for {}({}): Not mapped", ptr, _name, _pid);
 		kill(SIGSEGV);
 	}
 	auto prot = region.value()->prot();
 	if((!write && !prot.read) || (!prot.write && write)) {
-		KLog::dbg("Process", "Pointer check at 0x%x failed for %s(%d): Insufficient permissions", ptr, _name.c_str(), _pid);
+		KLog::dbg("Process", "Pointer check at {#x} failed for {}({}): Insufficient permissions", ptr, _name, _pid);
 		kill(SIGSEGV);
 	}
 }
@@ -338,7 +338,7 @@ void Process::alert_thread_died(kstd::Arc<Thread> thread) {
 		} else if(_pid == -1) {
 			// We are a process that just exec()'d. Nothing to do here.
 		} else {
-			KLog::warn("Process", "Process %d died and did not have a parent for SIGCHLD!", _pid);
+			KLog::warn("Process", "Process {} died and did not have a parent for SIGCHLD!", _pid);
 		}
 		TaskManager::reparent_orphans(this);
 		_state = ZOMBIE;

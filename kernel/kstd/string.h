@@ -64,4 +64,3 @@ namespace kstd {
 		char* _cstring;
 	};
 }
-

@@ -223,7 +223,8 @@ void Thread::die() {
 			_blocker->interrupt();
 			unblock();
 		} else {
-			KLog::warn("Thread", "Could not interrupt %s(pid: %d, tid: %d) while killing...", _process->name().c_str(),  _process->pid(), _tid);
+			KLog::warn("Thread", "Could not interrupt {}(pid: {}, tid: {}) while killing...", _process->name().c_str(),
+						_process->pid(), _tid);
 		}
 	}
 
@@ -515,7 +516,8 @@ void Thread::handle_pagefault(PageFault fault) {
 		if(fault.registers->interrupt_frame.eip > HIGHER_HALF) {
 			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, fault.address, fault.registers->interrupt_frame.eip);
 		}
-		KLog::warn("Thread", "PID %d thread %d made illegal memory access at 0x%x (eip: 0x%x)", _process->pid(), _tid, fault.address, fault.registers->interrupt_frame.eip);
+		KLog::warn("Thread", "PID {} thread {} made illegal memory access at {#x} (eip: {#x}})", _process->pid(), _tid,
+					fault.address, fault.registers->interrupt_frame.eip);
 		_process->kill(SIGSEGV);
 	}
 }
@@ -689,7 +691,7 @@ void Thread::dispatch_signal(int signal) {
 
 void Thread::die_from_signal(int signal) {
 	if(Signal::signal_severities[signal] == Signal::FATAL)
-		KLog::warn("Process", "PID %d exiting with fatal signal %s", _process->_pid, Signal::signal_names[signal]);
+		KLog::warn("Process", "PID {} exiting with fatal signal {}", _process->_pid, Signal::signal_names[signal]);
 
 	// Notify relevant waiters
 	if (signal == SIGKILL && _process->_died_gracefully)

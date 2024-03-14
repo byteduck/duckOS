@@ -110,7 +110,8 @@ PATADevice::PATADevice(PCI::Address addr, PATADevice::Channel channel, PATADevic
 		IO::outb(_bus_master_base + ATA_BM_STATUS, IO::inb(_bus_master_base + ATA_BM_STATUS) | 0x4u);
 	}
 
-	KLog::info("PATA", "Setup disk %s using %s (%d blocks)", _model_number, _use_pio ? "PIO" : "DMA", _max_addressable_block);
+	KLog::info("PATA", "Setup disk {} using {} ({} blocks)", _model_number, _use_pio ? "PIO" : "DMA",
+				_max_addressable_block);
 }
 
 PATADevice::~PATADevice() = default;
@@ -160,7 +161,8 @@ Result PATADevice::read_sectors_dma(uint32_t lba, uint8_t num_sectors, uint8_t *
 	uninstall_irq();
 
 	if(_post_irq_status & ATA_STATUS_ERR) {
-		KLog::err("PATA", "DMA read fail with status 0x%x and busmaster status 0x%x", _post_irq_status, _post_irq_bm_status);
+		KLog::err("PATA", "DMA read fail with status {#x} and busmaster status {#x}", _post_irq_status,
+				   _post_irq_bm_status);
 		return Result(-EIO);
 	}
 
@@ -207,7 +209,8 @@ Result PATADevice::write_sectors_dma(uint32_t lba, uint8_t num_sectors, const ui
 	uninstall_irq();
 
 	if(_post_irq_status & ATA_STATUS_ERR) {
-		KLog::err("PATA", "DMA write fail with status 0x%x and busmaster status 0x%x", _post_irq_status, _post_irq_bm_status);
+		KLog::err("PATA", "DMA write fail with status {#x} and busmaster status {#x}", _post_irq_status,
+				   _post_irq_bm_status);
 		return Result(-EIO);
 	}
 

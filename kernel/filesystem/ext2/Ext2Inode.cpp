@@ -53,7 +53,7 @@ Ext2Inode::Ext2Inode(Ext2Filesystem& filesystem, ino_t i, const Raw &raw, kstd::
 		entries.push_back(DirectoryEntry(parent, TYPE_DIR, "..")); //Parent increases their hardlink count in add_entry
 		Result res = write_directory_entries(entries);
 		if(res.is_error())
-			KLog::err("ext2", "Error %d writing new ext2 directory inode's entries to disk", res.code());
+			KLog::err("ext2", "Error {} writing new ext2 directory inode's entries to disk", res.code());
 	}
 	write_to_disk();
 }
@@ -346,7 +346,8 @@ ResultRet<kstd::Arc<Inode>> Ext2Inode::create_entry(const kstd::string& name, mo
 	if(entry_result.is_error()) {
 		auto free_or_err = ext2fs().free_inode(*inode_or_err.value());
 		if(free_or_err.is_error()) {
-			KLog::err("ext2", "Error freeing inode %d after entry creation error! (%d)\n", inode_or_err.value()->id, free_or_err.code());
+			KLog::err("ext2", "Error freeing inode {} after entry creation error! ({})\n", inode_or_err.value()->id,
+					   free_or_err.code());
 		}
 		return entry_result;
 	}
@@ -379,7 +380,7 @@ Result Ext2Inode::remove_entry(const kstd::string &name) {
 	if(!found) return Result(-ENOENT);
 	auto child_or_err = ext2fs().get_inode(entries[entry_index].id);
 	if(child_or_err.is_error()){
-		KLog::warn("ext2", "Orphaned directory entry in inode %d", id);
+		KLog::warn("ext2", "Orphaned directory entry in inode {}", id);
 		return child_or_err.result();
 	}
 

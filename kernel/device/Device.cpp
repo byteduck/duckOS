@@ -47,9 +47,9 @@ Device::Device(unsigned major, unsigned minor): _major(major), _minor(minor) {
 	auto res = get_device(_major, _minor);
 	if (res.is_error() && res.code() == -ENODEV) {
 		_devices.push_back(kstd::Arc<Device>(this));
-		KLog::dbg("Device", "Device %d,%d registered", _major, _minor);
+		KLog::dbg("Device", "Device {},{} registered", _major, _minor);
 	} else {
-		KLog::warn("Device", "Tried to register already-registered device %d,%d!", _major, _minor);
+		KLog::warn("Device", "Tried to register already-registered device {},{}!", _major, _minor);
 	}
 }
 
@@ -94,7 +94,7 @@ void Device::remove_device(unsigned major, unsigned minor) {
 		if(_devices[i]){
 			if(_devices[i]->_major == major && _devices[i]->_minor == minor){
 				_devices.erase(i);
-				KLog::dbg("Device", "Device %d,%d deregistered", major, minor);
+				KLog::dbg("Device", "Device {},{} deregistered", major, minor);
 			}
 		}
 	}

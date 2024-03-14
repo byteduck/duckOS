@@ -113,7 +113,7 @@ size_t DiskDevice::free_pages(size_t num_pages) {
 	}
 
 	if(num_freed != num_pages)
-		KLog::warn("DiskDevice", "Was asked to free %d pages, could only free %d...", num_pages, num_freed);
+		KLog::warn("DiskDevice", "Was asked to free {} pages, could only free {}...", num_pages, num_freed);
 
 	return num_freed;
 }

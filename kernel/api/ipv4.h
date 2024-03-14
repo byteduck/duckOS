@@ -33,7 +33,15 @@ private:
 	uint8_t m_data[4];
 };
 
-#define IPV4_ARGS(addr) (addr)[0], (addr)[1], (addr)[2], (addr)[3]
+
+#ifdef DUCKOS_KERNEL
+#include <kernel/kstd/KLog.h>
+namespace KLog {
+	inline void print_arg(const IPv4Address& addr, FormatRules rules) {
+		printf("%d.%d.%d.%d", addr[0], addr[1], addr[2], addr[3]);
+	}
+}
+#endif
 
 struct __attribute__((packed)) IPv4Packet {
 	uint8_t version_ihl = 0;

@@ -256,7 +256,7 @@ void SocketFSInode::close(FileDescriptor& fd) {
 				return;
 			}
 		}
-		KLog::warn("SocketFS", "Socket %d was closed by host but couldn't find an entry to remove!", id);
+		KLog::warn("SocketFS", "Socket {} was closed by host but couldn't find an entry to remove!", id);
 		return;
 	}
 

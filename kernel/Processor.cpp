@@ -17,7 +17,7 @@ void Processor::init() {
 	memcpy(&s_vendor[sizeof(uint32_t) * 2], &id.ecx, sizeof(uint32_t));
 	s_vendor[sizeof(uint32_t) * 3] = '\0';
 
-	KLog::dbg("Processor", "CPU Detected: %s", s_vendor);
+	KLog::dbg("Processor", "CPU Detected: {}", s_vendor);
 
 	// Get features
 	id = cpuid(CPUIDOp::Features);

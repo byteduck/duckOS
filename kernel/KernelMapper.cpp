@@ -84,7 +84,8 @@ void KernelMapper::load_map() {
 	delete[] filebuf;
 	symbols->shrink_to_fit();
 
-	KLog::dbg("KernelMapper", "Map loaded with %d symbols between 0x%x and 0x%x", symbols->size(), lowest_addr, highest_addr);
+	KLog::dbg("KernelMapper", "Map loaded with {} symbols between {#x} and {#x}", symbols->size(), lowest_addr,
+			   highest_addr);
 #endif
 }
 
