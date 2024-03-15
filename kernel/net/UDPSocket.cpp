@@ -4,6 +4,7 @@
 #include "UDPSocket.h"
 #include "../kstd/KLog.h"
 #include "../api/udp.h"
+#include "Router.h"
 
 #define UDP_DBG 1
 
@@ -16,9 +17,9 @@ UDPSocket::UDPSocket(): IPSocket(Type::Dgram, 0) {
 
 UDPSocket::~UDPSocket() {
 	LOCK(s_sockets_lock);
-	if (m_bound && s_sockets.contains(m_port)) {
-		s_sockets.erase(m_port);
-		KLog::dbg_if<UDP_DBG>("UDPSocket", "Unbinding from port {}", m_port);
+	if (m_bound && s_sockets.contains(m_bound_port)) {
+		s_sockets.erase(m_bound_port);
+		KLog::dbg_if<UDP_DBG>("UDPSocket", "Unbinding from port {}", m_bound_port);
 	}
 }
 
@@ -40,12 +41,10 @@ Result UDPSocket::do_bind() {
 	LOCK(s_sockets_lock);
 	if (m_bound)
 		return Result(set_error(EINVAL));
-	if (s_sockets.contains(m_port))
+	if (s_sockets.contains(m_bound_port))
 		return Result(set_error(EADDRINUSE));
 
-	KLog::dbg_if<UDP_DBG>("UDPSocket", "Binding to port {}", m_port);
-
-	if (m_port == 0) {
+	if (m_bound_port == 0) {
 		// If we didn't specify a port, we want an ephemeral port
 		// (Range suggested by IANA and RFC 6335)
 		uint16_t ephem;
@@ -59,22 +58,47 @@ Result UDPSocket::do_bind() {
 			return Result(set_error(EADDRINUSE));
 		}
 
-		m_port = ephem;
+		m_bound_port = ephem;
 	}
 
-	s_sockets[m_port] = self();
+	KLog::dbg_if<UDP_DBG>("UDPSocket", "Binding to port {}", m_bound_port);
+
+	s_sockets[m_bound_port] = self();
 	m_bound = true;
 
 	return Result(SUCCESS);
 }
 
-ssize_t UDPSocket::do_recv(const IPv4Packet* pkt, SafePointer<uint8_t> buf, size_t len) {
-	auto* udp_pkt = (const UDPPacket*) pkt->payload;
-	ASSERT(pkt->length >= sizeof(IPv4Packet) + sizeof(UDPPacket)); // Should've been rejected at IP layer
+ssize_t UDPSocket::do_recv(RecvdPacket* pkt, SafePointer<uint8_t> buf, size_t len) {
+	auto* udp_pkt = (const UDPPacket*) pkt->packet.payload;
+	ASSERT(pkt->packet.length >= sizeof(IPv4Packet) + sizeof(UDPPacket)); // Should've been rejected at IP layer
 	ASSERT(udp_pkt->len >= sizeof(UDPPacket)); // Should've been rejected in NetworkManager
 
 	const size_t nread = min(len, udp_pkt->len.val() - sizeof(UDPPacket));
 	buf.write(udp_pkt->payload, nread);
 
+	KLog::dbg_if<UDP_DBG>("UDPSocket", "Received packet from {}:{} ({} bytes)", pkt->packet.source_addr, udp_pkt->source_port, nread);
+
+	pkt->port = udp_pkt->source_port;
+
 	return (ssize_t) nread;
+}
+
+ResultRet<size_t> UDPSocket::do_send(SafePointer<uint8_t> buf, size_t len) {
+	auto route = Router::get_route(m_dest_addr, {}, {});
+	if (!route.mac || !route.adapter)
+		return Result(set_error(EHOSTUNREACH));
+
+	const size_t packet_len = sizeof(IPv4Packet) + sizeof(UDPPacket) + len;
+	auto pkt = route.adapter->alloc_packet(packet_len);
+	auto* ipv4_packet = route.adapter->setup_ipv4_packet(pkt, route.mac, m_dest_addr, UDP, sizeof(UDPPacket) + len, m_type_of_service, m_ttl);
+	auto* udp_packet = (UDPPacket*) ipv4_packet->payload;
+	udp_packet->source_port = m_bound_port;
+	udp_packet->dest_port = m_dest_port;
+	udp_packet->len = sizeof(UDPPacket) + len;
+	buf.read(udp_packet->payload, len);
+
+	KLog::dbg_if<UDP_DBG>("UDPSocket", "Sending packet to {}:{} ({} bytes)", m_dest_addr, m_dest_port, len);
+	route.adapter->send_packet(pkt);
+	return len;
 }

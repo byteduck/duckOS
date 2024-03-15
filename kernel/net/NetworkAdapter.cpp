@@ -55,7 +55,7 @@ void NetworkAdapter::receive_bytes(SafePointer<uint8_t> bytes, size_t count) {
 
 	int i;
 	for (i = 0; i < 32; i++) {
-		if (!m_packets[i].used)
+		if (!m_packets[i].used.load(MemoryOrder::Acquire))
 			break;
 	}
 	if (i == 32) {
@@ -102,3 +102,50 @@ NetworkAdapter::Packet* NetworkAdapter::dequeue_packet() {
 	m_packet_queue = m_packet_queue->next;
 	return pkt;
 }
+
+NetworkAdapter::Packet* NetworkAdapter::alloc_packet(size_t size) {
+	ASSERT(size < 8192);
+	TaskManager::ScopedCritical crit;
+	int i;
+	for (i = 0; i < 32; i++) {
+		if (!m_packets[i].used.load(MemoryOrder::Acquire))
+			break;
+	}
+
+	if (i == 32)
+		return nullptr;
+
+	auto& pkt = m_packets[i];
+	pkt.size = sizeof(FrameHeader) + size;
+	return &m_packets[i];
+}
+
+IPv4Packet* NetworkAdapter::setup_ipv4_packet(Packet* packet, const MACAddress& dest, const IPv4Address& dest_addr, IPv4Proto proto, size_t payload_size, uint8_t dscp, uint8_t ttl) {
+	ASSERT(packet);
+
+	auto* frame = (FrameHeader*) packet->buffer;
+	frame->type = EtherProto::IPv4;
+	frame->destination = dest;
+	frame->source = m_mac_addr;
+
+	auto* ipv4 = (IPv4Packet*) (packet->buffer + sizeof(FrameHeader));
+	ipv4->source_addr = m_ipv4_addr;
+	ipv4->dest_addr = dest_addr;
+	ipv4->length = payload_size + sizeof(IPv4Packet);
+	ipv4->dscp_ecn = dscp;
+	ipv4->ttl = ttl;
+	ipv4->proto = proto;
+	ipv4->identification = 1;
+	ipv4->version_ihl = (4 << 4) | 5;
+	ipv4->identification = 1;
+	ipv4->set_checksum();
+
+	return ipv4;
+}
+
+void NetworkAdapter::send_packet(NetworkAdapter::Packet* packet) {
+	ASSERT(packet->size < 8192);
+	send_raw_packet(KernelPointer(packet->buffer), packet->size);
+	packet->used.store(false, MemoryOrder::Release);
+}
+

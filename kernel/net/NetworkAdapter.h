@@ -18,7 +18,7 @@ public:
 		uint8_t buffer[8192]; /* TODO: We need non-constant packet sizes... */
 		union {
 			size_t size;
-			bool used = false;
+			Atomic<bool> used = false;
 		};
 		Packet* next = nullptr;
 	};
@@ -32,7 +32,10 @@ public:
 
 	void send_arp_packet(MACAddress dest, const ARPPacket& packet);
 	void send_raw_packet(SafePointer<uint8_t> bytes, size_t count);
+	void send_packet(Packet* packet);
 	Packet* dequeue_packet();
+	Packet* alloc_packet(size_t size);
+	IPv4Packet* setup_ipv4_packet(Packet* packet, const MACAddress& dest, const IPv4Address& dest_addr, IPv4Proto proto, size_t payload_size, uint8_t dscp, uint8_t ttl);
 
 	[[nodiscard]] IPv4Address ipv4_address() const { return m_ipv4_addr; }
 	[[nodiscard]] MACAddress mac_address() const { return m_mac_addr; }

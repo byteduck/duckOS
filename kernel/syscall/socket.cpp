@@ -62,6 +62,22 @@ int Process::sys_recvmsg(int sockfd, UserspacePointer<struct msghdr> msg_ptr, in
 	return socket->recvfrom(*desc, buf, iov.iov_len, flags, addr_ptr, addrlen_ptr);
 }
 
-int Process::sys_sendmsg(int sockfd, UserspacePointer<struct msghdr> msg, int flags) {
-	return -1;
+int Process::sys_sendmsg(int sockfd, UserspacePointer<struct msghdr> msg_ptr, int flags) {
+	get_socket(sockfd);
+
+	auto msg = msg_ptr.get();
+
+	// TODO: More than one entry in iovec
+	if (msg.msg_iovlen != 1)
+		return -EINVAL;
+
+	auto iov = UserspacePointer(msg.msg_iov).get();
+	auto addr_ptr = UserspacePointer((sockaddr*) msg.msg_name);
+	auto addrlen_ptr = UserspacePointer(&msg_ptr.raw()->msg_namelen);
+	auto buf = UserspacePointer((uint8_t*) iov.iov_base);
+
+	// TODO: Control messages
+	UserspacePointer(&msg_ptr.raw()->msg_controllen).set(0);
+
+	return socket->sendto(*desc, buf, iov.iov_len, flags, addr_ptr, addrlen_ptr.get());
 }

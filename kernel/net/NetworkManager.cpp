@@ -31,7 +31,7 @@ void NetworkManager::do_task() {
 		for (auto& iface : NetworkAdapter::interfaces()) {
 			while ((packet = iface->dequeue_packet())) {
 				handle_packet(iface, packet);
-				packet->used = false;
+				packet->used.store(false, MemoryOrder::Release);
 			}
 		}
 	}

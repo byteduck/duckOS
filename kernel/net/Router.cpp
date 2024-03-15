@@ -102,7 +102,7 @@ Router::Route Router::get_route(const IPv4Address& dest, const IPv4Address& sour
 	}
 
 	// ARP lookup
-	KLog::dbg_if<ROUTE_DEBUG>("Router", "Could not find route to {}, sending ARP request thru {} for {}", dest, adapter->name(), next_hop);
+	KLog::dbg_if<ROUTE_DEBUG>("Router", "Could not find route to {}, looking up ARP entry for {}", dest, next_hop);
 	auto mac = arp_lookup(next_hop, adapter);
 	if (mac.is_error())
 		return {{}, {}};

@@ -26,6 +26,7 @@ public:
 	// Socket
 	virtual Result bind(SafePointer<sockaddr> addr, socklen_t addrlen) = 0;
 	virtual ssize_t recvfrom(FileDescriptor& fd, SafePointer<uint8_t> buf, size_t len, int flags, SafePointer<sockaddr> src_addr, SafePointer<socklen_t> addrlen) = 0;
+	virtual ssize_t sendto(FileDescriptor& fd, SafePointer<uint8_t> buf, size_t len, int flags, SafePointer<sockaddr> dest_addr, socklen_t addrlen) = 0;
 	virtual Result recv_packet(const void* buf, size_t len) = 0;
 
 	[[nodiscard]] int error() const { return m_error; }

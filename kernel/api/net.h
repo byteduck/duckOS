@@ -35,6 +35,13 @@ public:
 		return false;
 	}
 
+	inline constexpr operator bool() const {
+		for (auto& val : m_data)
+			if (val)
+				return true;
+		return false;
+	}
+
 private:
 	uint8_t m_data[6] = {0};
 };

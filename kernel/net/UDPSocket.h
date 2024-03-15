@@ -17,7 +17,8 @@ protected:
 	UDPSocket();
 
 	Result do_bind() override;
-	ssize_t do_recv(const IPv4Packet *pkt, SafePointer<uint8_t> buf, size_t len) override;
+	ssize_t do_recv(RecvdPacket* pkt, SafePointer<uint8_t> buf, size_t len) override;
+	ResultRet<size_t> do_send(SafePointer<uint8_t> buf, size_t len) override;
 
 	static kstd::map<uint16_t, kstd::Weak<UDPSocket>> s_sockets;
 	static Mutex s_sockets_lock;

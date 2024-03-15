@@ -67,6 +67,30 @@ struct __attribute__((packed)) IPv4Packet {
 	IPv4Address source_addr;
 	IPv4Address dest_addr;
 	uint8_t payload[];
+
+	[[nodiscard]] inline BigEndian<uint16_t> compute_checksum() const { return __compute_checksum(this); }
+
+	inline void set_checksum() {
+		checksum = 0;
+		checksum = compute_checksum();
+	}
+
+private:
+	// Necessary to beat the alignment allegations. Scary, I know
+	[[nodiscard]] inline BigEndian<uint16_t> __compute_checksum(const void* voidptr) const {
+		uint32_t sum = 0;
+		auto* ptr = (const uint16_t*) voidptr;
+		size_t count = sizeof(IPv4Packet);
+		while (count > 1) {
+			sum += as_big_endian(*ptr++);
+			if (sum & 0x80000000)
+				sum = (sum & 0xffff) | (sum >> 16);
+			count -= 2;
+		}
+		while (sum >> 16)
+			sum = (sum & 0xffff) + (sum >> 16);
+		return ~sum & 0xffff;
+	}
 };
 
 static_assert(sizeof(IPv4Packet) == 20);
