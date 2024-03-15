@@ -117,7 +117,7 @@
 void E1000Adapter::probe() {
 	PCI::enumerate_devices([](PCI::Address address, PCI::ID id, uint16_t type, void* dataPtr) {
 		if(id.vendor == INTEL_VEND && id.device == E1000_DEV) {
-			new E1000Adapter(address);
+			NetworkAdapter::register_interface(kstd::Arc(new E1000Adapter(address)));
 		}
 	}, nullptr);
 

@@ -21,9 +21,20 @@ public:
 		m_data[5] = f;
 	}
 
-	uint8_t operator[](size_t index) const {
+	inline constexpr uint8_t operator[](size_t index) const {
 		return m_data[index];
 	}
+
+	inline constexpr bool operator<(const MACAddress& other) const {
+		for (int i = 0; i < 6; i++) {
+			if (m_data[i] < other.m_data[i])
+				return true;
+			else if (m_data[i] > other.m_data[i])
+				return false;
+		}
+		return false;
+	}
+
 private:
 	uint8_t m_data[6] = {0};
 };

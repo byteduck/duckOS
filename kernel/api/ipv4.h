@@ -11,26 +11,38 @@ class __attribute__((packed)) IPv4Address {
 public:
 	constexpr IPv4Address() = default;
 
-	constexpr IPv4Address(uint32_t addr) {
-		m_data[0] = addr >> 24;
-		m_data[1] = addr >> 16;
-		m_data[2] = addr >> 8;
-		m_data[3] = addr;
-	}
+	constexpr IPv4Address(uint32_t addr): m_data(addr) {}
 
-	constexpr IPv4Address(uint8_t a, uint8_t b, uint8_t c, uint8_t d) {
-		m_data[0] = a;
-		m_data[1] = b;
-		m_data[2] = c;
-		m_data[3] = d;
-	}
+	constexpr IPv4Address(uint32_t a, uint32_t b, uint32_t c, uint32_t d):
+		m_data(a | (b << 8) | (c << 16) | (d << 24)) {}
 
 	inline constexpr uint8_t operator[](int idx) const {
-		return m_data[idx];
+		return m_data >> (idx * 8);
+	}
+
+	inline constexpr IPv4Address operator& (const IPv4Address& mask) const {
+		return mask.m_data & m_data;
+	}
+
+	inline constexpr IPv4Address& operator&= (const IPv4Address& mask) {
+		m_data &= mask.m_data;
+		return *this;
+	}
+
+	inline constexpr bool operator== (const IPv4Address& other) const {
+		return m_data == other.m_data;
+	}
+
+	inline constexpr uint32_t val() const {
+		return m_data;
+	}
+
+	inline constexpr bool operator<(const IPv4Address& other) const {
+		return m_data < other.m_data;
 	}
 
 private:
-	uint8_t m_data[4];
+	uint32_t m_data;
 };
 
 

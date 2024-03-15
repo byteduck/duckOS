@@ -6,15 +6,12 @@
 #include "../kstd/KLog.h"
 #include "E1000Adapter.h"
 #include "NetworkManager.h"
+#include "Router.h"
 
-kstd::vector<NetworkAdapter*> NetworkAdapter::s_interfaces;
+kstd::vector<kstd::Arc<NetworkAdapter>> NetworkAdapter::s_interfaces;
 
 NetworkAdapter::NetworkAdapter(kstd::string name):
-	m_name(kstd::move(name))
-{
-	KLog::dbg("NetworkAdapter", "Registered network adapter {}", m_name);
-	s_interfaces.push_back(this);
-}
+	m_name(kstd::move(name)) {}
 
 const kstd::string& NetworkAdapter::name() const {
 	return m_name;
@@ -28,11 +25,15 @@ void NetworkAdapter::set_ipv4(IPv4Address addr) {
 	m_ipv4_addr = addr;
 }
 
+void NetworkAdapter::set_netmask(IPv4Address mask) {
+	m_ipv4_netmask = mask;
+}
+
 void NetworkAdapter::setup() {
 	E1000Adapter::probe();
 }
 
-ResultRet<NetworkAdapter*> NetworkAdapter::get_interface(const kstd::string& name) {
+ResultRet<kstd::Arc<NetworkAdapter>> NetworkAdapter::get_interface(const kstd::string& name) {
 	for(auto interface : s_interfaces) {
 		if (interface->name() == name)
 			return interface;
@@ -40,7 +41,12 @@ ResultRet<NetworkAdapter*> NetworkAdapter::get_interface(const kstd::string& nam
 	return Result(ENOENT);
 }
 
-const kstd::vector<NetworkAdapter*>& NetworkAdapter::interfaces() {
+void NetworkAdapter::register_interface(kstd::Arc<NetworkAdapter> adapter) {
+	KLog::dbg("NetworkAdapter", "Registered network adapter {}", adapter->name());
+	s_interfaces.push_back(kstd::move(adapter));
+}
+
+const kstd::vector<kstd::Arc<NetworkAdapter>>& NetworkAdapter::interfaces() {
 	return s_interfaces;
 }
 

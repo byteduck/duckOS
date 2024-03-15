@@ -241,7 +241,7 @@ namespace kstd {
 			reset();
 		}
 
-		Arc<T> lock() {
+		Arc<T> lock() const {
 			if(m_count && m_count->make_strong()) {
 				auto ret = Arc<T>(m_ptr, m_count);
 				m_count->release_strong();

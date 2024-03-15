@@ -6,8 +6,7 @@
 #include "ICMP.h"
 #include "UDPSocket.h"
 #include "../api/udp.h"
-
-#define ARP_DEBUG 1
+#include "Router.h"
 
 NetworkManager* NetworkManager::s_inst = nullptr;
 
@@ -22,6 +21,7 @@ void NetworkManager::task_entry() {
 }
 
 void NetworkManager::do_task() {
+	m_thread = TaskManager::current_thread();
 	while (true) {
 		/* Block until we get a packet */
 		TaskManager::current_thread()->block(m_blocker);
@@ -41,7 +41,7 @@ void NetworkManager::wakeup() {
 	m_blocker.set_ready(true);
 }
 
-void NetworkManager::handle_packet(NetworkAdapter* adapter, NetworkAdapter::Packet* packet) {
+void NetworkManager::handle_packet(const kstd::Arc<NetworkAdapter>& adapter, NetworkAdapter::Packet* packet) {
 	ASSERT(packet->size >= sizeof(NetworkAdapter::FrameHeader));
 	auto* hdr = (NetworkAdapter::FrameHeader*) packet->buffer;
 	switch (hdr->type) {
@@ -60,7 +60,7 @@ void NetworkManager::handle_packet(NetworkAdapter* adapter, NetworkAdapter::Pack
 	}
 }
 
-void NetworkManager::handle_arp(NetworkAdapter* adapter, const NetworkAdapter::Packet* raw_packet) {
+void NetworkManager::handle_arp(const kstd::Arc<NetworkAdapter>& adapter, const NetworkAdapter::Packet* raw_packet) {
 	if (raw_packet->size < (sizeof(NetworkAdapter::FrameHeader) + sizeof(ARPPacket))) {
 		KLog::warn("NetworkManager", "Got IPv4 packet with invalid frame size!");
 	}
@@ -69,7 +69,7 @@ void NetworkManager::handle_arp(NetworkAdapter* adapter, const NetworkAdapter::P
 
 	switch (packet.operation) {
 	case ARPOp::Req: {
-		KLog::dbg_if<ARP_DEBUG>("NetworkManager", "Got ARP request from {} ({})", packet.sender_protoaddr, packet.sender_hwaddr);
+		KLog::dbg_if<ARP_DEBUG>("NetworkManager", "Got ARP request from {} ({}), responding", packet.sender_protoaddr, packet.sender_hwaddr);
 
 		ARPPacket resp;
 		resp.operation = ARPOp::Resp;
@@ -82,13 +82,15 @@ void NetworkManager::handle_arp(NetworkAdapter* adapter, const NetworkAdapter::P
 		break;
 	}
 	case ARPOp::Resp:
+		KLog::dbg_if<ARP_DEBUG>("NetworkManager", "Received ARP response from {} ({})", packet.sender_protoaddr, packet.sender_hwaddr);
+		Router::arp_put(packet.sender_protoaddr, packet.sender_hwaddr);
 		break;
 	default:
 		KLog::warn("NetworkManager", "Got ARP packet with unknown operation {}!", packet.operation.val());
 	}
 }
 
-void NetworkManager::handle_ipv4(NetworkAdapter* adapter, const NetworkAdapter::Packet* raw_packet) {
+void NetworkManager::handle_ipv4(const kstd::Arc<NetworkAdapter>& adapter, const NetworkAdapter::Packet* raw_packet) {
 	if (raw_packet->size < (sizeof(NetworkAdapter::FrameHeader) + sizeof(IPv4Packet))) {
 		KLog::warn("NetworkManager", "Got IPv4 packet with invalid frame size!");
 	}
@@ -115,7 +117,7 @@ void NetworkManager::handle_ipv4(NetworkAdapter* adapter, const NetworkAdapter::
 	}
 }
 
-void NetworkManager::handle_icmp(NetworkAdapter* adapter, const IPv4Packet& packet) {
+void NetworkManager::handle_icmp(const kstd::Arc<NetworkAdapter>& adapter, const IPv4Packet& packet) {
 	if (packet.length < (sizeof(IPv4Packet) + sizeof(ICMPHeader))) {
 		KLog::warn("NetworkManager", "Received ICMP packet of invalid size!");
 		return;
@@ -123,7 +125,7 @@ void NetworkManager::handle_icmp(NetworkAdapter* adapter, const IPv4Packet& pack
 	const auto& header= *((ICMPHeader*) packet.payload);
 }
 
-void NetworkManager::handle_udp(NetworkAdapter* adapter, const IPv4Packet& packet) {
+void NetworkManager::handle_udp(const kstd::Arc<NetworkAdapter>& adapter, const IPv4Packet& packet) {
 	if (packet.length < (sizeof(IPv4Packet) + sizeof(UDPPacket))) {
 		KLog::warn("NetworkManager", "Received UDP packet of invalid size!");
 		return;
