@@ -23,7 +23,8 @@ struct sockaddr_in {
 # define INADDR_ANY ((uint32_t) 0x00000000)
 # define INADDR_NONE    0xffffffff
 # define INPORT_ANY 0
-#define IPPROTO_TCP 0
-#define IPPROTO_UDP 0
+#define IPPROTO_IP 1
+#define IPPROTO_TCP 2
+#define IPPROTO_UDP 3
 
 __DECL_END

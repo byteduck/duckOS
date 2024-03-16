@@ -85,6 +85,7 @@
 #define SYS_GETSOCKOPT 82
 #define SYS_RECVMSG 83
 #define SYS_SENDMSG 84
+#define SYS_GETIFADDRS 85
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

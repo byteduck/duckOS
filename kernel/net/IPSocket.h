@@ -39,7 +39,6 @@ protected:
 	IPv4Address m_bound_addr, m_dest_addr;
 	kstd::circular_queue<RecvdPacket*> m_receive_queue { 16 };
 	Mutex m_receive_queue_lock { "IPSocket::receive_queue" };
-	Mutex m_lock { "IPSocket::lock" };
 	BooleanBlocker m_receive_blocker;
 	uint8_t m_type_of_service = 0;
 	uint8_t m_ttl = 64;

@@ -21,6 +21,12 @@ __DECL_BEGIN
 #define SOCK_DGRAM   2
 #define SOCK_RAW     3
 
+// sockopt
+#define SOL_SOCKET 0
+#define SO_BINDTODEVICE       1
+#define SO_BROADCAST          2
+#define SO_ERROR              3
+
 typedef uint16_t sa_family_t;
 typedef uint32_t socklen_t;
 

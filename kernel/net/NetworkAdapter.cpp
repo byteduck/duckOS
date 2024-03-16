@@ -38,7 +38,7 @@ ResultRet<kstd::Arc<NetworkAdapter>> NetworkAdapter::get_interface(const kstd::s
 		if (interface->name() == name)
 			return interface;
 	}
-	return Result(ENOENT);
+	return Result(ENODEV);
 }
 
 void NetworkAdapter::register_interface(kstd::Arc<NetworkAdapter> adapter) {

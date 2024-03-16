@@ -5,6 +5,9 @@
 #include "../memory/SafePointer.h"
 #include "../net/Socket.h"
 #include "../filesystem/FileDescriptor.h"
+#include "../net/NetworkAdapter.h"
+#include "../api/ifaddrs.h"
+#include "syscall_numbers.h"
 
 int Process::sys_socket(int domain, int type, int protocol) {
 	auto socket_res = Socket::make((Socket::Domain) domain, (Socket::Type) type, protocol);
@@ -36,11 +39,17 @@ int Process::sys_bind(int sockfd, UserspacePointer<sockaddr> addr, uint32_t addr
 }
 
 int Process::sys_setsockopt(UserspacePointer<struct setsockopt_args> ptr) {
-	return -1;
+	auto args = ptr.get();
+	get_socket(args.sockfd);
+	auto res = socket->setsockopt(args.level, args.option_name, (void**) args.option_value, args.option_len);
+	return res.code();
 }
 
 int Process::sys_getsockopt(UserspacePointer<struct getsockopt_args> ptr) {
-	return -1;
+	auto args = ptr.get();
+	get_socket(args.sockfd);
+	auto res = socket->getsockopt(args.level, args.option_name, (void**) args.option_value, args.option_len);
+	return res.code();
 }
 
 int Process::sys_recvmsg(int sockfd, UserspacePointer<struct msghdr> msg_ptr, int flags) {
@@ -80,4 +89,70 @@ int Process::sys_sendmsg(int sockfd, UserspacePointer<struct msghdr> msg_ptr, in
 	UserspacePointer(&msg_ptr.raw()->msg_controllen).set(0);
 
 	return socket->sendto(*desc, buf, iov.iov_len, flags, addr_ptr, addrlen_ptr.get());
+}
+
+template<typename T>
+T* writebuf(SafePointer<uint8_t>& buf, const T& val) {
+	buf.write((const uint8_t*) &val, 0, sizeof(val));
+	auto ret = buf.raw();
+	buf = UserspacePointer(buf.raw() + sizeof(val));
+	return (T*) ret;
+}
+
+char* writebuf(SafePointer<uint8_t>& buf, const kstd::string& val) {
+	buf.write((const uint8_t*) val.c_str(), 0, val.length() + 1);
+	auto ret = buf.raw();
+	buf = UserspacePointer(buf.raw() + val.length() + 1);
+	return (char*) ret;
+}
+
+int Process::sys_getifaddrs(UserspacePointer<struct ifaddrs> buf, size_t bufsz) {
+	auto ifaces = NetworkAdapter::interfaces();
+
+	// Makes sure the provided buffer is large enough
+	size_t memsz = (sizeof(struct ifaddrs) + sizeof(sockaddr) * 2) * ifaces.size();
+	for (auto& iface : ifaces)
+		memsz += iface->name().length() + 1;
+	if (bufsz < memsz)
+		return -EOVERFLOW;
+
+	// Fill in the data
+	auto u8buf = buf.as<uint8_t>();
+	struct ifaddrs* prev = nullptr;
+	for (auto& iface : ifaces) {
+		// First, reserve space for the actual struct
+		auto* addrs_ptr = writebuf<struct ifaddrs>(u8buf, {});
+		struct ifaddrs addrs;
+
+		// First, the name and addresses
+		addrs.ifa_name = writebuf(u8buf, iface->name());
+
+		auto addr = iface->ipv4_address();
+		addrs.ifa_addr = writebuf<struct sockaddr>(u8buf, {
+			.sa_family = AF_INET,
+			.sa_data = {(char) addr[0], (char) addr[1], (char) addr[2], (char) addr[3]}
+		});
+
+		auto netmask = iface->netmask();
+		addrs.ifa_netmask = writebuf<struct sockaddr>(u8buf, {
+				.sa_family = AF_INET,
+				.sa_data = {(char) netmask[0], (char) netmask[1], (char) netmask[2], (char) netmask[3]}
+		});
+
+		// Then, fill out the rest of the struct and write it
+		addrs.ifa_flags = 0;
+		addrs.ifa_next = nullptr;
+		addrs.ifa_data = nullptr;
+		addrs.ifa_ifu.ifu_broadaddr = nullptr;
+		UserspacePointer(addrs_ptr).set(addrs);
+
+		// Write ifa_next for previous one
+		if (prev)
+			UserspacePointer(&prev->ifa_next).set(addrs_ptr);
+
+		prev = addrs_ptr;
+	}
+
+	// Return success
+	return SUCCESS;
 }

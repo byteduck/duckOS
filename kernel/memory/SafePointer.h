@@ -160,8 +160,8 @@ public:
 	}
 
 private:
-	T* const m_ptr = nullptr;
-	const bool m_is_user = false;
+	T* m_ptr = nullptr;
+	bool m_is_user = false;
 };
 
 template<typename T>

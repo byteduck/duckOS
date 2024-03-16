@@ -173,6 +173,7 @@ public:
 	int sys_getsockopt(UserspacePointer<struct getsockopt_args> ptr);
 	int sys_recvmsg(int sockfd, UserspacePointer<struct msghdr> msg, int flags);
 	int sys_sendmsg(int sockfd, UserspacePointer<struct msghdr> msg, int flags);
+	int sys_getifaddrs(UserspacePointer<struct ifaddrs> buf, size_t memsz);
 
 private:
 	friend class Thread;

@@ -85,7 +85,7 @@ ssize_t UDPSocket::do_recv(RecvdPacket* pkt, SafePointer<uint8_t> buf, size_t le
 }
 
 ResultRet<size_t> UDPSocket::do_send(SafePointer<uint8_t> buf, size_t len) {
-	auto route = Router::get_route(m_dest_addr, {}, {});
+	auto route = Router::get_route(m_dest_addr, m_bound_addr, m_bound_device);
 	if (!route.mac || !route.adapter)
 		return Result(set_error(EHOSTUNREACH));
 

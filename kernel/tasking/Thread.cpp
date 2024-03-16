@@ -516,7 +516,7 @@ void Thread::handle_pagefault(PageFault fault) {
 		if(fault.registers->interrupt_frame.eip > HIGHER_HALF) {
 			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, fault.address, fault.registers->interrupt_frame.eip);
 		}
-		KLog::warn("Thread", "PID {} thread {} made illegal memory access at {#x} (eip: {#x}})", _process->pid(), _tid,
+		KLog::warn("Thread", "PID {} thread {} made illegal memory access at {#x} (eip: {#x})", _process->pid(), _tid,
 					fault.address, fault.registers->interrupt_frame.eip);
 		_process->kill(SIGSEGV);
 	}

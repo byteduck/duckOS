@@ -8,6 +8,7 @@ SET(SOURCES
         dlfcn.cpp
         errno.c
         fcntl.c
+        ifaddrs.c
         locale.c
         poll.c
         signal.c
