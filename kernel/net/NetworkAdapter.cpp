@@ -129,15 +129,18 @@ IPv4Packet* NetworkAdapter::setup_ipv4_packet(Packet* packet, const MACAddress& 
 	frame->source = m_mac_addr;
 
 	auto* ipv4 = (IPv4Packet*) (packet->buffer + sizeof(FrameHeader));
-	ipv4->source_addr = m_ipv4_addr;
-	ipv4->dest_addr = dest_addr;
-	ipv4->length = payload_size + sizeof(IPv4Packet);
-	ipv4->dscp_ecn = dscp;
-	ipv4->ttl = ttl;
-	ipv4->proto = proto;
-	ipv4->identification = 1;
-	ipv4->version_ihl = (4 << 4) | 5;
-	ipv4->identification = 1;
+	*ipv4 = {
+		.version_ihl = (4 << 4) | 5,
+		.dscp_ecn = dscp,
+		.length = payload_size + sizeof(IPv4Packet),
+		.identification = 1,
+		.flags_fragment_offset = 0,
+		.ttl = ttl,
+		.proto = (uint8_t) proto,
+		.checksum = 0,
+		.source_addr = m_ipv4_addr,
+		.dest_addr = dest_addr
+	};
 	ipv4->set_checksum();
 
 	return ipv4;

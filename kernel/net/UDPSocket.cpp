@@ -96,6 +96,7 @@ ResultRet<size_t> UDPSocket::do_send(SafePointer<uint8_t> buf, size_t len) {
 	udp_packet->source_port = m_bound_port;
 	udp_packet->dest_port = m_dest_port;
 	udp_packet->len = sizeof(UDPPacket) + len;
+	udp_packet->checksum = 0;
 	buf.read(udp_packet->payload, len);
 
 	KLog::dbg_if<UDP_DBG>("UDPSocket", "Sending packet to {}:{} ({} bytes)", m_dest_addr, m_dest_port, len);
