@@ -19,6 +19,9 @@
 
 #include "Stream.h"
 #include "FileStream.h"
+#include "FormatStream.h"
+#include <kernel/api/ipv4.h>
+#include <kernel/api/net.h>
 
 using namespace Duck;
 
@@ -86,6 +89,16 @@ namespace Duck {
 	}
 
 	/*
+	 * OutputStream Results
+	 */
+	OutputStream& operator<<(OutputStream& stream, const Result& result) {
+		if (result.is_error())
+			return stream << result.message();
+		else
+			return stream << "Success";
+	}
+
+	/*
 	 * OutputStream primitives
 	 */
 
@@ -134,4 +147,17 @@ namespace Duck {
 	OutputStream& operator<<(OutputStream& stream, unsigned long long value) {
 		return operator<<(stream, std::to_string(value));
 	}
+}
+
+/*
+ * OutputStream misc
+ */
+OutputStream& operator<<(OutputStream& stream, const IPv4Address& address) {
+	stream % "{}.{}.{}.{}" % (int) address[0] % (int) address[1] % (int) address[2] % (int) address[3];
+	return stream;
+}
+
+OutputStream& operator<<(OutputStream& stream, const MACAddress& address) {
+	stream % "{x}:{x}:{x}:{x}:{x}:{x}" % (int) address[0] % (int) address[1] % (int) address[2] % (int) address[3] % (int) address[4] % (int) address[5];
+	return stream;
 }

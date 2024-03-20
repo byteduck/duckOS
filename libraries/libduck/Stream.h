@@ -81,6 +81,20 @@ namespace Duck {
 	OutputStream& operator<<(OutputStream& stream, const std::string_view& view);
 
 	/*
+	 * OutputStream Results
+	 */
+
+	OutputStream& operator<<(OutputStream& stream, const Result& result);
+
+	template<typename T>
+	OutputStream& operator<<(OutputStream& stream, const ResultRet<T>& result) {
+		if (result.has_value())
+			return stream << result.value();
+		else
+			return stream << result.result();
+	}
+
+	/*
 	 * OutputStream primitives
 	 */
 
@@ -96,3 +110,9 @@ namespace Duck {
 	OutputStream& operator<<(OutputStream& stream, unsigned long value);
 	OutputStream& operator<<(OutputStream& stream, unsigned long long value);
 }
+
+/*
+ * OutputStream Misc
+ */
+Duck::OutputStream& operator<<(Duck::OutputStream& stream, const class IPv4Address& address);
+Duck::OutputStream& operator<<(Duck::OutputStream& stream, const class MACAddress& address);
