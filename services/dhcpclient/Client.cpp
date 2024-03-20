@@ -6,6 +6,9 @@
 #include <unistd.h>
 #include <ifaddrs.h>
 #include <libduck/Log.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <net/route.h>
 
 using namespace Duck;
 
@@ -180,5 +183,36 @@ Duck::Result Client::setup_interface(const Client::Interface& interface, const I
 	if (sockid < 0)
 		return errno;
 
-	// TODO
+	ifreq req;
+	strncpy(req.ifr_name, interface.name.c_str(), IFNAMSIZ);
+
+	// Set IP
+	*((sockaddr_in*) &req.ifr_addr) = addr.as_sockaddr(0);
+	if (ioctl(sockid, SIOCSIFADDR, &req) < 0) {
+		close(sockid);
+		return errno;
+	}
+
+	// Set subnet mask
+	*((sockaddr_in*) &req.ifr_addr) = subnet.as_sockaddr(0);
+	if (ioctl(sockid, SIOCSIFNETMASK, &req) < 0) {
+		close(sockid);
+		return errno;
+	}
+
+	// Add route for gateway
+	if (gateway.has_value()) {
+		rtentry entry;
+		entry.rt_dev = (char*) interface.name.c_str();
+		*((sockaddr_in*) &entry.rt_gateway) = gateway.value().as_sockaddr(0);
+		entry.rt_flags = RTF_UP | RTF_GATEWAY;
+
+		if (ioctl(sockid, SIOCADDRT, &entry) < 0) {
+			close(sockid);
+			return errno;
+		}
+	}
+
+	close(sockid);
+	return Result::SUCCESS;
 }
