@@ -17,6 +17,7 @@ struct ifaddrs {
 		struct sockaddr *ifu_broadaddr;
 		struct sockaddr *ifu_dstaddr;
 	} ifa_ifu;
+	struct sockaddr *ifa_macaddr;
 	void            *ifa_data;
 };
 

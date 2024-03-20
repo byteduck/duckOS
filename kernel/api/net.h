@@ -7,6 +7,15 @@
 
 #define IFNAMESIZ	16
 
+__DECL_BEGIN
+
+struct sockaddr_mac {
+	sa_family_t sam_family;
+	uint8_t     sam_data[6];
+};
+
+__DECL_END
+
 #ifdef __cplusplus
 
 class __attribute__((packed)) MACAddress {
@@ -19,6 +28,11 @@ public:
 		m_data[3] = d;
 		m_data[4] = e;
 		m_data[5] = f;
+	}
+
+	MACAddress(const sockaddr_mac& sockaddr) {
+		for (int i = 0; i < 6; i++)
+			m_data[i] = sockaddr.sam_data[i];
 	}
 
 	inline constexpr uint8_t operator[](size_t index) const {
@@ -40,6 +54,13 @@ public:
 			if (val)
 				return true;
 		return false;
+	}
+
+	inline constexpr sockaddr_mac as_sockaddr() const {
+		return {
+			.sam_family = AF_MACADDR,
+			.sam_data = { m_data[0], m_data[1], m_data[2], m_data[3], m_data[4], m_data[5] }
+		};
 	}
 
 private:

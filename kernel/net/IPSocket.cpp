@@ -41,7 +41,7 @@ ssize_t IPSocket::recvfrom(FileDescriptor& fd, SafePointer<uint8_t> buf, size_t 
 	m_receive_queue_lock.acquire();
 
 	// Verify addrlen ptr
-	if (addrlen && addrlen.get() != sizeof(sockaddr_in))
+	if (src_addr && addrlen && addrlen.get() != sizeof(sockaddr_in))
 		return -set_error(EINVAL);
 
 	// Block until we have a packet to read

@@ -31,7 +31,7 @@ Result Socket::setsockopt(int level, int optname, UserspacePointer<void*> optval
 
 	switch (optname) {
 	case SO_BINDTODEVICE:
-		if (optlen < IFNAMESIZ)
+		if (optlen > IFNAMESIZ)
 			return Result(EINVAL);
 		m_bound_device = TRY(NetworkAdapter::get_interface(optval.str()));
 		return Result(SUCCESS);

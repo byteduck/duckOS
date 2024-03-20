@@ -15,6 +15,7 @@ __DECL_BEGIN
 #define AF_LOCAL    2
 #define AF_INET     3
 #define AF_PACKET   4
+#define AF_MACADDR  5
 
 // Types
 #define SOCK_STREAM  1

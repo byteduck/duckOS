@@ -25,7 +25,7 @@ void Router::add_entry(Router::Entry* ent) {
 	cur_ent->next = ent;
 }
 
-Router::Route Router::get_route(const IPv4Address& dest, const IPv4Address& source, const kstd::Arc<NetworkAdapter>& preferred_adapter) {
+Router::Route Router::get_route(const IPv4Address& dest, const IPv4Address& source, const kstd::Arc<NetworkAdapter>& preferred_adapter, bool allow_broadcast) {
 	uint32_t longest_netmask = 0;
 	Entry* found_entry = nullptr;
 	kstd::Arc<NetworkAdapter> found_adapter;
@@ -37,7 +37,7 @@ Router::Route Router::get_route(const IPv4Address& dest, const IPv4Address& sour
 			ASSERT(false);
 		}
 
-		if (!adapter->ipv4_address().val())
+		if (!adapter->ipv4_address().val() && !preferred_adapter)
 			continue;
 
 		if (source.val() && source != adapter->ipv4_address())
@@ -97,7 +97,7 @@ Router::Route Router::get_route(const IPv4Address& dest, const IPv4Address& sour
 	}
 
 	// Broadcast
-	if (dest == IPv4Address {255, 255, 255, 255} && (!preferred_adapter || adapter == preferred_adapter)) {
+	if (allow_broadcast && dest == IPv4Address {255, 255, 255, 255} && (!preferred_adapter || adapter == preferred_adapter)) {
 		return { {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, adapter };
 	}
 

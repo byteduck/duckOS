@@ -25,7 +25,7 @@ public:
 		kstd::Arc<NetworkAdapter> adapter;
 	};
 
-	static Route get_route(const IPv4Address& dest, const IPv4Address& source, const kstd::Arc<NetworkAdapter>& adapter = kstd::Arc<NetworkAdapter>(nullptr));
+	static Route get_route(const IPv4Address& dest, const IPv4Address& source, const kstd::Arc<NetworkAdapter>& adapter = kstd::Arc<NetworkAdapter>(nullptr), bool allow_broadcast = false);
 	static ResultRet<MACAddress> arp_lookup(const IPv4Address& dest, const kstd::Arc<NetworkAdapter>& request_adapter = {});
 	static void arp_put(const IPv4Address& ip, const MACAddress& mac);
 

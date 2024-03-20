@@ -5,13 +5,16 @@
 
 #include "types.h"
 #include "endian.h"
+#include "in.h"
 
 #ifdef __cplusplus
 class __attribute__((packed)) IPv4Address {
 public:
-	constexpr IPv4Address() = default;
+	constexpr IPv4Address(): m_data(0) {};
 
 	constexpr IPv4Address(uint32_t addr): m_data(addr) {}
+
+	constexpr IPv4Address(const sockaddr_in& addr): m_data(addr.sin_addr.s_addr) {}
 
 	constexpr IPv4Address(uint32_t a, uint32_t b, uint32_t c, uint32_t d):
 		m_data(a | (b << 8) | (c << 16) | (d << 24)) {}
@@ -39,6 +42,14 @@ public:
 
 	inline constexpr bool operator<(const IPv4Address& other) const {
 		return m_data < other.m_data;
+	}
+
+	inline sockaddr_in as_sockaddr(in_port_t port) {
+		sockaddr_in ret;
+		ret.sin_family = AF_INET;
+		ret.sin_port = as_big_endian(port);
+		ret.sin_addr.s_addr = m_data;
+		return ret;
 	}
 
 private:

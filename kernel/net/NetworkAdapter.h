@@ -60,7 +60,7 @@ private:
 	static kstd::vector<kstd::Arc<NetworkAdapter>> s_interfaces;
 
 	kstd::string m_name;
-	IPv4Address m_ipv4_addr {10, 0, 2, 15};
+	IPv4Address m_ipv4_addr {0, 0, 0, 0};
 	IPv4Address m_ipv4_netmask = {0, 0, 0, 0};
 	MACAddress m_mac_addr;
 	Packet* m_packet_queue = nullptr;

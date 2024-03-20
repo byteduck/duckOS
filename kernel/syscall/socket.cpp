@@ -126,18 +126,9 @@ int Process::sys_getifaddrs(UserspacePointer<struct ifaddrs> buf, size_t bufsz) 
 
 		// First, the name and addresses
 		addrs.ifa_name = writebuf(u8buf, iface->name());
-
-		auto addr = iface->ipv4_address();
-		addrs.ifa_addr = writebuf<struct sockaddr>(u8buf, {
-			.sa_family = AF_INET,
-			.sa_data = {(char) addr[0], (char) addr[1], (char) addr[2], (char) addr[3]}
-		});
-
-		auto netmask = iface->netmask();
-		addrs.ifa_netmask = writebuf<struct sockaddr>(u8buf, {
-				.sa_family = AF_INET,
-				.sa_data = {(char) netmask[0], (char) netmask[1], (char) netmask[2], (char) netmask[3]}
-		});
+		addrs.ifa_addr = (struct sockaddr*) writebuf<struct sockaddr_in>(u8buf, iface->ipv4_address().as_sockaddr(0));
+		addrs.ifa_netmask = (struct sockaddr*) writebuf<struct sockaddr_in>(u8buf, iface->netmask().as_sockaddr(0));
+		addrs.ifa_macaddr = (struct sockaddr*) writebuf<struct sockaddr_mac>(u8buf, iface->mac_address().as_sockaddr());
 
 		// Then, fill out the rest of the struct and write it
 		addrs.ifa_flags = 0;
