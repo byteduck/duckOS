@@ -386,6 +386,14 @@ char* strerror(int errnum) {
 			return "Address in use";
 		case ENOTSOCK:
 			return "File descriptor is not a socket";
+		case EHOSTUNREACH:
+			return "Host is unreachable";
+		case EHOSTDOWN:
+			return "Host is down";
+		case EADDRNOTAVAIL:
+			return "Address not available";
+		case EAFNOSUPPORT:
+			return "Address family not supported";
 		default:
 			return "Unknown error";
 	}
