@@ -16,3 +16,7 @@
 #define TIOCNOTTY	11
 #define TIOSGFX		12
 #define TIOSNOGFX	13
+
+#define SIOCSIFADDR 14
+#define SIOCSIFNETMASK 15
+#define SIOCADDRT 16

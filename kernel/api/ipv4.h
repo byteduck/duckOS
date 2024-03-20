@@ -44,7 +44,7 @@ public:
 		return m_data < other.m_data;
 	}
 
-	inline sockaddr_in as_sockaddr(in_port_t port) {
+	inline sockaddr_in as_sockaddr(in_port_t port) const {
 		sockaddr_in ret;
 		ret.sin_family = AF_INET;
 		ret.sin_port = as_big_endian(port);

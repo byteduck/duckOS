@@ -6,6 +6,7 @@
 #include "ipv4.h"
 
 #define IFNAMESIZ	16
+#define IFNAMSIZ IFNAMESIZ
 
 __DECL_BEGIN
 
