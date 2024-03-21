@@ -74,7 +74,7 @@ ssize_t IPSocket::recvfrom(FileDescriptor& fd, SafePointer<uint8_t> buf, size_t 
 		src_addr.as<sockaddr_in>().set({
 			AF_INET,
 			as_big_endian(packet->port),
-			packet->packet.source_addr.val()
+			packet->header().source_addr.val()
 		});
 		addrlen.set(sizeof(sockaddr_in));
 	}
@@ -120,6 +120,7 @@ ssize_t IPSocket::sendto(FileDescriptor& fd, SafePointer<uint8_t> buf, size_t le
 
 Result IPSocket::recv_packet(const void* buf, size_t len) {
 	LOCK(m_receive_queue_lock);
+	ASSERT(len <= received_packet_max_size);
 
 	if (m_receive_queue.size() == m_receive_queue.capacity()) {
 		KLog::warn("IPSocket", "Dropping packet because receive queue is full");
@@ -127,8 +128,8 @@ Result IPSocket::recv_packet(const void* buf, size_t len) {
 	}
 
 	auto* src_pkt = (const IPv4Packet*) buf;
-	auto* new_pkt = new RecvdPacket;
-	memcpy(&new_pkt->packet, src_pkt, len);
+	auto* new_pkt = (RecvdPacket*) kmalloc(sizeof(RecvdPacket) + len);
+	memcpy(&new_pkt->data, src_pkt, len);
 
 	m_receive_queue.push_back(new_pkt);
 	update_blocker();

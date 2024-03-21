@@ -120,6 +120,10 @@ NetworkAdapter::Packet* NetworkAdapter::alloc_packet(size_t size) {
 	return &m_packets[i];
 }
 
+void NetworkAdapter::release_packet(NetworkAdapter::Packet* packet) {
+	packet->used.store(false, MemoryOrder::Release);
+}
+
 IPv4Packet* NetworkAdapter::setup_ipv4_packet(Packet* packet, const MACAddress& dest, const IPv4Address& dest_addr, IPv4Proto proto, size_t payload_size, uint8_t dscp, uint8_t ttl) {
 	ASSERT(packet);
 
@@ -147,8 +151,7 @@ IPv4Packet* NetworkAdapter::setup_ipv4_packet(Packet* packet, const MACAddress& 
 }
 
 void NetworkAdapter::send_packet(NetworkAdapter::Packet* packet) {
-	ASSERT(packet->size < 8192);
+	ASSERT(packet->size < m_mtu);
 	send_raw_packet(KernelPointer(packet->buffer), packet->size);
-	packet->used.store(false, MemoryOrder::Release);
 }
 

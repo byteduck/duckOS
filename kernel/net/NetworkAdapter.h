@@ -35,6 +35,7 @@ public:
 	void send_packet(Packet* packet);
 	Packet* dequeue_packet();
 	Packet* alloc_packet(size_t size);
+	void release_packet(Packet* packet);
 	IPv4Packet* setup_ipv4_packet(Packet* packet, const MACAddress& dest, const IPv4Address& dest_addr, IPv4Proto proto, size_t payload_size, uint8_t dscp, uint8_t ttl);
 
 	[[nodiscard]] IPv4Address ipv4_address() const { return m_ipv4_addr; }
@@ -43,6 +44,7 @@ public:
 	[[nodiscard]] IPv4Address netmask() const { return m_ipv4_netmask; }
 	void set_netmask(IPv4Address mask);
 	const kstd::string& name() const;
+	[[nodiscard]] size_t mtu() const { return m_mtu; }
 
 	static ResultRet<kstd::Arc<NetworkAdapter>> get_interface(const kstd::string& name);
 	static const kstd::vector<kstd::Arc<NetworkAdapter>>& interfaces();
@@ -65,4 +67,5 @@ private:
 	MACAddress m_mac_addr;
 	Packet* m_packet_queue = nullptr;
 	Packet m_packets[32];
+	size_t m_mtu = 1500;
 };

@@ -24,10 +24,13 @@ public:
 protected:
 	IPSocket(Socket::Type type, int protocol);
 
+	static constexpr size_t received_packet_max_size = 8192;
 	struct RecvdPacket {
 		uint16_t port;
-		IPv4Packet packet; // Not actually set until we do do_recv
+		uint8_t data[];
+		IPv4Packet& header() { return *((IPv4Packet*) data); }
 	};
+	static_assert(received_packet_max_size > sizeof(RecvdPacket));
 
 	virtual ssize_t do_recv(RecvdPacket* pkt, SafePointer<uint8_t> buf, size_t len) = 0;
 	virtual Result do_bind() = 0;

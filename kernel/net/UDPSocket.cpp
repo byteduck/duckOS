@@ -41,8 +41,6 @@ Result UDPSocket::do_bind() {
 	LOCK(s_sockets_lock);
 	if (m_bound)
 		return Result(set_error(EINVAL));
-	if (s_sockets.contains(m_bound_port))
-		return Result(set_error(EADDRINUSE));
 
 	if (m_bound_port == 0) {
 		// If we didn't specify a port, we want an ephemeral port
@@ -61,6 +59,9 @@ Result UDPSocket::do_bind() {
 		m_bound_port = ephem;
 	}
 
+	if (s_sockets.contains(m_bound_port))
+		return Result(set_error(EADDRINUSE));
+
 	KLog::dbg_if<UDP_DBG>("UDPSocket", "Binding to port {}", m_bound_port);
 
 	s_sockets[m_bound_port] = self();
@@ -70,14 +71,14 @@ Result UDPSocket::do_bind() {
 }
 
 ssize_t UDPSocket::do_recv(RecvdPacket* pkt, SafePointer<uint8_t> buf, size_t len) {
-	auto* udp_pkt = (const UDPPacket*) pkt->packet.payload;
-	ASSERT(pkt->packet.length >= sizeof(IPv4Packet) + sizeof(UDPPacket)); // Should've been rejected at IP layer
+	auto* udp_pkt = (const UDPPacket*) pkt->header().payload;
+	ASSERT(pkt->header().length >= sizeof(IPv4Packet) + sizeof(UDPPacket)); // Should've been rejected at IP layer
 	ASSERT(udp_pkt->len >= sizeof(UDPPacket)); // Should've been rejected in NetworkManager
 
 	const size_t nread = min(len, udp_pkt->len.val() - sizeof(UDPPacket));
 	buf.write(udp_pkt->payload, nread);
 
-	KLog::dbg_if<UDP_DBG>("UDPSocket", "Received packet from {}:{} ({} bytes)", pkt->packet.source_addr, udp_pkt->source_port, nread);
+	KLog::dbg_if<UDP_DBG>("UDPSocket", "Received packet from {}:{} ({} bytes)", pkt->header().source_addr, udp_pkt->source_port, nread);
 
 	pkt->port = udp_pkt->source_port;
 
@@ -101,5 +102,7 @@ ResultRet<size_t> UDPSocket::do_send(SafePointer<uint8_t> buf, size_t len) {
 
 	KLog::dbg_if<UDP_DBG>("UDPSocket", "Sending packet to {}:{} ({} bytes)", m_dest_addr, m_dest_port, len);
 	route.adapter->send_packet(pkt);
+	route.adapter->release_packet(pkt);
+
 	return len;
 }
