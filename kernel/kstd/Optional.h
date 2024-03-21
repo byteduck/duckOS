@@ -73,6 +73,7 @@ namespace kstd {
 
 		Optional<T>& operator =(Optional<T>&& other) noexcept {
 			kstd::swap(other.m_value, m_value);
+			return *this;
 		}
 
 	private:
