@@ -19,6 +19,7 @@ public:
 
 	// File
 	bool can_read(const FileDescriptor &fd) override;
+	int ioctl(unsigned int request, SafePointer<void *> argp) override;
 
 protected:
 	IPSocket(Socket::Type type, int protocol);
@@ -33,6 +34,9 @@ protected:
 	virtual ResultRet<size_t> do_send(SafePointer<uint8_t> buf, size_t len) = 0;
 
 	void update_blocker();
+
+	ResultRet<int> if_ioctl(unsigned int request, SafePointer<struct ifreq> req);
+	ResultRet<int> rt_ioctl(unsigned int request, SafePointer<struct rtentry> req);
 
 	bool m_bound = false;
 	uint16_t m_bound_port, m_dest_port;

@@ -38,8 +38,10 @@ public:
 	IPv4Packet* setup_ipv4_packet(Packet* packet, const MACAddress& dest, const IPv4Address& dest_addr, IPv4Proto proto, size_t payload_size, uint8_t dscp, uint8_t ttl);
 
 	[[nodiscard]] IPv4Address ipv4_address() const { return m_ipv4_addr; }
+	void set_ipv4(IPv4Address addr);
 	[[nodiscard]] MACAddress mac_address() const { return m_mac_addr; }
 	[[nodiscard]] IPv4Address netmask() const { return m_ipv4_netmask; }
+	void set_netmask(IPv4Address mask);
 	const kstd::string& name() const;
 
 	static ResultRet<kstd::Arc<NetworkAdapter>> get_interface(const kstd::string& name);
@@ -50,8 +52,6 @@ protected:
 	static void register_interface(kstd::Arc<NetworkAdapter> adapter);
 
 	void set_mac(MACAddress addr);
-	void set_ipv4(IPv4Address addr);
-	void set_netmask(IPv4Address mask);
 
 	virtual void send_bytes(SafePointer<uint8_t> bytes, size_t count) = 0;
 	void receive_bytes(SafePointer<uint8_t> bytes, size_t count);

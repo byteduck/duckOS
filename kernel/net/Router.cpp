@@ -109,6 +109,16 @@ Router::Route Router::get_route(const IPv4Address& dest, const IPv4Address& sour
 	return { mac.value(), adapter };
 }
 
+void Router::set_route(const IPv4Address& dest, const IPv4Address& gateway, const IPv4Address& mask, kstd::Arc<NetworkAdapter> adapter) {
+	KLog::dbg_if<ROUTE_DEBUG>("Router", "Adding route to {}/{} through {} using {}", dest, mask, gateway, adapter ? adapter->name() : "[no adapter]");
+	add_entry(new Entry {
+		.dest_addr = dest,
+		.gateway = gateway,
+		.netmask = mask,
+		.adapter = kstd::move(adapter)
+	});
+}
+
 ResultRet<MACAddress> Router::arp_lookup(const IPv4Address& dest, const kstd::Arc<NetworkAdapter>& request_adapter) {
 	s_arp_lock.acquire();
 	auto* ent = s_arp_entries.find_node(dest);

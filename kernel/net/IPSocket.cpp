@@ -7,6 +7,10 @@
 #include "../kstd/KLog.h"
 #include "../tasking/PollBlocker.h"
 #include "../filesystem/FileDescriptor.h"
+#include "../api/ioctl.h"
+#include "../api/route.h"
+#include "../api/if.h"
+#include "Router.h"
 
 IPSocket::IPSocket(Socket::Type type, int protocol): Socket(Domain::Inet, type, protocol) {
 
@@ -138,4 +142,63 @@ bool IPSocket::can_read(const FileDescriptor& fd) {
 
 void IPSocket::update_blocker() {
 	m_receive_blocker.set_ready(!m_receive_queue.empty());
+}
+
+int IPSocket::ioctl(unsigned int request, SafePointer<void*> argp) {
+	ResultRet<int> res = 0;
+
+	switch (request) {
+		case SIOCSIFADDR:
+		case SIOCSIFNETMASK:
+			res = if_ioctl(request, argp.as<struct ifreq>());
+			break;
+		case SIOCADDRT:
+			res = rt_ioctl(request, argp.as<struct rtentry>());
+			break;
+		default:
+			res = Result(EINVAL);
+	}
+
+	return res.code();
+}
+
+ResultRet<int> IPSocket::if_ioctl(unsigned int request, SafePointer<struct ifreq> req_ptr) {
+	auto req = req_ptr.get();
+	req.ifr_name[IFNAMSIZ - 1] = '\0';
+	const auto adapter = TRY(NetworkAdapter::get_interface(req.ifr_name));
+	if (req.ifr_addr.sa_family != AF_INET)
+		return Result(EINVAL);
+	const IPv4Address addr {*((sockaddr_in*) &req.ifr_addr) };
+
+	// TODO: Check creds
+
+	switch (request) {
+		case SIOCSIFADDR:
+			adapter->set_ipv4(addr);
+			break;
+		case SIOCSIFNETMASK:
+			adapter->set_netmask(addr);
+			break;
+		default:
+			return Result(EINVAL);
+	}
+
+	return 0;
+}
+
+ResultRet<int> IPSocket::rt_ioctl(unsigned int request, SafePointer<struct rtentry> req) {
+	// TODO: Check creds
+
+	const auto ent = req.get();
+	const auto adapter = TRY(NetworkAdapter::get_interface(UserspacePointer(ent.rt_dev).str()));
+
+	switch (request) {
+	case SIOCADDRT:
+		Router::set_route(*((sockaddr_in*) &ent.rt_dst), *((sockaddr_in*) &ent.rt_gateway), *((sockaddr_in*) &ent.rt_genmask), adapter);
+		break;
+	default:
+		return Result(EINVAL);
+	}
+
+	return 0;
 }
