@@ -59,6 +59,9 @@ Client::Client(int socket, std::vector<Interface> interfaces):
 }
 
 void Client::loop() {
+	if (m_interfaces.empty())
+		return;
+
 	for (auto& interface : m_interfaces)
 		discover(interface);
 
@@ -90,6 +93,7 @@ void Client::loop() {
 		switch (type.value()) {
 		case Ack:
 			res = do_ack(buf);
+			return; // TODO: For now, we don't renew leases or anything so might as well exit
 			break;
 
 		case Offer:
@@ -185,6 +189,11 @@ Duck::Result Client::setup_interface(const Client::Interface& interface, const I
 
 	ifreq req;
 	strncpy(req.ifr_name, interface.name.c_str(), IFNAMSIZ);
+
+	if (gateway.has_value())
+		Duck::Log::infof("Setting up {} as {} with subnet {} and gateway {}", interface.name, addr, subnet, gateway.value());
+	else
+		Duck::Log::infof("Setting up {} as {} with subnet {}", interface.name, addr, subnet);
 
 	// Set IP
 	*((sockaddr_in*) &req.ifr_addr) = addr.as_sockaddr(0);
