@@ -44,6 +44,18 @@ public:
 		return m_data < other.m_data;
 	}
 
+	inline constexpr bool operator<=(const IPv4Address& other) const {
+		return m_data <= other.m_data;
+	}
+
+	inline constexpr bool operator>(const IPv4Address& other) const {
+		return m_data > other.m_data;
+	}
+
+	inline constexpr bool operator>=(const IPv4Address& other) const {
+		return m_data >= other.m_data;
+	}
+
 	inline sockaddr_in as_sockaddr(in_port_t port) const {
 		sockaddr_in ret;
 		ret.sin_family = AF_INET;

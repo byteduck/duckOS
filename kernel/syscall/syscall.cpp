@@ -196,6 +196,14 @@ int handle_syscall(ThreadRegisters& regs, uint32_t call, uint32_t arg1, uint32_t
 			return cur_proc->sys_recvmsg(arg1, (struct msghdr*) arg2, arg3);
 		case SYS_GETIFADDRS:
 			return cur_proc->sys_getifaddrs((struct ifaddrs*) arg1, (size_t) arg2);
+		case SYS_CONNECT:
+			return cur_proc->sys_connect(arg1, (struct sockaddr*) arg2, arg3);
+		case SYS_LISTEN:
+			return cur_proc->sys_listen(arg1, arg2);
+		case SYS_SHUTDOWN:
+			return cur_proc->sys_shutdown(arg1, arg2);
+		case SYS_ACCEPT:
+			return cur_proc->sys_accept(arg1, (struct sockaddr*) arg2, (uint32_t*) arg3);
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

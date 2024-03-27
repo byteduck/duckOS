@@ -28,6 +28,15 @@ __DECL_BEGIN
 #define SO_BROADCAST          2
 #define SO_ERROR              3
 
+// shutdown
+#define SHUT_RD   0x1
+#define SHUT_WR   0x2
+#define SHUT_RDWR (SHUT_RD | SHUT_WR)
+
+// flags
+#define SOCK_NONBLOCK   0x1
+#define SOCK_CLOEXEC    0x2
+
 typedef uint16_t sa_family_t;
 typedef uint32_t socklen_t;
 

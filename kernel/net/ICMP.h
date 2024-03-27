@@ -3,7 +3,7 @@
 
 #pragma once
 
-enum ICMPType {
+enum class ICMPType {
 	EchoReply = 0,
 	DestinationUnreachable = 3,
 	SourceQuench = 4,

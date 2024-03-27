@@ -86,6 +86,10 @@
 #define SYS_RECVMSG 83
 #define SYS_SENDMSG 84
 #define SYS_GETIFADDRS 85
+#define SYS_CONNECT 86
+#define SYS_LISTEN 87
+#define SYS_SHUTDOWN 88
+#define SYS_ACCEPT 89
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

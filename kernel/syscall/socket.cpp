@@ -38,6 +38,11 @@ int Process::sys_bind(int sockfd, UserspacePointer<sockaddr> addr, uint32_t addr
 	return -socket->bind(addr, addrlen).code();
 }
 
+int Process::sys_connect(int sockfd, UserspacePointer<sockaddr> addr, uint32_t addrlen) {
+	get_socket(sockfd);
+	return -socket->connect(addr, addrlen).code();
+}
+
 int Process::sys_setsockopt(UserspacePointer<struct setsockopt_args> ptr) {
 	auto args = ptr.get();
 	get_socket(args.sockfd);
@@ -146,4 +151,34 @@ int Process::sys_getifaddrs(UserspacePointer<struct ifaddrs> buf, size_t bufsz) 
 
 	// Return success
 	return SUCCESS;
+}
+
+int Process::sys_listen(int sockfd, int backlog) {
+	get_socket(sockfd);
+	auto res = socket->listen(backlog);
+	if (res.is_error())
+		return -res.code();
+	return SUCCESS;
+}
+
+int Process::sys_shutdown(int sockfd, int how) {
+	get_socket(sockfd);
+	auto res = socket->shutdown(how);
+	if (res.is_error())
+		return -res.code();
+	return SUCCESS;
+}
+
+int Process::sys_accept(int sockfd, UserspacePointer<struct sockaddr> addr, UserspacePointer<socklen_t> addrlen) {
+	get_socket(sockfd);
+	auto res = socket->accept(*desc, addr, addrlen, 0);
+	if (res.is_error())
+		return -res.code();
+
+	LOCK(m_fd_lock);
+	auto fd = kstd::make_shared<FileDescriptor>(res.value(), this);
+	_file_descriptors.push_back(fd);
+	fd->set_owner(_self_ptr);
+	fd->set_id((int) _file_descriptors.size() - 1);
+	return (int)_file_descriptors.size() - 1;
 }

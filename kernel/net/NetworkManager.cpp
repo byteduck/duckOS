@@ -7,6 +7,8 @@
 #include "UDPSocket.h"
 #include "../api/udp.h"
 #include "Router.h"
+#include "TCPSocket.h"
+#include "../api/tcp.h"
 
 NetworkManager* NetworkManager::s_inst = nullptr;
 
@@ -31,7 +33,7 @@ void NetworkManager::do_task() {
 		for (auto& iface : NetworkAdapter::interfaces()) {
 			while ((packet = iface->dequeue_packet())) {
 				handle_packet(iface, packet);
-				packet->used.store(false, MemoryOrder::Release);
+				iface->release_packet(packet);
 			}
 		}
 	}
@@ -43,7 +45,7 @@ void NetworkManager::wakeup() {
 
 void NetworkManager::handle_packet(const kstd::Arc<NetworkAdapter>& adapter, NetworkAdapter::Packet* packet) {
 	ASSERT(packet->size >= sizeof(NetworkAdapter::FrameHeader));
-	auto* hdr = (NetworkAdapter::FrameHeader*) packet->buffer;
+	auto* hdr = (NetworkAdapter::FrameHeader*) packet->buffer->ptr();
 	switch (hdr->type) {
 		case EtherProto::ARP:
 			handle_arp(adapter, packet);
@@ -65,7 +67,7 @@ void NetworkManager::handle_arp(const kstd::Arc<NetworkAdapter>& adapter, const 
 		KLog::warn("NetworkManager", "Got IPv4 packet with invalid frame size!");
 	}
 
-	auto& packet = *((ARPPacket*) ((NetworkAdapter::FrameHeader* ) raw_packet->buffer)->payload);
+	auto& packet = *((ARPPacket*) ((NetworkAdapter::FrameHeader*) raw_packet->buffer->ptr())->payload);
 
 	switch (packet.operation) {
 	case ARPOp::Req: {
@@ -95,11 +97,22 @@ void NetworkManager::handle_ipv4(const kstd::Arc<NetworkAdapter>& adapter, const
 		KLog::warn("NetworkManager", "Got IPv4 packet with invalid frame size!");
 	}
 
-	auto& packet = *((IPv4Packet*) ((NetworkAdapter::FrameHeader* ) raw_packet->buffer)->payload);
+	auto& packet = *((IPv4Packet*) ((NetworkAdapter::FrameHeader* ) raw_packet->buffer->ptr())->payload);
 
 	if (packet.length < sizeof(IPv4Packet)) {
 		KLog::warn("NetworkManager", "Got IPv4 packet with invalid size!");
 		return;
+	}
+
+	// Update ARP table
+	for (auto& interface : NetworkAdapter::interfaces()) {
+		if (!interface->ipv4_address().val())
+			continue;
+
+		auto interface_network = interface->ipv4_address() & adapter->netmask();
+		auto sender_network = packet.source_addr & interface->netmask();
+		if (interface_network == sender_network)
+			Router::arp_put(packet.source_addr, ((NetworkAdapter::FrameHeader* ) raw_packet->buffer->ptr())->source);
 	}
 
 	switch (packet.proto) {
@@ -107,7 +120,7 @@ void NetworkManager::handle_ipv4(const kstd::Arc<NetworkAdapter>& adapter, const
 			handle_icmp(adapter, packet);
 			break;
 		case IPv4Proto::TCP:
-			KLog::warn("NetworkManager", "Received TCP packet! Can't handle this yet!");
+			handle_tcp(adapter, packet);
 			break;
 		case IPv4Proto::UDP:
 			handle_udp(adapter, packet);
@@ -142,6 +155,53 @@ void NetworkManager::handle_udp(const kstd::Arc<NetworkAdapter>& adapter, const 
 	if (!sock) {
 		KLog::warn("NetworkManager", "Received UDP packet for port {} but no such port is bound.",
 					udp_pkt->dest_port.val());
+		return;
+	}
+
+	sock->recv_packet((uint8_t*) &packet, packet.length.val());
+}
+
+void NetworkManager::handle_tcp(const kstd::Arc<NetworkAdapter>& adapter, const IPv4Packet& packet) {
+	if (packet.length < (sizeof(IPv4Packet) + sizeof(TCPSegment))) {
+		KLog::warn("NetworkManager", "Received TCP packet of invalid size!");
+		return;
+	}
+
+	auto* tcp_segment = (TCPSegment*) packet.payload;
+
+	// Get the socket associated with the port
+	auto sock = TCPSocket::get_socket(packet.dest_addr, tcp_segment->dest_port, packet.source_addr, tcp_segment->source_port);
+	if (!sock) {
+		if (tcp_segment->flags() & TCP_RST)
+			return;
+
+		KLog::warn("NetworkManager", "Received TCP packet for {}:{} but no such port is bound.", packet.dest_addr, tcp_segment->dest_port);
+
+		// Send an RST to the sender
+		auto route = Router::get_route(packet.source_addr, packet.source_addr, adapter);
+		if (!route.adapter || !route.mac)
+			return;
+
+		auto pkt_res = route.adapter->alloc_packet(sizeof(IPv4Packet) + sizeof(TCPSegment));
+		if (pkt_res.is_error())
+			return;
+		auto pkt = pkt_res.value();
+
+		auto* ipv4_packet = route.adapter->setup_ipv4_packet(pkt, route.mac, packet.source_addr, TCP, sizeof(TCPSegment), 0, 64);
+		auto* rst_segment = (TCPSegment*) ipv4_packet->payload;
+		rst_segment->source_port = tcp_segment->dest_port;
+		rst_segment->dest_port = tcp_segment->source_port;
+		rst_segment->sequence = 0;
+		rst_segment->ack = tcp_segment->ack + 1;
+		rst_segment->set_flags(TCP_RST | TCP_ACK);
+		rst_segment->set_data_offset(sizeof (TCPSegment) / sizeof(uint32_t));
+		rst_segment->window_size = 0;
+		rst_segment->urgent_pointer = 0;
+		rst_segment->checksum = rst_segment->calculate_checksum(ipv4_packet->source_addr, ipv4_packet->dest_addr, 0);
+
+		adapter->send_packet(pkt);
+		adapter->release_packet(pkt);
+
 		return;
 	}
 

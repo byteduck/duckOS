@@ -21,6 +21,7 @@
 
 #include <kernel/kstd/Arc.h>
 #include <kernel/kstd/kstdio.h>
+#include <kernel/kstd/type_traits.h>
 
 #define TRY(expr) \
 	({ \
@@ -30,9 +31,16 @@
         res.value(); \
     })
 
+#define TRYRES(expr) \
+	({ \
+        auto res = (expr); \
+        if (res.is_error()) \
+            return res; \
+    })
+
 class Result {
 public:
-	static const int Success = 0;
+	static const Result Success;
 
 	explicit Result(int code);
 

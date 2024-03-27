@@ -91,6 +91,7 @@ SET(KERNEL_SRCS
         tasking/BooleanBlocker.cpp
         tasking/PollBlocker.cpp
         tasking/SleepBlocker.cpp
+        tasking/FileBlockers.cpp
         device/VGADevice.cpp
         device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp
@@ -181,6 +182,7 @@ SET(KERNEL_SRCS
         net/Socket.cpp
         net/IPSocket.cpp
         net/UDPSocket.cpp
+        net/TCPSocket.cpp
         net/Router.cpp)
 
 add_custom_command(

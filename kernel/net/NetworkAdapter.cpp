@@ -50,31 +50,29 @@ const kstd::vector<kstd::Arc<NetworkAdapter>>& NetworkAdapter::interfaces() {
 	return s_interfaces;
 }
 
-void NetworkAdapter::receive_bytes(SafePointer<uint8_t> bytes, size_t count) {
-	ASSERT(count <= sizeof(Packet::buffer));
+void NetworkAdapter::receive_bytes(const ReadableBytes& bytes, size_t count) {
+	ASSERT(count <= max_packet_buffer_size);
 
-	int i;
-	for (i = 0; i < 32; i++) {
-		if (!m_packets[i].used.load(MemoryOrder::Acquire))
-			break;
-	}
-	if (i == 32) {
+	auto pkt_res = alloc_packet(count);
+	if (pkt_res.is_error()) {
 		KLog::warn("NetworkAdapter", "{} had to drop packet, no more space in buffer!", name());
 		return;
 	}
 
+	auto pkt = pkt_res.value();
+
+	// TODO: Lock this...
 	if (!m_packet_queue) {
-		m_packet_queue = &m_packets[i];
+		m_packet_queue = pkt;
 	} else {
 		auto* prev_packet = m_packet_queue;
 		while (prev_packet->next)
 			prev_packet = prev_packet->next;
-		prev_packet->next = &m_packets[i];
+		prev_packet->next = pkt;
 	}
 
-	bytes.read(m_packets[i].buffer, count);
-	m_packets[i].size = count;
-	m_packets[i].next = nullptr;
+	bytes.read(*pkt->buffer, count);
+	pkt->next = nullptr;
 
 	NetworkManager::inst().wakeup();
 }
@@ -87,10 +85,10 @@ void NetworkAdapter::send_arp_packet(MACAddress dest, const ARPPacket& packet) {
 	hdr->destination = dest;
 	hdr->type = {EtherProto::ARP};
 	memcpy(hdr->payload, &packet, sizeof(ARPPacket));
-	send_raw_packet(KernelPointer(buf), sizeof(FrameHeader) + sizeof(ARPPacket));
+	send_raw_packet({buf, sizeof(FrameHeader) + sizeof(ARPPacket)}, sizeof(FrameHeader) + sizeof(ARPPacket));
 }
 
-void NetworkAdapter::send_raw_packet(SafePointer<uint8_t> bytes, size_t count) {
+void NetworkAdapter::send_raw_packet(const ReadableBytes& bytes, size_t count) {
 	send_bytes(bytes, count);
 }
 
@@ -103,36 +101,43 @@ NetworkAdapter::Packet* NetworkAdapter::dequeue_packet() {
 	return pkt;
 }
 
-NetworkAdapter::Packet* NetworkAdapter::alloc_packet(size_t size) {
-	ASSERT(size < 8192);
-	TaskManager::ScopedCritical crit;
+ResultRet<NetworkAdapter::Packet*> NetworkAdapter::alloc_packet(size_t size) {
+	ASSERT(size < (max_packet_buffer_size - sizeof(FrameHeader)));
+
+	auto buf = TRY(KBuffer::alloc(sizeof(FrameHeader) + size));
+
 	int i;
 	for (i = 0; i < 32; i++) {
-		if (!m_packets[i].used.load(MemoryOrder::Acquire))
+		bool exp = false;
+		if (m_packets[i].used.compare_exchange_strong(exp, true, MemoryOrder::Acquire))
 			break;
 	}
 
 	if (i == 32)
-		return nullptr;
+		return Result(ENOSPC);
 
 	auto& pkt = m_packets[i];
 	pkt.size = sizeof(FrameHeader) + size;
+	ASSERT(!pkt.buffer);
+	pkt.buffer = buf;
 	return &m_packets[i];
 }
 
 void NetworkAdapter::release_packet(NetworkAdapter::Packet* packet) {
+	packet->size = 0;
+	packet->buffer.reset();
 	packet->used.store(false, MemoryOrder::Release);
 }
 
 IPv4Packet* NetworkAdapter::setup_ipv4_packet(Packet* packet, const MACAddress& dest, const IPv4Address& dest_addr, IPv4Proto proto, size_t payload_size, uint8_t dscp, uint8_t ttl) {
-	ASSERT(packet);
+	ASSERT(packet && packet->buffer && packet->buffer->size() > sizeof(FrameHeader) + sizeof(IPv4Packet));
 
-	auto* frame = (FrameHeader*) packet->buffer;
+	auto* frame = (FrameHeader*) packet->buffer->ptr();
 	frame->type = EtherProto::IPv4;
 	frame->destination = dest;
 	frame->source = m_mac_addr;
 
-	auto* ipv4 = (IPv4Packet*) (packet->buffer + sizeof(FrameHeader));
+	auto* ipv4 = (IPv4Packet*) frame->payload;
 	*ipv4 = {
 		.version_ihl = (4 << 4) | 5,
 		.dscp_ecn = dscp,
@@ -152,6 +157,6 @@ IPv4Packet* NetworkAdapter::setup_ipv4_packet(Packet* packet, const MACAddress& 
 
 void NetworkAdapter::send_packet(NetworkAdapter::Packet* packet) {
 	ASSERT(packet->size < m_mtu);
-	send_raw_packet(KernelPointer(packet->buffer), packet->size);
+	send_raw_packet(*packet->buffer, packet->size);
 }
 

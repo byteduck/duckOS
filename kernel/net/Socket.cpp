@@ -3,6 +3,7 @@
 
 #include "Socket.h"
 #include "IPSocket.h"
+#include "../filesystem/FileDescriptor.h"
 
 Socket::Socket(Socket::Domain domain, Socket::Type type, int protocol):
 	m_domain(domain),
@@ -70,4 +71,38 @@ Result Socket::getsockopt(int level, int optname, UserspacePointer<void*> optval
 		default:
 			return Result(EINVAL);
 	}
+}
+
+Result Socket::shutdown(int how) {
+	if (m_type == Stream && m_connection_state == Disconnected)
+		return Result(ENOTCONN);
+	if (how & SHUT_RD)
+		TRYRES(shutdown_reading());
+	if (how & SHUT_WR)
+		TRYRES(shutdown_writing());
+	return Result::Success;
+}
+
+ResultRet<kstd::Arc<Socket>> Socket::accept(FileDescriptor& fd, UserspacePointer<sockaddr> addr, UserspacePointer<socklen_t> addrlen, int options) {
+	// Wait until we have a connection to accept
+	m_lock.acquire();
+	while (m_client_backlog.empty()) {
+		m_accept_blocker.set_ready(false);
+		m_lock.release();
+		if (options & SOCK_NONBLOCK)
+			return kstd::Arc<Socket>();
+		TaskManager::current_thread()->block(m_accept_blocker);
+		m_lock.acquire();
+	}
+
+	// Dequeue a client
+	auto client = m_client_backlog.pop_front();
+	client->get_dest_addr(addr, addrlen);
+	TRYRES(client->do_accept());
+
+	return client;
+}
+
+Result Socket::do_accept() {
+	return Result::Success;
 }

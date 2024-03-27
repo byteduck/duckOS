@@ -25,6 +25,7 @@ private:
 	void handle_ipv4(const kstd::Arc<NetworkAdapter>& adapter, const NetworkAdapter::Packet* packet);
 	void handle_icmp(const kstd::Arc<NetworkAdapter>& adapter, const IPv4Packet& packet);
 	void handle_udp(const kstd::Arc<NetworkAdapter>& adapter, const IPv4Packet& packet);
+	void handle_tcp(const kstd::Arc<NetworkAdapter>& adapter, const IPv4Packet& packet);
 
 	static NetworkManager* s_inst;
 

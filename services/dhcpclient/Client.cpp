@@ -212,6 +212,7 @@ Duck::Result Client::setup_interface(const Client::Interface& interface, const I
 	// Add route for gateway
 	if (gateway.has_value()) {
 		rtentry entry;
+		memset(&entry, 0, sizeof(entry));
 		entry.rt_dev = (char*) interface.name.c_str();
 		*((sockaddr_in*) &entry.rt_gateway) = gateway.value().as_sockaddr(0);
 		entry.rt_flags = RTF_UP | RTF_GATEWAY;

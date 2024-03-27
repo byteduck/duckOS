@@ -15,7 +15,7 @@ public:
 
 protected:
 	void handle_irq(IRQRegisters *regs) override;
-	void send_bytes(SafePointer<uint8_t> bytes, size_t count) override;
+	void send_bytes(const ReadableBytes &bytes, size_t count) override;
 
 private:
 	explicit E1000Adapter(PCI::Address addr);

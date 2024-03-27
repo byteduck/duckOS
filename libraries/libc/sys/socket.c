@@ -15,6 +15,10 @@ int bind(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
 	return syscall4(SYS_BIND, sockfd, (int) addr, addrlen);
 }
 
+int connect(int sockfd, const struct sockaddr* addr, socklen_t addrlen) {
+	return syscall4(SYS_CONNECT, sockfd, (int) addr, addrlen);
+}
+
 int setsockopt(int sockfd, int level, int option, const void* option_value, socklen_t option_len) {
 	struct setsockopt_args args = { sockfd, level, option, option_value, option_len };
 	return syscall2(SYS_SETSOCKOPT, (int) &args);
@@ -59,4 +63,16 @@ ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags, struct sockaddr *
 
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags) {
 	return syscall4(SYS_RECVMSG, sockfd, (int) msg, flags);
+}
+
+int listen(int sockfd, int backlog) {
+	return syscall3(SYS_LISTEN, sockfd, backlog);
+}
+
+int shutdown(int sockfd, int how) {
+	return syscall3(SYS_SHUTDOWN, sockfd, how);
+}
+
+int accept(int sockfd, struct sockaddr* addr, socklen_t* addrlen) {
+	return syscall4(SYS_ACCEPT, sockfd, (int) addr, (int) addrlen);
 }

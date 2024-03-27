@@ -8,7 +8,7 @@
 #include "../api/net.h"
 #include "NetworkAdapter.h"
 
-#define ARP_DEBUG 1
+#define ARP_DEBUG false
 
 class Router {
 public:

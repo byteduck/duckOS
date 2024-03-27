@@ -4,7 +4,7 @@
 #include "Router.h"
 #include "NetworkManager.h"
 
-#define ROUTE_DEBUG 1
+#define ROUTE_DEBUG false
 
 Mutex Router::s_routing_lock {"Router::routing_table" };
 Router::Entry* Router::s_routing_entries = nullptr;
@@ -59,8 +59,8 @@ Router::Route Router::get_route(const IPv4Address& dest, const IPv4Address& sour
 			return true;
 		}
 
-		// Match the default route (0.0.0.0) for the adapter specified
-		if (preferred_adapter && preferred_adapter == ent->adapter && ent->dest_addr == 0) {
+		// Match the default route (0.0.0.0)
+		if ((!preferred_adapter || preferred_adapter == ent->adapter) && ent->dest_addr == 0) {
 			found_entry = ent;
 		}
 
@@ -145,13 +145,14 @@ ResultRet<MACAddress> Router::arp_lookup(const IPv4Address& dest, const kstd::Ar
 	packet.sender_hwaddr = request_adapter->mac_address();
 	packet.target_protoaddr = dest;
 	packet.target_hwaddr = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-	request_adapter->send_arp_packet(packet.target_hwaddr, packet);
 
 	// Wait for a reply
 	s_arp_blocker_lock.acquire();
 	ARPBlocker blocker { dest, kstd::make_shared<BooleanBlocker>() };
 	s_arp_blockers.push_back(blocker);
 	s_arp_blocker_lock.release();
+
+	request_adapter->send_arp_packet(packet.target_hwaddr, packet);
 
 	// TODO: What if we never receive a response..? A timeout would probably be good.
 	TaskManager::current_thread()->block(*blocker.blocker);
@@ -173,11 +174,12 @@ ResultRet<MACAddress> Router::arp_lookup(const IPv4Address& dest, const kstd::Ar
 }
 
 void Router::arp_put(const IPv4Address& ip, const MACAddress& mac) {
-	KLog::dbg_if<ARP_DEBUG>("Router", "Adding ARP entry for {}: {}", ip, mac);
-
 	// Add entry
 	{
 		LOCK(s_arp_lock);
+		if (s_arp_entries.contains(ip))
+			return;
+		KLog::dbg_if<ARP_DEBUG>("Router", "Adding ARP entry for {}: {}", ip, mac);
 		s_arp_entries[ip] = mac;
 	}
 

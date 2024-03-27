@@ -20,6 +20,8 @@
 #include "Result.hpp"
 #include "kernel/kstd/kstdio.h"
 
+const Result Result::Success {0};
+
 Result::Result(int code): _code(code) {
 }
 

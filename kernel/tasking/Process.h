@@ -169,11 +169,15 @@ public:
 	int sys_uname(UserspacePointer<struct utsname> buf);
 	int sys_socket(int domain, int type, int protocol);
 	int sys_bind(int sockfd, UserspacePointer<struct sockaddr> addr, uint32_t addrlen);
+	int sys_connect(int sockfd, UserspacePointer<struct sockaddr> addr, uint32_t addrlen);
 	int sys_setsockopt(UserspacePointer<struct setsockopt_args> ptr);
 	int sys_getsockopt(UserspacePointer<struct getsockopt_args> ptr);
 	int sys_recvmsg(int sockfd, UserspacePointer<struct msghdr> msg, int flags);
 	int sys_sendmsg(int sockfd, UserspacePointer<struct msghdr> msg, int flags);
 	int sys_getifaddrs(UserspacePointer<struct ifaddrs> buf, size_t memsz);
+	int sys_listen(int sockfd, int backlog);
+	int sys_shutdown(int sockfd, int how);
+	int sys_accept(int sockfd, UserspacePointer<struct sockaddr> addr, UserspacePointer<uint32_t> addrlen);
 
 private:
 	friend class Thread;

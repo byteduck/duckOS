@@ -112,7 +112,7 @@
 #define INT_RXO     0x40 // Receiver Overrun
 #define INT_RXT0    0x80 // Receiver Timer Interrupt
 
-#define E1000_DBG true
+#define E1000_DBG false
 
 void E1000Adapter::probe() {
 	PCI::enumerate_devices([](PCI::Address address, PCI::ID id, uint16_t type, void* dataPtr) {
@@ -266,15 +266,12 @@ void E1000Adapter::receive() {
 		ASSERT(desc.length <= rx_buffer_size);
 		KLog::dbg_if<E1000_DBG>("E1000", "Received packet ({} bytes)", desc.length);
 		desc.status = 0;
-		{
-			TaskManager::ScopedCritical crit;
-			receive_bytes(KernelPointer((uint8_t*) (m_rx_buffer_region->start() + (rx_buffer_size * cur_desc))), desc.length);
-		}
+		receive_bytes({(uint8_t*) (m_rx_buffer_region->start() + (rx_buffer_size * cur_desc)), desc.length}, desc.length);
 		m_window.out32(REG_RXDESCTAIL, cur_desc);
 	}
 }
 
-void E1000Adapter::send_bytes(SafePointer<uint8_t> bytes, size_t count) {
+void E1000Adapter::send_bytes(const ReadableBytes& bytes, size_t count) {
 	ASSERT(count <= tx_buffer_size);
 	PCI::disable_interrupt(m_pci_address);
 	auto cur_tx_desc = m_window.in32(REG_TXDESCTAIL) % num_tx_descriptors;

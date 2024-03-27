@@ -5,8 +5,9 @@
 #include "../kstd/KLog.h"
 #include "../api/udp.h"
 #include "Router.h"
+#include "../random.h"
 
-#define UDP_DBG 1
+#define UDP_DBG true
 
 kstd::map<uint16_t, kstd::Weak<UDPSocket>> UDPSocket::s_sockets;
 Mutex UDPSocket::s_sockets_lock { "UDPSocket::sockets" };
@@ -17,7 +18,7 @@ UDPSocket::UDPSocket(): IPSocket(Type::Dgram, 0) {
 
 UDPSocket::~UDPSocket() {
 	LOCK(s_sockets_lock);
-	if (m_bound && s_sockets.contains(m_bound_port)) {
+	if (m_bound) {
 		s_sockets.erase(m_bound_port);
 		KLog::dbg_if<UDP_DBG>("UDPSocket", "Unbinding from port {}", m_bound_port);
 	}
@@ -45,15 +46,17 @@ Result UDPSocket::do_bind() {
 	if (m_bound_port == 0) {
 		// If we didn't specify a port, we want an ephemeral port
 		// (Range suggested by IANA and RFC 6335)
-		uint16_t ephem;
-		for (ephem = 49152; ephem < 65535; ephem++) {
-			if (!s_sockets.contains(ephem))
-				break;
-		}
-
-		if (ephem == 65535) {
-			KLog::warn("UDPSocket", "Out of ephemeral ports!");
-			return Result(set_error(EADDRINUSE));
+		// First try a random port, then go through all of them if that one's taken
+		auto ephem = rand_range<uint16_t>(49152, 65535);
+		if (s_sockets.contains(ephem)) {
+			for(ephem = 49152; ephem < 65535; ephem++) {
+				if(!s_sockets.contains(ephem))
+					break;
+			}
+			if (ephem == 65535) {
+				KLog::warn("UDPSocket", "Out of ephemeral ports!");
+				return Result(set_error(EADDRINUSE));
+			}
 		}
 
 		m_bound_port = ephem;
@@ -67,6 +70,14 @@ Result UDPSocket::do_bind() {
 	s_sockets[m_bound_port] = self();
 	m_bound = true;
 
+	return Result(SUCCESS);
+}
+
+Result UDPSocket::do_connect() {
+	LOCK(m_lock);
+	if (!m_bound)
+		TRYRES(do_bind());
+	m_connection_state = Connected;
 	return Result(SUCCESS);
 }
 
@@ -91,7 +102,7 @@ ResultRet<size_t> UDPSocket::do_send(SafePointer<uint8_t> buf, size_t len) {
 		return Result(set_error(EHOSTUNREACH));
 
 	const size_t packet_len = sizeof(IPv4Packet) + sizeof(UDPPacket) + len;
-	auto pkt = route.adapter->alloc_packet(packet_len);
+	auto pkt = TRY(route.adapter->alloc_packet(packet_len));
 	auto* ipv4_packet = route.adapter->setup_ipv4_packet(pkt, route.mac, m_dest_addr, UDP, sizeof(UDPPacket) + len, m_type_of_service, m_ttl);
 	auto* udp_packet = (UDPPacket*) ipv4_packet->payload;
 	udp_packet->source_port = m_bound_port;
@@ -105,4 +116,8 @@ ResultRet<size_t> UDPSocket::do_send(SafePointer<uint8_t> buf, size_t len) {
 	route.adapter->release_packet(pkt);
 
 	return len;
+}
+
+Result UDPSocket::do_listen() {
+	return Result::Success;
 }
