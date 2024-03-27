@@ -86,10 +86,31 @@ public:
 
 	/**
 	 * Performs a memcpy with this pointer as the source.
+	 * @param dest The safe destination buffer.
+	 * @param offset The offset (in sizeof(T)) to start reading at.
+	 * @param count The number of T elements to copy to the destination buffer.
+	 */
+	void read(SafePointer dest, size_t offset, size_t count) const {
+		checked<void>(false, offset, count, [&]() {
+			dest.write(m_ptr + offset, count);
+		});
+	}
+
+	/**
+	 * Performs a memcpy with this pointer as the source.
 	 * @param dest The destination buffer.
 	 * @param count The number of T elements to copy to the destination buffer.
 	 */
 	inline void read(T* dest, size_t count) const {
+		read(dest, 0, count);
+	}
+
+	/**
+	 * Performs a memcpy with this pointer as the source.
+	 * @param dest The safe destination buffer.
+	 * @param count The number of T elements to copy to the destination buffer.
+	 */
+	void read(SafePointer dest, size_t count) const {
 		read(dest, 0, count);
 	}
 
@@ -108,9 +129,30 @@ public:
 	/**
 	 * Performs a memcpy with this pointer as the destination.
 	 * @param source The source buffer.
+	 * @param offset The offset (in sizeof(T)) to start writing at.
+	 * @param count The number of T elements to copy from the destination buffer.
+	 */
+	void write(SafePointer source, size_t offset, size_t count) const {
+		checked<void>(true, offset, count, [&]() {
+			source.read(m_ptr + offset, count);
+		});
+	}
+
+	/**
+	 * Performs a memcpy with this pointer as the destination.
+	 * @param source The source buffer.
 	 * @param count The number of T elements to copy from the destination buffer.
 	 */
 	inline void write(const T* source, size_t count) const {
+		write(source, 0, count);
+	}
+
+	/**
+	 * Performs a memcpy with this pointer as the destination.
+	 * @param source The source buffer.
+	 * @param count The number of T elements to copy from the destination buffer.
+	 */
+	void write(SafePointer source, size_t count) const {
 		write(source, 0, count);
 	}
 
@@ -157,6 +199,14 @@ public:
 	template<typename R>
 	SafePointer<R> as() {
 		return SafePointer<R>((R*) m_ptr, m_is_user);
+	}
+
+	SafePointer operator+(ssize_t offset) const {
+		return SafePointer(m_ptr + offset, m_is_user);
+	}
+
+	SafePointer offset(ssize_t offset) const {
+		return operator+(offset);
 	}
 
 private:

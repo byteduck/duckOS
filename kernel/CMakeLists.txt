@@ -104,6 +104,8 @@ SET(KERNEL_SRCS
         memory/InodeVMObject.cpp
         memory/BuddyZone.cpp
         memory/Memory.cpp
+        memory/KBuffer.cpp
+        memory/Bytes.cpp
         device/PATADevice.cpp
         CommandLine.cpp
         tasking/Signal.cpp
