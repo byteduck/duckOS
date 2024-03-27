@@ -39,7 +39,9 @@ public:
 		m_head = ent->next;
 		if (m_tail == ent)
 			m_tail = nullptr;
-		return ent->val;
+		auto ret = ent->val;
+		delete ent;
+		return ret;
 	}
 
 	Optional<T> peek() {
