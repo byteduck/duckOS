@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <limits.h>
 #include "string.h"
+#include "fcntl.h"
 
 #define MAX_ATEXIT_FUNCS 256
 

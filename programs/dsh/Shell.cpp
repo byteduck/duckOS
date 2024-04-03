@@ -27,6 +27,7 @@
 #include <iostream>
 #include <cstring>
 #include <queue>
+#include <fcntl.h>
 #define MAX_COMMAND_HISTORY 100
 
 Shell::Shell(int argc, char** argv, char** envp) {

@@ -23,9 +23,7 @@
 #include <stddef.h>
 #include <time.h>
 #include <sys/cdefs.h>
-#include <fcntl.h>
-
-__DECL_BEGIN
+#include <kernel/api/stat.h>
 
 #define S_ISDIR(m)	(((m)&S_IFMT) == S_IFDIR)
 #define S_ISCHR(m)	(((m)&S_IFMT) == S_IFCHR)
@@ -35,21 +33,7 @@ __DECL_BEGIN
 #define S_ISLNK(m)	(((m)&S_IFMT) == S_IFLNK)
 #define S_ISSOCK(m)	(((m)&S_IFMT) == S_IFSOCK)
 
-struct stat {
-	dev_t		st_dev;
-	ino_t		st_ino;
-	mode_t		st_mode;
-	nlink_t		st_nlink;
-	uid_t		st_uid;
-	gid_t		st_gid;
-	dev_t		st_rdev;
-	off_t		st_size;
-	time_t		st_atime;
-	time_t		st_mtime;
-	time_t		st_ctime;
-	blksize_t	st_blksize;
-	blkcnt_t	st_blocks;
-};
+__DECL_BEGIN
 
 mode_t umask(mode_t new_umask);
 int chmod(const char* pathname, mode_t new_mode);

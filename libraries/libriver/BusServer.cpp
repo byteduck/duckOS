@@ -27,6 +27,7 @@
 #include "BusConnection.h"
 #include <libduck/Log.h>
 #include <sys/thread.h>
+#include <fcntl.h>
 
 using namespace River;
 using Duck::Result, Duck::ResultRet, Duck::Log;

@@ -20,6 +20,7 @@
 #pragma once
 
 #include <kernel/kstd/unix_types.h>
+#include <kernel/api/stat.h>
 
 #define MODE_FIFO 0x1000u
 #define MODE_CHAR_DEVICE 0x2000u
@@ -48,22 +49,6 @@
 #define PERM_STICKY	01000u
 #define PERM_SETGID	02000u
 #define PERM_SETUID	04000u
-
-struct stat {
-	dev_t		st_dev;
-	ino_t		st_ino;
-	mode_t		st_mode;
-	nlink_t		st_nlink;
-	uid_t		st_uid;
-	gid_t		st_gid;
-	dev_t		st_rdev;
-	off_t		st_size;
-	time_t		st_atime;
-	time_t		st_mtime;
-	time_t		st_ctime;
-	blksize_t	st_blksize;
-	blkcnt_t	st_blocks;
-};
 
 class User;
 

@@ -27,6 +27,7 @@
 #include "Function.hpp"
 #include "Message.hpp"
 #include <libduck/Log.h>
+#include <fcntl.h>
 
 using namespace River;
 using Duck::Result, Duck::ResultRet, Duck::Log;

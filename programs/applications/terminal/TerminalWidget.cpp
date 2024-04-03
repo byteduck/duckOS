@@ -24,6 +24,7 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <libui/widget/MenuWidget.h>
+#include <fcntl.h>
 
 static const uint32_t color_palette[] = {
 		0xFF000000,
