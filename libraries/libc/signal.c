@@ -39,3 +39,31 @@ int kill(pid_t pid, int sig) {
 void sigaction(int signum, const struct sigaction* act, const struct sigaction* oldact) {
 	syscall4(SYS_SIGACTION, signum, (int) act, (int) oldact);
 }
+
+int sigemptyset(sigset_t* set) {
+	*set = 0;
+	return 0;
+}
+
+int sigfillset(sigset_t* set) {
+	*set = ~UINT32_C(0);
+	return 0;
+}
+
+int sigaddset(sigset_t* set, int sig) {
+	if (sig < 1 || sig > 32) {
+		errno = EINVAL;
+		return -1;
+	}
+	*set |= 1 << (sig - 1);
+	return 0;
+}
+
+int sigdelset(sigset_t* set, int sig) {
+	if (sig < 1 || sig > 32) {
+		errno = EINVAL;
+		return -1;
+	}
+	*set &= ~(1 << (sig - 1));
+	return 0;
+}

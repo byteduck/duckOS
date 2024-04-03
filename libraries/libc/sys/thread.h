@@ -26,7 +26,7 @@
 __DECL_BEGIN
 
 tid_t thread_create(void* (*entry_func)(void*), void* arg);
-void thread_exit(void* retval);
+void thread_exit(void* retval) __attribute__((noreturn));
 int thread_join(tid_t thread, void** retval);
 tid_t gettid();
 

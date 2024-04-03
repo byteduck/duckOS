@@ -11,6 +11,8 @@ SET(SOURCES
         ifaddrs.c
         locale.c
         poll.c
+        pthread.cpp
+        sched.c
         signal.c
         stdio.c
         stdlib.c
@@ -78,3 +80,6 @@ ADD_CUSTOM_TARGET(libc_headers
 # Combine libc_dyn and libc_static
 ADD_CUSTOM_TARGET(libc)
 ADD_DEPENDENCIES(libc libc_headers libc_dyn libc_static)
+
+# Tell linker to use libc for pthread
+file(WRITE "${CMAKE_STAGING_PREFIX}/lib/libpthread.so" "INPUT(libc.so)")

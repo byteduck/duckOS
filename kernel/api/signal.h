@@ -44,11 +44,36 @@ __DECL_BEGIN
 #define SIG_ERR ((sighandler_t)1)
 #define SIG_IGN ((sighandler_t)2)
 
+#define SIG_BLOCK 0
+#define SIG_UNBLOCK 1
+#define SIG_SETMASK 2
+
 typedef uint32_t sig_atomic_t;
 typedef void (*sighandler_t)(int);
 typedef unsigned long sigset_t;
+
+union sigval {
+	int sival_int;
+	void* sival_ptr;
+};
+
+typedef struct siginfo {
+	int si_signo;
+	int si_code;
+	int si_errno;
+	pid_t si_pid;
+	uid_t si_uid;
+	void* si_addr;
+	int si_status;
+	int si_band;
+	union sigval si_value;
+} siginfo_t;
+
 typedef struct sigaction {
-	sighandler_t sa_sigaction;
+	union {
+		void (*sa_sigaction)(int, siginfo_t*, void *);
+		sighandler_t sa_handler;
+	};
 	sigset_t sa_mask;
 	int sa_flags;
 } sigaction_t;
