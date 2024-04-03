@@ -163,7 +163,7 @@ std::string Loader::find_library(const char* library_name) {
 	if(strchr(library_name, '/')) return library_name;
 
 	char* ld_library_path = getenv("LD_LIBRARY_PATH");
-	std::string default_ld = "/lib:/usr/lib";
+	std::string default_ld = "/lib:/usr/lib:/usr/local/lib";
 	if(!ld_library_path)
 		ld_library_path = const_cast<char*>(default_ld.c_str());
 
