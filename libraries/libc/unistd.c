@@ -239,6 +239,25 @@ int pipe2(int pipefd[2], int flags) {
 	return syscall3(SYS_PIPE, (int) pipefd, flags);
 }
 
+long pathconf(const char* path, int name) {
+	return fpathconf(0, name);
+}
+
+long fpathconf(int fd, int name) {
+	switch (name) {
+	case _PC_NAME_MAX:
+		return NAME_MAX;
+	case _PC_PATH_MAX:
+		return PATH_MAX;
+	case _PC_VDISABLE:
+		return _POSIX_VDISABLE;
+	case _PC_LINK_MAX:
+		return LINK_MAX;
+	default:
+		return 0;
+	}
+}
+
 int chdir(const char* pathname) {
 	return syscall2(SYS_CHDIR, (int) pathname);
 }

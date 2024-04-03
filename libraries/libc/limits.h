@@ -49,6 +49,10 @@
 
 #define ARG_MAX 65536
 
+#define NAME_MAX 256
+#define PATH_MAX 256
+#define LINK_MAX 256
+
 #ifndef PAGE_SIZE
 #include <kernel/api/page_size.h>
 #endif

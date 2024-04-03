@@ -629,3 +629,13 @@ char* mktemp(char* pattern) {
 
 	return pattern;
 }
+
+static const char* __progname = NULL;
+
+const char* getprogname() {
+	return __progname;
+}
+
+void setprogname(const char* progname) {
+	__progname = progname;
+}

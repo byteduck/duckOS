@@ -109,6 +109,10 @@ int ptsname_r(int fd, char* buf, size_t buflen);
 // Temporary files
 char* mktemp(char* pattern);
 
+// Progname
+const char* getprogname();
+void setprogname(const char* progname);
+
 __DECL_END
 
 #endif //DUCKOS_LIBC_STDLIB_H
