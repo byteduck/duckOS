@@ -21,6 +21,7 @@ SET(SOURCES
         sys/printf.c
         sys/ptrace.c
         sys/liballoc.cpp
+        sys/resource.c
         sys/scanf.c
         sys/socket.c
         sys/socketfs.c

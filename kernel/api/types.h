@@ -21,6 +21,7 @@ typedef unsigned short gid_t;
 typedef long off_t;
 typedef long blksize_t;
 typedef long blkcnt_t;
+typedef int id_t;
 
 typedef long suseconds_t;
 typedef unsigned long useconds_t;
