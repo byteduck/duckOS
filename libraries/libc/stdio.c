@@ -61,9 +61,10 @@ FILE __stdin = {
 		.offset = 0,
 		.bufavail = 0,
 		.bufsiz = 0,
-		.next = &__stdout,
+		.next = &stdout,
 		.prev = NULL
 };
+FILE* stdin = &__stdin;
 
 FILE __stdout = {
 		.fd = STDOUT_FILENO,
@@ -76,9 +77,10 @@ FILE __stdout = {
 		.offset = 0,
 		.bufavail = 0,
 		.bufsiz = 0,
-		.next = &__stderr,
-		.prev = &__stdin
+		.next = &stderr,
+		.prev = &stdin
 };
+FILE* stdout = &__stdout;
 
 FILE __stderr = {
 		.fd = STDERR_FILENO,
@@ -92,8 +94,9 @@ FILE __stderr = {
 		.bufavail = 0,
 		.bufsiz = 0,
 		.next = NULL,
-		.prev = &__stdout
+		.prev = &stdout
 };
+FILE* stderr = &__stderr;
 
 //File stuff
 FILE* filelist_first = &__stdin;

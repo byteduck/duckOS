@@ -42,6 +42,7 @@ __DECL_BEGIN
 extern char** environ;
 
 pid_t fork();
+pid_t vfork();
 int execv(const char* path, char* const argv[]);
 int execve(const char* filename, char* const argv[], char* const envp[]);
 int execvpe(const char* filename, char* const argv[], char* const envp[]);

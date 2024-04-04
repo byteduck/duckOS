@@ -33,6 +33,10 @@ pid_t fork() {
 	return syscall(SYS_FORK);
 }
 
+pid_t vfork() {
+	return fork();
+}
+
 int execv(const char* path, char* const argv[]) {
 	return execve(path, argv, environ);
 }
@@ -283,7 +287,7 @@ int sleep(unsigned secs) {
 }
 
 int usleep(useconds_t usec) {
-	struct timespec time = {0, usec};
+	struct timespec time = {0, usec * 1000};
 	struct timespec remainder;
 	return syscall3(SYS_SLEEP, (int) &time, (int) &remainder);
 }

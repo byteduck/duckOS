@@ -155,7 +155,7 @@ int gettimeofday(struct timeval *tv, void *tz) {
 }
 
 int nanosleep(const struct timespec *req, struct timespec *rem) {
-	return -1; //TODO
+	return syscall3(SYS_SLEEP, (int) req, (int) rem);
 }
 
 int clock_getres(clockid_t clk_id, struct timespec *res) {

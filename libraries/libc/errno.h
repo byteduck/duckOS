@@ -25,6 +25,7 @@
 
 __DECL_BEGIN
 extern int __errno;
+extern int* __errno_location;
 #define errno (__errno)
 __DECL_END
 
