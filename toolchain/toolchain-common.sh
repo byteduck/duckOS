@@ -30,6 +30,7 @@ INSTALL_BIN="install"
 
 if [ "$SYS_NAME" = "Darwin" ]; then
   INSTALL_BIN="ginstall"
+  SED_BIN="gsed"
 fi
 
 download-binutils () {

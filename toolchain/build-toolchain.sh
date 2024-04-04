@@ -101,7 +101,7 @@ build_gcc () {
 make_toolchain_file () {
   msg "Making CMakeToolchain.txt..."
   cp "$DIR/CMakeToolchain.txt.in" "$BUILD/CMakeToolchain.txt"
-  sed -i "s/@DUCKOS_SOURCE_DIR@/$(echo "$SOURCE_DIR" | sed -r 's/\//\\\//g')/g" "$BUILD/CMakeToolchain.txt"
+  $SED_BIN -i "s/@DUCKOS_SOURCE_DIR@/$(echo "$SOURCE_DIR" | sed -r 's/\//\\\//g')/g" "$BUILD/CMakeToolchain.txt"
 }
 
 mkdir -p "$BUILD"
