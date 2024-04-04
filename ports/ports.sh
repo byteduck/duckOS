@@ -21,11 +21,14 @@ export CXXFILT="i686-pc-duckos-c++filt"
 export READELF="i686-pc-duckos-readelf"
 export STRIP="$i686-pc-duckos-strip"
 export OBJCOPY="i686-pc-duckos-objcopy"
+export PKG_CONFIG_DIR=""
+export PKG_CONFIG_SYSROOT_DIR="$ROOT_DIR"
+export PKG_CONFIG_LIBDIR="$ROOT_DIR/usr/local/lib/pkgconfig"
 
 download_extract_patch() {
   if [ ! -d "$DOWNLOAD_FILE" ]; then
     msg "Downloading $DOWNLOAD_URL"
-    curl "$DOWNLOAD_URL" > "$DOWNLOAD_FILE.tar.gz" || return 1
+    curl -L "$DOWNLOAD_URL" > "$DOWNLOAD_FILE.tar.gz" || return 1
     msg "Extracting $DOWNLOAD_FILE.tar.gz..."
     tar -xf "$DOWNLOAD_FILE.tar.gz" || return 1
     rm "$DOWNLOAD_FILE.tar.gz"
@@ -96,6 +99,10 @@ build_port() {
     download_extract_patch
   elif [ -n "$GIT_URL" ]; then
     git_clone_patch
+  fi
+  if [[ $(type -t prebuild) == function ]]; then
+    msg "Executing prebuild steps for $DUCKOS_PORT_NAME..."
+    prebuild
   fi
   if [ "$USE_CONFIGURE" = "true" ]; then
     msg "Configuring port $DUCKOS_PORT_NAME..."
