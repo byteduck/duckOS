@@ -23,6 +23,7 @@ public:
 	 * @param index An optional index into this pointer as an array.
 	 * @return The value copied from userspace at the specified index.
 	 */
+	// TODO: This is gonna have to be a result. Right now, if we fail this check, we send SIGSEGV but since we're probably in a syscall, nothing will happen yet.
 	inline T get(int index = 0) const {
 		return checked<T>(false, index, 1, [&]() {
 			return m_ptr[index];
@@ -33,6 +34,7 @@ public:
 	 * Sets the value pointed to by this pointer in user memory.
 	 * @param index An index into this pointer as an array.
 	 */
+	// TODO: This is gonna have to be a result. Right now, if we fail this check, we send SIGSEGV but since we're probably in a syscall, nothing will happen yet.
 	inline void set(int index, const T& value) const {
 		checked<void>(true, index, 1, [&]() {
 			m_ptr[index] = value;
@@ -43,6 +45,7 @@ public:
 	 * Sets the value pointed to by this pointer to the given value.
 	 * @param value The value to set.
 	 */
+	// TODO: This is gonna have to be a result. Right now, if we fail this check, we send SIGSEGV but since we're probably in a syscall, nothing will happen yet.
 	inline void set(const T& value) const {
 		set(0, value);
 	}
@@ -51,6 +54,7 @@ public:
 	 * Casts this pointer to a char pointer, and then safely makes a string from it.
 	 * @return A string made from the C string that this pointer points to.
 	 */
+	// TODO: This is gonna have to be a result. Right now, if we fail this check, we send SIGSEGV but since we're probably in a syscall, nothing will happen yet.
 	kstd::string str() const {
 		// If this is a kernel pointer, don't check
 		if(!m_is_user)
