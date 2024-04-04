@@ -34,3 +34,8 @@ void* dlsym(void* object, const char* name) {
 	}
 	return (void*) res.value();
 }
+
+char* dlerror() {
+	// TODO: Only dl errors
+	return strerror(errno);
+}
