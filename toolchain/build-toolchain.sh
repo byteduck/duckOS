@@ -98,6 +98,12 @@ build_gcc () {
   popd
 }
 
+make_toolchain_file () {
+  msg "Making CMakeToolchain.txt..."
+  cp "$DIR/CMakeToolchain.txt.in" "$BUILD/CMakeToolchain.txt"
+  sed -i "s/@DUCKOS_SOURCE_DIR@/$(echo "$SOURCE_DIR" | sed -r 's/\//\\\//g')/g" "$BUILD/CMakeToolchain.txt"
+}
+
 mkdir -p "$BUILD"
 
 if [ "$1" ]; then
@@ -112,6 +118,9 @@ if [ "$1" ]; then
   elif [ "$1" == "install-headers" ]; then
     install_headers
     exit
+  elif [ "$1" == "make-toolchain-file" ]; then
+    make_toolchain_file
+    exit
   else
     fail "Unknown argument ${1}. Please pass either edited-binutils or edited-gcc to rebuild the respective component from the edit directory."
   fi
@@ -119,6 +128,7 @@ else
   msg "Building binutils and gcc..."
   build_binutils
   build_gcc
+  make_toolchain_file
 fi
 
 success "Done! The toolchain ($TARGET) is installed at $PREFIX and the sysroot is at $SYSROOT."
