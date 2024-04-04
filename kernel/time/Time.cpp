@@ -24,7 +24,12 @@ Time::Time(): _sec(0), _usec(0) {}
 
 Time::Time(long sec, long usec): _sec(sec), _usec(usec) {}
 
-Time::Time(timespec spec): _sec(spec.tv_sec), _usec(spec.tv_usec) {
+Time::Time(timespec spec): _sec(spec.tv_sec), _usec(spec.tv_nsec / 1000) {
+	_sec += _usec / 1000000;
+	_usec %= 1000000;
+}
+
+Time::Time(timeval spec): _sec(spec.tv_sec), _usec(spec.tv_usec) {
 	_sec += _usec / 1000000;
 	_usec %= 1000000;
 }
@@ -38,7 +43,7 @@ Time Time::distant_future() {
 }
 
 timespec Time::to_timespec() const {
-	return {_sec, _usec};
+	return {_sec, _usec * 1000};
 }
 
 timeval Time::to_timeval() const {

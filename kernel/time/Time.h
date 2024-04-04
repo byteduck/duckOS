@@ -26,7 +26,8 @@ class Time {
 public:
 	Time();
 	Time(long sec, long usec);
-	explicit Time(timespec spec);
+	explicit Time(timespec val);
+	explicit Time(timeval val);
 	static Time now();
 	static Time distant_future();
 

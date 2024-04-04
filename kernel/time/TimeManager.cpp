@@ -54,13 +54,13 @@ TimeManager& TimeManager::inst() {
 	return *_inst;
 }
 
-timespec TimeManager::uptime() {
+timeval TimeManager::uptime() {
 	if(!_inst)
 		return {0, 0};
 	return _inst->_uptime;
 }
 
-timespec TimeManager::now() {
+timeval TimeManager::now() {
 	return _inst->_epoch;
 }
 
