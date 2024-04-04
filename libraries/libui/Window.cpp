@@ -242,6 +242,8 @@ void Window::repaint_now() {
 void Window::close() {
 	if(!_closed)
 		_window->destroy();
+	if(on_close)
+		on_close();
 	_closed = true;
 }
 

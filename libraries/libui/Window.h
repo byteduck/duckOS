@@ -86,6 +86,7 @@ namespace UI {
 		void calculate_layout();
 
 		std::weak_ptr<WindowDelegate> delegate;
+		std::function<void()> on_close;
 
 	protected:
 		Window();
