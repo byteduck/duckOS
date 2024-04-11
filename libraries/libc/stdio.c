@@ -50,6 +50,8 @@ bool can_write(FILE* file) {
 	return file->options & O_RDWR || file->options & O_WRONLY;
 }
 
+extern FILE __stdin, __stdout, __stderr;
+
 FILE __stdin = {
 		.fd = STDIN_FILENO,
 		.options = O_RDONLY,
@@ -61,7 +63,7 @@ FILE __stdin = {
 		.offset = 0,
 		.bufavail = 0,
 		.bufsiz = 0,
-		.next = &stdout,
+		.next = &__stdout,
 		.prev = NULL
 };
 FILE* stdin = &__stdin;
@@ -77,8 +79,8 @@ FILE __stdout = {
 		.offset = 0,
 		.bufavail = 0,
 		.bufsiz = 0,
-		.next = &stderr,
-		.prev = &stdin
+		.next = &__stderr,
+		.prev = &__stdin
 };
 FILE* stdout = &__stdout;
 
@@ -94,7 +96,7 @@ FILE __stderr = {
 		.bufavail = 0,
 		.bufsiz = 0,
 		.next = NULL,
-		.prev = &stdout
+		.prev = &__stdout
 };
 FILE* stderr = &__stderr;
 
@@ -247,7 +249,7 @@ FILE* fopen(const char* filename, const char* mode) {
 		return NULL;
 
 	//Make the file
-	FILE* ret = malloc(sizeof(FILE));
+	FILE* ret = calloc(sizeof(FILE), 1);
 	ret->fd = fd;
 	ret->options = options;
 	ret->ungetc = -1;
