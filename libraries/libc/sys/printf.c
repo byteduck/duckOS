@@ -83,7 +83,7 @@ void dec_str(unsigned int val, char** buf, unsigned int width, size_t n, size_t*
 
 int common_printf(char* s, size_t n, const char* format, va_list arg) {
 	char* buf = s;
-	size_t len = 0;
+	size_t len = 1;
 	for(const char* p = format; *p && len < n; p++) {
 		int precision = -1;
 
@@ -334,6 +334,8 @@ int common_printf(char* s, size_t n, const char* format, va_list arg) {
 		}
 	}
 
-	*buf = '\0';
-	return len;
+	if (n)
+		*buf = '\0';
+
+	return len - 1;
 }
