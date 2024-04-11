@@ -148,3 +148,64 @@ roundfunc(llround, long long int, long long int, long long int);
 scalbnfunc(scalbn, double);
 scalbnfunc(scalbnf, float);
 scalbnfunc(scalbnl, long double);
+
+#define modffunc(name, T, IntT) T name(T arg, T* iptr) { \
+		*iptr = (T) (IntT) arg; \
+		float ret = arg - *iptr; \
+		return arg < 0 ? ret - *iptr : ret; \
+	}
+modffunc(modf, double, long);
+modffunc(modff, float, int);
+modffunc(modfl, long double, long long);
+
+int ilogb(double arg) {
+	if (arg == 0)
+		return FP_ILOGB0;
+	else if (isinf(arg))
+		return INT_MAX;
+	else if (isnan(arg))
+		return FP_ILOGBNAN;
+
+	union {
+		double val;
+		uint64_t bits;
+	} *argp = (void*) &arg;
+	return (int) ((argp->bits >> 52) & 0x7ff) - 1023;
+}
+
+int ilogbf(float arg) {
+	if (arg == 0)
+		return FP_ILOGB0;
+	else if (isinf(arg))
+		return INT_MAX;
+	else if (isnan(arg))
+		return FP_ILOGBNAN;
+
+	union {
+		float val;
+		uint32_t bits;
+	} *argp = (void*) &arg;
+	return (int) ((argp->bits >> 23) & 0xff) - 127;
+}
+
+int ilogbl(long double arg) {
+	if (arg == 0)
+		return FP_ILOGB0;
+	else if (isinf(arg))
+		return INT_MAX;
+	else if (isnan(arg))
+		return FP_ILOGBNAN;
+
+	union {
+		long double val;
+		uint64_t bits[6];
+	} __attribute__((packed)) *argp = (void*) &arg;
+	return (int) (argp->bits[4] & 0x7FF) - 16383;
+}
+
+#define frexpfunc(suffix, T) T frexp##suffix(T arg, int* exp) { *exp = (arg == 0) ? 0 : (1 + ilogb##suffix(arg)); return scalbn##suffix(arg, -(*exp)); }
+frexpfunc( , double);
+frexpfunc(f, float);
+frexpfunc(l, long double);
+
+

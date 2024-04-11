@@ -24,6 +24,18 @@
 
 __DECL_BEGIN
 
+#define isnan(x) __builtin_isnan(x)
+#define signbit(x) __builtin_signbit(x)
+#define isinf(x) __builtin_isinf_sign(x)
+#define isfinite(x) __builtin_isfinite(x)
+#define isunordered(x, y) __builtin_isunordered((x), (y))
+#define isnormal(x) __builtin_isnormal(x)
+#define isless(x, y) __builtin_isless((x), (y))
+#define islessequal(x, y) __builtin_islessequal((x), (y))
+#define islessgreater(x, y) __builtin_islessgreater((x), (y))
+#define isgreater(x, y) __builtin_isgreater((x), (y))
+#define isgreaterequal(x, y) __builtin_isgreaterequal((x), (y))
+
 #define FLT_EVAL_METHOD 0
 #define HUGE_VAL __builtin_huge_val()
 #define HUGE_VALF __builtin_huge_val()
@@ -36,6 +48,10 @@ __DECL_BEGIN
 #define FP_NORMAL 3
 #define FP_SUBNORMAL 4
 #define FP_ZERO 0
+#define fpclassify(x) __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_ZERO, FP_SUBNORMAL, FP_ZERO, x)
+
+#define FP_ILOGB0 0
+#define FP_ILOGBNAN INT_MIN
 
 #define MATH_ERRNO 1
 #define MATH_ERREXCEPT 2
