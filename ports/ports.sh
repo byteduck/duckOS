@@ -32,15 +32,17 @@ download_extract_patch() {
     msg "Extracting $DOWNLOAD_FILE.tar.gz..."
     tar -xf "$DOWNLOAD_FILE.tar.gz" || return 1
     rm "$DOWNLOAD_FILE.tar.gz"
-    pushd "$DOWNLOAD_FILE"
-    if [ -n "$PATCH_FILE" ]; then
-      msg "Applying patch $PATCH_FILE..."
-      patch -p1 < "$PORT_DIR/$PATCH_FILE" > /dev/null || return 1
+    pushd "$DOWNLOAD_FILE" || return 1
+    if [ -n "$PATCH_FILES" ]; then
+      for PATCH in "${PATCH_FILES[@]}"; do
+        msg "Applying patch $PATCH..."
+        patch -p1 < "$PORT_DIR/$PATCH" > /dev/null || fail "Failed to apply patch!"
+      done
       success "Downloaded and patched $DOWNLOAD_FILE!"
     else
       success "Downloaded $DOWNLOAD_FILE!"
     fi
-    popd
+    popd || return 1
   else
     msg "$DOWNLOAD_FILE already downloaded!"
   fi
@@ -49,7 +51,10 @@ download_extract_patch() {
 git_clone_patch() {
   if [ ! -d ".git" ]; then
     msg "Cloning $GIT_URL"
-    git clone "$GIT_URL" .
+    git clone "$GIT_URL" . || return 1
+    if [ -n "$GIT_BRANCH" ]; then
+      git switch "$GIT_BRANCH" || return 1
+    fi
     if [ -n "$PATCH_FILE" ]; then
       msg "Applying patch $PATCH_FILE..."
       patch -p1 < "$PORT_DIR/$PATCH_FILE" > /dev/null || return 1
@@ -91,12 +96,12 @@ build_port() {
   export CONFIGURE_PATH=""
   source "$PORT_DIR/build.sh"
 
-  install_dependencies
+  install_dependencies || return 1
 
   mkdir -p "$PORTS_DIR/build/$DUCKOS_PORT_NAME"
   pushd "$PORTS_DIR/build/$DUCKOS_PORT_NAME" || return 1
   if [ -n "$DOWNLOAD_URL" ]; then
-    download_extract_patch
+    download_extract_patch || return 1
   elif [ -n "$GIT_URL" ]; then
     git_clone_patch
   fi
