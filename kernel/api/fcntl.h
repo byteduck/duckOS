@@ -30,3 +30,6 @@
 #define F_SETLKW 8
 
 #define FD_CLOEXEC 1
+
+#define AT_FDCWD -100
+#define AT_SYMLINK_NOFOLLOW 0x100

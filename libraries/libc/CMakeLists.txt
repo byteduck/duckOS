@@ -10,9 +10,11 @@ SET(SOURCES
         fcntl.c
         ifaddrs.c
         locale.c
+        libgen.cpp
         poll.c
         pthread.cpp
         sched.c
+        setjmp.S
         signal.c
         stdio.c
         stdlib.c

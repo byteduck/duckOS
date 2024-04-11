@@ -74,13 +74,13 @@ typedef uint16_t  	uint_least8_t;
 #endif
 #endif
 
-#if __have_long32
-typedef signed long int32_t;
-typedef unsigned long uint32_t;
-#define __int32_t_defined 1
-#elif __STDINT_EXP(INT_MAX) == 0x7fffffffL
+#if __STDINT_EXP(INT_MAX) == 0x7fffffffL
 typedef signed int int32_t;
 typedef unsigned int uint32_t;
+#define __int32_t_defined 1
+#elif __have_long32
+typedef signed long int int32_t;
+typedef unsigned long int uint32_t;
 #define __int32_t_defined 1
 #elif __STDINT_EXP(SHRT_MAX) == 0x7fffffffL
 typedef signed short int32_t;

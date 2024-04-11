@@ -31,7 +31,7 @@ __DECL_BEGIN
 void (*signal(int sig, sighandler_t func))(int);
 int raise(int sig);
 int kill(pid_t pid, int sig);
-void sigaction(int signum, const struct sigaction* act, const struct sigaction* oldact);
+int sigaction(int signum, const struct sigaction* act, const struct sigaction* oldact);
 int sigemptyset(sigset_t* set);
 int sigfillset(sigset_t* set);
 int sigaddset(sigset_t* set, int sig);

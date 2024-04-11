@@ -30,6 +30,9 @@
 #define S_IRWXG		(S_IRGRP | S_IWGRP | S_IXGRP)
 #define S_IRWXO		(S_IROTH | S_IWOTH | S_IXOTH)
 
+#define UTIME_NOW - 1
+#define UTIME_OMIT -2
+
 __DECL_BEGIN
 
 struct stat {

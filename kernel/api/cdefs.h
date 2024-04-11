@@ -6,6 +6,8 @@
 #ifndef DUCKOS_CDEFS_H
 #define DUCKOS_CDEFS_H
 
+#define _POSIX_VERSION 200809L
+
 #ifdef __cplusplus
 #ifndef __DECL_BEGIN
 #define __DECL_BEGIN extern "C" {

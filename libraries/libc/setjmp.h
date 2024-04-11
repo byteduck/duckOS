@@ -25,11 +25,22 @@
 
 __DECL_BEGIN
 
-struct __jmp_struct {}; //TODO
+struct __jmp_struct {
+#if defined(i386)
+	long int ebx;
+	long int esi;
+	long int edi;
+	long int ebp;
+	long int esp;
+	long int eip;
+#else
+	IMPLEMENT OTHER ARCHES...
+#endif
+};
 typedef struct __jmp_struct jmp_buf[1];
 
-inline int setjmp(jmp_buf env) { return -1; /* TODO */ }
-__attribute__((noreturn)) inline void longjmp(jmp_buf env, int val) { while(1); /* TODO */ }
+int setjmp(jmp_buf env);
+__attribute__((noreturn)) void longjmp(jmp_buf env, int val);
 
 __DECL_END
 

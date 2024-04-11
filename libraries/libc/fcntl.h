@@ -23,12 +23,14 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <kernel/api/fcntl.h>
+#include <time.h>
 
 __DECL_BEGIN
 
 int open(const char* pathname, int flags, ...);
 int openat(int dirfd, const char* pathname, int flags);
 int fcntl(int fd, int cmd, ...);
+int utimensat(int dirfd, char const* path, struct timespec const times[2], int flag);
 
 __DECL_END
 

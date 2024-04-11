@@ -37,6 +37,7 @@ __DECL_BEGIN
 #define BUFSIZ 8192
 
 #include <kernel/api/unistd.h>
+#include <kernel/api/types.h>
 
 #define _IOFBF 0
 #define _IOLBF 1
@@ -103,8 +104,10 @@ size_t fwrite(const void* ptr, size_t size, size_t count, FILE* stream);
 //File positioning
 int fgetpos(FILE* stream, fpos_t* pos);
 int fseek(FILE* stream, long int offset, int whence);
+int fseeko(FILE* stream, off_t offset, int whence);
 int fsetpos(FILE* stream, const fpos_t* pos);
 long int ftell(FILE* stream);
+off_t ftello(FILE* stream);
 void rewind(FILE* stream);
 
 //Error handling

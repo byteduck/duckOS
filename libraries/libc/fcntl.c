@@ -39,3 +39,8 @@ int openat(int dirfd, const char* pathname, int flags) {
 int fcntl(int fd, int cmd, ...) {
 	return -1;
 }
+
+int utimensat(int dirfd, char const* path, struct timespec const times[2], int flag) {
+	// TODO: Implement
+	return -1;
+}

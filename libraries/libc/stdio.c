@@ -639,6 +639,10 @@ int fseek(FILE* stream, long int offset, int whence) {
 	}
 }
 
+int fseeko(FILE* stream, off_t offset, int whence) {
+	return fseek(stream, offset, whence);
+}
+
 int fsetpos(FILE* stream, const fpos_t* pos) {
 	return fseek(stream, *pos, SEEK_SET);
 }
@@ -647,6 +651,10 @@ long int ftell(FILE* stream) {
 	if(fflush(stream) < 0)
 		return -1;
 	return lseek(stream->fd, 0, SEEK_CUR);
+}
+
+off_t ftello(FILE* stream) {
+	return ftell(stream);
 }
 
 void rewind(FILE* stream) {

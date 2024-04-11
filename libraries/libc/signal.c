@@ -36,8 +36,8 @@ int kill(pid_t pid, int sig) {
 	return syscall3(SYS_KILL, pid, sig);
 }
 
-void sigaction(int signum, const struct sigaction* act, const struct sigaction* oldact) {
-	syscall4(SYS_SIGACTION, signum, (int) act, (int) oldact);
+int sigaction(int signum, const struct sigaction* act, const struct sigaction* oldact) {
+	return syscall4(SYS_SIGACTION, signum, (int) act, (int) oldact);
 }
 
 int sigemptyset(sigset_t* set) {
