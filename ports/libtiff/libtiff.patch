@@ -1,0 +1,84 @@
+diff --git a/config/config.sub b/config/config.sub
+index 7ffe373..e62f766 100755
+--- a/config/config.sub
++++ b/config/config.sub
+@@ -1369,6 +1369,7 @@ case $os in
+ 	# Each alternative MUST END IN A *, to match a version number.
+ 	# -sysv* is not here because it comes later, after sysvr4.
+ 	-gnu* | -bsd* | -mach* | -minix* | -genix* | -ultrix* | -irix* \
++	      | -duckos* \
+ 	      | -*vms* | -sco* | -esix* | -isc* | -aix* | -cnk* | -sunos | -sunos[34]*\
+ 	      | -hpux* | -unos* | -osf* | -luna* | -dgux* | -auroraux* | -solaris* \
+ 	      | -sym* | -kopensolaris* | -plan9* \
+diff --git a/configure b/configure
+index 96362da..5870c55 100755
+--- a/configure
++++ b/configure
+@@ -6240,6 +6240,9 @@ tpf*)
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++duckos*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -9820,6 +9823,10 @@ lt_prog_compiler_static=
+       lt_prog_compiler_static='-Bstatic'
+       ;;
+ 
++    duckos*)
++      lt_prog_compiler_can_build_shared=yes
++      ;;
++
+     *)
+       lt_prog_compiler_can_build_shared=no
+       ;;
+@@ -10923,6 +10930,10 @@ fi
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    duckos*)
++      ld_shlibs=yes
++      ;;
++
+     hpux9*)
+       if test yes = "$GCC"; then
+ 	archive_cmds='$RM $output_objdir/$soname~$CC -shared $pic_flag $wl+b $wl$install_libdir -o $output_objdir/$soname $libobjs $deplibs $compiler_flags~test "x$output_objdir/$soname" = "x$lib" || mv $output_objdir/$soname $lib'
+@@ -11961,6 +11972,17 @@ dgux*)
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++duckos*)
++  version_type=linux
++  need_lib_prefix=no
++  need_version=no
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  shlibpath_overrides_runpath=no
++  dynamic_linker='duckOS linker'
++  ;;
++
+ freebsd* | dragonfly*)
+   # DragonFly does not have aout.  When/if they implement a new
+   # versioning mechanism, adjust this.
+@@ -16786,6 +16808,17 @@ uts4*)
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++duckos*)
++  version_type=linux
++  need_lib_prefix=no
++  need_version=no
++  library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++  soname_spec='$libname$release$shared_ext$major'
++  shlibpath_var=LD_LIBRARY_PATH
++  shlibpath_overrides_runpath=no
++  dynamic_linker='duckOS linker'
++  ;;
++
+ *)
+   dynamic_linker=no
+   ;;

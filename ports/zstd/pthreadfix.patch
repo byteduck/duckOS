@@ -1,0 +1,22 @@
+diff --git a/lib/Makefile b/lib/Makefile
+index 9109476..67dbba7 100644
+--- a/lib/Makefile
++++ b/lib/Makefile
+@@ -72,7 +72,7 @@ CFLAGS   += $(DEBUGFLAGS) $(MOREFLAGS)
+ FLAGS     = $(CPPFLAGS) $(CFLAGS)
+ 
+ CPPFLAGS_DYNLIB  = -DZSTD_MULTITHREAD # dynamic library build defaults to multi-threaded
+-LDFLAGS_DYNLIB   = -pthread
++LDFLAGS_DYNLIB   = -lpthread
+ CPPFLAGS_STATLIB =                    # static library build defaults to single-threaded
+ 
+ HAVE_COLORNEVER = $(shell echo a | grep --color=never a > /dev/null 2> /dev/null && echo 1 || echo 0)
+@@ -316,7 +316,7 @@ lib : libzstd.a libzstd
+ 
+ %-mt : CPPFLAGS_DYNLIB  := -DZSTD_MULTITHREAD
+ %-mt : CPPFLAGS_STATLIB := -DZSTD_MULTITHREAD
+-%-mt : LDFLAGS_DYNLIB   := -pthread
++%-mt : LDFLAGS_DYNLIB   := -lpthread
+ %-mt : %
+ 	@echo multi-threaded build completed
+ 

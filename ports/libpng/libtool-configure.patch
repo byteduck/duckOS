@@ -1,0 +1,54 @@
+diff --git a/configure b/configure
+index 668c3dd..8b0d98a 100755
+--- a/configure
++++ b/configure
+@@ -8649,6 +8649,9 @@ tpf*)
+ os2*)
+   lt_cv_deplibs_check_method=pass_all
+   ;;
++duckos*)
++  lt_cv_deplibs_check_method=pass_all
++  ;;
+ esac
+ 
+ fi
+@@ -12125,6 +12128,10 @@ lt_prog_compiler_static=
+       lt_prog_compiler_static='-Bstatic'
+       ;;
+ 
++    duckos*)
++      lt_prog_compiler_can_build_shared='yes'
++      ;;
++
+     *)
+       lt_prog_compiler_can_build_shared=no
+       ;;
+@@ -13657,6 +13664,10 @@ printf "%s\n" "$lt_cv_irix_exported_symbol" >&6; }
+       hardcode_shlibpath_var=no
+       ;;
+ 
++    duckos*)
++      ld_shlibs=yes
++      ;;
++
+     *)
+       ld_shlibs=no
+       ;;
+@@ -14281,6 +14292,17 @@ dgux*)
+   shlibpath_var=LD_LIBRARY_PATH
+   ;;
+ 
++duckos*)
++	version_type=linux
++	need_lib_prefix=no
++	need_version=no
++	library_names_spec='$libname$release$shared_ext$versuffix $libname$release$shared_ext$major $libname$shared_ext'
++	soname_spec='$libname$release$shared_ext$major'
++	shlibpath_var=LD_LIBRARY_PATH
++	shlibpath_overrides_runpath=no
++	dynamic_linker='duckOS linker'
++	;;
++
+ freebsd* | dragonfly* | midnightbsd*)
+   # DragonFly does not have aout.  When/if they implement a new
+   # versioning mechanism, adjust this.
