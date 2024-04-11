@@ -24,6 +24,8 @@
 
 using Duck::Log;
 
+extern "C" [[noreturn]] void jump_to_entry(int argc, char** argv, char** envp, Exec::main_t entry);
+
 int main(int argc, char** argv, char** envp) {
 	if(argc < 2) {
 		fprintf(stderr, "No binary specified. Usage: ld-duckos.so BINARY\n");
@@ -40,7 +42,6 @@ int main(int argc, char** argv, char** envp) {
 	}
 
 	// Finally, jump to the executable's entry point!
-	loader.main_executable()->entry(argc - 2, argv + 2, envp);
-	return 0;
+	jump_to_entry(argc - 2, argv + 2, envp, loader.main_executable()->entry);
 }
 

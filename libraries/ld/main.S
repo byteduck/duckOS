@@ -1,23 +1,23 @@
 .align 4
-.globl call_main
-.hidden call_main
-.type call_main,@function
-call_main: # (argc, argv, envp, main_func)
-    # Push return addr, argc, argv, envp, and entry point in order
-    addl $4, %esp
-    popl %edi
-    popl %esi
-    popl %edx
-    popl %ecx
+.globl jump_to_entry
+.hidden jump_to_entry
+.type jump_to_entry, @function
+jump_to_entry: # (argc, argv, envp, entry)
+    mov  4(%esp), %edi
+    mov  8(%esp), %esi
+    mov 12(%esp), %edx
+    mov 16(%esp), %ecx
 
-    # Align to 16 bytes
+    # Align stack to 16 bytes
     andl $~15, %esp
-    subl $4, %esp
 
     # Push args
-    pushl %edx
-    pushl %esi
-    pushl %edi
+    pushl %edx # envp
+    pushl %esi # argv
+    pushl %edi # argc
 
-    # Call main
+    # Push null return addr
+    pushl $0
+
+    # jump to entry point
     jmp *%ecx
