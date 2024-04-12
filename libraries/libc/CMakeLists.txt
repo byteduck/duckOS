@@ -1,7 +1,6 @@
 SET(SOURCES
         arpa/inet.cpp
         assert.c
-        crt0.c
         ctype.c
         cxxabi.c
         dirent.c
