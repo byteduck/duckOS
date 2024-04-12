@@ -62,7 +62,7 @@ ADD_LIBRARY(libc_dyn SHARED ${SOURCES})
 SET_TARGET_PROPERTIES(libc_dyn PROPERTIES PREFIX "")
 set_target_properties(libc_dyn PROPERTIES OUTPUT_NAME libc)
 TARGET_LINK_DIRECTORIES(libc_dyn PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_LINK_LIBRARIES(libc_dyn crti crt0 gcc stdc++ supc++ crtn)
+TARGET_LINK_LIBRARIES(libc_dyn crti gcc stdc++ supc++ crtn)
 ADD_CUSTOM_COMMAND(TARGET libc_dyn COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:libc_dyn> ${CMAKE_INSTALL_PREFIX}/lib/libc.so)
 
 # Make static libc
