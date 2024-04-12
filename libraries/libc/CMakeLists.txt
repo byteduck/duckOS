@@ -11,6 +11,7 @@ SET(SOURCES
         ifaddrs.c
         locale.c
         libgen.cpp
+        math.c
         poll.c
         pthread.cpp
         sched.c
@@ -85,3 +86,6 @@ ADD_DEPENDENCIES(libc libc_headers libc_dyn libc_static)
 
 # Tell linker to use libc for pthread
 file(WRITE "${CMAKE_STAGING_PREFIX}/lib/libpthread.so" "INPUT(libc.so)")
+file(WRITE "${CMAKE_STAGING_PREFIX}/lib/libpthread.a" "INPUT(libc.a)")
+file(WRITE "${CMAKE_STAGING_PREFIX}/lib/libm.so" "INPUT(libc.so)")
+file(WRITE "${CMAKE_STAGING_PREFIX}/lib/libm.a" "INPUT(libc.a)")

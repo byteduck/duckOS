@@ -32,7 +32,7 @@
 
 X87_FUNC(sqrt, fsqrt);
 X87_FUNC(sin, fsin);
-X87_FUNC(cos, fsin);
+X87_FUNC(cos, fcos);
 X87_FUNC(atan, fpatan);
 X87_FUNC2(atan2, fpatan);
 X87_FUNC(tan, fptan);

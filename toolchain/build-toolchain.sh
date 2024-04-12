@@ -38,14 +38,6 @@ install_headers() {
   done <<< "$LIBC_HEADERS"
   success "Installed libc headers!"
 
-  msg "Installing libm headers..."
-  mkdir -p "$SYSROOT"/usr/include
-  LIBM_HEADERS=$(find "$LIBM_LOC" -name '*.h' -print)
-  while IFS= read -r HEADER; do
-    "$INSTALL_BIN" -D "$HEADER" "$SYSROOT/usr/include/$(echo "$HEADER" | sed -e "s@$LIBM_LOC@@")"
-  done <<< "$LIBM_HEADERS"
-  success "Installed libm headers!"
-
   msg "Installing kernel headers..."
   mkdir -p "$SYSROOT"/usr/include/kernel
   KERNEL_HEADERS=$(find "$KERNEL_LOC" -name '*.h' -print)
