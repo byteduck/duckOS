@@ -45,11 +45,12 @@ jobs:
         run: |
           cd toolchain
           ./build-toolchain.sh install-headers
+          ./build-toolchain.sh make-toolchain-file
       
       - name: Build duckOS (Release)
         run: |
           cd cmake-build
-          cmake .. -DCMAKE_TOOLCHAIN_FILE=toolchain/CMakeToolchain.txt -DCMAKE_BUILD_TYPE=Release
+          cmake .. -DCMAKE_TOOLCHAIN_FILE=cmake-build/CMakeToolchain.txt -DCMAKE_BUILD_TYPE=Release
           make install
           
       - name: Make image
