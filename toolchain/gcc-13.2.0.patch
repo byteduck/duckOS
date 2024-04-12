@@ -174,7 +174,7 @@ index 28ea0e64e..1018e32f7 100644
      && defined(TARGET_DL_ITERATE_PHDR) \
      && defined(__linux__)
 diff --git a/libstdc++-v3/acinclude.m4 b/libstdc++-v3/acinclude.m4
-index 49cb0623e..1394817f2 100644
+index 49cb0623e..0af5d2f6c 100644
 --- a/libstdc++-v3/acinclude.m4
 +++ b/libstdc++-v3/acinclude.m4
 @@ -1403,6 +1403,12 @@ AC_DEFUN([GLIBCXX_ENABLE_LIBSTDCXX_TIME], [
@@ -185,26 +185,87 @@ index 49cb0623e..1394817f2 100644
 +        ac_has_clock_monotonic=yes
 +        ac_has_clock_realtime=yes
 +        ac_has_nanosleep=yes
-+        ac_has_sched_yield=ys
++        ac_has_sched_yield=yes
 +	;;
        openbsd*)
          ac_has_clock_monotonic=yes
          ac_has_clock_realtime=yes
-diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
-index b3269cb88..5caa59b75 100644
---- a/libstdc++-v3/crossconfig.m4
-+++ b/libstdc++-v3/crossconfig.m4
-@@ -5,6 +5,13 @@ dnl
- AC_DEFUN([GLIBCXX_CROSSCONFIG],[
- # Base decisions on target environment.
- case "${host}" in
-+  *-duckos*)
-+    GLIBCXX_CHECK_COMPILER_FEATURES
-+    GLIBCXX_CHECK_LINKER_FEATURES
-+    GLIBCXX_CHECK_MATH_SUPPORT
-+    GLIBCXX_CHECK_STDLIB_SUPPORT
+@@ -2434,7 +2440,7 @@ AC_DEFUN([GLIBCXX_ENABLE_CLOCALE], [
+       dragonfly* | freebsd*)
+ 	enable_clocale_flag=dragonfly
+ 	;;
+-      openbsd*)
++      openbsd* | duckos*)
+ 	enable_clocale_flag=newlib
+ 	;;
+       *)
+diff --git a/libstdc++-v3/configure b/libstdc++-v3/configure
+index 9b6027775..2f13ff08f 100755
+--- a/libstdc++-v3/configure
++++ b/libstdc++-v3/configure
+@@ -11900,6 +11900,11 @@ else
+     lt_cv_dlopen_self=yes
+     ;;
+ 
++  duckos*)
++    lt_cv_dlopen="dlopen"
++    lt_cv_dlopen_libs=""
 +    ;;
 +
-   arm*-*-symbianelf*)
+   mingw* | pw32* | cegcc*)
+     lt_cv_dlopen="LoadLibrary"
+     lt_cv_dlopen_libs=
+@@ -16514,7 +16519,7 @@ fi
+       dragonfly* | freebsd*)
+ 	enable_clocale_flag=dragonfly
+ 	;;
+-      openbsd*)
++      openbsd* | duckos*)
+ 	enable_clocale_flag=newlib
+ 	;;
+       *)
+@@ -20675,7 +20680,7 @@ fi
+         ac_has_nanosleep=yes
+         ac_has_sched_yield=yes
+         ;;
+-      freebsd*|netbsd*|dragonfly*|rtems*)
++      freebsd*|netbsd*|dragonfly*|rtems*|duckos*)
+         ac_has_clock_monotonic=yes
+         ac_has_clock_realtime=yes
+         ac_has_nanosleep=yes
+@@ -29361,7 +29366,7 @@ case "${host}" in
      # This is a freestanding configuration; there is nothing to do here.
      ;;
+ 
+-  avr*-*-*)
++  avr*-*-* | *duckos*)
+     $as_echo "#define HAVE_ACOSF 1" >>confdefs.h
+ 
+     $as_echo "#define HAVE_ASINF 1" >>confdefs.h
+diff --git a/libstdc++-v3/configure.host b/libstdc++-v3/configure.host
+index 9e7c7f02d..c69485084 100644
+--- a/libstdc++-v3/configure.host
++++ b/libstdc++-v3/configure.host
+@@ -306,6 +306,9 @@ case "${host_os}" in
+   vxworks*)
+     os_include_dir="os/vxworks"
+     ;;
++  duckos*)
++    os_include_dir="os/newlib"
++    ;;
+   *)
+     os_include_dir="os/generic"
+     ;;
+diff --git a/libstdc++-v3/crossconfig.m4 b/libstdc++-v3/crossconfig.m4
+index b3269cb88..4519a38ac 100644
+--- a/libstdc++-v3/crossconfig.m4
++++ b/libstdc++-v3/crossconfig.m4
+@@ -9,7 +9,7 @@ case "${host}" in
+     # This is a freestanding configuration; there is nothing to do here.
+     ;;
+ 
+-  avr*-*-*)
++  avr*-*-* | *duckos*)
+     AC_DEFINE(HAVE_ACOSF)
+     AC_DEFINE(HAVE_ASINF)
+     AC_DEFINE(HAVE_ATAN2F)

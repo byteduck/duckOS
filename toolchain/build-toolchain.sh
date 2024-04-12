@@ -78,7 +78,7 @@ build_gcc () {
   msg "Configuring gcc..."
   mkdir -p "gcc-$GCC_VERSION-build"
   cd "gcc-$GCC_VERSION-build"
-  "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --with-newlib --enable-shared "${extra_config_args[@]}" || exit 1
+  "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --enable-shared "${extra_config_args[@]}" || exit 1
 
   msg "Making gcc..."
   make -j "$NUM_JOBS" all-gcc all-target-libgcc || exit 1

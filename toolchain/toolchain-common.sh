@@ -13,6 +13,10 @@ EDIT="$DIR/edit"
 SYSROOT="$DIR/../cmake-build/root"
 NUM_JOBS=$(( $(nproc) / 2 ))
 
+# Don't include debug info in toolchain, optimize
+export CFLAGS="-g0 -O2 -mtune=native"
+export CXXFLAGS="-g0 -O2 -mtune=native"
+
 source "$DIR/../scripts/duckos.sh"
 
 GNU_MIRROR="https://mirrors.ocf.berkeley.edu/gnu"
@@ -28,6 +32,7 @@ GCC_URL="$GNU_MIRROR/gcc/gcc-$GCC_VERSION/$GCC_FILE.tar.gz"
 SYS_NAME="$(uname -s)"
 INSTALL_BIN="install"
 
+SED_BIN="sed"
 if [ "$SYS_NAME" = "Darwin" ]; then
   INSTALL_BIN="ginstall"
   SED_BIN="gsed"
