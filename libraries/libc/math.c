@@ -208,4 +208,9 @@ frexpfunc( , double);
 frexpfunc(f, float);
 frexpfunc(l, long double);
 
+#define hypotfunc(suffix, T) T hypot##suffix(T x, T y) { return sqrt##suffix(x*x + y*y); }
+hypotfunc( , double);
+hypotfunc(f, float);
+hypotfunc(l, long double);
+
 
