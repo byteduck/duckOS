@@ -112,6 +112,8 @@ int tcsetpgrp(int fd, pid_t pgid);
 
 unsigned int alarm(unsigned int seconds);
 
+int getpagesize();;
+
 void _exit(int status);
 
 __DECL_END

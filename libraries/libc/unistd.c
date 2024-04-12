@@ -308,3 +308,7 @@ void _exit(int status) {
 	syscall2(SYS_EXIT, status);
 	__builtin_unreachable();
 }
+
+int getpagesize() {
+	return PAGE_SIZE;
+}
