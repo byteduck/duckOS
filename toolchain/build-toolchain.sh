@@ -80,13 +80,13 @@ build_gcc () {
   cd "gcc-$GCC_VERSION-build"
   "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --enable-shared "${extra_config_args[@]}" || exit 1
 
+  install_headers
+
   msg "Making gcc..."
   make -j "$NUM_JOBS" all-gcc all-target-libgcc || exit 1
   msg "Installing gcc..."
   make install-gcc install-target-libgcc || exit 1
   success "Installed gcc!"
-
-  install_headers
 
   msg "Making libstdc++..."
   make -j "$NUM_JOBS" all-target-libstdc++-v3 || exit 1
