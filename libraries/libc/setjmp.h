@@ -26,7 +26,7 @@
 __DECL_BEGIN
 
 struct __jmp_struct {
-#if defined(i386)
+#if defined(i386) || defined(__i386) || defined(__i386__)
 	long int ebx;
 	long int esi;
 	long int edi;
