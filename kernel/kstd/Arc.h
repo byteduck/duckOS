@@ -174,6 +174,7 @@ namespace kstd {
 		RefCount* m_count = nullptr;
 	};
 
+	// TODO: Huge problem I just realized - what if a RefCount pointer now points to something else..?
 	template<typename T>
 	class Weak {
 	public:

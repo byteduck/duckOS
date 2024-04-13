@@ -29,6 +29,7 @@
 #include "../memory/PageDirectory.h"
 #include "../kstd/queue.hpp"
 #include "kernel/kstd/circular_queue.hpp"
+#include "../kstd/KLog.h"
 #include <kernel/arch/i386/registers.h>
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
@@ -64,6 +65,9 @@ public:
 	void die();
 	bool waiting_to_die();
 	bool can_be_run();
+	[[nodiscard]] TrapFrame* cur_trap_frame() const { return _cur_trap_frame; };
+	void enter_trap_frame(TrapFrame* frame);
+	void exit_trap_frame();
 
 	//Memory
 	[[nodiscard]] PageDirectory* page_directory() const;
@@ -99,6 +103,10 @@ public:
 	void enqueue_thread(Thread* thread);
 	Thread* next_thread();
 
+	//Tracing
+	Result trace_attach_from(kstd::Arc<Thread> thread);
+	void trace_detach();
+
 	uint8_t fpu_state[512] __attribute__((aligned(16)));
 	ThreadRegisters registers = {};
 	ThreadRegisters signal_registers = {};
@@ -125,6 +133,7 @@ private:
 	int _in_critical = 0; // _in_critical starts as 1 since we leave critical after the first preemption
 	bool _waiting_to_die = false;
 	bool _in_syscall = false;
+	TrapFrame* _cur_trap_frame = nullptr;
 
 	//Memory
 	kstd::Arc<VMSpace> m_vm_space;
@@ -153,5 +162,10 @@ private:
 	// Thread queue
 	Thread* m_next = nullptr;
 	Thread* m_prev = nullptr;
+
+	// Tracing
+	Mutex m_tracing_lock {"Thread::Tracing"};
+	kstd::Weak<Thread> m_tracer;
 };
 
+void print_arg(Thread* thread, KLog::FormatRules rules);

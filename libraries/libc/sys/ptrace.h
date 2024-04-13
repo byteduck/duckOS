@@ -6,6 +6,8 @@
 
 #include <kernel/api/ptrace.h>
 
-long ptrace(enum __ptrace_request request, pid_t pid, void* addr, void* data);
+__DECL_BEGIN
+long ptrace(enum __ptrace_request request, tid_t tid, void* addr, void* data);
+__DECL_END
 
 #endif //DUCKOS_LIBC_SYS_PTRACE_H

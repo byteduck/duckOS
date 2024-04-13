@@ -19,7 +19,6 @@
 
 #pragma once
 
-#define NULL 0
 #include "../api/stdint.h"
 #include "../api/stddef.h"
 

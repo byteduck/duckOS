@@ -81,6 +81,13 @@ namespace Interrupt {
 	}
 
 	void irq_handler(IRQRegisters* regs){
+		{
+			auto thread = TaskManager::current_thread();
+			TrapFrame frame { nullptr, TrapFrame::IRQ, regs };
+			if (thread)
+				thread->enter_trap_frame(&frame);
+		}
+
 		regs->irq_num -= 0x20;
 		if (regs->irq_num >= (sizeof(handlers) / sizeof(handlers[0])))
 			PANIC("INVALID_IRQ", "Attempted to handle invalid IRQ %d", regs->irq_num);
@@ -99,6 +106,12 @@ namespace Interrupt {
 
 		//If we need to yield asynchronously after the interrupt because we called TaskManager::yield() during it, do so
 		TaskManager::do_yield_async();
+
+		{
+			auto thread = TaskManager::current_thread();
+			if (thread)
+				thread->exit_trap_frame();
+		}
 	}
 
 	bool in_irq() {

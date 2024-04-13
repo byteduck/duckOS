@@ -36,3 +36,13 @@ struct ThreadRegisters {
 	GPRegisters gp;
 	InterruptFrame iret;
 };
+
+struct TrapFrame {
+	TrapFrame* prev;
+	enum { IRQ, Syscall } type;
+	union {
+		void* regs;
+		IRQRegisters* irq_regs;
+		ThreadRegisters* syscall_regs;
+	};
+};

@@ -104,11 +104,11 @@ User Process::user() {
 	return _user;
 }
 
-kstd::string Process::name(){
+const kstd::string& Process::name(){
 	return _name;
 }
 
-kstd::string Process::exe() {
+const kstd::string& Process::exe() {
 	return _exe;
 }
 
@@ -243,10 +243,17 @@ Process::Process(Process *to_fork, ThreadRegisters& regs): _user(to_fork->_user)
 
 Process::~Process() {
 	TaskManager::remove_process(this);
+	for (auto thread : _tracing_threads) {
+		auto locked = thread.lock();
+		locked->trace_detach();
+	}
 }
 
 void Process::kill(int signal) {
-	ASSERT(_state == ALIVE || _state == STOPPED);
+	if (_state != ALIVE && _state != STOPPED) {
+		const char* PROC_STATE_NAMES[] = {"Running", "Zombie", "Dead", "Sleeping", "Stopped"};
+		KLog::warn("Process", "Tried to kill process {} in state {}", _name, PROC_STATE_NAMES[_state]);
+	}
 	if (signal <= 0 || signal >= NSIG) {
 		KLog::err("Process", "Invalid signal {} sent to {}!", signal, _pid);
 		return;

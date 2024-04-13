@@ -51,6 +51,25 @@ void kidle(){
 	}
 }
 
+ResultRet<kstd::Arc<Thread>> TaskManager::thread_for_tid(tid_t tid) {
+	if(!tid)
+		return Result(-ENOENT);
+	for(int i = 0; i < processes->size(); i++) {
+		auto cur = processes->at(i);
+		if(cur->pid() == 0 || cur->state() != Process::DEAD) {
+			for (auto& thread : cur->threads()) {
+				if (thread != tid)
+					continue;
+				auto threadobj = cur->get_thread(thread);
+				if (threadobj)
+					return threadobj;
+				return Result(ENOENT); // Thread must've died
+			}
+		}
+	}
+	return Result(ENOENT);
+}
+
 ResultRet<Process*> TaskManager::process_for_pid(pid_t pid){
 	if(!pid)
 		return Result(-ENOENT);

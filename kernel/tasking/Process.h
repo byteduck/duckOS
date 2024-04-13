@@ -64,8 +64,8 @@ public:
 	void set_ppid(pid_t ppid);
 	pid_t sid();
 	User user();
-	kstd::string name();
-	kstd::string exe();
+	const kstd::string& name();
+	const kstd::string& exe();
 	kstd::Arc<LinkedInode> cwd();
 	void set_tty(kstd::Arc<TTYDevice> tty);
 	State state();
@@ -167,6 +167,7 @@ public:
 	int sys_munmap(void* addr, size_t length);
 	int sys_mprotect(void* addr, size_t length, int prot);
 	int sys_uname(UserspacePointer<struct utsname> buf);
+	int sys_ptrace(UserspacePointer<struct ptrace_args> args);
 	int sys_socket(int domain, int type, int protocol);
 	int sys_bind(int sockfd, UserspacePointer<struct sockaddr> addr, uint32_t addrlen);
 	int sys_connect(int sockfd, UserspacePointer<struct sockaddr> addr, uint32_t addrlen);
@@ -244,6 +245,10 @@ private:
 	kstd::vector<tid_t> _tids;
 	tid_t _last_active_thread = 1;
 	Mutex _thread_lock {"Process::Thread"};
+
+	//Tracing
+	Mutex _tracing_lock {"Process::Tracing"};
+	kstd::vector<kstd::Weak<Thread>> _tracing_threads;
 
 	Process* _self_ptr;
 };

@@ -1,0 +1,96 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2016-2024 Byteduck */
+
+#include "../tasking/Process.h"
+#include "../api/ptrace_internal.h"
+#include "../memory/SafePointer.h"
+#include "../api/registers.h"
+
+int Process::sys_ptrace(UserspacePointer<struct ptrace_args> args_ptr) {
+	if (_user.uid != 0)
+		return -EACCES;
+
+	auto args = args_ptr.get();
+
+	// Find tracee
+	auto thread_res = TaskManager::thread_for_tid(args.tid);
+	if (thread_res.is_error())
+		return -thread_res.code();
+	auto tracee = thread_res.value();
+	if (tracee->process()->is_kernel_mode())
+		return -EACCES;
+
+	if (args.request == PTRACE_ATTACH) {
+		auto res = tracee->trace_attach_from(TaskManager::current_thread());
+		if (res.is_success()) {
+			LOCK(_tracing_lock);
+			_tracing_threads.push_back(tracee);
+		}
+		return -res.code();
+	}
+
+	switch (args.request) {
+	case PTRACE_GETREGS: {
+		auto frame = tracee->cur_trap_frame();
+		if (!frame)
+			return -EFAULT;
+		UserspacePointer out {(PTraceRegisters*) args.data};
+		switch (frame->type) {
+		case TrapFrame::IRQ:
+			out.set({
+				.gp = frame->irq_regs->registers,
+				.segment = frame->irq_regs->segment_registers,
+				.frame = frame->irq_regs->interrupt_frame
+			});
+			break;
+		case TrapFrame::Syscall:
+			out.set({
+				.gp = frame->syscall_regs->gp,
+				.segment = frame->syscall_regs->seg,
+				.frame = frame->syscall_regs->iret
+			});
+			break;
+		}
+		return SUCCESS;
+	}
+
+	case PTRACE_CONT:
+		tracee->process()->kill(SIGCONT);
+		return SUCCESS;
+
+	case PTRACE_DETACH:
+		tracee->trace_detach();
+		_tracing_lock.acquire();
+		for (size_t i = 0; i < _tracing_threads.size(); i++) {
+			if (_tracing_threads[i] != tracee)
+				continue;
+			_tracing_threads.erase(i);
+			break;
+		}
+		_tracing_lock.release();
+		return SUCCESS;
+
+	case PTRACE_PEEK:
+	case PTRACE_POKE: {
+		if ((VirtualAddress) args.addr >= HIGHER_HALF || (VirtualAddress) args.addr % sizeof(VirtualAddress) != 0)
+			return -EINVAL;
+		auto space = tracee->process()->vm_space();
+		auto reg_res = space->get_region_containing((VirtualAddress) args.addr);
+		if (reg_res.is_error())
+			return -EFAULT;
+		auto reg = reg_res.value();
+		auto obj_offset = (VirtualAddress) args.addr - reg->start() + reg->object_start();
+		ASSERT(obj_offset < reg->object()->size());
+		auto kreg = MM.map_object(reg->object());
+		auto* kptr = (uintptr_t*) (kreg->start() + obj_offset);
+		if (args.request == PTRACE_PEEK)
+			UserspacePointer((uintptr_t*) args.data).set(*kptr);
+		else
+			*kptr = (uintptr_t) args.data;
+		return SUCCESS;
+	}
+
+	default:
+		return -EINVAL;
+	}
+}

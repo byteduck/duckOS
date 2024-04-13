@@ -61,6 +61,7 @@ namespace TaskManager {
 	void queue_thread(const kstd::Arc<Thread>& thread);
 	kstd::Arc<Thread>& current_thread();
 	Process* current_process();
+	ResultRet<kstd::Arc<Thread>> thread_for_tid(tid_t tid);
 	ResultRet<Process*> process_for_pid(pid_t pid);
 	ResultRet<Process*> process_for_pgid(pid_t pgid, pid_t exclude = -1);
 	ResultRet<Process*> process_for_ppid(pid_t ppid, pid_t exclude = -1);

@@ -5,15 +5,12 @@
 #include "syscall.h"
 #include <kernel/api/ptrace_internal.h>
 
-long ptrace(enum __ptrace_request request, pid_t pid, void* addr, void* data) {
+long ptrace(enum __ptrace_request request, tid_t tid, void* addr, void* data) {
 	struct ptrace_args args = {
 		.request = request,
-		.pid     = pid,
+		.tid     = tid,
 		.addr    = addr,
 		.data    = data
 	};
-	struct ptrace_ret ret;
-	if(syscall3(SYS_PTRACE, (int) &args, (int) &ret) == -1)
-		return -1;
-	return ret.return_value;
+	return syscall2(SYS_PTRACE, (int) &args);
 }

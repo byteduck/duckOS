@@ -163,6 +163,7 @@ SET(KERNEL_SRCS
         syscall/pid.cpp
         syscall/pipe.cpp
         syscall/poll.cpp
+        syscall/ptrace.cpp
         syscall/ptsname.cpp
         syscall/read_write.cpp
         syscall/sigaction.cpp

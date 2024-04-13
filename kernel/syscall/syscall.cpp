@@ -24,9 +24,12 @@
 #include "kernel/memory/SafePointer.h"
 
 void syscall_handler(ThreadRegisters& regs){
+	TrapFrame frame { nullptr, TrapFrame::Syscall, &regs };
+	TaskManager::current_thread()->enter_trap_frame(&frame);
 	TaskManager::current_thread()->enter_syscall();
 	regs.gp.eax = handle_syscall(regs, regs.gp.eax, regs.gp.ebx, regs.gp.ecx, regs.gp.edx);
 	TaskManager::current_thread()->leave_syscall();
+	TaskManager::current_thread()->exit_trap_frame();
 }
 
 int handle_syscall(ThreadRegisters& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
@@ -182,6 +185,8 @@ int handle_syscall(ThreadRegisters& regs, uint32_t call, uint32_t arg1, uint32_t
 			return cur_proc->sys_mprotect((void*) arg1, (size_t) arg2, arg3);
 		case SYS_UNAME:
 			return cur_proc->sys_uname((struct utsname*) arg1);
+		case SYS_PTRACE:
+			return cur_proc->sys_ptrace((struct ptrace_args*) arg1);
 		case SYS_SOCKET:
 			return cur_proc->sys_socket(arg1, arg2, arg3);
 		case SYS_BIND:

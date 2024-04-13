@@ -241,6 +241,16 @@ bool Thread::can_be_run() {
 	return state() == ALIVE;
 }
 
+void Thread::enter_trap_frame(TrapFrame* frame) {
+	frame->prev = _cur_trap_frame;
+	_cur_trap_frame = frame;
+}
+
+void Thread::exit_trap_frame() {
+	ASSERT(_cur_trap_frame);
+	_cur_trap_frame = _cur_trap_frame->prev;
+}
+
 PageDirectory* Thread::page_directory() const {
 	return m_page_directory ? m_page_directory.get() : &MM.kernel_page_directory;
 }
@@ -540,6 +550,24 @@ Thread* Thread::next_thread() {
 	return next;
 }
 
+Result Thread::trace_attach_from(kstd::Arc<Thread> thread) {
+	LOCK(m_tracing_lock);
+	if (thread->_process == _process)
+		return Result(EINVAL);
+	if (m_tracer)
+		return Result(EBUSY);
+	m_tracer = thread;
+	_process->kill(SIGSTOP);
+	KLog::dbg("Thread", "Thread {} being debugged by {}", this, thread.get());
+	return Result(SUCCESS);
+}
+
+void Thread::trace_detach() {
+	LOCK(m_tracing_lock);
+	m_tracer.reset();
+	_process->kill(SIGCONT);
+}
+
 void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, ThreadRegisters& regs) {
 	//If usermode, push ss and useresp
 	if(__builtin_expect(!is_kernel_mode(), true)) {
@@ -702,4 +730,8 @@ void Thread::die_from_signal(int signal) {
 	// If the signal has no handler and is KILL or FATAL, then kill all threads
 	// Get the current thread as a raw pointer, so that if the current thread is part of this process the reference doesn't stay around
 	_process->die();
+}
+
+void print_arg(Thread* thread, KLog::FormatRules rules) {
+	printf("%s(%d.%d)", thread->process()->name().c_str(), thread->process()->pid(), thread->tid());
 }
