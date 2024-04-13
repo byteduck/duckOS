@@ -26,7 +26,7 @@ MappedBuffer::MappedBuffer(void* ptr, size_t size): m_ptr(ptr), m_size(size) {
 }
 
 MappedBuffer::~MappedBuffer() {
-	if(munmap(m_ptr, m_size)) {
+	if(m_unmap_on_destroy && munmap(m_ptr, m_size)) {
 		Duck::Log::warnf("libduck: Couldnt't unmap mapped buffer at {#x} with size {#x}: {}", (size_t) m_ptr, m_size, strerror(errno));
 	}
 }

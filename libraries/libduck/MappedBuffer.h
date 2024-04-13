@@ -31,6 +31,9 @@ namespace Duck {
 		static ResultRet<Ptr<MappedBuffer>> make_file(const File& file, Prot prot, Type type, off_t offset = 0, size_t size = 0);
 		static ResultRet<Ptr<MappedBuffer>> make_anonymous(Prot prot, size_t size);
 
+		[[nodiscard]] bool unmap_on_destroy() const { return m_unmap_on_destroy; }
+		void set_unmap_on_destroy(bool unmap) { m_unmap_on_destroy = unmap; }
+
 		[[nodiscard]] size_t size() const override { return m_size; }
 		[[nodiscard]] void* data() const override { return m_ptr; }
 
@@ -59,5 +62,6 @@ namespace Duck {
 
 		void   *m_ptr;
 		size_t  m_size;
+		bool    m_unmap_on_destroy = true;
 	};
 }
