@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <kernel/api/page_size.h>
 #include <string>
+#include <libduck/Result.h>
+#include <functional>
 #include "elf.h"
 
 namespace Exec {
@@ -14,20 +16,29 @@ namespace Exec {
 	class Loader;
 	class Object {
 	public:
-		explicit Object(Loader& loader): m_loader(loader) {};
+		explicit Object() = default;
+		~Object();
 
-		int load(const char* name_cstr, bool is_main_executable);
+		int load(Loader& loader, const char* name_cstr);
+		Duck::Result load_for_debugger();
 		int calculate_memsz();
 		int read_headers();
 		int load_dynamic_table();
-		void read_dynamic_table();
+		void read_dynamic_table(std::function<size_t(size_t)> lookup);
+		void read_section_headers();
 		int load_sections();
 		void mprotect_sections();
-		int read_copy_relocations();
-		int read_symbols();
-		int relocate();
+		int read_copy_relocations(Loader& loader);
+		int read_symbols(Loader& loader);
+		int relocate(Loader& loader);
 
-		uintptr_t get_symbol(const char* name);
+		uintptr_t get_dynamic_symbol(const char* name);
+
+		struct SymbolInfo {
+			const char* name;
+			size_t offset;
+		};
+		SymbolInfo get_symbol(uintptr_t offset);
 
 		std::string name;
 		int fd = 0;
@@ -37,11 +48,19 @@ namespace Exec {
 		size_t calculated_base = 0;
 		bool loaded = false;
 
+		char* dstring_table = nullptr;
+		size_t dstring_table_size = 0;
+		elf32_sym* dsym_table = nullptr;
+		size_t dsym_table_size = 0;
+		uint32_t* hash = nullptr;
+
 		char* string_table = nullptr;
 		size_t string_table_size = 0;
-		elf32_sym* symbol_table = nullptr;
-		size_t symbol_table_size = 0;
-		uint32_t* hash = nullptr;
+		elf32_sym* sym_table = nullptr;
+		size_t sym_table_size = 0;
+
+		char* section_header_string_table = nullptr;
+		size_t section_header_string_table_size = 0;
 
 		void (** init_array)() = nullptr;
 		size_t init_array_size = 0;
@@ -55,7 +74,5 @@ namespace Exec {
 		std::vector<elf32_pheader> pheaders;
 		std::vector<elf32_sheader> sheaders;
 		std::vector<elf32_dynamic> dynamic_table;
-
-		Loader& m_loader;
 	};
 }

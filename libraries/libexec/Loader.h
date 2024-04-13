@@ -18,7 +18,7 @@ namespace Exec {
 
 		Duck::Result load();
 
-		size_t get_memloc_for(Object* object, bool is_main_executable);
+		size_t get_memloc_for(Object* object);
 		Object* open_library(const char* library_name);
 		std::string find_library(const char* library_name);
 		Object* main_executable() const;

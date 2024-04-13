@@ -15,8 +15,8 @@ Duck::ResultRet<Object*> __dlopen(const char* filename, int flags) {
 	auto obj = loader->open_library(filename);
 	if (!obj)
 		return Result(ENOENT);
-	obj->load(filename, false);
-	obj->relocate();
+	obj->load(*loader, filename);
+	obj->relocate(*loader);
 	obj->mprotect_sections();
 	return obj;
 }
@@ -36,5 +36,5 @@ ResultRet<uintptr_t> __dlsym(Exec::Object* obj, const char* name) {
 			sym = loader->get_global_symbol(name);
 		return sym;
 	}
-	return obj->get_symbol(name);
+	return obj->get_dynamic_symbol(name);
 }

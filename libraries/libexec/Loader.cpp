@@ -32,7 +32,7 @@ void Loader::set_main(Exec::Loader* loader) {
 }
 
 Duck::Result Loader::load() {
-	m_executable = new Object(*this);
+	m_executable = new Object();
 	m_objects[m_main_executable] = m_executable;
 
 	//Open the executable
@@ -52,14 +52,14 @@ Duck::Result Loader::load() {
 	m_executable->mapped_file = (uint8_t*) mapped_file;
 
 	//Load the executable and its dependencies
-	if(m_executable->load(m_main_executable.c_str(), true) < 0)
+	if(m_executable->load(*this, m_main_executable.c_str()) < 0)
 		return errno;
 
 	//Read the symbols from the libraries and executable
 	auto rev_it = m_objects.rbegin();
 	while(rev_it != m_objects.rend()) {
 		auto* object = rev_it->second;
-		object->read_symbols();
+		object->read_symbols(*this);
 		rev_it++;
 	}
 
@@ -67,7 +67,7 @@ Duck::Result Loader::load() {
 	rev_it = m_objects.rbegin();
 	while(rev_it != m_objects.rend()) {
 		auto* object = rev_it->second;
-		object->relocate();
+		object->relocate(*this);
 		object->mprotect_sections();
 		rev_it++;
 	}
@@ -109,8 +109,8 @@ Object* Loader::main_executable() const {
 	return m_executable;
 }
 
-size_t Loader::get_memloc_for(Object* object, bool is_main_executable) {
-	if(is_main_executable) {
+size_t Loader::get_memloc_for(Object* object) {
+	if(object == m_executable) {
 		size_t alloc_start = (object->calculated_base / PAGE_SIZE) * PAGE_SIZE;
 		size_t alloc_size = ((object->memsz + (object->calculated_base - alloc_start) + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
 		m_current_brk = alloc_start + alloc_size;
@@ -147,7 +147,7 @@ Object* Loader::open_library(const char* library_name) {
 	}
 
 	//Add it to the objects map
-	auto* object = new Object(*this);
+	auto* object = new Object();
 	m_objects[library_name] = object;
 	object->fd = fd;
 	object->name = library_name;

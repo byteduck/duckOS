@@ -33,6 +33,12 @@
 #define PF_W 2u
 #define PF_R 4u
 
+#define ET_NONE 0
+#define ET_REL  1
+#define ET_EXEC 2
+#define ET_DYN  3
+#define ET_CORE 4
+
 #define DT_NULL		0
 #define DT_NEEDED	1
 #define DT_PLTRELSZ	2

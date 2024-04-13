@@ -11,7 +11,14 @@
 using Duck::Log;
 using namespace Exec;
 
-int Object::load(const char* name_cstr, bool is_main_executable) {
+// TODO: We just gotta redo most of this. It's pretty gross.
+
+Object::~Object() {
+	close(fd);
+	munmap(mapped_file, mapped_size);
+}
+
+int Object::load(Loader& loader, const char* name_cstr) {
 	if(loaded)
 		return 0;
 
@@ -31,7 +38,7 @@ int Object::load(const char* name_cstr, bool is_main_executable) {
 	}
 
 	//Allocate memory to hold the object
-	memloc = m_loader.get_memloc_for(this, is_main_executable);
+	memloc = loader.get_memloc_for(this);
 
 	//Read the dynamic table and figure out the required libraries
 	if(load_dynamic_table() < 0) {
@@ -55,10 +62,10 @@ int Object::load(const char* name_cstr, bool is_main_executable) {
 	close(fd);
 
 	// Read the dynamic table
-	read_dynamic_table();
+	read_dynamic_table([&] (size_t val) { return memloc + val; });
 
 	//Read the copy relocations of the main executable
-	if(is_main_executable && read_copy_relocations() < 0) {
+	if(this == loader.main_executable() && read_copy_relocations(loader) < 0) {
 		Log::err("Failed to read copy relocations of ", name_cstr, ": ", strerror(errno));
 		return -1;
 	}
@@ -66,14 +73,14 @@ int Object::load(const char* name_cstr, bool is_main_executable) {
 	//Load the required libraries
 	for(auto& library_name : required_libraries) {
 		//Open the library
-		auto* library = m_loader.open_library(library_name);
+		auto* library = loader.open_library(library_name);
 		if(library == nullptr) {
 			Log::err("Failed to open required library ", library_name, ": ", strerror(errno));
 			return -1;
 		}
 
 		//Load the library
-		if(library->load(library_name, false) < 0) {
+		if(library->load(loader, library_name) < 0) {
 			Log::err("Failed to load required library ", library_name, ": ", strerror(errno));
 		}
 	}
@@ -81,6 +88,21 @@ int Object::load(const char* name_cstr, bool is_main_executable) {
 	loaded = true;
 
 	return 0;
+}
+
+Duck::Result Object::load_for_debugger() {
+	if(loaded)
+		return Duck::Result("Already loaded");
+	if(read_headers() < 0)
+		return Duck::Result("Failed to read headers");
+	if (calculate_memsz() < 0)
+		return Duck::Result("Failed to calculate memsize");
+	if (load_dynamic_table() < 0)
+		return Duck::Result("Failed to load dynamic table");
+
+	read_section_headers();
+
+	return Duck::Result::SUCCESS;
 }
 
 int Object::read_headers() {
@@ -137,33 +159,33 @@ int Object::load_dynamic_table() {
 	return did_read ? 0 : -1;
 }
 
-void Object::read_dynamic_table() {
+void Object::read_dynamic_table(std::function<size_t(size_t)> lookup) {
 	for(auto& dynamic : dynamic_table) {
 		switch(dynamic.d_tag) {
 			case DT_HASH:
-				hash = (uint32_t*) (memloc + dynamic.d_val);
+				hash = (uint32_t*) lookup(dynamic.d_val);
 				//Size of symbol table should be the same as the number of entries in the symbol hash table
-				symbol_table_size = hash[1];
+				dsym_table_size = hash[1];
 				break;
 
 			case DT_STRTAB:
-				string_table = (char*) (memloc + dynamic.d_val);
+				dstring_table = (char*) lookup(dynamic.d_val);
 				break;
 
 			case DT_SYMTAB:
-				symbol_table = (elf32_sym*) (memloc + dynamic.d_val);
+				dsym_table = (elf32_sym*) lookup(dynamic.d_val);
 				break;
 
 			case DT_STRSZ:
-				string_table_size = dynamic.d_val;
+				dstring_table_size = dynamic.d_val;
 				break;
 
 			case DT_INIT:
-				init_func = (void(*)()) (memloc + dynamic.d_val);
+				init_func = (void(*)()) lookup(dynamic.d_val);
 				break;
 
 			case DT_INIT_ARRAY:
-				init_array = (void(**)()) (memloc + dynamic.d_val);
+				init_array = (void(**)()) lookup(dynamic.d_val);
 				break;
 
 			case DT_INIT_ARRAYSZ:
@@ -178,7 +200,36 @@ void Object::read_dynamic_table() {
 	required_libraries.resize(0);
 	for(auto& dynamic : dynamic_table) {
 		if(dynamic.d_tag == DT_NEEDED)
-			required_libraries.push_back(string_table + dynamic.d_val);
+			required_libraries.push_back(dstring_table + dynamic.d_val);
+	}
+}
+
+void Object::read_section_headers() {
+	if (header->e_shstrndx != 0) {
+		auto& sh = sheaders[header->e_shstrndx];
+		section_header_string_table = (char*) (mapped_file + sh.sh_offset);
+		section_header_string_table_size = sh.sh_size;
+	}
+	for(size_t i = 0; i < sheaders.size(); i++) {
+		auto& sh = sheaders[i];
+		switch(sh.sh_type) {
+			case SHT_SYMTAB:
+				sym_table = (elf32_sym*) (mapped_file + sh.sh_offset);
+				sym_table_size = sh.sh_size / sh.sh_entsize;
+				break;
+
+			case SHT_STRTAB:
+				if (i == header->e_shstrndx)
+					break;
+				if (!section_header_string_table || strcmp(&section_header_string_table[sh.sh_name], ".strtab"))
+					break;
+				string_table = (char*) (mapped_file + sh.sh_offset);
+				string_table_size = sh.sh_size;
+				break;
+
+			default:
+				break;
+		}
 	}
 }
 
@@ -229,7 +280,7 @@ void Object::mprotect_sections() {
 	}
 }
 
-int Object::read_copy_relocations() {
+int Object::read_copy_relocations(Loader& loader) {
 	//In the relocation table, find all of the copy relocations (ELF32_R_TYPE == STT_COMMON) and put them in the global symbols
 	for(auto& shdr : sheaders) {
 		if(shdr.sh_type != SHT_REL)
@@ -238,28 +289,28 @@ int Object::read_copy_relocations() {
 		for(size_t i = 0; i < shdr.sh_size / sizeof(elf32_rel); i++) {
 			auto& rel = rel_table[i];
 			if(ELF32_R_TYPE(rel.r_info) == R_386_COPY) {
-				auto& symbol = symbol_table[ELF32_R_SYM(rel.r_info)];
-				auto* symbol_name = (char*)((uintptr_t)string_table + symbol.st_name);
-				m_loader.set_global_symbol(symbol_name, rel.r_offset);
+				auto& symbol = dsym_table[ELF32_R_SYM(rel.r_info)];
+				auto* symbol_name = (char*)((uintptr_t)dstring_table + symbol.st_name);
+				loader.set_global_symbol(symbol_name, rel.r_offset);
 			}
 		}
 	}
 	return 0;
 }
 
-int Object::read_symbols() {
+int Object::read_symbols(Loader& loader) {
 	//Put all the symbols into the symbols map if they aren't there already
-	for(size_t i = 0; i < symbol_table_size; i++) {
-		auto* symbol = &symbol_table[i];
-		char* symbol_name = (char*)((uintptr_t) string_table + symbol->st_name);
-		if(symbol->st_shndx && !m_loader.get_symbol(symbol_name)) {
-			m_loader.set_symbol(symbol_name, symbol->st_value + memloc);
+	for(size_t i = 0; i < dsym_table_size; i++) {
+		auto* symbol = &dsym_table[i];
+		char* symbol_name = (char*)((uintptr_t) dstring_table + symbol->st_name);
+		if(symbol->st_shndx && !loader.get_symbol(symbol_name)) {
+			loader.set_symbol(symbol_name, symbol->st_value + memloc);
 		}
 	}
 	return 0;
 }
 
-int Object::relocate() {
+int Object::relocate(Loader& loader) {
 	//Relocate the symbols
 	for(auto& shdr : sheaders) {
 		if(shdr.sh_type != SHT_REL)
@@ -273,16 +324,16 @@ int Object::relocate() {
 			if(rel_type == R_386_NONE)
 				continue;
 
-			auto& symbol = symbol_table[rel_symbol];
+			auto& symbol = dsym_table[rel_symbol];
 			uintptr_t symbol_loc = memloc + symbol.st_value;
-			char* symbol_name = (char *)((uintptr_t) string_table + symbol.st_name);
+			char* symbol_name = (char *)((uintptr_t) dstring_table + symbol.st_name);
 
 			//If this kind of relocation is a symbol, look it up
 			if(rel_type == R_386_32 || rel_type == R_386_PC32 || rel_type == R_386_COPY || rel_type == R_386_GLOB_DAT || rel_type == R_386_JMP_SLOT) {
 				if(symbol_name) {
-					auto sym = m_loader.get_symbol(symbol_name);
+					auto sym = loader.get_symbol(symbol_name);
 					if(!sym) {
-						if(m_loader.debug_mode())
+						if(loader.debug_mode())
 							Log::warn("Symbol ", symbol_name, " not found for ", name);
 						symbol_loc = 0x0;
 					} else {
@@ -294,7 +345,7 @@ int Object::relocate() {
 			//If this is a global symbol or weak, try finding it in the global symbol table
 			if(rel_type == R_386_GLOB_DAT || (ELF32_ST_BIND(symbol.st_info) == STB_WEAK && !symbol_loc)) {
 				if(symbol_name) {
-					auto sym = m_loader.get_global_symbol(symbol_name);
+					auto sym = loader.get_global_symbol(symbol_name);
 					if(sym) {
 						symbol_loc = sym;
 					}
@@ -330,7 +381,7 @@ int Object::relocate() {
 					break;
 
 				default:
-					if(m_loader.debug_mode())
+					if(loader.debug_mode())
 						Log::warn("Unknown relocation type ", (int) rel_type, " for ",  (int) rel_symbol);
 					break;
 			}
@@ -340,13 +391,34 @@ int Object::relocate() {
 	return 0;
 }
 
-uintptr_t Object::get_symbol(const char* name) {
-	//Put all the symbols into the symbols map if they aren't there already
-	for(size_t i = 0; i < symbol_table_size; i++) {
-		auto* symbol = &symbol_table[i];
-		char* symbol_name = (char*)((uintptr_t) string_table + symbol->st_name);
+uintptr_t Object::get_dynamic_symbol(const char* name) {
+	for(size_t i = 0; i < dsym_table_size; i++) {
+		auto* symbol = &dsym_table[i];
+		char* symbol_name = (char*)((uintptr_t) dstring_table + symbol->st_name);
 		if (!strcmp(symbol_name, name))
 			return symbol->st_value + memloc;
 	}
 	return 0;
+}
+
+Object::SymbolInfo Object::get_symbol(uintptr_t offset) {
+	// Symbols in executables have an absolute address
+	if (header->e_type == ET_EXEC)
+		offset += memloc;
+	elf32_sym* best_match = nullptr;
+	for(size_t i = 0; i < sym_table_size; i++) {
+		auto* symbol = &sym_table[i];
+		if (symbol->st_value > offset)
+			continue;
+		if (!best_match || symbol->st_value > best_match->st_value)
+			best_match = symbol;
+	}
+
+	if (!best_match)
+		return {.name = nullptr, .offset = 0};
+
+	return {
+		.name = (const char*)((uintptr_t) string_table + best_match->st_name),
+		.offset = offset - best_match->st_value
+	};
 }
