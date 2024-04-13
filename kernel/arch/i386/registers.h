@@ -39,10 +39,11 @@ struct ThreadRegisters {
 
 struct TrapFrame {
 	TrapFrame* prev;
-	enum { IRQ, Syscall } type;
+	enum { IRQ, Syscall, Fault } type;
 	union {
 		void* regs;
 		IRQRegisters* irq_regs;
 		ThreadRegisters* syscall_regs;
+		ISRRegisters* fault_regs;
 	};
 };

@@ -50,6 +50,13 @@ int Process::sys_ptrace(UserspacePointer<struct ptrace_args> args_ptr) {
 				.frame = frame->syscall_regs->iret
 			});
 			break;
+		case TrapFrame::Fault:
+			out.set({
+				.gp = frame->fault_regs->registers,
+				.segment = frame->fault_regs->segment_registers,
+				.frame = frame->fault_regs->interrupt_frame
+			});
+			break;
 		}
 		return SUCCESS;
 	}

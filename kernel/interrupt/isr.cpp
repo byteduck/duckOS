@@ -142,7 +142,11 @@ namespace Interrupt {
 						// Never want to fault while preempting
 						MemoryManager::inst().page_fault_handler(regs);
 					} else {
-						TaskManager::current_thread()->handle_pagefault(fault);
+						auto thread = TaskManager::current_thread();
+						TrapFrame frame { nullptr, TrapFrame::Fault, regs };
+						thread->enter_trap_frame(&frame);
+						thread->handle_pagefault(fault);
+						thread->exit_trap_frame();
 					}
 					break;
 				}
