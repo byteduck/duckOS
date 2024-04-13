@@ -118,6 +118,8 @@ void filelist_remove(FILE* file) {
 		file->prev->next = file->next;
 	if(file == filelist_last)
 		filelist_last = file->prev;
+	if(file == filelist_first)
+		filelist_first = file->next;
 }
 
 int remove(const char* filename) {
@@ -691,7 +693,8 @@ void __init_stdio() {
 void __cleanup_stdio() {
 	FILE* cur = filelist_first;
 	while(cur) {
+		FILE* next = cur->next;
 		fclose(cur);
-		cur = cur->next;
+		cur = next;
 	}
 }
