@@ -32,6 +32,13 @@
         res.value(); \
     })
 
+#define TRYRES(expr) \
+	({ \
+        auto res = (expr); \
+        if (res.is_error()) \
+            return res; \
+    })
+
 namespace Duck {
 	class Result {
 	public:
