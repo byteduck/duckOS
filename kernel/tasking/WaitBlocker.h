@@ -57,13 +57,15 @@ private:
 	static kstd::vector<Notification> unhandled_notifications;
 	static Mutex lock;
 
-	bool _ready = false;
+	Atomic<bool> _ready = false;
 	int _err = 0;
 	int _status;
+	Reason _reason;
 	Process* _waited_process = nullptr;
 	pid_t _wait_pid;
-	pid_t _wait_pgid;
+	pid_t _wait_pgid = -1;
 	int _options;
 	pid_t _ppid;
+	kstd::Arc<Thread> _thread;
 };
 

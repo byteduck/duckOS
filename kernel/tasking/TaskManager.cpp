@@ -411,5 +411,8 @@ void TaskManager::preempt_finish() {
 	ASSERT(g_tasking_lock.times_locked() == 1);
 	g_tasking_lock.release();
 	leave_critical();
-	cur_thread->handle_pending_signal();
+
+	// Hack(?) to get signals to dispatch, thread to die if it needs, etc
+	cur_thread->enter_critical();
+	current_thread()->leave_critical();
 }

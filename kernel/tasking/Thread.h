@@ -30,6 +30,7 @@
 #include "../kstd/queue.hpp"
 #include "kernel/kstd/circular_queue.hpp"
 #include "../kstd/KLog.h"
+#include "Tracer.h"
 #include <kernel/arch/i386/registers.h>
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
@@ -85,6 +86,7 @@ public:
 	void unblock();
 	bool is_blocked();
 	bool should_unblock();
+	bool interrupt();
 	Result join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& other, UserspacePointer<void*> retp);
 	void acquired_lock(Mutex* lock);
 	void released_lock(Mutex* lock);
@@ -95,6 +97,7 @@ public:
 	bool& just_finished_signal();
 	void* signal_stack_top();
 	void handle_pending_signal();
+	void stop_if_should_stop();
 
 	//Misc
 	void handle_pagefault(PageFault fault);
@@ -104,7 +107,7 @@ public:
 	Thread* next_thread();
 
 	//Tracing
-	Result trace_attach_from(kstd::Arc<Thread> thread);
+	Result trace_attach(kstd::Arc<Tracer> tracer);
 	void trace_detach();
 
 	uint8_t fpu_state[512] __attribute__((aligned(16)));
@@ -119,6 +122,7 @@ private:
 	void exit(void* return_value);
 	void reap();
 
+	void queue_signal(int signal);
 	bool handle_signal(int signal);
 	bool call_signal_handler(int sig);
 	void die_from_signal(int signal);
@@ -128,7 +132,6 @@ private:
 	Process* _process;
 	tid_t _tid;
 	State _state = ALIVE;
-	State _before_stop_state;
 	void* _return_value = nullptr;
 	int _in_critical = 0; // _in_critical starts as 1 since we leave critical after the first preemption
 	bool _waiting_to_die = false;
@@ -165,7 +168,7 @@ private:
 
 	// Tracing
 	Mutex m_tracing_lock {"Thread::Tracing"};
-	kstd::Weak<Thread> m_tracer;
+	kstd::Arc<Tracer> m_tracer;
 };
 
 void print_arg(Thread* thread, KLog::FormatRules rules);

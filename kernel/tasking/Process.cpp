@@ -29,6 +29,7 @@
 #include "../kstd/KLog.h"
 #include "../filesystem/procfs/ProcFS.h"
 #include "WaitBlocker.h"
+#include "kernel/KernelMapper.h"
 
 Process* Process::create_kernel(const kstd::string& name, void (*func)()){
 	ProcessArgs args = ProcessArgs(kstd::Arc<LinkedInode>(nullptr));
@@ -243,10 +244,8 @@ Process::Process(Process *to_fork, ThreadRegisters& regs): _user(to_fork->_user)
 
 Process::~Process() {
 	TaskManager::remove_process(this);
-	for (auto thread : _tracing_threads) {
-		auto locked = thread.lock();
-		locked->trace_detach();
-	}
+	for (auto tracer : _tracers)
+		tracer->tracee_thread()->trace_detach();
 }
 
 void Process::kill(int signal) {
@@ -259,12 +258,22 @@ void Process::kill(int signal) {
 		return;
 	}
 
-	LOCK(m_signal_lock);
 	bool did_handle = false;
+
+	// Special case for stop / continue
+	if (signal == SIGSTOP || signal == SIGTSTP) {
+		stop(signal);
+		return;
+	} else if (signal == SIGCONT) {
+		cont();
+		return;
+	}
+
+	// Find a thread to handle our signal
 	TaskManager::current_thread()->enter_critical();
 	for_each_thread([&did_handle, signal] (const kstd::Arc<Thread>& thread) -> bool {
 		did_handle = thread->handle_signal(signal);
-		return !did_handle || Signal::dispatch_to_every_thread[signal];
+		return !did_handle;
 	});
 	TaskManager::current_thread()->leave_critical();
 
@@ -348,9 +357,14 @@ void Process::alert_thread_died(kstd::Arc<Thread> thread) {
 			KLog::warn("Process", "Process {} died and did not have a parent for SIGCHLD!", _pid);
 		}
 		TaskManager::reparent_orphans(this);
-		_state = ZOMBIE;
-		if (_was_reaped)
+		bool exp = false;
+		if (_ready_to_destroy.compare_exchange_strong(exp, true, MemoryOrder::Release)) {
+			// All threads died before reap() was called - just set state to zombie
+			_state = ZOMBIE;
+		} else {
+			// reap() was already called, delete ourselves now
 			delete this;
+		}
 	}
 }
 
@@ -373,32 +387,71 @@ void Process::remove_thread(const kstd::Arc<Thread>& thread) {
 }
 
 void Process::reap() {
-	_was_reaped = true;
-	if (_state == ZOMBIE)
+	bool exp = false;
+	if (!_ready_to_destroy.compare_exchange_strong(exp, true, MemoryOrder::Acquire)) {
+		// We reaped after all threads died delete ourselves.
 		delete this;
+	}
 }
 
-void Process::stop_thread(Thread* stopped_thread) {
-	ASSERT(!TaskManager::in_critical());
+bool Process::stop(int signal) {
+	bool ret = false;
+	if(_stopping.compare_exchange_strong(ret, true, MemoryOrder::Acquire)) {
+//		WaitBlocker::notify_all(this, WaitBlocker::Stopped, signal);
+		for_each_thread([&] (kstd::Arc<Thread>& thread) -> bool {
+			if (thread->is_blocked())
+				thread->interrupt();
+			return true;
+		});
+		return true;
+	}
+	return false;
+}
 
-	bool all_blocked = true;
+void Process::notify_thread_stopping(Thread* stopping_thread) {
+	bool all_stopped = true;
 	for_each_thread([&] (kstd::Arc<Thread>& thread) -> bool {
-		if(thread && thread.get() != stopped_thread && thread->state() != Thread::STOPPED)
-			all_blocked = false;
-		return all_blocked;
+		if(thread && thread.get() != stopping_thread && thread->state() != Thread::STOPPED)
+			all_stopped = false;
+		return all_stopped;
 	});
 
-	if(all_blocked)
-		WaitBlocker::notify_all(this, WaitBlocker::Stopped, 0);
-
-	const TaskManager::ScopedCritical crit;
-	stopped_thread->_state = Thread::STOPPED;
-	if(all_blocked)
+	if(all_stopped)
 		_state = STOPPED;
 }
 
-void Process::alert_thread_continued(Thread* thread) {
-	if(_state != STOPPED)
+bool Process::is_stopping() {
+	return _stopping.load(MemoryOrder::Relaxed);
+}
+
+void Process::cont() {
+	LOCK(m_starting_lock);
+	if (_state != STOPPED)
 		return;
 	_state = ALIVE;
+
+	for_each_thread([&] (kstd::Arc<Thread>& thread) -> bool {
+		thread->_state = Thread::ALIVE;
+		TaskManager::queue_thread(thread);
+		return true;
+	});
+
+	_stopping.store(false, MemoryOrder::Release);
+}
+
+bool Process::is_traced_by(Process* proc) {
+	bool is_traced = false;
+	for_each_thread([&] (kstd::Arc<Thread>& thread) -> bool {
+		LOCK(thread->m_tracing_lock);
+		if (thread->m_tracer && thread->m_tracer->tracer_process() == proc) {
+			is_traced = true;
+			return false;
+		}
+		return true;
+	});
+	return is_traced;
+}
+
+void print_arg(Process* process, KLog::FormatRules rules) {
+	printf("%s(%d)", process->name().c_str(), process->pid());
 }

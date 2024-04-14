@@ -28,6 +28,8 @@
 #include <kernel/kstd/string.h>
 #include "../api/poll.h"
 #include "../api/mmap.h"
+#include "Tracer.h"
+#include "../kstd/KLog.h"
 
 class FileDescriptor;
 class Blocker;
@@ -92,6 +94,9 @@ public:
 	size_t used_pmem() const;
 	size_t used_vmem() const;
 	size_t used_shmem() const;
+
+	//Tracing
+	bool is_traced_by(Process* proc);
 
 	//Syscalls
 	void check_ptr(const void* ptr, bool write = false);
@@ -203,8 +208,10 @@ private:
 	}
 
 	void reap();
-	void stop_thread(Thread* thread);
-	void alert_thread_continued(Thread* thread);
+	bool stop(int signal);
+	bool is_stopping();
+	void cont();
+	void notify_thread_stopping(Thread* thread);
 
 	//Identifying info and state
 	kstd::string _name = "";
@@ -220,8 +227,9 @@ private:
 	State _state;
 	bool _died_gracefully = false;
 	bool _kernel_mode = false;
-	bool _is_destroying = false;
-	bool _was_reaped = false;
+	Atomic<bool> _ready_to_destroy = false;
+	Atomic<bool> _stopping = false;
+	Mutex m_starting_lock {"Process::Starting"};
 
 	//Memory
 	kstd::Arc<VMSpace> _vm_space;
@@ -237,7 +245,6 @@ private:
 
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
-	Mutex m_signal_lock {"Process::Signal"};
 
 	//Threads
 	kstd::map<tid_t, kstd::Arc<Thread>> _threads;
@@ -248,9 +255,10 @@ private:
 
 	//Tracing
 	Mutex _tracing_lock {"Process::Tracing"};
-	kstd::vector<kstd::Weak<Thread>> _tracing_threads;
+	kstd::vector<kstd::Arc<Tracer>> _tracers;
 
 	Process* _self_ptr;
 };
 
+void print_arg(Process* thread, KLog::FormatRules rules);
 

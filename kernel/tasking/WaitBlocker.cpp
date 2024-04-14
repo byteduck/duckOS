@@ -44,7 +44,8 @@ kstd::Arc<WaitBlocker> WaitBlocker::make(kstd::Arc<Thread>& thread, pid_t wait_f
 WaitBlocker::WaitBlocker(kstd::Arc<Thread>& thread, pid_t wait_for, int options):
 	_ppid(thread->process()->pid()),
 	_wait_pid(wait_for),
-	_options(options)
+	_options(options),
+	_thread(thread)
 {
 	if(_wait_pid < -1) {
 		//Any child with pgid |pid|
@@ -59,7 +60,13 @@ WaitBlocker::WaitBlocker(kstd::Arc<Thread>& thread, pid_t wait_for, int options)
 }
 
 bool WaitBlocker::is_ready() {
-	return _ready;
+	if (_ready.load(MemoryOrder::Acquire)) {
+		// Since we mark ourselves ready before all threads are stopped, wait until the process is *actually* stopped.
+		if (_reason == Stopped)
+			return _waited_process->state() == Process::STOPPED;
+		return true;
+	}
+	return false;
 }
 
 Process* WaitBlocker::waited_process() {
@@ -87,34 +94,41 @@ void WaitBlocker::notify_all(Process* proc, WaitBlocker::Reason reason, int stat
 		}
 		if(blocker->notify(proc, reason, status)) {
 			blockers.erase(i);
-			return;
+			if (reason == Stopped) {
+				// We want to also notify our tracer if the reason is that we stopped...
+				blockers.erase(i);
+				i--;
+			} else {
+				return;
+			}
 		}
 	}
-	if (reason == Exited || reason == Signalled)
-		unhandled_notifications.push_back({proc, reason, status});
+	// TODO: Will this just get full after a while?
+	unhandled_notifications.push_back({proc, reason, status});
 }
 
 bool WaitBlocker::notify(Process* proc, WaitBlocker::Reason reason, int status) {
-	if (_ready)
+	if (_ready.load())
 		return true;
-	if (proc->ppid() != _ppid)
+	if (proc->ppid() != _ppid && !proc->is_traced_by(_thread->process()))
 		return false;
 	if (_wait_pgid != -1 && proc->pgid() != _wait_pgid)
 		return false;
 	if (_wait_pid != -1 && proc->pid() != _wait_pid)
 		return false;
-	_ready = true;
+	_reason = reason;
 	_waited_process = proc;
 	switch (reason) {
 		case Exited:
-			_status = __WIFEXITED | (status & 0x0f);
+			_status = __WIFEXITED | (status & 0xff);
 			break;
 		case Signalled:
-			_status = __WIFSIGNALED | (status & 0x0f);
+			_status = __WIFSIGNALED | (status & 0xff);
 			break;
 		case Stopped:
-			_status = __WIFSTOPPED;
+			_status = __WIFSTOPPED | (status & 0xff);
 			break;
 	}
+	_ready.store(true, MemoryOrder::Release);
 	return true;
 }

@@ -12,26 +12,42 @@ int Process::sys_ptrace(UserspacePointer<struct ptrace_args> args_ptr) {
 
 	auto args = args_ptr.get();
 
-	// Find tracee
-	auto thread_res = TaskManager::thread_for_tid(args.tid);
-	if (thread_res.is_error())
-		return -thread_res.code();
-	auto tracee = thread_res.value();
-	if (tracee->process()->is_kernel_mode())
-		return -EACCES;
-
+	kstd::Arc<Tracer> tracer;
 	if (args.request == PTRACE_ATTACH) {
-		auto res = tracee->trace_attach_from(TaskManager::current_thread());
+		// Find tracee
+		auto thread_res = TaskManager::thread_for_tid(args.tid);
+		if (thread_res.is_error())
+			return -thread_res.code();
+		auto tracee = thread_res.value();
+		if (tracee->process()->is_kernel_mode())
+			return -EACCES;
+
+		tracer = kstd::make_shared<Tracer>(TaskManager::current_process(), tracee);
+
+		auto res = tracee->trace_attach(tracer);
 		if (res.is_success()) {
 			LOCK(_tracing_lock);
-			_tracing_threads.push_back(tracee);
+			_tracers.push_back(tracer);
 		}
 		return -res.code();
+	} else {
+		LOCK(_tracing_lock);
+		for (auto& trac : _tracers) {
+			if (trac->tracee_thread()->tid() != args.tid)
+				continue;
+			tracer = trac;
+		}
 	}
+
+	if (!tracer)
+		return -ENOENT;
+
+	if (tracer->tracee_thread()->state() == Thread::ALIVE)
+		return -EBUSY;
 
 	switch (args.request) {
 	case PTRACE_GETREGS: {
-		auto frame = tracee->cur_trap_frame();
+		auto frame = tracer->tracee_thread()->cur_trap_frame();
 		if (!frame)
 			return -EFAULT;
 		UserspacePointer out {(PTraceRegisters*) args.data};
@@ -62,16 +78,16 @@ int Process::sys_ptrace(UserspacePointer<struct ptrace_args> args_ptr) {
 	}
 
 	case PTRACE_CONT:
-		tracee->process()->kill(SIGCONT);
+		tracer->tracee_thread()->process()->kill(SIGCONT);
 		return SUCCESS;
 
 	case PTRACE_DETACH:
-		tracee->trace_detach();
+		tracer->tracee_thread()->trace_detach();
 		_tracing_lock.acquire();
-		for (size_t i = 0; i < _tracing_threads.size(); i++) {
-			if (_tracing_threads[i] != tracee)
+		for (size_t i = 0; i < _tracers.size(); i++) {
+			if (_tracers[i] != tracer)
 				continue;
-			_tracing_threads.erase(i);
+			_tracers.erase(i);
 			break;
 		}
 		_tracing_lock.release();
@@ -81,7 +97,7 @@ int Process::sys_ptrace(UserspacePointer<struct ptrace_args> args_ptr) {
 	case PTRACE_POKE: {
 		if ((VirtualAddress) args.addr >= HIGHER_HALF || (VirtualAddress) args.addr % sizeof(VirtualAddress) != 0)
 			return -EINVAL;
-		auto space = tracee->process()->vm_space();
+		auto space = tracer->tracee_thread()->process()->vm_space();
 		auto reg_res = space->get_region_containing((VirtualAddress) args.addr);
 		if (reg_res.is_error())
 			return -EFAULT;

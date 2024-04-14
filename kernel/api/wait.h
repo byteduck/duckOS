@@ -10,16 +10,16 @@ __DECL_BEGIN
 #define WNOHANG    0x1
 #define WUNTRACED  0x2
 
-#define __WIFEXITED 0x10
+#define __WIFEXITED 0x1000
 #define WIFEXITED(w) ((w) & __WIFEXITED)
-#define WEXITSTATUS(w) ((w) & 0x0f)
+#define WEXITSTATUS(w) ((w) & 0x00ff)
 
-#define __WIFSIGNALED 0x20
+#define __WIFSIGNALED 0x2000
 #define WIFSIGNALED(w) ((w) & __WIFSIGNALED)
-#define WTERMSIG(w) ((w) & 0x0f)
+#define WTERMSIG(w) ((w) & 0x00ff)
 
-#define __WIFSTOPPED 0x40
+#define __WIFSTOPPED 0x4000
 #define WIFSTOPPED(w) ((w) & __WIFSTOPPED)
-#define WSTOPSIG(w) ((w) & 0x0f)
+#define WSTOPSIG(w) ((w) & 0x00ff)
 
 __DECL_END

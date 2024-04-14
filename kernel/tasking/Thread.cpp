@@ -219,10 +219,7 @@ void* Thread::return_value() {
 
 void Thread::die() {
 	if(is_blocked()) {
-		if (_blocker->can_be_interrupted()) {
-			_blocker->interrupt();
-			unblock();
-		} else {
+		if (!interrupt()) {
 			KLog::warn("Thread", "Could not interrupt {}(pid: {}, tid: {}) while killing...", _process->name().c_str(),
 						_process->pid(), _tid);
 		}
@@ -270,6 +267,7 @@ void Thread::leave_critical() {
 			Reaper::inst().reap(m_weak_self);
 			ASSERT(TaskManager::yield());
 		}
+		stop_if_should_stop();
 		handle_pending_signal();
 	}
 
@@ -292,7 +290,7 @@ bool Thread::in_syscall() {
 }
 
 void Thread::block(Blocker& blocker) {
-	if(state() != ALIVE || _waiting_to_die)
+	if(state() != ALIVE)
 		PANIC("INVALID_BLOCK", "Tried to block thread %d of PID %d in state %s", _tid, _process->pid(), state_name());
 	ASSERT(!_blocker);
 
@@ -302,7 +300,6 @@ void Thread::block(Blocker& blocker) {
 
 	// If we have a pending signal and we can interrupt this, we should do so.
 	{
-		LOCK(_process->m_signal_lock);
 		if (_pending_signals.load(MemoryOrder::Acquire) && blocker.can_be_interrupted()) {
 			blocker.interrupt();
 			return;
@@ -324,9 +321,8 @@ void Thread::block(Blocker& blocker) {
 	}
 
 	{
-		TaskManager::ScopedCritical critical;
-		_state = BLOCKED;
 		_blocker = &blocker;
+		_state = BLOCKED;
 	}
 
 	ASSERT(TaskManager::yield());
@@ -347,6 +343,16 @@ bool Thread::is_blocked() {
 
 bool Thread::should_unblock() {
 	return _blocker && (_blocker->is_ready() || _blocker->was_interrupted());
+}
+
+bool Thread::interrupt() {
+	if (!_blocker)
+		return false;
+	if (!_blocker->can_be_interrupted())
+		return false;
+	_blocker->interrupt();
+	unblock();
+	return true;
 }
 
 Result Thread::join(const kstd::Arc<Thread>& self_ptr, const kstd::Arc<Thread>& other, UserspacePointer<void*> retp) {
@@ -401,20 +407,18 @@ void Thread::released_lock(Mutex* lock) {
 		ASSERT(_held_locks.size());
 		// Ensure locks are acquired and released in the correct order
 		auto last_held = _held_locks.pop_back();
-		ASSERT(last_held == lock);
+		if (last_held != lock)
+			PANIC("POSSIBLE_DEADLOCK", "Last held lock is %s, expected %s", last_held->name().c_str(), lock->name().c_str());
 	}
 }
 
 bool Thread::call_signal_handler(int signal) {
-	_process->m_signal_lock.acquire();
 	ASSERT(!_in_critical);
 
 	TaskManager::ScopedCritical crit;
 	auto signal_loc = (size_t) _process->signal_actions[signal].action;
-	if(_ready_to_handle_signal || _in_signal || _just_finished_signal) {
-		_process->m_signal_lock.release();
+	if(_ready_to_handle_signal || _in_signal || _just_finished_signal)
 		return false;
-	}
 	crit.exit();
 
 	//Allocate a userspace stack
@@ -429,12 +433,10 @@ bool Thread::call_signal_handler(int signal) {
 
 	if(alloc_user_stack().is_error()) {
 		KLog::crit("Thread", "Could not allocate userspace stack for signal handler!");
-		_process->m_signal_lock.release();
 		return true;
 	}
 
 	// Map the user stack into kernel space
-	// FIXME: We panic here after the second time this is called. Why?
 	auto k_ustack = MM.map_object(_sighandler_ustack_region->object());
 
 	//Allocate a kernel stack
@@ -478,7 +480,6 @@ bool Thread::call_signal_handler(int signal) {
 	//Queue this thread
 	TaskManager::enter_critical();
 	_ready_to_handle_signal = true;
-	_process->m_signal_lock.release();
 	TaskManager::leave_critical();
 
 	TaskManager::queue_thread(self());
@@ -550,22 +551,28 @@ Thread* Thread::next_thread() {
 	return next;
 }
 
-Result Thread::trace_attach_from(kstd::Arc<Thread> thread) {
+Result Thread::trace_attach(kstd::Arc<Tracer> trace) {
 	LOCK(m_tracing_lock);
-	if (thread->_process == _process)
+	if (trace->tracer_process() == _process)
 		return Result(EINVAL);
 	if (m_tracer)
 		return Result(EBUSY);
-	m_tracer = thread;
-	_process->kill(SIGSTOP);
-	KLog::dbg("Thread", "Thread {} being debugged by {}", this, thread.get());
+	m_tracer = kstd::move(trace);
+	if (_process->state() != Process::STOPPED)
+		_process->kill(SIGSTOP);
+	KLog::dbg("Thread", "Thread {} being traced by {}", this, m_tracer->tracer_process());
 	return Result(SUCCESS);
 }
 
 void Thread::trace_detach() {
 	LOCK(m_tracing_lock);
+	if (_state != DEAD && _state != ZOMBIE) {
+		if (_process->state() == Process::STOPPED)
+			_process->kill(SIGCONT);
+		if (m_tracer)
+			KLog::dbg("Thread", "Thread {} tracing detached from {}", this, m_tracer->tracer_process());
+	}
 	m_tracer.reset();
-	_process->kill(SIGCONT);
 }
 
 void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, ThreadRegisters& regs) {
@@ -621,6 +628,23 @@ void Thread::reap() {
 		m_next->m_prev = this;
 }
 
+void Thread::queue_signal(int signal) {
+	uint32_t old_pending = _pending_signals.load(MemoryOrder::Acquire);
+	uint32_t new_pending;
+	do {
+		new_pending = old_pending | (1 << signal);
+	} while(!_pending_signals.compare_exchange_strong(old_pending, new_pending, MemoryOrder::Acquire));
+}
+
+void Thread::stop_if_should_stop() {
+	if (_process->is_stopping() && _state == ALIVE && !in_critical()) {
+		_process->notify_thread_stopping(this);
+		_state = STOPPED;
+		if (TaskManager::current_thread().get() == this)
+			ASSERT(TaskManager::yield());
+	}
+}
+
 void Thread::handle_pending_signal() {
 	ASSERT(TaskManager::current_thread().get() == this);
 
@@ -643,43 +667,46 @@ void Thread::handle_pending_signal() {
 }
 
 bool Thread::handle_signal(int signal) {
-	ASSERT(signal > 0 && signal < NSIG);
+	ASSERT(signal > 0 && signal < NSIG && signal != SIGSTOP && signal != SIGTSTP && signal != SIGCONT);
 
-	_process->m_signal_lock.acquire();
-	auto sigaction = _process->signal_actions[signal];
-	_process->m_signal_lock.release();
+	// If we're being traced, first, notify the tracer.
+	m_tracing_lock.acquire();
+	if (m_tracer) {
+		if (!m_tracer->has_signal(signal)) {
+			// First, set the sent signal as pending.
+			m_tracer->set_signal(signal);
+			queue_signal(signal);
 
-	if (!sigaction.action) {
-		// If this is a severe signal and we don't have a handler for it, die now.
-		if(Signal::signal_severities[signal] >= Signal::KILL) {
-			die_from_signal(signal);
-		}
-
-		// No handler, let's not worry about it.
-		if(signal != SIGSTOP && signal != SIGTSTP && signal != SIGCONT) {
+			// Then, stop.
+			_process->stop(signal);
+			m_tracing_lock.release();
 			return true;
+		} else {
+			// The tracer has the signal flag for this set, which means we need to handle it now.
+			m_tracer->clear_signal(signal);
 		}
+	}
+	m_tracing_lock.release();
+
+	auto sigaction = _process->signal_actions[signal];
+
+	if(!sigaction.action && Signal::signal_severities[signal] >= Signal::KILL) {
+		// If this is a severe signal and we don't have a handler for it, die now.
+		die_from_signal(signal);
+	} else if (!sigaction.action && signal != SIGSTOP && signal != SIGTSTP && signal != SIGCONT) {
+		// No handler, don't worry about it
+		return true;
 	}
 
 	if(TaskManager::current_thread().get() != this || in_critical()) {
-		uint32_t old_pending = _pending_signals.load(MemoryOrder::Acquire);
-		uint32_t new_pending;
-		do {
-			new_pending = old_pending | (1 << signal);
-		} while(!_pending_signals.compare_exchange_strong(old_pending, new_pending, MemoryOrder::Acquire));
+		// If this thread is not the current one, queue the signal.
+		queue_signal(signal);
 
-		if(in_critical() && is_blocked() && _blocker->can_be_interrupted()) {
-			_blocker->interrupt();
-			unblock();
-		}
-
-		TaskManager::ScopedCritical crit;
-		if(_state == STOPPED && signal == SIGCONT) {
-			_state = _before_stop_state;
-			_process->alert_thread_continued(this);
-			TaskManager::queue_thread(self());
-		}
+		// Interrupt if needed.
+		if(in_critical() && is_blocked())
+			interrupt();
 	} else {
+		// Otherwise, if this is the current thread, dispatch immediately.
 		dispatch_signal(signal);
 	}
 
@@ -688,33 +715,18 @@ bool Thread::handle_signal(int signal) {
 
 void Thread::dispatch_signal(int signal) {
 	ASSERT(!in_critical() && TaskManager::current_thread().get() == this);
+	ASSERT(signal != SIGSTOP && signal != SIGTSTP && signal != SIGCONT);
 
-	_process->m_signal_lock.acquire();
 	const auto sigaction = _process->signal_actions[signal];
 	const auto severity = Signal::signal_severities[signal];
-	_process->m_signal_lock.release();
 
 	if(severity >= Signal::KILL && !sigaction.action) {
 		die_from_signal(signal);
+		ASSERT(false);
 	}
 
-	if (sigaction.action) {
+	if (sigaction.action)
 		call_signal_handler(signal);
-		return;
-	}
-
-	switch(signal) {
-		case SIGSTOP:
-		case SIGTSTP: {
-			_before_stop_state = _state;
-			_process->stop_thread(this);
-			TaskManager::yield();
-			break;
-		}
-		case SIGCONT:
-		default:
-			break;
-	}
 }
 
 void Thread::die_from_signal(int signal) {
@@ -731,7 +743,6 @@ void Thread::die_from_signal(int signal) {
 	// Get the current thread as a raw pointer, so that if the current thread is part of this process the reference doesn't stay around
 	_process->die();
 }
-
 void print_arg(Thread* thread, KLog::FormatRules rules) {
 	printf("%s(%d.%d)", thread->process()->name().c_str(), thread->process()->pid(), thread->tid());
 }

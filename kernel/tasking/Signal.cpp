@@ -89,39 +89,3 @@ Signal::SignalSeverity Signal::signal_severities[] = {
 		NOKILL, //SIGUSR2
 		NOKILL, //NSIG
 };
-
-bool Signal::dispatch_to_every_thread[] = {
-		false, //0
-		false, //SIGHUP
-		false, //SIGINT
-		false, //SIGQUIT
-		false, //SIGILL
-		false, //SIGTRAP
-		false, //SIGABRT
-		false, //SIGEMT
-		false, //SIGFPE
-		false, //SIGKILL
-		false, //SIGBUS
-		false, //SIGSEGV
-		false, //SIGSYS
-		false, //SIGPIPE
-		false, //SIGALRM
-		false, //SIGTERM
-		false, //SIGURG
-		true,  //SIGSTOP
-		true,  //SIGTSTP
-		true,  //SIGCONT
-		false, //SIGCHLD
-		false, //SIGTTIN
-		false, //SIGTTOU
-		false, //SIGIO
-		false, //SIGXCPU
-		false, //SIGXFSZ
-		false, //SIGVTALRM
-		false, //SIGPROF
-		false, //SIGWINCH
-		false, //SIGLOST
-		false, //SIGUSR1
-		false, //SIGUSR2
-		false, //NSIG
-};

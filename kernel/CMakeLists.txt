@@ -92,6 +92,7 @@ SET(KERNEL_SRCS
         tasking/PollBlocker.cpp
         tasking/SleepBlocker.cpp
         tasking/FileBlockers.cpp
+        tasking/Tracer.cpp
         device/VGADevice.cpp
         device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp
