@@ -92,6 +92,7 @@ The code for these can be found in [programs](programs/).
   - There is only support for one redirection at a time right now.
 - open (/bin/open): A utility to open files and applications from the command line.
 - play (/bin/play): Plays audio files.
+- profile (/bin/profile): Profiles a running application and outputs a [FlameGraph](https://github.com/brendangregg/FlameGraph) / [SpeedScope](https://speedscope.app) compatible file.
 
 Programs that take arguments will provide you with the correct usage when you run them without arguments.
 
@@ -111,6 +112,8 @@ Programs that take arguments will provide you with the correct usage when you ru
 - [libsound](/libraries/libsound): Provides a framework for audio applications and interfacing with the sound server, Quack.
 - [lib3d](/libraries/lib3d): Provides basic software 3D rendering functionality.
 - [libmatrix](/libraries/libmatrix): Provides matrix math utilities.
+- [libexec](/libraries/libexec): Provides ELF support.
+- [libdebug](/libraries/libdebug): Provides debugging functionality.
 
 ### Ports
 
