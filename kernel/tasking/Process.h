@@ -97,6 +97,7 @@ public:
 
 	//Tracing
 	bool is_traced_by(Process* proc);
+	bool is_traced();
 
 	//Syscalls
 	void check_ptr(const void* ptr, bool write = false);

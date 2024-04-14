@@ -397,7 +397,7 @@ void Process::reap() {
 bool Process::stop(int signal) {
 	bool ret = false;
 	if(_stopping.compare_exchange_strong(ret, true, MemoryOrder::Acquire)) {
-//		WaitBlocker::notify_all(this, WaitBlocker::Stopped, signal);
+		WaitBlocker::notify_all(this, WaitBlocker::Stopped, signal);
 		for_each_thread([&] (kstd::Arc<Thread>& thread) -> bool {
 			if (thread->is_blocked())
 				thread->interrupt();
@@ -444,6 +444,19 @@ bool Process::is_traced_by(Process* proc) {
 	for_each_thread([&] (kstd::Arc<Thread>& thread) -> bool {
 		LOCK(thread->m_tracing_lock);
 		if (thread->m_tracer && thread->m_tracer->tracer_process() == proc) {
+			is_traced = true;
+			return false;
+		}
+		return true;
+	});
+	return is_traced;
+}
+
+bool Process::is_traced() {
+	bool is_traced = false;
+	for_each_thread([&] (kstd::Arc<Thread>& thread) -> bool {
+		LOCK(thread->m_tracing_lock);
+		if (thread->m_tracer) {
 			is_traced = true;
 			return false;
 		}

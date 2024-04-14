@@ -92,15 +92,10 @@ void WaitBlocker::notify_all(Process* proc, WaitBlocker::Reason reason, int stat
 			i--;
 			continue;
 		}
-		if(blocker->notify(proc, reason, status)) {
+
+		if (blocker->notify(proc, reason, status)){
 			blockers.erase(i);
-			if (reason == Stopped) {
-				// We want to also notify our tracer if the reason is that we stopped...
-				blockers.erase(i);
-				i--;
-			} else {
-				return;
-			}
+			return;
 		}
 	}
 	// TODO: Will this just get full after a while?
@@ -108,6 +103,10 @@ void WaitBlocker::notify_all(Process* proc, WaitBlocker::Reason reason, int stat
 }
 
 bool WaitBlocker::notify(Process* proc, WaitBlocker::Reason reason, int status) {
+	// If the reason is a stop and the process has a tracer, we need to send it there first.
+	if (reason == Stopped && proc->is_traced() && !proc->is_traced_by(_thread->process()))
+		return false;
+
 	if (_ready.load())
 		return true;
 	if (proc->ppid() != _ppid && !proc->is_traced_by(_thread->process()))
