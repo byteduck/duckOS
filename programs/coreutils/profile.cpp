@@ -52,9 +52,10 @@ Duck::Result profile() {
 		usleep(interval * 1000);
 		kill(pid, SIGSTOP);
 	}
+	waitpid(pid, nullptr, 0);
 	kill(pid, SIGCONT);
 
-	Duck::println("Done! Symbolicating...");
+	Duck::println("Done! Symbolicating and dumping...");
 	std::map<size_t, AddressInfo> symbols;
 
 	if (filename.empty())
