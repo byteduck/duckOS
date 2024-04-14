@@ -19,74 +19,55 @@
 
 #include <errno.h>
 
-int syscall(int call) {
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(call));
+// We don't want to inline this so we can easily ID it on the debugger.
+static int __attribute__((noinline)) __syscall_trap__(int call, int b, int c, int d) {
+	int ret;
+	asm volatile("int $0x80" :: "a"(call), "b"(b), "c"(c), "d"(d));
 	asm volatile("mov %%eax, %0" : "=r"(ret));
-	if(ret < 0) {
+	return ret;
+}
+
+static inline int __attribute__((always_inline)) __syscall(int call, int b, int c, int d) {
+	int ret = __syscall_trap__(call, b, c, d);
+	if (ret < 0) {
 		errno = -ret;
 		return -1;
 	}
 	return ret;
+}
+
+static inline int __attribute__((always_inline)) __syscall_noerr(int call, int b, int c, int d) {
+	return __syscall_trap__(call, b, c, d);;
+}
+
+int syscall(int call) {
+	return __syscall(call, 0, 0, 0);
 }
 
 int syscall_noerr(int call) {
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(call));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	return ret;
+	return __syscall_noerr(call, 0, 0, 0);
 }
 
 int syscall2(int call, int b) {
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(call), "b"(b));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	if(ret < 0) {
-		errno = -ret;
-		return -1;
-	}
-	return ret;
+	return __syscall(call, b, 0, 0);
 }
 
 int syscall2_noerr(int call, int b) {
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(call), "b"(b));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	return ret;
+	return __syscall_noerr(call, b, 0, 0);
 }
 
 int syscall3(int call, int b, int c) {
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(call), "b"(b), "c"(c));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	if(ret < 0) {
-		errno = -ret;
-		return -1;
-	}
-	return ret;
+	return __syscall(call, b, c, 0);
 }
 
 int syscall3_noerr(int call, int b, int c) {
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(call), "b"(b), "c"(c));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	return ret;
+	return __syscall_noerr(call, b, c, 0);
 }
 
 int syscall4(int call, int b, int c, int d) {
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(call), "b"(b), "c"(c), "d"(d));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	if(ret < 0) {
-		errno = -ret;
-		return -1;
-	}
-	return ret;
+	return __syscall(call, b, c, d);
 }
 
 int syscall4_noerr(int call, int b, int c, int d) {
-	int ret = 0;
-	asm volatile("int $0x80" :: "a"(call), "b"(b), "c"(c), "d"(d));
-	asm volatile("mov %%eax, %0" : "=r"(ret));
-	return ret;
+	return __syscall_noerr(call, b, c, d);
 }
