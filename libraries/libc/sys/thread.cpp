@@ -21,6 +21,7 @@
 #include <atomic>
 #include "thread.h"
 #include "syscall.h"
+#include "assert.h"
 
 void thread_entry(void* (*entry_func)(void*), void* arg) {
 	void* ret = entry_func(arg);
@@ -33,6 +34,7 @@ tid_t thread_create(void* (*entry_func)(void*), void* arg) {
 
 void thread_exit(void* retval) {
 	syscall2(SYS_THREADEXIT, (int) retval);
+	assert(false);
 }
 
 int thread_join(tid_t thread, void** retval) {

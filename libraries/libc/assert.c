@@ -20,7 +20,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void __assert_failed(const char* file, int line, const char* func, const char* expr) {
+void __attribute__((noreturn)) __assert_failed(const char* file, int line, const char* func, const char* expr) {
 	FILE* klog = fopen("/dev/klog", "w");
 	FILE* stream = klog ? klog : stderr;
 	const char* prefix = klog ? "\01" : "";
