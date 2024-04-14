@@ -101,7 +101,10 @@ namespace Interrupt {
 		if(!TaskManager::enabled() || TaskManager::current_thread()->is_kernel_mode() || TaskManager::is_preempting()) {
 			PANIC(err, "%s\nFault %d at 0x%x", panic_msg, regs->isr_num, regs->interrupt_frame.eip);
 		} else {
+			TrapFrame frame { nullptr, TrapFrame::Fault, regs };
+			TaskManager::current_thread()->enter_trap_frame(&frame);
 			TaskManager::current_process()->kill(sig);
+			TaskManager::current_thread()->exit_trap_frame();
 		}
 	}
 
