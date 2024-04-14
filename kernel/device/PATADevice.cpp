@@ -304,7 +304,6 @@ Result PATADevice::read_uncached_blocks(uint32_t block, uint32_t count, uint8_t 
 }
 
 Result PATADevice::write_uncached_blocks(uint32_t block, uint32_t count, const uint8_t *buffer) {
-	return Result(Result::Success);
 	if(!_use_pio) {
 		//DMA mode
 		size_t num_chunks = (count + ATA_MAX_SECTORS_AT_ONCE - 1) / ATA_MAX_SECTORS_AT_ONCE;
