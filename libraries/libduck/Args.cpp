@@ -189,14 +189,9 @@ Args::IterationResult Args::try_named(std::queue<std::string>& input_queue, cons
 	//Pop the argument off of the queue
 	input_queue.pop();
 
-	//If the flag is short, the rest of the argument is the operand. If long, the next argument is the operand.
+	//If the flag is short, the rest of the argument or the next argument is the operand. If long, the next argument is the operand.
 	std::string operand;
-	if(is_short) {
-		if(next_arg_raw.length() < 3) {
-			if(show_errors)
-				fprintf(stderr, "Missing operand for argument '%s'.\n", arg_name.c_str());
-			return ERROR;
-		}
+	if(is_short && next_arg_raw.length() > 2) {
 		operand = next_arg_raw.substr(2);
 	} else {
 		if(input_queue.empty()) {
