@@ -229,6 +229,10 @@ Result VMSpace::try_pagefault(PageFault fault) {
 			if(!vmRegion)
 				return Result(EINVAL);
 
+			// If this region has a sentinel page, then we might be within the VMSpaceRegion but not the vmRegion.
+			if (!vmRegion->contains(fault.address))
+				return Result(ENOENT);
+
 			// First, sanity check. If the region doesn't have the proper permissions, we can just fail here.
 			auto prot = vmRegion->prot();
 			if(
