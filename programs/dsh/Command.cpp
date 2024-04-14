@@ -99,10 +99,15 @@ pid_t Command::pid() {
 int Command::wait() {
 	if(!_pid || waited)
 		return return_status;
-	waitpid(_pid, &return_status, WUNTRACED);
-	waited = true;
-	if (WIFSIGNALED(return_status))
-		printf("%s: Terminated with signal %d\n", cmd.c_str(), WTERMSIG(return_status));
+	while (true) {
+		waitpid(_pid, &return_status, WUNTRACED);
+		waited = true;
+		if (WIFSTOPPED(return_status))
+			continue;
+		if (WIFSIGNALED(return_status))
+			printf("%s: Terminated with signal %d\n", cmd.c_str(), WTERMSIG(return_status));
+		break;
+	}
 	return return_status;
 }
 
