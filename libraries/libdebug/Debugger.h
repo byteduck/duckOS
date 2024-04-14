@@ -24,5 +24,6 @@ namespace Debug {
 
 		Duck::ResultRet<AddressInfo> info_at(size_t addr);
 		Duck::ResultRet<std::vector<AddressInfo>> walk_stack();
+		Duck::ResultRet<std::vector<size_t>> walk_stack_unsymbolicated();
 	};
 }

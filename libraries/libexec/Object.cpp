@@ -401,14 +401,14 @@ uintptr_t Object::get_dynamic_symbol(const char* name) {
 	return 0;
 }
 
-Object::SymbolInfo Object::get_symbol(uintptr_t offset) {
+Object::SymbolInfo Object::symbolicate(uintptr_t offset) {
 	// Symbols in executables have an absolute address
 	if (header->e_type == ET_EXEC)
 		offset += memloc;
 	elf32_sym* best_match = nullptr;
 	for(size_t i = 0; i < sym_table_size; i++) {
 		auto* symbol = &sym_table[i];
-		if (symbol->st_value > offset)
+		if (symbol->st_value > offset || ELF32_ST_TYPE(symbol->st_info) == STT_SECTION || *(const char*)((uintptr_t) string_table + symbol->st_name) == '.')
 			continue;
 		if (!best_match || symbol->st_value > best_match->st_value)
 			best_match = symbol;

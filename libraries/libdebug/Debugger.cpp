@@ -13,7 +13,7 @@ Duck::ResultRet<AddressInfo> Debugger::info_at(size_t addr) {
 	if (addr < obj->memloc || addr > (obj->memloc + obj->memsz))
 		return Result("Symbol outside of object memory");
 
-	auto sym = obj->get_symbol(addr - obj->memloc);
+	auto sym = obj->symbolicate(addr - obj->memloc);
 	if (!sym.name)
 		return Result("No such symbol exists");
 
@@ -27,6 +27,23 @@ Duck::ResultRet<AddressInfo> Debugger::info_at(size_t addr) {
 	};
 	if (status == 0)
 		free(demangled_name);
+	return ret;
+}
+
+Duck::ResultRet<std::vector<size_t>> Debugger::walk_stack_unsymbolicated() {
+	auto regs = TRY(get_registers());
+	std::vector<size_t> ret;
+	ret.push_back(regs.eip);
+	while (true) {
+		auto retaddr_res = peek(regs.ebp + 4);
+		if (retaddr_res.is_error() || !retaddr_res.value())
+			break;
+		ret.push_back(retaddr_res.value());
+		auto ebp_res = peek(regs.ebp);
+		if (ebp_res.is_error())
+			break;
+		regs.ebp = ebp_res.value();
+	}
 	return ret;
 }
 

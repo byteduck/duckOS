@@ -38,7 +38,7 @@ namespace Exec {
 			const char* name;
 			size_t offset;
 		};
-		SymbolInfo get_symbol(uintptr_t offset);
+		SymbolInfo symbolicate(uintptr_t offset);
 
 		std::string name;
 		int fd = 0;

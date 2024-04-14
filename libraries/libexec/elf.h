@@ -129,6 +129,8 @@
 #define ELF32_R_SYM(x) ((x) >> 8u)
 #define ELF32_R_TYPE(x) ((x) & 0xffu)
 #define ELF32_ST_BIND(info) ((info) >> 4)
+#define ELF32_ST_TYPE(info) ((info) & 0xf)
+#define ELF32_ST_INFO(bind, type) (((bind)<<4)+((type)&0xf))
 
 typedef struct {
 	unsigned char	e_ident[16];
