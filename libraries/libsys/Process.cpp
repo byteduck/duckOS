@@ -105,6 +105,15 @@ Result Process::update() {
 	_virtual_mem = {std::stoul(proc["vmem"])};
 	_shared_mem = {std::stoul(proc["shmem"])};
 
+	Duck::StringInputStream threads { proc["threads"] };
+	threads.set_delimeter(',');
+	_threads.clear();
+	while (!threads.eof()) {
+		std::string thrd;
+		threads >> thrd;
+		_threads.push_back(std::stoi(thrd));
+	}
+
 	return Result::SUCCESS;
 }
 

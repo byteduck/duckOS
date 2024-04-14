@@ -64,6 +64,7 @@ namespace Sys {
 		Mem::Amount physical_mem() const { return _physical_mem; }
 		Mem::Amount virtual_mem() const { return _virtual_mem; }
 		Mem::Amount shared_mem() const { return _shared_mem; }
+		const std::vector<tid_t>& threads() const { return _threads; }
 		Duck::ResultRet<std::vector<MemoryRegion>> memory_regions() const;
 
 		Duck::ResultRet<App::Info> app_info() const;
@@ -80,6 +81,7 @@ namespace Sys {
 		Mem::Amount _physical_mem;
 		Mem::Amount _virtual_mem;
 		Mem::Amount _shared_mem;
+		std::vector<tid_t> _threads;
 	};
 }
 

@@ -122,6 +122,16 @@ ResultRet<kstd::string> ProcFSContent::status(pid_t pid) {
 	str += "\nshmem = ";
 	itoa(proc->used_shmem(), numbuf, 10);
 	str += numbuf;
+
+	str += "\nthreads = ";
+	auto& threads = proc->threads();
+	for (size_t i = 0; i < threads.size(); i++) {
+		itoa(threads[i], numbuf, 10);
+		str += numbuf;
+		if (i != threads.size() - 1)
+			str += ",";
+	}
+
 	str += "\n";
 
 	return str;
