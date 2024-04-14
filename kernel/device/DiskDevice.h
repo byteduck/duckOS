@@ -39,6 +39,8 @@ public:
 	/** Tries to free a number of pages from the cache. Returns the number of pages that could be freed. **/
 	static size_t free_pages(size_t num_pages);
 
+	static void cache_writeback_task_entry();
+
 private:
 	class BlockCacheRegion {
 	public:
@@ -61,11 +63,14 @@ private:
 	static Mutex s_disk_devices_lock;
 	static size_t s_used_cache_memory;
 	static kstd::vector<DiskDevice*> s_disk_devices;
+	static BooleanBlocker s_writeback_blocker;
 
 	kstd::LRUCache<size_t, kstd::Arc<BlockCacheRegion>> _cache_regions;
+	kstd::queue<size_t> _dirty_regions; // We really need a set type.
 	kstd::Arc<BlockCacheRegion> get_cache_region(size_t block);
 	inline size_t blocks_per_cache_region() { return PAGE_SIZE / block_size(); }
 	inline size_t block_cache_region_start(size_t block) { return block - (block % blocks_per_cache_region()); }
 	Mutex _cache_lock {"DiskDeviceCache"};
+	Mutex _dirty_regions_lock { "DiskDeviceDirty" };
 };
 

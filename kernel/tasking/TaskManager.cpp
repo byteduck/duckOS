@@ -28,6 +28,7 @@
 #include <kernel/Processor.h>
 #include <kernel/kstd/KLog.h>
 #include <kernel/net/NetworkManager.h>
+#include "../device/DiskDevice.h"
 
 TSS TaskManager::tss;
 Mutex TaskManager::g_tasking_lock {"Tasking"};
@@ -177,6 +178,7 @@ void TaskManager::init(){
 	//Create kernel threads
 	kernel_process->spawn_kernel_thread(kreaper_entry);
 	kernel_process->spawn_kernel_thread(NetworkManager::task_entry);
+	kernel_process->spawn_kernel_thread(DiskDevice::cache_writeback_task_entry);
 
 	//Preempt
 	cur_thread = kernel_process->get_thread(kernel_process->pid());

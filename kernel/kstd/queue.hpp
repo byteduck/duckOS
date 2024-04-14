@@ -144,6 +144,20 @@ namespace kstd {
 			return _size == 0;
 		}
 
+		bool contains(const T& value) const {
+			if (empty())
+				return false;
+
+			size_t i = _front;
+			do {
+				if (_storage[i] == value)
+					return true;
+				i = (i + 1) % _capacity;
+			} while (i != ((_back + 1) % _size));
+
+			return false;
+		}
+
 		size_t size() const {
 			return _size;
 		}

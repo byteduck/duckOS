@@ -26,6 +26,7 @@
 size_t DiskDevice::s_used_cache_memory = 0;
 kstd::vector<DiskDevice*> DiskDevice::s_disk_devices;
 Mutex DiskDevice::s_disk_devices_lock("DiskDevices");
+BooleanBlocker DiskDevice::s_writeback_blocker;
 
 DiskDevice::DiskDevice(unsigned int major, unsigned int minor): BlockDevice(major, minor) {
 	s_disk_devices.push_back(this);
@@ -55,19 +56,31 @@ Result DiskDevice::read_blocks(uint32_t start_block, uint32_t count, uint8_t* bu
 }
 
 Result DiskDevice::write_blocks(uint32_t start_block, uint32_t count, const uint8_t* buffer) {
+	auto invalidate_cache_region = [this] (const kstd::Arc<BlockCacheRegion>& region) {
+		LOCK(_dirty_regions_lock);
+		if (_dirty_regions.contains(region->start_block))
+			return;
+		_dirty_regions.push_back(region->start_block);
+	};
+
 	kstd::Arc<BlockCacheRegion> cache_region;
 	for(size_t i = 0; i < count; i++) {
 		size_t block = start_block + i;
-		if(!cache_region || !cache_region->has_block(block))
+		if(!cache_region || !cache_region->has_block(block)) {
+			if (cache_region)
+				invalidate_cache_region(cache_region);
 			cache_region = get_cache_region(block);
+		}
 		LOCK(cache_region->lock);
 		cache_region->last_used = Time::now();
 		cache_region->dirty = true;
 		memcpy(cache_region->block_data(block), buffer + i * block_size(), block_size());
 	}
 
-	//TODO: Flush cached writes to disk periodically instead of on every write
-	return write_uncached_blocks(start_block, count, buffer);
+	invalidate_cache_region(cache_region);
+	s_writeback_blocker.set_ready(true);
+
+	return Result::Success;
 }
 
 size_t DiskDevice::used_cache_memory() {
@@ -144,6 +157,42 @@ kstd::Arc<DiskDevice::BlockCacheRegion> DiskDevice::get_cache_region(size_t bloc
 
 	//Return the requested region
 	return reg;
+}
+
+void DiskDevice::cache_writeback_task_entry() {
+	s_writeback_blocker.set_ready(false);
+	static constexpr bool writeback_debug = false;
+	while (true) {
+		TaskManager::current_thread()->block(s_writeback_blocker);
+		s_writeback_blocker.set_ready(false);
+
+		KLog::dbg_if<writeback_debug>("DiskDevice", "Writing back caches...");
+		for (auto device : s_disk_devices) {
+			while (true) {
+				size_t region_loc;
+				{
+					LOCK(device->_dirty_regions_lock);
+					if (device->_dirty_regions.empty())
+						break;
+					region_loc = device->_dirty_regions.pop_front();
+				}
+				kstd::Arc<BlockCacheRegion> region;
+				{
+					LOCK(device->_cache_lock);
+					auto region_opt = device->_cache_regions.get(region_loc);
+					if (!region_opt) {
+						KLog::warn("DiskDevice", "Was going to write back cache region, but couldn't find it!");
+						return;
+					}
+					region = region_opt.value();
+				}
+				LOCK(region->lock);
+				device->write_uncached_blocks(region->start_block, region->num_blocks(), (uint8_t*) region->region->start());
+				region->dirty = false;
+			}
+		}
+		KLog::dbg_if<writeback_debug>("DiskDevice", "Done writing caches!");
+	}
 }
 
 DiskDevice::BlockCacheRegion::BlockCacheRegion(size_t start_block, size_t block_size):
