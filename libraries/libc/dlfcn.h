@@ -12,6 +12,7 @@ __DECL_BEGIN
 #define RTLD_LAZY 2
 #define RTLD_NOW 4
 #define RTLD_LOCAL 8
+#define RTLD_GLOBAL 16
 
 void* dlopen(const char*, int);
 int dlclose(void*);

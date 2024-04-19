@@ -4,13 +4,8 @@
 #include "futex.h"
 #include "syscall.h"
 
-int futex_init(futex_t* futex, int val) {
-	*futex = val;
-	return syscall3(SYS_FUTEX, (int) futex, FUTEX_INIT);
-}
-
-int futex_destroy(futex_t* futex) {
-	return syscall3(SYS_FUTEX, (int) futex, FUTEX_DESTROY);
+int futex_open(futex_t* futex) {
+	return syscall3(SYS_FUTEX, (int) futex, FUTEX_REGFD);
 }
 
 void futex_wait(futex_t* futex) {
@@ -20,11 +15,23 @@ void futex_wait(futex_t* futex) {
 			if (__atomic_compare_exchange_n(futex, &exp, exp - 1, 0, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE))
 				break;
 		} else {
-			if (syscall3_noerr(SYS_FUTEX, (int) futex, FUTEX_WAIT))
-				return;
+			syscall3_noerr(SYS_FUTEX, (int) futex, FUTEX_WAIT);
 			exp = __atomic_load_n(futex, __ATOMIC_RELAXED);
 		}
 	}
+}
+
+int futex_trywait(futex_t* futex) {
+	int exp = __atomic_load_n(futex, __ATOMIC_RELAXED);
+	while (1) {
+		if (exp > 0) {
+			if (__atomic_compare_exchange_n(futex, &exp, exp - 1, 0, __ATOMIC_ACQUIRE, __ATOMIC_ACQUIRE))
+				break;
+		} else {
+			return 0;
+		}
+	}
+	return 1;
 }
 
 void futex_signal(futex_t* futex) {

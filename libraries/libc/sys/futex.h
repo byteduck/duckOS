@@ -7,25 +7,24 @@
 __DECL_BEGIN
 
 /**
- * Initializes a futex.
+ * Registers a futex to a file descriptor, so that it can be waited on using poll().
  * @param futex Pointer to the futex_t to initialize.
- * @param val The value to initialize the futex with.
- * @return 0 on success, -1 on error (errno set).
+ * @return file descriptor on success, -1 on error (errno set).
  */
-int futex_init(futex_t* futex, int val);
-
-/**
- * Destroys a futex.
- * @param futex Pointer to the futex to destroy.
- * @return 0 on success, -1 on error (errno set).
- */
-int futex_destroy(futex_t* futex);
+int futex_open(futex_t* futex);
 
 /**
  * Waits for a futex to be greater than zero and then subtracts one from its stored value.
  * @param futex Pointer to the futex to wait on.
  */
 void futex_wait(futex_t* futex);
+
+/**
+ * Tries to wait for a futex to be greater than zero and subtracts one from its stored value if successful.
+ * @param futex Pointer to the futex to try waiting on.
+ * @return 1 if the futex was waited on, 0 if not.
+ */
+int futex_trywait(futex_t* futex);
 
 /**
  * Adds one to the futex's stored value.

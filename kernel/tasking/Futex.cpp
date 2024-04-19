@@ -15,3 +15,7 @@ Futex::Futex(kstd::Arc<VMObject> object, size_t offset_in_object):
 bool Futex::is_ready() {
 	return m_var->load(MemoryOrder::Relaxed) > 0;
 }
+
+bool Futex::can_read(const FileDescriptor& fd) {
+	return is_ready();
+}

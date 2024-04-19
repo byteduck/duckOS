@@ -4,9 +4,8 @@
 #pragma once
 #include "types.h"
 
-#define FUTEX_INIT    1
-#define FUTEX_DESTROY 2
-#define FUTEX_WAIT    3
+#define FUTEX_WAIT    1
+#define FUTEX_REGFD   2
 
 __DECL_BEGIN
 

@@ -5,12 +5,17 @@
 
 #include "Blocker.h"
 #include "../memory/VMRegion.h"
+#include "../filesystem/File.h"
 
-class Futex: public Blocker {
+class Futex: public Blocker, public File {
 public:
 	Futex(kstd::Arc<VMObject> object, size_t offset_in_object);
 
+	// Blocker
 	bool is_ready() override;
+
+	// File
+	bool can_read(const FileDescriptor& fd) override;
 
 private:
 	kstd::Arc<VMObject> m_object;

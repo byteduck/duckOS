@@ -30,7 +30,6 @@
 #include "../api/mmap.h"
 #include "Tracer.h"
 #include "../kstd/KLog.h"
-#include "Futex.h"
 
 class FileDescriptor;
 class Blocker;
@@ -245,8 +244,6 @@ private:
 	Mutex m_fd_lock { "Process::FileDescriptor" };
 	kstd::vector<kstd::Arc<FileDescriptor>> _file_descriptors;
 	kstd::Arc<LinkedInode> _cwd;
-	Mutex m_futex_lock { "Process::Futexes" };
-	kstd::map<uintptr_t, kstd::Arc<Futex>> m_futexes;
 
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
