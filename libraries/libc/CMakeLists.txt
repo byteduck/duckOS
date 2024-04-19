@@ -22,6 +22,7 @@ SET(SOURCES
         strings.c
         sys/ioctl.c
         sys/shm.c
+        sys/futex.c
         sys/printf.c
         sys/ptrace.c
         sys/liballoc.cpp

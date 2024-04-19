@@ -90,6 +90,7 @@ SET(KERNEL_SRCS
         tasking/JoinBlocker.cpp
         tasking/BooleanBlocker.cpp
         tasking/PollBlocker.cpp
+        tasking/Futex.cpp
         tasking/SleepBlocker.cpp
         tasking/FileBlockers.cpp
         tasking/Tracer.cpp
@@ -153,6 +154,7 @@ SET(KERNEL_SRCS
         syscall/exec.cpp
         syscall/exit.cpp
         syscall/fork.cpp
+        syscall/futex.cpp
         syscall/getcwd.cpp
         syscall/gettimeofday.cpp
         syscall/ioctl.cpp

@@ -90,6 +90,7 @@
 #define SYS_LISTEN 87
 #define SYS_SHUTDOWN 88
 #define SYS_ACCEPT 89
+#define SYS_FUTEX 90
 
 #ifndef DUCKOS_KERNEL
 #include <sys/types.h>

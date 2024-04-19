@@ -30,6 +30,7 @@
 #include "../api/mmap.h"
 #include "Tracer.h"
 #include "../kstd/KLog.h"
+#include "Futex.h"
 
 class FileDescriptor;
 class Blocker;
@@ -185,6 +186,7 @@ public:
 	int sys_listen(int sockfd, int backlog);
 	int sys_shutdown(int sockfd, int how);
 	int sys_accept(int sockfd, UserspacePointer<struct sockaddr> addr, UserspacePointer<uint32_t> addrlen);
+	int sys_futex(UserspacePointer<int> futex, int operation);
 
 private:
 	friend class Thread;
@@ -243,6 +245,8 @@ private:
 	Mutex m_fd_lock { "Process::FileDescriptor" };
 	kstd::vector<kstd::Arc<FileDescriptor>> _file_descriptors;
 	kstd::Arc<LinkedInode> _cwd;
+	Mutex m_futex_lock { "Process::Futexes" };
+	kstd::map<uintptr_t, kstd::Arc<Futex>> m_futexes;
 
 	//Signals
 	Signal::SigAction signal_actions[32] = {{Signal::SigAction()}};
