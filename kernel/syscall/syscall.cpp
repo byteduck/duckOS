@@ -211,6 +211,9 @@ int handle_syscall(ThreadRegisters& regs, uint32_t call, uint32_t arg1, uint32_t
 			return cur_proc->sys_accept(arg1, (struct sockaddr*) arg2, (uint32_t*) arg3);
 		case SYS_FUTEX:
 			return cur_proc->sys_futex((int*) arg1, arg2);
+		case SYS_YIELD:
+			TaskManager::yield();
+			return 0;
 
 		//TODO: Implement these syscalls
 		case SYS_TIMES:

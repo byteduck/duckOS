@@ -2,10 +2,12 @@
 /* Copyright © 2016-2024 Byteduck */
 
 #include "sched.h"
+#include "sys/syscall.h"
 
 // TODO
 
 int sched_yield() {
+	syscall(SYS_YIELD);
 	return 0;
 }
 
