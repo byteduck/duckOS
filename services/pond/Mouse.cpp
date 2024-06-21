@@ -51,6 +51,8 @@ bool Mouse::update() {
 	ssize_t nread = read(mouse_fd, &events, sizeof(MouseEvent) * 32);
 	if(!nread) return false;
 	int num_events = (int) nread / sizeof(MouseEvent);
+	Point total_delta {0, 0};
+	int total_z = 0;
 
 	for(int i = 0; i < num_events; i++) {
 		Gfx::Point new_pos = rect().position();
@@ -66,9 +68,21 @@ bool Mouse::update() {
 		new_pos = new_pos.constrain(parent()->rect());
 		Gfx::Point delta_pos = new_pos - rect().position();
 		set_position(new_pos);
-		_mouse_buttons = events[i].buttons;
-		Display::inst().create_mouse_events(delta_pos.x, delta_pos.y, events[i].z, _mouse_buttons);
+		total_delta += delta_pos;
+		total_z += events[i].z;
+
+		// If the mouse buttons changed, send a new event immediately.
+		// Otherwise, keep running delta totals so we don't create a bunch of unnecessary events
+		if (_mouse_buttons != events[i].buttons) {
+			_mouse_buttons = events[i].buttons;
+			Display::inst().create_mouse_events(total_delta.x, total_delta.y, total_z, _mouse_buttons);
+			total_delta = {0, 0};
+			total_z = 0;
+		}
 	}
+
+	if (total_delta.x != 0 || total_delta.y != 0 || total_z != 0)
+		Display::inst().create_mouse_events(total_delta.x, total_delta.y, total_z, _mouse_buttons);
 
 	return true;
 }
