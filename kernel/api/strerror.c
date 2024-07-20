@@ -99,6 +99,18 @@ char* strerror(int errnum) {
 			return "Address not available";
 		case EAFNOSUPPORT:
 			return "Address family not supported";
+		case ECONNABORTED:
+			return "Connection aborted";
+		case ECONNREFUSED:
+			return "Connection refused";
+		case ECONNRESET:
+			return "Connection reset";
+		case ENETUNREACH:
+			return "Network unreachable";
+		case ENETDOWN:
+			return "Network interface is not configured";
+		case ETIMEDOUT:
+			return "Connection timed out";
 		default:
 			return "Unknown error";
 	}
