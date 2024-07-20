@@ -63,6 +63,9 @@ public:
 		ASSERT(!is_error());
 		return _ret;
 	};
+	const T& value() const {
+		return _ret;
+	}
 private:
 	T _ret;
 	Result _result;

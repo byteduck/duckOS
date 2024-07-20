@@ -20,6 +20,8 @@
 #pragma once
 
 #include "../tasking/Mutex.h"
+#include "../Result.hpp"
+#include "../api/strerror.h"
 
 extern Mutex printf_lock;
 
@@ -162,6 +164,18 @@ namespace KLog {
 		print_header(component, "97;41", "CRITICAL");
 		format_doprint(fmt, args...);
 		putch('\n');
+	}
+
+	inline void print_arg(const Result& result, FormatRules rules) {
+		printf("%s (%d)", strerror(result.code()), result.code());
+	}
+
+	template<typename T>
+	inline void print_arg(const ResultRet<T>& result, FormatRules rules) {
+		if (result.is_error())
+			print_arg(result.result(), rules);
+		else
+			print_arg(result.value(), rules);
 	}
 
 #define KLOG_CONDITIONAL(method) \
