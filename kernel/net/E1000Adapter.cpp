@@ -234,6 +234,7 @@ void E1000Adapter::handle_irq(IRQRegisters* regs) {
 	}
 
 	if (cause & INT_RXT0) {
+		send_eoi();
 		receive();
 	}
 }
