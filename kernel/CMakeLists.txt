@@ -187,7 +187,8 @@ SET(KERNEL_SRCS
         net/IPSocket.cpp
         net/UDPSocket.cpp
         net/TCPSocket.cpp
-        net/Router.cpp)
+        net/Router.cpp
+        api/strerror.c)
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h"
