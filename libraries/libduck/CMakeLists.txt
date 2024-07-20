@@ -14,6 +14,7 @@ SET(SOURCES
         Result.cpp
         Serializable.cpp
         SharedBuffer.cpp
+        Socket.cpp
         SpinLock.cpp
         Stream.cpp
         StringStream.cpp
