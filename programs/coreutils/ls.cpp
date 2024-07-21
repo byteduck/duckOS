@@ -24,12 +24,15 @@
 #include <libduck/FormatStream.h>
 #include <unistd.h>
 #include <algorithm>
+#include <termios.h>
+#include <sys/ioctl.h>
 
 bool g_colorize = false;
 bool g_no_color = false;
 bool g_human = false;
 bool g_show_all = false;
 bool g_long_format = false;
+bool g_columns = false;
 
 constexpr auto RESET_FORMAT = "\033[39m";
 
@@ -98,10 +101,15 @@ int main(int argc, char** argv) {
 	args.add_named(g_show_all, "a", "all", "Show entries starting with \".\".");
 	args.add_named(g_long_format, "l", "long", "Show more details for entries.");
 	args.add_named(g_human, "h", "human-readable", "Show human-readable sizes.");
+	args.add_named(g_columns, "c", "columns", "Force multi-column output.");
 	args.parse(argc, argv);
 
 	if(!isatty(STDOUT_FILENO))
 		g_no_color = true;
+	else
+		g_columns = true;
+
+	g_columns = g_columns && !g_long_format;
 
 	// Read entries
 	auto dirs_res = Duck::Path(dir_name).get_directory_entries();
@@ -136,6 +144,47 @@ int main(int argc, char** argv) {
 					<< ENTRY_TYPE_CHARS[entry.type()] << entry_permissions_string(entry) << ' '
 					<< entry_size_str(entry, widest_size) << ' '
 					<< entry_name(entry) << '\n';
+		}
+	} else if(g_columns) {
+		// If we're printing columns, figure out how wide they should be
+		winsize winsz;
+		winsz.ws_col = 80;
+		ioctl(STDOUT_FILENO, TIOCGWINSZ, &winsz);
+
+		size_t widest_name = 0;
+		for(auto& entry : entries) {
+			if(entry.name()[0] == '.' && !g_show_all)
+				continue;
+			widest_name = std::max(widest_name, entry.name().size());
+		}
+
+		/* Yeah, this calculation doesn't take into account that we
+		 * don't have padding on the right. I'm too lazy to do that
+		 * right now */
+		constexpr size_t padding = 2;
+		auto n_cols = std::max((int) winsz.ws_col / (int) (widest_name + padding), 1);
+		auto n_rows = (entries.size() + n_cols - 1) / n_cols;
+		std::vector<std::vector<Duck::DirectoryEntry>> cols;
+		cols.emplace_back();
+		for (auto& entry : entries) {
+			if (cols[cols.size() - 1].size() == n_rows)
+				cols.emplace_back();
+			cols[cols.size() - 1].push_back(entry);
+		}
+
+		for (auto row = 0; row < n_rows; row++) {
+			for(auto col = 0; col < n_cols; col++) {
+				auto& col_entries = cols[col];
+				if (col_entries.size() <= row)
+					continue;
+				Duck::Stream::std_out << entry_name(col_entries[row]);
+				if (col != n_cols - 1) {
+					auto pad = padding + widest_name - col_entries[row].name().size();
+					for (auto i = 0; i < pad; i++)
+						Duck::Stream::std_out << ' ';
+				}
+			}
+			Duck::Stream::std_out << '\n';
 		}
 	} else {
 		// If we're in short format, we can simply print the entries.
