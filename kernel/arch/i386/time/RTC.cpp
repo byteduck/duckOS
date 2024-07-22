@@ -19,8 +19,8 @@
 
 #include "RTC.h"
 #include "CMOS.h"
-#include "../tasking/TaskManager.h"
-#include <kernel/interrupt/interrupt.h>
+#include "kernel/tasking/TaskManager.h"
+#include "kernel/interrupt/interrupt.h"
 
 #define LEAPYEAR(year) (((year) % 4 == 0) && (((year) % 100 != 0) || ((year) % 400 == 0)))
 

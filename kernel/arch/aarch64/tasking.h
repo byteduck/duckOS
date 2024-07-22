@@ -3,6 +3,3 @@
 
 #pragma once
 
-#if defined(__i386__)
-#include "i386/registers.h"
-#endif

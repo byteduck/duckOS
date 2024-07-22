@@ -45,15 +45,35 @@ bool strcmp(const char* str1, const char* str2){
 }
 
 extern "C" void* memset(void* dest, int c, size_t n) {
+#if defined(__i386__)
 	void* odest = dest;
 	asm volatile( "rep stosb" : "=D"(dest), "=c"(n) : "0"(dest), "1"(n), "a"(c) : "memory");
 	return odest;
+#else
+	auto* ptr = (uint8_t*) dest;
+	while (n--) {
+		*ptr = (uint8_t) c;
+		ptr++;
+	}
+	return dest;
+#endif
 }
 
 extern "C" void *memcpy(void *dest, const void *src, size_t count){
+#if defined(__i386__)
 	void* odest = dest;
 	asm volatile( "rep movsb" : "+D"(dest), "+S"(src), "+c"(count)::"memory");
 	return odest;
+#elif defined(__aarch64__)
+	auto* dptr = (uint8_t*) dest;
+	auto* sptr = (uint8_t*) src;
+	while (count--) {
+		*dptr = *sptr;
+		dptr++;
+		sptr++;
+	}
+	return dest;
+#endif
 }
 
 extern "C" void* memmove(void* dest, const void* src, size_t n) {
@@ -69,9 +89,13 @@ extern "C" void* memmove(void* dest, const void* src, size_t n) {
 }
 
 void* memcpy_uint32(uint32_t* d, uint32_t* s, size_t n) {
+#if defined(__i386__)
 	void* od = d;
 	asm volatile("rep movsl\n" : "+S"(s), "+D"(d), "+c"(n)::"memory");
 	return od;
+#elif defined(__aarch64__)
+	return memcpy(d, s, n * 4);
+#endif
 }
 
 int strlen(const char *str){

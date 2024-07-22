@@ -18,11 +18,11 @@
 */
 
 #include <kernel/kstd/kstddef.h>
-#include <kernel/interrupt/idt.h>
-#include <kernel/interrupt/irq.h>
+#include "idt.h"
+#include "irq.h"
 #include <kernel/tasking/TaskManager.h>
-#include "IRQHandler.h"
-#include "interrupt.h"
+#include <kernel/interrupt/IRQHandler.h>
+#include <kernel/interrupt/interrupt.h>
 
 namespace Interrupt {
 	IRQHandler* handlers[16] = {nullptr};

@@ -3,18 +3,29 @@
 
 #pragma once
 
-#include "api/stdint.h"
-#include "arch/i386/CPUID.h"
+#include "../../api/stdint.h"
+#include "CPUID.h"
+
+class IRQHandler;
 
 class Processor {
 public:
 	static void init();
+	static void halt();
 
 	static const char* vendor_string() { return s_vendor; }
 	static CPUFeatures& features() { return s_features; }
 
 	static void save_fpu_state(void*& fpu_state);
 	static void load_fpu_state(void*& fpu_state);
+
+	static void init_interrupts();
+	static bool in_interrupt();
+	static void set_interrupt_handler(int irq, IRQHandler* handler);
+	static void send_eoi(int irq);
+	static void disable_interrupts();
+	static void enable_interrupts();
+
 
 private:
 	struct CPUID {

@@ -25,7 +25,7 @@
 #include "MemoryManager.h"
 #include <kernel/multiboot.h>
 #include "AnonymousVMObject.h"
-#include <kernel/interrupt/isr.h>
+#include <kernel/arch/i386/isr.h>
 #include <kernel/device/DiskDevice.h>
 #include <kernel/tasking/Thread.h>
 #include <kernel/tasking/TaskManager.h>
@@ -145,13 +145,19 @@ void MemoryManager::load_page_directory(PageDirectory* page_directory) {
 }
 
 void MemoryManager::load_page_directory(PageDirectory& page_directory) {
+#if defined(__i386__)
 	asm volatile("movl %0, %%cr3" :: "r"(page_directory.entries_physaddr()));
+#endif
+	// TODO: aarch64
 }
 
 void MemoryManager::page_fault_handler(ISRRegisters* regs) {
 	TaskManager::ScopedCritical critical;
 	uint32_t err_pos;
+#if defined(__i386__)
 	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
+#endif
+	// TODO: aarch64
 	switch (regs->err_code) {
 		case FAULT_KERNEL_READ:
 			PANIC("KRNL_READ_NONPAGED_AREA", "0x%x", err_pos);
@@ -175,7 +181,10 @@ void MemoryManager::page_fault_handler(ISRRegisters* regs) {
 }
 
 void MemoryManager::invlpg(void* vaddr) {
+#if defined(__i386__)
 	asm volatile("invlpg %0" : : "m"(*(uint8_t*)vaddr) : "memory");
+#endif
+	// TODO: aarch64
 }
 
 void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct multiboot_mmap_entry* mmap_entry) {

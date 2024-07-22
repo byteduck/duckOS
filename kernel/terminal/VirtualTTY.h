@@ -21,7 +21,7 @@
 
 #include "TTYDevice.h"
 #include <libterm/Terminal.h>
-#include <kernel/device/KeyboardDevice.h>
+#include "kernel/device/KeyboardDevice.h"
 
 class VirtualTTY: public TTYDevice, private KeyboardHandler, private Term::Listener {
 public:

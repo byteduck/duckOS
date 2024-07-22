@@ -17,11 +17,11 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <kernel/kstd/kstddef.h>
-#include <kernel/memory/gdt.h>
-#include <kernel/tasking/TaskManager.h>
-#include <kernel/kstd/cstring.h>
-#include <kernel/interrupt/isr.h>
+#include "kernel/kstd/kstddef.h"
+#include "gdt.h"
+#include "kernel/tasking/TaskManager.h"
+#include "kernel/kstd/cstring.h"
+#include "isr.h"
 
 Memory::GDTEntry gdt[GDT_ENTRIES];
 Memory::GDTPointer gp;

@@ -18,11 +18,11 @@
 */
 
 #include "isr.h"
-#include "interrupt.h"
+#include <kernel/interrupt/interrupt.h>
 #include <kernel/kstd/kstddef.h>
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/kstd/kstdio.h>
-#include <kernel/interrupt/idt.h>
+#include "idt.h"
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/Signal.h>
 #include <kernel/tasking/Thread.h>

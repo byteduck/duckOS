@@ -169,7 +169,7 @@ int TTYDevice::ioctl(unsigned int request, SafePointer<void*> argp) {
 		case TIOCGPGRP:
 			return _pgid;
 		case TIOCSPGRP: {
-			auto pgid = (pid_t) argp.raw();
+			auto pgid = (pid_t) (size_t) argp.raw();
 			if(pgid <= 0)
 				return -EINVAL;
 			auto proc = TaskManager::process_for_pgid(pgid);

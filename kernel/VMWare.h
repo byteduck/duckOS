@@ -4,7 +4,7 @@
 #pragma once
 
 #include "Result.hpp"
-#include "device/MouseDevice.h"
+#include "kernel/device/MouseDevice.h"
 
 /* Thanks, OSDev Wiki! */
 

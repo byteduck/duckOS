@@ -20,10 +20,10 @@
 #pragma once
 
 //Converts binary coded decimal (bcd) to normal numbers
-#include <kernel/kstd/unix_types.h>
-#include <kernel/interrupt/IRQHandler.h>
+#include "kernel/kstd/unix_types.h"
+#include "kernel/interrupt/IRQHandler.h"
 #include "kernel/kstd/kstddef.h"
-#include "TimeKeeper.h"
+#include "kernel/time/TimeKeeper.h"
 
 #define RTC_IRQ 0x8
 

@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include "CharacterDevice.h"
-#include <kernel/keyboard.h>
-#include <kernel/kstd/circular_queue.hpp>
-#include <kernel/interrupt/IRQHandler.h>
+#include "kernel/device/CharacterDevice.h"
+#include "kernel/keyboard.h"
+#include "kernel/kstd/circular_queue.hpp"
+#include "kernel/interrupt/IRQHandler.h"
 
 class KeyEvent {
 public:

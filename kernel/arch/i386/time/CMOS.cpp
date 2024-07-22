@@ -17,28 +17,15 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <kernel/kstd/kstddef.h>
-#include <kernel/interrupt/idt.h>
-#include <kernel/kstd/cstring.h>
+#include "CMOS.h"
+#include "kernel/IO.h"
 
-struct Interrupt::IDTPointer idtp;
-namespace Interrupt {
-	struct IDTEntry idt[256];
+void CMOS::write(uint8_t reg, uint8_t val) {
+	IO::outb(CMOS_ADDRESS, reg);
+	IO::outb(CMOS_DATA, val);
+}
 
-	void idt_set_gate(uint8_t num, uint32_t loc, uint16_t selector, uint8_t attrs) {
-		idt[num].offset_low = (loc & 0xFFFFu);
-		idt[num].offset_high = (loc >> 16u) & 0xFFFFu;
-		idt[num].selector = selector;
-		idt[num].zero = 0;
-		idt[num].attrs = attrs;
-	}
-
-	void register_idt() {
-		idtp.size = (sizeof(struct IDTEntry) * 256) - 1;
-		idtp.offset = (int) &idt;
-
-		memset(&idt, 0, sizeof(struct IDTEntry) * 256);
-
-		idt_load();
-	}
+uint8_t CMOS::read(uint8_t reg) {
+	IO::outb(CMOS_ADDRESS, reg);
+	return IO::inb(CMOS_DATA);
 }

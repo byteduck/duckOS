@@ -32,7 +32,7 @@ void syscall_handler(ThreadRegisters& regs){
 	TaskManager::current_thread()->exit_trap_frame();
 }
 
-int handle_syscall(ThreadRegisters& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3) {
+int handle_syscall(ThreadRegisters& regs, size_t call, size_t arg1, size_t arg2, size_t arg3) {
 	auto cur_proc = TaskManager::current_thread()->process();
 	switch(call) {
 		case SYS_EXIT:

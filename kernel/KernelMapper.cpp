@@ -115,7 +115,7 @@ void KernelMapper::print_stacktrace(size_t ebp) {
 		printf("[Symbols not available yet]\n");
 
 	//Start walking the stack
-	auto* stk = (uint32_t*) ebp;
+	auto* stk = (size_t*) ebp;
 
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
 		if(!MM.kernel_page_directory.is_mapped((VirtualAddress) &stk[1], false))
@@ -142,7 +142,7 @@ void KernelMapper::print_stacktrace(size_t ebp) {
 			printf("0x%x\n", stk[1]);
 
 		//Continue walking the stack
-		stk = (uint32_t*) stk[0];
+		stk = (size_t*) stk[0];
 	}
 #else
 	SYMBOLS_NOT_ENABLED_MESSAGE
@@ -151,7 +151,7 @@ void KernelMapper::print_stacktrace(size_t ebp) {
 
 void KernelMapper::print_userspace_stacktrace() {
 #ifdef DUCKOS_KERNEL_DEBUG_SYMBOLS
-	auto* stk = (uint32_t*) __builtin_frame_address(0);
+	auto* stk = (size_t*) __builtin_frame_address(0);
 	for(unsigned int frame = 0; stk && frame < 4096; frame++) {
 		if(!TaskManager::current_process()->page_directory()->is_mapped((size_t) stk, false) || !stk[1])
 			break;
@@ -161,7 +161,7 @@ void KernelMapper::print_userspace_stacktrace() {
 		}
 		if(stk[1] < HIGHER_HALF)
 			printf("0x%x\n", stk[1]);
-		stk = (uint32_t*) stk[0];
+		stk = (size_t*) stk[0];
 	}
 #else
 	SYMBOLS_NOT_ENABLED_MESSAGE

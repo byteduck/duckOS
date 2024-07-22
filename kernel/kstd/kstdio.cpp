@@ -23,13 +23,14 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/terminal/VirtualTTY.h>
 #include <kernel/kstd/defines.h>
-#include <kernel/IO.h>
+#include "kernel/IO.h"
 #include <kernel/KernelMapper.h>
 #include <kernel/interrupt/interrupt.h>
 #include "cstring.h"
 #include <kernel/device/VGADevice.h>
 #include <kernel/filesystem/FileDescriptor.h>
 #include <kernel/bootlogo.h>
+#include <kernel/arch/Processor.h>
 
 kstd::Arc<FileDescriptor> tty_desc(nullptr);
 kstd::Arc<VirtualTTY> tty(nullptr);
@@ -48,6 +49,7 @@ void putch(char c){
 }
 
 void serial_putch(char c) {
+#if defined(__i386__)
 	static bool serial_inited = false;
 	if(!serial_inited) {
 		IO::outb(0x3F9, 0x00);
@@ -67,6 +69,8 @@ void serial_putch(char c) {
 		while (!(IO::inb(0x3FD) & 0x20u));
 	}
 	IO::outb(0x3F8, c);
+#endif
+	// TODO: aarch64
 }
 
 void print(const char* str){
@@ -208,7 +212,7 @@ void PANIC_NOHLT(const char *error, const char *msg, ...) {
 	va_start(list, msg);
 	panic_inner(error, msg, list);
 	va_end(list);
-	asm volatile("cli; hlt");
+	Processor::halt();
 	while(1);
 }
 

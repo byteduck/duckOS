@@ -110,19 +110,28 @@ size_t VMWare::mouse_queue_size() {
 }
 
 void VMWare::send(VMWare::Command& cmd) {
+#if defined(__i386__)
 	cmd.magic = VMW_MAGIC;
 	cmd.port = VMW_PORT;
 	asm volatile("in %%dx, %0" : "+a"(cmd.ax), "+b"(cmd.bx), "+c"(cmd.cx), "+d"(cmd.dx), "+S"(cmd.si), "+D"(cmd.di));
+#endif
+	//TODO: aarch64
 }
 
 void VMWare::send_hb(VMWare::Command& cmd) {
+#if defined(__i386__)
 	cmd.magic = VMW_MAGIC;
 	cmd.port = VMW_PORTHB;
 	asm volatile("cld; rep; outsb" : "+a"(cmd.ax), "+b"(cmd.bx), "+c"(cmd.cx), "+d"(cmd.dx), "+S"(cmd.si), "+D"(cmd.di));
+#endif
+	//TODO: aarch64
 }
 
 void VMWare::get_hb(VMWare::Command& cmd) {
+#if defined(__i386__)
 	cmd.magic = VMW_MAGIC;
 	cmd.port = VMW_PORTHB;
 	asm volatile("cld; rep; insb" : "+a"(cmd.ax), "+b"(cmd.bx), "+c"(cmd.cx), "+d"(cmd.dx), "+S"(cmd.si), "+D"(cmd.di));
+#endif
+	//TODO: aarch64
 }

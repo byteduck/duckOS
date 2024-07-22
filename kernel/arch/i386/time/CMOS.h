@@ -17,15 +17,17 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "CMOS.h"
-#include <kernel/IO.h>
+#pragma once
 
-void CMOS::write(uint8_t reg, uint8_t val) {
-	IO::outb(CMOS_ADDRESS, reg);
-	IO::outb(CMOS_DATA, val);
-}
+#include "kernel/kstd/kstddef.h"
 
-uint8_t CMOS::read(uint8_t reg) {
-	IO::outb(CMOS_ADDRESS, reg);
-	return IO::inb(CMOS_DATA);
-}
+#define	CMOS_ADDRESS 0x70
+#define	CMOS_DATA 0x71
+
+class CMOS {
+public:
+	static void write(uint8_t reg, uint8_t val);
+	static uint8_t read(uint8_t reg);
+};
+
+

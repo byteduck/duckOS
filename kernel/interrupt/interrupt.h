@@ -19,22 +19,28 @@
 
 #pragma once
 
-#include <kernel/IO.h>
+#if defined(__i386__)
+#include "kernel/IO.h"
+#endif
 
 #define CMOS_PORT 0x70
 #define NMI_FLAG 0x80
 
 namespace Interrupt {
-	void init();
-
 	class NMIDisabler {
 	public:
 		inline NMIDisabler() {
+#if defined(__i386__)
 			IO::outb(CMOS_PORT, NMI_FLAG | IO::inb(CMOS_PORT));
+#endif
+			//TODO: aarch64
 		}
 
 		inline ~NMIDisabler() {
+#if defined(__i386__)
 			IO::outb(CMOS_PORT, IO::inb(CMOS_PORT) & (~NMI_FLAG));
+#endif
+			//TODO: aarch64
 		}
 	};
 }

@@ -26,8 +26,8 @@
 #define PIT_IRQ 0
 #define PIT_FREQUENCY 1000 //Hz
 
-#include <kernel/interrupt/IRQHandler.h>
-#include "TimeKeeper.h"
+#include "kernel/interrupt/IRQHandler.h"
+#include "kernel/time/TimeKeeper.h"
 
 class PIT: public TimeKeeper, public IRQHandler {
 public:

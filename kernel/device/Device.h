@@ -46,6 +46,8 @@ private:
 	static kstd::vector<kstd::Arc<Device>> _devices;
 	static Mutex _lock;
 
+	static void arch_init();
+
 	unsigned _major = 0;
 	unsigned _minor = 0;
 };

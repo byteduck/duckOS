@@ -25,6 +25,7 @@
 #include <kernel/kstd/unix_types.h>
 #include "Thread.h"
 #include "Process.h"
+#include "../arch/tasking.h"
 
 class Process;
 class Thread;
@@ -50,6 +51,7 @@ namespace TaskManager {
 	extern Thread* g_next_thread;
 
 	void init();
+	void idle_task();
 	bool enabled();
 	bool is_idle();
 	bool is_preempting();
@@ -105,8 +107,6 @@ namespace TaskManager {
 
 	extern "C" void preempt();
 	extern "C" void preempt_finish();
-	extern "C" void __attribute((cdecl)) preempt_init_asm(unsigned int new_esp);
-	extern "C" void __attribute((cdecl)) preempt_asm(uint32_t *old_esp, uint32_t *new_esp, uint32_t new_cr3);
 	extern "C" void proc_first_preempt();
 };
 

@@ -1,8 +1,8 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright © 2016-2024 Byteduck */
 
-#pragma once
+#include <kernel/device/Device.h>
 
-#if defined(__i386__)
-#include "i386/registers.h"
-#endif
+void Device::arch_init() {
+
+}

@@ -26,5 +26,5 @@
 #define SOCKETFS_TYPE_MSG_CONNECT -2
 #define SOCKETFS_TYPE_MSG_DISCONNECT -3
 
-typedef unsigned int sockid_t;
+typedef unsigned long sockid_t;
 

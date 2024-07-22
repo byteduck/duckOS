@@ -18,21 +18,17 @@
 */
 
 #include "kmain.h"
-#include "kernel/device/AC97Device.h"
 #include "VMWare.h"
 #include <kernel/kstd/kstdio.h>
 #include <kernel/memory/MemoryManager.h>
-#include <kernel/memory/gdt.h>
 #include <kernel/device/Device.h>
 #include <kernel/time/TimeManager.h>
 #include <kernel/interrupt/interrupt.h>
 #include <kernel/CommandLine.h>
-#include <kernel/device/BochsVGADevice.h>
 #include <kernel/device/MultibootVGADevice.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/tasking/Process.h>
 #include <kernel/tasking/Thread.h>
-#include <kernel/device/PATADevice.h>
 #include <kernel/terminal/VirtualTTY.h>
 #include <kernel/filesystem/ext2/Ext2Filesystem.h>
 #include <kernel/device/PartitionDevice.h>
@@ -47,8 +43,13 @@
 #include <kernel/kstd/KLog.h>
 #include <kernel/tests/KernelTest.h>
 #include "bootlogo.h"
-#include "Processor.h"
+#include "arch/Processor.h"
 #include "net/NetworkAdapter.h"
+
+#if defined(__i386__)
+#include "arch/i386/device/BochsVGADevice.h"
+#include "arch/i386/device/PATADevice.h"
+#endif
 
 uint8_t boot_disk;
 
@@ -65,7 +66,7 @@ __attribute__((constructor)) void constructor_test() {
 //Use a uint8_t array to store the memory manager, or else it would be re-initialized when global constructors are called
 uint8_t __mem_manager_storage[sizeof(MemoryManager)] __attribute__((aligned(4096)));
 
-int kmain(uint32_t mbootptr){
+int kmain(size_t mbootptr){
 	// Call global constructors
 	for (constructor_func* ctor = start_ctors; ctor < end_ctors; ctor++)
 		(*ctor)();
@@ -79,20 +80,24 @@ int kmain(uint32_t mbootptr){
 
 	struct multiboot_info mboot_header = parse_mboot(mbootptr);
 	CommandLine cmd_line(mboot_header);
-	Memory::load_gdt();
+	Memory::init();
 	MemoryManager::inst().setup_paging();
-	Interrupt::init();
+	Processor::init_interrupts();
 	VMWare::detect();
 	Device::init();
 
 	//Try setting up VGA
+#if defined(__i386__)
 	BochsVGADevice* bochs_vga = BochsVGADevice::create();
 	if(!bochs_vga) {
 		//We didn't find a bochs VGA device, try using the multiboot VGA device
+#endif
 		auto* mboot_vga = MultibootVGADevice::create(&mboot_header);
 		if(!mboot_vga || mboot_vga->is_textmode())
 			PANIC("MBOOT_TEXTMODE", "duckOS doesn't support textmode.");
+#if defined(__i386__)
 	}
+#endif
 
 	// Clear screen and draw boot logo
 	clearScreen();
@@ -125,6 +130,12 @@ void kmain_late(){
 	tty0->set_active();
 	setup_tty();
 
+
+#if defined(__aarch64__)
+	KLog::dbg("kinit", "TODO aarch64");
+	while (1);
+	// TODO: aarch64
+#elif defined(__i386__)
 	KLog::dbg("kinit", "Initializing disk...");
 
 	//Setup the disk (Assumes we're using primary master drive
@@ -226,9 +237,6 @@ void kmain_late(){
 	//Load the kernel symbols
 	KernelMapper::load_map();
 
-	//Try initializing the sound card
-	auto dev = AC97Device::detect();
-
 	//Try initializing network
 	NetworkAdapter::setup();
 
@@ -248,9 +256,10 @@ void kmain_late(){
 	//We shouldn't get here
 	PANIC("INIT_FAILED", "Failed to start init.");
 	ASSERT(false);
+#endif
 }
 
-struct multiboot_info parse_mboot(uint32_t physaddr){
+struct multiboot_info parse_mboot(size_t physaddr){
 	auto* header = (struct multiboot_info*) (physaddr + HIGHER_HALF);
 
 	//Check boot disk
@@ -263,7 +272,7 @@ struct multiboot_info parse_mboot(uint32_t physaddr){
 
 	//Parse memory map
 	if(header->flags & MULTIBOOT_INFO_MEM_MAP) {
-		auto* mmap_entry = (multiboot_mmap_entry*) (header->mmap_addr + HIGHER_HALF);
+		auto* mmap_entry = (multiboot_mmap_entry*) ((size_t) header->mmap_addr + HIGHER_HALF);
 		MemoryManager::inst().parse_mboot_memory_map(header, mmap_entry);
 	} else {
 		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have a memory map. Cannot boot.");
