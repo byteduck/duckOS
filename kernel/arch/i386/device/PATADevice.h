@@ -19,14 +19,14 @@
 
 #pragma once
 
-#include <kernel/kstd/types.h>
-#include <kernel/kstd/kstdlib.h>
-#include <kernel/pci/PCI.h>
-#include <kernel/interrupt/IRQHandler.h>
-#include "ATA.h"
-#include "DiskDevice.h"
-#include <kernel/tasking/Mutex.h>
-#include <kernel/memory/MemoryManager.h>
+#include "kernel/kstd/types.h"
+#include "kernel/kstd/kstdlib.h"
+#include "kernel/pci/PCI.h"
+#include "kernel/interrupt/IRQHandler.h"
+#include "kernel/device/ATA.h"
+#include "kernel/device/DiskDevice.h"
+#include "kernel/tasking/Mutex.h"
+#include "kernel/memory/MemoryManager.h"
 
 #define ATA_MAX_SECTORS_AT_ONCE (PAGE_SIZE / 512)
 

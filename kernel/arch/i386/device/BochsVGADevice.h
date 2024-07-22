@@ -19,9 +19,9 @@
 
 #pragma once
 
-#include "VGADevice.h"
-#include <kernel/pci/PCI.h>
-#include <kernel/tasking/Mutex.h>
+#include "kernel/device/VGADevice.h"
+#include "kernel/pci/PCI.h"
+#include "kernel/tasking/Mutex.h"
 
 #define VBE_DISPI_INDEX_ID 0
 #define VBE_DISPI_INDEX_XRES 1

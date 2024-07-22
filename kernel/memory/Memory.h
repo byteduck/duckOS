@@ -25,6 +25,10 @@
 #define MAX_QUICKMAP_PAGES 8
 #define KERNEL_QUICKMAP_PAGES (KERNEL_VIRTUAL_HEAP_BEGIN - (PAGE_SIZE * MAX_QUICKMAP_PAGES))
 
+namespace Memory {
+	void init();
+}
+
 // For disambiguating parameter meanings.
 typedef size_t PageIndex;
 typedef size_t PhysicalAddress;

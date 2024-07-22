@@ -46,7 +46,10 @@ void VirtualTTY::set_current_tty(size_t tty) {
 		current->_active = false;
 	_current_tty = tty;
 	_ttys[_current_tty]->_active = true;
+#if defined(__i386__)
 	KeyboardDevice::inst()->set_handler(_ttys[_current_tty].get());
+#endif
+	// TODO: aarch64
 }
 
 void VirtualTTY::register_tty(size_t id, VirtualTTY *device) {

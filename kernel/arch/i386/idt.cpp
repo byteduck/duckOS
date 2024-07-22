@@ -17,22 +17,28 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include "interrupt.h"
+#include <kernel/kstd/kstddef.h>
 #include "idt.h"
-#include "isr.h"
-#include "irq.h"
+#include <kernel/kstd/cstring.h>
 
-extern "C" void asm_syscall_handler();
+struct Interrupt::IDTPointer idtp;
+namespace Interrupt {
+	struct IDTEntry idt[256];
 
-void Interrupt::init() {
-	//Register the IDT
-	Interrupt::register_idt();
-	//Setup ISR handlers
-	Interrupt::isr_init();
-	//Setup the syscall handler
-	Interrupt::idt_set_gate(0x80, (unsigned)asm_syscall_handler, 0x08, 0xEF);
-	//Setup IRQ handlers
-	Interrupt::irq_init();
-	//Start interrupts
-	asm volatile("sti");
+	void idt_set_gate(uint8_t num, uint32_t loc, uint16_t selector, uint8_t attrs) {
+		idt[num].offset_low = (loc & 0xFFFFu);
+		idt[num].offset_high = (loc >> 16u) & 0xFFFFu;
+		idt[num].selector = selector;
+		idt[num].zero = 0;
+		idt[num].attrs = attrs;
+	}
+
+	void register_idt() {
+		idtp.size = (sizeof(struct IDTEntry) * 256) - 1;
+		idtp.offset = (int) &idt;
+
+		memset(&idt, 0, sizeof(struct IDTEntry) * 256);
+
+		idt_load();
+	}
 }

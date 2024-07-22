@@ -18,12 +18,12 @@
 */
 
 #include "I8042.h"
-#include <kernel/IO.h>
-#include <kernel/kstd/kstdio.h>
-#include "KeyboardDevice.h"
-#include "MouseDevice.h"
+#include "kernel/IO.h"
+#include "kernel/kstd/kstdio.h"
+#include "kernel/device/KeyboardDevice.h"
+#include "kernel/device/MouseDevice.h"
 #include "kernel/VMWare.h"
-#include <kernel/kstd/KLog.h>
+#include "kernel/kstd/KLog.h"
 
 I8042* I8042::_inst = nullptr;
 
@@ -35,6 +35,7 @@ I8042& I8042::inst() {
 }
 
 bool I8042::init() {
+#if defined(__i386__)
 	if(_inst) {
 		KLog::warn("I8042", "Already initialized!");
 		return false;
@@ -120,11 +121,15 @@ bool I8042::init() {
 
 	//Write the updated config
 	write_config(config);
-
 	return true;
+#elif defined(__aarch64__)
+	// TODO: aarch64
+	return false;
+#endif
 }
 
 void I8042::handle_irq() {
+#if defined(__i386__)
 	controller_command(I8042_CMD_DISABLE_PORT1);
 	controller_command(I8042_CMD_DISABLE_PORT2);
 
@@ -149,14 +154,20 @@ void I8042::handle_irq() {
 		}
 		_mouse->handle_byte(byte);
 	}
+#endif
+	// TODO: aarch64
 }
 
 void I8042::controller_command(uint8_t command) {
+#if defined(__i386__)
 	wait_write();
 	IO::outb(I8042_STATUS, command);
+#endif
+	// TODO: aarch64
 }
 
 uint8_t I8042::controller_command_read(uint8_t command) {
+#if defined(__i386__)
 	controller_command(command);
 	uint32_t timeout = 100000;
 	while(--timeout) {
@@ -165,12 +176,19 @@ uint8_t I8042::controller_command_read(uint8_t command) {
 	}
 	KLog::warn("I8042", "Controller read timed out...");
 	return 0;
+#elif defined(__aarch64__)
+	// TODO: aarch64
+	return 0;
+#endif
 }
 
 void I8042::write_config(uint8_t config) {
+#if defined(__i386__)
 	controller_command(I8042_CMD_WRITE_CONFIG);
 	wait_write();
 	IO::outb(I8042_BUFFER, config);
+#endif
+	// TODO: aarch64
 }
 
 bool I8042::reset_device(I8042::DeviceType device) {
@@ -181,6 +199,7 @@ bool I8042::reset_device(I8042::DeviceType device) {
 }
 
 void I8042::write(I8042::DeviceType type, uint8_t value) {
+#if defined(__i386__)
 	if(type == MOUSE) {
 		//We have to tell the controller we want to talk to the second port
 		wait_write();
@@ -188,23 +207,34 @@ void I8042::write(I8042::DeviceType type, uint8_t value) {
 	}
 	wait_write();
 	IO::outb(I8042_BUFFER, value);
+#endif
+	// TODO: aarch64
 }
 
 void I8042::wait_write() {
+#if defined(__i386__)
 	uint32_t timeout = 1000;
 	while(--timeout) {
 		if(!(IO::inb(I8042_STATUS) & I8042_STATUS_INPUT_FULL))
 			return;
 	}
 	KLog::warn("I8042", "Write timed out...");
+#endif
+	// TODO: aarch64
 }
 
 uint8_t I8042::read(I8042::DeviceType type) {
+#if defined(__i386__)
 	wait_read(type);
 	return IO::inb(I8042_BUFFER);
+#elif defined(__aarch64__)
+	// TODO: aarch64
+	return 0;
+#endif
 }
 
 void I8042::wait_read(DeviceType type) {
+#if defined(__i386__)
 	uint32_t timeout = 1000;
 	uint8_t status;
 	uint8_t buf = type == MOUSE ? I8042_MOUSE_BUFFER : I8042_KEYBOARD_BUFFER;
@@ -214,4 +244,6 @@ void I8042::wait_read(DeviceType type) {
 			return;
 	}
 	KLog::warn("I8042", "Read timed out...");
+#endif
+	// TODO: aarch64
 }

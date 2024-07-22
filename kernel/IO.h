@@ -19,13 +19,13 @@
 
 #pragma once
 
-#include <kernel/kstd/unix_types.h>
-#include "pci/PCI.h"
-#include "kstd/Arc.h"
-#include "memory/VMRegion.h"
+#include "kernel/kstd/unix_types.h"
+#include "kernel/pci/PCI.h"
+#include "kernel/kstd/Arc.h"
+#include "kernel/memory/VMRegion.h"
 
 namespace IO {
-	void wait();
+#if defined(__i386__)
 	void outb(uint16_t port, uint8_t value);
 	void outw(uint16_t port, uint16_t value);
 	void outl(uint16_t port, uint32_t value);
@@ -36,11 +36,17 @@ namespace IO {
 		while(us--)
 			inb(0x80);
 	}
+#endif
+
+	void wait();
 
 	class Window {
 	public:
 		enum Type {
-			Invalid, Mem16, Mem32, Mem64, IOSpace
+			Invalid, Mem16, Mem32, Mem64,
+#if defined(__i386__)
+			IOSpace
+#endif
 		};
 
 		Window() = default;
@@ -49,6 +55,7 @@ namespace IO {
 		template<typename T>
 		T in(size_t offset) {
 			ASSERT(m_type != Invalid);
+#if defined(__i386__)
 			if (m_type == Type::IOSpace) {
 				if constexpr(sizeof(T) == 1)
 					return inb(m_addr + offset);
@@ -57,9 +64,9 @@ namespace IO {
 				else if constexpr(sizeof(T) == 4)
 					return inl(m_addr + offset);
 				static_assert(sizeof(T) <= 4 && sizeof(T) != 3);
-			} else {
+			} else
+#endif
 				return *((T*) (m_vm_region->start() + offset));
-			}
 		}
 
 		uint8_t in8(size_t offset) { return in<uint8_t>(offset); }
@@ -69,6 +76,7 @@ namespace IO {
 		template<typename T>
 		void out(size_t offset, T& data) {
 			ASSERT(m_type != Invalid);
+#if defined(__i386__)
 			if (m_type == Type::IOSpace) {
 				if constexpr(sizeof(T) == 1)
 					outb(m_addr + offset, data);
@@ -77,9 +85,9 @@ namespace IO {
 				else if constexpr(sizeof(T) == 4)
 					outl(m_addr + offset, data);
 				static_assert(sizeof(T) <= 4 && sizeof(T) != 3);
-			} else {
+			} else
+#endif
 				*((T*) (m_vm_region->start() + offset)) = data;
-			}
 		}
 
 		void out8(size_t offset, uint8_t val) { return out<uint8_t>(offset, val); }

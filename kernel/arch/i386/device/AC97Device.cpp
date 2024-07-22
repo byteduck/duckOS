@@ -18,10 +18,10 @@
 */
 #include "AC97Device.h"
 #include "kernel/tasking/TaskManager.h"
-#include <kernel/kstd/KLog.h>
-#include <kernel/kstd/unix_types.h>
-#include <kernel/memory/MemoryManager.h>
-#include <kernel/kstd/cstring.h>
+#include "kernel/kstd/KLog.h"
+#include "kernel/kstd/unix_types.h"
+#include "kernel/memory/MemoryManager.h"
+#include "kernel/kstd/cstring.h"
 
 ResultRet<kstd::Arc<AC97Device>> AC97Device::detect() {
 	PCI::Address found_ac97 = {0, 0, 0};

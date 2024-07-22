@@ -18,9 +18,9 @@
 */
 
 #include "PATADevice.h"
-#include <kernel/IO.h>
-#include <kernel/kstd/KLog.h>
-#include <kernel/filesystem/FileDescriptor.h>
+#include "kernel/IO.h"
+#include "kernel/kstd/KLog.h"
+#include "kernel/filesystem/FileDescriptor.h"
 
 PATADevice *PATADevice::find(PATADevice::Channel channel, PATADevice::DriveType drive, bool use_pio) {
 	PCI::Address addr = {0,0,0};

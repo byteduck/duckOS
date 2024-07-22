@@ -18,9 +18,10 @@
 */
 
 #include "IO.h"
-#include "kstd/kstdio.h"
-#include "memory/MemoryManager.h"
+#include "kernel/kstd/kstdio.h"
+#include "kernel/memory/MemoryManager.h"
 
+#if defined(__i386__)
 void IO::wait() {
 	asm volatile ( "jmp 1f\n\t"
 				   "1:jmp 2f\n\t"
@@ -56,6 +57,11 @@ uint32_t IO::inl(uint16_t port){
 	asm volatile ("inl %1, %0" : "=a" (ret) : "dN" (port));
 	return ret;
 }
+#elif defined(__aarch64__)
+void IO::wait() {
+	// TODO: aarch64
+}
+#endif
 
 IO::Window::Window(PCI::Address addr, uint8_t bar) {
 	auto bar_val = PCI::read_dword(addr, bar);
@@ -77,7 +83,11 @@ IO::Window::Window(PCI::Address addr, uint8_t bar) {
 		PCI::write_dword(addr, bar, bar_val);
 		m_vm_region = MM.alloc_mapped_region(m_addr, m_size);
 	} else {
+#if defined(__i386__)
 		m_type = IOSpace;
 		m_addr = bar_val & ~0x3u;
+#else
+		m_type = Invalid;
+#endif
 	}
 }

@@ -18,13 +18,13 @@
 */
 
 #include "BochsVGADevice.h"
-#include <kernel/memory/PageDirectory.h>
-#include <kernel/pci/PCI.h>
-#include <kernel/kstd/defines.h>
-#include <kernel/tasking/Process.h>
-#include <kernel/IO.h>
-#include <kernel/kstd/cstring.h>
-#include <kernel/kstd/KLog.h>
+#include "kernel/memory/PageDirectory.h"
+#include "kernel/pci/PCI.h"
+#include "kernel/kstd/defines.h"
+#include "kernel/tasking/Process.h"
+#include "kernel/IO.h"
+#include "kernel/kstd/cstring.h"
+#include "kernel/kstd/KLog.h"
 
 PCI::ID bochs_qemu_vga = {0x1234, 0x1111};
 PCI::ID vbox_vga = {0x80ee, 0xbeef};

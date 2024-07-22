@@ -4,5 +4,7 @@
 #pragma once
 
 #if defined(__i386__)
-#include "i386/registers.h"
+#include "i386/Processor.h"
+#elif defined(__aarch64__)
+#include "aarch64/Processor.h"
 #endif

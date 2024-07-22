@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <kernel/kstd/types.h>
-#include <kernel/tasking/TSS.h>
+#include "kernel/kstd/types.h"
+#include "kernel/tasking/TSS.h"
 
 #define GDT_ENTRIES 7
 

@@ -86,6 +86,7 @@ void PageDirectory::init_paging() {
 
 	// Enable paging
 
+#if defined(__i386__)
 	asm volatile(
 		"movl %%eax, %%cr3\n" //Put the page directory pointer in cr3
 		"movl %%cr0, %%eax\n"
@@ -93,6 +94,8 @@ void PageDirectory::init_paging() {
 		"movl %%eax, %%cr0\n"
 		: : "a"((size_t) MM.kernel_page_directory.m_entries - HIGHER_HALF)
 	);
+#endif
+	// TODO: aarch64
 }
 
 void PageDirectory::Entry::Data::set_address(size_t address) {
@@ -276,7 +279,10 @@ bool PageDirectory::is_mapped(size_t vaddr, bool write) {
 
 bool PageDirectory::is_mapped() {
 	size_t current_page_directory;
+#if defined(__i386__)
 	asm volatile("mov %%cr3, %0" : "=r"(current_page_directory));
+#endif
+	// TODO: aarch64
 	return current_page_directory == entries_physaddr();
 }
 

@@ -28,7 +28,7 @@ CommandLine::CommandLine(const struct multiboot_info& header) {
 	if(!_inst)
 		_inst = this;
 	if(header.flags & MULTIBOOT_INFO_CMDLINE) {
-		cmdline = (char*) (header.cmdline + HIGHER_HALF);
+		cmdline = (char*) ((size_t) header.cmdline + HIGHER_HALF);
 
 		KLog::info("CommandLine", "Command line options: '{}'", cmdline);
 

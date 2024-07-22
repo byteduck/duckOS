@@ -18,11 +18,11 @@
 */
 #pragma once
 
-#include "CharacterDevice.h"
+#include "kernel/device/CharacterDevice.h"
 #include "kernel/IO.h"
-#include <kernel/Result.hpp>
-#include <kernel/pci/PCI.h>
-#include <kernel/interrupt/IRQHandler.h>
+#include "kernel/Result.hpp"
+#include "kernel/pci/PCI.h"
+#include "kernel/interrupt/IRQHandler.h"
 
 #define AC97_PCI_CLASS 0x4u
 #define AC97_PCI_SUBCLASS 0x1u

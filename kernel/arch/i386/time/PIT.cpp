@@ -17,10 +17,10 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <kernel/kstd/kstddef.h>
-#include <kernel/time/PIT.h>
-#include <kernel/IO.h>
-#include "TimeManager.h"
+#include "kernel/kstd/kstddef.h"
+#include "PIT.h"
+#include "kernel/IO.h"
+#include "kernel/time/TimeManager.h"
 
 PIT::PIT(TimeManager* manager): TimeKeeper(manager), IRQHandler(PIT_IRQ) {
 	auto divisor = (uint16_t)(1193180u / PIT_FREQUENCY);

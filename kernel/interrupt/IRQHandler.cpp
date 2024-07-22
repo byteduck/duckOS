@@ -19,7 +19,7 @@
 
 #include <kernel/kstd/kstdio.h>
 #include "IRQHandler.h"
-#include "irq.h"
+#include "../arch/Processor.h"
 
 IRQHandler::IRQHandler() {
 
@@ -35,7 +35,7 @@ bool IRQHandler::sent_eoi() {
 }
 
 IRQHandler::IRQHandler(int irq): _irq(irq) {
-	Interrupt::irq_set_handler(irq, this);
+	Processor::set_interrupt_handler(irq, this);
 }
 
 void IRQHandler::set_irq(int irq) {
@@ -43,12 +43,12 @@ void IRQHandler::set_irq(int irq) {
 }
 
 void IRQHandler::uninstall_irq() {
-	Interrupt::irq_set_handler(_irq, nullptr);
+	Processor::set_interrupt_handler(_irq, nullptr);
 }
 
 void IRQHandler::reinstall_irq() {
 	if(!_irq) return;
-	Interrupt::irq_set_handler(_irq, this);
+	Processor::set_interrupt_handler(_irq, this);
 }
 
 bool IRQHandler::mark_in_irq() {
@@ -56,6 +56,6 @@ bool IRQHandler::mark_in_irq() {
 }
 
 void IRQHandler::send_eoi() {
-	Interrupt::send_eoi(_irq);
+	Processor::send_eoi(_irq);
 	_sent_eoi = true;
 }
