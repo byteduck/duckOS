@@ -34,6 +34,20 @@ if [ -z "$DUCKOS_QEMU_ACCEL" ]; then
 	fi
 fi
 
+DUCKOS_QEMU_MACHINE=""
+case $ARCH in
+  i686)
+    QEMU_SYSTEM="i386"
+    ;;
+  aarch64)
+    QEMU_SYSTEM="aarch64"
+    DUCKOS_QEMU_MACHINE="-machine virt"
+    ;;
+  *)
+    fail "Unsupported architecture $ARCH."
+    ;;
+esac
+
 # Find which qemu binary we should use
 if command -v wslpath >/dev/null; then
 	# We're on windows, use windows QEMU
@@ -41,10 +55,10 @@ if command -v wslpath >/dev/null; then
 		DUCKOS_WIN_QEMU_INSTALL_DIR="C:\\Program Files\\qemu"
 	fi
 	USE_KVM="0"
-	DUCKOS_QEMU="$(wslpath "${DUCKOS_WIN_QEMU_INSTALL_DIR}")/qemu-system-i386.exe"
+	DUCKOS_QEMU="$(wslpath "${DUCKOS_WIN_QEMU_INSTALL_DIR}")/qemu-system-$QEMU_SYSTEM.exe"
 	DUCKOS_IMAGE="$(wslpath -w "$DUCKOS_IMAGE")"
 else
-	DUCKOS_QEMU="qemu-system-i386"
+	DUCKOS_QEMU="qemu-system-$QEMU_SYSTEM"
 fi
 
 DUCKOS_QEMU_DISPLAY=""
@@ -62,11 +76,12 @@ fi
 # Run!
 DUCKOS_QEMU_ARGS="
 	-s
-	-kernel kernel/duckk32
+	-kernel kernel/${KERNEL_NAME}
 	-drive file=$DUCKOS_IMAGE,cache=directsync,format=raw,id=disk,if=ide
 	-m 512M
 	-serial stdio
 	-device ac97
+	$DUCKOS_QEMU_MACHINE
 	$DUCKOS_QEMU_DISPLAY
 	$DUCKOS_QEMU_ACCEL"
 
