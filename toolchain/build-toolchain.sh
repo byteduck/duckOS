@@ -1,5 +1,26 @@
 #!/bin/bash
 set -e
+source "../scripts/duckos.sh"
+
+TARGETS=("i686-pc-duckos" "aarch64-pc-duckos")
+ARCHES=("i686" "aarch64")
+
+if [ -z "$ARCH" ]; then
+  msg "No architecture specified, defaulting to i686. Specify a desired architecture with the ARCH environment variable."
+  TARGET="i686-pc-duckos"
+  ARCH="i686"
+else
+  unset $TARGET
+  for i in "${!ARCHES[@]}"; do
+    if [[ "${ARCHES[$i]}" = "$ARCH" ]]; then
+      msg "Building for $ARCH"
+      TARGET="${TARGETS[$i]}"
+    fi
+  done
+  if [ -z "$TARGET" ]; then
+    fail "Unsupported architecture $ARCH."
+  fi
+fi
 
 source "./toolchain-common.sh"
 
@@ -16,8 +37,8 @@ build_binutils () {
   fi
 
   msg "Configuring binutils..."
-  mkdir -p "binutils-$BINUTILS_VERSION-build"
-  cd "binutils-$BINUTILS_VERSION-build"
+  mkdir -p "binutils-$BINUTILS_VERSION-$ARCH-build"
+  cd "binutils-$BINUTILS_VERSION-$ARCH-build"
   "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --with-sysroot="$SYSROOT" --disable-nls --enable-shared || exit 1
   msg "Making binutils..."
   make -j "$NUM_JOBS" || exit 1
@@ -68,8 +89,8 @@ build_gcc () {
   fi
 
   msg "Configuring gcc..."
-  mkdir -p "gcc-$GCC_VERSION-build"
-  cd "gcc-$GCC_VERSION-build"
+  mkdir -p "gcc-$GCC_VERSION-$ARCH-build"
+  cd "gcc-$GCC_VERSION-$ARCH-build"
   "$CONFIGURE_SCRIPT" --prefix="$PREFIX" --target="$TARGET" --disable-nls --enable-languages=c,c++ --with-sysroot="$SYSROOT" --enable-shared "${extra_config_args[@]}" || exit 1
 
   install_headers
@@ -94,6 +115,8 @@ make_toolchain_file () {
   msg "Making CMakeToolchain.txt..."
   cp "$DIR/CMakeToolchain.txt.in" "$BUILD/CMakeToolchain.txt"
   $SED_BIN -i "s/@DUCKOS_SOURCE_DIR@/$(echo "$SOURCE_DIR" | sed -r 's/\//\\\//g')/g" "$BUILD/CMakeToolchain.txt"
+  $SED_BIN -i "s/@DUCKOS_TARGET@/$TARGET/g" "$BUILD/CMakeToolchain.txt"
+  $SED_BIN -i "s/@DUCKOS_ARCH@/$ARCH/g" "$BUILD/CMakeToolchain.txt"
 }
 
 mkdir -p "$BUILD"

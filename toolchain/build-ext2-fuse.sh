@@ -6,7 +6,7 @@ export PATH="/usr/local/opt/m4/bin:$PATH"
 if [[ "$(uname -s)" != "Darwin" ]]; then
 	fail "FUSE-ext2 is only needed on macOS."
 fi
-pushd "$DIR"/../cmake-build
+pushd "$DIR"/../build
 if [ ! -d fuse-ext2 ]; then
 	msg "Cloning alperakcanfuse-ext2..."
 	git clone https://github.com/alperakcan/fuse-ext2.git

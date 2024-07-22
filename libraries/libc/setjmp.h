@@ -33,6 +33,8 @@ struct __jmp_struct {
 	long int ebp;
 	long int esp;
 	long int eip;
+#elif defined(__aarch64__)
+	// TODO
 #else
 	IMPLEMENT OTHER ARCHES...
 #endif
