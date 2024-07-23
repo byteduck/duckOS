@@ -24,12 +24,12 @@ SECTIONS {
 
 		*(.rodata*)
 	}
-	
+
 	.data : AT(ADDR(.data) - 0xC0000000)
 	{
 		*(.data*)
 	}
-	
+
 	.bss : AT(ADDR(.bss) - 0xC0000000)
 	{
 	    _PAGETABLES_START = .;

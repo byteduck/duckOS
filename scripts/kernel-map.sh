@@ -1,2 +1,2 @@
 #!/bin/sh
-nm -C -n duckk32 > kernel.map
+nm -C -n $1 > kernel.map

@@ -38,10 +38,18 @@ DUCKOS_QEMU_MACHINE=""
 case $ARCH in
   i686)
     QEMU_SYSTEM="i386"
+    DUCKOS_QEMU_MEM="512M"
+    DUCKOS_QEMU_DRIVE="-drive file=$DUCKOS_IMAGE,cache=directsync,format=raw,id=disk,if=ide"
+    DUCKOS_QEMU_DEVICES="-device ac97"
+    DUCKOS_QEMU_SERIAL="-serial stdio"
     ;;
   aarch64)
     QEMU_SYSTEM="aarch64"
-    DUCKOS_QEMU_MACHINE="-machine virt"
+    DUCKOS_QEMU_MACHINE="-machine raspi3b"
+    DUCKOS_QEMU_MEM="1G"
+    DUCKOS_QEMU_DRIVE=""
+    DUCKOS_QEMU_DEVICES=""
+    DUCKOS_QEMU_SERIAL="-serial null -serial stdio" # UART1 is mini UART
     ;;
   *)
     fail "Unsupported architecture $ARCH."
@@ -77,10 +85,10 @@ fi
 DUCKOS_QEMU_ARGS="
 	-s
 	-kernel kernel/${KERNEL_NAME}
-	-drive file=$DUCKOS_IMAGE,cache=directsync,format=raw,id=disk,if=ide
-	-m 512M
-	-serial stdio
-	-device ac97
+	-m $DUCKOS_QEMU_MEM
+	$DUCKOS_QEMU_SERIAL
+	$DUCKOS_QEMU_DEVICES
+	$DUCKOS_QEMU_DRIVE
 	$DUCKOS_QEMU_MACHINE
 	$DUCKOS_QEMU_DISPLAY
 	$DUCKOS_QEMU_ACCEL"
