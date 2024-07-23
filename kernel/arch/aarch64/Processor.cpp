@@ -8,7 +8,9 @@ void Processor::init() {
 }
 
 void Processor::halt() {
-
+	while (1) {
+		asm volatile ("wfi");
+	}
 }
 
 void Processor::save_fpu_state(void*& fpu_state) {

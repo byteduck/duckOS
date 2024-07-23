@@ -173,6 +173,7 @@ SET(KERNEL_SRCS
         api/strerror.c)
 
 IF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
+    SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/arch/i386/kernel.ld)
     SET(KERNEL_SRCS
             ${KERNEL_SRCS}
 
@@ -182,6 +183,7 @@ IF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
             arch/i386/isr.cpp
             arch/i386/tasking.cpp
             arch/i386/gdt.cpp
+            arch/i386/kstdio.cpp
 
             arch/i386/asm/startup.s
             arch/i386/asm/tasking.s
@@ -199,12 +201,23 @@ IF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
             arch/i386/time/PIT.cpp
             arch/i386/time/RTC.cpp)
 ELSEIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
+    SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/arch/aarch64/kernel.ld)
     SET(KERNEL_SRCS
             ${KERNEL_SRCS}
 
             arch/aarch64/Processor.cpp
             arch/aarch64/ARMTimer.cpp
             arch/aarch64/tasking.cpp
+            arch/aarch64/startup.cpp
+            arch/aarch64/kstdio.cpp
+
+            arch/aarch64/asm/startup.S
+            arch/aarch64/asm/exception.S
+
+            arch/aarch64/rpi/MiniUART.cpp
+            arch/aarch64/rpi/GPIO.cpp
+            arch/aarch64/rpi/Mailbox.cpp
+            arch/aarch64/rpi/Framebuffer.cpp
 
             arch/aarch64/device/Device.cpp)
 ENDIF()
@@ -221,7 +234,6 @@ ADD_EXECUTABLE(${KERNEL_EXECUTABLE_NAME} ${KERNEL_SRCS} ${CMAKE_CURRENT_BINARY_D
 ADD_DEPENDENCIES(${KERNEL_EXECUTABLE_NAME} generate_version_file)
 TARGET_COMPILE_DEFINITIONS(${KERNEL_EXECUTABLE_NAME} PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL "$<$<BOOL:${ADD_KERNEL_DEBUG_SYMBOLS}>:DUCKOS_KERNEL_DEBUG_SYMBOLS>")
 
-SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/kernel.ld)
 SET_TARGET_PROPERTIES(${KERNEL_EXECUTABLE_NAME} PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
 TARGET_LINK_LIBRARIES(${KERNEL_EXECUTABLE_NAME} gcc)
 TARGET_LINK_OPTIONS(${KERNEL_EXECUTABLE_NAME} PRIVATE LINKER:-T ${LINKER_SCRIPT} -nostdlib)
@@ -239,5 +251,5 @@ endforeach()
 INSTALL(TARGETS ${KERNEL_EXECUTABLE_NAME} RUNTIME DESTINATION boot)
 
 # Make kernel map
-ADD_CUSTOM_COMMAND(TARGET ${KERNEL_EXECUTABLE_NAME} COMMAND ${CMAKE_SOURCE_DIR}/scripts/kernel-map.sh)
+ADD_CUSTOM_COMMAND(TARGET ${KERNEL_EXECUTABLE_NAME} COMMAND ${CMAKE_SOURCE_DIR}/scripts/kernel-map.sh ${KERNEL_EXECUTABLE_NAME})
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/kernel.map DESTINATION boot)

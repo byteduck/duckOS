@@ -8,7 +8,7 @@
 class Processor {
 public:
 	static void init();
-	static void halt();
+	[[noreturn]] static void halt();
 
 	static void save_fpu_state(void*& fpu_state);
 	static void load_fpu_state(void*& fpu_state);
