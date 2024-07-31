@@ -53,13 +53,6 @@
  * often)
  */
 
-extern "C" long _KERNEL_TEXT;
-extern "C" long _KERNEL_TEXT_END;
-extern "C" long _KERNEL_DATA;
-extern "C" long _KERNEL_DATA_END;
-extern "C" long _PAGETABLES_START;
-extern "C" long _PAGETABLES_END;
-
 struct multiboot_info;
 struct multiboot_mmap_entry;
 

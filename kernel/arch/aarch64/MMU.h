@@ -1,0 +1,146 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright © 2016-2024 Byteduck */
+
+#pragma once
+
+#include <kernel/kstd/types.h>
+
+namespace Aarch64::Regs {
+	union MAIR {
+		enum DeviceMemory: uint8_t {
+			nGnRnE = 0b00 << 2, // non-Gathering, non-Reordering, non-Early Write Acknowledgement
+			nGnRE  = 0b01 << 2, // non-Gathering, non-Reordering, Early Write Acknowledgement
+			nGRE   = 0b10 << 2, // non-Gathering, Reordering, Early Write Acknowledgement
+			GRE    = 0b11 << 2  // Gathering, Reordering, Early Write Acknowledgement
+		};
+
+		enum NormalMemory: uint8_t {
+			NonCacheable = 0b0100,
+			Cacheable = 0b1111
+		};
+
+		// Bits to shift NormalMemory by
+		enum CacheLevel: int {
+			Outer = 4,
+			Inner = 0
+		};
+
+		uint8_t sections[8];
+		uint64_t value;
+	};
+
+	union TCR {
+		struct {
+			uint8_t t0sz : 6;
+			uint8_t : 1;
+			bool epd0 : 1;
+			uint8_t irgn0 : 2;
+			uint8_t orgn0 : 2;
+			uint8_t sh0 : 2;
+			uint8_t tg0 : 2;
+
+			uint8_t t1sz : 6;
+			bool a1 : 1;
+			bool epd1 : 1;
+			uint8_t irgn1 : 2;
+			uint8_t orgn1 : 2;
+			uint8_t sh1 : 2;
+			uint8_t tg1 : 2;
+
+			uint8_t ips : 3;
+			uint8_t : 1;
+			bool as : 1;
+			bool tbi0 : 1;
+			bool tbi1 : 1;
+			bool ha : 1;
+			bool hd : 1;
+			bool hpd0 : 1;
+			bool hpd1 : 1;
+			bool hwu059 : 1;
+			bool hwu060 : 1;
+			bool hwu061 : 1;
+			bool hwu062 : 1;
+			bool hwu159 : 1;
+			bool hwu160 : 1;
+			bool hwu161 : 1;
+			bool hwu162 : 1;
+			bool tbid0 : 1;
+			bool tbid1 : 1;
+			bool nfd0 : 1;
+			bool nfd1 : 1;
+			bool e0pd0 : 1;
+			bool e0pd1 : 1;
+			bool tcma0 : 1;
+			bool tcma1 : 1;
+			bool ds : 1;
+			bool mtx0 : 1;
+			bool mxt1 : 1;
+			uint8_t : 2;
+		};
+		uint64_t value;
+	};
+}
+
+namespace Aarch64::MMU {
+	enum Attr: uint8_t {
+		NormalUncacheable = 0,
+		NormalCacheable   = 1,
+		Device_nGnRnE     = 2,
+		Device_nGnRE      = 3
+	};
+
+	struct PageDescriptor {
+		bool valid: 1;
+
+		enum Type: bool {
+			Block = false,
+			Table = true
+		} type: 1;
+
+		uint8_t attr_index : 3;
+
+		enum Security: bool {
+			Secure = false,
+			Nonsecure = true
+		} security : 1;
+
+		enum Perms: uint8_t {
+			pRW    = 0b00,
+			pRWuRW = 0b01,
+			pR     = 0b10,
+			pRuR   = 0b11
+		} read_write : 2;
+
+		enum Shareability: uint8_t {
+			NonShareable   = 0b00,
+			Reserved       = 0b01,
+			OuterShareable = 0b10,
+			InnerShareable = 0b11
+		} shareability : 2;
+
+		bool access : 1;
+		bool _zero : 1 = false;
+		uint64_t address : 36;
+		uint16_t _reserved : 16 = 0;
+	};
+
+	struct TableDescriptor {
+		bool valid : 1;
+		enum Type: bool {
+			Block = false,
+			Table = true
+		} type : 1 = Table;
+		uint16_t _res0 : 10 = 0;
+		uint64_t address : 36;
+		uint16_t _res1 : 11 = 0;
+		uint8_t heirarchical_perms : 4 = 0;
+		enum Security: bool {
+			Secure = false,
+			Nonsecure = true
+		} security : 1;
+	};
+
+	void mmu_init();
+
+	[[noreturn]] void mem_early_panic(const char* str);
+}

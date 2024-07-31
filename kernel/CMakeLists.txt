@@ -210,6 +210,7 @@ ELSEIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
             arch/aarch64/tasking.cpp
             arch/aarch64/startup.cpp
             arch/aarch64/kstdio.cpp
+            arch/aarch64/MMU.cpp
 
             arch/aarch64/asm/startup.S
             arch/aarch64/asm/exception.S

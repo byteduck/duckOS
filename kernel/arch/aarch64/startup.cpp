@@ -9,19 +9,19 @@
 #include "Processor.h"
 #include <kernel/kstd/kstdio.h>
 #include "asm/exception.h"
+#include "MMU.h"
 
 extern "C" [[noreturn]] void aarch64init() {
 	// We're currently mapped at a low physical address, so no touching any variables yet.
+	setup_exception_level();
+	// Init MMU
+	Aarch64::MMU::mmu_init();
+
+	while(1); // TODO
 
 	// Setup MiniUART for output
 	RPi::MiniUART::init();
 	RPi::MiniUART::puts("Booting, in el");
-	RPi::MiniUART::tx('0' + get_el());
-	RPi::MiniUART::tx('\n');
-
-	// Jump to the correct EL
-	setup_exception_level();
-	RPi::MiniUART::puts("Successfully dropped to el");
 	RPi::MiniUART::tx('0' + get_el());
 	RPi::MiniUART::tx('\n');
 
@@ -33,8 +33,8 @@ extern "C" [[noreturn]] void aarch64init() {
 
 extern "C" [[noreturn]] void unknown_el() {
 	// We may end up here if we boot in an unknown EL
-	RPi::MiniUART::puts("Booted in el");
-	RPi::MiniUART::tx('0' + get_el());
-	RPi::MiniUART::puts(", cannot handle. Halting.\n");
+//	RPi::MiniUART::puts("Booted in el");
+//	RPi::MiniUART::tx('0' + get_el());
+//	RPi::MiniUART::puts(", cannot handle. Halting.\n");
 	Processor::halt();
 }
