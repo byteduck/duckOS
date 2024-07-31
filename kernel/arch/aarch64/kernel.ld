@@ -1,6 +1,5 @@
 ENTRY(start)
-
-KERNEL_BASE = 0xC000000000;
+KERNEL_BASE = 0xFFFF000000000000;
 
 SECTIONS {
 
@@ -42,6 +41,9 @@ SECTIONS {
 
 		. = ALIGN(4K);
 		*(.kheap);
+
+		. = ALIGN(4K);
+		*(.meminit*);
 	}
 	PROVIDE(_BSS_END = .);
 	PROVIDE(_BSS_SIZE_LONG =( _BSS_END - _BSS_START) / 8);
