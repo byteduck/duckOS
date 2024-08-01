@@ -10,8 +10,7 @@
 
 using namespace Aarch64;
 
-#define descriptor_addr(addr) (((addr) >> 12) & 0xFFFFFFFFF)
-
+// TODO: We could unmap these once we're done with them.
 __attribute__((aligned(4096), section(".meminit"))) MMU::TableDescriptor __initial_pgd_storage[512];
 __attribute__((aligned(4096), section(".meminit"))) MMU::TableDescriptor __initial_pud_storage[512];
 __attribute__((aligned(4096), section(".meminit"))) MMU::PageDescriptor __initial_pmd_storage[512];
@@ -20,11 +19,6 @@ __attribute__((aligned(4096), section(".meminit"))) MMU::PageDescriptor __initia
 auto* initial_pgd = (MMU::TableDescriptor*) (((size_t) &__initial_pgd_storage[0]) - HIGHER_HALF);
 auto* initial_pud = (MMU::TableDescriptor*) (((size_t) &__initial_pud_storage[0]) - HIGHER_HALF);
 auto* initial_pmd = (MMU::PageDescriptor*) (((size_t) &__initial_pmd_storage[0]) - HIGHER_HALF);
-
-constexpr size_t pte_size = PAGE_SIZE;
-constexpr size_t pmd_size = pte_size * 512;
-constexpr size_t pud_size = pmd_size * 512;
-constexpr size_t pgd_size = pud_size * 512;
 
 void MMU::mmu_init() {
 	/** Setup MAIR_EL1 attributes **/
@@ -70,7 +64,7 @@ void MMU::mmu_init() {
 		pmd.read_write  = PageDescriptor::pRW;
 		pmd.shareability = PageDescriptor::OuterShareable;
 		pmd.access = true;
-		pmd.address = descriptor_addr(section * pmd_size + kernel_start_phys);
+		pmd.address = descriptor_addr(section * pmd_size + (kernel_start_phys / pmd_size) * pmd_size);
 	}
 
 	// TCR value. Map ttbr0/1 as follows:
@@ -91,33 +85,13 @@ void MMU::mmu_init() {
 			"tlbi vmalle1                \n"
 			"dsb ish                     \n"
 			"isb                         \n"
-			"mrs x5, sctlr_el1           \n"
-			"orr x5, x5, #0x1            \n"
-			"msr sctlr_el1, x5           \n"
-			"br %[mmu_fin]               \n"
+			"mrs x4, sctlr_el1           \n"
+			"orr x4, x4, #0x1            \n"
+			"msr sctlr_el1, x4           \n"
 			:: [ttbr_val]"r"(initial_pgd),
 			   [tcr_val]"r"(tcr.value),
-			   [mair_val]"r"(mair_el1.value),
-			   [mmu_fin]"r"((uint64_t) &&mmu_fin | HIGHER_HALF) // TODO: Why do I have to OR with HIGHER_HALF to get those upper bits set..?
-			: "x5");
-mmu_fin:
-	// Correct our stack pointer and return address
-	asm volatile (
-			"mov x0, #0                   \n"
-			"msr ttbr0_el1, x0            \n" // Disable ttbr0 identity mapping
-			"tlbi vmalle1                 \n" // Flush tlb
-
-			"mov x0, sp                   \n" // OR high bits into sp
-			"mov x1, #" STR(HIGHER_HALF) "\n"
-			"orr x0, x0, x1               \n"
-			"mov sp, x0                   \n"
-
-			"mov x0, lr                   \n" // OR high bits into lr
-			"orr x0, x0, x1               \n"
-			"mov lr, x0                   \n"
-
-			"ret                          \n" // Manual ret or else the compiler will screw with it
-			::: "x0", "x1");
+			   [mair_val]"r"(mair_el1.value)
+			: "x4");
 }
 
 void MMU::mem_early_panic(const char* str) {

@@ -19,7 +19,7 @@ SECTIONS {
 	.rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_BASE)
 	{
 		start_ctors = .;
-		*(.ctors)
+		*(.init_array)
 		end_ctors = .;
 
 		*(.rodata*)

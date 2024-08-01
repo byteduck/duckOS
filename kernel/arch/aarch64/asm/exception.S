@@ -26,6 +26,8 @@ el3_to_el1:
     msr elr_el3, x0
     mov x0, sp
     msr sp_el1, x0
+    ldr x0, =CPACR_FPEN
+    msr cpacr_el1, x0
     eret
 
 el2_to_el1:

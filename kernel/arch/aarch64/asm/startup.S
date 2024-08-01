@@ -11,8 +11,9 @@ start:
     cbnz x10, corestop
 
     // Get ourselves some stack
-    adrp x10, start
-    add x10, x10, :lo12:start
+    adrp x10, __early_stack
+    add x10, x10, :lo12:__early_stack
+    add x10, x10, #0x4000
     mov sp, x10
 
     // Clear out BSS

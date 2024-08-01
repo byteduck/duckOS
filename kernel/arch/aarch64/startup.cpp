@@ -10,25 +10,40 @@
 #include <kernel/kstd/kstdio.h>
 #include "asm/exception.h"
 #include "MMU.h"
+#include <kernel/memory/Memory.h>
+#include <kernel/constructors.h>
+
+// TODO: We could unmap this once it's no longer needed.
+__attribute__((aligned(8))) char __early_stack[0x4000];
+
+[[noreturn]] void aarch64_late_init();
+
+extern "C" int kmain(size_t mbootptr);
 
 extern "C" [[noreturn]] void aarch64init() {
 	// We're currently mapped at a low physical address, so no touching any variables yet.
 	setup_exception_level();
+
 	// Init MMU
 	Aarch64::MMU::mmu_init();
 
-	while(1); // TODO
+	call_global_constructors();
 
-	// Setup MiniUART for output
-	RPi::MiniUART::init();
-	RPi::MiniUART::puts("Booting, in el");
-	RPi::MiniUART::tx('0' + get_el());
-	RPi::MiniUART::tx('\n');
+	// Jump to high memory and correct sp
+	asm volatile (
+			"ldr x0, =1f                  \n" // Continue execution in high mem
+			"br x0                        \n"
+			"1:                           \n"
 
-	RPi::Framebuffer::init();
-	RPi::MiniUART::puts("Framebuffer inited!\n");
+			"mov x0, sp                   \n" // OR high bits into sp
+			"mov x1, #" STR(HIGHER_HALF) "\n"
+			"orr x0, x0, x1               \n"
+			"mov sp, x0                   \n"
 
-	while (1);
+			"b kmain                      \n" // Jump to kinit
+			::: "x0", "x1");
+
+	ASSERT(false);
 }
 
 extern "C" [[noreturn]] void unknown_el() {

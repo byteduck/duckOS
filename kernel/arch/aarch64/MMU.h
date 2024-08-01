@@ -82,6 +82,47 @@ namespace Aarch64::Regs {
 }
 
 namespace Aarch64::MMU {
+	constexpr size_t pte_size = 4096;
+	constexpr size_t pmd_size = pte_size * 512;
+	constexpr size_t pud_size = pmd_size * 512;
+	constexpr size_t pgd_size = pud_size * 512;
+
+	constexpr uint64_t descriptor_addr(size_t addr) {
+		return ((addr) >> 12) & 0xFFFFFFFFF;
+	}
+
+	constexpr uint64_t pte_index(size_t addr) {
+		return ((addr) >> 12) & 0x1FF;
+	}
+
+	constexpr uint64_t pte_page_index(size_t page) {
+		return page & 0x1FF;
+	}
+
+	constexpr uint64_t pmd_index(size_t addr) {
+		return ((addr) >> 21) & 0x1FF;
+	}
+
+	constexpr uint64_t pmd_page_index(size_t page) {
+		return ((page) >> 9) & 0x1FF;
+	}
+
+	constexpr uint64_t pud_index(size_t addr) {
+		return ((addr) >> 30) & 0x1FF;
+	}
+
+	constexpr uint64_t pud_page_index(size_t page) {
+		return ((page) >> 18) & 0x1FF;
+	}
+
+	constexpr uint64_t pgd_index(size_t addr) {
+		return ((addr) >> 39) & 0x1FF;
+	}
+
+	constexpr uint64_t pgd_page_index(size_t page) {
+		return ((page) >> 27) & 0x1FF;
+	}
+
 	enum Attr: uint8_t {
 		NormalUncacheable = 0,
 		NormalCacheable   = 1,

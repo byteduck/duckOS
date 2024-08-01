@@ -17,7 +17,6 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/cstring.h>
 #include <kernel/memory/MemoryManager.h>
 #include "DiskDevice.h"
