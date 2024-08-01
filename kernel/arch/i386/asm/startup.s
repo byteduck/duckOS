@@ -1,7 +1,7 @@
 [bits 32]
 [global start]
 [global load_gdt]
-[extern kmain]
+[extern i386init]
 
 global flagss
 
@@ -113,7 +113,7 @@ start_hh:
 	mov esp, stack+0x4000
 	push dword [mbootptr]
 
-	call kmain
+	call i386init
 
 	jmp $
 

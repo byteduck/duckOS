@@ -47,57 +47,20 @@
 #include "net/NetworkAdapter.h"
 
 #if defined(__i386__)
-#include "arch/i386/device/BochsVGADevice.h"
 #include "arch/i386/device/PATADevice.h"
 #endif
 
 uint8_t boot_disk;
 
-typedef void (*constructor_func)();
-extern constructor_func start_ctors[];
-extern constructor_func end_ctors[];
-
-//This method should be called with global constructors, so we'll assert that did_constructors == true after we do that
-bool did_constructors = false;
-__attribute__((constructor)) void constructor_test() {
-	did_constructors = true;
-}
-
-//Use a uint8_t array to store the memory manager, or else it would be re-initialized when global constructors are called
-uint8_t __mem_manager_storage[sizeof(MemoryManager)] __attribute__((aligned(4096)));
-
-int kmain(size_t mbootptr){
-	// Call global constructors
-	for (constructor_func* ctor = start_ctors; ctor < end_ctors; ctor++)
-		(*ctor)();
-	ASSERT(did_constructors);
-
-	clearScreen();
-	KLog::info("kinit", "Starting duckOS...");
+void kmain(){
 	Processor::init();
 
-	new (__mem_manager_storage) MemoryManager;
+	KLog::info("kinit", "Starting duckOS...");
 
-	struct multiboot_info mboot_header = parse_mboot(mbootptr);
-	CommandLine cmd_line(mboot_header);
 	Memory::init();
-	MemoryManager::inst().setup_paging();
 	Processor::init_interrupts();
 	VMWare::detect();
 	Device::init();
-
-	//Try setting up VGA
-#if defined(__i386__)
-	BochsVGADevice* bochs_vga = BochsVGADevice::create();
-	if(!bochs_vga) {
-		//We didn't find a bochs VGA device, try using the multiboot VGA device
-#endif
-		auto* mboot_vga = MultibootVGADevice::create(&mboot_header);
-		if(!mboot_vga || mboot_vga->is_textmode())
-			PANIC("MBOOT_TEXTMODE", "duckOS doesn't support textmode.");
-#if defined(__i386__)
-	}
-#endif
 
 	// Clear screen and draw boot logo
 	clearScreen();
@@ -117,8 +80,8 @@ int kmain(size_t mbootptr){
 	KLog::dbg("kinit", "First stage complete.");
 	
 	TaskManager::init();
+
 	ASSERT(false); //We should never get here
-	return 0;
 }
 
 void kmain_late(){
@@ -257,26 +220,4 @@ void kmain_late(){
 	PANIC("INIT_FAILED", "Failed to start init.");
 	ASSERT(false);
 #endif
-}
-
-struct multiboot_info parse_mboot(size_t physaddr){
-	auto* header = (struct multiboot_info*) (physaddr + HIGHER_HALF);
-
-	//Check boot disk
-	if(header->flags & MULTIBOOT_INFO_BOOTDEV) {
-		boot_disk = (header->boot_device & 0xF0000000u) >> 28u;
-		KLog::dbg("kinit", "BIOS boot disk: {#x}", boot_disk);
-	} else {
-		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have boot device info. Cannot boot.");
-	}
-
-	//Parse memory map
-	if(header->flags & MULTIBOOT_INFO_MEM_MAP) {
-		auto* mmap_entry = (multiboot_mmap_entry*) ((size_t) header->mmap_addr + HIGHER_HALF);
-		MemoryManager::inst().parse_mboot_memory_map(header, mmap_entry);
-	} else {
-		PANIC("MULTIBOOT_FAIL", "The multiboot header doesn't have a memory map. Cannot boot.");
-	}
-
-	return *header;
 }

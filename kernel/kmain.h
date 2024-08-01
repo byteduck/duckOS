@@ -21,5 +21,5 @@
 #include <kernel/kstd/unix_types.h>
 
 struct multiboot_info parse_mboot(size_t physaddr);
-extern "C" int kmain(size_t mbootptr);
+extern "C" void kmain();
 void kmain_late();

@@ -25,6 +25,10 @@
 #include "Memory.h"
 #include "VMRegion.h"
 
+#if defined(__aarch64__)
+#include <kernel/arch/aarch64/MMU.h>
+#endif
+
 class PageTable;
 
 class PageDirectory {
@@ -34,6 +38,15 @@ public:
 		KERNEL
 	};
 
+	explicit PageDirectory(DirectoryType type = DirectoryType::USER);
+	~PageDirectory();
+
+	/**
+	 * Initialize the kernel page directory entries & related variables.
+	 */
+	static void init_paging();
+
+#if defined(__i386__)
 	typedef union Entry {
 		class __attribute((packed)) Data {
 		public:
@@ -56,14 +69,6 @@ public:
 	} Entry;
 
 	/**
-	 * Initialize the kernel page directory entries & related variables.
-	 */
-	static void init_paging();
-
-	explicit PageDirectory(DirectoryType type = DirectoryType::USER);
-	~PageDirectory();
-
-	/**
 	 * Gets a pointer to the entries in the PageDirectory.
 	 * @return
 	 */
@@ -74,6 +79,7 @@ public:
 	 * @return The physical address of the table of entries.
 	 */
 	size_t entries_physaddr();
+#endif
 
 	/**
 	 * Maps a portion of a region into the page directory.
@@ -100,19 +106,6 @@ public:
 	 * Calls get_physaddr(size_t virtaddr).
 	 */
 	size_t get_physaddr(void* virtaddr);
-
-	/**
-	 * Allocates space for a new page table at tables_index in the page directory.
-	 * @param tables_index The index in the page directory that this newly allocated page table is for.
-	 * @return A pointer to the newly allocated page table.
-	 */
-	PageTable* alloc_page_table(size_t tables_index);
-
-	/**
-	 * Deallocates the space used for a page table at tables_index in the page directory.
-	 * @param tables_index The index in the page directory of the page table being dealloc'd.
-	 */
-	void dealloc_page_table(size_t tables_index);
 
 	/**
 	 * Checks if a given virtual address is mapped to anything.
@@ -146,13 +139,29 @@ private:
 	 */
 	Result unmap_page(PageIndex vpage);
 
+	/**
+	 * Maps the kernel when booting, without initializing VMRegions and tracking physical pages.
+	 */
+	static void setup_kernel_map();
+
+#if defined(__i386__)
+	/**
+	 * Allocates space for a new page table at tables_index in the page directory.
+	 * @param tables_index The index in the page directory that this newly allocated page table is for.
+	 * @return A pointer to the newly allocated page table.
+	 */
+	PageTable* alloc_page_table(size_t tables_index);
+
+	/**
+	 * Deallocates the space used for a page table at tables_index in the page directory.
+	 * @param tables_index The index in the page directory of the page table being dealloc'd.
+	 */
+	void dealloc_page_table(size_t tables_index);
+
 	// The entries for the kernel.
 	static Entry s_kernel_entries[1024];
 	// The page tables for the kernel.
 	static PageTable s_kernel_page_tables[256];
-
-	// The type of the page directory.
-	const DirectoryType m_type;
 	// The VMRegion for this page directory's entries.
 	kstd::Arc<VMRegion> m_entries_region;
 	// The page directory entries for this page directory.
@@ -161,6 +170,50 @@ private:
 	PageTable* m_page_tables[768] = {nullptr};
 	// An array of u16s that stores the number of pages mapped in each page table, used to deallocate a page table once no longer needed
 	int m_page_tables_num_mapped[1024] = {0};
+#elif defined(__aarch64__)
+	static uint64_t* alloc_table();
+
+	/* Yes, these could all be the same struct.
+	 * However, this way, naming in code will be much clearer. */
+	struct LowerPages {
+		Aarch64::MMU::PageDescriptor* entries;
+	};
+
+	template<typename Child>
+	struct Table {
+		Aarch64::MMU::TableDescriptor* entries = nullptr;
+		Child* children[512] = {nullptr};
+
+		Child* get_child(size_t index) {
+			ASSERT(index >= 0 && index < 512);
+			auto& child = children[index];
+			if (__builtin_expect(!child, false)) {
+				child = new Child();
+				child->entries = (typeof(child->entries)) alloc_table();
+				entries[index].valid = true;
+				entries[index].type = Aarch64::MMU::TableDescriptor::Table;
+				// TODO: Actual physical page lookup
+				entries[index].address = Aarch64::MMU::descriptor_addr(((size_t) child->entries) & (~HIGHER_HALF));
+				entries[index].heirarchical_perms = 0;
+				entries[index].security = Aarch64::MMU::TableDescriptor::Secure;
+			}
+			return child;
+		}
+	};
+
+	using MiddleTable = Table<LowerPages>;
+	using UpperTable = Table<MiddleTable>;
+	using GlobalTable = Table<UpperTable>;
+
+	// The page global directory.
+	GlobalTable m_global_table;
+
+	// The start page of the global directory.
+	PageIndex start_page;
+#endif
+
+	// The type of the page directory.
+	const DirectoryType m_type;
 	// A lock used to prevent race conditions.
 	Mutex m_lock {"PageDirectory"};
 };

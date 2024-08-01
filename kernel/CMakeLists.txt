@@ -65,7 +65,6 @@ SET(KERNEL_SRCS
         device/MouseDevice.cpp
         interrupt/IRQHandler.cpp
         memory/PageDirectory.cpp
-        memory/PageTable.cpp
         tasking/Process.cpp
         tasking/Thread.cpp
         tasking/Lock.cpp
@@ -170,7 +169,8 @@ SET(KERNEL_SRCS
         net/UDPSocket.cpp
         net/TCPSocket.cpp
         net/Router.cpp
-        api/strerror.c)
+        api/strerror.c
+        constructors.cpp)
 
 IF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
     SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/arch/i386/kernel.ld)
@@ -184,6 +184,10 @@ IF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
             arch/i386/tasking.cpp
             arch/i386/gdt.cpp
             arch/i386/kstdio.cpp
+            arch/i386/startup.cpp
+            arch/i386/PageTable.cpp
+            arch/i386/PageDirectory.cpp
+            arch/i386/MemoryManager.cpp
 
             arch/i386/asm/startup.s
             arch/i386/asm/tasking.s
@@ -211,6 +215,8 @@ ELSEIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
             arch/aarch64/startup.cpp
             arch/aarch64/kstdio.cpp
             arch/aarch64/MMU.cpp
+            arch/aarch64/PageDirectory.cpp
+            arch/aarch64/MemoryManager.cpp
 
             arch/aarch64/asm/startup.S
             arch/aarch64/asm/exception.S
@@ -219,6 +225,7 @@ ELSEIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
             arch/aarch64/rpi/GPIO.cpp
             arch/aarch64/rpi/Mailbox.cpp
             arch/aarch64/rpi/Framebuffer.cpp
+            arch/aarch64/rpi/DeviceInfo.cpp
 
             arch/aarch64/device/Device.cpp)
 ENDIF()

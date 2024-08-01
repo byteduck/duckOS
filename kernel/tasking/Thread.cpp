@@ -397,13 +397,13 @@ void Thread::acquired_lock(Mutex* lock) {
 	TaskManager::ScopedCritical crit;
 	if(_held_locks.size() == _held_locks.capacity())
 		PANIC("MAX_LOCKS", "A thread is holding way too many locks.");
-	if(lock != &MM.liballoc_lock && lock != &TaskManager::g_tasking_lock)
+	if(lock != &MM.s_liballoc_lock && lock != &TaskManager::g_tasking_lock)
 		_held_locks.push_back(lock);
 }
 
 void Thread::released_lock(Mutex* lock) {
 	TaskManager::ScopedCritical crit;
-	if(lock != &MM.liballoc_lock && lock != &TaskManager::g_tasking_lock) {
+	if(lock != &MM.s_liballoc_lock && lock != &TaskManager::g_tasking_lock) {
 		ASSERT(_held_locks.size());
 		// Ensure locks are acquired and released in the correct order
 		auto last_held = _held_locks.pop_back();

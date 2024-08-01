@@ -21,7 +21,6 @@
 #include <kernel/tasking/TaskManager.h>
 #include "KernelMapper.h"
 #include <kernel/kstd/cstring.h>
-#include <kernel/memory/PageDirectory.h>
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/kstd/KLog.h>
 

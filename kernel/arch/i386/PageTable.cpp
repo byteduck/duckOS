@@ -18,8 +18,8 @@
 */
 
 #include "PageTable.h"
-#include "PageDirectory.h"
-#include "MemoryManager.h"
+#include "kernel/memory/PageDirectory.h"
+#include "kernel/memory/MemoryManager.h"
 
 void PageTable::Entry::Data::set_address(size_t address) {
 	page_addr = address >> 12u;

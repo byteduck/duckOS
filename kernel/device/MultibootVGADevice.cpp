@@ -19,7 +19,6 @@
 
 #include <kernel/kstd/defines.h>
 #include "MultibootVGADevice.h"
-#include <kernel/memory/PageDirectory.h>
 #include <kernel/tasking/Process.h>
 #include <kernel/kstd/cstring.h>
 #include <kernel/multiboot.h>

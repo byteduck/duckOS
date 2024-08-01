@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <kernel/kstd/types.h>
-#include "VMRegion.h"
+#include "kernel/kstd/types.h"
+#include "kernel/memory/VMRegion.h"
 
 class PageDirectory;
 class PageTable {

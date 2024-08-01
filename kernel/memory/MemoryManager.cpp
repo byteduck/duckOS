@@ -19,9 +19,7 @@
 
 #include <kernel/kstd/kstddef.h>
 #include <kernel/kstd/kstdio.h>
-#include <kernel/memory/PageDirectory.h>
 #include <kernel/interrupt/interrupt.h>
-#include "PageTable.h"
 #include "MemoryManager.h"
 #include <kernel/multiboot.h>
 #include "AnonymousVMObject.h"
@@ -31,14 +29,6 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/kstd/KLog.h>
 
-size_t usable_bytes_ram = 0;
-size_t total_bytes_ram = 0;
-size_t reserved_bytes_ram = 0;
-size_t bad_bytes_ram = 0;
-size_t usable_lower_limt = ~0;
-size_t usable_upper_limit = 0;
-size_t mem_lower_limit = ~0;
-size_t mem_upper_limit = 0;
 size_t used_kheap_mem;
 
 uint8_t early_kheap_memory[0x200000]; // 2MiB
@@ -46,6 +36,7 @@ size_t used_early_kheap_memory = 0;
 bool did_setup_paging = false;
 
 MemoryManager* MemoryManager::_inst;
+Mutex MemoryManager::s_liballoc_lock {"liballoc"};
 kstd::Arc<VMRegion> kernel_text_region;
 kstd::Arc<VMRegion> kernel_data_region;
 kstd::Arc<VMRegion> physical_pages_region;
@@ -56,17 +47,15 @@ MemoryManager::MemoryManager():
 {
 	if(_inst)
 		PANIC("MEMORY_MANAGER_DUPLICATE", "Something tried to initialize the memory manager twice.");
-	_inst = this;
 }
 
 MemoryManager& MemoryManager::inst() {
+	if(__builtin_expect(!_inst, false))
+		_inst = new MemoryManager;
 	return *_inst;
 }
 
 void MemoryManager::setup_paging() {
-	// Setup and enable paging
-	PageDirectory::init_paging();
-
 	// Find a region where we can store our physical page array
 	size_t num_physical_pages = mem_upper_limit / PAGE_SIZE;
 	size_t page_array_num_pages = kstd::ceil_div(num_physical_pages * sizeof(PhysicalPage), PAGE_SIZE);
@@ -95,6 +84,9 @@ void MemoryManager::setup_paging() {
 		PANIC("PAGE_ARRAY_NOMEM", "Cannot find enough contiguous memory to store the physical page array.");
 	KLog::dbg("Memory", "Mapping physical page array to pages {#x} -> {#x}", page_array_start_page,
 			   page_array_start_page + page_array_num_pages - 1);
+
+	// Setup and enable paging
+	PageDirectory::init_paging();
 
 	// Map the array to memory
 	VMProt pages_prot = {
@@ -185,107 +177,6 @@ void MemoryManager::invlpg(void* vaddr) {
 	asm volatile("invlpg %0" : : "m"(*(uint8_t*)vaddr) : "memory");
 #endif
 	// TODO: aarch64
-}
-
-void MemoryManager::parse_mboot_memory_map(struct multiboot_info* header, struct multiboot_mmap_entry* mmap_entry) {
-	size_t mmap_offset = 0;
-	usable_bytes_ram = 0;
-
-	auto make_region = [&](size_t addr, size_t size, bool reserved, bool used) {
-		//Round up the address of the entry to a page boundary and round the size down to a page boundary
-		uint32_t addr_pagealigned = ((addr + PAGE_SIZE - 1) / PAGE_SIZE) * PAGE_SIZE;
-		uint32_t size_pagealigned = ((size - (addr_pagealigned - addr)) / PAGE_SIZE) * PAGE_SIZE;
-
-		// We don't want the zero page.
-		if(addr_pagealigned == 0) {
-			addr_pagealigned += PAGE_SIZE;
-			if(size_pagealigned)
-				size_pagealigned -= PAGE_SIZE;
-		}
-
-		if(size_pagealigned / PAGE_SIZE < 2) {
-			KLog::dbg("Memory", "Ignoring too-small memory region at {#x}", addr);
-			return;
-		}
-
-		KLog::dbg("Memory", "Making memory region at page {#x} of {#x} pages ({}, {})", addr_pagealigned / PAGE_SIZE,
-				   size_pagealigned / PAGE_SIZE, used ? "Used" : "Unused", reserved ? "Reserved" : "Unreserved");
-		auto region = new PhysicalRegion(
-			addr_pagealigned / PAGE_SIZE,
-			size_pagealigned / PAGE_SIZE,
-			reserved,
-			used
-		);
-		total_bytes_ram += size_pagealigned;
-
-		if(!region->reserved() && region->free_pages()) {
-			if(addr_pagealigned < usable_lower_limt)
-				usable_lower_limt = addr_pagealigned;
-			if(addr_pagealigned + (size_pagealigned - 1) > usable_upper_limit)
-				usable_upper_limit = addr_pagealigned + (size_pagealigned - 1);
-		}
-
-		if(addr_pagealigned < mem_lower_limit)
-			mem_lower_limit = addr_pagealigned;
-		if(addr_pagealigned + (size_pagealigned - 1) > mem_upper_limit)
-			mem_upper_limit = addr_pagealigned + (size_pagealigned - 1);
-
-		if(!region->reserved())
-			usable_bytes_ram += size_pagealigned;
-		else
-			reserved_bytes_ram += size_pagealigned;
-
-		if(mmap_entry->type == MULTIBOOT_MEMORY_BADRAM)
-			bad_bytes_ram += size_pagealigned;
-
-		m_physical_regions.push_back(region);
-
-		KLog::dbg("Memory", "Adding memory region at page {#x} of {#x} pages ({}, {})", region->start_page(),
-				   region->num_pages(), !region->free_pages() ? "Used" : "Unused",
-				   region->reserved() ? "Reserved" : "Unreserved");
-	};
-
-	while(mmap_offset < header->mmap_length) {
-		if(mmap_entry->addr_high || mmap_entry->len_high) {
-			//If the entry is in extended memory, ignore it
-			KLog::dbg("Memory", "Ignoring memory region above 4GiB (0x{x}{x})",
-					   mmap_entry->addr_high, mmap_entry->addr_low);
-		} else {
-			size_t addr = mmap_entry->addr_low;
-			size_t size = mmap_entry->len_low;
-			size_t end = addr + size;
-
-			// Check if the kernel is contained inside of this region. If so, we need to bifurcate it.
-			if(KERNEL_DATA_END - HIGHER_HALF >= addr && KERNEL_DATA_END - HIGHER_HALF <= end) {
-				KLog::dbg("Memory", "Kernel is from pages {#x} --> {#x}", (KERNEL_TEXT - HIGHER_HALF) / PAGE_SIZE,
-						   (KERNEL_DATA_END - HIGHER_HALF) / PAGE_SIZE - 1);
-				if(addr < KERNEL_TEXT - HIGHER_HALF) {
-					// Space in region before kernel
-					make_region(addr,
-								KERNEL_TEXT - addr,
-								mmap_entry->type == MULTIBOOT_MEMORY_RESERVED,
-								mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE);
-				}
-				if(end > KERNEL_DATA_END - HIGHER_HALF) {
-					// Space in region after kernel
-					make_region(KERNEL_DATA_END - HIGHER_HALF,
-								end - (KERNEL_DATA_END - HIGHER_HALF),
-								mmap_entry->type == MULTIBOOT_MEMORY_RESERVED,
-								mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE);
-				}
-			} else {
-				make_region(addr,
-							size,
-							mmap_entry->type == MULTIBOOT_MEMORY_RESERVED,
-							mmap_entry->type != MULTIBOOT_MEMORY_AVAILABLE);
-			}
-		}
-		mmap_offset += mmap_entry->size + sizeof(mmap_entry->size);
-		mmap_entry = (struct multiboot_mmap_entry*) ((size_t)mmap_entry + mmap_entry->size + sizeof(mmap_entry->size));
-	}
-
-	KLog::dbg("Memory", "Usable memory limits: {#x} -> {#x}", usable_lower_limt, usable_upper_limit);
-	KLog::dbg("Memory", "Total memory limits: {#x} -> {#x}", mem_lower_limit, mem_upper_limit);
 }
 
 ResultRet<PageIndex> MemoryManager::alloc_physical_page() const {
@@ -502,11 +393,11 @@ size_t MemoryManager::kernel_heap() const {
 }
 
 void liballoc_lock() {
-	MemoryManager::inst().liballoc_lock.acquire();
+	MemoryManager::s_liballoc_lock.acquire();
 }
 
 void liballoc_unlock() {
-	MemoryManager::inst().liballoc_lock.release();
+	MemoryManager::s_liballoc_lock.release();
 }
 
 void *liballoc_alloc(int pages) {
@@ -529,7 +420,8 @@ void *liballoc_alloc(int pages) {
 }
 
 void liballoc_afteralloc(void* ptr_alloced) {
-	MM.finalize_heap_pages();
+	if (did_setup_paging)
+		MM.finalize_heap_pages();
 }
 
 void liballoc_free(void *ptr, int pages) {

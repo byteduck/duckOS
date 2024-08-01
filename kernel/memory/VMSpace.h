@@ -7,7 +7,7 @@
 #include "VMRegion.h"
 #include "../Result.hpp"
 #include "../tasking/Mutex.h"
-#include "PageDirectory.h"
+#include <kernel/Memory/PageDirectory.h>
 #include <kernel/kstd/Iteration.h>
 
 /**

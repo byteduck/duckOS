@@ -21,7 +21,6 @@
 #include <kernel/filesystem/VFS.h>
 #include <kernel/memory/MemoryManager.h>
 #include <kernel/filesystem/FileDescriptor.h>
-#include <kernel/memory/PageDirectory.h>
 #include <kernel/kstd/KLog.h>
 #include <kernel/memory/AnonymousVMObject.h>
 

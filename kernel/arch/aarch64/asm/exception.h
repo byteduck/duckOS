@@ -16,6 +16,8 @@
 // SPSR_EL3
 #define SPSR_EL3_VAL ((7 << 6) | 5)
 
+#define CPACR_FPEN 0x300000
+
 #ifdef __cplusplus
 extern "C" void setup_exception_level();
 #endif
