@@ -1,4 +1,6 @@
 #!/bin/sh
+SCRIPTDIR=$(dirname "$BASH_SOURCE")
+source "$SCRIPTDIR/duckos.sh"
 
 set -e
 
@@ -6,13 +8,11 @@ set -e
 if [ -z "$USE_KVM" ]; then
 	USE_KVM="0"
 	if [ -e /dev/kvm ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
-	  if ! command -v arch &> /dev/null; then
-        USE_KVM="1" # No arch command
+    HOST_ARCH="$(uname -m)"
+    if [ "$ARCH" = "$HOST_ARCH" ] || { [ "$ARCH" = "i686" ] && [ "$HOST_ARCH" = "x86_64" ]; }; then
+      USE_KVM="1"
     else
-      ARCH="$(arch)"
-      if [[ "$ARCH" == "x86_64" ]] || [[ "$ARCH" =~ i[3-6]86 ]]; then
-        USE_KVM="1"
-      fi
+      warn "Host architecture ($HOST_ARCH) does not match guest architecture ($ARCH) - not using kvm. Set USE_KVM=1 to override."
     fi
 	fi
 fi
@@ -72,7 +72,9 @@ fi
 DUCKOS_QEMU_DISPLAY=""
 
 if "$DUCKOS_QEMU" --display help | grep -iq sdl; then
-	DUCKOS_QEMU_DISPLAY="--display sdl"
+  if [ "$ARCH" != "aarch64" ]; then # For some reason sdl doesn't work properly with aarch64...
+    DUCKOS_QEMU_DISPLAY="--display sdl"
+  fi
 elif "$DUCKOS_QEMU" --display help | grep -iq cocoa; then
 	DUCKOS_QEMU_DISPLAY="--display cocoa"
 fi
