@@ -15,6 +15,10 @@ struct VMProt {
 	bool read : 1;
 	bool write : 1;
 	bool execute : 1;
+
+	constexpr bool operator==(VMProt other) {
+		return other.read == read && other.write == write && other.execute == execute;
+	}
 };
 
 class VMSpace;

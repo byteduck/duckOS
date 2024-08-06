@@ -122,10 +122,6 @@ size_t PageDirectory::get_physaddr(size_t virtaddr) {
 	}
 }
 
-size_t PageDirectory::get_physaddr(void *virtaddr) {
-	return get_physaddr((size_t)virtaddr);
-}
-
 PageTable *PageDirectory::alloc_page_table(size_t tables_index) {
 	LOCK(m_lock);
 

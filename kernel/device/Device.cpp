@@ -31,12 +31,12 @@ kstd::vector<kstd::Arc<Device>> Device::_devices;
 Mutex Device::_lock("Device");
 
 void Device::init() {
+	arch_init();
 	new ZeroDevice();
 	new RandomDevice();
 	new NullDevice();
 	new PTYMuxDevice();
 	new KernelLogDevice();
-	arch_init();
 }
 
 Device::Device(unsigned major, unsigned minor): _major(major), _minor(minor) {

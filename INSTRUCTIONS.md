@@ -60,3 +60,15 @@ To build something from the `edit` directory, pass the `edited-[thing]` to the `
 To run kernel unit tests, run `make install` and `make image` as usual, and then use `make tests` to run tests. Instead of running init, the kernel will run unit tests after booting.
 
 Alternatively, supply the `kernel-tests` kernel argument to run tests.
+
+## Raspberry Pi
+*Note: aarch64 support is WIP, and even less likely to work properly on real hardware than in qemu. duckOS currently supports the Raspberry Pi 3B.*
+
+To run duckOS on a Raspberry Pi, make the kernel as usual and then run `make rpi-kernel` to create a flat binary for the Raspberry Pi bootloader. Copy the resulting `kernel8.img` to a FAT32-formatted SD card along with the appropriate [firmware](https://github.com/raspberrypi/firmware) (just as you would have the boot partition in a raspbian install), and then add a `config.txt` file with the following contents:
+
+```
+disable_commandline_tags=1
+kernel=kernel8.img
+arm_64bit=1
+kernel_address=0x80000
+```

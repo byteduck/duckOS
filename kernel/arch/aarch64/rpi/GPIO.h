@@ -29,34 +29,24 @@ namespace RPi {
 		static void set_pin_pull(int pin, PullMode mode);
 
 	private:
-		static constexpr size_t phys_base = 0x3F200000;
+		static constexpr size_t base = 0x200000;
 		enum Register: size_t {
-			GPFSEL0 = 0x00,
-			GPFSEL1 = 0x04,
-			GPFSEL2 = 0x08,
-			GPFSEL3 = 0x0C,
-			GPFSEL4 = 0x10,
-			GPFSEL5 = 0x14,
+			GPFSEL0 = base + 0x00,
+			GPFSEL1 = base + 0x04,
+			GPFSEL2 = base + 0x08,
+			GPFSEL3 = base + 0x0C,
+			GPFSEL4 = base + 0x10,
+			GPFSEL5 = base + 0x14,
 
-			GPSET0 = 0x1C,
-			GPSET1 = 0x20,
+			GPSET0 = base + 0x1C,
+			GPSET1 = base + 0x20,
 
-			GPCLR0 = 0x28,
-			GPCLR1 = 0x2C,
+			GPCLR0 = base + 0x28,
+			GPCLR1 = base + 0x2C,
 
-			GPPUD =     0x94,
-			GPPUDCLK0 = 0x98,
-			CPPUDCLK1 = 0x9C
+			GPPUD =     base + 0x94,
+			GPPUDCLK0 = base + 0x98,
+			CPPUDCLK1 = base + 0x9C
 		};
-
-		template<typename T>
-		inline static T get(Register reg) {
-			return *((T*) (phys_base + reg));
-		}
-
-		template<typename T>
-		inline static void set(Register reg, T val) {
-			*((T*) (phys_base + reg)) = val;
-		}
 	};
 }

@@ -4,5 +4,5 @@
 #include "rpi/MiniUART.h"
 
 void serial_putch(char c) {
-//	RPi::MiniUART::tx(c);
+	RPi::MiniUART::tx(c);
 }

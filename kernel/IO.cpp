@@ -81,7 +81,7 @@ IO::Window::Window(PCI::Address addr, uint8_t bar) {
 		PCI::write_dword(addr, bar, 0xFFFFFFFF);
 		m_size = ~(PCI::read_dword(addr, bar) & (~0xfull)) + 1;
 		PCI::write_dword(addr, bar, bar_val);
-		m_vm_region = MM.alloc_mapped_region(m_addr, m_size);
+		m_vm_region = MM.map_device_region(m_addr, m_size);
 	} else {
 #if defined(__i386__)
 		m_type = IOSpace;

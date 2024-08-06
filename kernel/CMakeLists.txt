@@ -217,6 +217,7 @@ ELSEIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
             arch/aarch64/MMU.cpp
             arch/aarch64/PageDirectory.cpp
             arch/aarch64/MemoryManager.cpp
+            arch/aarch64/Device.cpp
 
             arch/aarch64/asm/startup.S
             arch/aarch64/asm/exception.S
@@ -226,8 +227,12 @@ ELSEIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
             arch/aarch64/rpi/Mailbox.cpp
             arch/aarch64/rpi/Framebuffer.cpp
             arch/aarch64/rpi/DeviceInfo.cpp
+            arch/aarch64/rpi/MMIO.cpp)
 
-            arch/aarch64/device/Device.cpp)
+    ADD_CUSTOM_TARGET(rpi-kernel
+            COMMAND ${CMAKE_OBJCOPY} ${KERNEL_EXECUTABLE_NAME} -O binary ${CMAKE_BINARY_DIR}/kernel8.img
+            USES_TERMINAL
+    )
 ENDIF()
 
 add_custom_command(

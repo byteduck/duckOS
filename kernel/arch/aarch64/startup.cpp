@@ -18,16 +18,20 @@ __attribute__((aligned(8))) char __early_stack[0x4000];
 
 [[noreturn]] void aarch64_late_init();
 
-extern "C" int kmain(size_t mbootptr);
+extern "C" void kmain();
+
+extern uint8_t early_kheap_memory[0x200000]; // 2MiB
 
 extern "C" [[noreturn]] void aarch64init() {
-	// We're currently mapped at a low physical address, so no touching any variables yet.
+	RPi::MiniUART::init();
+	RPi::MiniUART::puts("duckOS aarch64 boot\n");
+
+	// We're currently mapped at a low physical address, so no touching any global variables yet.
 	setup_exception_level();
 
 	// Init MMU
 	Aarch64::MMU::mmu_init();
-
-	call_global_constructors();
+	RPi::MiniUART::puts("MMU Initialized\n");
 
 	// Jump to high memory and correct sp
 	asm volatile (
@@ -38,18 +42,17 @@ extern "C" [[noreturn]] void aarch64init() {
 			"mov x0, sp                   \n" // OR high bits into sp
 			"mov x1, #" STR(HIGHER_HALF) "\n"
 			"orr x0, x0, x1               \n"
-			"mov sp, x0                   \n"
+			"mov sp, x0                   \n");
 
-			"b kmain                      \n" // Jump to kinit
-			::: "x0", "x1");
+	call_global_constructors();
+
+	asm volatile("b kmain");
 
 	ASSERT(false);
 }
 
 extern "C" [[noreturn]] void unknown_el() {
 	// We may end up here if we boot in an unknown EL
-//	RPi::MiniUART::puts("Booted in el");
-//	RPi::MiniUART::tx('0' + get_el());
-//	RPi::MiniUART::puts(", cannot handle. Halting.\n");
+	RPi::MiniUART::puts("Cannot handle EL. Halting.\n");
 	Processor::halt();
 }

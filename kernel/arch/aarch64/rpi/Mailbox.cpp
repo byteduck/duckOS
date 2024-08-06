@@ -3,22 +3,30 @@
 
 #include "Mailbox.h"
 #include <kernel/kstd/kstdio.h>
+#include "MMIO.h"
+#include <kernel/memory/MemoryManager.h>
 
 using namespace RPi;
 
-bool Mailbox::call(void* buffer, Channel channel) {
-	if ((size_t) buffer & 0xF || (size_t) buffer > 0xFFFFFFFF)
+bool Mailbox::call(void* buffer, size_t size, Channel channel) {
+	auto buf_phys = MM.kernel_page_directory.get_physaddr(buffer);
+
+	if (buf_phys & 0xF || buf_phys > 0xFFFFFFFF)
 		return false; // Not properly aligned
 
-	auto header = ((uint32_t) (size_t) buffer) | (channel & 0xF);
-	// TODO: Flush cache memory?
+	// Wait until we can write
+	while (MMIO::peek<uint32_t>(STATUS) & FULL) {}
 
-	while (get<uint32_t>(STATUS) & FULL) {}
-	set<uint32_t>(WRITE, header);
+	auto header = ((uint32_t) buf_phys) | (channel & 0xF);
+
+	// Flush out cache before sending to make sure VideoCore memory is in sync
+	Aarch64::flush_cache({(size_t) buffer, size});
+
+	MMIO::poke<uint32_t>(WRITE, header);
 
 	while (true) {
-		while (get<uint32_t>(STATUS) & EMPTY) {}
-		if (header == get<uint32_t>(READ))
+		while (MMIO::peek<uint32_t>(STATUS) & EMPTY) {}
+		if (header == MMIO::peek<uint32_t>(READ))
 			return ((uint32_t*) buffer)[1] == RESPONSE;
 	}
 }
