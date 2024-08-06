@@ -84,6 +84,7 @@ _deps
 
 # CMake
 cmake-build*/
+build/
 
 #
 # DUCKOS-SPECIFIC

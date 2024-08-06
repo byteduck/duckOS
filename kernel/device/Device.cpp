@@ -23,10 +23,7 @@
 #include "ZeroDevice.h"
 #include "RandomDevice.h"
 #include "NullDevice.h"
-#include "KeyboardDevice.h"
-#include "MouseDevice.h"
 #include "KernelLogDevice.h"
-#include "I8042.h"
 #include <kernel/kstd/unix_types.h>
 #include <kernel/kstd/KLog.h>
 
@@ -34,10 +31,10 @@ kstd::vector<kstd::Arc<Device>> Device::_devices;
 Mutex Device::_lock("Device");
 
 void Device::init() {
+	arch_init();
 	new ZeroDevice();
 	new RandomDevice();
 	new NullDevice();
-	I8042::init();
 	new PTYMuxDevice();
 	new KernelLogDevice();
 }

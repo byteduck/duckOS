@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 /* Copyright © 2016-2022 Byteduck */
 #include "KernelTest.h"
-#include "../memory/PageDirectory.h"
+#include <kernel/memory/PageDirectory.h>
 #include "../random.h"
 
 #define NUM_REGIONS 100

@@ -1,16 +1,22 @@
 #!/bin/bash
 source "../scripts/duckos.sh"
 
+if [ -z "$TARGET" ]; then
+  fail "No target specified."
+fi
+if [ -z "$ARCH" ]; then
+  ARCH="${TARGET%%-*}"
+fi
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LIBC_LOC=$(realpath "$DIR"/../libraries/libc)
 LIBM_LOC=$(realpath "$DIR"/../libraries/libm)
 KERNEL_LOC=$(realpath "$DIR"/../kernel)
 SOURCE_DIR=$(realpath "$DIR"/..)
-TARGET="i686-pc-duckos"
-PREFIX="$DIR/tools"
-BUILD="$DIR/../cmake-build"
+PREFIX="$DIR/tools/$ARCH"
+BUILD="$DIR/../build/$ARCH"
 EDIT="$DIR/edit"
-SYSROOT="$DIR/../cmake-build/root"
+SYSROOT="$DIR/../build/$ARCH/root"
 NUM_JOBS=$(( $(nproc) / 2 ))
 
 # Don't include debug info in toolchain, optimize

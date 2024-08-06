@@ -6,6 +6,7 @@
 #include "memory/MemoryManager.h"
 
 StackWalker::Frame* StackWalker::walk_stack(const kstd::Arc<Thread>& thread, uintptr_t* addr_buf, size_t addr_bufsz, StackWalker::Frame* start_frame) {
+#if defined(__i386__)
 	Frame* cur_frame;
 	if (start_frame)
 		cur_frame = start_frame;
@@ -38,4 +39,8 @@ StackWalker::Frame* StackWalker::walk_stack(const kstd::Arc<Thread>& thread, uin
 	}
 
 	return cur_frame;
+#elif defined(__aarch64__)
+	// TODO: aarch64
+	return nullptr;
+#endif
 }

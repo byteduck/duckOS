@@ -23,13 +23,14 @@
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/terminal/VirtualTTY.h>
 #include <kernel/kstd/defines.h>
-#include <kernel/IO.h>
+#include "kernel/IO.h"
 #include <kernel/KernelMapper.h>
 #include <kernel/interrupt/interrupt.h>
 #include "cstring.h"
 #include <kernel/device/VGADevice.h>
 #include <kernel/filesystem/FileDescriptor.h>
 #include <kernel/bootlogo.h>
+#include <kernel/arch/Processor.h>
 
 kstd::Arc<FileDescriptor> tty_desc(nullptr);
 kstd::Arc<VirtualTTY> tty(nullptr);
@@ -45,28 +46,6 @@ void putch(char c){
 			tty_desc->write(KernelPointer<uint8_t>((uint8_t*) &c), 1);
 	}
 	serial_putch(c);
-}
-
-void serial_putch(char c) {
-	static bool serial_inited = false;
-	if(!serial_inited) {
-		IO::outb(0x3F9, 0x00);
-		IO::outb(0x3FB, 0x80);
-		IO::outb(0x3F8, 0x02);
-		IO::outb(0x3F9, 0x00);
-		IO::outb(0x3FB, 0x03);
-		IO::outb(0x3FA, 0xC7);
-		IO::outb(0x3FC, 0x0B);
-		serial_inited = true;
-	}
-
-	while (!(IO::inb(0x3FD) & 0x20u));
-
-	if(c == '\n') {
-		IO::outb(0x3F8, '\r');
-		while (!(IO::inb(0x3FD) & 0x20u));
-	}
-	IO::outb(0x3F8, c);
 }
 
 void print(const char* str){
@@ -94,23 +73,34 @@ void vprintf(const char* fmt, va_list argp){
 
 	const char *p;
 	int i;
+	long l;
 	char *s;
 	char fmtbuf[256];
+	bool is_long = false;
 
 	for(p = fmt; *p != '\0'; p++){
 		if(*p != '%'){
 			putch(*p);
 			continue;
 		}
+		fmt_eval:
 		switch(*++p){
+			case 'l':
+				is_long = true;
+				goto fmt_eval;
 			case 'c':
 				i = va_arg(argp, int);
 				putch(i);
 				break;
 
 			case 'd':
-				i = va_arg(argp, int);
-				s = itoa(i, fmtbuf, 10);
+				if (is_long) {
+					l = va_arg(argp, long);
+					s = ltoa(l, fmtbuf, 10);
+				} else {
+					i = va_arg(argp, int);
+					s = itoa(i, fmtbuf, 10);
+				}
 				print(s);
 				break;
 
@@ -120,21 +110,36 @@ void vprintf(const char* fmt, va_list argp){
 				break;
 
 			case 'x':
-				i = va_arg(argp, int);
-				s = itoa(i, fmtbuf, 16);
+				if (is_long) {
+					l = va_arg(argp, long);
+					s = ltoa(l, fmtbuf, 16);
+				} else {
+					i = va_arg(argp, int);
+					s = itoa(i, fmtbuf, 16);
+				}
 				print(s);
 				break;
 
 			case 'X':
-				i = va_arg(argp, int);
-				s = itoa(i, fmtbuf, 16);
+				if (is_long) {
+					l = va_arg(argp, long);
+					s = ltoa(l, fmtbuf, 16);
+				} else {
+					i = va_arg(argp, int);
+					s = itoa(i, fmtbuf, 16);
+				}
 				to_upper(s);
 				print(s);
 				break;
 
 			case 'b':
-				i = va_arg(argp, int);
-				s = itoa(i, fmtbuf, 2);
+				if (is_long) {
+					l = va_arg(argp, long);
+					s = ltoa(l, fmtbuf, 2);
+				} else {
+					i = va_arg(argp, int);
+					s = itoa(i, fmtbuf, 2);
+				}
 				print(s);
 				break;
 
@@ -142,6 +147,7 @@ void vprintf(const char* fmt, va_list argp){
 				putch('%');
 				break;
 		}
+		is_long = false;
 	}
 
 	if(!g_panicking && !TaskManager::in_critical())
@@ -208,7 +214,7 @@ void PANIC_NOHLT(const char *error, const char *msg, ...) {
 	va_start(list, msg);
 	panic_inner(error, msg, list);
 	va_end(list);
-	asm volatile("cli; hlt");
+	Processor::halt();
 	while(1);
 }
 

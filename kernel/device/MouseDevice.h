@@ -19,10 +19,10 @@
 
 #pragma once
 
-#include <kernel/interrupt/IRQHandler.h>
-#include <kernel/device/CharacterDevice.h>
-#include <kernel/kstd/circular_queue.hpp>
-#include <kernel/api/hid.h>
+#include "kernel/interrupt/IRQHandler.h"
+#include "kernel/device/CharacterDevice.h"
+#include "kernel/kstd/circular_queue.hpp"
+#include "kernel/api/hid.h"
 
 #define I8042_BUFFER 0x60u
 #define I8042_STATUS 0x64u

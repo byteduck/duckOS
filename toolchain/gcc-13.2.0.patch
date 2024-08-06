@@ -23,10 +23,10 @@ index df90720b7..2b5a287a1 100755
  	#  IF there is no include fixing,
  	#  THEN create a no-op fixer and exit
 diff --git a/gcc/config.gcc b/gcc/config.gcc
-index 648b3dc21..ad7e8c0c5 100644
+index 648b3dc21..fbb4363c9 100644
 --- a/gcc/config.gcc
 +++ b/gcc/config.gcc
-@@ -690,6 +690,14 @@ x86_cpus="generic intel"
+@@ -690,6 +690,19 @@ x86_cpus="generic intel"
  
  # Common parts for widely ported systems.
  case ${target} in
@@ -36,17 +36,26 @@ index 648b3dc21..ad7e8c0c5 100644
 +  default_use_cxa_ataexit=yes
 +  extra_options="${extra_options} duckos.opt"
 +  tmake_file="t-slibgcc"
++  case ${target} in
++    x86_64-* | aarch64*-*)
++      default_gnu_indirect_function=yes
++      ;;
++  esac
 +  ;;
 +  
  *-*-darwin*)
    tmake_file="t-darwin "
    tm_file="${tm_file} darwin.h"
-@@ -1126,6 +1134,12 @@ case ${target} in
+@@ -1126,6 +1139,16 @@ case ${target} in
  esac
  
  case ${target} in
 +i[34567]86-*-duckos*)
 +	tm_file="${tm_file} i386/unix.h i386/att.h elfos.h glibc-stdint.h i386/i386elf.h duckos.h i386/duckos.h"
++	;;
++aarch64*-*-duckos*)
++	tm_file="${tm_file} elfos.h glibc-stdint.h aarch64/aarch64-elf.h duckos.h"
++	tmake_file="${tmake_file} aarch64/t-aarch64"
 +	;;
 +x86_64-*-duckos*)
 +	tm_file="${tm_file} i386/unix.h i386/att.h elfos.h glibc-stdint.h i386/i386elf.h i386/x86-64.h duckos.h i386/duckos.h"
@@ -125,10 +134,10 @@ index 000000000..06cb0325e
 +#undef PTRDIFF_TYPE
 +#define PTRDIFF_TYPE (TARGET_64BIT ? "long int" : "int")
 diff --git a/libgcc/config.host b/libgcc/config.host
-index 9d7212028..91d06887b 100644
+index 9d7212028..e3df1fac5 100644
 --- a/libgcc/config.host
 +++ b/libgcc/config.host
-@@ -1525,6 +1525,14 @@ nvptx-*)
+@@ -1525,6 +1525,22 @@ nvptx-*)
  	tmake_file="$tmake_file nvptx/t-nvptx"
  	extra_parts="crt0.o"
  	;;
@@ -139,6 +148,14 @@ index 9d7212028..91d06887b 100644
 +x86_64-*-duckos*)
 +	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
 +	tmake_file="$tmake_file i386/t-crtstuff t-crtstuff-pic t-libgcc-pic t-slibgcc" 
++	;;
++aarch64-*-duckos*)
++	extra_parts="$extra_parts crti.o crtbegin.o crtend.o crtn.o"
++	extra_parts="$extra_parts crtfastmath.o"
++	tmake_file="$tmake_file ${cpu_type}/t-aarch64"
++	tmake_file="$tmake_file ${cpu_type}/t-lse t-slibgcc t-slibgcc-libgcc t-slibgcc-gld-nover"
++	tmake_file="$tmake_file ${cpu_type}/t-softfp t-softfp t-crtfm"
++	md_unwind_header=aarch64/aarch64-unwind.h
 +	;;
  *)
  	echo "*** Configuration ${host} not supported" 1>&2

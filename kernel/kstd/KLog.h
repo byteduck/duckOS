@@ -41,9 +41,9 @@ namespace KLog {
 #define __printarg_num(type) \
 	inline void print_arg(type arg, FormatRules rules) { \
         if (rules.hex) \
-			printf(rules.prefix ? rules.upper ? "0x%X" : "0x%x" : rules.upper ? "%X" : "%x", (long) arg); \
+			printf(rules.prefix ? rules.upper ? "0x%lX" : "0x%lx" : rules.upper ? "%lX" : "%lx", (long) arg); \
     	else \
-    		printf("%d", (long) arg); \
+    		printf("%ld", (long) arg); \
 	}
 
 	__printarg_num(unsigned char);

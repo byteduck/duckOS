@@ -49,5 +49,3 @@ private:
 	kstd::circular_queue<bool> idle_ticks = kstd::circular_queue<bool>(100);
 };
 
-extern "C" void __attribute((cdecl)) measure_tsc_speed();
-

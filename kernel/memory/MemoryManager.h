@@ -21,8 +21,6 @@
 
 #include <kernel/kstd/types.h>
 #include <kernel/kstd/Arc.h>
-#include "PageTable.h"
-#include "PageDirectory.h"
 #include "PhysicalPage.h"
 #include "PhysicalRegion.h"
 #include "BuddyZone.h"
@@ -30,6 +28,7 @@
 #include <kernel/tasking/Mutex.h>
 #include "Memory.h"
 #include "kernel/arch/i386/registers.h"
+#include <kernel/memory/PageDirectory.h>
 
 /**
  * The basic premise of how the memory allocation in duckOS is as follows:
@@ -53,13 +52,6 @@
  * often)
  */
 
-extern "C" long _KERNEL_TEXT;
-extern "C" long _KERNEL_TEXT_END;
-extern "C" long _KERNEL_DATA;
-extern "C" long _KERNEL_DATA_END;
-extern "C" long _PAGETABLES_START;
-extern "C" long _PAGETABLES_END;
-
 struct multiboot_info;
 struct multiboot_mmap_entry;
 
@@ -71,11 +63,7 @@ class MemoryManager {
 public:
 	PageDirectory kernel_page_directory { PageDirectory::DirectoryType::KERNEL };
 
-	PageDirectory::Entry kernel_page_directory_entries[1024] __attribute__((aligned(4096)));
-	PageTable::Entry kernel_early_page_table_entries1[1024] __attribute__((aligned(4096)));
-	PageTable::Entry kernel_early_page_table_entries2[1024] __attribute__((aligned(4096)));
-
-	Mutex liballoc_lock {"liballoc"};
+	static Mutex s_liballoc_lock;
 
 	MemoryManager();
 
@@ -139,12 +127,12 @@ public:
 	kstd::Arc<VMRegion> alloc_contiguous_kernel_region(size_t size);
 
 	/**
-	 * Allocates a new virtual region in kernel space that is mapped to an existing range of physical pages.
+	 * Allocates a new virtual region in kernel space that is mapped to an MMIO device.
 	 * @param start The start physical address to map to. Will be rounded down to a page boundary.
 	 * @param size The size (in bytes) to map to. Will be rounded up to a page boundary.
 	 * @return The newly mapped region.
 	 */
-	kstd::Arc<VMRegion> alloc_mapped_region(PhysicalAddress start, size_t size);
+	kstd::Arc<VMRegion> map_device_region(PhysicalAddress start, size_t size);
 
 	/**
 	 * Maps a VMObject into kernel space.
@@ -227,9 +215,9 @@ public:
 	 void invlpg(void* vaddr);
 
 	/**
-	 * Parses the multiboot memory map.
+	 * Sets up a memory map for the hardware.
 	 */
-	void parse_mboot_memory_map(multiboot_info* header, multiboot_mmap_entry* first_entry);
+	void setup_device_memory_map();
 
 	/**
 	 * Allocates a number of new pages for the heap. `finalize_heap_pages` MUST be called afterwards to release the lock
@@ -244,6 +232,9 @@ public:
 	 */
 	void finalize_heap_pages();
 
+	// Whether paging is set up yet.
+	[[nodiscard]] bool is_paging_setup() const;
+
 	// Various usage statistics
 	size_t usable_mem() const;
 	size_t used_pmem() const;
@@ -256,6 +247,13 @@ private:
 	friend class PhysicalRegion;
 
 	static MemoryManager* _inst;
+
+	size_t usable_bytes_ram = 0;
+	size_t total_bytes_ram = 0;
+	size_t reserved_bytes_ram = 0;
+	size_t bad_bytes_ram = 0;
+	size_t mem_lower_limit = ~0;
+	size_t mem_upper_limit = 0;
 
 	// Heap stuff
 	kstd::vector<PageIndex> m_heap_pages = kstd::vector<PageIndex>(4096);

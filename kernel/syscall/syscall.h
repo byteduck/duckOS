@@ -24,4 +24,4 @@
 #include "../arch/i386/registers.h"
 
 extern "C" void syscall_handler(ThreadRegisters& regs);
-int handle_syscall(ThreadRegisters& regs, uint32_t call, uint32_t arg1, uint32_t arg2, uint32_t arg3);
+int handle_syscall(ThreadRegisters& regs, size_t call, size_t arg1, size_t arg2, size_t arg3);

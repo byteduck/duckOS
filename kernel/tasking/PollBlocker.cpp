@@ -18,7 +18,7 @@
 */
 
 #include "PollBlocker.h"
-#include <kernel/time/PIT.h>
+#include "kernel/arch/i386/time/PIT.h"
 #include <kernel/filesystem/FileDescriptor.h>
 
 PollBlocker::PollBlocker(kstd::vector<PollFD>& pollfd, Time timeout):

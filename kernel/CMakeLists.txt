@@ -5,7 +5,7 @@
 set(CMAKE_CXX_STANDARD 20)
 
 ENABLE_LANGUAGE(ASM_NASM)
-SET_SOURCE_FILES_PROPERTIES(asm/startup.s asm/tasking.s asm/int.s asm/syscall.s asm/gdt.s asm/timing.s PROPERTIES LANGUAGE ASM_NASM)
+SET_SOURCE_FILES_PROPERTIES(arch/i386/asm/startup.s arch/i386/asm/tasking.s arch/i386/asm/int.s arch/i386/asm/syscall.s arch/i386/asm/gdt.s arch/i386/asm/timing.s PROPERTIES LANGUAGE ASM_NASM)
 
 SET(CMAKE_CXX_FLAGS "-ffreestanding -nostdlib -fno-rtti -fno-exceptions -Wno-write-strings -fbuiltin -nostdlib -nostdinc -nostdinc++ -std=c++2a")
 
@@ -24,16 +24,7 @@ SET(CMAKE_ASM_NASM_FLAGS "-I ${CMAKE_CURRENT_SOURCE_DIR}/ -f elf")
 SET(CMAKE_ASM_NASM_COMPILE_OBJECT "<CMAKE_ASM_NASM_COMPILER> <FLAGS> -o <OBJECT> <SOURCE>")
 
 SET(KERNEL_SRCS
-        asm/startup.s
-        asm/tasking.s
-        asm/int.s
-        asm/syscall.s
-        asm/gdt.s
-        asm/timing.s
         kmain.cpp
-        time/CMOS.cpp
-        time/PIT.cpp
-        time/RTC.cpp
         time/TimeManager.cpp
         time/TimeKeeper.cpp
         time/Time.cpp
@@ -43,13 +34,8 @@ SET(KERNEL_SRCS
         tasking/ELF.cpp
         tasking/TaskManager.cpp
         pci/PCI.cpp
-        memory/gdt.cpp
         memory/liballoc.cpp
         memory/MemoryManager.cpp
-        interrupt/interrupt.cpp
-        interrupt/idt.cpp
-        interrupt/irq.cpp
-        interrupt/isr.cpp
         pci/PCI.cpp
         device/Device.cpp
         device/BlockDevice.cpp
@@ -79,7 +65,6 @@ SET(KERNEL_SRCS
         device/MouseDevice.cpp
         interrupt/IRQHandler.cpp
         memory/PageDirectory.cpp
-        memory/PageTable.cpp
         tasking/Process.cpp
         tasking/Thread.cpp
         tasking/Lock.cpp
@@ -95,7 +80,6 @@ SET(KERNEL_SRCS
         tasking/FileBlockers.cpp
         tasking/Tracer.cpp
         device/VGADevice.cpp
-        device/BochsVGADevice.cpp
         device/MultibootVGADevice.cpp
         memory/Stack.h
         memory/PhysicalRegion.cpp
@@ -109,7 +93,6 @@ SET(KERNEL_SRCS
         memory/Memory.cpp
         memory/KBuffer.cpp
         memory/Bytes.cpp
-        device/PATADevice.cpp
         CommandLine.cpp
         tasking/Signal.cpp
         filesystem/DirectoryEntry.cpp
@@ -138,7 +121,6 @@ SET(KERNEL_SRCS
 		kstd/cstring.cpp
         kstd/kstdlib.cpp
         kstd/string.cpp
-        device/AC97Device.cpp
         tests/KernelTest.cpp
         tests/kstd/TestMap.cpp
         tests/TestMemory.cpp
@@ -178,7 +160,6 @@ SET(KERNEL_SRCS
         syscall/waitpid.cpp
         syscall/uname.cpp
         VMWare.cpp
-        Processor.cpp
         StackWalker.cpp
         net/NetworkAdapter.cpp
         net/E1000Adapter.cpp
@@ -188,7 +169,71 @@ SET(KERNEL_SRCS
         net/UDPSocket.cpp
         net/TCPSocket.cpp
         net/Router.cpp
-        api/strerror.c)
+        api/strerror.c
+        constructors.cpp)
+
+IF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i686")
+    SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/arch/i386/kernel.ld)
+    SET(KERNEL_SRCS
+            ${KERNEL_SRCS}
+
+            arch/i386/Processor.cpp
+            arch/i386/idt.cpp
+            arch/i386/irq.cpp
+            arch/i386/isr.cpp
+            arch/i386/tasking.cpp
+            arch/i386/gdt.cpp
+            arch/i386/kstdio.cpp
+            arch/i386/startup.cpp
+            arch/i386/PageTable.cpp
+            arch/i386/PageDirectory.cpp
+            arch/i386/MemoryManager.cpp
+
+            arch/i386/asm/startup.s
+            arch/i386/asm/tasking.s
+            arch/i386/asm/int.s
+            arch/i386/asm/syscall.s
+            arch/i386/asm/gdt.s
+            arch/i386/asm/timing.s
+
+            arch/i386/device/Device.cpp
+            arch/i386/device/PATADevice.cpp
+            arch/i386/device/BochsVGADevice.cpp
+            arch/i386/device/AC97Device.cpp
+
+            arch/i386/time/CMOS.cpp
+            arch/i386/time/PIT.cpp
+            arch/i386/time/RTC.cpp)
+ELSEIF("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
+    SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/arch/aarch64/kernel.ld)
+    SET(KERNEL_SRCS
+            ${KERNEL_SRCS}
+
+            arch/aarch64/Processor.cpp
+            arch/aarch64/ARMTimer.cpp
+            arch/aarch64/tasking.cpp
+            arch/aarch64/startup.cpp
+            arch/aarch64/kstdio.cpp
+            arch/aarch64/MMU.cpp
+            arch/aarch64/PageDirectory.cpp
+            arch/aarch64/MemoryManager.cpp
+            arch/aarch64/Device.cpp
+
+            arch/aarch64/asm/startup.S
+            arch/aarch64/asm/exception.S
+
+            arch/aarch64/rpi/MiniUART.cpp
+            arch/aarch64/rpi/GPIO.cpp
+            arch/aarch64/rpi/Mailbox.cpp
+            arch/aarch64/rpi/Framebuffer.cpp
+            arch/aarch64/rpi/DeviceInfo.cpp
+            arch/aarch64/rpi/MMIO.cpp)
+
+    ADD_CUSTOM_TARGET(rpi-kernel
+            COMMAND ${CMAKE_OBJCOPY} ${KERNEL_EXECUTABLE_NAME} -O binary ${CMAKE_BINARY_DIR}/kernel8.img
+            USES_TERMINAL
+    )
+ENDIF()
 
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h"
@@ -198,16 +243,15 @@ add_custom_command(
 )
 add_custom_target(generate_version_file DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h")
 
-ADD_EXECUTABLE(duckk32 ${KERNEL_SRCS} ${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h)
-ADD_DEPENDENCIES(duckk32 generate_version_file)
-TARGET_COMPILE_DEFINITIONS(duckk32 PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL "$<$<BOOL:${ADD_KERNEL_DEBUG_SYMBOLS}>:DUCKOS_KERNEL_DEBUG_SYMBOLS>")
+ADD_EXECUTABLE(${KERNEL_EXECUTABLE_NAME} ${KERNEL_SRCS} ${CMAKE_CURRENT_BINARY_DIR}/generated/duckos_version.h)
+ADD_DEPENDENCIES(${KERNEL_EXECUTABLE_NAME} generate_version_file)
+TARGET_COMPILE_DEFINITIONS(${KERNEL_EXECUTABLE_NAME} PUBLIC "$<$<CONFIG:DEBUG>:DEBUG>" DUCKOS_KERNEL "$<$<BOOL:${ADD_KERNEL_DEBUG_SYMBOLS}>:DUCKOS_KERNEL_DEBUG_SYMBOLS>")
 
-SET(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/kernel/kernel.ld)
-SET_TARGET_PROPERTIES(duckk32 PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
-TARGET_LINK_LIBRARIES(duckk32 gcc)
-TARGET_LINK_OPTIONS(duckk32 PRIVATE LINKER:-T ${LINKER_SCRIPT} -nostdlib)
+SET_TARGET_PROPERTIES(${KERNEL_EXECUTABLE_NAME} PROPERTIES LINK_DEPENDS ${LINKER_SCRIPT})
+TARGET_LINK_LIBRARIES(${KERNEL_EXECUTABLE_NAME} gcc)
+TARGET_LINK_OPTIONS(${KERNEL_EXECUTABLE_NAME} PRIVATE LINKER:-T ${LINKER_SCRIPT} -nostdlib)
 
-TARGET_INCLUDE_DIRECTORIES(duckk32 PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/generated)
+TARGET_INCLUDE_DIRECTORIES(${KERNEL_EXECUTABLE_NAME} PRIVATE ${CMAKE_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
 # Install headers
 FILE(GLOB_RECURSE KHEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
@@ -217,8 +261,8 @@ foreach(HEADER ${KHEADERS})
 endforeach()
 
 # Install kernel
-INSTALL(TARGETS duckk32 RUNTIME DESTINATION boot)
+INSTALL(TARGETS ${KERNEL_EXECUTABLE_NAME} RUNTIME DESTINATION boot)
 
 # Make kernel map
-ADD_CUSTOM_COMMAND(TARGET duckk32 COMMAND ${CMAKE_SOURCE_DIR}/scripts/kernel-map.sh)
+ADD_CUSTOM_COMMAND(TARGET ${KERNEL_EXECUTABLE_NAME} COMMAND ${CMAKE_SOURCE_DIR}/scripts/kernel-map.sh ${KERNEL_EXECUTABLE_NAME})
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/kernel.map DESTINATION boot)

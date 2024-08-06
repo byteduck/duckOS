@@ -26,7 +26,7 @@
 #include <kernel/Result.hpp>
 #include "kernel/memory/VMRegion.h"
 #include "Mutex.h"
-#include "../memory/PageDirectory.h"
+#include <kernel/memory/PageDirectory.h>
 #include "../kstd/queue.hpp"
 #include "kernel/kstd/circular_queue.hpp"
 #include "../kstd/KLog.h"

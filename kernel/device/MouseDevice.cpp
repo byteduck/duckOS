@@ -17,14 +17,14 @@
 	Copyright (c) Byteduck 2016-2021. All rights reserved.
 */
 
-#include <kernel/random.h>
-#include <kernel/tasking/TaskManager.h>
-#include <kernel/IO.h>
+#include "kernel/random.h"
+#include "kernel/tasking/TaskManager.h"
+#include "kernel/IO.h"
 #include "MouseDevice.h"
 #include "I8042.h"
-#include "../VMWare.h"
-#include <kernel/kstd/cstring.h>
-#include <kernel/kstd/KLog.h>
+#include "kernel/VMWare.h"
+#include "kernel/kstd/cstring.h"
+#include "kernel/kstd/KLog.h"
 
 MouseDevice* MouseDevice::instance;
 

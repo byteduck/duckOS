@@ -100,8 +100,10 @@ char *lltoa(long long i, char *p, int base) {
 				p[0] = '0'; p[1] = '\0';
 			}else{
 				uint8_t shift = base == 16 ? 4 : 1;
-				for(uint32_t a = (base == 16 ? 0xF0000000 : 0x80000000); a > 0; a = a >> shift) {
-					if (((unsigned) i & a) != 0 || flag) {
+				constexpr auto hexmask = (unsigned long long) 0xF << (sizeof(long long) * 8 - 8);
+				constexpr auto binmask = (unsigned long long) 0x8 << (sizeof(long long) * 8 - 8);
+				for(unsigned long long a = (base == 16 ? hexmask : binmask); a > 0; a = a >> shift) {
+					if (((unsigned long long) i & a) != 0 || flag) {
 						nbcount++;
 						flag = true;
 					}

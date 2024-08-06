@@ -39,7 +39,7 @@ ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::alloc_contiguous(size
 	return object;
 }
 
-ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::map_to_physical(PhysicalAddress start, size_t size) {
+ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::map_to_physical(PhysicalAddress start, size_t size, Type type) {
 	ASSERT((start / PAGE_SIZE) * PAGE_SIZE == start);
 
 	PageIndex start_page = start / PAGE_SIZE;
@@ -59,6 +59,7 @@ ResultRet<kstd::Arc<AnonymousVMObject>> AnonymousVMObject::map_to_physical(Physi
 	auto object = new AnonymousVMObject("Physical Mapping", kstd::move(pages), false);
 	object->m_num_committed_pages = 0; // Hack - but we don't want this counting towards our memory total.
 	object->m_fork_action = ForkAction::Share;
+	object->m_type = type;
 	return kstd::Arc<AnonymousVMObject>(object);
 }
 

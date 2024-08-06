@@ -19,13 +19,13 @@
 
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/kmain.h>
-#include <kernel/interrupt/irq.h>
+#include <kernel/arch/Processor.h>
 #include <kernel/filesystem/procfs/ProcFS.h>
 #include "TSS.h"
 #include "Process.h"
 #include "Thread.h"
 #include "Reaper.h"
-#include <kernel/Processor.h>
+#include <kernel/arch/Processor.h>
 #include <kernel/kstd/KLog.h>
 #include <kernel/net/NetworkManager.h>
 #include "../device/DiskDevice.h"
@@ -47,9 +47,7 @@ bool preempting = false;
 void kidle(){
 	tasking_enabled = true;
 	TaskManager::yield();
-	while(1) {
-		asm volatile("hlt");
-	}
+	TaskManager::idle_task();
 }
 
 ResultRet<kstd::Arc<Thread>> TaskManager::thread_for_tid(tid_t tid) {
@@ -182,7 +180,10 @@ void TaskManager::init(){
 
 	//Preempt
 	cur_thread = kernel_process->get_thread(kernel_process->pid());
+	// TODO: AARCH64
+#if defined (__i686__)
 	preempt_init_asm(cur_thread->registers.gp.esp);
+#endif
 }
 
 kstd::vector<Process*>* TaskManager::process_list() {
@@ -266,7 +267,7 @@ kstd::Arc<Thread> TaskManager::pick_next_thread() {
 
 bool TaskManager::yield() {
 	ASSERT(!preempting);
-	if(Interrupt::in_irq()) {
+	if(Processor::in_interrupt()) {
 		// We can't yield in an interrupt. Instead, we'll yield immediately after we exit the interrupt
 		yield_async = true;
 		return false;
@@ -298,21 +299,21 @@ void TaskManager::do_yield_async() {
 }
 
 void TaskManager::tick() {
-	ASSERT(Interrupt::in_irq());
+	ASSERT(Processor::in_interrupt());
 	yield();
 }
 
 Atomic<int, MemoryOrder::SeqCst> g_critical_count = 0;
 
 void TaskManager::enter_critical() {
-	asm volatile("cli");
+	Processor::disable_interrupts();
 	g_critical_count.add(1, MemoryOrder::Acquire);
 }
 
 void TaskManager::leave_critical() {
 	ASSERT(g_critical_count.load() > 0);
 	if(g_critical_count.sub(1, MemoryOrder::Release) == 1)
-		asm volatile("sti");
+		Processor::enable_interrupts();
 }
 
 bool TaskManager::in_critical() {
@@ -401,7 +402,10 @@ void TaskManager::preempt(){
 
 		Processor::save_fpu_state((void*&) old_thread->fpu_state);
 		old_thread.reset();
+		// TODO: AARCH64
+#if defined(__i386__)
 		preempt_asm(old_esp, new_esp, cur_thread->page_directory()->entries_physaddr());
+#endif
 		Processor::load_fpu_state((void*&) cur_thread->fpu_state);
 	}
 
