@@ -29,6 +29,7 @@ public:
 
 	virtual bool is_anonymous() const { return false; }
 	virtual bool is_inode() const { return false; }
+	virtual bool is_device() const { return false; }
 
 	kstd::string name() const { return m_name; }
 	size_t size() const { return m_size; }

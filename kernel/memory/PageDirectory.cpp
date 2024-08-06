@@ -16,6 +16,7 @@ void PageDirectory::map(VMRegion& region, VirtualRange range) {
 	PageIndex end_index = (range.start + range.size) / PAGE_SIZE;
 	PageIndex page_offset = region.object_start() / PAGE_SIZE;
 	auto prot = region.prot();
+	auto is_device = region.object()->is_device();
 	ASSERT(prot.read);
 	ASSERT(range.start % PAGE_SIZE == 0);
 	ASSERT(range.size % PAGE_SIZE == 0);
@@ -34,8 +35,13 @@ void PageDirectory::map(VMRegion& region, VirtualRange range) {
 			.execute = prot.execute
 		};
 
+#if defined(__i386__)
 		if(map_page(vpage, ppage, page_prot).is_error())
 			return;
+#elif defined(__aarch64__)
+		if(map_page(vpage, ppage, page_prot, is_device).is_error())
+			return;
+#endif
 	}
 }
 
@@ -78,4 +84,8 @@ void PageDirectory::setup_kernel_map() {
 	// Map the kernel text and data
 	map_range(KERNEL_TEXT, KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, VMProt::RX);
 	map_range(KERNEL_DATA, KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, VMProt::RW);
+}
+
+size_t PageDirectory::get_physaddr(void *virtaddr) {
+	return get_physaddr((size_t)virtaddr);
 }

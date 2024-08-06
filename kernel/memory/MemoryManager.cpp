@@ -109,13 +109,13 @@ void MemoryManager::setup_paging() {
 
 	// Now that we're all set up to use normal methods of mapping stuff, map the kernel and physical pages again
 	auto do_map = [&]() -> Result {
-		auto kernel_text_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE));
+		auto kernel_text_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_TEXT - HIGHER_HALF, KERNEL_TEXT_SIZE, AnonymousVMObject::Type::Normal));
 		kernel_text_region = TRY(m_kernel_space->map_object(kernel_text_object, VMProt::RX, VirtualRange {KERNEL_TEXT, kernel_text_object->size()}));
 
-		auto kernel_data_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE));
+		auto kernel_data_object = TRY(AnonymousVMObject::map_to_physical(KERNEL_DATA - HIGHER_HALF, KERNEL_DATA_SIZE, AnonymousVMObject::Type::Normal));
 		kernel_data_region = TRY(m_kernel_space->map_object(kernel_data_object, VMProt::RW, VirtualRange {KERNEL_DATA, kernel_data_object->size()}));
 
-		auto physical_pages_object = TRY(AnonymousVMObject::map_to_physical(page_array_start_page * PAGE_SIZE, page_array_num_pages * PAGE_SIZE));
+		auto physical_pages_object = TRY(AnonymousVMObject::map_to_physical(page_array_start_page * PAGE_SIZE, page_array_num_pages * PAGE_SIZE, AnonymousVMObject::Type::Normal));
 		physical_pages_region = TRY(m_kernel_space->map_object(physical_pages_object, VMProt::RW, VirtualRange { (VirtualAddress) m_physical_pages, physical_pages_object->size() }));
 
 		return Result(SUCCESS);
@@ -276,9 +276,9 @@ kstd::Arc<VMRegion> MemoryManager::alloc_contiguous_kernel_region(size_t size) {
 	return res.value();
 }
 
-kstd::Arc<VMRegion> MemoryManager::alloc_mapped_region(PhysicalAddress start, size_t size) {
+kstd::Arc<VMRegion> MemoryManager::map_device_region(PhysicalAddress start, size_t size) {
 	auto do_map = [&]() -> ResultRet<kstd::Arc<VMRegion>> {
-		auto object = TRY(AnonymousVMObject::map_to_physical(start, size));
+		auto object = TRY(AnonymousVMObject::map_to_physical(start, size, AnonymousVMObject::Type::Device));
 		return TRY(m_kernel_space->map_object(object, VMProt::RW));
 	};
 	auto res = do_map();
@@ -390,6 +390,10 @@ size_t MemoryManager::kernel_pmem() const {
 
 size_t MemoryManager::kernel_heap() const {
 	return used_kheap_mem;
+}
+
+bool MemoryManager::is_paging_setup() const {
+	return did_setup_paging;
 }
 
 void liballoc_lock() {

@@ -24,17 +24,17 @@ namespace RPi {
 			REQUEST = 0
 		};
 
-		static bool call(void* buffer, Channel channel);
+		static bool call(void* buffer, size_t size, Channel channel);
 
 	private:
-		static constexpr size_t phys_base = 0x3F00B880;
+		static constexpr size_t base = 0xB880;
 		enum Register: size_t {
-			READ =   0x0,
-			POLL =   0x10,
-			SENDER = 0x14,
-			STATUS = 0x18,
-			CONFIG = 0x1C,
-			WRITE =  0x20
+			READ =   base + 0x0,
+			POLL =   base + 0x10,
+			SENDER = base + 0x14,
+			STATUS = base + 0x18,
+			CONFIG = base + 0x1C,
+			WRITE =  base + 0x20
 		};
 
 		enum Status: uint32_t {
@@ -42,15 +42,5 @@ namespace RPi {
 			EMPTY = 0x40000000,
 			RESPONSE = 0x80000000
 		};
-
-		template<typename T>
-		inline static T get(Register reg) {
-			return *((T*) (phys_base + reg));
-		}
-
-		template<typename T>
-		inline static void set(Register reg, T val) {
-			*((T*) (phys_base + reg)) = val;
-		}
 	};
 }

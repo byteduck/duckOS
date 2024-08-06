@@ -53,10 +53,9 @@
 uint8_t boot_disk;
 
 void kmain(){
-	Processor::init();
-
 	KLog::info("kinit", "Starting duckOS...");
 
+	Processor::init();
 	Memory::init();
 	Processor::init_interrupts();
 	VMWare::detect();
@@ -74,6 +73,10 @@ void kmain(){
 		}
 	}
 
+	auto* tty0 = new VirtualTTY(4, 0);
+	tty0->set_active();
+	setup_tty();
+
 #ifdef DEBUG
 	KLog::info("kinit", "Debug mode is enabled.");
 #endif
@@ -88,10 +91,6 @@ void kmain_late(){
 	KLog::dbg("kinit", "Tasking initialized.");
 
 	TimeManager::init();
-
-	auto* tty0 = new VirtualTTY(4, 0);
-	tty0->set_active();
-	setup_tty();
 
 
 #if defined(__aarch64__)

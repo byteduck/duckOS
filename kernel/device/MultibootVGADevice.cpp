@@ -58,7 +58,7 @@ bool MultibootVGADevice::detect(struct multiboot_info *mboot_header) {
 			return false;
 	}
 
-	framebuffer_region = MM.alloc_mapped_region(framebuffer_paddr, framebuffer_size());
+	framebuffer_region = MM.map_device_region(framebuffer_paddr, framebuffer_size());
 	framebuffer = (uint32_t*) framebuffer_region->start();
 
 	return true;

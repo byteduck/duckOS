@@ -15,6 +15,10 @@ class AnonymousVMObject: public VMObject {
 public:
 	~AnonymousVMObject() override;
 
+	enum class Type {
+		Normal, Device
+	};
+
 	/**
 	 * Allocates a new anonymous VMObject.
 	 * @param size The minimum size, in bytes, of the object.
@@ -35,9 +39,10 @@ public:
 	 * Creates an anonymous VMObject backed by existing physical pages.
 	 * @param start The start address to map to. Will be rounded down to a page boundary.
 	 * @param size The size to map. Will be rounded up to a page boundary.
+	 * @param type Whether the mapping is mapped to normal memory or a device.
 	 * @return The newly allocated object, if successful.
 	 */
-	static ResultRet<kstd::Arc<AnonymousVMObject>> map_to_physical(PhysicalAddress start, size_t size);
+	static ResultRet<kstd::Arc<AnonymousVMObject>> map_to_physical(PhysicalAddress start, size_t size, Type type);
 
 	/**
 	 * Finds the existing anonymous VMObject with the given shared memory ID, if any.
@@ -72,6 +77,7 @@ public:
 
 	// VMObject
 	bool is_anonymous() const override { return true; }
+	bool is_device() const override { return m_type == Type::Device; }
 	ForkAction fork_action() const override { return m_fork_action; }
 	ResultRet<kstd::Arc<VMObject>> clone() override;
 	ResultRet<bool> try_fault_in_page(PageIndex page) override;
@@ -94,4 +100,5 @@ private:
 	pid_t m_shared_owner;
 	int m_shm_id = 0;
 	size_t m_num_committed_pages = 0;
+	Type m_type = Type::Normal;
 };

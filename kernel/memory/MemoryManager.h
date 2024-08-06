@@ -127,12 +127,12 @@ public:
 	kstd::Arc<VMRegion> alloc_contiguous_kernel_region(size_t size);
 
 	/**
-	 * Allocates a new virtual region in kernel space that is mapped to an existing range of physical pages.
+	 * Allocates a new virtual region in kernel space that is mapped to an MMIO device.
 	 * @param start The start physical address to map to. Will be rounded down to a page boundary.
 	 * @param size The size (in bytes) to map to. Will be rounded up to a page boundary.
 	 * @return The newly mapped region.
 	 */
-	kstd::Arc<VMRegion> alloc_mapped_region(PhysicalAddress start, size_t size);
+	kstd::Arc<VMRegion> map_device_region(PhysicalAddress start, size_t size);
 
 	/**
 	 * Maps a VMObject into kernel space.
@@ -231,6 +231,9 @@ public:
 	 * See `alloc_heap_pages`.
 	 */
 	void finalize_heap_pages();
+
+	// Whether paging is set up yet.
+	[[nodiscard]] bool is_paging_setup() const;
 
 	// Various usage statistics
 	size_t usable_mem() const;

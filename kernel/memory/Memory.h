@@ -10,7 +10,7 @@
 #if defined(__i386__)
 #define HIGHER_HALF 0xC0000000
 #elif defined(__aarch64__)
-#define HIGHER_HALF 0xFFFF000000000000
+#define HIGHER_HALF 0xC000000000
 #endif
 
 extern "C" long _KERNEL_TEXT;

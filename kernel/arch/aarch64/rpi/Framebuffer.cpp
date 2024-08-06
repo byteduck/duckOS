@@ -17,11 +17,12 @@ using namespace RPi;
 #define SET_VIRTUAL_OFFSET 0x48009
 
 #define PIXEL_ORDER_RGB 1
+#define PIXEL_ORDER_BGR 0
 
-void Framebuffer::init() {
-	uint32_t mbox[35] __attribute__((aligned(16)));
+Framebuffer::Framebuffer() {
+	uint32_t mbox[48] __attribute__((aligned(16)));
 
-	mbox[0] = 35 * 4;
+	mbox[0] = 48 * 4;
 	mbox[1] = Mailbox::REQUEST;
 
 	mbox[2] = SET_PHYSICAL_SIZE;
@@ -50,7 +51,7 @@ void Framebuffer::init() {
 	mbox[21] = SET_PIXEL_ORDER;
 	mbox[22] = 4;
 	mbox[23] = 4;
-	mbox[24] = PIXEL_ORDER_RGB;
+	mbox[24] = PIXEL_ORDER_BGR;
 
 	mbox[25] = GET_FRAMEBUFFER;
 	mbox[26] = 8;
@@ -65,20 +66,69 @@ void Framebuffer::init() {
 
 	mbox[34] = 0; // End
 
-	if (!Mailbox::call(mbox, Mailbox::PROP)) {
-		 printf("Unable to set RPi framebuffer resolution\n");
-		 return;
+	if (!Mailbox::call(mbox, sizeof(mbox), Mailbox::PROP)) {
+		KLog::err("RPi::Framebuffer", "Unable to set RPi framebuffer resolution");
+		return;
 	}
 
-	auto width = mbox[5];
-	auto height = mbox[6];
-	auto pitch = mbox[33];
+	m_width = mbox[5];
+	m_height = mbox[6];
+	m_pitch = mbox[33];
 	auto order = mbox[24];
-	auto fb = ((uint32_t*) (size_t) (mbox[28] & 0x3FFFFFFF));
+	m_addr = (size_t) (mbox[28] & 0x3FFFFFFF);
+	m_size = mbox[29];
 
-	for (int x = 0; x < width; x++) {
-		for (int y = 0; y < height; y++) {
-			fb[x + y * width] = (x / (width / 255)) + ((y / (height / 255)) << 8);
-		}
+	KLog::dbg("RPi::Framebuffer", "Framebuffer at {#x} -> {#x}", m_addr, m_addr + m_size);
+
+	m_region = MM.map_device_region(m_addr, m_size); // TODO: Pitch considerations
+	m_fb = (uint32_t*) m_region->start();
+}
+
+void Framebuffer::init() {
+	new Framebuffer();
+}
+
+ssize_t Framebuffer::write(FileDescriptor& fd, size_t offset, SafePointer<uint8_t> buffer, size_t count) {
+	if(!m_fb) return -ENOSPC;
+	if(offset + count > (m_width * m_height * sizeof(uint32_t))) return -ENOSPC;
+	buffer.read(((uint8_t*)m_fb + offset), count);
+	return count;
+}
+
+void Framebuffer::set_pixel(size_t x, size_t y, uint32_t value) {
+	if (x >= m_width || y >= m_height)
+		return;
+	m_fb[x + y * m_width] = value;
+}
+
+uint32_t* Framebuffer::get_framebuffer() {
+	return m_fb;
+}
+
+size_t Framebuffer::get_display_width() {
+	return m_width;
+}
+
+size_t Framebuffer::get_display_height() {
+	return m_height;
+}
+
+void Framebuffer::scroll(size_t pixels) {
+	if(pixels >= m_height) return;
+	memcpy(m_fb, m_fb + pixels * m_width, (m_height - pixels) * m_width * sizeof(uint32_t));
+	memset(m_fb + (m_height - pixels) * m_width, 0, m_width * pixels * sizeof(uint32_t));
+}
+
+void Framebuffer::clear(uint32_t color) {
+	auto size = m_height * m_width;
+	for(size_t i = 0; i < size; i++) {
+		m_fb[i] = color;
 	}
+}
+
+void* Framebuffer::map_framebuffer(Process* proc) {
+	auto region_res = proc->map_object(m_region->object(), VMProt::RW);
+	if(region_res.is_error())
+		return nullptr;
+	return (void*) region_res.value()->start();
 }

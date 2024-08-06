@@ -73,23 +73,34 @@ void vprintf(const char* fmt, va_list argp){
 
 	const char *p;
 	int i;
+	long l;
 	char *s;
 	char fmtbuf[256];
+	bool is_long = false;
 
 	for(p = fmt; *p != '\0'; p++){
 		if(*p != '%'){
 			putch(*p);
 			continue;
 		}
+		fmt_eval:
 		switch(*++p){
+			case 'l':
+				is_long = true;
+				goto fmt_eval;
 			case 'c':
 				i = va_arg(argp, int);
 				putch(i);
 				break;
 
 			case 'd':
-				i = va_arg(argp, int);
-				s = itoa(i, fmtbuf, 10);
+				if (is_long) {
+					l = va_arg(argp, long);
+					s = ltoa(l, fmtbuf, 10);
+				} else {
+					i = va_arg(argp, int);
+					s = itoa(i, fmtbuf, 10);
+				}
 				print(s);
 				break;
 
@@ -99,21 +110,36 @@ void vprintf(const char* fmt, va_list argp){
 				break;
 
 			case 'x':
-				i = va_arg(argp, int);
-				s = itoa(i, fmtbuf, 16);
+				if (is_long) {
+					l = va_arg(argp, long);
+					s = ltoa(l, fmtbuf, 16);
+				} else {
+					i = va_arg(argp, int);
+					s = itoa(i, fmtbuf, 16);
+				}
 				print(s);
 				break;
 
 			case 'X':
-				i = va_arg(argp, int);
-				s = itoa(i, fmtbuf, 16);
+				if (is_long) {
+					l = va_arg(argp, long);
+					s = ltoa(l, fmtbuf, 16);
+				} else {
+					i = va_arg(argp, int);
+					s = itoa(i, fmtbuf, 16);
+				}
 				to_upper(s);
 				print(s);
 				break;
 
 			case 'b':
-				i = va_arg(argp, int);
-				s = itoa(i, fmtbuf, 2);
+				if (is_long) {
+					l = va_arg(argp, long);
+					s = ltoa(l, fmtbuf, 2);
+				} else {
+					i = va_arg(argp, int);
+					s = itoa(i, fmtbuf, 2);
+				}
 				print(s);
 				break;
 
@@ -121,6 +147,7 @@ void vprintf(const char* fmt, va_list argp){
 				putch('%');
 				break;
 		}
+		is_long = false;
 	}
 
 	if(!g_panicking && !TaskManager::in_critical())

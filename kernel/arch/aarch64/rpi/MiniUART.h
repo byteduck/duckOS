@@ -4,6 +4,8 @@
 #pragma once
 
 #include <kernel/kstd/types.h>
+#include <kernel/memory/VMRegion.h>
+#include "MMIO.h"
 
 namespace RPi {
 	class MiniUART {
@@ -14,31 +16,21 @@ namespace RPi {
 		static char rx();
 
 	private:
-		static constexpr size_t phys_base = 0x3F215000;
+		static constexpr size_t base = 0x215000;
 		enum Register: size_t {
-			AUX_IRQ =        0x00,
-			AUX_ENABLES =    0x04,
-			AUX_MU_IO =      0x40,
-			AUX_MU_IER =     0x44,
-			AUX_MU_IIR =     0x48,
-			AUX_MU_LCR =     0x4C,
-			AUX_MU_MCR =     0x50,
-			AUX_MU_LSR =     0x54,
-			AUX_MU_MSR =     0x58,
-			AUX_MU_SCRATCH = 0x5C,
-			AUX_MU_CNTL =    0x60,
-			AUX_MU_STAT =    0x64,
-			AUX_MU_BAUD =    0x68
+			AUX_IRQ =        base + 0x00,
+			AUX_ENABLES =    base + 0x04,
+			AUX_MU_IO =      base + 0x40,
+			AUX_MU_IER =     base + 0x44,
+			AUX_MU_IIR =     base + 0x48,
+			AUX_MU_LCR =     base + 0x4C,
+			AUX_MU_MCR =     base + 0x50,
+			AUX_MU_LSR =     base + 0x54,
+			AUX_MU_MSR =     base + 0x58,
+			AUX_MU_SCRATCH = base + 0x5C,
+			AUX_MU_CNTL =    base + 0x60,
+			AUX_MU_STAT =    base + 0x64,
+			AUX_MU_BAUD =    base + 0x68
 		};
-
-		template<typename T>
-		inline static T get(Register reg) {
-			return *((T*) (phys_base + reg));
-		}
-
-		template<typename T>
-		inline static void set(Register reg, T val) {
-			*((T*) (phys_base + reg)) = val;
-		}
 	};
 }

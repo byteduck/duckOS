@@ -31,24 +31,24 @@ namespace Aarch64::Regs {
 
 	union TCR {
 		struct {
-			uint8_t t0sz : 6;
-			uint8_t : 1;
+			uint64_t t0sz : 6;
+			uint64_t : 1;
 			bool epd0 : 1;
-			uint8_t irgn0 : 2;
-			uint8_t orgn0 : 2;
-			uint8_t sh0 : 2;
-			uint8_t tg0 : 2;
+			uint64_t irgn0 : 2;
+			uint64_t orgn0 : 2;
+			uint64_t sh0 : 2;
+			uint64_t tg0 : 2;
 
-			uint8_t t1sz : 6;
+			uint64_t t1sz : 6;
 			bool a1 : 1;
 			bool epd1 : 1;
-			uint8_t irgn1 : 2;
-			uint8_t orgn1 : 2;
-			uint8_t sh1 : 2;
-			uint8_t tg1 : 2;
+			uint64_t irgn1 : 2;
+			uint64_t orgn1 : 2;
+			uint64_t sh1 : 2;
+			uint64_t tg1 : 2;
 
-			uint8_t ips : 3;
-			uint8_t : 1;
+			uint64_t ips : 3;
+			uint64_t : 1;
 			bool as : 1;
 			bool tbi0 : 1;
 			bool tbi1 : 1;
@@ -75,7 +75,7 @@ namespace Aarch64::Regs {
 			bool ds : 1;
 			bool mtx0 : 1;
 			bool mxt1 : 1;
-			uint8_t : 2;
+			uint64_t : 2;
 		};
 		uint64_t value;
 	};
@@ -89,6 +89,10 @@ namespace Aarch64::MMU {
 
 	constexpr uint64_t descriptor_addr(size_t addr) {
 		return ((addr) >> 12) & 0xFFFFFFFFF;
+	}
+
+	constexpr uint64_t get_descriptor_addr(size_t addr) {
+		return addr << 12;
 	}
 
 	constexpr uint64_t pte_index(size_t addr) {
@@ -138,21 +142,21 @@ namespace Aarch64::MMU {
 			Table = true
 		} type: 1;
 
-		uint8_t attr_index : 3;
+		uint64_t attr_index : 3;
 
 		enum Security: bool {
 			Secure = false,
 			Nonsecure = true
 		} security : 1;
 
-		enum Perms: uint8_t {
+		enum Perms: uint64_t {
 			pRW    = 0b00,
 			pRWuRW = 0b01,
 			pR     = 0b10,
 			pRuR   = 0b11
 		} read_write : 2;
 
-		enum Shareability: uint8_t {
+		enum Shareability: uint64_t {
 			NonShareable   = 0b00,
 			Reserved       = 0b01,
 			OuterShareable = 0b10,
@@ -162,7 +166,7 @@ namespace Aarch64::MMU {
 		bool access : 1;
 		bool _zero : 1 = false;
 		uint64_t address : 36;
-		uint16_t _reserved : 16 = 0;
+		uint64_t _reserved : 16 = 0;
 	};
 
 	struct TableDescriptor {
@@ -171,10 +175,10 @@ namespace Aarch64::MMU {
 			Block = false,
 			Table = true
 		} type : 1 = Table;
-		uint16_t _res0 : 10 = 0;
+		uint64_t _res0 : 10 = 0;
 		uint64_t address : 36;
-		uint16_t _res1 : 11 = 0;
-		uint8_t heirarchical_perms : 4 = 0;
+		uint64_t _res1 : 11 = 0;
+		uint64_t heirarchical_perms : 4 = 0;
 		enum Security: bool {
 			Secure = false,
 			Nonsecure = true
@@ -182,6 +186,11 @@ namespace Aarch64::MMU {
 	};
 
 	void mmu_init();
+
+	/**
+	 * Allocates memory from early page table memory.
+	 */
+	void* alloc_early_table();
 
 	[[noreturn]] void mem_early_panic(const char* str);
 }

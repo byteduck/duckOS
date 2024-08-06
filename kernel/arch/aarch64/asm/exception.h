@@ -2,19 +2,18 @@
 /* Copyright © 2016-2024 Byteduck */
 
 #pragma once
-
-// SCTLR_EL1
-#define SCTLR_RESERVED ((3 << 28) | (3 << 22) | (1 << 20) | (1 << 11))
-#define SCTLR_MMU_ENABLED (1 << 0)
+#include "../registers.h"
 
 // HCR_EL2
 #define HCR_EL2_VAL (1 << 31)
 
-// SCR_EL3
+// SCR
 #define SCR_EL3_VAL ((1 << 10) | (3 << 4) | 1)
+#define SCR_EL2_VAL ((1 << 10) | (3 << 4) | 1)
 
-// SPSR_EL3
+// SPSR
 #define SPSR_EL3_VAL ((7 << 6) | 5)
+#define SPSR_EL2_VAL ((7 << 6) | 5)
 
 #define CPACR_FPEN 0x300000
 
