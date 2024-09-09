@@ -8,6 +8,7 @@
 #include "isr.h"
 #include "irq.h"
 #include "idt.h"
+#include <kernel/tasking/TaskManager.h>
 
 char Processor::s_vendor[sizeof(uint32_t) * 3 + 1];
 CPUFeatures Processor::s_features = {};
@@ -89,4 +90,30 @@ void Processor::disable_interrupts() {
 
 void Processor::enable_interrupts() {
 	asm volatile ("sti");
+}
+
+ThreadRegisters Processor::initial_thread_registers(bool kernel, size_t entry, size_t user_stack) {
+	ThreadRegisters registers;
+	registers.iret.eflags = 0x202;
+	registers.iret.cs = kernel ? 0x8 : 0x1B;
+	registers.iret.eip = entry;
+	registers.gp.eax = 0;
+	registers.gp.ebx = 0;
+	registers.gp.ecx = 0;
+	registers.gp.edx = 0;
+	registers.gp.ebp = user_stack;
+	registers.gp.edi = 0;
+	registers.gp.esi = 0;
+	if (kernel) {
+		registers.seg.ds = 0x10; // ds
+		registers.seg.es = 0x10; // es
+		registers.seg.fs = 0x10; // fs
+		registers.seg.gs = 0x10; // gs
+	} else {
+		registers.seg.ds = 0x23; // ds
+		registers.seg.es = 0x23; // es
+		registers.seg.fs = 0x23; // fs
+		registers.seg.gs = 0x23; // gs
+	}
+	return registers;
 }

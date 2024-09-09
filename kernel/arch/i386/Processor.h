@@ -5,8 +5,11 @@
 
 #include "../../api/stdint.h"
 #include "CPUID.h"
+#include "registers.h"
+#include <kernel/kstd/Arc.h>
 
 class IRQHandler;
+class Thread;
 
 class Processor {
 public:
@@ -25,6 +28,7 @@ public:
 	static void send_eoi(int irq);
 	static void disable_interrupts();
 	static void enable_interrupts();
+	static ThreadRegisters initial_thread_registers(bool kernel, size_t entry, size_t user_stack);
 
 
 private:

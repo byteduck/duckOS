@@ -23,11 +23,14 @@
 #include "MemoryManager.h"
 #include <kernel/multiboot.h>
 #include "AnonymousVMObject.h"
-#include <kernel/arch/i386/isr.h>
 #include <kernel/device/DiskDevice.h>
 #include <kernel/tasking/Thread.h>
 #include <kernel/tasking/TaskManager.h>
 #include <kernel/kstd/KLog.h>
+
+#if defined(__i386__)
+#include <kernel/arch/i386/isr.h>
+#endif
 
 size_t used_kheap_mem;
 
@@ -148,8 +151,6 @@ void MemoryManager::page_fault_handler(ISRRegisters* regs) {
 	uint32_t err_pos;
 #if defined(__i386__)
 	asm volatile ("mov %%cr2, %0" : "=r" (err_pos));
-#endif
-	// TODO: aarch64
 	switch (regs->err_code) {
 		case FAULT_KERNEL_READ:
 			PANIC("KRNL_READ_NONPAGED_AREA", "0x%x", err_pos);
@@ -170,6 +171,8 @@ void MemoryManager::page_fault_handler(ISRRegisters* regs) {
 		default:
 			PANIC("UNKNOWN_PAGE_FAULT", "0x%x", err_pos);
 	}
+#endif
+	// TODO: aarch64
 }
 
 void MemoryManager::invlpg(void* vaddr) {

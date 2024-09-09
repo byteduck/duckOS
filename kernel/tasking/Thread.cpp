@@ -29,6 +29,7 @@
 #include "../memory/AnonymousVMObject.h"
 #include "Reaper.h"
 #include "WaitBlocker.h"
+#include <kernel/arch/Processor.h>
 
 Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* args):
 	_tid(tid),
@@ -58,27 +59,7 @@ Thread::Thread(Process* process, tid_t tid, size_t entry_point, ProcessArgs* arg
 	}
 
 	//Setup registers
-	registers.iret.eflags = 0x202;
-	registers.iret.cs = _process->_kernel_mode ? 0x8 : 0x1B;
-	registers.iret.eip = entry_point;
-	registers.gp.eax = 0;
-	registers.gp.ebx = 0;
-	registers.gp.ecx = 0;
-	registers.gp.edx = 0;
-	registers.gp.ebp = user_stack.real_stackptr();
-	registers.gp.edi = 0;
-	registers.gp.esi = 0;
-	if(_process->_kernel_mode) {
-		registers.seg.ds = 0x10; // ds
-		registers.seg.es = 0x10; // es
-		registers.seg.fs = 0x10; // fs
-		registers.seg.gs = 0x10; // gs
-	} else {
-		registers.seg.ds = 0x23; // ds
-		registers.seg.es = 0x23; // es
-		registers.seg.fs = 0x23; // fs
-		registers.seg.gs = 0x23; // gs
-	}
+	registers = Processor::initial_thread_registers(_process->_kernel_mode, entry_point, user_stack.real_stackptr());
 
 	//Set up the user stack for the program arguments
 	args->setup_stack(user_stack);
@@ -101,9 +82,13 @@ Thread::Thread(Process* process, tid_t tid, ThreadRegisters& regs):
 	_kernel_stack_region = MM.alloc_kernel_stack_region(THREAD_KERNEL_STACK_SIZE);
 
 	//Setup registers and stack
+#if defined(__i386__)
 	registers.gp.eax = 0; // fork() in child returns zero
 	Stack stack((void*) (_kernel_stack_region->start() + _kernel_stack_region->size()));
 	setup_kernel_stack(stack, regs.iret.esp, registers);
+#elif defined(__aarch64__)
+	// TODO: aarch64
+#endif
 }
 
 Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*), void*), void* (* thread_func)(void*), void* arg):
@@ -135,27 +120,7 @@ Thread::Thread(Process* process, tid_t tid, void* (*entry_func)(void* (*)(void*)
 	}
 
 	//Setup registers
-	registers.iret.eflags = 0x202;
-	registers.iret.cs = _process->_kernel_mode ? 0x8 : 0x1B;
-	registers.iret.eip = (size_t) entry_func;
-	registers.gp.eax = 0;
-	registers.gp.ebx = 0;
-	registers.gp.ecx = 0;
-	registers.gp.edx = 0;
-	registers.gp.ebp = user_stack.real_stackptr();
-	registers.gp.edi = 0;
-	registers.gp.esi = 0;
-	if(_process->_kernel_mode) {
-		registers.seg.ds = 0x10; // ds
-		registers.seg.es = 0x10; // es
-		registers.seg.fs = 0x10; // fs
-		registers.seg.gs = 0x10; // gs
-	} else {
-		registers.seg.ds = 0x23; // ds
-		registers.seg.es = 0x23; // es
-		registers.seg.fs = 0x23; // fs
-		registers.seg.gs = 0x23; // gs
-	}
+	registers = Processor::initial_thread_registers(_process->_kernel_mode, (size_t) entry_func, user_stack.real_stackptr());
 
 	//Set up the user stack for the thread arguments
 	user_stack.push<size_t>((size_t) arg);
@@ -452,27 +417,7 @@ bool Thread::call_signal_handler(int signal) {
 	user_stack.push<size_t>(SIGNAL_RETURN_FAKE_ADDR);
 
 	//Setup signal registers
-	signal_registers.iret.eflags = 0x202;
-	signal_registers.iret.cs = _process->_kernel_mode ? 0x8 : 0x1B;
-	signal_registers.iret.eip = signal_loc;
-	signal_registers.gp.eax = 0;
-	signal_registers.gp.ebx = 0;
-	signal_registers.gp.ecx = 0;
-	signal_registers.gp.edx = 0;
-	signal_registers.gp.ebp = user_stack.real_stackptr();
-	signal_registers.gp.edi = 0;
-	signal_registers.gp.esi = 0;
-	if(_process->_kernel_mode) {
-		signal_registers.seg.ds = 0x10; // ds
-		signal_registers.seg.es = 0x10; // es
-		signal_registers.seg.fs = 0x10; // fs
-		signal_registers.seg.gs = 0x10; // gs
-	} else {
-		signal_registers.seg.ds = 0x23; // ds
-		signal_registers.seg.es = 0x23; // es
-		signal_registers.seg.fs = 0x23; // fs
-		signal_registers.seg.gs = 0x23; // gs
-	}
+	signal_registers = Processor::initial_thread_registers(_process->_kernel_mode, signal_loc, user_stack.real_stackptr());
 
 	//Set up the stack
 	setup_kernel_stack(kernel_stack, user_stack.real_stackptr(), signal_registers);
@@ -523,6 +468,7 @@ void Thread::handle_pagefault(PageFault fault) {
 	auto space = fault.address >= HIGHER_HALF ? MM.kernel_space() : m_vm_space;
 
 	//Otherwise, try CoW and kill the process if it doesn't work
+#if defined(__i386__)
 	if(space->try_pagefault(fault).is_error()) {
 		if(fault.registers->interrupt_frame.eip > HIGHER_HALF) {
 			PANIC("SYSCALL_PAGEFAULT", "A page fault occurred in the kernel (pid: %d, tid: %d, ptr: 0x%x, ip: 0x%x).", _process->pid(), _tid, fault.address, fault.registers->interrupt_frame.eip);
@@ -531,6 +477,8 @@ void Thread::handle_pagefault(PageFault fault) {
 					fault.address, fault.registers->interrupt_frame.eip);
 		_process->kill(SIGSEGV);
 	}
+#endif
+	// TODO: aarch64
 }
 
 void Thread::enqueue_thread(Thread* thread) {
@@ -576,6 +524,7 @@ void Thread::trace_detach() {
 }
 
 void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, ThreadRegisters& regs) {
+#if defined(__i386__)
 	//If usermode, push ss and useresp
 	if(__builtin_expect(!is_kernel_mode(), true)) {
 		kernel_stack.push<uint32_t>(0x23); //ss
@@ -610,6 +559,12 @@ void Thread::setup_kernel_stack(Stack& kernel_stack, size_t user_stack_ptr, Thre
 
 	regs.gp.esp = (size_t) kernel_stack.stackptr();
 	regs.iret.esp = (size_t) user_stack_ptr;
+#elif defined(__aarch64__)
+	// Push GP registers
+	for (auto i = 0; i < 31; i++)
+		kernel_stack.push<uint64_t>(regs.gp.regs[i]);
+	regs.sp = (size_t) kernel_stack.stackptr();
+#endif
 }
 
 void Thread::exit(void* return_value) {

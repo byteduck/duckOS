@@ -20,7 +20,7 @@
 #pragma once
 
 #include <kernel/kstd/kstddef.h>
-#include <kernel/arch/i386/registers.h>
+#include <kernel/arch/registers.h>
 
 class IRQHandler {
 public:

@@ -3,16 +3,8 @@
 
 #include "kernel/kstd/vector.hpp"
 #include "kernel/tasking/TaskManager.h"
-#include "kernel/kstd/defines.h"
-#include "kernel/Atomic.h"
 #include "kernel/memory/MemoryManager.h"
-#include "kernel/kstd/KLog.h"
-#include "kernel/KernelMapper.h"
-#include "kernel/kstd/cstring.h"
 #include "PageDirectory.h"
-
-#include <kernel/memory/PageDirectory.h>
-#include "rpi/MMIO.h"
 
 using namespace Aarch64;
 
@@ -21,15 +13,6 @@ __attribute__((aligned(4096))) MMU::TableDescriptor __kernel_pgd[512];
 
 void PageDirectory::init_paging() {
 	setup_kernel_map();
-	auto map_range = [&](VirtualAddress vstart, VirtualAddress pstart, size_t size, VMProt prot, bool dev) {
-		size_t start_vpage = vstart / PAGE_SIZE;
-		size_t start_ppage = pstart / PAGE_SIZE;
-		size_t num_pages = ((vstart + size) / PAGE_SIZE) - start_vpage;
-		for(size_t i = 0; i < num_pages; i++)
-			if(MM.kernel_page_directory.map_page(start_vpage + i, start_ppage + i, prot, dev).is_error())
-				PANIC("PAGING_INIT_FAIL", "Could not map the kernel when setting up paging.");
-	};
-	map_range(RPi::MMIO::phys_base, RPi::MMIO::phys_base, RPi::MMIO::phys_size, VMProt::RW, true);
 
 	asm volatile(
 			"msr ttbr1_el1, %0 \n"

@@ -27,7 +27,7 @@
 #include "VMSpace.h"
 #include <kernel/tasking/Mutex.h>
 #include "Memory.h"
-#include "kernel/arch/i386/registers.h"
+#include "kernel/arch/registers.h"
 #include <kernel/memory/PageDirectory.h>
 
 /**

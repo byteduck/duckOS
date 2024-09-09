@@ -5,7 +5,7 @@
 
 #include "../kstd/kstddef.h"
 #include "../api/page_size.h"
-#include <kernel/arch/i386/registers.h>
+#include <kernel/arch/registers.h>
 
 #if defined(__i386__)
 #define HIGHER_HALF 0xC0000000

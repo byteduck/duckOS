@@ -136,9 +136,9 @@ void KernelMapper::print_stacktrace(size_t ebp) {
 		//Finally, get the symbol name and print
 		auto* sym = KernelMapper::get_symbol(stk[1]);
 		if(sym)
-			printf("0x%x %s\n", stk[1], sym->name);
+			printf("0x%lx %s\n", stk[1], sym->name);
 		else
-			printf("0x%x\n", stk[1]);
+			printf("0x%lx\n", stk[1]);
 
 		//Continue walking the stack
 		stk = (size_t*) stk[0];

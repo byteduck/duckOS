@@ -31,7 +31,7 @@
 #include "kernel/kstd/circular_queue.hpp"
 #include "../kstd/KLog.h"
 #include "Tracer.h"
-#include <kernel/arch/i386/registers.h>
+#include <kernel/arch/registers.h>
 
 #define THREAD_STACK_SIZE 1048576 //1024KiB
 #define THREAD_KERNEL_STACK_SIZE 524288 //512KiB

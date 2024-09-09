@@ -4,6 +4,8 @@
 #pragma once
 #include "types.h"
 
+#if defined(__i386__)
+
 __DECL_BEGIN
 
 struct ptrace_registers {
@@ -31,3 +33,4 @@ union PTraceRegisters {
 };
 
 #endif
+#endif // TODO: aarch64
