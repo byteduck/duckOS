@@ -92,6 +92,6 @@ ADD_CUSTOM_TARGET(qemu
 )
 
 ADD_CUSTOM_TARGET(tests
-    COMMAND ${CMAKE_SOURCE_DIR}/scripts/qemu.sh kernel-tests=true
+	COMMAND ${CMAKE_COMMAND} -E env "KERNEL_NAME=${KERNEL_EXECUTABLE_NAME}" "ARCH=${CMAKE_SYSTEM_PROCESSOR}" ${CMAKE_SOURCE_DIR}/scripts/qemu.sh kernel-tests=true
     USES_TERMINAL
 )

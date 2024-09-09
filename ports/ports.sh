@@ -3,9 +3,9 @@
 
 PORTS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SOURCE_DIR="$PORTS_DIR/.."
-ROOT_DIR="$SOURCE_DIR/cmake-build/root"
+ROOT_DIR="$SOURCE_DIR/build/i686/root"
 PORTS_D_DIR="$ROOT_DIR/usr/ports.d"
-PATH="$PATH:$SOURCE_DIR/toolchain/tools/bin"
+PATH="$PATH:$SOURCE_DIR/toolchain/tools/i686/bin"
 NUM_JOBS=$(( $(nproc) / 2 ))
 
 SED_BIN="sed"

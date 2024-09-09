@@ -53,13 +53,14 @@ To build something from the `edit` directory, pass the `edited-[thing]` to the `
 ## Building and running duckOS
 1. In the `build/[arch]` directory, run `make install` to build the kernel & programs.
 2. Run `make image` to make the disk image.
+    - If you'd like to add extra files to the image, create a folder named `user` at the root of the repository. These files will be copied to the root of the built image.
 4. Run `make qemu` to run qemu with the image you just made.
 5. Enjoy!
 
 ## Running kernel unit tests
 To run kernel unit tests, run `make install` and `make image` as usual, and then use `make tests` to run tests. Instead of running init, the kernel will run unit tests after booting.
 
-Alternatively, supply the `kernel-tests` kernel argument to run tests.
+Alternatively, supply the `kernel-tests=true` kernel argument to run tests.
 
 ## Raspberry Pi
 *Note: aarch64 support is WIP, and even less likely to work properly on real hardware than in qemu. duckOS currently supports the Raspberry Pi 3B.*

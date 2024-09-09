@@ -109,6 +109,7 @@ Ports can be installed by running [ports.sh](ports/ports.sh) supplied with the d
 Some of the more exciting ports are:
 
 - [DOOM](ports/doom)
+    - You'll need to provide your own DOOM wadfile and put it in the /apps/doom.app/ directory. (See [the build instructions](INSTRUCTIONS.md#building-and-running-duckos) for more details.)
 - [binutils](ports/binutils)
 - [gcc](ports/gcc)
 - [sdl2](ports/sdl2)
