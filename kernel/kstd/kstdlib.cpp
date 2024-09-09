@@ -60,11 +60,21 @@ uint8_t parse_hex_char(char c) {
 }
 
 char* itoa(int i, char* p, int base) {
-	return lltoa(i, p, base);
+	if (base != 10)
+		return lltoa((long long) (i & ~0x0u), p, base);
+	else
+		return lltoa(i, p, base);
 }
 
+
+
+extern void serial_putch(char);
+
 char* ltoa(long i, char* p, int base) {
-	return lltoa(i, p, base);
+	if (base != 10)
+		return lltoa((long long) (i & ~0x0ul), p, base);
+	else
+		return lltoa(i, p, base);
 }
 
 char *lltoa(long long i, char *p, int base) {
@@ -72,6 +82,9 @@ char *lltoa(long long i, char *p, int base) {
 	int nbcount = 0;
 	bool flag = 0;
 	int ind;
+	if (i & 0xfffffff00000000ULL) {
+		serial_putch('!');
+	}
 	switch(base){
 		case 10: {
 			bool neg = i < 0;
@@ -102,7 +115,8 @@ char *lltoa(long long i, char *p, int base) {
 				uint8_t shift = base == 16 ? 4 : 1;
 				constexpr auto hexmask = (unsigned long long) 0xF << (sizeof(long long) * 8 - 8);
 				constexpr auto binmask = (unsigned long long) 0x8 << (sizeof(long long) * 8 - 8);
-				for(unsigned long long a = (base == 16 ? hexmask : binmask); a > 0; a = a >> shift) {
+				auto mask = (base == 16 ? hexmask : binmask);
+				for(unsigned long long a = mask; a > 0; a = a >> shift) {
 					if (((unsigned long long) i & a) != 0 || flag) {
 						nbcount++;
 						flag = true;
