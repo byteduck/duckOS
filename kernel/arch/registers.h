@@ -5,4 +5,6 @@
 
 #if defined(__i386__)
 #include "i386/registers.h"
+#elif defined(__aarch64__)
+#include "aarch64/registers.h"
 #endif

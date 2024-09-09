@@ -28,7 +28,7 @@
 #include <kernel/tasking/Thread.h>
 #include <kernel/tasking/Process.h>
 #include <kernel/KernelMapper.h>
-#include <kernel/arch/i386/registers.h>
+#include <kernel/arch/registers.h>
 
 namespace Interrupt {
 	TSS fault_tss;

@@ -47,6 +47,7 @@ int Process::sys_ptrace(UserspacePointer<struct ptrace_args> args_ptr) {
 
 	switch (args.request) {
 	case PTRACE_GETREGS: {
+#if defined(__i386__)
 		auto frame = tracer->tracee_thread()->cur_trap_frame();
 		if (!frame)
 			return -EFAULT;
@@ -75,6 +76,9 @@ int Process::sys_ptrace(UserspacePointer<struct ptrace_args> args_ptr) {
 			break;
 		}
 		return SUCCESS;
+#elif defined(__aarch64__)
+		return ENOTSUP; // TODO: aarch64
+#endif
 	}
 
 	case PTRACE_CONT:

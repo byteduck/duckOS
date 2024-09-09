@@ -72,7 +72,6 @@ namespace TaskManager {
 	void kill_pgid(pid_t pgid, int sig);
 
 	bool yield();
-	bool yield_if_not_preempting();
 	bool yield_if_idle();
 	void do_yield_async();
 	void tick();

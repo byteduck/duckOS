@@ -24,12 +24,14 @@
 #include "kernel/memory/SafePointer.h"
 
 void syscall_handler(ThreadRegisters& regs){
+#if defined(__i386__)
 	TrapFrame frame { nullptr, TrapFrame::Syscall, &regs };
 	TaskManager::current_thread()->enter_trap_frame(&frame);
 	TaskManager::current_thread()->enter_syscall();
 	regs.gp.eax = handle_syscall(regs, regs.gp.eax, regs.gp.ebx, regs.gp.ecx, regs.gp.edx);
 	TaskManager::current_thread()->leave_syscall();
 	TaskManager::current_thread()->exit_trap_frame();
+#endif // TODO: aarch64
 }
 
 int handle_syscall(ThreadRegisters& regs, size_t call, size_t arg1, size_t arg2, size_t arg3) {

@@ -49,18 +49,18 @@ jobs:
       
       - name: Build duckOS (Release)
         run: |
-          cd build/i386
-          cmake ../.. -DCMAKE_TOOLCHAIN_FILE=build/i386/CMakeToolchain.txt -DCMAKE_BUILD_TYPE=Release
+          cd build/i686
+          cmake ../.. -DCMAKE_TOOLCHAIN_FILE=build/i686/CMakeToolchain.txt -DCMAKE_BUILD_TYPE=Release
           make install
           
       - name: Make image
         run: |
-          cd build/i386
+          cd build/i686
           make image
           
       - name: Upload image
         uses: actions/upload-artifact@v3
         with:
           name: Disk Image
-          path: build/i386/duckOS.img
+          path: build/i686/duckOS.img
 

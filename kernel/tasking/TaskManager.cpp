@@ -183,6 +183,8 @@ void TaskManager::init(){
 	// TODO: AARCH64
 #if defined (__i686__)
 	preempt_init_asm(cur_thread->registers.gp.esp);
+#elif defined(__aarch64__)
+	Processor::start_initial_thread(cur_thread.get());
 #endif
 }
 
@@ -277,12 +279,6 @@ bool TaskManager::yield() {
 	}
 }
 
-bool TaskManager::yield_if_not_preempting() {
-	if(!preempting)
-		return yield();
-	return true;
-}
-
 bool TaskManager::yield_if_idle() {
 	if(!kernel_process)
 		return false;
@@ -356,9 +352,15 @@ void TaskManager::preempt(){
 	if(!old_thread) {
 		old_esp = &dummy_esp;
 	} if(old_thread->in_signal_handler()) {
+		// TODO: aarch64
+#if defined (__i386__)
 		old_esp = &old_thread->signal_registers.gp.esp;
+#endif
 	} else {
+		// TODO: aarch64
+#if defined (__i386__)
 		old_esp = &old_thread->registers.gp.esp;
+#endif
 	}
 
 	//If we just finished handling a signal, set in_signal_handler to false.
@@ -378,10 +380,16 @@ void TaskManager::preempt(){
 	//If we're switching to a process in a signal handler, use the esp from signal_registers
 	uint32_t* new_esp;
 	if(next_thread->in_signal_handler()) {
+		// TODO: aarch64
+#if defined (__i386__)
 		new_esp = &next_thread->signal_registers.gp.esp;
+#endif
 		tss.esp0 = (size_t) next_thread->signal_stack_top();
 	} else {
+		// TODO: aarch64
+#if defined (__i386__)
 		new_esp = &next_thread->registers.gp.esp;
+#endif
 		tss.esp0 = (size_t) next_thread->kernel_stack_top();
 	}
 
@@ -405,6 +413,8 @@ void TaskManager::preempt(){
 		// TODO: AARCH64
 #if defined(__i386__)
 		preempt_asm(old_esp, new_esp, cur_thread->page_directory()->entries_physaddr());
+#elif defined(__aarch64__)
+		Processor::switch_threads(old_thread.get(), cur_thread.get());
 #endif
 		Processor::load_fpu_state((void*&) cur_thread->fpu_state);
 	}
